@@ -1,0 +1,9 @@
+.tox
+dist
+
+__pycache__
+.pytest_cache
+
+
+# IDEs
+.vscode
