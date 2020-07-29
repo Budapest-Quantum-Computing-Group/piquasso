@@ -1,10 +1,11 @@
+image: python:3.6
+
 stages:
   - test
 
 unittest:
   stage: test
-  image: python:3.6
   script:
     - pip install tox
     - pip install poetry
-    - tox -e py36
+    - tox

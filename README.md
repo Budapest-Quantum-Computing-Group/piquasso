@@ -14,9 +14,9 @@ sudo apt-get install libeigen3-dev
 ```
 on a machine running Ubuntu/Debian (the rpm package is named `eigen3-devel`).
 
-Additionally, this project uses `tox` to manage virtualenvs, install it with
-```
-pip install tox
+Additionally, this project uses `tox` to manage virtualenvs, install it with 
+``` 
+pip install tox 
 ```
 
 For packaging, `poetry` is used:
