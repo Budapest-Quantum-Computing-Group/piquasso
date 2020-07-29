@@ -1,4 +1,4 @@
-Í# Development Guide
+# Development Guide
 
 ## Development requirements
 
@@ -12,16 +12,38 @@ The deb package is named `libeigen3-dev`, so issue
 ```
 sudo apt-get install libeigen3-dev
 ```
-on a machine running Ubuntu/Debian (the rpm package is named `eigen3-devel`).
+on a machine running Fedora/CentOS (the rpm package is named `eigen3-devel`).
 
-Additionally, this project uses `tox` to manage virtualenvs, install it with
+`python3-venv` is important for the python virtual environment, install it on linux with:
 ```
+sudo apt install python3-venv
+```
+
+Additionally, this project uses `tox` to manage virtualenvs, install it with 
+``` 
 pip install tox
 ```
 
-For packaging, `poetry` is used:
+For packaging, `poetry` is used.
+Install it with the below command:
 ```
-pip install poetry
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+```
+`poetry` can be installed with `pip` as well, but the recommended way is to install it with the above command. More info [here](https://python-poetry.org/docs/#installation).
+
+The last step is to run the below command to download all the python dependencies (more info [here](https://python-poetry.org/docs/basic-usage/#installing-with-poetrylock)):
+```
+poetry install
+```
+
+## Running a program with poetry
+A python program can be run inside poetries virtual environment with the below command
+```
+poetry run python <python file>
+```
+Or the virtual environment can be activated explicitly by running:
+```
+source `poetry env info --path`/bin/activate
 ```
 
 ## Testing
@@ -29,4 +51,52 @@ pip install poetry
 Run tests with
 ```
 tox
+```
+
+## How to contribute?
+
+We plan out and track all Piquasso issues through GitLab *Issues*. Feel free
+to browse around and pick a sympathetic one to work on. Once you have it,
+then please:
+
+1. Follow the [feature branch workflow][1]. In the commit message please
+refrence the issue with `#issue-num`.
+2. Issue a *merge request*. The Git server will report back the URL for this
+after the `push`. You are also welcome to check out the merge requests and add
+comments to others' work there.
+3. Anytime during the process you can add more changes to your new branch
+and `push` anew. If you do this, any approvals will be reset though, but its
+fine as the approval concerns the whole of the merge request, so your peers
+have to re-evaluate your work.
+4. Every request needs to be accepted by at least one other developer. Once
+you have it, you can *merge* your change. If your change consists of
+multiple commits, please consider checking the *Squash commit* check-box for
+GitLab to make a single commit---this improves readability of *master*
+branch history.
+
+[1]: https://docs.gitlab.com/ee/gitlab-basics/feature_branch_workflow.html
+
+
+## Publish package to private gitlab repository
+
+### Register private repository
+```
+poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
+```
+Create [Personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) and put it in the below command
+```
+poetry config pypi-token.gitlab <my-token>
+```   
+The above commands are based on these:
+- https://gitlab.inf.elte.hu/help/user/packages/pypi_repository/index.md for the repository link used in the first command
+- https://python-poetry.org/docs/repositories/#adding-a-repository for the commands.
+
+### Publish to the private repository
+https://python-poetry.org/docs/libraries/#packaging
+```
+poetry build
+```
+https://python-poetry.org/docs/libraries/#publishing-to-a-private-repository
+```
+poetry publish -r gitlab
 ```

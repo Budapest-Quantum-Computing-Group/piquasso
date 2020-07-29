@@ -1,0 +1,23 @@
+image: python:3.6
+
+stages:
+  - test
+  - build
+
+unittest:
+  stage: test
+  script:
+    - pip install tox
+    - pip install poetry
+    - tox
+
+buildpackage:
+  stage: build
+  only: 
+    - merge_requests
+  script:
+    - pip install poetry
+    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
+    - poetry config pypi-token.gitlab 1z5AF-A6zsitDWpwGP91
+    - poetry build
+    - poetry publish -r gitlab
