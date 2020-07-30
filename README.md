@@ -19,7 +19,7 @@ on a machine running Fedora/CentOS (the rpm package is named `eigen3-devel`).
 sudo apt install python3-venv
 ```
 
-Additionally, this project uses `tox` to manage virtualenvs, install it with 
+Additionally, this project uses `tox` to manage virtualenvs, install it with:
 ``` 
 pip install tox
 ```
@@ -100,3 +100,19 @@ https://python-poetry.org/docs/libraries/#publishing-to-a-private-repository
 ```
 poetry publish -r gitlab
 ```
+## Benchmarking
+We can run benckmarks with various pennylane devices, for more details see:
+https://github.com/XanaduAI/pennylane/blob/master/benchmark/README.rst
+For instance:
+```
+cd pennylane/benchmark/
+poetry run python benchmark.py -d default.qubit time bm_entangling_layers
+```
+### Notes:
+Unfortunatelly running `benchmark.py` with `bm_mutable_rotations` or
+`bm_mutable_complicated_params` will not work. There is a bug in both of these
+in their `__init__()` function: they are expected to accept a named parameter
+`qnode_type` but they don't. If you add the parameter by hand it will work
+fine.
+
+**The benchmarks, as of now, only work for qubit operations!**

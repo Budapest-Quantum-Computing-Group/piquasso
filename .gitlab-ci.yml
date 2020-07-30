@@ -1,5 +1,11 @@
 image: python:3.6
 
+variables:
+  GIT_SUBMODULE_STRATEGY: normal #to use submodule
+
+before_script:
+  - pip install poetry
+
 stages:
   - test
   - build
@@ -8,16 +14,29 @@ unittest:
   stage: test
   script:
     - pip install tox
-    - pip install poetry
     - tox
+
+benchmark:
+    stage: test
+    script:
+      - apt update
+      - apt-get install libeigen3-dev
+      - poetry install
+      - cd pennylane/benchmark/
+      - poetry run python benchmark.py -d default.qubit time bm_entangling_layers > ./output.txt
+    artifacts:
+      paths:
+        - pennylane/benchmark/output.txt
+      expire_in: 15 days
+
 
 buildpackage:
   stage: build
   only: 
     - merge_requests
   script:
-    - pip install poetry
     - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
     - poetry config pypi-token.gitlab 1z5AF-A6zsitDWpwGP91
     - poetry build
     - poetry publish -r gitlab
+

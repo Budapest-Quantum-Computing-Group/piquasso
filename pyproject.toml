@@ -10,6 +10,9 @@ numpy = "^1.19.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+strawberryfields = "^0.14.0"
+pennylane = "^0.10.0"
+pennylane-sf = "^0.9.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
