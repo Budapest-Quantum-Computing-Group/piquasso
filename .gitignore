@@ -3,7 +3,9 @@ dist
 
 __pycache__
 .pytest_cache
-
+piquasso.egg-info/
+venv/
 
 # IDEs
 .vscode
+.idea
