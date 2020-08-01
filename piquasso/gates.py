@@ -18,7 +18,9 @@ class Gate:
         method = self.backends.get(Context.current_program.backend.__class__)
 
         if not method:
-            raise NotImplementedError("No such operation implemented on this backend.")
+            raise NotImplementedError(
+                "No such operation implemented on this backend."
+            )
 
         return method
 
