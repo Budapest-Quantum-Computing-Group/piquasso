@@ -6,4 +6,8 @@
 
 
 class Context:
+    """
+    TODO: Rework it into a module:
+    https://docs.python.org/3/faq/programming.html#how-do-i-share-global-variables-across-modules
+    """
     current_program = None

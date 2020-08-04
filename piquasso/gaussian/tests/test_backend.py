@@ -9,11 +9,6 @@ from ..backend import GaussianBackend
 from ..state import GaussianState
 
 
-@pytest.fixture(scope="session")
-def tolerance():
-    return 10E-10
-
-
 class TestGaussianBackend:
     @pytest.fixture(autouse=True)
     def setup(self):

@@ -2,7 +2,9 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-"""A simple quantum state implementation based on numpy."""
+"""
+A simple quantum state implementation.
+"""
 
 import numpy as np
 
