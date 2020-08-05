@@ -8,7 +8,8 @@ from piquasso.context import Context
 class Program:
     """The representation for a quantum program.
 
-    This also specifies a context in which all the operations should be specified.
+    This also specifies a context in which all the operations should be
+    specified.
     """
 
     def __init__(self, state, backend):

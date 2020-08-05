@@ -6,7 +6,6 @@
 
 import numpy as np
 
-from piquasso.context import Context
 from piquasso.operator import BaseOperator
 
 
@@ -27,8 +26,8 @@ class FockBackend:
             modes [int]: modes to operate on
 
         Returns:
-            (numpy.ndarray): The representation of the one-particle beamsplitter gate
-                on modes `i` and `j`.
+            (numpy.ndarray): The representation of the one-particle
+                beamsplitter gate on modes `i` and `j`.
         """
 
         theta, phi = params

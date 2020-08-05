@@ -7,13 +7,14 @@ from piquasso.context import Context
 
 class Q:
     """
-    The implementation of qumodes, which is used to track on which qumodes are the
-    operators placed in the circuit.
+    The implementation of qumodes, which is used to track on which qumodes are
+    the operators placed in the circuit.
     """
     def __init__(self, *modes):
         """
         Args:
-            modes: The positive integer values which is used to represent the qumodes.
+            modes: The positive integer values which is used to represent the
+                qumodes.
         """
         self.modes = modes
 
@@ -27,6 +28,10 @@ class Q:
             (Q): The current qumode.
         """
         Context.current_program.instructions.append(
-            {'params': gate.params, 'modes': self.modes, 'op': gate.resolve_method_for_backend()}
+            {
+                'params': gate.params,
+                'modes': self.modes,
+                'op': gate.resolve_method_for_backend()
+            }
         )
         return self
