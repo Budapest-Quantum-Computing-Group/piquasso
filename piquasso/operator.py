@@ -28,3 +28,15 @@ class BaseOperator(np.ndarray):
             (BaseOperator): The adjoint of the operator.
         """
         return self.conjugate().transpose().view(self.__class__)
+
+    def is_unitary(self, tol=1e-10):
+        """
+        Args:
+            tol (float, optional): The tolerance for testing the unitarity.
+                Defaults to `1e-10`.
+
+        Returns:
+            bool: `True` if the current object is unitary within the specified
+                tolerance `tol`, else `False`.
+        """
+        return (self @ self.adjoint() - np.identity(self.shape[0]) < tol).all()
