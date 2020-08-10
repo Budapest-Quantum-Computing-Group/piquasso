@@ -20,6 +20,8 @@ unittest:
 benchmark:
   variables:
     GIT_SUBMODULE_STRATEGY: normal #to use submodule
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
   stage: test
   script:
     - apt update
@@ -31,6 +33,23 @@ benchmark:
     paths:
       - pennylane/benchmark/output.txt
     expire_in: 15 days
+
+generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
+  stage: build
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
+  script:
+    - apt update
+    - apt-get install libeigen3-dev
+    - poetry install
+    - cd docs
+    - poetry run make html_all
+  artifacts:
+    paths:
+      - docs/_build
+    expire_in: 30 days
 
 
 buildpackage:
