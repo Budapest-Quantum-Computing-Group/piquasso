@@ -39,8 +39,8 @@ class FockBackend(Backend):
         TODO: Multiple particles are not handled yet.
 
         Args:
-            params [float]:
-            modes [int]: modes to operate on
+            params ([float]):
+            modes ([int]): modes to operate on
 
         Returns:
             (numpy.ndarray): The representation of the one-particle

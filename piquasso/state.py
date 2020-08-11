@@ -11,7 +11,7 @@ from piquasso.backend import FockBackend
 
 
 class FockState(BaseOperator):
-    """
+    r"""
     Implements the density operator from quantum mechanics in Fock
     representation.
     """

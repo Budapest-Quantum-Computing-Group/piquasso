@@ -13,13 +13,17 @@ class Q:
     def __init__(self, *modes):
         """
         Args:
-            modes: The positive integer values which is used to represent the
+            modes: Distinct positive integer values which are used to represent
                 qumodes.
         """
+
+        assert self._is_distinct(modes)
+
         self.modes = modes
 
     def __or__(self, gate):
-        """This registers the specified `operator` to the current quantum program.
+        """This registers the specified `operator` to the current quantum
+            program.
 
         Args:
             gate (Gate): The operator to be applied on execution.
@@ -35,3 +39,7 @@ class Q:
             }
         )
         return self
+
+    @staticmethod
+    def _is_distinct(iterable):
+        return len(iterable) == len(set(iterable))

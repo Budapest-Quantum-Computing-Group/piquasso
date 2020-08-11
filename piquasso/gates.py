@@ -5,7 +5,10 @@
 """Simple passive linear optical elements."""
 
 from piquasso.backend import FockBackend
+
 from piquasso.context import Context
+from piquasso.gaussian.backend import GaussianBackend
+from piquasso.passivegaussian.backend import PassiveGaussianBackend
 
 
 class Gate:
@@ -29,5 +32,7 @@ class B(Gate):
     """Beamsplitter gate."""
 
     backends = {
-        FockBackend: FockBackend.beamsplitter
+        FockBackend: FockBackend.beamsplitter,
+        GaussianBackend: GaussianBackend.beamsplitter,
+        PassiveGaussianBackend: PassiveGaussianBackend.beamsplitter
     }
