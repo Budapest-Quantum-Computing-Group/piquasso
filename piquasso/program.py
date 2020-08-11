@@ -12,24 +12,23 @@ class Program:
     specified.
     """
 
-    def __init__(self, state, backend):
+    def __init__(self, state, backend_class=None):
         """
         Args:
             state (State): The initial quantum state.
-            backend: The backend on which the quantum program should run.
+            backend_class: The backend on which the quantum program should run.
         """
         self.state = state
         self.d = self.state.d
         self.instructions = []
-        self.backend = backend(state)
+
+        backend_class = backend_class or state.backend_class
+        self.backend = backend_class(state)
 
     def execute(self):
-        """Execute all the collected instructions in order.
+        """Executes the collected instructions on the backend."""
 
-        TODO: Multiple particles are not handled yet.
-        """
-
-        self.backend.execute_program(self)
+        self.backend.execute_instructions(self.instructions)
 
     def __enter__(self):
         Context.current_program = self

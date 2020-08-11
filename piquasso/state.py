@@ -7,10 +7,17 @@
 import numpy as np
 
 from piquasso.operator import BaseOperator
+from piquasso.backend import FockBackend
 
 
-class State(BaseOperator):
-    """Implements the density operator from quantum mechanics."""
+class FockState(BaseOperator):
+    """
+    Implements the density operator from quantum mechanics in Fock
+    representation.
+    """
+
+    backend_class = FockBackend
+
     def __new__(cls, representation):
         return np.array(representation).view(cls)
 

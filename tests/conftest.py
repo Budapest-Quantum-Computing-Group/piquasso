@@ -7,7 +7,7 @@ import pytest
 from scipy.stats import unitary_group
 
 from piquasso.operator import BaseOperator
-from piquasso.state import State
+from piquasso.state import FockState
 
 
 @pytest.fixture
@@ -19,8 +19,8 @@ def dummy_unitary():
 
 
 @pytest.fixture
-def dummy_state():
-    return State.from_state_vector([1, 0])
+def dummy_fock_state():
+    return FockState.from_state_vector([1, 0])
 
 
 @pytest.fixture(scope="session")

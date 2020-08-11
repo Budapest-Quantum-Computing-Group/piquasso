@@ -9,7 +9,22 @@ import numpy as np
 from piquasso.operator import BaseOperator
 
 
-class FockBackend:
+class Backend:
+    def execute_instructions(self, instructions):
+        """Executes the collected instructions in order.
+
+        Args:
+            instructions (list): The methods, parameters and modes of the
+                current backend to be executed in order.
+        """
+        for instruction in instructions:
+            operation = instruction['op']
+            params = instruction['params']
+            modes = instruction['modes']
+            operation(self, params, modes)
+
+
+class FockBackend(Backend):
 
     def __init__(self, state):
         """
@@ -20,6 +35,8 @@ class FockBackend:
 
     def beamsplitter(self, params, modes):
         """Applies a beamsplitter.
+
+        TODO: Multiple particles are not handled yet.
 
         Args:
             params [float]:
@@ -49,23 +66,11 @@ class FockBackend:
 
         BaseOperator(embedded_matrix).apply(self.state)
 
-    def execute_program(self, program):
-        """Execute the program.
 
-        Args:
-            program (Program):
-        """
-        for operations in program.instructions:
-            instruction = operations['op']
-            params = operations['params']
-            modes = operations['modes']
-            instruction(self, params, modes)
+class GaussianBackend(Backend):
 
+    def beamsplitter(self, params, modes):
+        raise NotImplementedError()
 
-class GaussianBackend:
-
-    def beamsplitter(cls, params, modes):
-        pass
-
-    def execute_program(cls, program):
-        pass
+    def phaseshift(self, params, modes):
+        raise NotImplementedError()

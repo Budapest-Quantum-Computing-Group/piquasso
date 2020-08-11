@@ -8,11 +8,10 @@ from piquasso.program import Program
 from piquasso.context import Context
 from piquasso.gates import B
 from piquasso.mode import Q
-from piquasso.backend import FockBackend
 
 
-def test_current_program_in_program_context(dummy_state):
-    program = Program(state=dummy_state, backend=FockBackend)
+def test_current_program_in_program_context(dummy_fock_state):
+    program = Program(state=dummy_fock_state)
 
     with program:
         assert Context.current_program is program
@@ -20,8 +19,8 @@ def test_current_program_in_program_context(dummy_state):
     assert Context.current_program is None
 
 
-def test_program(dummy_state, tolerance):
-    program = Program(state=dummy_state, backend=FockBackend)
+def test_program(dummy_fock_state, tolerance):
+    program = Program(state=dummy_fock_state)
 
     with program:
         Q(0, 1) | B(0.1, 0.4) | B(0.5, 0.3)
