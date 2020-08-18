@@ -1,0 +1,3 @@
+[flake8]
+extend-ignore = W605,  # Ignoring latex syntax in docstrings
+                E201   # Ignoring whitespace after '(' or '[' for matrices

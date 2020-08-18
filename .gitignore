@@ -9,3 +9,10 @@ venv/
 # IDEs
 .vscode
 .idea
+
+# Sphinx
+docs/
+!docs/conf.py
+!docs/help.rst
+!docs/index.rst
+!docs/license.rst
