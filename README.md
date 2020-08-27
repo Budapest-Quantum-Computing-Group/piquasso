@@ -1,5 +1,7 @@
 # Development Guide
 
+[[_TOC_]]
+
 ## Development requirements
 
 First and foremost, a `python3.6` is needed to be installed on your machine.
@@ -116,3 +118,15 @@ in their `__init__()` function: they are expected to accept a named parameter
 fine.
 
 **The benchmarks, as of now, only work for qubit operations!**
+
+## Generating documentation
+
+Generate the `html` documentation with the below command from the docs folder:
+```
+poetry run make html_all
+```
+The generated documentation is available in the docs/_build folder.
+
+To generate the web page and open it in the default browser run `poetry run make open`
+
+The generated documentation can also be downloaded form the gitlab pipeline more info [here](https://docs.gitlab.com/ee/ci/pipelines/job_artifacts.html).
