@@ -8,10 +8,6 @@ from piquasso.backend import Backend
 
 
 class GaussianBackend(Backend):
-
-    def beamsplitter(self, params, modes):
-        raise NotImplementedError()
-
     def phaseshift(self, params, modes):
         """Performs a phase shifting on the quantum state.
 
@@ -44,3 +40,41 @@ class GaussianBackend(Backend):
 
         self.state.C[:, k] = np.conj(self.state.C[k, :])
         self.state.G[:, k] = self.state.G[k, :]
+
+    def beamsplitter(self, params, modes):
+        r"""Applies the beamsplitter gate to the state.
+
+        The matrix representation of the beamsplitter operation
+        is
+
+        .. math::
+            B = \begin{bmatrix}
+                t  & r^* \\
+                -r & t
+            \end{bmatrix},
+
+        where :math:`t = \cos(\theta)` and
+        :math:`r = e^{- i \phi} \sin(\theta)`.
+
+        Args:
+            params (tuple): Angle parameters :math:`\phi` and :math:`\theta` for the
+                beamsplitter gate.
+            modes (tuple): Distinct positive integer values which are used to represent
+                qumodes.
+        """
+
+        phi, theta = params
+
+        t = np.cos(theta)
+        r = np.exp(-1j * phi) * np.sin(theta)
+
+        B = np.array(
+            [
+                [ t, np.conj(r)],
+                [-r,          t]
+            ]
+        )
+
+        self.state.mean[modes, ] = B @ self.state.mean[modes, ]
+
+        self.state.apply_to_C_and_G(B, modes=modes)

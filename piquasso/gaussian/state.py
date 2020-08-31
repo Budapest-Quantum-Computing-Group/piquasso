@@ -180,3 +180,86 @@ class GaussianState:
         """
 
         return self.mu, self.sigma
+
+    def apply_to_C_and_G(self, T, modes):
+        r"""
+        Applies the matrix :math:`T` to the :math:`C` and :math:`G`.
+
+        Let :math:`\vec{i}` denote an index set, which corresponds to `index`
+        in the implementation. E.g. for 2 modes denoted by :math:`n` and
+        :math:`m`:, one could write
+
+        .. math::
+                \vec{i} = \{n, m\} \times \{n, m\}.
+
+        From now on, I will use the notation
+        :math:`\{n, m\} := \mathrm{modes}`.
+
+        The transformation by :math:`T` can be prescribed in the following
+        manner:
+
+        .. math::
+                C_{\vec{i}} \mapsto T^* C_{\vec{i}} T^T \\
+                G_{\vec{i}} \mapsto T G_{\vec{i}} T^T
+
+        Let us denote :math:`\vec{k}` the following:
+
+        .. math::
+                \vec{k} = \mathrm{modes}
+                        \times \big (
+                                [d]
+                                - \mathrm{modes}
+                        \big ).
+
+        For all the remaining modes, the following is applied regarding the
+        elements, where the **first** index corresponds to
+        :math:`\mathrm{modes}`:
+
+        .. math::
+                C_{\vec{k}} \mapsto T C_{\vec{k}} \\
+                G_{\vec{k}} \mapsto T G_{\vec{k}}
+
+        Regarding the case where the **second** index corresponds to
+        :math:`\mathrm{modes}`, i.e. where we use
+        :math:`\big ( [d] - \mathrm{modes} \big )
+        \times \mathrm{modes}`, the same has to be applied.
+
+        For :math:`n \in \mathrm{modes}` and :math:`m \in [d]`, we could
+        use
+
+        .. math::
+                C_{nm} := C^*_{mn} \\
+                G_{nm} := G_{mn}.
+
+        For indexing of numpy arrays, see
+        https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
+
+        Args:
+            T (np.array): The matrix to be applied.
+            modes (tuple): The modes, on which the matrix should operate.
+        """
+
+        columns = np.array([modes, modes])
+        rows = columns.transpose()
+
+        index = rows, columns
+
+        self.C[index] = (
+            T.conjugate() @ self.C[index] @ T.transpose()
+        )
+        self.G[index] = (
+            T @ self.G[index] @ T.transpose()
+        )
+
+        all_other_modes = np.delete(np.arange(self.d), modes)
+
+        self.C[modes, all_other_modes] = (
+            T @ self.C[modes, all_other_modes]
+        )
+
+        self.G[modes, all_other_modes] = (
+            T @ self.G[modes, all_other_modes]
+        )
+
+        self.C[:, modes] = np.conj(self.C[modes, ]).transpose()
+        self.G[:, modes] = self.G[modes, :].transpose()

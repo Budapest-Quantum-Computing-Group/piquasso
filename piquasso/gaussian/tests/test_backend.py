@@ -34,7 +34,7 @@ class TestGaussianBackend:
 
         self.backend = GaussianBackend(state=state)
 
-    def test_phaseshift(self, tolerance):
+    def test_phaseshift(self):
         angle = np.pi/3
         self.backend.phaseshift(params=(angle,), modes=(0,))
 
@@ -58,8 +58,46 @@ class TestGaussianBackend:
         )
         expected_mean = np.array([phase, 1, 1], dtype=complex)
 
-        assert (np.abs(self.backend.state.C - expected_C) < tolerance).all()
-        assert (np.abs(self.backend.state.G - expected_G) < tolerance).all()
-        assert (
-            np.abs(self.backend.state.mean - expected_mean) < tolerance
-        ).all()
+        assert np.allclose(self.backend.state.C, expected_C)
+        assert np.allclose(self.backend.state.G, expected_G)
+        assert np.allclose(self.backend.state.mean, expected_mean)
+
+    def test_beamsplitter(self):
+        phi = np.pi/3
+        theta = np.pi/4
+        modes = 0, 1
+
+        self.backend.beamsplitter(
+            params=(phi, theta),
+            modes=modes,
+        )
+
+        expected_C = np.array(
+            [
+                [             3, 0.5+0.8660254j, 0],
+                [0.5-0.8660254j,              2, 0],
+                [             0,              0, 1],
+            ],
+            dtype=complex,
+        )
+        expected_G = np.array(
+            [
+                [ 1.5+3.46410162j,  0.25+1.29903811j, 0],
+                [0.25+1.29903811j, -0.75+2.16506351j, 0],
+                [               0,                 0, 1],
+            ],
+            dtype=complex,
+        )
+
+        expected_mean = np.array(
+            [
+                1.06066017 + 0.61237244j,
+                0.35355339 + 0.61237244j,
+                1,
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(self.backend.state.C, expected_C)
+        assert np.allclose(self.backend.state.G, expected_G)
+        assert np.allclose(self.backend.state.mean, expected_mean)
