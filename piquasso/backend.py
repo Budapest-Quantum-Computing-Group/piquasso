@@ -10,6 +10,13 @@ from piquasso.operator import BaseOperator
 
 
 class Backend:
+    def __init__(self, state):
+        """
+        Args:
+            state (State): The initial quantum state.
+        """
+        self.state = state
+
     def execute_instructions(self, instructions):
         """Executes the collected instructions in order.
 
@@ -25,13 +32,6 @@ class Backend:
 
 
 class FockBackend(Backend):
-
-    def __init__(self, state):
-        """
-        Args:
-            state (State): The initial quantum state.
-        """
-        self.state = state
 
     def beamsplitter(self, params, modes):
         """Applies a beamsplitter.
@@ -65,12 +65,3 @@ class FockBackend(Backend):
         embedded_matrix[j, j] = matrix[1, 1]
 
         BaseOperator(embedded_matrix).apply(self.state)
-
-
-class GaussianBackend(Backend):
-
-    def beamsplitter(self, params, modes):
-        raise NotImplementedError()
-
-    def phaseshift(self, params, modes):
-        raise NotImplementedError()
