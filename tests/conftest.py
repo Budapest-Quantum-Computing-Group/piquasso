@@ -3,7 +3,6 @@
 #
 
 import pytest
-
 from scipy.stats import unitary_group
 
 from piquasso.operator import BaseOperator
