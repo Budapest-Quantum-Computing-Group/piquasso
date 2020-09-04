@@ -2,30 +2,38 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import numpy as np
+from unittest.mock import Mock
 
-from piquasso.program import Program
+import pytest
+
 from piquasso.context import Context
+from piquasso.fock.backend import FockBackend
 from piquasso.gates import B
 from piquasso.mode import Q
+from piquasso.program import Program
 
 
-def test_current_program_in_program_context(dummy_fock_state):
-    program = Program(state=dummy_fock_state)
+class TestProgram:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.program = Program(
+            state=Mock(name="State"),
+            backend_class=lambda _: Mock(FockBackend, name="Backend")
+        )
 
-    with program:
-        assert Context.current_program is program
+    def test_current_program_in_program_context(self):
+        with self.program:
+            assert Context.current_program is self.program
 
-    assert Context.current_program is None
+        assert Context.current_program is None
 
+    def test_program_instructions(self):
+        assert len(self.program.instructions) == 0
 
-def test_program(dummy_fock_state, tolerance):
-    program = Program(state=dummy_fock_state)
+        with self.program:
+            Q(0, 1) | B(0.1, 0.4) | B(0.5, 0.3)
 
-    with program:
-        Q(0, 1) | B(0.1, 0.4) | B(0.5, 0.3)
+        self.program.execute()
 
-    program.execute()
-
-    assert len(program.instructions) == 2
-    assert np.abs(program.state.trace() - 1) < tolerance
+        assert len(self.program.instructions) == 2
+        self.program.backend.execute_instructions.assert_called_once()

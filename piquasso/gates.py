@@ -4,9 +4,9 @@
 
 """Simple passive linear optical elements."""
 
-from piquasso.backend import FockBackend
-
 from piquasso.context import Context
+
+from piquasso.fock.backend import FockBackend
 from piquasso.gaussian.backend import GaussianBackend
 from piquasso.passivegaussian.backend import PassiveGaussianBackend
 
