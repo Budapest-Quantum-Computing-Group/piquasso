@@ -7,7 +7,7 @@
 import numpy as np
 
 from piquasso.operator import BaseOperator
-from piquasso.backend import FockBackend
+from piquasso.fock.backend import FockBackend
 
 
 class FockState(BaseOperator):
@@ -28,4 +28,9 @@ class FockState(BaseOperator):
 
     @property
     def d(self):
+        r"""The number of modes, on which the state is defined.
+
+        Returns:
+            int: The number of modes.
+        """
         return self.shape[0]

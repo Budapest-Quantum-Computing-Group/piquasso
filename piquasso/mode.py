@@ -10,6 +10,7 @@ class Q:
     The implementation of qumodes, which is used to track on which qumodes are
     the operators placed in the circuit.
     """
+
     def __init__(self, *modes):
         """
         Args:
