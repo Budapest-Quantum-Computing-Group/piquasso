@@ -79,30 +79,74 @@ branch history.
 [1]: https://docs.gitlab.com/ee/gitlab-basics/feature_branch_workflow.html
 
 
-## Publish package to private gitlab repository
+## Publishing
 
-### Register private repository
+### Register any repository
+
+Create a [personal access
+token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
+with at least an `api` permission. Use this access token, to register a
+repository in poetry:
+```
+poetry config repositories.<REPOSITORY-NAME> https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
+
+poetry config pypi-token.<REPOSITORY-NAME> <ACCESS-TOKEN>
+```
+
+To publish a package, use
+```
+poetry publish --build --repository <REPOSITORY-NAME>
+```
+
+### Register a private GitLab PyPi repository
+
+Configure a repository named `gitlab` in poetry:
 ```
 poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
-```
-Create [Personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) and put it in the below command
-```
-poetry config pypi-token.gitlab <my-token>
-```   
-The above commands are based on these:
-- https://gitlab.inf.elte.hu/help/user/packages/pypi_repository/index.md for the repository link used in the first command
-- https://python-poetry.org/docs/repositories/#adding-a-repository for the commands.
 
-### Publish to the private repository
-https://python-poetry.org/docs/libraries/#packaging
+poetry config pypi-token.gitlab <ACCESS-TOKEN>
 ```
-poetry build
+
+To publish a package, use
 ```
-https://python-poetry.org/docs/libraries/#publishing-to-a-private-repository
+poetry publish --build --repository gitlab
 ```
-poetry publish -r gitlab
+
+References:
+- https://python-poetry.org/docs/repositories/#adding-a-repository
+- https://python-poetry.org/docs/libraries/#publishing-to-a-private-repository
+
+### Automatic publish with GitLab
+
+Automatic publishing would work with GitLab, but we don't have a proper
+versioning yet, and the package repository doesn't overwrite existing versions
+(rightfully so!). Therefore, it is not present in the `.gitlab-ci.yml`, but
+would work like this:
+
 ```
+buildpackage:
+  stage: build
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/${CI_PROJECT_ID}/packages/pypi
+    - poetry config pypi-token.gitlab <ACCESS-TOKEN>
+    - poetry build
+    - poetry publish -r gitlab
+```
+
+**Note**:
+- The documentation uses `twine`, but `poetry publish` works similarly.
+- Access tokens might be safer in CI/CD environment variables, see:
+https://gitlab.inf.elte.hu/wigner-rcp-quantum-computing-and-information-group/piquasso/-/settings/ci_cd
+
+References:
+- https://gitlab.inf.elte.hu/help/user/packages/pypi_repository/index.md
+
 ## Benchmarking
+
 We can run benckmarks with various pennylane devices, for more details see:
 https://github.com/XanaduAI/pennylane/blob/master/benchmark/README.rst
 For instance:
