@@ -50,17 +50,3 @@ generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
     paths:
       - docs/_build
     expire_in: 30 days
-
-
-buildpackage:
-  stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  script:
-    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
-    - poetry config pypi-token.gitlab 1z5AF-A6zsitDWpwGP91
-    - poetry build
-    - poetry publish -r gitlab
-
