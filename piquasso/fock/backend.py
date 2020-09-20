@@ -12,6 +12,9 @@ from piquasso.operator import BaseOperator
 
 class FockBackend(Backend):
 
+    def phaseshift(self, params, modes):
+        raise NotImplementedError()
+
     def beamsplitter(self, params, modes):
         """Applies a beamsplitter.
 

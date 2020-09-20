@@ -27,6 +27,35 @@ class Gate:
 
         return method
 
+    @staticmethod
+    def blackbird_op_to_gate(op):
+        """Maps the name of a BlackBird gate into the represented class
+
+        Args:
+            op (string): the representation of a gate in BlackBird
+
+        Returns:
+            Gate: subclass of :class:`Gate` that the argument represents
+        """
+        return \
+            {
+                "Dgate": None,
+                "Xgate": None,
+                "Zgate": None,
+                "Sgate": None,
+                "Pgate": None,
+                "Vgate": None,
+                "Kgate": None,
+                "Rgate": R,
+                "BSgate": B,
+                "MZgate": None,
+                "S2gate": None,
+                "CXgate": None,
+                "CZgate": None,
+                "CKgate": None,
+                "Fouriergate": None
+            }[op]
+
 
 class B(Gate):
     """Beamsplitter gate."""
@@ -35,4 +64,14 @@ class B(Gate):
         FockBackend: FockBackend.beamsplitter,
         GaussianBackend: GaussianBackend.beamsplitter,
         PassiveGaussianBackend: PassiveGaussianBackend.beamsplitter
+    }
+
+
+class R(Gate):
+    """Rotation or Phaseshifter gate."""
+
+    backends = {
+        FockBackend: FockBackend.phaseshift,
+        GaussianBackend: GaussianBackend.phaseshift,
+        PassiveGaussianBackend: PassiveGaussianBackend.phaseshift
     }

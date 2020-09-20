@@ -2,7 +2,10 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import blackbird
+
 from piquasso.context import Context
+from piquasso.gates import Gate
 
 
 class Program:
@@ -35,3 +38,54 @@ class Program:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         Context.current_program = None
+
+    def _blackbird_operation_to_instruction(self, operation):
+        """
+        Maps one element of the `operations` of a `BlackbirdProgram` into an
+        element of `self.instructions`.
+
+        Args:
+            operation (dict): An element of the `BlackbirdProgram.operations`
+        """
+        gate_class = Gate.blackbird_op_to_gate(operation['op'])
+        instruction = \
+            {
+                'modes': operation['modes'],
+                'op': gate_class.backends[self.backend.__class__]
+            }
+        if 'args' in operation:
+            instruction['params'] = operation['args']
+        return instruction
+
+    def from_blackbird(self, bb):
+        """
+        Loads the gates to apply into `self.instructions` from a
+        :class:`blackbird.BlackbirdProgram`
+
+        Args:
+            bb (blackbird.BlackbirdProgram): the BlackbirdProgram to use
+        """
+        self.instructions = \
+            [*map(self._blackbird_operation_to_instruction, bb.operations)]
+
+    def load_blackbird(self, filename: str):
+        """
+        Loads the gates to apply into `self.instructions` from a BlackBird file
+        (.xbb).
+
+        Args:
+            filename (str): file location of a valid Blackbird program
+        """
+        bb = blackbird.load(filename)
+        return self.from_blackbird(bb)
+
+    def loads_blackbird(self, string):
+        """
+        Loads the gates to apply into `self.instructions` from a string
+        representing a :class:`blackbird.BlackbirdProgram`.
+
+        Args:
+            string (str): string containing a valid Blackbird Program
+        """
+        bb = blackbird.loads(string)
+        return self.from_blackbird(bb)
