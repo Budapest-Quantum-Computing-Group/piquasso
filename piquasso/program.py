@@ -4,6 +4,7 @@
 
 import blackbird
 
+from piquasso import constants
 from piquasso.context import Context
 from piquasso.gates import Gate
 
@@ -15,7 +16,7 @@ class Program:
     specified.
     """
 
-    def __init__(self, state, backend_class=None):
+    def __init__(self, state, backend_class=None, hbar=constants.HBAR_DEFAULT):
         """
         Args:
             state (State): The initial quantum state.
@@ -24,6 +25,7 @@ class Program:
         self.state = state
         self.d = self.state.d
         self.instructions = []
+        self.hbar = hbar
 
         backend_class = backend_class or state.backend_class
         self.backend = backend_class(state)

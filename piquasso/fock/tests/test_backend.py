@@ -9,11 +9,6 @@ from ..backend import FockBackend
 from ..state import FockState
 
 
-@pytest.fixture(scope="session")
-def tolerance():
-    return 10E-10
-
-
 class TestFockBackend:
     @pytest.fixture(autouse=True)
     def setup(self):
