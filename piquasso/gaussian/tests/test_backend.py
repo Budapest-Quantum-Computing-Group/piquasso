@@ -101,3 +101,42 @@ class TestGaussianBackend:
         assert np.allclose(self.backend.state.C, expected_C)
         assert np.allclose(self.backend.state.G, expected_G)
         assert np.allclose(self.backend.state.mean, expected_mean)
+
+    def test_displacement_with_alpha(self):
+        alpha = 3 - 4j
+
+        self.backend.displacement(
+            params=(alpha, ),
+            modes=(1, ),
+        )
+
+        expected_mean = np.array(
+            [
+                1,
+                1 + alpha,
+                1,
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(self.backend.state.mean, expected_mean)
+
+    def test_displacement_with_r_and_phi(self):
+        r = 5
+        phi = np.pi / 4
+
+        self.backend.displacement(
+            params=(r, phi),
+            modes=(1, ),
+        )
+
+        expected_mean = np.array(
+            [
+                1,
+                1 + r * np.exp(1j * phi),
+                1,
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(self.backend.state.mean, expected_mean)

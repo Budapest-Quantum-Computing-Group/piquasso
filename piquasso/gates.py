@@ -39,7 +39,7 @@ class Gate:
         """
         return \
             {
-                "Dgate": None,
+                "Dgate": D,
                 "Xgate": None,
                 "Zgate": None,
                 "Sgate": None,
@@ -74,4 +74,12 @@ class R(Gate):
         FockBackend: FockBackend.phaseshift,
         GaussianBackend: GaussianBackend.phaseshift,
         PassiveGaussianBackend: PassiveGaussianBackend.phaseshift
+    }
+
+
+class D(Gate):
+    """Displacement gate."""
+
+    backends = {
+        GaussianBackend: GaussianBackend.displacement,
     }

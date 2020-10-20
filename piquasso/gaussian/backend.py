@@ -78,3 +78,59 @@ class GaussianBackend(Backend):
         self.state.mean[modes, ] = B @ self.state.mean[modes, ]
 
         self.state.apply_to_C_and_G(B, modes=modes)
+
+    def displacement(self, params, modes):
+        r"""Applies the displacement gate to the state.
+
+        .. math::
+            D(\alpha) = \exp(\alpha \hat{a}_i^\dagger - \alpha^* \hat{a}_i),
+
+        where :math:`\alpha \in \mathbb{C}` is a parameter, :math:`\hat{a}_i` and
+        :math:`\hat{a}_i^\dagger` are the annihilation and creation operators on the
+        :math:`i`-th mode, respectively.
+
+        The displacement gate acts on the annihilation and creation operators
+        in the following way:
+
+        .. math::
+            D^\dagger (\alpha) \hat{a}_i D (\alpha) = \hat{a}_i + \alpha \mathbb{1}.
+
+        `GaussianState.mean` is defined by
+
+        .. math::
+            m = \langle \hat{a}_i \rangle_{\rho}.
+
+        By using the displacement, one acquires
+
+        .. math::
+            m_{\mathrm{displaced}}
+                = \langle D^\dagger (\alpha) \hat{a}_i D (\alpha) \rangle_{\rho}
+                = \langle \hat{a}_i + \alpha \mathbb{1}) \rangle_{\rho}
+                = m + \alpha.
+
+        Note, that :math:`\alpha` is often written in the form
+
+        .. math:
+            \alpha = r \exp(i \phi),
+
+        where :math:`r \geq 0` and :math:`\phi \in [ 0, 2 \pi )`. When two parameters
+        are specified for this gate, the first is interpreted as :math:`r`, and the
+        second one as :math:`\phi`.
+
+        Args:
+            params (tuple): Parameter(s) for the displacement gate in the form of
+                `(alpha, )` or `(r, phi)`, where `alpha == r * np.exp(1j * phi)`.
+            modes (tuple): The qumode index on which the displacement gate operates,
+                embedded in a `tuple`.
+
+        """
+
+        if len(params) == 1:
+            alpha = params[0]
+        else:
+            r, phi = params
+            alpha = r * np.exp(1j * phi)
+
+        mode = modes[0]
+
+        self.state.mean[mode] += alpha
