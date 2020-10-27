@@ -4,7 +4,7 @@
 
 from .program import Program
 from .mode import Q
-from .gates import D
+from .operations import D
 
 
 __all__ = [

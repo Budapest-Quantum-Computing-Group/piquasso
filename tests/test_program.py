@@ -8,7 +8,7 @@ import pytest
 
 from piquasso.context import Context
 from piquasso.fock.backend import FockBackend
-from piquasso.gates import B
+from piquasso.operations import B
 from piquasso.mode import Q
 from piquasso.program import Program
 

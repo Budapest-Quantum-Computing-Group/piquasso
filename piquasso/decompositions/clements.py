@@ -31,7 +31,7 @@ class T(BaseOperator):
 
         Args:
             operation (dict): A dict containing the angle parameters and the
-                modes on which the beamsplitter gate are applied.
+                modes on which the beamsplitter operation is applied.
             d (int): The total number of modes.
 
         Returns:
@@ -62,7 +62,7 @@ class T(BaseOperator):
 
         Args:
             operation (dict): A dict containing the angle parameters and the
-                modes on which the beamsplitter gate are applied.
+                modes on which the beamsplitter operation is applied.
             d (int): The total number of modes.
 
         Returns:

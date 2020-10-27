@@ -11,7 +11,7 @@ from piquasso.gaussian.backend import GaussianBackend
 from piquasso.passivegaussian.backend import PassiveGaussianBackend
 
 
-class Gate:
+class Operation:
     backends = {}
 
     def __init__(self, *params):
@@ -29,13 +29,13 @@ class Gate:
 
     @staticmethod
     def blackbird_op_to_gate(op):
-        """Maps the name of a BlackBird gate into the represented class
+        """Maps the name of a BlackBird operation into the represented class
 
         Args:
-            op (string): the representation of a gate in BlackBird
+            op (string): the representation of a operation in BlackBird
 
         Returns:
-            Gate: subclass of :class:`Gate` that the argument represents
+            Operation: subclass of :class:`Operation` that the argument represents
         """
         return \
             {
@@ -54,11 +54,11 @@ class Gate:
                 "CZgate": None,
                 "CKgate": None,
                 "Fouriergate": None
-            }[op]
+            }.get(op)
 
 
-class B(Gate):
-    """Beamsplitter gate."""
+class B(Operation):
+    """Beamsplitter operation."""
 
     backends = {
         FockBackend: FockBackend.beamsplitter,
@@ -67,8 +67,8 @@ class B(Gate):
     }
 
 
-class R(Gate):
-    """Rotation or Phaseshifter gate."""
+class R(Operation):
+    """Rotation or Phaseshifter operation."""
 
     backends = {
         FockBackend: FockBackend.phaseshift,
@@ -77,8 +77,8 @@ class R(Gate):
     }
 
 
-class D(Gate):
-    """Displacement gate."""
+class D(Operation):
+    """Displacement operation."""
 
     backends = {
         GaussianBackend: GaussianBackend.displacement,
