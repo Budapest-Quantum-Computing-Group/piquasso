@@ -7,7 +7,7 @@ python-versions = "*"
 version = "0.7.12"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "ANTLR 4.7.2 runtime for Python 3.6.3"
 name = "antlr4-python3-runtime"
 optional = false
@@ -141,7 +141,7 @@ diagnostics = ["bokeh (>=1.0.0)"]
 distributed = ["distributed (>=2.0)"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Decorators for Humans"
 name = "decorator"
 optional = false
@@ -260,7 +260,7 @@ python-versions = ">=3.5"
 version = "8.4.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python library for arbitrary-precision floating-point arithmetic"
 name = "mpmath"
 optional = false
@@ -268,7 +268,7 @@ python-versions = "*"
 version = "1.1.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python package for creating and manipulating graphs and networks"
 name = "networkx"
 optional = false
@@ -463,7 +463,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "5.3.1"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Blackbird is a quantum assembly language for continuous-variable quantum computation by Xanadu Inc."
 name = "quantum-blackbird"
 optional = false
@@ -682,7 +682,7 @@ toml = "*"
 urllib3 = ">=1.25.3"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Computer algebra system (CAS) in Python"
 name = "sympy"
 optional = false
@@ -760,8 +760,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "7145ae8726af52aa580a508e0f77a6f2dd7ab424ab915ff9493e361d0b171b7d"
-lock-version = "1.0"
+content-hash = "7ead8631b79fa8689badded4bde124130bbd39fb92aa2beb635e4994fca5a684"
 python-versions = "^3.6"
 
 [metadata.files]
