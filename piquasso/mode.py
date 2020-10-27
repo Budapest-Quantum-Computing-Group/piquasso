@@ -22,21 +22,21 @@ class Q:
 
         self.modes = modes
 
-    def __or__(self, gate):
+    def __or__(self, op):
         """This registers the specified `operator` to the current quantum
             program.
 
         Args:
-            gate (Gate): The operator to be applied on execution.
+            op (Operation): The operator to be applied on execution.
 
         Returns:
             (Q): The current qumode.
         """
         Context.current_program.instructions.append(
             {
-                'params': gate.params,
+                'params': op.params,
                 'modes': self.modes,
-                'op': gate.resolve_method_for_backend()
+                'op': op.resolve_method_for_backend()
             }
         )
         return self

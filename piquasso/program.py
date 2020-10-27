@@ -6,7 +6,7 @@ import blackbird
 
 from piquasso import constants
 from piquasso.context import Context
-from piquasso.gates import Gate
+from piquasso.operations import Operation
 
 
 class Program:
@@ -49,7 +49,7 @@ class Program:
         Args:
             operation (dict): An element of the `BlackbirdProgram.operations`
         """
-        gate_class = Gate.blackbird_op_to_gate(operation['op'])
+        gate_class = Operation.blackbird_op_to_gate(operation['op'])
         instruction = \
             {
                 'modes': operation['modes'],

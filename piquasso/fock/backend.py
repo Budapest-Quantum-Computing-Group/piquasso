@@ -26,7 +26,7 @@ class FockBackend(Backend):
 
         Returns:
             (numpy.ndarray): The representation of the one-particle
-                beamsplitter gate on modes `i` and `j`.
+                beamsplitter operation on modes `i` and `j`.
         """
 
         theta, phi = params
