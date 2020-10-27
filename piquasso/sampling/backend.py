@@ -1,0 +1,97 @@
+#
+# Copyright (C) 2020 by TODO - All rights reserved.
+#
+
+import numpy as np
+
+from piquasso.backend import Backend
+
+
+class SamplingBackend(Backend):
+    r"""A backend for fast boson sampling."""
+
+    def phaseshift(self, params, modes):
+        r"""
+        Multiplies the interferometer with the matrix representation of the phaseshifter
+
+        Args:
+            params (tuple): An iterable with a single element, which corresponds to the
+                angle of the phaseshifter.
+            modes (tuple): An iterable with a single element, which corresponds to the
+                mode of the phaseshifter.
+        """
+        phi = params[0]
+        phase = np.exp(1j * phi)
+
+        P = np.array([[phase]])
+
+        self.state.multiple_interferometer_on_modes(P, modes)
+
+    def beamsplitter(self, params, modes):
+        r"""
+        Multiplies the interferometer with the matrix representation of the beamsplitter
+
+        The matrix representation of the beamsplitter operation is:
+
+        .. math::
+            B = \begin{bmatrix}
+                t  & r^* \\
+                -r & t
+            \end{bmatrix},
+
+        where
+            :math:`t = \cos(\theta)` and
+            :math:`r = e^{- i \phi} \sin(\theta)`.
+
+        Args:
+            params (tuple): Angle parameters :math:`\phi` and :math:`\theta` for the
+                beamsplitter operation.
+            modes (tuple): Distinct positive integer values which are used to represent
+                qumodes.
+        """
+        phi, theta = params
+
+        t = np.cos(theta)
+        r = np.exp(-1j * phi) * np.sin(theta)
+
+        B = np.array([
+            [t, np.conj(r)],
+            [-r, t]
+        ])
+
+        self.state.multiple_interferometer_on_modes(B, modes)
+
+    def interferometer(self, params, modes):
+        r"""
+        Multiplies the interferometer of the state with the interferometer given in
+        `params` in the qumodes specified in `modes`.
+
+        Args:
+            params (tuple): A tuple containing a single square matrix that represents
+                the interferometer.
+            modes (tuple): Distinct positive integer values which are used to represent
+                qumodes.
+        """
+        J = params[0]
+
+        assert \
+            J.shape == (len(modes), len(modes)), \
+            "The number of qumodes should be equal to " \
+            "the size of the interferometer matrix."
+
+        self.state.multiple_interferometer_on_modes(J, modes)
+
+    def sampling(self, params, _):
+        r"""Simulates a boson sampling
+
+        Args:
+            params (tuple): A tuple with a single element corresponding to number of
+                samples for the experiment.
+            _: Ignored `modes` parameter
+        """
+        # shots=params[0]
+        # ...
+        # ...
+        # ...
+        # self.state.results = ...
+        raise NotImplementedError()

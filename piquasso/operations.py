@@ -9,6 +9,7 @@ from piquasso.context import Context
 from piquasso.fock.backend import FockBackend
 from piquasso.gaussian.backend import GaussianBackend
 from piquasso.passivegaussian.backend import PassiveGaussianBackend
+from piquasso.sampling.backend import SamplingBackend
 
 
 class Operation:
@@ -63,7 +64,8 @@ class B(Operation):
     backends = {
         FockBackend: FockBackend.beamsplitter,
         GaussianBackend: GaussianBackend.beamsplitter,
-        PassiveGaussianBackend: PassiveGaussianBackend.beamsplitter
+        PassiveGaussianBackend: PassiveGaussianBackend.beamsplitter,
+        SamplingBackend: SamplingBackend.beamsplitter
     }
 
 
@@ -73,7 +75,8 @@ class R(Operation):
     backends = {
         FockBackend: FockBackend.phaseshift,
         GaussianBackend: GaussianBackend.phaseshift,
-        PassiveGaussianBackend: PassiveGaussianBackend.phaseshift
+        PassiveGaussianBackend: PassiveGaussianBackend.phaseshift,
+        SamplingBackend: SamplingBackend.phaseshift
     }
 
 
@@ -83,3 +86,31 @@ class D(Operation):
     backends = {
         GaussianBackend: GaussianBackend.displacement,
     }
+
+
+class Interferometer(Operation):
+    """Interferometer"""
+
+    backends = {
+        SamplingBackend: SamplingBackend.interferometer
+    }
+
+
+class Sampling(Operation):
+    r"""Boson Sampling"""
+
+    backends = {
+        SamplingBackend: SamplingBackend.sampling
+    }
+
+    def __init__(self, shots=1):
+        r"""Boson Sampling
+
+        Args:
+            shots (int): A positive integer value representing number of samples for the
+                experiment
+        """
+        assert \
+            shots > 0 and isinstance(shots, int),\
+            "The number of shots should be a positive integer."
+        super().__init__(shots)
