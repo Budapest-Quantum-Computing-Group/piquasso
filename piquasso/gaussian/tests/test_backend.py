@@ -34,6 +34,42 @@ class TestGaussianBackend:
 
         self.backend = GaussianBackend(state=state)
 
+    def test_squeezing(self):
+        amp = -0.6
+        theta = 0.7
+        mode = 1
+        self.backend.squeezing(
+            params=(amp, theta),
+            modes=(mode,),
+        )
+        expected_mean = np.array(
+            [
+                1,
+                np.cosh(amp) - np.exp(1j * theta) * np.sinh(amp),
+                1,
+            ],
+            dtype=complex,
+        )
+        expected_C = np.array(
+            [
+                [3.0, 2.646283 + 1.23043j, 0.0],
+                [2.646283 - 1.23043j, 6.335638, 0.0],
+                [0.0, 0.0, 1.0],
+            ],
+            dtype=complex,
+        )
+        expected_G = np.array(
+            [
+                [1.0, 4.043335 + 0.41014j, 0.0],
+                [4.043335 + 0.41014j, 5.834689 + 3.229914j, 0.0],
+                [0.0, 0.0, 1.0],
+            ],
+            dtype=complex,
+        )
+        assert np.allclose(self.backend.state.C, expected_C)
+        assert np.allclose(self.backend.state.G, expected_G)
+        assert np.allclose(self.backend.state.mean, expected_mean)
+
     def test_phaseshift(self):
         angle = np.pi/3
         self.backend.phaseshift(params=(angle,), modes=(0,))

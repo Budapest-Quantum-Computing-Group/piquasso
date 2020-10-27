@@ -128,3 +128,49 @@ class GaussianBackend(Backend):
         mode = modes[0]
 
         self.state.mean[mode] += alpha
+
+    def squeezing(self, params, modes):
+        r"""
+        This method implements the squeezing operator for the gaussian backend. The standard
+        definition of its operator is:
+
+        .. math::
+                S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
+
+        where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the squeezing
+        and :math:`\theta` is the angle of the squeezing.
+
+        This act of squeezing at a given rotation angle :math:`\theta` results in a shrinkage in the
+        :math:`\hat{x}` quadrature and a stretching in the other quadrature :math:`\hat{p}` as follows:
+
+        .. math::
+            S^\dagger(z) x_{\theta} S(z) = e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
+
+        The action of the :math:`\hat{S}(z)` gate on the ladder operators :math:`\hat{a}`
+        and :math:`\hat{a}^\dagger` can be defined as follows:
+
+        .. math::
+            {S(z)}^{\dagger}\hat{a}S(z) = \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
+                {S(z)}^{\dagger}\hat{a}^\dagger S(z) = \alpha\hat{a}^\dagger - \beta^* \hat{a}
+
+        where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`, :math:`e^{i\theta}\sinh(amp)`
+        respectively.
+
+        Args:
+            params (tuple): The parameters for the squeezing gate are in the form of
+                `(amp, )` or `(amp, theta)` where the amplitude is a real float that represents the
+                magnitude of the squeezing gate and :math:`\theta` which is in radians :math:`\in [0, 2 \pi )`.
+            modes (tuple): The qumode index on which the squeezing gate operates,
+                embedded in a `tuple`.
+        """  # noqa: E501
+
+        if len(params) == 1:
+            theta = 0
+        else:
+            theta = params[1]
+
+        alpha = np.cosh(params[0]) + 0j
+
+        beta = np.sinh(params[0]) * np.exp(1j * theta)
+
+        self.state.apply_active(alpha, beta, modes)
