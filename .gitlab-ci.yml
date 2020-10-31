@@ -50,3 +50,14 @@ generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
     paths:
       - docs/_build
     expire_in: 30 days
+
+buildpackage:
+  stage: build
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  script:
+    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
+    - poetry build
+    - poetry publish --repository gitlab -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+  only:
+    - web
