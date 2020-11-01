@@ -216,56 +216,60 @@ class TestGaussianStateOperations:
         assert np.allclose(self.state.C, expected_C)
         assert np.allclose(self.state.G, expected_G)
 
-    @staticmethod
-    def test_apply_to_C_and_G_for_5_modes(
-        generate_complex_symmetric_matrix,
-        generate_hermitian_matrix,
-        generate_unitary_matrix,
-    ):
-        C = generate_hermitian_matrix(5)
-        G = generate_complex_symmetric_matrix(5)
-        mean = np.random.rand(5) + 1j * np.random.rand(5)
 
-        state = GaussianState(
-            C=C,
-            G=G,
-            mean=mean,
-        )
+def test_apply(
+    generate_complex_symmetric_matrix,
+    generate_hermitian_matrix,
+    generate_unitary_matrix
+):
+    C = generate_hermitian_matrix(5)
+    G = generate_complex_symmetric_matrix(5)
+    mean = np.random.rand(5) + 1j * np.random.rand(5)
 
-        expected_C = C.copy()
-        expected_G = G.copy()
+    state = GaussianState(
+        C=C,
+        G=G,
+        mean=mean,
+    )
 
-        T = generate_unitary_matrix(3)
+    expected_mean = mean.copy()
+    expected_C = C.copy()
+    expected_G = G.copy()
 
-        columns = np.array(
-            [
-                [0, 1, 3],
-                [0, 1, 3],
-                [0, 1, 3],
-            ]
-        )
+    T = generate_unitary_matrix(3)
 
-        rows = np.array(
-            [
-                [0, 0, 0],
-                [1, 1, 1],
-                [3, 3, 3],
-            ]
-        )
+    expected_mean[(0, 1, 3), ] = T @ expected_mean[(0, 1, 3), ]
 
-        index = rows, columns
+    columns = np.array(
+        [
+            [0, 1, 3],
+            [0, 1, 3],
+            [0, 1, 3],
+        ]
+    )
 
-        expected_C[index] = T.conjugate() @ expected_C[index] @ T.transpose()
-        expected_C[(0, 1, 3), 2] = T.conjugate() @ expected_C[(0, 1, 3), 2]
-        expected_C[(0, 1, 3), 4] = T.conjugate() @ expected_C[(0, 1, 3), 4]
-        expected_C[:, (0, 1, 3)] = np.conj(expected_C[(0, 1, 3), :]).transpose()
+    rows = np.array(
+        [
+            [0, 0, 0],
+            [1, 1, 1],
+            [3, 3, 3],
+        ]
+    )
 
-        expected_G[index] = T @ expected_G[index] @ T.transpose()
-        expected_G[(0, 1, 3), 2] = T @ expected_G[(0, 1, 3), 2]
-        expected_G[(0, 1, 3), 4] = T @ expected_G[(0, 1, 3), 4]
-        expected_G[:, (0, 1, 3)] = expected_G[(0, 1, 3), :].transpose()
+    index = rows, columns
 
-        state.apply_to_C_and_G(T, modes=(0, 1, 3))
+    expected_C[index] = T.conjugate() @ expected_C[index] @ T.transpose()
+    expected_C[(0, 1, 3), 2] = T.conjugate() @ expected_C[(0, 1, 3), 2]
+    expected_C[(0, 1, 3), 4] = T.conjugate() @ expected_C[(0, 1, 3), 4]
+    expected_C[:, (0, 1, 3)] = np.conj(expected_C[(0, 1, 3), :]).transpose()
 
-        assert np.allclose(state.C, expected_C)
-        assert np.allclose(state.G, expected_G)
+    expected_G[index] = T @ expected_G[index] @ T.transpose()
+    expected_G[(0, 1, 3), 2] = T @ expected_G[(0, 1, 3), 2]
+    expected_G[(0, 1, 3), 4] = T @ expected_G[(0, 1, 3), 4]
+    expected_G[:, (0, 1, 3)] = expected_G[(0, 1, 3), :].transpose()
+
+    state.apply(T, modes=(0, 1, 3))
+
+    assert np.allclose(state.mean, expected_mean)
+    assert np.allclose(state.C, expected_C)
+    assert np.allclose(state.G, expected_G)
