@@ -196,6 +196,42 @@ class TestGaussianStateOperations:
             rotated_state.mean,
         )
 
+    def test_reduced(self):
+        modes = (0, 2)
+
+        reduced_state = self.state.reduced(modes)
+
+        reduced_C = np.array(
+            [
+                [     1,   4 - 6j],
+                [4 + 6j,      -10],
+            ],
+            dtype=complex
+        )
+
+        reduced_G = np.array(
+            [
+                [3 + 1j, 2 + 2j],
+                [2 + 2j, 7 + 0j],
+            ],
+            dtype=complex
+        )
+
+        reduced_mean = np.array([1 - 2j, 2 - 5j], dtype=complex)
+
+        assert np.allclose(
+            reduced_C,
+            reduced_state.C,
+        )
+        assert np.allclose(
+            reduced_G,
+            reduced_state.G,
+        )
+        assert np.allclose(
+            reduced_mean,
+            reduced_state.mean,
+        )
+
     def test_apply_to_C_and_G_for_1_modes(self, C, G):
         alpha = np.exp(1j * np.pi/3)
 
