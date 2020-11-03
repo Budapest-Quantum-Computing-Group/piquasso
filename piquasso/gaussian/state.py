@@ -236,6 +236,54 @@ class GaussianState:
 
         return self.mu, self.corr
 
+    def rotated(self, phi):
+        r"""Returns the copy of the current state, rotated by `phi`.
+
+        Let :math:`\phi \in [ 0, 2 \pi )`. Let us define the following:
+
+        .. math::
+            x_{i, \phi} = \cos\phi~x_i + \sin\phi~p_i,
+
+        which is a generalized quadrature operator. One could rotate the whole state by
+        this simple, phase space transformation.
+
+        Using the transformation rules between the ladder operators and quadrature
+        operators, i.e.
+
+        .. math::
+            x_i &= \sqrt{\frac{\hbar}{2}} (a_i + a_i^\dagger) \\
+            p_i &= -i \sqrt{\frac{\hbar}{2}} (a_i - a_i^\dagger),
+
+        we could rewrite :math:`x_{i, \phi}` to the following form:
+
+        .. math::
+            x_{i, \phi} = \sqrt{\frac{\hbar}{2}} \left(
+                a_i \exp(-i \phi) + a_i^\dagger \exp(i \phi)
+            \right)
+
+        which means, that e.g. the annihilation operators `a_i` are transformed just
+        multiplied by a phase factor :math:`\exp(-i \phi)` under this phase space
+        rotation, i.e.
+
+        .. math::
+            (\langle a_i \rangle_{\rho} =: )~m_i &\mapsto \exp(-i \phi) m_i \\
+            (\langle a^\dagger_i a_j \rangle_{\rho} =: )~C_{ij} &\mapsto C_{ij} \\
+            (\langle a_i a_j \rangle_{\rho} =: )~G_{ij} &\mapsto \exp(-i 2 \phi) G_{ij}.
+
+        Args:
+            phi (float): The angle to rotate the state with.
+
+        Returns:
+            GaussianState: The rotated `GaussianState` instance.
+        """
+        phase = np.exp(- 1j * phi)
+
+        return GaussianState(
+            C=self.C,
+            G=(self.G * phase**2),
+            mean=(self.mean * phase),
+        )
+
     def apply(self, T, modes):
         r"""Apply a transformation to the quantum state.
 
