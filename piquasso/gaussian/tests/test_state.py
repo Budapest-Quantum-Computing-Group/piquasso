@@ -40,7 +40,7 @@ class TestGaussianState:
         return np.array([1, -2, 3, 4]) / np.sqrt(2 * constants.HBAR_DEFAULT)
 
     @pytest.fixture
-    def sigma(self):
+    def corr(self):
         return np.array(
             [
                 [ 9,  2,  4,  6],
@@ -86,13 +86,13 @@ class TestGaussianState:
     def test_quad_representation(
         self,
         mu,
-        sigma,
+        corr,
     ):
         assert np.allclose(
             mu,
             self.state.mu,
         )
         assert np.allclose(
-            sigma,
-            self.state.sigma,
+            corr,
+            self.state.corr,
         )

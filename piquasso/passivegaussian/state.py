@@ -10,7 +10,7 @@ from .backend import PassiveGaussianBackend
 class PassiveGaussianState:
     r"""Represents the state of a pure gaussian quantum system
 
-    A Gaussian state is fully characterised by its mean and covariance
+    A Gaussian state is fully characterised by its mean and correlation
     matrix, i.e. its first and second moments with the quadrature
     operators.
 
@@ -19,7 +19,7 @@ class PassiveGaussianState:
     and the :math:`m \in \mathbb{C}^d` vector.
 
     However, since the application of passive operations will not affect $G$
-    and the mean vector, the correlation matrix can represent the state alone.
+    and the mean vector, the :math:`C` correlation matrix can represent the state alone.
     """
 
     backend_class = PassiveGaussianBackend
