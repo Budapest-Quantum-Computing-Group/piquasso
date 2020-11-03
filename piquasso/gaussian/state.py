@@ -182,8 +182,7 @@ class GaussianState:
         return self.mu, self.sigma
 
     def apply_to_C_and_G(self, T, modes):
-        r"""
-        Applies the matrix :math:`T` to the :math:`C` and :math:`G`.
+        r"""Applies the matrix :math:`T` to the :math:`C` and :math:`G`.
 
         Let :math:`\vec{i}` denote an index set, which corresponds to `index`
         in the implementation. E.g. for 2 modes denoted by :math:`n` and
@@ -202,6 +201,38 @@ class GaussianState:
                 C_{\vec{i}} \mapsto T^* C_{\vec{i}} T^T \\
                 G_{\vec{i}} \mapsto T G_{\vec{i}} T^T
 
+        If there are other modes in the system, i.e. `modes` does not refer to all the
+        modes, :meth:`_apply_to_other_modes` is called to handle those.
+
+        Note:
+            For indexing of numpy arrays, see
+            https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
+
+        Args:
+            T (np.array): The matrix to be applied.
+            modes (tuple): The modes, on which the transformation should directly
+                operate.
+        """
+
+        transformed_columns = np.array([modes] * len(modes))
+        transformed_rows = transformed_columns.transpose()
+
+        index = transformed_rows, transformed_columns
+
+        self.C[index] = T.conjugate() @ self.C[index] @ T.transpose()
+        self.G[index] = T @ self.G[index] @ T.transpose()
+
+        other_modes = np.delete(np.arange(self.d), modes)
+
+        if other_modes.size != 0:
+            self._apply_to_other_modes(T, modes, other_modes)
+
+    def _apply_to_other_modes(self, T, modes, other_modes):
+        r"""Applies the matrix :math:`T` to modes which are not directly transformed.
+
+        This method is applied for the correlation matrices :math:`C` and :math:`G`.
+        For context, visit :meth:`apply_to_C_and_G`.
+
         Let us denote :math:`\vec{k}` the following:
 
         .. math::
@@ -216,7 +247,7 @@ class GaussianState:
         :math:`\mathrm{modes}`:
 
         .. math::
-                C_{\vec{k}} \mapsto T C_{\vec{k}} \\
+                C_{\vec{k}} \mapsto T^* C_{\vec{k}} \\
                 G_{\vec{k}} \mapsto T G_{\vec{k}}
 
         Regarding the case where the **second** index corresponds to
@@ -231,35 +262,21 @@ class GaussianState:
                 C_{nm} := C^*_{mn} \\
                 G_{nm} := G_{mn}.
 
-        For indexing of numpy arrays, see
-        https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
 
         Args:
             T (np.array): The matrix to be applied.
-            modes (tuple): The modes, on which the matrix should operate.
+            modes (tuple): The modes, on which the transformation should directly
+                operate.
+            other_modes (tuple): The modes, on which the transformation is not directly
+                applied, but should be accounted for in :math:`C` and :math:`G`.
+
         """
+        other_rows = np.array([modes] * len(other_modes)).transpose()
 
-        columns = np.array([modes, modes])
-        rows = columns.transpose()
+        index = other_rows, other_modes
 
-        index = rows, columns
+        self.C[index] = T.conjugate() @ self.C[index]
+        self.G[index] = T @ self.G[index]
 
-        self.C[index] = (
-            T.conjugate() @ self.C[index] @ T.transpose()
-        )
-        self.G[index] = (
-            T @ self.G[index] @ T.transpose()
-        )
-
-        all_other_modes = np.delete(np.arange(self.d), modes)
-
-        self.C[modes, all_other_modes] = (
-            T @ self.C[modes, all_other_modes]
-        )
-
-        self.G[modes, all_other_modes] = (
-            T @ self.G[modes, all_other_modes]
-        )
-
-        self.C[:, modes] = np.conj(self.C[modes, ]).transpose()
+        self.C[:, modes] = np.conj(self.C[modes, :]).transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
