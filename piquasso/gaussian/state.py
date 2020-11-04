@@ -302,6 +302,46 @@ class GaussianState:
             mean=self.mean[np.ix_(modes)],
         )
 
+    def reduced_rotated_mean_and_cov(self, modes, phi):
+        r"""The quadrature operator's mean and covariance on a rotated and reduced state.
+
+        Let the index set :math:`\vec{i}` correspond to `modes`, and the angle
+        :math:`\phi` correspond to `phi`. The current :class:`GaussianState` instance
+        is reduced to `modes` and rotated by `phi` in a new instance, and let that
+        state be denoted by :math:`\rho_{\vec{i}, \phi}`.
+
+        Then the quadrature ordered mean and covariance can be calculated by
+
+        .. math::
+            \mu_{\vec{i}, \phi}
+                &:= \langle \hat{R}_{\vec{i}} \rangle_{\rho_{\vec{i}, \phi}}, \\
+            \sigma_{\vec{i}, \phi}
+                &:=  \langle
+                    \hat{R}_{\vec{i}} \hat{R}_{\vec{i}}^T
+                \rangle_{\rho_{\vec{i}, \phi}}
+                - \mu_{\vec{i}, \phi} \mu_{\vec{i}, \phi}^T,
+
+        where
+
+        .. math::
+            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+
+        and :math:`\hat{R}_{\vec{i}}` is just the same vector, reduced to a subsystem
+        specified by :math:`\vec{i}`.
+
+        Args:
+            modes (tuple): The modes to reduce the state to.
+            phi (float): The angle to rotate the state with.
+
+        Returns:
+            tuple:
+                Quadrature ordered mean and covariance of the reduced and rotated
+                version of the current :class:`GaussianState`.
+        """
+        transformed_state = self.reduced(modes).rotated(phi)
+
+        return transformed_state.mu, transformed_state.cov
+
     def apply(self, T, modes):
         r"""Apply a transformation to the quantum state.
 
