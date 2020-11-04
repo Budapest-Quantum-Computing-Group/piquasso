@@ -26,20 +26,16 @@ class GaussianBackend(Backend):
                 corresponds to the mode of the phaseshifter.
         """
         phi = params[0]
-        k = modes[0]
 
         phase = np.exp(1j * phi)
 
-        self.state.mean[k] *= phase
+        P = np.array(
+            [
+                [phase],
+            ]
+        )
 
-        self.state.G[k][k] *= phase ** 2
-
-        idx = np.delete(np.arange(self.state.d), k)
-        self.state.C[k][idx] *= np.conj(phase)
-        self.state.G[k][idx] *= phase
-
-        self.state.C[:, k] = np.conj(self.state.C[k, :])
-        self.state.G[:, k] = self.state.G[k, :]
+        self.state.apply(P, modes)
 
     def beamsplitter(self, params, modes):
         r"""Applies the beamsplitter operation to the state.
@@ -75,9 +71,7 @@ class GaussianBackend(Backend):
             ]
         )
 
-        self.state.mean[modes, ] = B @ self.state.mean[modes, ]
-
-        self.state.apply_to_C_and_G(B, modes=modes)
+        self.state.apply(B, modes)
 
     def displacement(self, params, modes):
         r"""Applies the displacement operation to the state.

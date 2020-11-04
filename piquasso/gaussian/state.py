@@ -11,7 +11,28 @@ from .transformations import quad_transformation
 
 
 class GaussianState:
-    """Object to represent a Gaussian state."""
+    r"""Object to represent a Gaussian state.
+
+    Attributes:
+        mean (numpy.array): The expectation value of the annihilation operators on all
+            modes (a vector, essentially), and is defined by
+
+            .. math::
+                m = \langle \hat{a}_i \rangle_{\rho}.
+
+        C (numpy.array): A correlation matrix which is defined by
+
+            .. math::
+                \langle \hat{C}_{ij} \rangle_{\rho} =
+                \langle \hat{a}^\dagger_i \hat{a}_j \rangle_{\rho}.
+
+        G (numpy.array): A correlation matrix which is defined by
+
+                .. math::
+                    \langle \hat{G}_{ij} \rangle_{\rho} =
+                    \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
+
+    """
 
     def __init__(self, C, G, mean):
         r"""
@@ -24,22 +45,9 @@ class GaussianState:
         and the :math:`m \in \mathbb{C}^d` vector.
 
         Args:
-            C (numpy.array): The matrix which is defined by
-
-                .. math::
-                    \langle \hat{C}_{ij} \rangle_{\rho} =
-                    \langle \hat{a}^\dagger_i \hat{a}_j \rangle_{\rho}.
-
-            G (numpy.array): The matrix which is defined by
-
-                .. math::
-                    \langle \hat{G}_{ij} \rangle_{\rho} =
-                    \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
-
-            mean (numpy.array): The vector which is defined by
-
-                .. math::
-                    m = \langle \hat{a}_i \rangle_{\rho}.
+            C (numpy.array): See :attr:`C`.
+            G (numpy.array): See :attr:`G`.
+            mean (numpy.array): See :attr:`mean`.
 
         """
 
@@ -180,6 +188,58 @@ class GaussianState:
         """
 
         return self.mu, self.sigma
+
+    def apply(self, T, modes):
+        r"""Apply a transformation to the quantum state.
+
+        Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
+        `modes`.
+
+        Let :math:`T \in \mathbb{C}^{k \times k},\, k \in [d]` be a transformation
+        which transforms the vector of annihilation operators in the following manner:
+
+        .. math::
+            \mathbf{a}_{\vec{m}} \mapsto T \mathbf{a}_{\vec{m}},
+
+        or in terms of vector elements:
+
+        .. math::
+            a_{i} \mapsto \sum_{j \in \vec{m}} T^{ij} a_j
+
+        Application to :attr:`mean` is done by matrix multiplication.
+
+        The canonical commutation relations can be written as
+
+        .. math::
+            [a^\dagger_i, a_j] = \delta_{i j},
+
+        and then applying the transformation :math:`T` we get
+
+        .. math::
+            \sum_{i, j \in \vec{m}} [T^*_{ki} a^\dagger_i, T_{lj} a_j]
+                &= \sum_{i, j \in \vec{m}} T^*_{ki} T_{lj}
+                    [a^\dagger_i, a_j] \\
+                &= \sum_{i, j \in \vec{m}} T^*_{ki} T_{lj} \delta_{i j} \\
+                &= \sum_{i \in \vec{m}} T^*_{ki} T_{li} \\
+                &= \sum_{i \in \vec{m}} (T^\dagger)_{ik} T_{li} \\
+                &= \delta_{k l},
+
+        where the last line imposes, that any transformation should leave the canonical
+        commutation relations invariant.
+        The last line of the equation means, that :math:`T` should actually be a
+        unitary matrix.
+
+        Application to `C` and `G` is non-trivial however: one has to apply the
+        transformation for the external modes as well, see :meth:`apply_to_C_and_G`.
+
+        Args:
+            T (numpy.array): The matrix to be applied.
+            modes (tuple): The modes, on which the matrix should operate.
+        """
+
+        self.mean[modes, ] = T @ self.mean[modes, ]
+
+        self.apply_to_C_and_G(T, modes=modes)
 
     def apply_to_C_and_G(self, T, modes):
         r"""Applies the matrix :math:`T` to the :math:`C` and :math:`G`.
