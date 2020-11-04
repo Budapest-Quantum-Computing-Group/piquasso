@@ -3,6 +3,7 @@ name = "piquasso"
 version = "0.1.1"
 description = ""
 authors = ["Zoltán Kolarovszki"]
+exclude = ["benchmarks"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
