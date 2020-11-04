@@ -36,7 +36,7 @@ class GaussianState:
 
     def __init__(self, C, G, mean):
         r"""
-        A Gaussian state is fully characterised by its mean and covariance
+        A Gaussian state is fully characterised by its mean and correlation
         matrix, i.e. its first and second moments with the quadrature
         operators.
 
@@ -99,13 +99,13 @@ class GaussianState:
     def xp_corr(self):
         r"""The state's correlation matrix in the xp basis.
 
-        Let :math:`\sigma_{(xp)}` be the correlation matrix in the xp basis.
+        Let :math:`M_{(xp)}` be the correlation matrix in the xp basis.
         Then
 
         .. math::
-            \sigma_{ij (xp)} = \langle Y_i Y_j + Y_j Y_i \rangle_\rho,
+            M_{ij (xp)} = \langle Y_i Y_j + Y_j Y_i \rangle_\rho,
 
-        where :math:`\sigma_{ij (xp)}` denotes the matrix element in the
+        where :math:`M_{ij (xp)}` denotes the matrix element in the
         :math:`i`-th row and :math:`j`-th column,
 
         .. math::
@@ -114,7 +114,7 @@ class GaussianState:
         and :math:`\rho` is a density operator.
 
         Returns:
-            np.array: The :math:`d \times d` covariance matrix in the xp basis.
+            np.array: The :math:`d \times d` correlation matrix in the xp basis.
         """
 
         d = self.d
@@ -156,16 +156,16 @@ class GaussianState:
         return T @ self.xp_mean
 
     @property
-    def sigma(self):
+    def corr(self):
         r"""Returns the quadrature-ordered correlation matrix of the state.
 
-        Let :math:`\sigma` be the correlation matrix in the quadrature basis.
+        Let :math:`M` be the correlation matrix in the quadrature basis.
         Then
 
         .. math::
-            \sigma_{ij} = \langle R_i R_j + R_j R_i \rangle_\rho,
+            M_{ij} = \langle R_i R_j + R_j R_i \rangle_\rho,
 
-        where :math:`\sigma_{ij}` denotes the matrix element in the
+        where :math:`M_{ij}` denotes the matrix element in the
         :math:`i`-th row and :math:`j`-th column,
 
         .. math::
@@ -174,20 +174,20 @@ class GaussianState:
         and :math:`\rho` is a density operator.
 
         Returns:
-            np.array: The :math:`2d \times 2d` quad-ordered covariance matrix.
+            np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
         """
         T = quad_transformation(self.d)
         return T @ self.xp_corr @ T.transpose()
 
     @property
     def quad_representation(self):
-        r"""The state's mean and covariance matrix ordered by the quadrature basis.
+        r"""The state's mean and correlation matrix ordered by the quadrature basis.
 
         Returns:
-            tuple: :meth:`mu`, :meth:`sigma`.
+            tuple: :meth:`mu`, :meth:`corr`.
         """
 
-        return self.mu, self.sigma
+        return self.mu, self.corr
 
     def apply(self, T, modes):
         r"""Apply a transformation to the quantum state.
