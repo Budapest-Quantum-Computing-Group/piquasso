@@ -37,7 +37,7 @@ class TestGaussianStateRepresentations:
 
     @pytest.fixture
     def mu(self):
-        return np.array([1, -2, 3, 4]) / np.sqrt(2 * constants.HBAR_DEFAULT)
+        return np.array([1, -2, 3, 4]) * np.sqrt(2 * constants.HBAR_DEFAULT)
 
     @pytest.fixture
     def corr(self):
@@ -52,7 +52,7 @@ class TestGaussianStateRepresentations:
 
     @pytest.fixture
     def xp_mean(self):
-        return np.array([1, 3, -2, 4]) / np.sqrt(2 * constants.HBAR_DEFAULT)
+        return np.array([1, 3, -2, 4]) * np.sqrt(2 * constants.HBAR_DEFAULT)
 
     @pytest.fixture
     def xp_corr(self):

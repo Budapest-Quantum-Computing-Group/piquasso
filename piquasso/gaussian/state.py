@@ -91,8 +91,8 @@ class GaussianState:
         """
 
         _xp_mean = np.empty(2 * self.d)
-        _xp_mean[:self.d] = self.mean.real / np.sqrt(2 * self.hbar)
-        _xp_mean[self.d:] = self.mean.imag / np.sqrt(2 * self.hbar)
+        _xp_mean[:self.d] = self.mean.real * np.sqrt(2 * self.hbar)
+        _xp_mean[self.d:] = self.mean.imag * np.sqrt(2 * self.hbar)
         return _xp_mean
 
     @property
