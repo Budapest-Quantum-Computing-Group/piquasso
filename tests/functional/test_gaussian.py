@@ -43,9 +43,9 @@ class TestGaussian:
         phi = np.pi/3
 
         with self.program:
-            Q(0) | D(r, phi)
-            Q(1) | D(alpha)
-            Q(2) | D(r, phi) | D(alpha)
+            Q(0) | D(r=r, phi=phi)
+            Q(1) | D(alpha=alpha)
+            Q(2) | D(r=r, phi=phi) | D(alpha=alpha)
 
         self.program.execute()
 

@@ -4,6 +4,8 @@
 
 """Simple passive linear optical elements."""
 
+import numpy as np
+
 from piquasso.context import Context
 
 from piquasso.fock.backend import FockBackend
@@ -68,6 +70,17 @@ class B(Operation):
         SamplingBackend: SamplingBackend.beamsplitter
     }
 
+    def __init__(self, theta=0., phi=np.pi / 4):
+        r"""Beamsplitter operation
+
+        Args:
+            phi (float): Phase angle of the beamsplitter.
+                (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
+            theta (float): The transmittivity angle of the beamsplitter.
+                (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
+        """
+        super().__init__(phi, theta)
+
 
 class R(Operation):
     """Rotation or Phaseshifter operation."""
@@ -79,6 +92,14 @@ class R(Operation):
         SamplingBackend: SamplingBackend.phaseshift
     }
 
+    def __init__(self, phi):
+        r"""Rotation or Phaseshifter operation.
+
+        Args:
+            phi (float): The angle of the rotation.
+        """
+        super().__init__(phi)
+
 
 class D(Operation):
     """Displacement operation."""
@@ -87,6 +108,34 @@ class D(Operation):
         GaussianBackend: GaussianBackend.displacement,
     }
 
+    def __init__(self, *, alpha=None, r=None, phi=None):
+        r"""Phase space displacement operation.
+
+        One must either specify :param:`alpha` only, or the combination of :param:`r`
+        and :param:`phi`.
+
+        When :param:`r` and :param:`phi` are the given parameters, `alpha` is calculated
+        via:
+
+        .. math:
+            \alpha = r \exp(i \phi)
+
+        Args:
+            alpha (complex): The displacement.
+            r (float): The displacement magnitude.
+            phi (float): The displacement angle.
+        """
+        assert \
+            alpha is not None and r is None and phi is None \
+            or \
+            alpha is None and r is not None and phi is not None, \
+            "Either specify 'alpha' only, or the combination of 'r' and 'phi'."
+
+        if alpha is None:
+            alpha = r * np.exp(1j * phi)
+
+        super().__init__(alpha)
+
 
 class Interferometer(Operation):
     """Interferometer"""
@@ -94,6 +143,23 @@ class Interferometer(Operation):
     backends = {
         SamplingBackend: SamplingBackend.interferometer
     }
+
+    @staticmethod
+    def _is_square(matrix):
+        shape = matrix.shape
+        return len(shape) == 2 and shape[0] == shape[1]
+
+    def __init__(self, interferometer_matrix):
+        r"""Interferometer
+
+        Args:
+            interferometer_matrix (np.array): A square matrix representing the
+                interferometer
+        """
+        assert \
+            self._is_square(interferometer_matrix), \
+            "The interferometer matrix should be a square matrix."
+        super().__init__(interferometer_matrix)
 
 
 class Sampling(Operation):
