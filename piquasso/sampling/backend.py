@@ -3,6 +3,9 @@
 #
 
 import numpy as np
+from BoSS.BosonSamplingSimulator import BosonSamplingSimulator
+from BoSS.simulation_strategies.GeneralizedCliffordsSimulationStrategy \
+    import GeneralizedCliffordsSimulationStrategy
 
 from piquasso.backend import Backend
 
@@ -82,16 +85,28 @@ class SamplingBackend(Backend):
         self.state.multiple_interferometer_on_modes(J, modes)
 
     def sampling(self, params, _):
-        r"""Simulates a boson sampling
+        r"""Simulates a boson sampling using generalized Clifford&Clifford algorithm
+        from [Brod, Oszmaniec 2020].
+
+        This method assumes that initial_state is given in the second quantization
+        description (mode occupation). BoSS requires input states as numpy arrays,
+        therefore the state is prepared as such structure.
+
+        Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
+        as it allows effective simulation of broader range of input states than original
+        algorithm.
 
         Args:
             params (tuple): A tuple with a single element corresponding to number of
                 samples for the experiment.
             _: Ignored `modes` parameter
         """
-        # shots=params[0]
-        # ...
-        # ...
-        # ...
-        # self.state.results = ...
-        raise NotImplementedError()
+        simulation_strategy = \
+            GeneralizedCliffordsSimulationStrategy(self.state.interferometer)
+        sampling_simulator = BosonSamplingSimulator(simulation_strategy)
+
+        initial_state = np.array(self.state.initial_state)
+        shots = params[0]
+        self.state.results = \
+            [sampling_simulator.get_classical_simulation_results(initial_state)
+             for _ in range(shots)]
