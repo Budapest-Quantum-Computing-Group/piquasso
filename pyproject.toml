@@ -8,12 +8,12 @@ authors = ["Zoltán Kolarovszki"]
 python = "^3.6"
 numpy = "^1.19.0"
 flake8 = "^3.8.3"
-quantum-blackbird = "^0.2.4"
+quantum-blackbird = "^0.2.3"
 BoSS-Tomev = "^0.0.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
-strawberryfields = "^0.14.0"
+strawberryfields = "^0.16.0"
 pennylane = "^0.10.0"
 pennylane-sf = "^0.9.0"
 scipy = "^1.5.2"
