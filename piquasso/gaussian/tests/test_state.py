@@ -51,6 +51,17 @@ class TestGaussianStateRepresentations:
         ) * constants.HBAR_DEFAULT
 
     @pytest.fixture
+    def cov(self):
+        return np.array(
+            [
+                [  5,  10,  -8, -10],
+                [ 10, -13,  22,  32],
+                [ -8,  22, -19, -54],
+                [-10,  32, -54, -73]
+            ]
+        ) * constants.HBAR_DEFAULT
+
+    @pytest.fixture
     def xp_mean(self):
         return np.array([1, 3, -2, 4]) * np.sqrt(2 * constants.HBAR_DEFAULT)
 
@@ -65,6 +76,17 @@ class TestGaussianStateRepresentations:
             ]
         ) * constants.HBAR_DEFAULT
 
+    @pytest.fixture
+    def xp_cov(self):
+        return np.array(
+            [
+                [  5,  -8,  10, -10],
+                [ -8, -19,  22, -54],
+                [ 10,  22, -13,  32],
+                [-10, -54,  32, -73]
+            ]
+        ) * constants.HBAR_DEFAULT
+
     @pytest.fixture(autouse=True)
     def setup(self, C, G, mean):
         self.state = GaussianState(C, G, mean)
@@ -73,6 +95,7 @@ class TestGaussianStateRepresentations:
         self,
         xp_mean,
         xp_corr,
+        xp_cov,
     ):
         assert np.allclose(
             xp_mean,
@@ -82,11 +105,16 @@ class TestGaussianStateRepresentations:
             xp_corr,
             self.state.xp_corr,
         )
+        assert np.allclose(
+            xp_cov,
+            self.state.xp_cov,
+        )
 
     def test_quad_representation(
         self,
         mu,
         corr,
+        cov,
     ):
         assert np.allclose(
             mu,
@@ -95,6 +123,10 @@ class TestGaussianStateRepresentations:
         assert np.allclose(
             corr,
             self.state.corr,
+        )
+        assert np.allclose(
+            cov,
+            self.state.cov,
         )
 
 

@@ -111,10 +111,10 @@ class GaussianState:
         .. math::
             \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
 
-        and :math:`\rho` is a density operator.
+        and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array: The :math:`d \times d` correlation matrix in the xp basis.
+            np.array: The :math:`2d \times 2d` correlation matrix in the xp basis.
         """
 
         d = self.d
@@ -130,6 +130,29 @@ class GaussianState:
         corr[d:, :d] = 2 * (G - C).imag
 
         return corr * self.hbar
+
+    @property
+    def xp_cov(self):
+        r"""The xp-ordered coveriance matrix of the state.
+
+        The xp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
+
+        .. math::
+            \sigma_{xp, ij} := \langle Y_i Y_j + Y_j Y_i \rangle_\rho
+                - 2 \langle Y_i \rangle_\rho \langle Y_j \rangle_\rho,
+
+        where
+
+        .. math::
+            \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
+
+        and :math:`\rho` is the density operator of the currently represented state.
+
+        Returns:
+            np.array: The :math:`2d \times 2d` xp-ordered covariance matrix in xp basis.
+        """
+        xp_mean = self.xp_mean
+        return self.xp_corr - 2 * np.outer(xp_mean, xp_mean)
 
     @property
     def xp_representation(self):
@@ -171,13 +194,37 @@ class GaussianState:
         .. math::
             \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
 
-        and :math:`\rho` is a density operator.
+        and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
             np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
         """
         T = quad_transformation(self.d)
         return T @ self.xp_corr @ T.transpose()
+
+    @property
+    def cov(self):
+        r"""The quadrature-ordered coveriance matrix of the state.
+
+        The quadrature-ordered covariance matrix :math:`\sigma` is defined by
+
+        .. math::
+            \sigma_{ij} := \langle R_i R_j + R_j R_i \rangle_\rho
+                - 2 \langle R_i \rangle_\rho \langle R_j \rangle_\rho,
+
+        where
+
+        .. math::
+            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+
+        and :math:`\rho` is the density operator of the currently represented state.
+
+        Returns:
+            np.array: The :math:`2d \times 2d` quadrature-ordered covariance matrix in
+                xp basis.
+        """
+        mu = self.mu
+        return self.corr - 2 * np.outer(mu, mu)
 
     @property
     def quad_representation(self):
