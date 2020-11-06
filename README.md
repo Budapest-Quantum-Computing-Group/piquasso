@@ -116,31 +116,29 @@ References:
 - https://python-poetry.org/docs/repositories/#adding-a-repository
 - https://python-poetry.org/docs/libraries/#publishing-to-a-private-repository
 
-### Automatic publish with GitLab
+### Manual publish with GitLab
 
-Automatic publishing would work with GitLab, but we don't have a proper
-versioning yet, and the package repository doesn't overwrite existing versions
-(rightfully so!). Therefore, it is not present in the `.gitlab-ci.yml`, but
-would work like this:
-
-```
-buildpackage:
-  stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  script:
-    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/${CI_PROJECT_ID}/packages/pypi
-    - poetry config pypi-token.gitlab <ACCESS-TOKEN>
-    - poetry build
-    - poetry publish -r gitlab
-```
+Automatic publishing don't work with GitLab, since we bump (increment) the
+version of the project by hand, and the package repository doesn't overwrite
+existing versions (rightfully so!).
 
 **Note**:
 - The documentation uses `twine`, but `poetry publish` works similarly.
-- Access tokens might be safer in CI/CD environment variables, see:
+- Accessing the registry is safer using CI/CD environment variables, see:
 https://gitlab.inf.elte.hu/wigner-rcp-quantum-computing-and-information-group/piquasso/-/settings/ci_cd
+
+#### How to publish
+
+1. Create a version bump commit (which increments the version in
+   `piquasso/__init__.py` and in `pyproject.toml`.
+2. Create a merge request from this commit.
+3. When merged, tag the current `origin/master` with `git tag -a <version>`,
+   where `<version>` could be e.g. `0.1.1`.
+4. Push the tag with `git push --tags`.
+5. Go to `CI/CD->Pipelines->Run Pipeline`, select the previously-made git tag,
+   then click on `Run Pipeline`.
+6. Visit `Packages & Registries->Package Registry` and verify, that there is a
+   package under the `PyPI` tab with the newly created version.
 
 References:
 - https://gitlab.inf.elte.hu/help/user/packages/pypi_repository/index.md
