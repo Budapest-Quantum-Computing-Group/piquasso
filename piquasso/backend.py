@@ -21,7 +21,5 @@ class Backend:
                 current backend to be executed in order.
         """
         for instruction in instructions:
-            operation = instruction['op']
-            params = instruction['params']
-            modes = instruction['modes']
-            operation(self, params, modes)
+            operation = instruction.pop("op")
+            operation(self, **instruction)

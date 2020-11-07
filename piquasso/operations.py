@@ -60,6 +60,19 @@ class Operation:
             }.get(op)
 
 
+class ModelessOperation(Operation):
+
+    def __init__(self, *params):
+        super().__init__(*params)
+
+        Context.current_program.instructions.append(
+            {
+                'params': self.params,
+                'op': self.resolve_method_for_backend()
+            }
+        )
+
+
 class B(Operation):
     """Beamsplitter operation."""
 
@@ -162,7 +175,7 @@ class Interferometer(Operation):
         super().__init__(interferometer_matrix)
 
 
-class Sampling(Operation):
+class Sampling(ModelessOperation):
     r"""Boson Sampling"""
 
     backends = {
