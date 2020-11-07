@@ -232,6 +232,26 @@ class TestGaussianStateOperations:
             reduced_state.mean,
         )
 
+    def test_reduced_rotated_mean_and_cov(self):
+        modes = (0, 2)
+        phi = np.pi/2
+
+        mean, cov = self.state.reduced_rotated_mean_and_cov(modes, phi)
+
+        expected_mean = np.array([ -4,  -2, -10,  -4])
+
+        expected_cov = np.array(
+            [
+                [ -38, -20,  -72,  -64],
+                [ -20, -26,  -24,  -40],
+                [ -72, -24, -266,  -80],
+                [ -64, -40,  -80,  -22],
+            ]
+        )
+
+        assert np.allclose(mean, expected_mean)
+        assert np.allclose(cov, expected_cov)
+
     def test_apply_to_C_and_G_for_1_modes(self, C, G):
         alpha = np.exp(1j * np.pi/3)
 
