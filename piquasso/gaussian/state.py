@@ -284,6 +284,24 @@ class GaussianState:
             mean=(self.mean * phase),
         )
 
+    def reduced(self, modes):
+        """Returns the copy of the current state, reduced to the given `modes`.
+
+        This method essentially preserves the modes specified from the representation
+        of the Gaussian state, but cuts out the other modes.
+
+        Args:
+            modes (tuple): The modes to reduce the state to.
+
+        Returns:
+            GaussianState: The reduced `GaussianState` instance.
+        """
+        return GaussianState(
+            C=self.C[np.ix_(modes, modes)],
+            G=self.G[np.ix_(modes, modes)],
+            mean=self.mean[np.ix_(modes)],
+        )
+
     def apply(self, T, modes):
         r"""Apply a transformation to the quantum state.
 
