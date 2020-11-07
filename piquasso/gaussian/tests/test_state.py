@@ -161,6 +161,41 @@ class TestGaussianStateOperations:
     def setup(self, C, G, mean):
         self.state = GaussianState(C, G, mean)
 
+    def test_rotated(self):
+        phi = np.pi / 2
+        rotated_state = self.state.rotated(phi)
+
+        rotated_C = np.array(
+            [
+                [     1, 1 + 2j, 4 - 6j],
+                [1 - 2j,      6, 5 + 9j],
+                [4 + 6j, 5 - 9j,    -10],
+            ]
+        )
+
+        rotated_G = np.array(
+            [
+                [-3 - 1j, -1 - 1j, -2 - 2j],
+                [-1 - 1j, -2 + 3j, -5 + 6j],
+                [-2 - 2j, -5 + 6j,      -7],
+            ]
+        )
+
+        rotated_mean = np.array([-2 - 1j,  4 - 3j, -5 - 2j])
+
+        assert np.allclose(
+            rotated_C,
+            rotated_state.C,
+        )
+        assert np.allclose(
+            rotated_G,
+            rotated_state.G,
+        )
+        assert np.allclose(
+            rotated_mean,
+            rotated_state.mean,
+        )
+
     def test_apply_to_C_and_G_for_1_modes(self, C, G):
         alpha = np.exp(1j * np.pi/3)
 
