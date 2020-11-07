@@ -4,13 +4,17 @@
 
 from .program import Program
 from .mode import Q
-from .operations import D
+from .operations import R, B, D, Interferometer, Sampling
 
 
 __all__ = [
-    "Q",
-    "D",
     "Program",
+    "Q",
+    "R",
+    "B",
+    "D",
+    "Interferometer",
+    "Sampling"
 ]
 
 __version__ = "0.1.1"

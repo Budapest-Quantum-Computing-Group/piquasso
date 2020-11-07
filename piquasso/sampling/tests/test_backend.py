@@ -66,10 +66,10 @@ class TestSamplingBackend:
         assert np.allclose(self.program.state.interferometer, expected_interferometer)
 
     def test_beamsplitter(self):
-        phi = np.pi / 3
         theta = np.pi / 4
+        phi = np.pi / 3
         with self.program:
-            Q(1, 3) | B(phi, theta)
+            Q(1, 3) | B(theta, phi)
         self.program.execute()
 
         t = np.cos(theta)
