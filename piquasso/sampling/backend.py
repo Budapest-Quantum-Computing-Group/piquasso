@@ -84,7 +84,7 @@ class SamplingBackend(Backend):
 
         self.state.multiple_interferometer_on_modes(J, modes)
 
-    def sampling(self, params, _):
+    def sampling(self, params):
         r"""Simulates a boson sampling using generalized Clifford&Clifford algorithm
         from [Brod, Oszmaniec 2020].
 
@@ -99,7 +99,6 @@ class SamplingBackend(Backend):
         Args:
             params (tuple): A tuple with a single element corresponding to number of
                 samples for the experiment.
-            _: Ignored `modes` parameter
         """
         simulation_strategy = \
             GeneralizedCliffordsSimulationStrategy(self.state.interferometer)

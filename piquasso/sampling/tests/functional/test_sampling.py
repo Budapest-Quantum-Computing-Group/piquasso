@@ -27,7 +27,7 @@ class TestSamplingBackend:
     def test_sampling_samples_number(self):
         shots = 100
 
-        self.backend.sampling((shots,), None)
+        self.backend.sampling((shots,))
 
         assert len(self.backend.state.results) == shots,\
             f'Expected {shots} samples, ' \
@@ -36,7 +36,7 @@ class TestSamplingBackend:
     def test_sampling_mode_permutation(self):
         shots = 1
 
-        self.backend.sampling((shots,), None)
+        self.backend.sampling((shots,))
 
         sample = self.backend.state.results[0]
         assert np.allclose(sample, [1, 0, 0, 1, 1]),\
@@ -45,7 +45,7 @@ class TestSamplingBackend:
     def test_sampling_multiple_samples_for_permutation_interferometer(self):
         shots = 2
 
-        self.backend.sampling((shots,), None)
+        self.backend.sampling((shots,))
 
         first_sample = self.backend.state.results[0]
         second_sample = self.backend.state.results[1]

@@ -7,8 +7,8 @@ from unittest.mock import Mock
 import pytest
 
 from piquasso.context import Context
-from piquasso.fock.backend import FockBackend
-from piquasso.operations import B
+from piquasso.sampling import SamplingBackend
+from piquasso.operations import B, Sampling
 from piquasso.mode import Q
 from piquasso.program import Program
 
@@ -18,7 +18,7 @@ class TestProgram:
     def setup(self):
         self.program = Program(
             state=Mock(name="State"),
-            backend_class=lambda _: Mock(FockBackend, name="Backend")
+            backend_class=lambda _: Mock(SamplingBackend, name="Backend")
         )
 
     def test_current_program_in_program_context(self):
@@ -38,6 +38,12 @@ class TestProgram:
         assert len(self.program.instructions) == 2
         self.program.backend.execute_instructions.assert_called_once()
 
+    def test_modeless_program_instructions(self):
+        with self.program:
+            Sampling(shots=10)
+
+        assert len(self.program.instructions) == 1
+
     def test_from_blackbird(self):
         str = \
             """name StateTeleportation
@@ -53,9 +59,9 @@ class TestProgram:
         bs_gate = self.program.instructions[0]
         assert bs_gate['modes'] == [1, 2]
         assert bs_gate['params'] == [0.7853981633974483, 0]
-        assert bs_gate['op'] == FockBackend.beamsplitter
+        assert bs_gate['op'] == SamplingBackend.beamsplitter
 
         r_gate = self.program.instructions[1]
         assert r_gate['modes'] == [1]
         assert r_gate['params'] == [0.7853981633974483]
-        assert r_gate['op'] == FockBackend.phaseshift
+        assert r_gate['op'] == SamplingBackend.phaseshift

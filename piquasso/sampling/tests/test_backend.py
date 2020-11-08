@@ -26,7 +26,7 @@ class TestSamplingBackend:
             Q(0, 1) | B(.5)
             Q(1, 2, 3) | Interferometer(U)
             Q(3) | R(.5)
-            Q() | Sampling(shots=10)
+            Sampling(shots=10)
 
     def test_interferometer(self):
         U = np.array([
