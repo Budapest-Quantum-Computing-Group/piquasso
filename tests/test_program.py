@@ -57,11 +57,11 @@ class TestProgram:
         assert len(self.program.instructions) == 2
 
         bs_gate = self.program.instructions[0]
-        assert bs_gate['modes'] == [1, 2]
-        assert bs_gate['params'] == [0.7853981633974483, 0]
-        assert bs_gate['op'] == SamplingBackend.beamsplitter
+        assert bs_gate["kwargs"]["modes"] == [1, 2]
+        assert bs_gate["kwargs"]["params"] == [0.7853981633974483, 0]
+        assert bs_gate["op"] == SamplingBackend.beamsplitter
 
         r_gate = self.program.instructions[1]
-        assert r_gate['modes'] == [1]
-        assert r_gate['params'] == [0.7853981633974483]
-        assert r_gate['op'] == SamplingBackend.phaseshift
+        assert r_gate["kwargs"]["modes"] == [1]
+        assert r_gate["kwargs"]["params"] == [0.7853981633974483]
+        assert r_gate["op"] == SamplingBackend.phaseshift

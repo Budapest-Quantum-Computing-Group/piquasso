@@ -17,9 +17,9 @@ class Backend:
         """Executes the collected instructions in order.
 
         Args:
-            instructions (list): The methods, parameters and modes of the
+            instructions (list): The methods along with keyword arguments of the
                 current backend to be executed in order.
         """
         for instruction in instructions:
-            operation = instruction.pop("op")
-            operation(self, **instruction)
+            operation = instruction["op"]
+            operation(self, **instruction["kwargs"])

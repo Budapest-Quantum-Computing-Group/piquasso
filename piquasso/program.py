@@ -41,7 +41,7 @@ class Program:
     def __exit__(self, exc_type, exc_val, exc_tb):
         Context.current_program = None
 
-    def _blackbird_operation_to_instruction(self, operation):
+    def _blackbird_operation_to_instruction(self, blackbird_operation):
         """
         Maps one element of the `operations` of a `BlackbirdProgram` into an
         element of `self.instructions`.
@@ -49,14 +49,18 @@ class Program:
         Args:
             operation (dict): An element of the `BlackbirdProgram.operations`
         """
-        gate_class = Operation.blackbird_op_to_gate(operation['op'])
-        instruction = \
-            {
-                'modes': operation['modes'],
-                'op': gate_class.backends[self.backend.__class__]
-            }
-        if 'args' in operation:
-            instruction['params'] = operation['args']
+
+        operation_class = Operation.blackbird_op_to_gate(blackbird_operation["op"])
+        instruction = {
+            "kwargs": {
+                "modes": blackbird_operation["modes"],
+            },
+            "op": operation_class.backends[self.backend.__class__]
+        }
+
+        if "args" in blackbird_operation:
+            instruction["kwargs"]["params"] = blackbird_operation["args"]
+
         return instruction
 
     def from_blackbird(self, bb):
