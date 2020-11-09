@@ -4,8 +4,10 @@
 
 """Implementation of backends."""
 
+from . import registry
 
-class Backend:
+
+class Backend(registry.ClassRecorder):
     def __init__(self, state):
         """
         Args:

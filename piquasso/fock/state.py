@@ -9,10 +9,11 @@ A simple quantum state implementation.
 import numpy as np
 
 from piquasso.operator import BaseOperator
+from piquasso.state import State
 from piquasso.fock.backend import FockBackend
 
 
-class FockState(BaseOperator):
+class FockState(BaseOperator, State):
     r"""
     Implements the density operator from quantum mechanics in Fock
     representation.

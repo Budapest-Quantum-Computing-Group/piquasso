@@ -27,8 +27,10 @@ class TestProgram:
 
         self.backend_class = DummyBackend
 
+        self.state = Mock(name="DummyState")
+
         self.program = Program(
-            state=Mock(name="State"),
+            state=self.state,
             backend_class=lambda state: Mock(self.backend_class, name="DummyBackend"),
         )
 
@@ -72,6 +74,11 @@ class TestProgram:
             DummyModelessOperation(42)
 
         assert len(self.program.instructions) == 1
+
+    def test_creating_program_using_string(self):
+        program = Program(state=self.state, backend_class="DummyBackend")
+
+        assert isinstance(program.backend, self.backend_class)
 
 
 class TestBlackbirdParsing:
