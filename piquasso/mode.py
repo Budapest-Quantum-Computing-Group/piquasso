@@ -34,9 +34,11 @@ class Q:
         """
         Context.current_program.instructions.append(
             {
-                'params': op.params,
-                'modes': self.modes,
-                'op': op.resolve_method_for_backend()
+                "op": op.resolve_method_for_backend(),
+                "kwargs": {
+                    "params": op.params,
+                    "modes": self.modes,
+                },
             }
         )
         return self
