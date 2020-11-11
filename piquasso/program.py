@@ -16,18 +16,29 @@ class Program:
     specified.
     """
 
-    def __init__(self, state, backend_class=None, hbar=constants.HBAR_DEFAULT):
+    def __init__(self, state=None, backend_class=None, hbar=constants.HBAR_DEFAULT):
         """
         Args:
             state (State): The initial quantum state.
             backend_class: The backend on which the quantum program should run.
         """
         self.state = state
-        self.d = self.state.d
         self.operations = []
         self.hbar = hbar
 
-        self.backend = self._create_backend(backend_class)
+        self.backend = (
+            None if (backend_class or self.state) is None
+            else self._create_backend(backend_class)
+        )
+
+    @property
+    def d(self):
+        """The number of modes, on which the state of the program is defined.
+
+        Returns:
+            int: The number of modes.
+        """
+        return self.state.d
 
     def execute(self):
         """Executes the collected operations on the backend."""

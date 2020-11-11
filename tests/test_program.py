@@ -82,6 +82,37 @@ class TestProgram:
         program = Program(state=self.state, backend_class="DummyBackend")
         assert isinstance(program.backend, self.backend_class)
 
+    def test_complex_program_stacking(self, DummyOperation, DummyModelessOperation):
+        dummy_param1, dummy_param2, dummy_param3 = 1, 2, 3
+
+        sub_program = Program()
+        with sub_program:
+            Q(0, 1) | DummyOperation(dummy_param1)
+            Q(1, 2) | DummyOperation(dummy_param2)
+            DummyModelessOperation(dummy_param3)
+
+        with self.program:
+            Q(0, 1, 2) | sub_program
+            Q(1, 3, 2) | sub_program
+
+        # Q(0, 1, 2) | sub_program
+        assert self.program.operations[0].modes == (0, 1)
+        assert self.program.operations[1].modes == (1, 2)
+        assert self.program.operations[2].modes is None
+
+        assert self.program.operations[0].params == (dummy_param1, )
+        assert self.program.operations[1].params == (dummy_param2, )
+        assert self.program.operations[2].params == (dummy_param3, )
+
+        # Q(1, 3, 2) | sub_program
+        assert self.program.operations[3].modes == (1, 3)
+        assert self.program.operations[4].modes == (3, 2)
+        assert self.program.operations[5].modes is None
+
+        assert self.program.operations[3].params == (dummy_param1, )
+        assert self.program.operations[4].params == (dummy_param2, )
+        assert self.program.operations[5].params == (dummy_param3, )
+
 
 def test_modeless_operation_is_called_on_execute():
 
