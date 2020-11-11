@@ -6,6 +6,7 @@
 
 import numpy as np
 
+from piquasso import registry
 from piquasso.context import Context
 
 from piquasso.fock.backend import FockBackend
@@ -14,7 +15,7 @@ from piquasso.passivegaussian.backend import PassiveGaussianBackend
 from piquasso.sampling.backend import SamplingBackend
 
 
-class Operation:
+class Operation(registry.ClassRecorder):
     backends = {}
 
     def __init__(self, *params):

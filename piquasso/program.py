@@ -4,7 +4,7 @@
 
 import blackbird
 
-from piquasso import constants
+from piquasso import constants, registry
 from piquasso.context import Context
 from piquasso.operations import Operation
 
@@ -27,8 +27,7 @@ class Program:
         self.instructions = []
         self.hbar = hbar
 
-        backend_class = backend_class or state.backend_class
-        self.backend = backend_class(state)
+        self.backend = self._create_backend(backend_class)
 
     def execute(self):
         """Executes the collected instructions on the backend."""
@@ -40,6 +39,22 @@ class Program:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         Context.current_program = None
+
+    def _create_backend(self, backend_class):
+        """Instantiates a backend from the specified `backend_class`.
+
+        Args:
+            backend_class: The class (or its name) to be instantiated.
+
+        Returns:
+            Backend: The instantiated backend.
+        """
+        backend_class = backend_class or self.state.backend_class
+
+        if isinstance(backend_class, str):
+            backend_class = registry.retrieve_class(backend_class)
+
+        return backend_class(self.state)
 
     def _blackbird_operation_to_instruction(self, blackbird_operation):
         """

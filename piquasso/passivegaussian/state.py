@@ -4,10 +4,12 @@
 
 """A simple quantum state implementation based on numpy."""
 
+from piquasso.state import State
+
 from .backend import PassiveGaussianBackend
 
 
-class PassiveGaussianState:
+class PassiveGaussianState(State):
     r"""Represents the state of a pure gaussian quantum system
 
     A Gaussian state is fully characterised by its mean and correlation

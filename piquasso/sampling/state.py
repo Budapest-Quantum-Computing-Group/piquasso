@@ -4,10 +4,12 @@
 
 import numpy as np
 
+from piquasso.state import State
+
 from .backend import SamplingBackend
 
 
-class SamplingState:
+class SamplingState(State):
     backend_class = SamplingBackend
 
     def __init__(self, *initial_state):

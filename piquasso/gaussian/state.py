@@ -4,13 +4,14 @@
 
 import numpy as np
 
-from piquasso.context import Context
 from piquasso import constants
+from piquasso.context import Context
+from piquasso.state import State
 
 from .transformations import quad_transformation
 
 
-class GaussianState:
+class GaussianState(State):
     r"""Object to represent a Gaussian state.
 
     Attributes:
