@@ -22,6 +22,28 @@ class Operation(registry.ClassRecorder):
         self.params = params
         self.modes = None
 
+    @classmethod
+    def from_properties(cls, properties):
+        """Creates an `Operation` instance from a mapping specified.
+
+        Overrides `registry.ClassRecorder.from_properties`, since the `modes` attribute
+        of an `Operator` instance cannot be specified in `__init__`, it has to be
+        specified after initialization.
+
+        Args:
+            properties (collections.Mapping):
+                The desired `Operator` instance in the format of a mapping.
+
+        Returns:
+            Operator: An `Operator` initialized using the specified mapping.
+        """
+
+        operation = cls(properties["params"])
+
+        operation.modes = properties["modes"]
+
+        return operation
+
     def __call__(self, backend):
         """Executes the operation on the specified backend.
 

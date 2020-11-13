@@ -4,30 +4,58 @@
 
 import pytest
 
-from unittest.mock import Mock
-
 from piquasso import registry
 
 
-def test_ClassRecorder_stores_subclasses():
-    class SomeClass(registry.ClassRecorder):
-        pass
+class TestRegistry:
 
-    class SomeSubClass(SomeClass):
-        pass
+    @pytest.fixture
+    def SomeClass(self):
+        class SomeClass(registry.ClassRecorder):
+            def __init__(self, foo, bar):
+                self.foo = foo
+                self.bar = bar
 
-    class SomeSubSubClass(SomeSubClass):
-        pass
+            @classmethod
+            def from_properties(cls, properties):
+                return cls(**properties)
 
-    assert registry.retrieve_class("SomeSubClass") == SomeSubClass
-    assert registry.retrieve_class("SomeSubSubClass") == SomeSubSubClass
+        return SomeClass
 
+    @pytest.fixture
+    def SomeSubClass(self, SomeClass):
+        class SomeSubClass(SomeClass):
+            pass
 
-def test_retrieving_nonexistent_class_raises_NameError():
-    registry.ClassRecorder.records = {
-        "existing_class": Mock(),
-        "other_existing_class": Mock(),
-    }
+        return SomeSubClass
 
-    with pytest.raises(NameError):
-        registry.retrieve_class("nonexistent_class")
+    @pytest.fixture
+    def SomeSubSubClass(self, SomeSubClass):
+        class SomeSubSubClass(SomeSubClass):
+            pass
+
+        return SomeSubSubClass
+
+    def test_retrieving_existing_subclasses(self, SomeSubClass, SomeSubSubClass):
+
+        assert registry.retrieve_class("SomeSubClass") == SomeSubClass
+        assert registry.retrieve_class("SomeSubSubClass") == SomeSubSubClass
+
+    def test_retrieving_nonexistent_class_raises_NameError(self):
+        with pytest.raises(NameError):
+            registry.retrieve_class("nonexistent_class")
+
+    def test_creating_instance_from_properties(self, SomeClass):
+        instance = registry.create_instance_from_mapping(
+            {
+                "type": "SomeClass",
+                "properties": {
+                    "foo": "fee",
+                    "bar": "beer",
+                },
+            }
+        )
+
+        assert isinstance(instance, SomeClass)
+        assert instance.foo == "fee"
+        assert instance.bar == "beer"

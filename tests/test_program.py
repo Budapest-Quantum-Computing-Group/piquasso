@@ -4,11 +4,14 @@
 
 from unittest.mock import Mock
 
+import json
 import pytest
 import collections
 
+from piquasso import registry
 from piquasso.context import Context
 from piquasso.backend import Backend
+from piquasso.state import State
 from piquasso.mode import Q
 from piquasso.program import Program
 from piquasso.operations import Operation, ModelessOperation
@@ -78,10 +81,6 @@ class TestProgram:
         assert len(self.program.operations) == 1
         assert self.program.operations[0].params == (operation_parameter,)
 
-    def test_creating_program_using_string(self):
-        program = Program(state=self.state, backend_class="DummyBackend")
-        assert isinstance(program.backend, self.backend_class)
-
     def test_complex_program_stacking(self, DummyOperation, DummyModelessOperation):
         dummy_param1, dummy_param2, dummy_param3 = 1, 2, 3
 
@@ -141,6 +140,127 @@ def test_modeless_operation_is_called_on_execute():
     program.execute()
 
     DummyBackend.dummy_modeless_operation.assert_called_once()
+
+
+class TestProgramJSONParsing:
+    @pytest.fixture
+    def FakeState(self):
+        class FakeState(State):
+            def __init__(self, foo, bar, d):
+                self.foo = foo
+                self.bar = bar
+                self.d = d
+
+        return FakeState
+
+    @pytest.fixture
+    def FakeBackend(self):
+        class FakeBackend(registry.ClassRecorder):
+            def __init__(self, state):
+                self.state = state
+
+        return FakeBackend
+
+    @pytest.fixture
+    def FakeOperation(self):
+        class FakeOperation(Operation):
+            def __init__(self, params):
+                self.params = params
+                self.modes = None
+
+        return FakeOperation
+
+    @pytest.fixture
+    def number_of_modes(self):
+        return 420
+
+    @pytest.fixture
+    def state_mapping(self, number_of_modes):
+        return {
+            "type": "FakeState",
+            "properties": {
+                "foo": "fee",
+                "bar": "beer",
+                "d": number_of_modes,
+            }
+        }
+
+    @pytest.fixture
+    def operations_mapping(self):
+        return [
+            {
+                "type": "FakeOperation",
+                "properties": {
+                    "params": ["some", "params"],
+                    "modes": ["some", "modes"],
+                }
+            },
+            {
+                "type": "FakeOperation",
+                "properties": {
+                    "params": ["some", "other", "params"],
+                    "modes": ["some", "other", "modes"],
+                }
+            },
+        ]
+
+    def test_instantiation_using_mappings(
+        self,
+        FakeState,
+        FakeBackend,
+        FakeOperation,
+        state_mapping,
+        operations_mapping,
+        number_of_modes,
+    ):
+        program = Program.from_properties(
+            {
+                "state": state_mapping,
+                "backend_class": "FakeBackend",
+                "operations": operations_mapping,
+            }
+        )
+
+        assert program.state.foo == "fee"
+        assert program.state.bar == "beer"
+        assert program.state.d == number_of_modes
+
+        assert type(program.backend) == FakeBackend
+
+        assert program.operations[0].params == ["some", "params"]
+        assert program.operations[0].modes == ["some", "modes"]
+        assert program.operations[1].params == ["some", "other", "params"]
+        assert program.operations[1].modes == ["some", "other", "modes"]
+
+    def test_from_json(
+        self,
+        FakeState,
+        FakeBackend,
+        FakeOperation,
+        state_mapping,
+        operations_mapping,
+        number_of_modes,
+    ):
+        json_ = json.dumps(
+            {
+                "state": state_mapping,
+                "backend_class": "FakeBackend",
+                "operations": operations_mapping,
+            }
+        )
+
+        program = Program.from_json(json_)
+
+        assert program.state.foo == "fee"
+        assert program.state.bar == "beer"
+        assert program.state.d == number_of_modes
+
+        assert type(program.backend) == FakeBackend
+
+        assert program.operations[0].params == ["some", "params"]
+        assert program.operations[0].modes == ["some", "modes"]
+        assert program.operations[1].params == ["some", "other", "params"]
+        assert program.operations[1].modes == ["some", "other", "modes"]
 
 
 class TestBlackbirdParsing:
