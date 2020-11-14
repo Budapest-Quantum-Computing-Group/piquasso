@@ -32,15 +32,11 @@ class Q:
         Returns:
             (Q): The current qumode.
         """
-        Context.current_program.instructions.append(
-            {
-                "op": op.resolve_method_for_backend(),
-                "kwargs": {
-                    "params": op.params,
-                    "modes": self.modes,
-                },
-            }
-        )
+
+        op.modes = self.modes
+
+        Context.current_program.operations.append(op)
+
         return self
 
     @staticmethod
