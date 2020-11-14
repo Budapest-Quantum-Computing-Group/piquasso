@@ -74,6 +74,12 @@ class TestProgram:
             DummyModelessOperation(42)
 
         assert len(self.program.instructions) == 1
+        assert self.program.instructions[0] == {
+            "op": self.backend_class.dummy_modeless_operation,
+            "kwargs": {
+                "params": (42,)
+            },
+        }
 
     def test_creating_program_using_string(self):
         program = Program(state=self.state, backend_class="DummyBackend")

@@ -68,8 +68,10 @@ class ModelessOperation(Operation):
 
         Context.current_program.instructions.append(
             {
-                'params': self.params,
-                'op': self.resolve_method_for_backend()
+                "op": self.resolve_method_for_backend(),
+                "kwargs": {
+                    "params": self.params,
+                },
             }
         )
 
