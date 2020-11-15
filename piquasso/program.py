@@ -24,15 +24,15 @@ class Program:
         """
         self.state = state
         self.d = self.state.d
-        self.instructions = []
+        self.operations = []
         self.hbar = hbar
 
         self.backend = self._create_backend(backend_class)
 
     def execute(self):
-        """Executes the collected instructions on the backend."""
+        """Executes the collected operations on the backend."""
 
-        self.backend.execute_instructions(self.instructions)
+        self.backend.execute_operations(self.operations)
 
     def __enter__(self):
         Context.current_program = self
@@ -56,42 +56,37 @@ class Program:
 
         return backend_class(self.state)
 
-    def _blackbird_operation_to_instruction(self, blackbird_operation):
+    def _blackbird_operation_to_operation(self, blackbird_operation):
         """
         Maps one element of the `operations` of a `BlackbirdProgram` into an
-        element of `self.instructions`.
+        element of `self.operations`.
 
         Args:
             operation (dict): An element of the `BlackbirdProgram.operations`
         """
 
         operation_class = Operation.blackbird_op_to_gate(blackbird_operation["op"])
-        instruction = {
-            "kwargs": {
-                "modes": blackbird_operation["modes"],
-            },
-            "op": operation_class.backends[self.backend.__class__]
-        }
 
-        if "args" in blackbird_operation:
-            instruction["kwargs"]["params"] = blackbird_operation["args"]
+        operation = operation_class(*blackbird_operation.get("args", tuple()))
 
-        return instruction
+        operation.modes = blackbird_operation["modes"]
+
+        return operation
 
     def from_blackbird(self, bb):
         """
-        Loads the gates to apply into `self.instructions` from a
+        Loads the gates to apply into `self.operations` from a
         :class:`blackbird.BlackbirdProgram`
 
         Args:
             bb (blackbird.BlackbirdProgram): the BlackbirdProgram to use
         """
-        self.instructions = \
-            [*map(self._blackbird_operation_to_instruction, bb.operations)]
+        self.operations = \
+            [*map(self._blackbird_operation_to_operation, bb.operations)]
 
     def load_blackbird(self, filename: str):
         """
-        Loads the gates to apply into `self.instructions` from a BlackBird file
+        Loads the gates to apply into `self.operations` from a BlackBird file
         (.xbb).
 
         Args:
@@ -102,7 +97,7 @@ class Program:
 
     def loads_blackbird(self, string):
         """
-        Loads the gates to apply into `self.instructions` from a string
+        Loads the gates to apply into `self.operations` from a string
         representing a :class:`blackbird.BlackbirdProgram`.
 
         Args:

@@ -15,13 +15,12 @@ class Backend(registry.ClassRecorder):
         """
         self.state = state
 
-    def execute_instructions(self, instructions):
-        """Executes the collected instructions in order.
+    def execute_operations(self, operations):
+        """Executes the collected operations in order.
 
         Args:
-            instructions (list): The methods along with keyword arguments of the
+            operations (list): The methods along with keyword arguments of the
                 current backend to be executed in order.
         """
-        for instruction in instructions:
-            operation = instruction["op"]
-            operation(self, **instruction["kwargs"])
+        for operation in operations:
+            operation(self)

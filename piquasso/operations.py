@@ -20,14 +20,35 @@ class Operation(registry.ClassRecorder):
 
     def __init__(self, *params):
         self.params = params
+        self.modes = None
 
-    def resolve_method_for_backend(self):
-        method = self.backends.get(Context.current_program.backend.__class__)
+    def __call__(self, backend):
+        """Executes the operation on the specified backend.
+
+        Args:
+            backend (Backend): The backend to execute the operation on.
+        """
+
+        method = self._resolve_method(backend)
+
+        method(backend, self.params, self.modes)
+
+    def _resolve_method(self, backend):
+        """Resolves the method according to the specified `backend` instance.
+
+        Args:
+            backend (Backend): The `Backend` on which the desired method is defined.
+
+        Raises:
+            NotImplementedError: If no such method is implemented on the `Backend`.
+
+        Returns:
+            The method which corresponds to the operation on `Backend`.
+        """
+        method = self.backends.get(backend.__class__)
 
         if not method:
-            raise NotImplementedError(
-                "No such operation implemented on this backend."
-            )
+            raise NotImplementedError("No such operation implemented on this backend.")
 
         return method
 
@@ -66,14 +87,12 @@ class ModelessOperation(Operation):
     def __init__(self, *params):
         super().__init__(*params)
 
-        Context.current_program.instructions.append(
-            {
-                "op": self.resolve_method_for_backend(),
-                "kwargs": {
-                    "params": self.params,
-                },
-            }
-        )
+        Context.current_program.operations.append(self)
+
+    def __call__(self, backend):
+        method = self._resolve_method(backend)
+
+        method(backend, self.params)
 
 
 class B(Operation):
@@ -95,6 +114,8 @@ class B(Operation):
             theta (float): The transmittivity angle of the beamsplitter.
                 (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
         """
+
+        # TODO: It flips the arguments. Why?
         super().__init__(phi, theta)
 
 

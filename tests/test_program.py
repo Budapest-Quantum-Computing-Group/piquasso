@@ -5,6 +5,7 @@
 from unittest.mock import Mock
 
 import pytest
+import collections
 
 from piquasso.context import Context
 from piquasso.backend import Backend
@@ -58,33 +59,57 @@ class TestProgram:
 
         assert Context.current_program is None
 
-    def test_program_instructions(self, DummyOperation):
-        assert len(self.program.instructions) == 0
+    def test_program_operations(self, DummyOperation):
+        assert len(self.program.operations) == 0
 
         with self.program:
             Q(0, 1) | DummyOperation(42) | DummyOperation(42, 320)
 
         self.program.execute()
 
-        assert len(self.program.instructions) == 2
-        self.program.backend.execute_instructions.assert_called_once()
+        assert len(self.program.operations) == 2
+        self.program.backend.execute_operations.assert_called_once()
 
-    def test_modeless_program_instructions(self, DummyModelessOperation):
+    def test_modeless_program_operations(self, DummyModelessOperation):
+        operation_parameter = 42
         with self.program:
-            DummyModelessOperation(42)
+            DummyModelessOperation(operation_parameter)
 
-        assert len(self.program.instructions) == 1
-        assert self.program.instructions[0] == {
-            "op": self.backend_class.dummy_modeless_operation,
-            "kwargs": {
-                "params": (42,)
-            },
-        }
+        assert len(self.program.operations) == 1
+        assert self.program.operations[0].params == (operation_parameter,)
 
     def test_creating_program_using_string(self):
         program = Program(state=self.state, backend_class="DummyBackend")
-
         assert isinstance(program.backend, self.backend_class)
+
+
+def test_modeless_operation_is_called_on_execute():
+
+    class DummyBackend(Backend):
+        dummy_modeless_operation = Mock()
+
+    class DummyModelessOperation(ModelessOperation):
+        backends = {
+            DummyBackend: DummyBackend.dummy_modeless_operation,
+        }
+
+    DummyState = collections.namedtuple("State", "d")
+
+    number_of_modes = 420
+
+    program = Program(
+        state=DummyState(d=number_of_modes),
+        backend_class=DummyBackend,
+    )
+
+    operation_parameter = 42
+
+    with program:
+        DummyModelessOperation(operation_parameter)
+
+    program.execute()
+
+    DummyBackend.dummy_modeless_operation.assert_called_once()
 
 
 class TestBlackbirdParsing:
@@ -111,14 +136,12 @@ class TestBlackbirdParsing:
             """
         self.program.loads_blackbird(str)
 
-        assert len(self.program.instructions) == 2
+        assert len(self.program.operations) == 2
 
-        bs_gate = self.program.instructions[0]
-        assert bs_gate["kwargs"]["modes"] == [1, 2]
-        assert bs_gate["kwargs"]["params"] == [0.7853981633974483, 0]
-        assert bs_gate["op"] == SamplingBackend.beamsplitter
+        bs_gate = self.program.operations[0]
+        assert bs_gate.modes == [1, 2]
+        assert bs_gate.params == (0, 0.7853981633974483)
 
-        r_gate = self.program.instructions[1]
-        assert r_gate["kwargs"]["modes"] == [1]
-        assert r_gate["kwargs"]["params"] == [0.7853981633974483]
-        assert r_gate["op"] == SamplingBackend.phaseshift
+        r_gate = self.program.operations[1]
+        assert r_gate.modes == [1]
+        assert r_gate.params == (0.7853981633974483,)
