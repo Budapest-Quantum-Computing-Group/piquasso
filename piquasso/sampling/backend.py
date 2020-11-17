@@ -133,5 +133,5 @@ class SamplingBackend(Backend):
         initial_state = np.array(self.state.initial_state)
         shots = params[0]
         self.state.results = \
-            [sampling_simulator.get_classical_simulation_results(initial_state)
-             for _ in range(shots)]
+            sampling_simulator.get_classical_simulation_results(initial_state,
+                                                                samples_number=shots)
