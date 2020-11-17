@@ -69,7 +69,7 @@ pytz = ">=2015.7"
 
 [[package]]
 name = "boss-tomev"
-version = "0.0.5"
+version = "0.0.6"
 description = "A utility package for boson sampling experiments."
 category = "main"
 optional = false
@@ -774,7 +774,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "9a73315458f1bcdfb499cc158099fa6a10fbb9e2bf0c4ad046800ac357750c6a"
+content-hash = "0f2385fc2789532faf732eba6b64aba860025ee3ece90ccdba911cb16cdd5c0f"
 
 [metadata.files]
 alabaster = [
@@ -804,8 +804,8 @@ babel = [
     {file = "Babel-2.8.0.tar.gz", hash = "sha256:1aac2ae2d0d8ea368fa90906567f5c08463d98ade155c0c4bfedd6a0f7160e38"},
 ]
 boss-tomev = [
-    {file = "BoSS-Tomev-0.0.5.tar.gz", hash = "sha256:f62cca9fe4212c05870886a0fd911e29eb1343608c27089e5f154a913c0fd48e"},
-    {file = "BoSS_Tomev-0.0.5-py3-none-any.whl", hash = "sha256:a1f1a26503338191f49b90afcb0c8a88b555c781d76fe4d4208583ce08a3536c"},
+    {file = "BoSS-Tomev-0.0.6.tar.gz", hash = "sha256:495bd83def49b7640ba0670dbd7a699fd4b78fc3a6ef673d81cb3128364c746f"},
+    {file = "BoSS_Tomev-0.0.6-py3-none-any.whl", hash = "sha256:455e71b66595283ad835c731af2f70e0a3c3090e315daa3ebafde0f4aef98e37"},
 ]
 certifi = [
     {file = "certifi-2020.6.20-py2.py3-none-any.whl", hash = "sha256:8fc0819f1f30ba15bdb34cceffb9ef04d99f420f68eb75d901e9560b8749fc41"},
