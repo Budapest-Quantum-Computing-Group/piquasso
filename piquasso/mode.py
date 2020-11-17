@@ -2,7 +2,10 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import copy
+
 from piquasso.context import Context
+from piquasso import Program
 
 
 class Q:
@@ -22,22 +25,41 @@ class Q:
 
         self.modes = modes
 
-    def __or__(self, op):
-        """This registers the specified `operator` to the current quantum
-            program.
+    def __or__(self, rhs):
+        """Registers an `Operation` or `Program` to the current program.
+
+        If `rhs` is an `Operation`, then it is appended to the current program's
+        `operations`.
+
+        If `rhs` is a `Program`, then the current program's `operations` is extended
+        with `rhs.operations`.
 
         Args:
-            op (Operation): The operator to be applied on execution.
+            rhs (Operation or Program): An `Operation` or a `Program` to be added to the
+                current program.
 
         Returns:
             (Q): The current qumode.
         """
-
-        op.modes = self.modes
-
-        Context.current_program.operations.append(op)
+        if isinstance(rhs, Program):
+            self._register_program(rhs)
+        else:
+            rhs.modes = self.modes
+            Context.current_program.operations.append(rhs)
 
         return self
+
+    def _register_program(self, program):
+        Context.current_program.operations += \
+            map(self._resolve_operation, program.operations)
+
+    def _resolve_operation(self, operation):
+        new_operation = copy.deepcopy(operation)
+        new_operation.modes = (
+            None if operation.modes is None
+            else tuple(self.modes[m] for m in operation.modes)
+        )
+        return new_operation
 
     @staticmethod
     def _is_distinct(iterable):
