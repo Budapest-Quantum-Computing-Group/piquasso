@@ -19,8 +19,8 @@ class SamplingState(State):
 
     def multiple_interferometer_on_modes(self, U, modes):
         r"""
-        Multiplies the interferometer of the state with the `U` matrix  in the qumodes
-        specified in `modes`.
+        Multiplies the interferometer of the state with the `U` matrix (representing
+        the additional interferometer) in the qumodes specified in `modes`.
 
         The size of `U` should be smaller than or equal to the size of the
         interferometer.
