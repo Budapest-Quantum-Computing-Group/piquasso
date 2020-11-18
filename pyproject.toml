@@ -4,6 +4,7 @@ version = "0.1.1"
 description = ""
 authors = ["Zoltán Kolarovszki"]
 exclude = ["benchmarks"]
+build = "build.py"
 
 [tool.poetry.dependencies]
 python = "^3.6"
@@ -11,6 +12,7 @@ numpy = "^1.19.0"
 flake8 = "^3.8.3"
 quantum-blackbird = "^0.2.3"
 BoSS-Tomev = "^0.0.6"
+cython = "^0.29.21"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -23,5 +25,5 @@ sphinx_rtd_theme = "^0.5.0"
 llvmlite = "^0.33.0"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=0.12", "cython==0.29.21", "setuptools"]
 build-backend = "poetry.masonry.api"
