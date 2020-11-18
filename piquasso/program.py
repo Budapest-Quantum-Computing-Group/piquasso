@@ -2,6 +2,7 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import json
 import blackbird
 
 from piquasso import constants, registry
@@ -14,22 +15,36 @@ class Program:
 
     This also specifies a context in which all the operations should be
     specified.
+
+    Attributes:
+        state (State): The initial quantum state.
+        backend (Backend):
+            The backend on which the quantum program should run.
+        operations (list):
+            The set of operations, e.g. quantum gates and measurements.
+        hbar (float):
+            The value of :math:`\hbar` throughout the program, defaults to `2`.
     """
 
-    def __init__(self, state=None, backend_class=None, hbar=constants.HBAR_DEFAULT):
-        """
-        Args:
-            state (State): The initial quantum state.
-            backend_class: The backend on which the quantum program should run.
-        """
+    def __init__(
+        self,
+        state=None,
+        backend_class=None,
+        operations=None,
+        hbar=constants.HBAR_DEFAULT
+    ):
         self.state = state
-        self.operations = []
+        self.operations = operations or []
         self.hbar = hbar
 
-        self.backend = (
-            None if (backend_class or self.state) is None
-            else self._create_backend(backend_class)
-        )
+        if backend_class is not None:
+            self.backend = backend_class(state)
+
+        elif state is not None:
+            self.backend = state.backend_class(state)
+
+        else:
+            self.backend = None
 
     @property
     def d(self):
@@ -39,6 +54,69 @@ class Program:
             int: The number of modes.
         """
         return self.state.d
+
+    @classmethod
+    def from_properties(cls, properties):
+        """Creates a `Program` instance from a mapping.
+
+        The currently supported format is
+        ```
+        {
+            "state": {
+                "type": <STATE_CLASS_NAME>,
+                "properties": {
+                    ...
+                }
+            },
+            "backend_class": <BACKEND_CLASS_NAME>,
+            "operations": [
+                {
+                    "type": <OPERATION_CLASS_NAME>,
+                    "properties": {
+                        ...
+                    }
+                }
+            ]
+        }
+        ```
+
+        TODO: This docstring is quite verbose, put it into a separate Sphinx section
+            when present.
+
+        Note:
+            Numeric arrays and complex numbers are not supported yet.
+
+        Args:
+            properties (collections.Mapping):
+                The desired `Program` instance in the format of a mapping.
+
+        Returns:
+            Program: A `Program` initialized using the specified mapping.
+        """
+
+        return cls(
+            state=registry.create_instance_from_mapping(properties["state"]),
+            backend_class=registry.retrieve_class(properties["backend_class"]),
+            operations=list(
+                map(registry.create_instance_from_mapping, properties["operations"])
+            )
+        )
+
+    @classmethod
+    def from_json(cls, json_):
+        """Creates a `Program` instance from JSON.
+
+        Almost the same as :meth:`from_properties`, but with JSON parsing.
+
+        Args:
+            json_ (str): The JSON formatted program.
+
+        Returns:
+            Program: A program initialized with the JSON data.
+        """
+        properties = json.loads(json_)
+
+        return cls.from_properties(properties)
 
     def execute(self):
         """Executes the collected operations on the backend."""
@@ -50,22 +128,6 @@ class Program:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         Context.current_program = None
-
-    def _create_backend(self, backend_class):
-        """Instantiates a backend from the specified `backend_class`.
-
-        Args:
-            backend_class: The class (or its name) to be instantiated.
-
-        Returns:
-            Backend: The instantiated backend.
-        """
-        backend_class = backend_class or self.state.backend_class
-
-        if isinstance(backend_class, str):
-            backend_class = registry.retrieve_class(backend_class)
-
-        return backend_class(self.state)
 
     def _blackbird_operation_to_operation(self, blackbird_operation):
         """

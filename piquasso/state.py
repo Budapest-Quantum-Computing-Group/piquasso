@@ -6,4 +6,6 @@ from . import registry
 
 
 class State(registry.ClassRecorder):
-    pass
+    @classmethod
+    def from_properties(cls, properties):
+        return cls(**properties)

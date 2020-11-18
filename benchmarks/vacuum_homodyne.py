@@ -35,7 +35,7 @@ def piquasso_setup():
             G=np.zeros((NO_OF_MODES, NO_OF_MODES), dtype=complex),
             mean=np.zeros(NO_OF_MODES, dtype=complex),
         ),
-        backend_class="GaussianBackend",
+        backend_class=pq.GaussianBackend,
     )
 
     with program:
