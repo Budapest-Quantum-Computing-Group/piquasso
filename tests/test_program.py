@@ -164,9 +164,8 @@ class TestProgramJSONParsing:
     @pytest.fixture
     def FakeOperation(self):
         class FakeOperation(Operation):
-            def __init__(self, params):
-                self.params = params
-                self.modes = None
+            def __init__(self, first_param, second_param):
+                super().__init__(first_param, second_param)
 
         return FakeOperation
 
@@ -191,14 +190,20 @@ class TestProgramJSONParsing:
             {
                 "type": "FakeOperation",
                 "properties": {
-                    "params": ["some", "params"],
+                    "params": {
+                        "first_param": "first_param_value",
+                        "second_param": "second_param_value",
+                    },
                     "modes": ["some", "modes"],
                 }
             },
             {
                 "type": "FakeOperation",
                 "properties": {
-                    "params": ["some", "other", "params"],
+                    "params": {
+                        "first_param": "2nd_operations_1st_param_value",
+                        "second_param": "2nd_operations_2nd_param_value",
+                    },
                     "modes": ["some", "other", "modes"],
                 }
             },
@@ -227,9 +232,14 @@ class TestProgramJSONParsing:
 
         assert type(program.backend) == FakeBackend
 
-        assert program.operations[0].params == ["some", "params"]
+        assert program.operations[0].params == (
+            "first_param_value", "second_param_value"
+        )
         assert program.operations[0].modes == ["some", "modes"]
-        assert program.operations[1].params == ["some", "other", "params"]
+
+        assert program.operations[1].params == (
+            "2nd_operations_1st_param_value", "2nd_operations_2nd_param_value"
+        )
         assert program.operations[1].modes == ["some", "other", "modes"]
 
     def test_from_json(
@@ -257,9 +267,13 @@ class TestProgramJSONParsing:
 
         assert type(program.backend) == FakeBackend
 
-        assert program.operations[0].params == ["some", "params"]
+        assert program.operations[0].params == (
+            "first_param_value", "second_param_value"
+        )
         assert program.operations[0].modes == ["some", "modes"]
-        assert program.operations[1].params == ["some", "other", "params"]
+        assert program.operations[1].params == (
+            "2nd_operations_1st_param_value", "2nd_operations_2nd_param_value"
+        )
         assert program.operations[1].modes == ["some", "other", "modes"]
 
 

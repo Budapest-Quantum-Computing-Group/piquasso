@@ -38,7 +38,7 @@ class Operation(registry.ClassRecorder):
             Operator: An `Operator` initialized using the specified mapping.
         """
 
-        operation = cls(properties["params"])
+        operation = cls(**properties["params"])
 
         operation.modes = properties["modes"]
 
