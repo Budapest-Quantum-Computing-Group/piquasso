@@ -89,7 +89,7 @@ class Operation(registry.ClassRecorder):
                 "Dgate": D,
                 "Xgate": None,
                 "Zgate": None,
-                "Sgate": None,
+                "Sgate": S,
                 "Pgate": None,
                 "Vgate": None,
                 "Kgate": None,
@@ -194,6 +194,30 @@ class D(Operation):
             alpha = r * np.exp(1j * phi)
 
         super().__init__(alpha)
+
+
+class S(Operation):
+    """Squeezing operation."""
+
+    backends = {
+        GaussianBackend: GaussianBackend.squeezing,
+    }
+
+    def __init__(self, amp, theta=0):
+        r"""
+        Squeezing operation.
+
+        The Hamiltonian of this operator is defined in terms of `z`:
+
+        .. math:
+            z = amp \exp(i\theta)
+
+        Args:
+            amp (float): The amplitude of the squeezing operation.
+            theta (float): The squeezing angle.
+        """
+
+        super().__init__(amp, theta)
 
 
 class Interferometer(Operation):

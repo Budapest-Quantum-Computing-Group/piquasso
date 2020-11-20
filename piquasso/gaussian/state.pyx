@@ -495,3 +495,107 @@ class GaussianState(State):
 
         self.C[:, modes] = np.conj(self.C[modes, :]).transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
+
+    def apply_active(self, alpha, beta, modes):
+        r"""
+        This method updates the vector of the means when an active operation such as `Squeezing` is applied
+        and calls :meth:`apply_active_to_C_and_G`.
+
+        The vector of the means of the :math:`ith` mode:
+        :math:`m_i = \langle \hat{a}_i \rangle_\rho` is evolved as follows:
+
+        .. math::
+            {S(z)}^{\dagger}m_i S(z) = \alpha\hat{a} - \beta\hat{a}^\dagger \\
+                = \alpha m_i - \beta m_i^*
+
+        Args:
+            alpha (complex): A complex that represents the value of :math:`cosh(amp)`.
+            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
+            modes (tuple): The qumode index on which the squeezing gate operates,
+                embedded in a `tuple`.
+        """  # noqa: E501
+        self.mean[modes[0]] = (alpha * self.mean[modes[0]]) - (
+            beta * np.conj(self.mean[modes[0]])
+        )
+        self.apply_active_to_C_and_G(alpha, beta, modes)
+
+    def apply_active_to_C_and_G(self, alpha, beta, modes):
+        r"""
+        This method updates the :math:`G_{ij}` and the :math:`C_{ij}` elements and calls :meth:`_apply_active_to_other_modes`.
+
+        By performing an active operation such as `Squeezing` a gaussian state, the element :math:`G_{ij}`
+        evolves to be:
+
+        .. math::
+            \hat{S}^\dagger(z)\hat{a}\hat{a}\hat{S}(z) = \alpha^2 G_{i j} -
+                \alpha\beta - 2\alpha\beta C_{i j} + \beta^2 G_{i j}^\dagger,
+
+        for the :math:`C_{ij}` element, it evolves into:
+
+        .. math::
+            \hat{S}^\dagger(z)\hat{a}^\dagger\hat{a}\hat{S}(z) = \alpha^2 C_{ij} -
+                \alpha\beta G_{ij}^\dagger - \alpha\beta^\dagger G_{ij} + \beta\beta^* + \beta\beta^* C_{ij}
+
+        Args:
+            alpha (complex): A float that represents the value of :math:`\cosh(amp)`.
+            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
+            modes (tuple): The qumode index on which the squeezing gate operates,
+                embedded in a `tuple`.
+        """  # noqa: E501
+        alpha2 = alpha * np.conj(alpha)
+        alpha_beta = alpha * beta
+
+        transformed_index_C = self.C[modes, modes]
+        transformed_index_G = self.G[modes, modes]
+
+        self.G[modes, modes] = (
+            (alpha2 * transformed_index_G)
+            - (alpha_beta)
+            - (2 * alpha_beta * transformed_index_C)
+            + (beta**2 * np.conj(transformed_index_G))
+        )
+        self.C[modes, modes] = (
+            (alpha2 * transformed_index_C)
+            + (beta * np.conj(beta) * transformed_index_C)
+            + beta * np.conj(beta)
+            - (alpha_beta * np.conj(transformed_index_G))
+            - (np.conj(alpha_beta) * transformed_index_G)
+        )
+
+        other_modes = np.delete(np.arange(self.d), modes)
+
+        if other_modes.size != 0:
+            self._apply_active_to_other_modes(alpha, beta, modes, other_modes)
+
+    def _apply_active_to_other_modes(self, alpha, beta, modes, other_modes):
+        r"""
+        This method updates the off diagonal elements of the :math:`G` and the :math:`C` matrices.
+
+        The columns :math:`j` defined in `other_modes` associated with the mode :math:`i` defioned in
+        `modes` evolve according to the linear transformation defined in :meth:`apply_active`.
+
+        Then each row of the mode :math:`i` will be updated according to the fact that :math:`C_{ij} = C_{ij}^*`
+        and :math:`G_{ij} = G_{ij}^T`.
+
+        Args:
+            alpha (complex): A complex that represents the value of :math:`cosh(amp)`.
+            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
+            modes (tuple): The qumode index on which the squeezing gate operates,
+                embedded in a `tuple`.
+            other_modes (np.array): A vector that contains The modes, on which the transformation
+                is not directly applied, but should be accounted for in :math:`C` and :math:`G`.
+        """  # noqa: E501
+        transformed_index_C = self.C[modes, other_modes]
+        transformed_index_G = self.G[modes, other_modes]
+
+        self.C[modes, other_modes] = (alpha * transformed_index_C) - (
+            np.conj(beta) * transformed_index_G
+        )
+
+        self.G[modes, other_modes] = (alpha * transformed_index_G) - (
+            beta * transformed_index_C
+        )
+
+        self.C[:, modes] = self.C[modes, :].conj().T
+
+        self.G[:, modes] = self.G[modes, :].T
