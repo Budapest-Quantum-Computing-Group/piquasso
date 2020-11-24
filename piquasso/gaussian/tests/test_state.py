@@ -402,16 +402,26 @@ def test_apply(
     assert np.allclose(state.G, expected_G)
 
 
-def test_GaussianState_vacuum_covariance_is_proportional_to_identity():
-    number_of_modes = 2
-    hbar = constants.HBAR_DEFAULT
+class GaussianStateVacuum:
+    def test_create_vacuum(self):
+        number_of_modes = 3
 
-    state = GaussianState(
-        C=np.zeros((number_of_modes, number_of_modes), dtype=complex),
-        G=np.zeros((number_of_modes, number_of_modes), dtype=complex),
-        mean=np.zeros(number_of_modes, dtype=complex),
-    )
+        state = GaussianState.create_vacuum(d=number_of_modes)
 
-    expected_covariance = np.identity(2 * number_of_modes) * hbar
+        expected_mean = np.zeros(number_of_modes, dtype=complex)
+        expected_C = np.zeros((number_of_modes, number_of_modes), dtype=complex)
+        expected_G = np.zeros((number_of_modes, number_of_modes), dtype=complex)
 
-    assert np.allclose(state.cov, expected_covariance)
+        assert np.allclose(state.mean, expected_mean)
+        assert np.allclose(state.C, expected_C)
+        assert np.allclose(state.G, expected_G)
+
+    def test_vacuum_covariance_is_proportional_to_identity(self):
+        number_of_modes = 2
+        hbar = constants.HBAR_DEFAULT
+
+        state = GaussianState.create_vacuum(d=number_of_modes)
+
+        expected_covariance = np.identity(2 * number_of_modes) * hbar
+
+        assert np.allclose(state.cov, expected_covariance)
