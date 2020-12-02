@@ -128,7 +128,7 @@ class GaussianState(State):
 
         corr[:d, :d] = 2 * (G + C).real + np.identity(d)
         corr[:d, d:] = 2 * (G + C).imag
-        corr[d:, d:] = 2 * (G - C).real - np.identity(d)
+        corr[d:, d:] = 2 * (-G + C).real + np.identity(d)
         corr[d:, :d] = 2 * (G - C).imag
 
         return corr * self.hbar

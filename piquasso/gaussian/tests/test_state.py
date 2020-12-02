@@ -10,6 +10,10 @@ from piquasso import constants
 
 
 class TestGaussianStateRepresentations:
+    """
+    TODO: Beware, the `mean`, `C` and `G` are not realistic in a sense that they cannot
+        be acquired by Gaussian transformations.
+    """
 
     @pytest.fixture
     def mean(self):
@@ -44,9 +48,9 @@ class TestGaussianStateRepresentations:
         return np.array(
             [
                 [ 9,  2,  4,  6],
-                [ 2,  3, -2,  0],
+                [ 2, -3, -2,  0],
                 [ 4, -2, 17, -6],
-                [ 6,  0, -6, -9],
+                [ 6,  0, -6,  9],
             ]
         ) * constants.HBAR_DEFAULT
 
@@ -55,9 +59,9 @@ class TestGaussianStateRepresentations:
         return np.array(
             [
                 [  5,  10,  -8, -10],
-                [ 10, -13,  22,  32],
+                [ 10, -19,  22,  32],
                 [ -8,  22, -19, -54],
-                [-10,  32, -54, -73]
+                [-10,  32, -54, -55],
             ]
         ) * constants.HBAR_DEFAULT
 
@@ -71,8 +75,8 @@ class TestGaussianStateRepresentations:
             [
                 [ 9,  4,  2,  6],
                 [ 4, 17, -2, -6],
-                [ 2, -2,  3,  0],
-                [ 6, -6,  0, -9]
+                [ 2, -2, -3,  0],
+                [ 6, -6,  0,  9]
             ]
         ) * constants.HBAR_DEFAULT
 
@@ -82,8 +86,8 @@ class TestGaussianStateRepresentations:
             [
                 [  5,  -8,  10, -10],
                 [ -8, -19,  22, -54],
-                [ 10,  22, -13,  32],
-                [-10, -54,  32, -73]
+                [ 10,  22, -19,  32],
+                [-10, -54,  32, -55],
             ]
         ) * constants.HBAR_DEFAULT
 
@@ -242,10 +246,10 @@ class TestGaussianStateOperations:
 
         expected_cov = np.array(
             [
-                [ -38, -20,  -72,  -64],
-                [ -20, -26,  -24,  -40],
-                [ -72, -24, -266,  -80],
-                [ -64, -40,  -80,  -22],
+                [ -38, -20,  -72, -64],
+                [ -20,  10,  -24,   8],
+                [ -72, -24, -266, -80],
+                [ -64,   8,  -80, -42],
             ]
         )
 
@@ -396,3 +400,18 @@ def test_apply(
     assert np.allclose(state.mean, expected_mean)
     assert np.allclose(state.C, expected_C)
     assert np.allclose(state.G, expected_G)
+
+
+def test_GaussianState_vacuum_covariance_is_proportional_to_identity():
+    number_of_modes = 2
+    hbar = constants.HBAR_DEFAULT
+
+    state = GaussianState(
+        C=np.zeros((number_of_modes, number_of_modes), dtype=complex),
+        G=np.zeros((number_of_modes, number_of_modes), dtype=complex),
+        mean=np.zeros(number_of_modes, dtype=complex),
+    )
+
+    expected_covariance = np.identity(2 * number_of_modes) * hbar
+
+    assert np.allclose(state.cov, expected_covariance)
