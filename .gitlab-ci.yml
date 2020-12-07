@@ -16,6 +16,10 @@ unittest:
   script:
     - pip install tox
     - tox
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+    expire_in: 15 days
 
 benchmark:
   variables:
