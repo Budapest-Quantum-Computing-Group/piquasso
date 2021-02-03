@@ -143,15 +143,6 @@ https://gitlab.inf.elte.hu/wigner-rcp-quantum-computing-and-information-group/pi
 References:
 - https://gitlab.inf.elte.hu/help/user/packages/pypi_repository/index.md
 
-## Benchmarking
-
-We can run benckmarks with various pennylane devices, for more details see:
-https://github.com/XanaduAI/pennylane/blob/master/benchmark/README.rst
-For instance:
-```
-cd pennylane/benchmark/
-poetry run python benchmark.py -d default.qubit time bm_entangling_layers
-```
 ### Notes:
 Unfortunatelly running `benchmark.py` with `bm_mutable_rotations` or
 `bm_mutable_complicated_params` will not work. There is a bug in both of these

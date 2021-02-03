@@ -8,8 +8,6 @@ stages:
   - build
 
 unittest:
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
   stage: test
@@ -22,8 +20,6 @@ unittest:
     expire_in: 15 days
 
 benchmark:
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal #to use submodule
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
   stage: test
@@ -31,21 +27,11 @@ benchmark:
     - apt update
     - apt-get install libeigen3-dev
     - poetry install
-    - cd pennylane/benchmark/
-    - echo "Pennylane benchmark"
-    - poetry run python benchmark.py -d default.qubit time bm_entangling_layers > ./output.txt
-    - cd ../../
     - echo "Piquasso vs. StrawberryFields vacuum homodyne benchmark"
     - poetry run python benchmarks/homodyne.py
-  artifacts:
-    paths:
-      - pennylane/benchmark/output.txt
-    expire_in: 15 days
 
 generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
   stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   rules:
   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
   script:
@@ -61,8 +47,6 @@ generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
 
 buildpackage:
   stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   script:
     - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
     - poetry build
