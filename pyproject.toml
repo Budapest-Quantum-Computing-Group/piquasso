@@ -13,6 +13,7 @@ flake8 = "^3.8.3"
 quantum-blackbird = "^0.2.3"
 BoSS-Tomev = "^0.0.6"
 cython = "^0.29.21"
+coverage = "^5.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
