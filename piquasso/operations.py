@@ -9,7 +9,6 @@ import numpy as np
 from piquasso import registry
 from piquasso.context import Context
 
-from piquasso.fock.backend import FockBackend
 from piquasso.gaussian.backend import GaussianBackend
 from piquasso.passivegaussian.backend import PassiveGaussianBackend
 from piquasso.sampling.backend import SamplingBackend
@@ -121,7 +120,6 @@ class B(Operation):
     """Beamsplitter operation."""
 
     backends = {
-        FockBackend: FockBackend.beamsplitter,
         GaussianBackend: GaussianBackend.beamsplitter,
         PassiveGaussianBackend: PassiveGaussianBackend.beamsplitter,
         SamplingBackend: SamplingBackend.beamsplitter
@@ -145,7 +143,6 @@ class R(Operation):
     """Rotation or Phaseshifter operation."""
 
     backends = {
-        FockBackend: FockBackend.phaseshift,
         GaussianBackend: GaussianBackend.phaseshift,
         PassiveGaussianBackend: PassiveGaussianBackend.phaseshift,
         SamplingBackend: SamplingBackend.phaseshift
