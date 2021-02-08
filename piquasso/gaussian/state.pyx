@@ -57,6 +57,23 @@ class GaussianState(State):
         self.G = G
         self.mean = mean
 
+    @classmethod
+    def create_vacuum(cls, d):
+        r"""Creates a Gaussian vacuum state.
+
+        Args:
+            d (int): The number of modes.
+
+        Returns:
+            GaussianState: A Gaussan vacuum state.
+        """
+
+        return cls(
+            C=np.zeros((d, d), dtype=complex),
+            G=np.zeros((d, d), dtype=complex),
+            mean=np.zeros(d, dtype=complex),
+        )
+
     @property
     def hbar(self):
         """Reduced Plack constant.

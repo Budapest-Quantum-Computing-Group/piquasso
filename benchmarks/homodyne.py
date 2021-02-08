@@ -7,22 +7,23 @@ $`\pi/3`$ on the second mode.
 
 To run this script:
 ```
-./benchmarks/vacuum_homodyne.py [NUMBER_OF_ITERATIONS]
+./benchmarks/homodyne.py [NUMBER_OF_ITERATIONS]
 ```
 
-Note:
-    Initialization of `piquasso` to a vacuum state is still not implemented, and it had
-    to be done when initializing the program. Hopefully we'll be able to omit this in
-    the future.
 """
 
-import sys
 import timeit
 import cProfile
 
 import numpy as np
-import piquasso as pq
 import strawberryfields as sf
+
+import sys
+import os
+
+sys.path.append(os.getcwd())
+
+import piquasso as pq  # noqa: E402
 
 
 NO_OF_MODES = 5
@@ -30,15 +31,17 @@ NO_OF_MODES = 5
 
 def piquasso_setup():
     program = pq.Program(
-        state=pq.GaussianState(
-            C=np.zeros((NO_OF_MODES, NO_OF_MODES), dtype=complex),
-            G=np.zeros((NO_OF_MODES, NO_OF_MODES), dtype=complex),
-            mean=np.zeros(NO_OF_MODES, dtype=complex),
-        ),
+        state=pq.GaussianState.create_vacuum(d=NO_OF_MODES),
         backend_class=pq.GaussianBackend,
     )
 
     with program:
+        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+
         pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
         pq.Q(1, 2) | pq.B(1.0152680371119776, 1.2863559998816205)
@@ -64,6 +67,18 @@ def strawberryfields_setup():
     engine = sf.Engine(backend="gaussian")
 
     with program.context as q:
+        sf.ops.Sgate(0.1) | q[0]
+        sf.ops.Sgate(0.1) | q[1]
+        sf.ops.Sgate(0.1) | q[2]
+        sf.ops.Sgate(0.1) | q[3]
+        sf.ops.Sgate(0.1) | q[4]
+
+        sf.ops.Dgate(1) | q[0]
+        sf.ops.Dgate(1) | q[1]
+        sf.ops.Dgate(1) | q[2]
+        sf.ops.Dgate(1) | q[3]
+        sf.ops.Dgate(1) | q[4]
+
         sf.ops.BSgate(0.0959408065906761, 0.06786053071484363) | (q[0], q[1])
         sf.ops.BSgate(0.7730047654405018, 1.453770233324797) | (q[2], q[3])
         sf.ops.BSgate(1.0152680371119776, 1.2863559998816205) | (q[1], q[2])
@@ -89,20 +104,20 @@ def profiling():
 
 def main(iterations):
     pq_time = timeit.timeit(
-        "vacuum_homodyne.piquasso_benchmark(program)",
+        "homodyne.piquasso_benchmark(program)",
         setup=(
-            "from benchmarks import vacuum_homodyne;"
-            "program = vacuum_homodyne.piquasso_setup()"
+            "import homodyne;"
+            "program = homodyne.piquasso_setup()"
         ),
         number=iterations,
     )
     print("Piquasso (PQ): {}".format(pq_time))
 
     sf_time = timeit.timeit(
-        "vacuum_homodyne.strawberryfields_benchmark(program, engine)",
+        "homodyne.strawberryfields_benchmark(program, engine)",
         setup=(
-            "from benchmarks import vacuum_homodyne;"
-            "program, engine = vacuum_homodyne.strawberryfields_setup()"
+            "import homodyne;"
+            "program, engine = homodyne.strawberryfields_setup()"
         ),
         number=iterations,
     )

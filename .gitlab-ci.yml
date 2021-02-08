@@ -36,7 +36,7 @@ benchmark:
     - poetry run python benchmark.py -d default.qubit time bm_entangling_layers > ./output.txt
     - cd ../../
     - echo "Piquasso vs. StrawberryFields vacuum homodyne benchmark"
-    - poetry run python benchmarks/vacuum_homodyne.py
+    - poetry run python benchmarks/homodyne.py
   artifacts:
     paths:
       - pennylane/benchmark/output.txt
