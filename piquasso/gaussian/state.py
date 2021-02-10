@@ -1,4 +1,3 @@
-# distutils: language = c++
 #
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
@@ -616,5 +615,3 @@ class GaussianState(State):
         self.C[:, modes] = self.C[modes, :].conj().T
 
         self.G[:, modes] = self.G[modes, :].T
-
-
