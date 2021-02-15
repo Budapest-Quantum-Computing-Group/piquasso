@@ -1,3 +1,0 @@
-[submodule "pennylane"]
-	path = pennylane
-	url = https://github.com/XanaduAI/pennylane.git
