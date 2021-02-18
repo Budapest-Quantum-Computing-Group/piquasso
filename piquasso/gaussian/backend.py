@@ -89,7 +89,7 @@ class GaussianBackend(Backend):
         .. math::
             D^\dagger (\alpha) \hat{a}_i D (\alpha) = \hat{a}_i + \alpha \mathbb{1}.
 
-        `GaussianState.mean` is defined by
+        :attr:`GaussianState.m` is defined by
 
         .. math::
             m = \langle \hat{a}_i \rangle_{\rho}.
@@ -141,9 +141,9 @@ class GaussianBackend(Backend):
 
         mode = modes[0]
 
-        mean_copy = np.copy(self.state.mean)
+        mean_copy = np.copy(self.state.m)
 
-        self.state.mean[mode] += alpha
+        self.state.m[mode] += alpha
 
         self.state.C[mode, mode] += (
             alpha * np.conj(mean_copy[mode])

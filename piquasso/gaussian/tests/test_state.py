@@ -11,12 +11,12 @@ from piquasso import constants
 
 class TestGaussianStateRepresentations:
     """
-    TODO: Beware, the `mean`, `C` and `G` are not realistic in a sense that they cannot
+    TODO: Beware, the `m`, `C` and `G` are not realistic in a sense that they cannot
         be acquired by Gaussian transformations.
     """
 
     @pytest.fixture
-    def mean(self):
+    def m(self):
         return np.array([1 - 2j, 3 + 4j], dtype=complex)
 
     @pytest.fixture
@@ -92,8 +92,8 @@ class TestGaussianStateRepresentations:
         ) * constants.HBAR_DEFAULT
 
     @pytest.fixture(autouse=True)
-    def setup(self, C, G, mean):
-        self.state = GaussianState(C, G, mean)
+    def setup(self, C, G, m):
+        self.state = GaussianState(C, G, m)
 
     def test_xp_representation(
         self,
@@ -136,7 +136,7 @@ class TestGaussianStateRepresentations:
 
 class TestGaussianStateOperations:
     @pytest.fixture
-    def mean(self):
+    def m(self):
         return np.array([1 - 2j, 3 + 4j, 2 - 5j], dtype=complex)
 
     @pytest.fixture
@@ -162,8 +162,8 @@ class TestGaussianStateOperations:
         )
 
     @pytest.fixture(autouse=True)
-    def setup(self, C, G, mean):
-        self.state = GaussianState(C, G, mean)
+    def setup(self, C, G, m):
+        self.state = GaussianState(C, G, m)
 
     def test_rotated(self):
         phi = np.pi / 2
@@ -185,7 +185,7 @@ class TestGaussianStateOperations:
             ]
         )
 
-        rotated_mean = np.array([-2 - 1j,  4 - 3j, -5 - 2j])
+        rotated_m = np.array([-2 - 1j,  4 - 3j, -5 - 2j])
 
         assert np.allclose(
             rotated_C,
@@ -196,8 +196,8 @@ class TestGaussianStateOperations:
             rotated_state.G,
         )
         assert np.allclose(
-            rotated_mean,
-            rotated_state.mean,
+            rotated_m,
+            rotated_state.m,
         )
 
     def test_reduced(self):
@@ -221,7 +221,7 @@ class TestGaussianStateOperations:
             dtype=complex
         )
 
-        reduced_mean = np.array([1 - 2j, 2 - 5j], dtype=complex)
+        reduced_m = np.array([1 - 2j, 2 - 5j], dtype=complex)
 
         assert np.allclose(
             reduced_C,
@@ -232,8 +232,8 @@ class TestGaussianStateOperations:
             reduced_state.G,
         )
         assert np.allclose(
-            reduced_mean,
-            reduced_state.mean,
+            reduced_m,
+            reduced_state.m,
         )
 
     def test_reduced_rotated_mean_and_cov(self):
@@ -354,21 +354,21 @@ def test_apply_passive(
 ):
     C = generate_hermitian_matrix(5)
     G = generate_complex_symmetric_matrix(5)
-    mean = np.random.rand(5) + 1j * np.random.rand(5)
+    m = np.random.rand(5) + 1j * np.random.rand(5)
 
     state = GaussianState(
         C=C,
         G=G,
-        mean=mean,
+        m=m,
     )
 
-    expected_mean = mean.copy()
+    expected_m = m.copy()
     expected_C = C.copy()
     expected_G = G.copy()
 
     T = generate_unitary_matrix(3)
 
-    expected_mean[(0, 1, 3), ] = T @ expected_mean[(0, 1, 3), ]
+    expected_m[(0, 1, 3), ] = T @ expected_m[(0, 1, 3), ]
 
     columns = np.array(
         [
@@ -400,7 +400,7 @@ def test_apply_passive(
 
     state.apply_passive(T, modes=(0, 1, 3))
 
-    assert np.allclose(state.mean, expected_mean)
+    assert np.allclose(state.m, expected_m)
     assert np.allclose(state.C, expected_C)
     assert np.allclose(state.G, expected_G)
 
@@ -411,11 +411,11 @@ class GaussianStateVacuum:
 
         state = GaussianState.create_vacuum(d=number_of_modes)
 
-        expected_mean = np.zeros(number_of_modes, dtype=complex)
+        expected_m = np.zeros(number_of_modes, dtype=complex)
         expected_C = np.zeros((number_of_modes, number_of_modes), dtype=complex)
         expected_G = np.zeros((number_of_modes, number_of_modes), dtype=complex)
 
-        assert np.allclose(state.mean, expected_mean)
+        assert np.allclose(state.m, expected_m)
         assert np.allclose(state.C, expected_C)
         assert np.allclose(state.G, expected_G)
 

@@ -28,9 +28,9 @@ class TestGaussian:
             ],
             dtype=complex,
         )
-        mean = np.ones(3, dtype=complex)
+        m = np.ones(3, dtype=complex)
 
-        state = GaussianState(C, G, mean)
+        state = GaussianState(C, G, m)
 
         self.program = Program(
             state=state,
@@ -49,7 +49,7 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1 + r * np.exp(1j * phi),
                 1 + alpha,
@@ -58,7 +58,7 @@ class TestGaussian:
             dtype=complex,
         )
 
-        assert np.allclose(self.program.state.mean, expected_mean)
+        assert np.allclose(self.program.state.m, expected_m)
 
     def test_squeezing(self):
         r = 4
@@ -74,7 +74,7 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1 + r * np.exp(1j * phi),
                 np.cosh(amp) - np.exp(1j * theta) * np.sinh(amp),
@@ -100,7 +100,7 @@ class TestGaussian:
             dtype=complex
         )
 
-        assert np.allclose(self.program.state.mean, expected_mean)
+        assert np.allclose(self.program.state.m, expected_m)
         assert np.allclose(self.program.state.G, expected_G)
         assert np.allclose(self.program.state.C, expected_C)
 
@@ -112,7 +112,7 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1 + 0j, 1 + 2j, 1 + 1j
             ],
@@ -136,7 +136,7 @@ class TestGaussian:
             dtype=complex
         )
 
-        assert np.allclose(self.program.state.mean, expected_mean)
+        assert np.allclose(self.program.state.m, expected_m)
         assert np.allclose(self.program.state.G, expected_G)
         assert np.allclose(self.program.state.C, expected_C)
 
@@ -176,9 +176,9 @@ class TestTwoModeGaussian:
             ],
             dtype=complex,
         )
-        mean = 3 * np.ones(2, dtype=complex)
+        m = 3 * np.ones(2, dtype=complex)
 
-        state = GaussianState(C, G, mean)
+        state = GaussianState(C, G, m)
 
         program = Program(
             state=state,
@@ -215,9 +215,9 @@ class TestTwoModeGaussian:
             ],
             dtype=complex,
         )
-        mean = np.zeros(2, dtype=complex)
+        m = np.zeros(2, dtype=complex)
 
-        state = GaussianState(C, G, mean)
+        state = GaussianState(C, G, m)
 
         program = Program(
             state=state,
