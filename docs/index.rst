@@ -1,29 +1,56 @@
-.. piquasso documentation master file, created by
-   sphinx-quickstart on Mon Aug 10 10:14:01 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Piquasso
+********
 
-Welcome to piquasso's documentation!
-====================================
+
+A fast and easy-to-use Photonic Quantum Computer Simulator.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :caption: Examples:
+   :hidden:
 
-   modules
-   readme
+   examples/bosonsampling
 
-About the project
-*****************
-**piquasso** stands for: PhotonIc QUAntum S... S... O...
---------------------------------------------------------
+.. toctree::
+   :maxdepth: 3
+   :caption: States:
+   :hidden:
 
-The goal of the project is to create a fast and easy to use photonic quantum simulator (<--- this is an example...)
+   states/gaussian
+   states/purefock
+   states/pncfock
+   states/sampling
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Operations:
+   :hidden:
+
+   operations
 
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 3
+   :caption: Decompositions:
+   :hidden:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   decompositions/clements
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API:
+   :hidden:
+
+   api/program
+   api/mode
+   api/state
+   api/circuit
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Appendix:
+   :hidden:
+
+   appendix/ladder
+   appendix/gaussian

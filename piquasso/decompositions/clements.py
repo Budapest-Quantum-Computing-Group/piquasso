@@ -2,39 +2,26 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-"""
-Implementation for the Clements decomposition
-
-References
-----------
-.. [1] William R. Clements, Peter C. Humphreys, Benjamin J. Metcalf,
-    W. Steven Kolthammer, Ian A. Walmsley, "An Optimal Design for
-    Universal Multiport Interferometers", arXiv:1603.08788.
-"""
+"""Implementation for the Clements decomposition."""
 
 import numpy as np
 
 
 class T(np.ndarray):
-    """
-    A definition for the representation
-    of the beamsplitter.
+    """A definition for the representation of the beamsplitter.
+
+    The matrix is automatically embedded in a `d` times `d` identity
+    matrix, which can be readily applied during decomposition.
+
+    Args:
+        operation (dict):
+            A dict containing the angle parameters and the modes on which the
+            beamsplitter operation is applied.
+        d (int): The total number of modes.
     """
 
     def __new__(cls, operation, d):
-        """Produces the beamsplitter matrix.
 
-        The matrix is automatically embedded in a `d` times `d` identity
-        matrix, which can be readily applied during decomposition.
-
-        Args:
-            operation (dict): A dict containing the angle parameters and the
-                modes on which the beamsplitter operation is applied.
-            d (int): The total number of modes.
-
-        Returns:
-            T: The beamsplitter matrix.
-        """
         theta, phi = operation["params"]
         i, j = operation["modes"]
 
@@ -56,11 +43,12 @@ class T(np.ndarray):
 
     @classmethod
     def transposed(cls, operation, d):
-        """Produces the transposed beamsplitter matrix.
+        """Transposed beamsplitter matrix.
 
         Args:
-            operation (dict): A dict containing the angle parameters and the
-                modes on which the beamsplitter operation is applied.
+            operation (dict):
+                A dict containing the angle parameters and the modes on which the
+                beamsplitter operation is applied.
             d (int): The total number of modes.
 
         Returns:
@@ -86,13 +74,15 @@ class T(np.ndarray):
 
 
 class Clements:
+    """
+    Args:
+        U (numpy.ndarray): The (square) unitary matrix to be decomposed.
+        decompose (bool):
+            Optional, if `True`, the decomposition is automatically calculated.
+            Defaults to `True`.
+    """
+
     def __init__(self, U, decompose=True):
-        """
-        Args:
-            U (numpy.ndarray): The (square) unitary matrix to be decomposed.
-            decompose (bool): Optional, if `True`, the decomposition is
-                automatically calculated. Defaults to `True`.
-        """
         self.U = U
         self.d = U.shape[0]
         self.inverse_operations = []

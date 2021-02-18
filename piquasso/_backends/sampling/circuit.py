@@ -43,6 +43,7 @@ class SamplingCircuit(Circuit):
 
         Adds additional beam splitter to the effective interferometer.
 
+
         This can be interpreted as placing additional beam splitter (in the network)
         just before performing the sampling. This is realized by multiplying
         interferometer matrix with a matrix representing the phase shifter.
