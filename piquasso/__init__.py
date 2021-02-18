@@ -5,7 +5,15 @@
 from .gaussian import GaussianState, GaussianBackend
 from .program import Program
 from .mode import Q
-from .operations import R, B, D, S, Interferometer, Sampling
+from .operations import (
+    R,
+    B,
+    D,
+    S,
+    P,
+    Interferometer,
+    Sampling,
+)
 
 
 __all__ = [
@@ -15,6 +23,7 @@ __all__ = [
     "B",
     "D",
     "S",
+    "P",
     "Interferometer",
     "Sampling",
     "GaussianState",

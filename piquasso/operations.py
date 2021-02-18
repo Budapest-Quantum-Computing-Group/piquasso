@@ -184,6 +184,17 @@ class S(Operation):
         super().__init__(amp, theta)
 
 
+class P(Operation):
+    """Quadratic phase operation."""
+
+    backends = {
+        GaussianBackend: GaussianBackend.quadratic_phase,
+    }
+
+    def __init__(self, s):
+        super().__init__(s)
+
+
 class D(Operation):
     """Displacement operation."""
 
