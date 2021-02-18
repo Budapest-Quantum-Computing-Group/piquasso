@@ -256,7 +256,7 @@ class TestGaussianStateOperations:
         assert np.allclose(mean, expected_mean)
         assert np.allclose(cov, expected_cov)
 
-    def test_apply_to_C_and_G_for_1_modes(self, C, G):
+    def test_apply_passive_to_C_and_G_for_1_modes(self, C, G):
         alpha = np.exp(1j * np.pi/3)
 
         T = np.array(
@@ -286,12 +286,13 @@ class TestGaussianStateOperations:
         expected_G[0, 1] = G[0, 1] * alpha
         expected_G[2, 1] = G[2, 1] * alpha
 
-        self.state.apply_to_C_and_G(T, modes=(1,))
+        # TODO: Refactor to test the interface instead!
+        self.state._apply_passive_to_C_and_G(T, modes=(1,))
 
         assert np.allclose(self.state.C, expected_C)
         assert np.allclose(self.state.G, expected_G)
 
-    def test_apply_to_C_and_G_for_2_modes(self, C, G):
+    def test_apply_passive_to_C_and_G_for_2_modes(self, C, G):
 
         T = np.array(
             [
@@ -319,12 +320,13 @@ class TestGaussianStateOperations:
 
         expected_G[2, 2] = G[2, 2]
 
-        self.state.apply_to_C_and_G(T, modes=(0, 1))
+        # TODO: Refactor to test the interface instead!
+        self.state._apply_passive_to_C_and_G(T, modes=(0, 1))
 
         assert np.allclose(self.state.C, expected_C)
         assert np.allclose(self.state.G, expected_G)
 
-    def test_apply_to_C_and_G_for_all_modes(self, C, G):
+    def test_apply_passive_to_C_and_G_for_all_modes(self, C, G):
         T = np.array(
             [
                 [       1,    3 + 4j,   9 - 10j],
@@ -338,13 +340,14 @@ class TestGaussianStateOperations:
 
         expected_G = T @ G @ T.transpose()
 
-        self.state.apply_to_C_and_G(T, modes=(0, 1, 2))
+        # TODO: Refactor to test the interface instead!
+        self.state._apply_passive_to_C_and_G(T, modes=(0, 1, 2))
 
         assert np.allclose(self.state.C, expected_C)
         assert np.allclose(self.state.G, expected_G)
 
 
-def test_apply(
+def test_apply_passive(
     generate_complex_symmetric_matrix,
     generate_hermitian_matrix,
     generate_unitary_matrix
@@ -395,7 +398,7 @@ def test_apply(
     expected_G[(0, 1, 3), 4] = T @ expected_G[(0, 1, 3), 4]
     expected_G[:, (0, 1, 3)] = expected_G[(0, 1, 3), :].transpose()
 
-    state.apply(T, modes=(0, 1, 3))
+    state.apply_passive(T, modes=(0, 1, 3))
 
     assert np.allclose(state.mean, expected_mean)
     assert np.allclose(state.C, expected_C)

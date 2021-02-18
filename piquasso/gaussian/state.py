@@ -360,8 +360,8 @@ class GaussianState(State):
 
         return transformed_state.mu, transformed_state.cov
 
-    def apply(self, T, modes):
-        r"""Apply a transformation to the quantum state.
+    def apply_passive(self, T, modes):
+        r"""Applies a passive transformation to the quantum state.
 
         Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
         `modes`.
@@ -401,26 +401,27 @@ class GaussianState(State):
         unitary matrix.
 
         Application to `C` and `G` is non-trivial however: one has to apply the
-        transformation for the external modes as well, see :meth:`apply_to_C_and_G`.
+        transformation for the external modes as well, see
+        :meth:`_apply_passive_to_C_and_G`.
 
         Args:
             T (numpy.array): The matrix to be applied.
-            modes (tuple): The modes, on which the matrix should operate.
+            modes (tuple): Qumodes on which the transformation directly operates.
         """
 
         self.mean[modes, ] = T @ self.mean[modes, ]
 
-        self.apply_to_C_and_G(T, modes=modes)
+        self._apply_passive_to_C_and_G(T, modes=modes)
 
-    def apply_to_C_and_G(self, T, modes):
-        r"""Applies the matrix :math:`T` to the :math:`C` and :math:`G`.
+    def _apply_passive_to_C_and_G(self, T, modes):
+        r"""Applies the transformation :math:`T` to the :math:`C` and :math:`G`.
 
         Let :math:`\vec{i}` denote an index set, which corresponds to `index`
         in the implementation. E.g. for 2 modes denoted by :math:`n` and
         :math:`m`:, one could write
 
         .. math::
-                \vec{i} = \{n, m\} \times \{n, m\}.
+            \vec{i} = \{n, m\} \times \{n, m\}.
 
         From now on, I will use the notation
         :math:`\{n, m\} := \mathrm{modes}`.
@@ -433,7 +434,7 @@ class GaussianState(State):
                 G_{\vec{i}} \mapsto T G_{\vec{i}} T^T
 
         If there are other modes in the system, i.e. `modes` does not refer to all the
-        modes, :meth:`_apply_to_other_modes` is called to handle those.
+        modes, :meth:`_apply_passive_to_auxiliary_modes` is called to handle those.
 
         Note:
             For indexing of numpy arrays, see
@@ -441,28 +442,24 @@ class GaussianState(State):
 
         Args:
             T (np.array): The matrix to be applied.
-            modes (tuple): The modes, on which the transformation should directly
-                operate.
+            modes (tuple): Qumodes on which the transformation directly operates.
         """
 
-        transformed_columns = np.array([modes] * len(modes))
-        transformed_rows = transformed_columns.transpose()
-
-        index = transformed_rows, transformed_columns
+        index = self._get_operator_index(modes)
 
         self.C[index] = T.conjugate() @ self.C[index] @ T.transpose()
         self.G[index] = T @ self.G[index] @ T.transpose()
 
-        other_modes = np.delete(np.arange(self.d), modes)
+        auxiliary_modes = self._get_auxiliary_modes(modes)
 
-        if other_modes.size != 0:
-            self._apply_to_other_modes(T, modes, other_modes)
+        if auxiliary_modes.size != 0:
+            self._apply_passive_to_auxiliary_modes(T, modes, auxiliary_modes)
 
-    def _apply_to_other_modes(self, T, modes, other_modes):
+    def _apply_passive_to_auxiliary_modes(self, T, modes, auxiliary_modes):
         r"""Applies the matrix :math:`T` to modes which are not directly transformed.
 
         This method is applied for the correlation matrices :math:`C` and :math:`G`.
-        For context, visit :meth:`apply_to_C_and_G`.
+        For context, visit :meth:`_apply_passive_to_C_and_G`.
 
         Let us denote :math:`\vec{k}` the following:
 
@@ -496,122 +493,143 @@ class GaussianState(State):
 
         Args:
             T (np.array): The matrix to be applied.
-            modes (tuple): The modes, on which the transformation should directly
-                operate.
-            other_modes (tuple): The modes, on which the transformation is not directly
-                applied, but should be accounted for in :math:`C` and :math:`G`.
-
+            modes (tuple): Qumodes on which the transformation directly operates.
+            auxiliary_modes (tuple):
+                The modes, on which the transformation is not directly applied, but
+                should be accounted for in :math:`C` and :math:`G`.
         """
-        other_rows = np.array([modes] * len(other_modes)).transpose()
 
-        index = other_rows, other_modes
+        auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
-        self.C[index] = T.conjugate() @ self.C[index]
-        self.G[index] = T @ self.G[index]
+        self.C[auxiliary_index] = T.conjugate() @ self.C[auxiliary_index]
+        self.G[auxiliary_index] = T @ self.G[auxiliary_index]
 
         self.C[:, modes] = np.conj(self.C[modes, :]).transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
 
-    def apply_active(self, alpha, beta, modes):
-        r"""
-        This method updates the vector of the means when an active operation such as `Squeezing` is applied
-        and calls :meth:`apply_active_to_C_and_G`.
+    def apply_active(self, P, A, modes):
+        r"""Applies an active transformation to the quantum state.
 
-        The vector of the means of the :math:`ith` mode:
+        Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
+        `modes`.
+
+        Let :math:`P, A \in \mathbb{C}^{k \times k},\, k \in [d]` be a passive and an
+        active transformation, respectively. An active operation transforms the vector
+        of annihilation operators in the following manner:
+
+        .. math::
+             \mathbf{a}_{\vec{m}}
+                P \mathbf{a}_{\vec{m}} + A \mathbf{a}_{\vec{m}^*},
+
+        or in terms of vector elements:
+
+        .. math::
+            a_{i} \mapsto
+                \sum_{j \in \vec{m}} P^{ij} a_j
+                + \sum_{j \in \vec{m}} A^{ij} a_j^\dagger
+
+        The vector of the means of the :math:`i`-th mode
         :math:`m_i = \langle \hat{a}_i \rangle_\rho` is evolved as follows:
 
         .. math::
-            {S(z)}^{\dagger}m_i S(z) = \alpha\hat{a} - \beta\hat{a}^\dagger \\
-                = \alpha m_i - \beta m_i^*
+            m_i \mapsto P m_i + A m_i^*
+
+        Args:
+            P (np.array): A matrix that represents a (P)assive transformation.
+            A (np.array): A matrix that represents an (A)assive transformation.
+            modes (tuple): Qumodes on which the transformation directly operates.
+        """
+
+        self.mean[modes, ] = (
+            P @ self.mean[modes, ]
+            + A * np.conj(self.mean[modes, ])
+        )
+
+        self._apply_active_to_C_and_G(P, A, modes)
+
+    def _apply_active_to_C_and_G(self, P, A, modes):
+        r"""Applies an active transformation to the C and G matrices.
+
+        The transformations in the terms of the transformation matrices are defined by
+
+        .. math::
+            G_{i j} \mapsto
+                (P G P^T + A G^\dagger A^T + P (1 + C^T) A^T + A C P^T)_{i j}
+
+        .. math::
+            C_{i j} \mapsto
+                (P^* C P^T + A^* (1 + C^T) P^T + P^* G^\dagger A^T + A^* G P^T)_{i j}
+
+        If there are other modes in the system, i.e. `modes` does not refer to all the
+        modes, :meth:`_apply_active_to_auxiliary_modes` is called to handle those.
+
+        Args:
+            P (np.array): A matrix that represents a (P)assive transformation.
+            A (np.array): A matrix that represents an (A)assive transformation.
+            modes (tuple): Qumodes on which the transformation directly operates.
+        """
+
+        index = self._get_operator_index(modes)
+
+        original_C = self.C[index]
+        original_G = self.G[index]
+
+        self.G[index] = (
+            P @ original_G @ P.transpose()
+            + A @ original_G.conjugate().transpose() @ A.transpose()
+            + P @ (original_C.transpose() + np.identity(len(modes))) @ A.transpose()
+            + A @ original_C @ P.transpose()
+        )
+
+        self.C[index] = (
+            P.conjugate() @ original_C @ P.conjugate().transpose()
+            + A.conjugate() @ (
+                original_C.transpose() + np.identity(len(modes))
+            ) @ A.transpose()
+            + P.conjugate() @ original_G.conjugate().transpose() @ A.transpose()
+            + A.conjugate() @ original_G @ P.transpose()
+        )
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        if auxiliary_modes.size != 0:
+            self._apply_active_to_auxiliary_modes(P, A, modes, auxiliary_modes)
+
+    def _apply_active_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
+        r"""
+        This method updates the off diagonal elements of the :math:`G` and the :math:`C`
+        matrices.
+
+        The columns :math:`j` defined in `auxiliary_modes` associated with the mode
+        :math:`i` defined in `modes` evolve according to the linear transformation
+        defined in :meth:`apply_active`.
+
+        Then each row of the mode :math:`i` will be updated according to the fact that
+        :math:`C_{ij} = C_{ij}^*` and :math:`G_{ij} = G_{ij}^T`.
 
         Args:
             alpha (complex): A complex that represents the value of :math:`cosh(amp)`.
-            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
-            modes (tuple): The qumode index on which the squeezing gate operates,
-                embedded in a `tuple`.
-        """  # noqa: E501
-        self.mean[modes[0]] = (alpha * self.mean[modes[0]]) - (
-            beta * np.conj(self.mean[modes[0]])
-        )
-        self.apply_active_to_C_and_G(alpha, beta, modes)
+            beta (complex):
+                A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
+            modes (tuple): Qumodes on which the transformation directly operates.
+            auxiliary_modes (np.array): A vector that contains The modes, on which the
+                transformation is not directly applied, but should be accounted for in
+                :math:`C` and :math:`G`.
+        """
+        auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
-    def apply_active_to_C_and_G(self, alpha, beta, modes):
-        r"""
-        This method updates the :math:`G_{ij}` and the :math:`C_{ij}` elements and calls :meth:`_apply_active_to_other_modes`.
+        auxiliary_C = self.C[auxiliary_index]
+        auxiliary_G = self.G[auxiliary_index]
 
-        By performing an active operation such as `Squeezing` a gaussian state, the element :math:`G_{ij}`
-        evolves to be:
-
-        .. math::
-            \hat{S}^\dagger(z)\hat{a}\hat{a}\hat{S}(z) = \alpha^2 G_{i j} -
-                \alpha\beta - 2\alpha\beta C_{i j} + \beta^2 G_{i j}^\dagger,
-
-        for the :math:`C_{ij}` element, it evolves into:
-
-        .. math::
-            \hat{S}^\dagger(z)\hat{a}^\dagger\hat{a}\hat{S}(z) = \alpha^2 C_{ij} -
-                \alpha\beta G_{ij}^\dagger - \alpha\beta^\dagger G_{ij} + \beta\beta^* + \beta\beta^* C_{ij}
-
-        Args:
-            alpha (complex): A float that represents the value of :math:`\cosh(amp)`.
-            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
-            modes (tuple): The qumode index on which the squeezing gate operates,
-                embedded in a `tuple`.
-        """  # noqa: E501
-        alpha2 = alpha * np.conj(alpha)
-        alpha_beta = alpha * beta
-
-        transformed_index_C = self.C[modes, modes]
-        transformed_index_G = self.G[modes, modes]
-
-        self.G[modes, modes] = (
-            (alpha2 * transformed_index_G)
-            - (alpha_beta)
-            - (2 * alpha_beta * transformed_index_C)
-            + (beta**2 * np.conj(transformed_index_G))
-        )
-        self.C[modes, modes] = (
-            (alpha2 * transformed_index_C)
-            + (beta * np.conj(beta) * transformed_index_C)
-            + beta * np.conj(beta)
-            - (alpha_beta * np.conj(transformed_index_G))
-            - (np.conj(alpha_beta) * transformed_index_G)
+        self.C[auxiliary_index] = (
+            P.conjugate() @ auxiliary_C
+            + A.conjugate() @ auxiliary_G
         )
 
-        other_modes = np.delete(np.arange(self.d), modes)
-
-        if other_modes.size != 0:
-            self._apply_active_to_other_modes(alpha, beta, modes, other_modes)
-
-    def _apply_active_to_other_modes(self, alpha, beta, modes, other_modes):
-        r"""
-        This method updates the off diagonal elements of the :math:`G` and the :math:`C` matrices.
-
-        The columns :math:`j` defined in `other_modes` associated with the mode :math:`i` defioned in
-        `modes` evolve according to the linear transformation defined in :meth:`apply_active`.
-
-        Then each row of the mode :math:`i` will be updated according to the fact that :math:`C_{ij} = C_{ij}^*`
-        and :math:`G_{ij} = G_{ij}^T`.
-
-        Args:
-            alpha (complex): A complex that represents the value of :math:`cosh(amp)`.
-            beta (complex): A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
-            modes (tuple): The qumode index on which the squeezing gate operates,
-                embedded in a `tuple`.
-            other_modes (np.array): A vector that contains The modes, on which the transformation
-                is not directly applied, but should be accounted for in :math:`C` and :math:`G`.
-        """  # noqa: E501
-        transformed_index_C = self.C[modes, other_modes]
-        transformed_index_G = self.G[modes, other_modes]
-
-        self.C[modes, other_modes] = (alpha * transformed_index_C) - (
-            np.conj(beta) * transformed_index_G
+        self.G[auxiliary_index] = (
+            P @ auxiliary_G
+            + A @ auxiliary_C
         )
 
-        self.G[modes, other_modes] = (alpha * transformed_index_G) - (
-            beta * transformed_index_C
-        )
-
-        self.C[:, modes] = self.C[modes, :].conj().T
-
-        self.G[:, modes] = self.G[modes, :].T
+        self.C[:, modes] = self.C[modes, :].conjugate().transpose()
+        self.G[:, modes] = self.G[modes, :].transpose()
