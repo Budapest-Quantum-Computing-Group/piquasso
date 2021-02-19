@@ -35,7 +35,7 @@ class GaussianBackend(Backend):
             ]
         )
 
-        self.state.apply(P, modes)
+        self.state.apply_passive(P, modes)
 
     def beamsplitter(self, params, modes):
         r"""Applies the beamsplitter operation to the state.
@@ -71,7 +71,7 @@ class GaussianBackend(Backend):
             ]
         )
 
-        self.state.apply(B, modes)
+        self.state.apply_passive(B, modes)
 
     def displacement(self, params, modes):
         r"""Applies the displacement operation to the state.
@@ -205,4 +205,8 @@ class GaussianBackend(Backend):
 
         beta = np.sinh(params[0]) * np.exp(1j * theta)
 
-        self.state.apply_active(alpha, beta, modes)
+        P = np.array([[alpha]])
+
+        A = np.array([[- beta]])
+
+        self.state.apply_active(P, A, modes)

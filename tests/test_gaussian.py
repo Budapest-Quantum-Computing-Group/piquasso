@@ -101,8 +101,8 @@ class TestGaussian:
         )
 
         assert np.allclose(self.program.state.mean, expected_mean)
-        assert np.allclose(self.program.state.C, expected_C)
         assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.C, expected_C)
 
     def test_displacement_leaves_the_covariance_invariant(self):
         r = 1
