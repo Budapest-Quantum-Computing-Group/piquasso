@@ -133,6 +133,25 @@ class TestGaussianStateRepresentations:
             self.state.cov,
         )
 
+    def test_wigner_function(self, mu, cov):
+        quadrature_array = np.array(
+            [
+                [1, 2, 3, 4],
+                [5, 6, 7, 8],
+            ]
+        )
+
+        expected_result = np.array(
+            [
+                0.00040656676635938727,
+                0.01037619639200025,
+            ]
+        )
+
+        actual_result = self.state.wigner_function(quadrature_array)
+
+        assert np.allclose(expected_result, actual_result)
+
 
 class TestGaussianStateOperations:
     @pytest.fixture

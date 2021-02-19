@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from piquasso import constants
+from piquasso import constants, functions
 from piquasso.context import Context
 from piquasso.state import State
 
@@ -359,6 +359,43 @@ class GaussianState(State):
         transformed_state = self.reduced(modes).rotated(phi)
 
         return transformed_state.mu, transformed_state.cov
+
+    def wigner_function(self, quadrature_matrix, modes=None):
+        r"""
+        Calculates the Wigner function values at the specified `quadrature_matrix`,
+        according to the equation
+
+        .. math::
+            W(r) = \frac{1}{\pi^d \sqrt{\mathrm{det} \sigma}}
+                \exp \big (
+                    - (r - \mu)^T
+                    \sigma^{-1}
+                    (r - \mu)
+                \big ).
+
+        Args:
+            quadrature_matrix (list): list of canonical coordinates vectors.
+            modes (tuple or None): modes where Wigner function should be calculcated.
+
+        Returns:
+            tuple: The Wigner function values in the shape of `quadrature_matrix`.
+        """
+
+        if modes:
+            reduced_state = self.reduced(modes)
+            return functions.gaussian_wigner_function(
+                quadrature_matrix,
+                d=reduced_state.d,
+                mean=reduced_state.mu,
+                cov=reduced_state.cov
+            )
+
+        return functions.gaussian_wigner_function(
+            quadrature_matrix,
+            d=self.d,
+            mean=self.mu,
+            cov=self.cov,
+        )
 
     def apply_passive(self, T, modes):
         r"""Applies a passive transformation to the quantum state.
