@@ -15,7 +15,7 @@ class GaussianState(State):
     r"""Object to represent a Gaussian state.
 
     Attributes:
-        mean (numpy.array): The expectation value of the annihilation operators on all
+        m (numpy.array): The expectation value of the annihilation operators on all
             modes (a vector, essentially), and is defined by
 
             .. math::
@@ -35,9 +35,9 @@ class GaussianState(State):
 
     """
 
-    def __init__(self, C, G, mean):
+    def __init__(self, C, G, m):
         r"""
-        A Gaussian state is fully characterised by its mean and correlation
+        A Gaussian state is fully characterised by its m and correlation
         matrix, i.e. its first and second moments with the quadrature
         operators.
 
@@ -48,13 +48,13 @@ class GaussianState(State):
         Args:
             C (numpy.array): See :attr:`C`.
             G (numpy.array): See :attr:`G`.
-            mean (numpy.array): See :attr:`mean`.
+            m (numpy.array): See :attr:`m`.
 
         """
 
         self.C = C
         self.G = G
-        self.mean = mean
+        self.m = m
 
     @classmethod
     def create_vacuum(cls, d):
@@ -70,7 +70,7 @@ class GaussianState(State):
         return cls(
             C=np.zeros((d, d), dtype=complex),
             G=np.zeros((d, d), dtype=complex),
-            mean=np.zeros(d, dtype=complex),
+            m=np.zeros(d, dtype=complex),
         )
 
     @property
@@ -95,7 +95,7 @@ class GaussianState(State):
         Returns:
             int: The number of modes.
         """
-        return len(self.mean)
+        return len(self.m)
 
     @property
     def xp_mean(self):
@@ -109,8 +109,8 @@ class GaussianState(State):
         """
 
         _xp_mean = np.empty(2 * self.d)
-        _xp_mean[:self.d] = self.mean.real * np.sqrt(2 * self.hbar)
-        _xp_mean[self.d:] = self.mean.imag * np.sqrt(2 * self.hbar)
+        _xp_mean[:self.d] = self.m.real * np.sqrt(2 * self.hbar)
+        _xp_mean[self.d:] = self.m.imag * np.sqrt(2 * self.hbar)
         return _xp_mean
 
     @property
@@ -299,7 +299,7 @@ class GaussianState(State):
         return GaussianState(
             C=self.C,
             G=(self.G * phase**2),
-            mean=(self.mean * phase),
+            m=(self.m * phase),
         )
 
     def reduced(self, modes):
@@ -317,7 +317,7 @@ class GaussianState(State):
         return GaussianState(
             C=self.C[np.ix_(modes, modes)],
             G=self.G[np.ix_(modes, modes)],
-            mean=self.mean[np.ix_(modes)],
+            m=self.m[np.ix_(modes)],
         )
 
     def reduced_rotated_mean_and_cov(self, modes, phi):
@@ -414,7 +414,7 @@ class GaussianState(State):
         .. math::
             a_{i} \mapsto \sum_{j \in \vec{m}} T^{ij} a_j
 
-        Application to :attr:`mean` is done by matrix multiplication.
+        Application to :attr:`m` is done by matrix multiplication.
 
         The canonical commutation relations can be written as
 
@@ -446,7 +446,7 @@ class GaussianState(State):
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
-        self.mean[modes, ] = T @ self.mean[modes, ]
+        self.m[modes, ] = T @ self.m[modes, ]
 
         self._apply_passive_to_C_and_G(T, modes=modes)
 
@@ -577,9 +577,9 @@ class GaussianState(State):
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
-        self.mean[modes, ] = (
-            P @ self.mean[modes, ]
-            + A * np.conj(self.mean[modes, ])
+        self.m[modes, ] = (
+            P @ self.m[modes, ]
+            + A * np.conj(self.m[modes, ])
         )
 
         self._apply_active_to_C_and_G(P, A, modes)

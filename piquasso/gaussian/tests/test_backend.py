@@ -28,9 +28,9 @@ class TestGaussianBackend:
             ],
             dtype=complex,
         )
-        mean = np.ones(3, dtype=complex)
+        m = np.ones(3, dtype=complex)
 
-        state = GaussianState(C, G, mean)
+        state = GaussianState(C, G, m)
 
         self.backend = GaussianBackend(state=state)
 
@@ -42,7 +42,7 @@ class TestGaussianBackend:
             params=(amp, theta),
             modes=(mode,),
         )
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1,
                 np.cosh(amp) - np.exp(1j * theta) * np.sinh(amp),
@@ -68,7 +68,7 @@ class TestGaussianBackend:
         )
         assert np.allclose(self.backend.state.C, expected_C)
         assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.mean, expected_mean)
+        assert np.allclose(self.backend.state.m, expected_m)
 
     def test_phaseshift(self):
         angle = np.pi/3
@@ -92,11 +92,11 @@ class TestGaussianBackend:
             ],
             dtype=complex,
         )
-        expected_mean = np.array([phase, 1, 1], dtype=complex)
+        expected_m = np.array([phase, 1, 1], dtype=complex)
 
         assert np.allclose(self.backend.state.C, expected_C)
         assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.mean, expected_mean)
+        assert np.allclose(self.backend.state.m, expected_m)
 
     def test_beamsplitter(self):
         phi = np.pi/3
@@ -125,7 +125,7 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1.06066017 + 0.61237244j,
                 0.35355339 + 0.61237244j,
@@ -136,7 +136,7 @@ class TestGaussianBackend:
 
         assert np.allclose(self.backend.state.C, expected_C)
         assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.mean, expected_mean)
+        assert np.allclose(self.backend.state.m, expected_m)
 
     def test_displacement_with_alpha(self):
         alpha = 3 - 4j
@@ -146,7 +146,7 @@ class TestGaussianBackend:
             modes=(1, ),
         )
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1,
                 1 + alpha,
@@ -155,7 +155,7 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        assert np.allclose(self.backend.state.mean, expected_mean)
+        assert np.allclose(self.backend.state.m, expected_m)
 
     def test_displacement_with_r_and_phi(self):
         r = 5
@@ -166,7 +166,7 @@ class TestGaussianBackend:
             modes=(1, ),
         )
 
-        expected_mean = np.array(
+        expected_m = np.array(
             [
                 1,
                 1 + r * np.exp(1j * phi),
@@ -175,4 +175,4 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        assert np.allclose(self.backend.state.mean, expected_mean)
+        assert np.allclose(self.backend.state.m, expected_m)
