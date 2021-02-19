@@ -1,6 +1,5 @@
 .tox
 dist
-build
 
 __pycache__
 .pytest_cache
@@ -18,10 +17,3 @@ docs/
 !docs/help.rst
 !docs/index.rst
 !docs/license.rst
-
-# C++ stuff
-*.so
-# TODO: temporary solution. Obviously, we don't want to ignore *.cpp
-# files completely, only the built ones. We'll have to investigate this*.cpp  
-# issue.                                                                      
-*.cpp       
