@@ -5,7 +5,7 @@
 import pytest
 import numpy as np
 
-from piquasso import Program, Q, D, S
+from piquasso import Program, Q, D, S, P
 from piquasso.gaussian import GaussianState, GaussianBackend
 
 
@@ -96,6 +96,42 @@ class TestGaussian:
                 [-3 + 20.78460969j,  5.96736589 + 7.02381044j, 0.89865793 + 1.5565211j],
                 [5.96736589 + 7.02381044j,  5.83468969 + 3.22991457j, 0],
                 [0.89865793 + 1.55652119j,  0, -0.98588746]
+            ],
+            dtype=complex
+        )
+
+        assert np.allclose(self.program.state.mean, expected_mean)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.C, expected_C)
+
+    def test_quadratic_phase(self):
+        with self.program:
+            Q(0) | P(0)
+            Q(1) | P(2)
+            Q(2) | P(1)
+
+        self.program.execute()
+
+        expected_mean = np.array(
+            [
+                1 + 0j, 1 + 2j, 1 + 1j
+            ],
+            dtype=complex,
+        )
+        expected_C = np.array(
+            [
+                [3 - 0j, 1 + 4j, 0 - 0j],
+                [1 - 4j, 7 + 4j, 0 - 0j],
+                [0 + 0j, 0 + 0j, 1.75 + 1j]
+            ],
+            dtype=complex,
+        )
+
+        expected_G = np.array(
+            [
+                [ 1 + 0j,  3 + 4j,  0 + 0j],
+                [ 3 + 4j, -7 + 9j,  0 + 0j],
+                [ 0 + 0j,  0 + 0j, -0.25 + 2.5j],
             ],
             dtype=complex
         )

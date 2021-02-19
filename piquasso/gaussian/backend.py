@@ -210,3 +210,30 @@ class GaussianBackend(Backend):
         A = np.array([[- beta]])
 
         self.state.apply_active(P, A, modes)
+
+    def quadratic_phase(self, params, modes):
+        r"""Applies the quadratic phase operation to the state.
+
+        The operator of the quadratic phase gate is
+
+        .. math::
+            P(s) = \exp (i \frac{s \hat{x}}{2\hbar}),
+
+        and it evolves the annihilation operator as
+
+        .. math::
+            P(s)^\dagger a_i P(s) = (1 + i \frac{s}{2}) a_i + i \frac{s}{2} a_i^\dagger.
+
+        Args:
+            params (tuple): Parameter :math:`s`.
+            modes (tuple): Distinct positive integer values which are used to represent
+                qumodes.
+        """
+
+        s = params[0]
+
+        P = np.array([[1 + s/2 * 1j]])
+
+        A = np.array([[s/2 * 1j]])
+
+        self.state.apply_active(P, A, modes)
