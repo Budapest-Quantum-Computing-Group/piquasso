@@ -8,33 +8,11 @@ from piquasso.backend import Backend
 
 
 class GaussianBackend(Backend):
-    def phaseshift(self, operation):
-        phi = operation.params[0]
-
-        phase = np.exp(1j * phi)
-
-        P = np.array(
-            [
-                [phase],
-            ]
+    def _apply_passive(self, operation):
+        self.state.apply_passive(
+            operation.one_particle_representation,
+            operation.modes
         )
-
-        self.state.apply_passive(P, operation.modes)
-
-    def beamsplitter(self, operation):
-        theta, phi = operation.params
-
-        t = np.cos(theta)
-        r = np.exp(-1j * phi) * np.sin(theta)
-
-        B = np.array(
-            [
-                [ t, np.conj(r)],
-                [-r,          t]
-            ]
-        )
-
-        self.state.apply_passive(B, operation.modes)
 
     def displacement(self, operation):
         r"""Applies the displacement operation to the state.

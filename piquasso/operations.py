@@ -126,8 +126,8 @@ class B(Operation):
     """
 
     backends = {
-        GaussianBackend: GaussianBackend.beamsplitter,
-        SamplingBackend: SamplingBackend.beamsplitter
+        GaussianBackend: GaussianBackend._apply_passive,
+        SamplingBackend: SamplingBackend._multiply_interferometer,
     }
 
     def __init__(self, theta=0., phi=np.pi / 4):
@@ -141,6 +141,18 @@ class B(Operation):
         """
 
         super().__init__(theta, phi)
+
+    @property
+    def one_particle_representation(self):
+        theta, phi = self.params
+
+        t = np.cos(theta)
+        r = np.exp(-1j * phi) * np.sin(theta)
+
+        return np.array([
+            [t, np.conj(r)],
+            [-r, t]
+        ])
 
 
 class R(Operation):
@@ -157,8 +169,8 @@ class R(Operation):
     """
 
     backends = {
-        GaussianBackend: GaussianBackend.phaseshift,
-        SamplingBackend: SamplingBackend.phaseshift
+        GaussianBackend: GaussianBackend._apply_passive,
+        SamplingBackend: SamplingBackend._multiply_interferometer,
     }
 
     def __init__(self, phi):
@@ -168,6 +180,13 @@ class R(Operation):
             phi (float): The angle of the rotation.
         """
         super().__init__(phi)
+
+    @property
+    def one_particle_representation(self):
+        phi = self.params[0]
+        phase = np.exp(1j * phi)
+
+        return np.array([[phase]])
 
 
 class S(Operation):
