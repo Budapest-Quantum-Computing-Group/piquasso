@@ -6,50 +6,49 @@ from unittest.mock import Mock
 
 import pytest
 
+from piquasso.state import State
 from piquasso.backend import Backend
 from piquasso.operations import Operation, ModelessOperation
 from piquasso.program import Program
 
 
 class TestProgramBase:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        class DummyBackend(Backend):
+    @pytest.fixture
+    def FakeBackend(self):
+        class _FakeBackend(Backend):
             dummy_operation = Mock(name="dummy_operation")
 
             dummy_modeless_operation = Mock(name="dummy_modeless_operation")
 
-        self.backend_class = DummyBackend
-
-        self.state = Mock(name="DummyState")
-
-        self.program = Program(
-            state=self.state,
-            backend_class=DummyBackend,
-        )
+        return _FakeBackend
 
     @pytest.fixture
-    def DummyOperation(self):
+    def FakeState(self, FakeBackend):
+        class _FakeState(State):
+            _backend_class = FakeBackend
+
+        return _FakeState
+
+    @pytest.fixture(autouse=True)
+    def setup(self, FakeState):
+        self.state = FakeState()
+
+        self.program = Program(state=self.state)
+
+    @pytest.fixture
+    def DummyOperation(self, FakeBackend):
         class _DummyOperation(Operation):
             backends = {
-                self.backend_class: self.backend_class.dummy_operation,
+                FakeBackend: FakeBackend.dummy_operation,
             }
 
         return _DummyOperation
 
     @pytest.fixture
-    def DummyModelessOperation(self):
+    def DummyModelessOperation(self, FakeBackend):
         class _DummyModelessOperation(ModelessOperation):
             backends = {
-                self.backend_class: self.backend_class.dummy_modeless_operation,
+                FakeBackend: FakeBackend.dummy_modeless_operation,
             }
 
         return _DummyModelessOperation
-
-    @property
-    def backend(self):
-        return self.program.backend
-
-    @property
-    def operations(self):
-        return self.program.operations

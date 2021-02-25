@@ -10,7 +10,7 @@ from .backend import SamplingBackend
 
 
 class SamplingState(State):
-    backend_class = SamplingBackend
+    _backend_class = SamplingBackend
 
     def __init__(self, *initial_state):
         self.initial_state = initial_state

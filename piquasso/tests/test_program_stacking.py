@@ -17,8 +17,8 @@ class TestProgramStacking(TestProgramBase):
         with self.program:
             Q(0, 1) | sub_program
 
-        assert self.operations[0].modes == (0, 1)
-        assert self.operations[0].params == (420,)
+        assert self.program.operations[0].modes == (0, 1)
+        assert self.program.operations[0].params == (420,)
 
     def test_multiple_operation_program_stacking(self, DummyOperation):
         sub_program = Program()
@@ -29,14 +29,14 @@ class TestProgramStacking(TestProgramBase):
         with self.program:
             Q(0, 1, 2, 3) | sub_program
 
-        assert self.operations[0].modes == (0,)
-        assert self.operations[0].params == (2,)
+        assert self.program.operations[0].modes == (0,)
+        assert self.program.operations[0].params == (2,)
 
-        assert self.operations[1].modes == (0,)
-        assert self.operations[1].params == (4,)
+        assert self.program.operations[1].modes == (0,)
+        assert self.program.operations[1].params == (4,)
 
-        assert self.operations[2].modes == (2, 3)
-        assert self.operations[2].params == (10,)
+        assert self.program.operations[2].modes == (2, 3)
+        assert self.program.operations[2].params == (10,)
 
     def test_multiple_operation_mixed_program_stacking(self, DummyOperation):
         sub_program = Program()
@@ -48,14 +48,14 @@ class TestProgramStacking(TestProgramBase):
             Q(0, 1) | sub_program
             Q(3) | DummyOperation(0)
 
-        assert self.operations[0].modes == (2,)
-        assert self.operations[0].params == (2,)
+        assert self.program.operations[0].modes == (2,)
+        assert self.program.operations[0].params == (2,)
 
-        assert self.operations[1].modes == (0, 1)
-        assert self.operations[1].params == (10,)
+        assert self.program.operations[1].modes == (0, 1)
+        assert self.program.operations[1].params == (10,)
 
-        assert self.operations[2].modes == (3,)
-        assert self.operations[2].params == (0,)
+        assert self.program.operations[2].modes == (3,)
+        assert self.program.operations[2].params == (0,)
 
     def test_multiple_modeless_operation_mixed_program_stacking(
             self,
@@ -75,20 +75,20 @@ class TestProgramStacking(TestProgramBase):
             Q(0, 1) | sub_program
             Q(3) | DummyOperation(0)
 
-        assert self.operations[0].modes == (2,)
-        assert self.operations[0].params == (2,)
+        assert self.program.operations[0].modes == (2,)
+        assert self.program.operations[0].params == (2,)
 
-        assert self.operations[1].modes is ModelessMode
-        assert self.operations[1].params == (420,)
+        assert self.program.operations[1].modes is ModelessMode
+        assert self.program.operations[1].params == (420,)
 
-        assert self.operations[2].modes == (0, 1)
-        assert self.operations[2].params == (10,)
+        assert self.program.operations[2].modes == (0, 1)
+        assert self.program.operations[2].params == (10,)
 
-        assert self.operations[3].modes is ModelessMode
-        assert self.operations[3].params == (999,)
+        assert self.program.operations[3].modes is ModelessMode
+        assert self.program.operations[3].params == (999,)
 
-        assert self.operations[4].modes == (3,)
-        assert self.operations[4].params == (0,)
+        assert self.program.operations[4].modes == (3,)
+        assert self.program.operations[4].params == (0,)
 
     def test_mixed_index_program_stacking(self, DummyOperation):
         sub_program = Program()
@@ -99,11 +99,11 @@ class TestProgramStacking(TestProgramBase):
         with self.program:
             Q(0, 2, 1, 3) | sub_program
 
-        assert self.operations[0].modes == (0, 2)
-        assert self.operations[0].params == (10,)
+        assert self.program.operations[0].modes == (0, 2)
+        assert self.program.operations[0].params == (10,)
 
-        assert self.operations[1].modes == (1, 3)
-        assert self.operations[1].params == (100,)
+        assert self.program.operations[1].modes == (1, 3)
+        assert self.program.operations[1].params == (100,)
 
     def test_mixed_index_multiple_modeless_operation_program_stacking(
             self,
@@ -123,19 +123,19 @@ class TestProgramStacking(TestProgramBase):
             Q(1, 3, 2) | sub_program
 
         # Q(0, 1, 2) | sub_program
-        assert self.operations[0].modes == (0, 1)
-        assert self.operations[1].modes == (1, 2)
-        assert self.operations[2].modes is ModelessMode
+        assert self.program.operations[0].modes == (0, 1)
+        assert self.program.operations[1].modes == (1, 2)
+        assert self.program.operations[2].modes is ModelessMode
 
-        assert self.operations[0].params == (1,)
-        assert self.operations[1].params == (2,)
-        assert self.operations[2].params == (3,)
+        assert self.program.operations[0].params == (1,)
+        assert self.program.operations[1].params == (2,)
+        assert self.program.operations[2].params == (3,)
 
         # Q(1, 3, 2) | sub_program
-        assert self.operations[3].modes == (1, 3)
-        assert self.operations[4].modes == (3, 2)
-        assert self.operations[5].modes is ModelessMode
+        assert self.program.operations[3].modes == (1, 3)
+        assert self.program.operations[4].modes == (3, 2)
+        assert self.program.operations[5].modes is ModelessMode
 
-        assert self.operations[3].params == (1,)
-        assert self.operations[4].params == (2,)
-        assert self.operations[5].params == (3,)
+        assert self.program.operations[3].params == (1,)
+        assert self.program.operations[4].params == (2,)
+        assert self.program.operations[5].params == (3,)

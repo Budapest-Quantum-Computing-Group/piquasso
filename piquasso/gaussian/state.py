@@ -8,6 +8,8 @@ from piquasso import constants, functions
 from piquasso.context import Context
 from piquasso.state import State
 
+from .backend import GaussianBackend
+
 from .transformations import quad_transformation
 
 
@@ -34,6 +36,8 @@ class GaussianState(State):
                     \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
 
     """
+
+    _backend_class = GaussianBackend
 
     def __init__(self, C, G, m):
         r"""

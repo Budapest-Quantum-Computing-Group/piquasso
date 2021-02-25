@@ -3,10 +3,8 @@
 #
 
 from .state import GaussianState
-from .backend import GaussianBackend
 
 
 __all__ = [
     "GaussianState",
-    "GaussianBackend",
 ]

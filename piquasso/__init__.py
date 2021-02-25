@@ -2,8 +2,8 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from .sampling import SamplingBackend, SamplingState
-from .gaussian import GaussianState, GaussianBackend
+from .sampling import SamplingState
+from .gaussian import GaussianState
 from .program import Program
 from .mode import Q
 from .operations import (
@@ -28,8 +28,6 @@ __all__ = [
     "Interferometer",
     "Sampling",
     "GaussianState",
-    "GaussianBackend",
-    "SamplingBackend",
     "SamplingState",
 ]
 

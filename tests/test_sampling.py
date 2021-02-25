@@ -13,7 +13,6 @@ class TestSampling:
     def setup(self):
         self.program = pq.Program(
             state=pq.SamplingState(1, 1, 1, 0, 0),
-            backend_class=pq.SamplingBackend,
         )
 
         permutation_matrix = np.array([

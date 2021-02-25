@@ -27,7 +27,6 @@ class Program:
     def __init__(
         self,
         state=None,
-        backend_class=None,
         operations=None,
         hbar=pq.constants.HBAR_DEFAULT
     ):
@@ -35,14 +34,7 @@ class Program:
         self.operations = operations or []
         self.hbar = hbar
 
-        if backend_class is not None:
-            self.backend = backend_class(state)
-
-        elif state is not None:
-            self.backend = state.backend_class(state)
-
-        else:
-            self.backend = None
+        self.backend = state._backend_class(state) if state else None
 
     @property
     def d(self):
@@ -94,7 +86,6 @@ class Program:
 
         return cls(
             state=pq.registry.create_instance_from_mapping(properties["state"]),
-            backend_class=pq.registry.retrieve_class(properties["backend_class"]),
             operations=list(
                 map(pq.registry.create_instance_from_mapping, properties["operations"])
             )
