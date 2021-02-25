@@ -5,8 +5,7 @@
 import pytest
 import numpy as np
 
-from ..backend import GaussianBackend
-from ..state import GaussianState
+import piquasso as pq
 
 
 class TestGaussianBackend:
@@ -30,18 +29,20 @@ class TestGaussianBackend:
         )
         m = np.ones(3, dtype=complex)
 
-        state = GaussianState(C, G, m)
-
-        self.backend = GaussianBackend(state=state)
+        self.program = pq.Program(
+            state=pq.GaussianState(C, G, m),
+            backend_class=pq.GaussianBackend
+        )
 
     def test_squeezing(self):
         amp = -0.6
         theta = 0.7
-        mode = 1
-        self.backend.squeezing(
-            params=(amp, theta),
-            modes=(mode,),
-        )
+
+        with self.program:
+            pq.Q(1) | pq.S(amp, theta)
+
+        self.program.execute()
+
         expected_m = np.array(
             [
                 1,
@@ -66,13 +67,17 @@ class TestGaussianBackend:
             ],
             dtype=complex,
         )
-        assert np.allclose(self.backend.state.C, expected_C)
-        assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.m, expected_m)
+        assert np.allclose(self.program.state.C, expected_C)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.m, expected_m)
 
     def test_phaseshift(self):
         angle = np.pi/3
-        self.backend.phaseshift(params=(angle,), modes=(0,))
+
+        with self.program:
+            pq.Q(0) | pq.R(phi=np.pi/3)
+
+        self.program.execute()
 
         phase = np.exp(1j * angle)
 
@@ -94,19 +99,18 @@ class TestGaussianBackend:
         )
         expected_m = np.array([phase, 1, 1], dtype=complex)
 
-        assert np.allclose(self.backend.state.C, expected_C)
-        assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.m, expected_m)
+        assert np.allclose(self.program.state.C, expected_C)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.m, expected_m)
 
     def test_beamsplitter(self):
-        phi = np.pi/3
         theta = np.pi/4
-        modes = 0, 1
+        phi = np.pi/3
 
-        self.backend.beamsplitter(
-            params=(theta, phi),
-            modes=modes,
-        )
+        with self.program:
+            pq.Q(0, 1) | pq.B(theta=theta, phi=phi)
+
+        self.program.execute()
 
         expected_C = np.array(
             [
@@ -134,17 +138,17 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        assert np.allclose(self.backend.state.C, expected_C)
-        assert np.allclose(self.backend.state.G, expected_G)
-        assert np.allclose(self.backend.state.m, expected_m)
+        assert np.allclose(self.program.state.C, expected_C)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.m, expected_m)
 
     def test_displacement_with_alpha(self):
         alpha = 3 - 4j
 
-        self.backend.displacement(
-            params=(alpha, ),
-            modes=(1, ),
-        )
+        with self.program:
+            pq.Q(1) | pq.D(alpha=alpha)
+
+        self.program.execute()
 
         expected_m = np.array(
             [
@@ -155,16 +159,16 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        assert np.allclose(self.backend.state.m, expected_m)
+        assert np.allclose(self.program.state.m, expected_m)
 
     def test_displacement_with_r_and_phi(self):
         r = 5
         phi = np.pi / 4
 
-        self.backend.displacement(
-            params=(r, phi),
-            modes=(1, ),
-        )
+        with self.program:
+            pq.Q(1) | pq.D(r=r, phi=phi)
+
+        self.program.execute()
 
         expected_m = np.array(
             [
@@ -175,4 +179,4 @@ class TestGaussianBackend:
             dtype=complex,
         )
 
-        assert np.allclose(self.backend.state.m, expected_m)
+        assert np.allclose(self.program.state.m, expected_m)
