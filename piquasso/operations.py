@@ -72,35 +72,6 @@ class Operation(registry.ClassRecorder):
 
         return method
 
-    @staticmethod
-    def blackbird_op_to_gate(op):
-        """Maps the name of a BlackBird operation into the represented class
-
-        Args:
-            op (string): the representation of a operation in BlackBird
-
-        Returns:
-            Operation: subclass of :class:`Operation` that the argument represents
-        """
-        return \
-            {
-                "Dgate": D,
-                "Xgate": None,
-                "Zgate": None,
-                "Sgate": S,
-                "Pgate": None,
-                "Vgate": None,
-                "Kgate": None,
-                "Rgate": R,
-                "BSgate": B,
-                "MZgate": None,
-                "S2gate": None,
-                "CXgate": None,
-                "CZgate": None,
-                "CKgate": None,
-                "Fouriergate": None
-            }.get(op)
-
 
 class ModelessOperation(Operation):
     def __init__(self, *params):
