@@ -80,6 +80,27 @@ class ModelessOperation(Operation):
         Context.current_program.operations.append(self)
 
 
+class PassiveTransform(Operation):
+    r"""Applies a general passive transformation.
+
+    Args:
+        T (np.array):
+            The representation of the passive transformation on the one-particle
+            subspace.
+    """
+
+    backends = {
+        GaussianBackend: GaussianBackend._apply_passive,
+    }
+
+    def __init__(self, T):
+        self.T = T
+
+    @property
+    def one_particle_representation(self):
+        return self.T
+
+
 class B(Operation):
     r"""Applies a beamsplitter operation.
 
