@@ -13,7 +13,7 @@ from piquasso.backend import Backend
 class SamplingBackend(Backend):
     r"""A backend for fast boson sampling."""
 
-    def phaseshift(self, operation):
+    def _multiply_interferometer(self, operation):
         r"""Adds additional phase shifter to the effective interferometer.
 
         This can be interpreted as placing additional phase shifter (in the network)
@@ -30,17 +30,8 @@ class SamplingBackend(Backend):
 
         Do note, that multiplication occurs only on one specified (as the argument)
         mode and the phase shifter acts as an identity on every other mode.
-        """
 
-        phi = operation.params[0]
-        phase = np.exp(1j * phi)
-
-        P = np.array([[phase]])
-
-        self.state.multiple_interferometer_on_modes(P, operation.modes)
-
-    def beamsplitter(self, operation):
-        r"""Adds additional beam splitter to the effective interferometer.
+        Adds additional beam splitter to the effective interferometer.
 
         This can be interpreted as placing additional beam splitter (in the network)
         just before performing the sampling. This is realized by multiplying
@@ -61,17 +52,11 @@ class SamplingBackend(Backend):
         Do note, that multiplication occurs only on two specified (as the arguments)
         modes and the beam splitter acts as an identity on every other mode.
         """
-        theta, phi = operation.params
 
-        t = np.cos(theta)
-        r = np.exp(-1j * phi) * np.sin(theta)
-
-        B = np.array([
-            [t, np.conj(r)],
-            [-r, t]
-        ])
-
-        self.state.multiple_interferometer_on_modes(B, operation.modes)
+        self.state.multiply_interferometer_on_modes(
+            operation.one_particle_representation,
+            operation.modes,
+        )
 
     def interferometer(self, operation):
         J = operation.params[0]
@@ -82,7 +67,7 @@ class SamplingBackend(Backend):
             "The number of qumodes should be equal to " \
             "the size of the interferometer matrix."
 
-        self.state.multiple_interferometer_on_modes(J, modes)
+        self.state.multiply_interferometer_on_modes(J, modes)
 
     def sampling(self, operation):
         params = operation.params

@@ -30,7 +30,7 @@ class TestSamplingState:
             [4, 5, 6],
             [7, 8, 9]
         ], dtype=complex)
-        self.state.multiple_interferometer_on_modes(U, [0, 1, 2])
+        self.state.multiply_interferometer_on_modes(U, [0, 1, 2])
 
         expected_interferometer = np.array([
             [1, 2, 3, 0, 0],
@@ -48,7 +48,7 @@ class TestSamplingState:
             [4, 5, 6],
             [7, 8, 9]
         ], dtype=complex)
-        self.state.multiple_interferometer_on_modes(U, [0, 1, 4])
+        self.state.multiply_interferometer_on_modes(U, [0, 1, 4])
 
         expected_interferometer = np.array([
             [1, 2, 0, 0, 3],
@@ -66,7 +66,7 @@ class TestSamplingState:
             [4, 5, 6],
             [7, 8, 9]
         ], dtype=complex)
-        self.state.multiple_interferometer_on_modes(U, [4, 3, 1])
+        self.state.multiply_interferometer_on_modes(U, [4, 3, 1])
 
         expected_interferometer = np.array([
             [1, 0, 0, 0, 0],
