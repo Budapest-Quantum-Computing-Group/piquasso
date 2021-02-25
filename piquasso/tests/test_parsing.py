@@ -12,20 +12,8 @@ from piquasso.state import State
 from piquasso.program import Program
 from piquasso.operations import Operation
 
-from piquasso.sampling import SamplingBackend
-
 
 class TestProgramJSONParsing:
-    @pytest.fixture
-    def FakeState(self):
-        class FakeState(State):
-            def __init__(self, foo, bar, d):
-                self.foo = foo
-                self.bar = bar
-                self.d = d
-
-        return FakeState
-
     @pytest.fixture
     def FakeBackend(self):
         class FakeBackend(registry.ClassRecorder):
@@ -33,6 +21,18 @@ class TestProgramJSONParsing:
                 self.state = state
 
         return FakeBackend
+
+    @pytest.fixture
+    def FakeState(self, FakeBackend):
+        class FakeState(State):
+            _backend_class = FakeBackend
+
+            def __init__(self, foo, bar, d):
+                self.foo = foo
+                self.bar = bar
+                self.d = d
+
+        return FakeState
 
     @pytest.fixture
     def FakeOperation(self):
@@ -94,7 +94,6 @@ class TestProgramJSONParsing:
         program = Program.from_properties(
             {
                 "state": state_mapping,
-                "backend_class": "FakeBackend",
                 "operations": operations_mapping,
             }
         )
@@ -127,7 +126,6 @@ class TestProgramJSONParsing:
         json_ = json.dumps(
             {
                 "state": state_mapping,
-                "backend_class": "FakeBackend",
                 "operations": operations_mapping,
             }
         )
@@ -161,7 +159,6 @@ class TestBlackbirdParsing:
     def setup(self):
         self.program = Program(
             state=Mock(name="State"),
-            backend_class=SamplingBackend,
         )
 
     def test_from_blackbird(self):

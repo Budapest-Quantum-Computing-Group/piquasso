@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from piquasso import Program, Q, D, S, P
-from piquasso.gaussian import GaussianState, GaussianBackend
+from piquasso.gaussian import GaussianState
 
 
 class TestGaussian:
@@ -32,10 +32,7 @@ class TestGaussian:
 
         state = GaussianState(C, G, m)
 
-        self.program = Program(
-            state=state,
-            backend_class=GaussianBackend
-        )
+        self.program = Program(state=state)
 
     def test_displacement(self):
         alpha = 2 + 3j
@@ -180,10 +177,7 @@ class TestTwoModeGaussian:
 
         state = GaussianState(C, G, m)
 
-        program = Program(
-            state=state,
-            backend_class=GaussianBackend
-        )
+        program = Program(state=state)
 
         initial_cov = program.state.cov
 
@@ -219,10 +213,7 @@ class TestTwoModeGaussian:
 
         state = GaussianState(C, G, m)
 
-        program = Program(
-            state=state,
-            backend_class=GaussianBackend
-        )
+        program = Program(state=state)
 
         with program:
             Q(0) | D(r=r, phi=phi)

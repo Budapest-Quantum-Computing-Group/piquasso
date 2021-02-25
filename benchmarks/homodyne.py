@@ -32,7 +32,6 @@ NO_OF_MODES = 5
 def piquasso_setup():
     program = pq.Program(
         state=pq.GaussianState.create_vacuum(d=NO_OF_MODES),
-        backend_class=pq.GaussianBackend,
     )
 
     with program:

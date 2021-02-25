@@ -10,7 +10,7 @@ from piquasso.operations import B, Interferometer, R, Sampling
 from ..state import SamplingState
 
 
-class TestSamplingBackend:
+class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
         initial_state = SamplingState(1, 1, 1, 0, 0)

@@ -8,7 +8,7 @@ import numpy as np
 import piquasso as pq
 
 
-class TestGaussianBackend:
+class TestGaussian:
     @pytest.fixture(autouse=True)
     def setup(self):
         C = np.array(
@@ -31,7 +31,6 @@ class TestGaussianBackend:
 
         self.program = pq.Program(
             state=pq.GaussianState(C, G, m),
-            backend_class=pq.GaussianBackend
         )
 
     def test_squeezing(self):
