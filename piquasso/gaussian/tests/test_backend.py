@@ -104,7 +104,7 @@ class TestGaussianBackend:
         modes = 0, 1
 
         self.backend.beamsplitter(
-            params=(phi, theta),
+            params=(theta, phi),
             modes=modes,
         )
 

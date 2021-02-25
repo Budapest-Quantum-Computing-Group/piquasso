@@ -73,7 +73,7 @@ class SamplingBackend(Backend):
             modes (tuple): Distinct positive integer values which are used to represent
                 qumodes.
         """
-        phi, theta = params
+        theta, phi = params
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)
