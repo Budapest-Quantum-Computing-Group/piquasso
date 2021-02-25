@@ -51,7 +51,7 @@ class Operation(registry.ClassRecorder):
 
         method = self._resolve_method(backend)
 
-        method(backend, self.params, self.modes)
+        method(backend, self)
 
     def _resolve_method(self, backend):
         """Resolves the method according to the specified `backend` instance.
@@ -103,20 +103,27 @@ class Operation(registry.ClassRecorder):
 
 
 class ModelessOperation(Operation):
-
     def __init__(self, *params):
         super().__init__(*params)
 
         Context.current_program.operations.append(self)
 
-    def __call__(self, backend):
-        method = self._resolve_method(backend)
-
-        method(backend, self.params)
-
 
 class B(Operation):
-    """Beamsplitter operation."""
+    r"""Applies a beamsplitter operation.
+
+    The matrix representation of the beamsplitter operation
+    is
+
+    .. math::
+        B = \begin{bmatrix}
+            t  & r^* \\
+            -r & t
+        \end{bmatrix},
+
+    where :math:`t = \cos(\theta)` and :math:`r = e^{- i \phi} \sin(\theta)`.
+
+    """
 
     backends = {
         GaussianBackend: GaussianBackend.beamsplitter,
@@ -137,7 +144,17 @@ class B(Operation):
 
 
 class R(Operation):
-    """Rotation or Phaseshifter operation."""
+    r"""Rotation or Phaseshifter operation.
+
+    The annihilation and creation operators are evolved in the following
+    way:
+
+    .. math::
+        P(\phi) \hat{a}_k P(\phi)^\dagger = e^{i \phi} \hat{a}_k \\
+        P(\phi) \hat{a}_k^\dagger P(\phi)^\dagger
+            = e^{- i \phi} \hat{a}_k^\dagger
+
+    """
 
     backends = {
         GaussianBackend: GaussianBackend.phaseshift,
@@ -154,7 +171,32 @@ class R(Operation):
 
 
 class S(Operation):
-    """Squeezing operation."""
+    r"""Applies the squeezing operator.
+
+    The definition of the operator is:
+
+    .. math::
+            S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
+
+    where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the squeezing
+    and :math:`\theta` is the angle of the squeezing.
+
+    This act of squeezing at a given rotation angle :math:`\theta` results in a shrinkage in the
+    :math:`\hat{x}` quadrature and a stretching in the other quadrature :math:`\hat{p}` as follows:
+
+    .. math::
+        S^\dagger(z) x_{\theta} S(z) = e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
+
+    The action of the :math:`\hat{S}(z)` gate on the ladder operators :math:`\hat{a}`
+    and :math:`\hat{a}^\dagger` can be defined as follows:
+
+    .. math::
+        {S(z)}^{\dagger}\hat{a}S(z) = \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
+            {S(z)}^{\dagger}\hat{a}^\dagger S(z) = \alpha\hat{a}^\dagger - \beta^* \hat{a}
+
+    where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`, :math:`e^{i\theta}\sinh(amp)`
+    respectively.
+    """  # noqa: E501
 
     backends = {
         GaussianBackend: GaussianBackend.squeezing,
@@ -178,7 +220,18 @@ class S(Operation):
 
 
 class P(Operation):
-    """Quadratic phase operation."""
+    r"""Applies the quadratic phase operation to the state.
+
+    The operator of the quadratic phase gate is
+
+    .. math::
+        P(s) = \exp (i \frac{s \hat{x}}{2\hbar}),
+
+    and it evolves the annihilation operator as
+
+    .. math::
+        P(s)^\dagger a_i P(s) = (1 + i \frac{s}{2}) a_i + i \frac{s}{2} a_i^\dagger.
+    """
 
     backends = {
         GaussianBackend: GaussianBackend.quadratic_phase,
@@ -225,7 +278,17 @@ class D(Operation):
 
 
 class Interferometer(Operation):
-    """Interferometer"""
+    """Interferometer.
+
+    Adds additional interferometer to the effective interferometer.
+
+    This can be interpreted as placing another interferometer in the network, just
+    before performing the sampling. This operation is realized by multiplying
+    current effective interferometer matrix with new interferometer matrix.
+
+    Do note, that new interferometer matrix works as interferometer matrix on
+    qumodes (provided as the arguments) and as an identity on every other mode.
+    """
 
     backends = {
         SamplingBackend: SamplingBackend.interferometer
@@ -250,19 +313,29 @@ class Interferometer(Operation):
 
 
 class Sampling(ModelessOperation):
-    r"""Boson Sampling"""
+    r"""Boson Sampling.
+
+    Simulates a boson sampling using generalized Clifford&Clifford algorithm
+    from [Brod, Oszmaniec 2020].
+
+    This method assumes that initial_state is given in the second quantization
+    description (mode occupation). BoSS requires input states as numpy arrays,
+    therefore the state is prepared as such structure.
+
+    Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
+    as it allows effective simulation of broader range of input states than original
+    algorithm.
+
+    Args:
+        shots (int): A positive integer value representing number of samples for the
+            experiment
+    """
 
     backends = {
         SamplingBackend: SamplingBackend.sampling
     }
 
     def __init__(self, shots=1):
-        r"""Boson Sampling
-
-        Args:
-            shots (int): A positive integer value representing number of samples for the
-                experiment
-        """
         assert \
             shots > 0 and isinstance(shots, int),\
             "The number of shots should be a positive integer."

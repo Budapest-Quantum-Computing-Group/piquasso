@@ -2,6 +2,7 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+from .sampling import SamplingBackend, SamplingState
 from .gaussian import GaussianState, GaussianBackend
 from .program import Program
 from .mode import Q
@@ -28,6 +29,8 @@ __all__ = [
     "Sampling",
     "GaussianState",
     "GaussianBackend",
+    "SamplingBackend",
+    "SamplingState",
 ]
 
 __version__ = "0.1.1"

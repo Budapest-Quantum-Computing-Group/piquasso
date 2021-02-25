@@ -8,24 +8,8 @@ from piquasso.backend import Backend
 
 
 class GaussianBackend(Backend):
-    def phaseshift(self, params, modes):
-        """Performs a phase shifting on the quantum state.
-
-        The annihilation and creation operators are evolved in the following
-        way:
-
-        .. math::
-            P(\phi) \hat{a}_k P(\phi)^\dagger = e^{i \phi} \hat{a}_k \\
-            P(\phi) \hat{a}_k^\dagger P(\phi)^\dagger
-                = e^{- i \phi} \hat{a}_k^\dagger
-
-        Args:
-            params (tuple): An iterable with a single element, which
-                corresponds to the angle of the phaseshifter.
-            modes (tuple): An iterable with a single element, which
-                corresponds to the mode of the phaseshifter.
-        """
-        phi = params[0]
+    def phaseshift(self, operation):
+        phi = operation.params[0]
 
         phase = np.exp(1j * phi)
 
@@ -35,31 +19,10 @@ class GaussianBackend(Backend):
             ]
         )
 
-        self.state.apply_passive(P, modes)
+        self.state.apply_passive(P, operation.modes)
 
-    def beamsplitter(self, params, modes):
-        r"""Applies the beamsplitter operation to the state.
-
-        The matrix representation of the beamsplitter operation
-        is
-
-        .. math::
-            B = \begin{bmatrix}
-                t  & r^* \\
-                -r & t
-            \end{bmatrix},
-
-        where :math:`t = \cos(\theta)` and
-        :math:`r = e^{- i \phi} \sin(\theta)`.
-
-        Args:
-            params (tuple): Angle parameters :math:`\phi` and :math:`\theta` for the
-                beamsplitter operation.
-            modes (tuple): Distinct positive integer values which are used to represent
-                qumodes.
-        """
-
-        theta, phi = params
+    def beamsplitter(self, operation):
+        theta, phi = operation.params
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)
@@ -71,9 +34,9 @@ class GaussianBackend(Backend):
             ]
         )
 
-        self.state.apply_passive(B, modes)
+        self.state.apply_passive(B, operation.modes)
 
-    def displacement(self, params, modes):
+    def displacement(self, operation):
         r"""Applies the displacement operation to the state.
 
         .. math::
@@ -124,14 +87,10 @@ class GaussianBackend(Backend):
         Also note, that the displacement cannot be categorized as an active or passive
         linear transformation, because the unitary transformation does not strictly
         produce a linear combination of the field operators.
-
-        Args:
-            params (tuple): Parameter(s) for the displacement operation in the form of
-                `(alpha, )` or `(r, phi)`, where `alpha == r * np.exp(1j * phi)`.
-            modes (tuple): The qumode index on which the displacement operation
-                operates, embedded in a `tuple`.
-
         """
+
+        params = operation.params
+        modes = operation.modes
 
         if len(params) == 1:
             alpha = params[0]
@@ -161,40 +120,9 @@ class GaussianBackend(Backend):
         self.state.G[other_modes, mode] += alpha * mean_copy[other_modes]
         self.state.G[mode, other_modes] += alpha * mean_copy[other_modes]
 
-    def squeezing(self, params, modes):
-        r"""
-        This method implements the squeezing operator for the gaussian backend. The standard
-        definition of its operator is:
-
-        .. math::
-                S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
-
-        where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the squeezing
-        and :math:`\theta` is the angle of the squeezing.
-
-        This act of squeezing at a given rotation angle :math:`\theta` results in a shrinkage in the
-        :math:`\hat{x}` quadrature and a stretching in the other quadrature :math:`\hat{p}` as follows:
-
-        .. math::
-            S^\dagger(z) x_{\theta} S(z) = e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
-
-        The action of the :math:`\hat{S}(z)` gate on the ladder operators :math:`\hat{a}`
-        and :math:`\hat{a}^\dagger` can be defined as follows:
-
-        .. math::
-            {S(z)}^{\dagger}\hat{a}S(z) = \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
-                {S(z)}^{\dagger}\hat{a}^\dagger S(z) = \alpha\hat{a}^\dagger - \beta^* \hat{a}
-
-        where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`, :math:`e^{i\theta}\sinh(amp)`
-        respectively.
-
-        Args:
-            params (tuple): The parameters for the squeezing gate are in the form of
-                `(amp, )` or `(amp, theta)` where the amplitude is a real float that represents the
-                magnitude of the squeezing gate and :math:`\theta` which is in radians :math:`\in [0, 2 \pi)`.
-            modes (tuple): The qumode index on which the squeezing gate operates,
-                embedded in a `tuple`.
-        """  # noqa: E501
+    def squeezing(self, operation):
+        params = operation.params
+        modes = operation.modes
 
         if len(params) == 1:
             theta = 0
@@ -211,29 +139,11 @@ class GaussianBackend(Backend):
 
         self.state.apply_active(P, A, modes)
 
-    def quadratic_phase(self, params, modes):
-        r"""Applies the quadratic phase operation to the state.
-
-        The operator of the quadratic phase gate is
-
-        .. math::
-            P(s) = \exp (i \frac{s \hat{x}}{2\hbar}),
-
-        and it evolves the annihilation operator as
-
-        .. math::
-            P(s)^\dagger a_i P(s) = (1 + i \frac{s}{2}) a_i + i \frac{s}{2} a_i^\dagger.
-
-        Args:
-            params (tuple): Parameter :math:`s`.
-            modes (tuple): Distinct positive integer values which are used to represent
-                qumodes.
-        """
-
-        s = params[0]
+    def quadratic_phase(self, operation):
+        s = operation.params[0]
 
         P = np.array([[1 + s/2 * 1j]])
 
         A = np.array([[s/2 * 1j]])
 
-        self.state.apply_active(P, A, modes)
+        self.state.apply_active(P, A, operation.modes)

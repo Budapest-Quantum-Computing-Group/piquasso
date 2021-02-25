@@ -13,8 +13,8 @@ from piquasso.backend import Backend
 class SamplingBackend(Backend):
     r"""A backend for fast boson sampling."""
 
-    def phaseshift(self, params, modes):
-        """Adds additional phase shifter to the effective interferometer.
+    def phaseshift(self, operation):
+        r"""Adds additional phase shifter to the effective interferometer.
 
         This can be interpreted as placing additional phase shifter (in the network)
         just before performing the sampling. This is realized by multiplying
@@ -30,23 +30,17 @@ class SamplingBackend(Backend):
 
         Do note, that multiplication occurs only on one specified (as the argument)
         mode and the phase shifter acts as an identity on every other mode.
-
-        Args:
-            params (tuple): An iterable with a single element, which corresponds to the
-                angle of the phase shifter.
-            modes (tuple): An iterable with a single element, which corresponds to the
-                mode of the phase shifter.
         """
 
-        phi = params[0]
+        phi = operation.params[0]
         phase = np.exp(1j * phi)
 
         P = np.array([[phase]])
 
-        self.state.multiple_interferometer_on_modes(P, modes)
+        self.state.multiple_interferometer_on_modes(P, operation.modes)
 
-    def beamsplitter(self, params, modes):
-        """Adds additional beam splitter to the effective interferometer.
+    def beamsplitter(self, operation):
+        r"""Adds additional beam splitter to the effective interferometer.
 
         This can be interpreted as placing additional beam splitter (in the network)
         just before performing the sampling. This is realized by multiplying
@@ -66,14 +60,8 @@ class SamplingBackend(Backend):
 
         Do note, that multiplication occurs only on two specified (as the arguments)
         modes and the beam splitter acts as an identity on every other mode.
-
-        Args:
-            params (tuple): Angle parameters :math:`\phi` and :math:`\theta` for the
-                beamsplitter operation.
-            modes (tuple): Distinct positive integer values which are used to represent
-                qumodes.
         """
-        theta, phi = params
+        theta, phi = operation.params
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)
@@ -83,25 +71,11 @@ class SamplingBackend(Backend):
             [-r, t]
         ])
 
-        self.state.multiple_interferometer_on_modes(B, modes)
+        self.state.multiple_interferometer_on_modes(B, operation.modes)
 
-    def interferometer(self, params, modes):
-        """Adds additional interferometer to the effective interferometer.
-
-        This can be interpreted as placing another interferometer in the network, just
-        before performing the sampling. This operation is realized by multiplying
-        current effective interferometer matrix with new interferometer matrix.
-
-        Do note, that new interferometer matrix works as interferometer matrix on
-        qumodes (provided as the arguments) and as an identity on every other mode.
-
-        Args:
-            params (tuple): A tuple containing a single square matrix that represents
-                the additional interferometer.
-            modes (tuple): Distinct positive integer values which are used to represent
-                qumodes.
-        """
-        J = params[0]
+    def interferometer(self, operation):
+        J = operation.params[0]
+        modes = operation.modes
 
         assert \
             J.shape == (len(modes), len(modes)), \
@@ -110,22 +84,9 @@ class SamplingBackend(Backend):
 
         self.state.multiple_interferometer_on_modes(J, modes)
 
-    def sampling(self, params):
-        """Simulates a boson sampling using generalized Clifford&Clifford algorithm
-        from [Brod, Oszmaniec 2020].
+    def sampling(self, operation):
+        params = operation.params
 
-        This method assumes that initial_state is given in the second quantization
-        description (mode occupation). BoSS requires input states as numpy arrays,
-        therefore the state is prepared as such structure.
-
-        Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
-        as it allows effective simulation of broader range of input states than original
-        algorithm.
-
-        Args:
-            params (tuple): A tuple with a single element corresponding to number of
-                samples for the experiment.
-        """
         simulation_strategy = \
             GeneralizedCliffordsSimulationStrategy(self.state.interferometer)
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
