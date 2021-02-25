@@ -54,7 +54,7 @@ class SamplingBackend(Backend):
         """
 
         self.state.multiply_interferometer_on_modes(
-            operation.one_particle_representation,
+            operation._passive_representation,
             operation.modes,
         )
 
