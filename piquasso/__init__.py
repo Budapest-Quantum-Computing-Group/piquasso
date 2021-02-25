@@ -8,6 +8,7 @@ from .program import Program
 from .mode import Q
 from .operations import (
     PassiveTransform,
+    GaussianTransform,
     R,
     B,
     D,
@@ -21,6 +22,7 @@ from .operations import (
 __all__ = [
     "Program",
     "PassiveTransform",
+    "GaussianTransform",
     "Q",
     "R",
     "B",
