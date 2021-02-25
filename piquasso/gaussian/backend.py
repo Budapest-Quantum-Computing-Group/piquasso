@@ -59,7 +59,7 @@ class GaussianBackend(Backend):
                 qumodes.
         """
 
-        phi, theta = params
+        theta, phi = params
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)

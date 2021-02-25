@@ -133,8 +133,7 @@ class B(Operation):
                 (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
         """
 
-        # TODO: It flips the arguments. Why?
-        super().__init__(phi, theta)
+        super().__init__(theta, phi)
 
 
 class R(Operation):

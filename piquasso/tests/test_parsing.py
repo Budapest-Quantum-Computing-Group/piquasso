@@ -178,7 +178,7 @@ class TestBlackbirdParsing:
 
         bs_gate = self.program.operations[0]
         assert bs_gate.modes == [1, 2]
-        assert bs_gate.params == (0, 0.7853981633974483)
+        assert bs_gate.params == (0.7853981633974483, 0)
 
         r_gate = self.program.operations[1]
         assert r_gate.modes == [1]
