@@ -94,11 +94,7 @@ class PassiveTransform(Operation):
     }
 
     def __init__(self, T):
-        self.T = T
-
-    @property
-    def one_particle_representation(self):
-        return self.T
+        self._passive_representation = T
 
 
 class B(Operation):
@@ -131,11 +127,11 @@ class B(Operation):
             theta (float): The transmittivity angle of the beamsplitter.
                 (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
         """
-
         super().__init__(theta, phi)
 
-    @property
-    def one_particle_representation(self):
+        self._passive_representation = self._get_passive_representation()
+
+    def _get_passive_representation(self):
         theta, phi = self.params
 
         t = np.cos(theta)
@@ -173,8 +169,9 @@ class R(Operation):
         """
         super().__init__(phi)
 
-    @property
-    def one_particle_representation(self):
+        self._passive_representation = self._get_passive_representation()
+
+    def _get_passive_representation(self):
         phi = self.params[0]
         phase = np.exp(1j * phi)
 

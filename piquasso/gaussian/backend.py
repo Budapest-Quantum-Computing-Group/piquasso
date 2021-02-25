@@ -10,7 +10,7 @@ from piquasso.backend import Backend
 class GaussianBackend(Backend):
     def _apply_passive(self, operation):
         self.state.apply_passive(
-            operation.one_particle_representation,
+            operation._passive_representation,
             operation.modes
         )
 
