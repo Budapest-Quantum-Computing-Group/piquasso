@@ -5,13 +5,11 @@
 import json
 import blackbird
 
-from piquasso import constants, registry
-from piquasso.context import Context
-from piquasso.operations import Operation
+import piquasso as pq
 
 
 class Program:
-    """The representation for a quantum program.
+    r"""The representation for a quantum program.
 
     This also specifies a context in which all the operations should be
     specified.
@@ -31,7 +29,7 @@ class Program:
         state=None,
         backend_class=None,
         operations=None,
-        hbar=constants.HBAR_DEFAULT
+        hbar=pq.constants.HBAR_DEFAULT
     ):
         self.state = state
         self.operations = operations or []
@@ -95,10 +93,10 @@ class Program:
         """
 
         return cls(
-            state=registry.create_instance_from_mapping(properties["state"]),
-            backend_class=registry.retrieve_class(properties["backend_class"]),
+            state=pq.registry.create_instance_from_mapping(properties["state"]),
+            backend_class=pq.registry.retrieve_class(properties["backend_class"]),
             operations=list(
-                map(registry.create_instance_from_mapping, properties["operations"])
+                map(pq.registry.create_instance_from_mapping, properties["operations"])
             )
         )
 
@@ -124,10 +122,10 @@ class Program:
         self.backend.execute_operations(self.operations)
 
     def __enter__(self):
-        Context.current_program = self
+        pq.context.Context.current_program = self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        Context.current_program = None
+        pq.context.Context.current_program = None
 
     def _blackbird_operation_to_operation(self, blackbird_operation):
         """
@@ -135,10 +133,31 @@ class Program:
         element of `self.operations`.
 
         Args:
-            operation (dict): An element of the `BlackbirdProgram.operations`
+            blackbird_operation (dict): An element of the `BlackbirdProgram.operations`
+
+        Returns:
+            Operation:
+                Instance of :class:`Operation` corresponding to the operation defined
+                in Blackbird.
         """
 
-        operation_class = Operation.blackbird_op_to_gate(blackbird_operation["op"])
+        operation_class = {
+            "Dgate": pq.D,
+            "Xgate": None,
+            "Zgate": None,
+            "Sgate": pq.S,
+            "Pgate": None,
+            "Vgate": None,
+            "Kgate": None,
+            "Rgate": pq.R,
+            "BSgate": pq.B,
+            "MZgate": None,
+            "S2gate": None,
+            "CXgate": None,
+            "CZgate": None,
+            "CKgate": None,
+            "Fouriergate": None
+        }.get(blackbird_operation["op"])
 
         operation = operation_class(*blackbird_operation.get("args", tuple()))
 
@@ -154,8 +173,7 @@ class Program:
         Args:
             bb (blackbird.BlackbirdProgram): the BlackbirdProgram to use
         """
-        self.operations = \
-            [*map(self._blackbird_operation_to_operation, bb.operations)]
+        self.operations = [*map(self._blackbird_operation_to_operation, bb.operations)]
 
     def load_blackbird(self, filename: str):
         """
