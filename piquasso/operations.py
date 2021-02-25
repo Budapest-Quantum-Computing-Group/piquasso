@@ -42,36 +42,6 @@ class Operation(registry.ClassRecorder):
 
         return operation
 
-    def __call__(self, backend):
-        """Executes the operation on the specified backend.
-
-        Args:
-            backend (Backend): The backend to execute the operation on.
-        """
-
-        method = self._resolve_method(backend)
-
-        method(backend, self)
-
-    def _resolve_method(self, backend):
-        """Resolves the method according to the specified `backend` instance.
-
-        Args:
-            backend (Backend): The `Backend` on which the desired method is defined.
-
-        Raises:
-            NotImplementedError: If no such method is implemented on the `Backend`.
-
-        Returns:
-            The method which corresponds to the operation on `Backend`.
-        """
-        method = self.backends.get(backend.__class__)
-
-        if not method:
-            raise NotImplementedError("No such operation implemented on this backend.")
-
-        return method
-
 
 class ModelessOperation(Operation):
     def __init__(self, *params):
