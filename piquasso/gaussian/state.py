@@ -583,7 +583,7 @@ class GaussianState(State):
 
         self.m[modes, ] = (
             P @ self.m[modes, ]
-            + A * np.conj(self.m[modes, ])
+            + A @ np.conj(self.m[modes, ])
         )
 
         self._apply_active_to_C_and_G(P, A, modes)
