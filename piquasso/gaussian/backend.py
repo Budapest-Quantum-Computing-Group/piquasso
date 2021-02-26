@@ -14,6 +14,13 @@ class GaussianBackend(Backend):
             operation.modes
         )
 
+    def _apply(self, operation):
+        self.state.apply_active(
+            P=operation._passive_representation,
+            A=operation._active_representation,
+            modes=operation.modes
+        )
+
     def displacement(self, operation):
         r"""Applies the displacement operation to the state.
 
@@ -97,31 +104,3 @@ class GaussianBackend(Backend):
 
         self.state.G[other_modes, mode] += alpha * mean_copy[other_modes]
         self.state.G[mode, other_modes] += alpha * mean_copy[other_modes]
-
-    def squeezing(self, operation):
-        params = operation.params
-        modes = operation.modes
-
-        if len(params) == 1:
-            theta = 0
-        else:
-            theta = params[1]
-
-        alpha = np.cosh(params[0]) + 0j
-
-        beta = np.sinh(params[0]) * np.exp(1j * theta)
-
-        P = np.array([[alpha]])
-
-        A = np.array([[- beta]])
-
-        self.state.apply_active(P, A, modes)
-
-    def quadratic_phase(self, operation):
-        s = operation.params[0]
-
-        P = np.array([[1 + s/2 * 1j]])
-
-        A = np.array([[s/2 * 1j]])
-
-        self.state.apply_active(P, A, operation.modes)

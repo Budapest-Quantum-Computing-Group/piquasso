@@ -148,6 +148,28 @@ class R(Operation):
         return np.array([[phase]])
 
 
+class GaussianTransform(Operation):
+    """Applies a transformation to the state.
+
+    Args:
+        P (np.array):
+            The representation of the passive transformation on the one-particle
+            subspace.
+        A (np.array):
+            The representation of the active transformation on the one-particle
+            subspace.
+    """
+    backends = {
+        GaussianBackend: GaussianBackend._apply,
+    }
+
+    def __init__(self, P, A):
+        super().__init__(P, A)
+
+        self._passive_representation = P
+        self._active_representation = A
+
+
 class S(Operation):
     r"""Applies the squeezing operator.
 
@@ -177,7 +199,7 @@ class S(Operation):
     """  # noqa: E501
 
     backends = {
-        GaussianBackend: GaussianBackend.squeezing,
+        GaussianBackend: GaussianBackend._apply,
     }
 
     def __init__(self, amp, theta=0):
@@ -196,6 +218,22 @@ class S(Operation):
 
         super().__init__(amp, theta)
 
+        self._calculate_representations()
+
+    def _calculate_representations(self):
+        if len(self.params) == 1:
+            theta = 0
+        else:
+            theta = self.params[1]
+
+        alpha = np.cosh(self.params[0])
+
+        beta = np.sinh(self.params[0]) * np.exp(1j * theta)
+
+        self._passive_representation = np.array([[alpha]])
+
+        self._active_representation = np.array([[- beta]])
+
 
 class P(Operation):
     r"""Applies the quadratic phase operation to the state.
@@ -212,11 +250,20 @@ class P(Operation):
     """
 
     backends = {
-        GaussianBackend: GaussianBackend.quadratic_phase,
+        GaussianBackend: GaussianBackend._apply,
     }
 
     def __init__(self, s):
         super().__init__(s)
+
+        self._calculate_representations()
+
+    def _calculate_representations(self):
+        s = self.params[0]
+
+        self._passive_representation = np.array([[1 + s/2 * 1j]])
+
+        self._active_representation = np.array([[s/2 * 1j]])
 
 
 class D(Operation):

@@ -358,6 +358,89 @@ class TestGaussianPassiveTransform:
         assert np.allclose(self.program.state.G, expected_G)
 
 
+class TestGaussianTransform:
+
+    @pytest.fixture
+    def m(self):
+        return np.array([1 - 2j, 3 + 4j, 2 - 5j], dtype=complex)
+
+    @pytest.fixture
+    def C(self):
+        return np.array(
+            [
+                [     1, 1 + 2j, 4 - 6j],
+                [1 - 2j,      6, 5 + 9j],
+                [4 + 6j, 5 - 9j,    -10],
+            ],
+            dtype=complex,
+        )
+
+    @pytest.fixture
+    def G(self):
+        return np.array(
+            [
+                [3 + 1j, 1 + 1j, 2 + 2j],
+                [1 + 1j, 2 - 3j, 5 - 6j],
+                [2 + 2j, 5 - 6j,      7]
+            ],
+            dtype=complex,
+        )
+
+    @pytest.fixture(autouse=True)
+    def setup(self, C, G, m):
+        self.program = pq.Program(
+            state=GaussianState(C, G, m)
+        )
+
+    def test_apply_transform_for_1_modes(self, C, G):
+        alpha = np.exp(1j * np.pi/3)
+
+        beta = np.exp(1j * np.pi/4)
+
+        passive_transform = np.array(
+            [
+                [alpha]
+            ],
+            dtype=complex,
+        )
+
+        active_transform = np.array(
+            [
+                [beta]
+            ],
+            dtype=complex,
+        )
+
+        with self.program:
+            pq.Q(1) | pq.GaussianTransform(P=passive_transform, A=active_transform)
+
+        self.program.execute()
+
+        expected_m = np.array(
+            [1 - 2j, 2.98564585 + 3.89096943j, 2 - 5j],
+        )
+
+        expected_C = np.array(
+            [
+                [1, 0.18216275 + 1.8660254j, 4 - 6j],
+                [0.182162 - 1.86602j, 9.416617 + 5.196152j, 9.587121 - 7.608301j],
+                [4 + 6j, 9.58712185 + 7.60830161j, -10]
+            ]
+        )
+
+        expected_G = np.array(
+            [
+                [3 + 1j, 1.75529494 + 0.65891862j, 2 + 2j],
+                [1.755294 + 0.658918j, -4.766571 + 17.789086j, 4.86772 + 11.229621j],
+                [2 + 2j, 4.8677253 + 11.22962196j, 7 + 0j]
+            ]
+        )
+
+        assert np.allclose(self.program.state.m, expected_m)
+        assert np.allclose(self.program.state.C, expected_C)
+        assert np.allclose(self.program.state.G, expected_G)
+
+
 def test_apply_passive(
     generate_complex_symmetric_matrix,
     generate_hermitian_matrix,
