@@ -9,13 +9,8 @@ import numpy as np
 from piquasso import registry
 from piquasso.context import Context
 
-from piquasso.gaussian.backend import GaussianBackend
-from piquasso.sampling.backend import SamplingBackend
-
 
 class Operation(registry.ClassRecorder):
-    backends = {}
-
     def __init__(self, *params):
         self.params = params
         self.modes = None
@@ -59,10 +54,6 @@ class PassiveTransform(Operation):
             subspace.
     """
 
-    backends = {
-        GaussianBackend: GaussianBackend._apply_passive,
-    }
-
     def __init__(self, T):
         self._passive_representation = T
 
@@ -82,11 +73,6 @@ class B(Operation):
     where :math:`t = \cos(\theta)` and :math:`r = e^{- i \phi} \sin(\theta)`.
 
     """
-
-    backends = {
-        GaussianBackend: GaussianBackend._apply_passive,
-        SamplingBackend: SamplingBackend._multiply_interferometer,
-    }
 
     def __init__(self, theta=0., phi=np.pi / 4):
         r"""Beamsplitter operation
@@ -126,11 +112,6 @@ class R(Operation):
 
     """
 
-    backends = {
-        GaussianBackend: GaussianBackend._apply_passive,
-        SamplingBackend: SamplingBackend._multiply_interferometer,
-    }
-
     def __init__(self, phi):
         r"""Rotation or Phaseshifter operation.
 
@@ -159,9 +140,6 @@ class GaussianTransform(Operation):
             The representation of the active transformation on the one-particle
             subspace.
     """
-    backends = {
-        GaussianBackend: GaussianBackend._apply,
-    }
 
     def __init__(self, P, A):
         super().__init__(P, A)
@@ -197,10 +175,6 @@ class S(Operation):
     where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`, :math:`e^{i\theta}\sinh(amp)`
     respectively.
     """  # noqa: E501
-
-    backends = {
-        GaussianBackend: GaussianBackend._apply,
-    }
 
     def __init__(self, amp, theta=0):
         r"""
@@ -249,10 +223,6 @@ class P(Operation):
         P(s)^\dagger a_i P(s) = (1 + i \frac{s}{2}) a_i + i \frac{s}{2} a_i^\dagger.
     """
 
-    backends = {
-        GaussianBackend: GaussianBackend._apply,
-    }
-
     def __init__(self, s):
         super().__init__(s)
 
@@ -277,10 +247,6 @@ class S2(Operation):
         r (float): The amplitude of the squeezing operation.
         phi (float): The squeezing angle.
     """
-
-    backends = {
-        GaussianBackend: GaussianBackend._apply,
-    }
 
     def __init__(self, r, phi):
         super().__init__(r, phi)
@@ -308,10 +274,6 @@ class S2(Operation):
 
 class D(Operation):
     """Displacement operation."""
-
-    backends = {
-        GaussianBackend: GaussianBackend.displacement,
-    }
 
     def __init__(self, *, alpha=None, r=None, phi=None):
         r"""Phase space displacement operation.
@@ -355,10 +317,6 @@ class Interferometer(Operation):
     qumodes (provided as the arguments) and as an identity on every other mode.
     """
 
-    backends = {
-        SamplingBackend: SamplingBackend.interferometer
-    }
-
     @staticmethod
     def _is_square(matrix):
         shape = matrix.shape
@@ -395,10 +353,6 @@ class Sampling(ModelessOperation):
         shots (int): A positive integer value representing number of samples for the
             experiment
     """
-
-    backends = {
-        SamplingBackend: SamplingBackend.sampling
-    }
 
     def __init__(self, shots=1):
         assert \

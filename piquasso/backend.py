@@ -4,18 +4,28 @@
 
 """Implementation of backends."""
 
+import abc
+
 from . import registry
 
 
-class Backend(registry.ClassRecorder):
+class Backend(registry.ClassRecorder, abc.ABC):
+    _operation_map = {}
+
     def __init__(self, state):
         """
         Args:
             state (State): The initial quantum state.
         """
         self.state = state
+        self._operation_map.update(self.get_operation_map())
 
-    def execute_operations(self, operations):
+    @abc.abstractmethod
+    def get_operation_map(self):
+        pass
+
+    @classmethod
+    def execute_operations(cls, operations):
         """Executes the collected operations in order.
 
         Raises:
@@ -28,11 +38,11 @@ class Backend(registry.ClassRecorder):
                 executed in order.
         """
         for operation in operations:
-            method = operation.backends.get(self.__class__)
+            method = cls._operation_map.get(operation.__class__.__name__)
 
             if not method:
                 raise NotImplementedError(
                     "No such operation implemented on this backend."
                 )
 
-            method(self, operation)
+            method(operation)

@@ -9,9 +9,19 @@ from BoSS.simulation_strategies.GeneralizedCliffordsSimulationStrategy \
 
 from piquasso.backend import Backend
 
+from piquasso import operations
+
 
 class SamplingBackend(Backend):
     r"""A backend for fast boson sampling."""
+
+    def get_operation_map(self):
+        return {
+            operations.B.__name__: self._multiply_interferometer,
+            operations.R.__name__: self._multiply_interferometer,
+            operations.Sampling.__name__: self.sampling,
+            operations.Interferometer.__name__: self.interferometer,
+        }
 
     def _multiply_interferometer(self, operation):
         r"""Adds additional phase shifter to the effective interferometer.

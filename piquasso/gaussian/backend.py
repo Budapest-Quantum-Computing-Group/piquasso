@@ -6,8 +6,23 @@ import numpy as np
 
 from piquasso.backend import Backend
 
+from piquasso import operations
+
 
 class GaussianBackend(Backend):
+
+    def get_operation_map(self):
+        return {
+            operations.PassiveTransform.__name__: self._apply_passive,
+            operations.B.__name__: self._apply_passive,
+            operations.R.__name__: self._apply_passive,
+            operations.GaussianTransform.__name__: self._apply,
+            operations.S.__name__: self._apply,
+            operations.P.__name__: self._apply,
+            operations.S2.__name__: self._apply,
+            operations.D.__name__: self.displacement
+        }
+
     def _apply_passive(self, operation):
         self.state.apply_passive(
             operation._passive_representation,
