@@ -14,11 +14,31 @@ from piquasso.program import Program
 
 class TestProgramBase:
     @pytest.fixture
-    def FakeBackend(self):
+    def DummyOperation(self):
+        class _DummyOperation(Operation):
+            pass
+
+        return _DummyOperation
+
+    @pytest.fixture
+    def DummyModelessOperation(self):
+        class _DummyModelessOperation(ModelessOperation):
+            pass
+
+        return _DummyModelessOperation
+
+    @pytest.fixture
+    def FakeBackend(self, DummyOperation, DummyModelessOperation):
         class _FakeBackend(Backend):
             dummy_operation = Mock(name="dummy_operation")
 
             dummy_modeless_operation = Mock(name="dummy_modeless_operation")
+
+            def get_operation_map(self):
+                return {
+                    DummyOperation.__name__: self.dummy_operation,
+                    DummyModelessOperation.__name__: self.dummy_modeless_operation,
+                }
 
         return _FakeBackend
 
@@ -34,21 +54,3 @@ class TestProgramBase:
         self.state = FakeState()
 
         self.program = Program(state=self.state)
-
-    @pytest.fixture
-    def DummyOperation(self, FakeBackend):
-        class _DummyOperation(Operation):
-            backends = {
-                FakeBackend: FakeBackend.dummy_operation,
-            }
-
-        return _DummyOperation
-
-    @pytest.fixture
-    def DummyModelessOperation(self, FakeBackend):
-        class _DummyModelessOperation(ModelessOperation):
-            backends = {
-                FakeBackend: FakeBackend.dummy_modeless_operation,
-            }
-
-        return _DummyModelessOperation

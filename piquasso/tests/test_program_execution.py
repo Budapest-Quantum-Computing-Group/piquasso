@@ -15,7 +15,6 @@ class TestProgramExecution(TestProgramBase):
         self.program.execute()
 
         self.program.backend.dummy_operation.assert_called_once_with(
-            self.program.backend,
             operation
         )
 
@@ -26,7 +25,6 @@ class TestProgramExecution(TestProgramBase):
         self.program.execute()
 
         self.program.backend.dummy_modeless_operation.assert_called_once_with(
-            self.program.backend,
             operation
         )
 
