@@ -4,10 +4,12 @@
 
 import numpy as np
 
-from . import registry
+from ._mixins import PropertyMixin
 
 
-class State(registry.ClassRecorder):
+class State(PropertyMixin):
+    _backend_class = None
+
     @classmethod
     def from_properties(cls, properties):
         return cls(**properties)

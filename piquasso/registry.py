@@ -3,44 +3,32 @@
 #
 
 
-class ClassRecorder:
-    """Class to record class definitions throughout the package.
-
-    To record a class, just subclass this class.
+class _Registry:
+    """Class to store class definitions.
 
     Attributes:
-        records (dict): A map of the classes to access them by their names.
+        items (dict): A map of the classes to access them by their names.
     """
 
-    records = {}
-
-    def __init_subclass__(cls, **kwargs):
-        """Adds the subclass to :attr:`records`."""
-        super().__init_subclass__(**kwargs)
-
-        cls.records[cls.__name__] = cls
-
-    @classmethod
-    def from_properties(cls, properties):
-        """Creates an instance from a mapping specified.
-
-        Args:
-            properties (collections.Mapping):
-                The desired instance in the format of a mapping.
-        """
-
-        raise NotImplementedError(
-            f"No 'from_properties' classmethod is implemented for class '{cls}'."
-        )
+    items = {}
 
 
-def set_class(name, class_):
-    ClassRecorder.records[name] = class_
-    class_.__name__ = name
+def add(class_):
+    if class_.__name__ not in _Registry.items:
+        _Registry.items[class_.__name__] = class_
+
+    return class_
+
+
+def use_plugin(plugin, override=False):
+    for name, class_ in plugin.classes.items():
+        class_.__name__ = name
+        if override or name not in _Registry.items:
+            _Registry.items[name] = class_
 
 
 def retrieve_class(class_name):
-    class_ = ClassRecorder.records.get(class_name)
+    class_ = _Registry.items.get(class_name)
 
     if class_ is None:
         raise NameError(f"Class with name '{class_name}' not found in registry.")

@@ -11,7 +11,9 @@ class TestRegistry:
 
     @pytest.fixture
     def SomeClass(self):
-        class SomeClass(registry.ClassRecorder):
+
+        @registry.add
+        class SomeClass:
             def __init__(self, foo, bar):
                 self.foo = foo
                 self.bar = bar
@@ -24,6 +26,8 @@ class TestRegistry:
 
     @pytest.fixture
     def SomeSubClass(self, SomeClass):
+
+        @registry.add
         class SomeSubClass(SomeClass):
             pass
 
@@ -31,6 +35,8 @@ class TestRegistry:
 
     @pytest.fixture
     def SomeSubSubClass(self, SomeSubClass):
+
+        @registry.add
         class SomeSubSubClass(SomeSubClass):
             pass
 
@@ -56,6 +62,7 @@ class TestRegistry:
             }
         )
 
-        assert isinstance(instance, SomeClass)
+        assert instance.__class__.__name__ == "SomeClass"
+
         assert instance.foo == "fee"
         assert instance.bar == "beer"
