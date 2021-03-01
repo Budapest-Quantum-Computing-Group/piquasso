@@ -16,7 +16,9 @@ from piquasso.operations import Operation
 class TestProgramJSONParsing:
     @pytest.fixture
     def FakeBackend(self):
-        class FakeBackend(registry.ClassRecorder):
+
+        @registry.add
+        class FakeBackend:
             def __init__(self, state):
                 self.state = state
 
@@ -24,6 +26,8 @@ class TestProgramJSONParsing:
 
     @pytest.fixture
     def FakeState(self, FakeBackend):
+
+        @registry.add
         class FakeState(State):
             _backend_class = FakeBackend
 
@@ -36,6 +40,8 @@ class TestProgramJSONParsing:
 
     @pytest.fixture
     def FakeOperation(self):
+
+        @registry.add
         class FakeOperation(Operation):
             def __init__(self, first_param, second_param):
                 super().__init__(first_param, second_param)
@@ -102,7 +108,7 @@ class TestProgramJSONParsing:
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
 
-        assert type(program.backend) == FakeBackend
+        assert program.backend.__class__.__name__ == "FakeBackend"
 
         assert program.operations[0].params == (
             "first_param_value", "second_param_value"
@@ -136,7 +142,7 @@ class TestProgramJSONParsing:
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
 
-        assert type(program.backend) == FakeBackend
+        assert program.backend.__class__.__name__ == "FakeBackend"
 
         assert program.operations[0].params == (
             "first_param_value", "second_param_value"

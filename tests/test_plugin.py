@@ -82,3 +82,27 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianBac
     assert program.state.__class__ is MyGaussianState
     assert program.backend.__class__ is MyGaussianBackend
     assert pq.B is MyBeamsplitter
+
+
+def test_untouched_classes_remain_to_be_accessible(
+    MyGaussianState,
+    MyBeamsplitter,
+    MyGaussianBackend,
+):
+    class Plugin:
+        classes = {
+            "GaussianState": MyGaussianState,
+            "B": MyBeamsplitter,
+        }
+
+    pq.use(Plugin)
+
+    program = pq.Program(state=pq.GaussianState.create_vacuum(3))
+
+    with program:
+        pq.Q(0, 1) | pq.B(theta=np.pi/3)
+
+    program.execute()
+
+    assert pq.B is MyBeamsplitter
+    assert pq.R is pq.operations.R

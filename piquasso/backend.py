@@ -6,10 +6,8 @@
 
 import abc
 
-from . import registry
 
-
-class Backend(registry.ClassRecorder, abc.ABC):
+class Backend(abc.ABC):
     _operation_map = {}
 
     def __init__(self, state):

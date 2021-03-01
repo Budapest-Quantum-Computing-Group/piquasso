@@ -6,11 +6,13 @@
 
 import numpy as np
 
-from piquasso import registry
+from . import registry
+
+from piquasso._mixins import PropertyMixin
 from piquasso.context import Context
 
 
-class Operation(registry.ClassRecorder):
+class Operation(PropertyMixin):
     def __init__(self, *params):
         self.params = params
         self.modes = None
@@ -18,10 +20,6 @@ class Operation(registry.ClassRecorder):
     @classmethod
     def from_properties(cls, properties):
         """Creates an `Operation` instance from a mapping specified.
-
-        Overrides `registry.ClassRecorder.from_properties`, since the `modes` attribute
-        of an `Operator` instance cannot be specified in `__init__`, it has to be
-        specified after initialization.
 
         Args:
             properties (collections.Mapping):
@@ -45,6 +43,7 @@ class ModelessOperation(Operation):
         Context.current_program.operations.append(self)
 
 
+@registry.add
 class PassiveTransform(Operation):
     r"""Applies a general passive transformation.
 
@@ -58,6 +57,7 @@ class PassiveTransform(Operation):
         self._passive_representation = T
 
 
+@registry.add
 class B(Operation):
     r"""Applies a beamsplitter operation.
 
@@ -99,6 +99,7 @@ class B(Operation):
         ])
 
 
+@registry.add
 class R(Operation):
     r"""Rotation or Phaseshifter operation.
 
@@ -129,6 +130,7 @@ class R(Operation):
         return np.array([[phase]])
 
 
+@registry.add
 class GaussianTransform(Operation):
     """Applies a transformation to the state.
 
@@ -148,6 +150,7 @@ class GaussianTransform(Operation):
         self._active_representation = A
 
 
+@registry.add
 class S(Operation):
     r"""Applies the squeezing operator.
 
@@ -209,6 +212,7 @@ class S(Operation):
         self._active_representation = np.array([[- beta]])
 
 
+@registry.add
 class P(Operation):
     r"""Applies the quadratic phase operation to the state.
 
@@ -236,6 +240,7 @@ class P(Operation):
         self._active_representation = np.array([[s/2 * 1j]])
 
 
+@registry.add
 class S2(Operation):
     r"""2-mode squeezing gate.
 
@@ -272,6 +277,7 @@ class S2(Operation):
         )
 
 
+@registry.add
 class D(Operation):
     """Displacement operation."""
 
@@ -304,6 +310,7 @@ class D(Operation):
         super().__init__(alpha)
 
 
+@registry.add
 class Interferometer(Operation):
     """Interferometer.
 
@@ -335,6 +342,7 @@ class Interferometer(Operation):
         super().__init__(interferometer_matrix)
 
 
+@registry.add
 class Sampling(ModelessOperation):
     r"""Boson Sampling.
 
