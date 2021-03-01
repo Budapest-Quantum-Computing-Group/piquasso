@@ -103,6 +103,45 @@ class TestGaussian:
         assert np.allclose(self.program.state.G, expected_G)
         assert np.allclose(self.program.state.C, expected_C)
 
+    def test_two_mode_squeezing(self):
+        r = 4
+        phi = np.pi/3
+
+        with self.program:
+            pq.Q(1, 2) | pq.S2(r=r, phi=phi)
+
+        self.program.execute()
+
+        expected_m = np.array(
+            [
+                1,
+                40.95319143 + 23.63376156j,
+                40.95319143 + 23.63376156j
+            ],
+            dtype=complex,
+        )
+        expected_C = np.array(
+            [
+                [3, 27.308232, 40.93487 + 70.901284j],
+                [27.308232, 2980.95832, 1117.859119 + 645.396263j],
+                [40.93487 - 70.901284j, 1117.859119 - 645.396263j, 2979.95832],
+            ],
+            dtype=complex
+        )
+
+        expected_G = np.array(
+            [
+                [1, 81.92469, 13.64495 + 23.633761j],
+                [81.92469, 1119.109 + 644.963396j, 1490.479 + 2581.5850j],
+                [13.64495 + 23.633761j, 1490.479 + 2581.5850j, 1 + 1289.926792j]
+            ],
+            dtype=complex
+        )
+
+        assert np.allclose(self.program.state.m, expected_m)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.C, expected_C)
+
     def test_quadratic_phase(self):
         with self.program:
             Q(0) | P(0)

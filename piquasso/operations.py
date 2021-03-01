@@ -266,6 +266,46 @@ class P(Operation):
         self._active_representation = np.array([[s/2 * 1j]])
 
 
+class S2(Operation):
+    r"""2-mode squeezing gate.
+
+    .. math::
+        S a_1 S^\dagger = a_1 \cosh r + a_2^\dagger \exp(i \phi)
+        S a_2 S^\dagger = a_2 \cosh r + a_1^\dagger \exp(i \phi)
+
+    Args:
+        r (float): The amplitude of the squeezing operation.
+        phi (float): The squeezing angle.
+    """
+
+    backends = {
+        GaussianBackend: GaussianBackend._apply,
+    }
+
+    def __init__(self, r, phi):
+        super().__init__(r, phi)
+
+        self._calculate_representations()
+
+    def _calculate_representations(self):
+        r = self.params[0]
+        phi = self.params[1]
+
+        self._passive_representation = np.array(
+            [
+                [np.cosh(r), 0],
+                [0, np.cosh(r)],
+            ]
+        )
+
+        self._active_representation = np.array(
+            [
+                [0, np.sinh(r) * np.exp(1j * phi)],
+                [np.sinh(r) * np.exp(1j * phi), 0],
+            ]
+        )
+
+
 class D(Operation):
     """Displacement operation."""
 

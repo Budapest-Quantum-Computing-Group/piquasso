@@ -14,6 +14,7 @@ from .operations import (
     D,
     S,
     P,
+    S2,
     Interferometer,
     Sampling,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "D",
     "S",
     "P",
+    "S2",
     "Interferometer",
     "Sampling",
     "GaussianState",
