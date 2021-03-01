@@ -7,9 +7,6 @@ import numpy as np
 
 import piquasso as pq
 
-from piquasso import Program, Q, D, S, P
-from piquasso.gaussian import GaussianState
-
 
 class TestGaussian:
     @pytest.fixture(autouse=True)
@@ -32,9 +29,9 @@ class TestGaussian:
         )
         m = np.ones(3, dtype=complex)
 
-        state = GaussianState(C, G, m)
+        state = pq.GaussianState(C, G, m)
 
-        self.program = Program(state=state)
+        self.program = pq.Program(state=state)
 
     def test_displacement(self):
         alpha = 2 + 3j
@@ -42,9 +39,9 @@ class TestGaussian:
         phi = np.pi/3
 
         with self.program:
-            Q(0) | D(r=r, phi=phi)
-            Q(1) | D(alpha=alpha)
-            Q(2) | D(r=r, phi=phi) | D(alpha=alpha)
+            pq.Q(0) | pq.D(r=r, phi=phi)
+            pq.Q(1) | pq.D(alpha=alpha)
+            pq.Q(2) | pq.D(r=r, phi=phi) | pq.D(alpha=alpha)
 
         self.program.execute()
 
@@ -67,9 +64,9 @@ class TestGaussian:
         amp_1 = 0.8
 
         with self.program:
-            Q(0) | D(r=r, phi=phi)
-            Q(1) | S(amp=-0.6, theta=0.7)
-            Q(2) | S(amp=0.8)
+            pq.Q(0) | pq.D(r=r, phi=phi)
+            pq.Q(1) | pq.S(amp=-0.6, theta=0.7)
+            pq.Q(2) | pq.S(amp=0.8)
 
         self.program.execute()
 
@@ -144,9 +141,9 @@ class TestGaussian:
 
     def test_quadratic_phase(self):
         with self.program:
-            Q(0) | P(0)
-            Q(1) | P(2)
-            Q(2) | P(1)
+            pq.Q(0) | pq.P(0)
+            pq.Q(1) | pq.P(2)
+            pq.Q(2) | pq.P(1)
 
         self.program.execute()
 
@@ -185,7 +182,7 @@ class TestGaussian:
         initial_cov = self.program.state.cov
 
         with self.program:
-            Q(0) | D(r=r, phi=phi)
+            pq.Q(0) | pq.D(r=r, phi=phi)
 
         self.program.execute()
 
@@ -216,14 +213,14 @@ class TestTwoModeGaussian:
         )
         m = 3 * np.ones(2, dtype=complex)
 
-        state = GaussianState(C, G, m)
+        state = pq.GaussianState(C, G, m)
 
-        program = Program(state=state)
+        program = pq.Program(state=state)
 
         initial_cov = program.state.cov
 
         with program:
-            Q(0) | D(r=r, phi=phi)
+            pq.Q(0) | pq.D(r=r, phi=phi)
 
         program.execute()
 
@@ -252,12 +249,12 @@ class TestTwoModeGaussian:
         )
         m = np.zeros(2, dtype=complex)
 
-        state = GaussianState(C, G, m)
+        state = pq.GaussianState(C, G, m)
 
-        program = Program(state=state)
+        program = pq.Program(state=state)
 
         with program:
-            Q(0) | D(r=r, phi=phi)
+            pq.Q(0) | pq.D(r=r, phi=phi)
 
         program.execute()
 
@@ -297,7 +294,7 @@ class TestGaussianPassiveTransform:
     @pytest.fixture(autouse=True)
     def setup(self, C, G, m):
         self.program = pq.Program(
-            state=GaussianState(C, G, m)
+            state=pq.GaussianState(C, G, m)
         )
 
     def test_apply_passive_to_C_and_G_for_1_modes(self, C, G):
@@ -428,7 +425,7 @@ class TestGaussianTransform:
     @pytest.fixture(autouse=True)
     def setup(self, C, G, m):
         self.program = pq.Program(
-            state=GaussianState(C, G, m)
+            state=pq.GaussianState(C, G, m)
         )
 
     def test_apply_transform_for_1_modes(self, C, G):
@@ -489,7 +486,7 @@ def test_apply_passive(
     G = generate_complex_symmetric_matrix(5)
     m = np.random.rand(5) + 1j * np.random.rand(5)
 
-    program = pq.Program(state=GaussianState(C=C, G=G, m=m))
+    program = pq.Program(state=pq.GaussianState(C=C, G=G, m=m))
 
     expected_m = m.copy()
     expected_C = C.copy()

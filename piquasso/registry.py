@@ -34,6 +34,11 @@ class ClassRecorder:
         )
 
 
+def set_class(name, class_):
+    ClassRecorder.records[name] = class_
+    class_.__name__ = name
+
+
 def retrieve_class(class_name):
     class_ = ClassRecorder.records.get(class_name)
 
