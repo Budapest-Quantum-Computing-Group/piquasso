@@ -8,7 +8,7 @@ from ._mixins import PropertyMixin
 
 
 class State(PropertyMixin):
-    _backend_class = None
+    _circuit_class = None
 
     @classmethod
     def from_properties(cls, properties):

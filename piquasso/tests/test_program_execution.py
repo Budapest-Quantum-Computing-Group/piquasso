@@ -14,7 +14,7 @@ class TestProgramExecution(TestProgramBase):
 
         self.program.execute()
 
-        self.program.backend.dummy_operation.assert_called_once_with(
+        self.program.circuit.dummy_operation.assert_called_once_with(
             operation
         )
 
@@ -24,7 +24,7 @@ class TestProgramExecution(TestProgramBase):
 
         self.program.execute()
 
-        self.program.backend.dummy_modeless_operation.assert_called_once_with(
+        self.program.circuit.dummy_modeless_operation.assert_called_once_with(
             operation
         )
 
@@ -35,5 +35,5 @@ class TestProgramExecution(TestProgramBase):
 
         self.program.execute()
 
-        self.program.backend.dummy_operation.assert_called_once()
-        self.program.backend.dummy_modeless_operation.assert_called_once()
+        self.program.circuit.dummy_operation.assert_called_once()
+        self.program.circuit.dummy_modeless_operation.assert_called_once()

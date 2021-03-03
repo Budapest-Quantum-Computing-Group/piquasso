@@ -4,12 +4,12 @@
 
 import numpy as np
 
-from piquasso.backend import Backend
+from piquasso.circuit import Circuit
 
 from piquasso import operations
 
 
-class GaussianBackend(Backend):
+class GaussianCircuit(Circuit):
 
     def get_operation_map(self):
         return {

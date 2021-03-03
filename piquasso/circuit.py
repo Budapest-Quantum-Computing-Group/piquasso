@@ -2,12 +2,12 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-"""Implementation of backends."""
+"""Implementation of circuits."""
 
 import abc
 
 
-class Backend(abc.ABC):
+class Circuit(abc.ABC):
     _operation_map = {}
 
     def __init__(self, state):
@@ -28,11 +28,11 @@ class Backend(abc.ABC):
 
         Raises:
             NotImplementedError:
-                If no such method is implemented on the `Backend` class.
+                If no such method is implemented on the `Circuit` class.
 
         Args:
             operations (list):
-                The methods along with keyword arguments of the current backend to be
+                The methods along with keyword arguments of the current circuit to be
                 executed in order.
         """
         for operation in operations:
@@ -40,7 +40,7 @@ class Backend(abc.ABC):
 
             if not method:
                 raise NotImplementedError(
-                    "No such operation implemented on this backend."
+                    "No such operation implemented on this circuit."
                 )
 
             method(operation)

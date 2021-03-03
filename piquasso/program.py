@@ -16,8 +16,8 @@ class Program:
 
     Attributes:
         state (State): The initial quantum state.
-        backend (Backend):
-            The backend on which the quantum program should run.
+        circuit (Circuit):
+            The circuit on which the quantum program should run.
         operations (list):
             The set of operations, e.g. quantum gates and measurements.
         hbar (float):
@@ -34,7 +34,7 @@ class Program:
         self.operations = operations or []
         self.hbar = hbar
 
-        self.backend = state._backend_class(state) if state else None
+        self.circuit = state._circuit_class(state) if state else None
 
     @property
     def d(self):
@@ -58,7 +58,6 @@ class Program:
                     ...
                 }
             },
-            "backend_class": <BACKEND_CLASS_NAME>,
             "operations": [
                 {
                     "type": <OPERATION_CLASS_NAME>,
@@ -108,9 +107,9 @@ class Program:
         return cls.from_properties(properties)
 
     def execute(self):
-        """Executes the collected operations on the backend."""
+        """Executes the collected operations on the circuit."""
 
-        self.backend.execute_operations(self.operations)
+        self.circuit.execute_operations(self.operations)
 
     def __enter__(self):
         pq.context.Context.current_program = self

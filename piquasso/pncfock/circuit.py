@@ -2,12 +2,12 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.backend import Backend
+from piquasso.circuit import Circuit
 
 from piquasso import operations
 
 
-class PNCFockBackend(Backend):
+class PNCFockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
