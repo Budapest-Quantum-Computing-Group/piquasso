@@ -62,3 +62,20 @@ class TestSampling:
 
         assert np.allclose(first_sample, second_sample),\
             f'Expected same samples, got: {first_sample} & {second_sample}'
+
+    def test_mach_zehnder(self):
+        int_ = np.pi/3
+        ext = np.pi/4
+
+        with self.program:
+            pq.Q(0, 1) | pq.MZ(int_=int_, ext=ext)
+            pq.Sampling(shots=1)
+
+        self.program.execute()
+
+    def test_fourier(self):
+        with self.program:
+            pq.Q(0) | pq.F()
+            pq.Sampling(shots=1)
+
+        self.program.execute()

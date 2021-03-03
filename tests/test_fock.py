@@ -211,6 +211,59 @@ def test_phaseshift():
     )
 
 
+def test_fourier():
+    state = pq.PNCFockState.from_pure(
+        coefficients=[
+            [0],
+            [0.5, 0],
+            [np.sqrt(1/2), 0.5, 0],
+        ],
+        d=2,
+        cutoff=2,
+    )
+
+    program = pq.Program(state=state)
+
+    with program:
+        pq.Q(0) | pq.F()
+
+    program.execute()
+
+    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.allclose(
+        program.state.fock_probabilities,
+        [0, 0.25, 0, 0.5, 0.25, 0],
+    )
+
+
+def test_mach_zehnder():
+    state = pq.PNCFockState.from_pure(
+        coefficients=[
+            [0],
+            [0.5, 0],
+            [np.sqrt(1/2), 0.5, 0],
+        ],
+        d=2,
+        cutoff=2,
+    )
+
+    program = pq.Program(state=state)
+
+    int_ = np.pi/3
+    ext = np.pi/4
+
+    with program:
+        pq.Q(0, 1) | pq.MZ(int_=int_, ext=ext)
+
+    program.execute()
+
+    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.allclose(
+        program.state.fock_probabilities,
+        [0, 0.0625, 0.1875, 0.04845345, 0.09690689, 0.60463966],
+    )
+
+
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     state = pq.PNCFockState.from_pure(
         coefficients=[

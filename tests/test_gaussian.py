@@ -139,6 +139,81 @@ class TestGaussian:
         assert np.allclose(self.program.state.G, expected_G)
         assert np.allclose(self.program.state.C, expected_C)
 
+    def test_fourier(self):
+        with self.program:
+            pq.Q(0) | pq.F()
+
+        self.program.execute()
+
+        expected_m = np.array(
+            [
+                1j,
+                1,
+                1,
+            ],
+            dtype=complex,
+        )
+        expected_C = np.array(
+            [
+                [3, -1j, 0],
+                [1j, 2, 0],
+                [0, 0, 1],
+            ],
+            dtype=complex
+        )
+
+        expected_G = np.array(
+            [
+                [-1, 3j, 0],
+                [3j, 2, 0],
+                [0, 0, 1],
+            ],
+            dtype=complex
+        )
+
+        assert np.allclose(self.program.state.m, expected_m)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.C, expected_C)
+
+    def test_mach_zehnder(self):
+        int_ = np.pi/3
+        ext = np.pi/4
+
+        with self.program:
+            pq.Q(1, 2) | pq.MZ(int_=int_, ext=ext)
+
+        self.program.execute()
+
+        expected_m = np.array(
+            [
+                1,
+                -0.9159756 + 0.87940952j,
+                -0.5865163 - 0.20886883j,
+            ],
+            dtype=complex,
+        )
+        expected_C = np.array(
+            [
+                [3, -0.48296291 + 0.129409523j, -0.8365163 + 0.224143868j],
+                [-0.48296291 - 0.129409523j,  1.25, 0.4330127],
+                [-0.8365163 - 0.224143868j, 0.4330127, 1.75]
+            ],
+            dtype=complex
+        )
+
+        expected_G = np.array(
+            [
+                [1, -1.4488887 + 0.3882286j, -2.5095489 + 0.672432j],
+                [-1.448889 + 0.388229j, 0.058013 - 0.899519j, 0.966506 - 0.058013j],
+                [-2.509549 + 0.672432j, 0.966506 - 0.058013j, 1.174038 - 0.966506j]
+            ],
+            dtype=complex
+        )
+
+        assert np.allclose(self.program.state.m, expected_m)
+        assert np.allclose(self.program.state.G, expected_G)
+        assert np.allclose(self.program.state.C, expected_C)
+
     def test_quadratic_phase(self):
         with self.program:
             pq.Q(0) | pq.P(0)

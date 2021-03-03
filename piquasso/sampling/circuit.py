@@ -19,6 +19,8 @@ class SamplingCircuit(Circuit):
         return {
             operations.B.__name__: self._multiply_interferometer,
             operations.R.__name__: self._multiply_interferometer,
+            operations.MZ.__name__: self._multiply_interferometer,
+            operations.F.__name__: self._multiply_interferometer,
             operations.Sampling.__name__: self.sampling,
             operations.Interferometer.__name__: self.interferometer,
         }

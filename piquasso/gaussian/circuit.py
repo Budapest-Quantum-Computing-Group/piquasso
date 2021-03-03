@@ -16,6 +16,8 @@ class GaussianCircuit(Circuit):
             operations.PassiveTransform.__name__: self._apply_passive,
             operations.B.__name__: self._apply_passive,
             operations.R.__name__: self._apply_passive,
+            operations.MZ.__name__: self._apply_passive,
+            operations.F.__name__: self._apply_passive,
             operations.GaussianTransform.__name__: self._apply,
             operations.S.__name__: self._apply,
             operations.P.__name__: self._apply,

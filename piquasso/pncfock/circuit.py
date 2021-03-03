@@ -14,6 +14,8 @@ class PNCFockCircuit(Circuit):
             operations.PassiveTransform.__name__: self._apply,
             operations.B.__name__: self._apply,
             operations.R.__name__: self._apply,
+            operations.MZ.__name__: self._apply,
+            operations.F.__name__: self._apply,
         }
 
     def _apply(self, operation):
