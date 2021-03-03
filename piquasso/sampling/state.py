@@ -6,11 +6,11 @@ import numpy as np
 
 from piquasso.state import State
 
-from .backend import SamplingBackend
+from .circuit import SamplingCircuit
 
 
 class SamplingState(State):
-    _backend_class = SamplingBackend
+    _circuit_class = SamplingCircuit
 
     def __init__(self, *initial_state):
         self.initial_state = initial_state

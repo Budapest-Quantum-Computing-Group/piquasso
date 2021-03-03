@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from piquasso.state import State
-from piquasso.backend import Backend
+from piquasso.circuit import Circuit
 from piquasso.operations import Operation, ModelessOperation
 from piquasso.program import Program
 
@@ -28,8 +28,8 @@ class TestProgramBase:
         return _DummyModelessOperation
 
     @pytest.fixture
-    def FakeBackend(self, DummyOperation, DummyModelessOperation):
-        class _FakeBackend(Backend):
+    def FakeCircuit(self, DummyOperation, DummyModelessOperation):
+        class _FakeCircuit(Circuit):
             dummy_operation = Mock(name="dummy_operation")
 
             dummy_modeless_operation = Mock(name="dummy_modeless_operation")
@@ -40,12 +40,12 @@ class TestProgramBase:
                     DummyModelessOperation.__name__: self.dummy_modeless_operation,
                 }
 
-        return _FakeBackend
+        return _FakeCircuit
 
     @pytest.fixture
-    def FakeState(self, FakeBackend):
+    def FakeState(self, FakeCircuit):
         class _FakeState(State):
-            _backend_class = FakeBackend
+            _circuit_class = FakeCircuit
 
         return _FakeState
 

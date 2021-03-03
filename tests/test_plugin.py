@@ -10,20 +10,20 @@ import piquasso as pq
 
 
 @pytest.fixture
-def MyGaussianBackend():
+def MyGaussianCircuit():
     # TODO: better way to expose API
-    class _MyGaussianBackend(pq.gaussian.backend.GaussianBackend):
+    class _MyGaussianCircuit(pq.gaussian.circuit.GaussianCircuit):
         pass
 
-    _MyGaussianBackend.__name__ = "MyGaussianBackend"
+    _MyGaussianCircuit.__name__ = "MyGaussianCircuit"
 
-    return _MyGaussianBackend
+    return _MyGaussianCircuit
 
 
 @pytest.fixture
-def MyGaussianState(MyGaussianBackend):
+def MyGaussianState(MyGaussianCircuit):
     class _MyGaussianState(pq.GaussianState):
-        _backend_class = MyGaussianBackend
+        _circuit_class = MyGaussianCircuit
 
     _MyGaussianState.__name__ = "MyGaussianState"
 
@@ -40,7 +40,7 @@ def MyBeamsplitter():
     return _MyBeamsplitter
 
 
-def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianBackend):
+def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
@@ -57,11 +57,11 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianBackend):
     program.execute()
 
     assert program.state.__class__ is MyGaussianState
-    assert program.backend.__class__ is MyGaussianBackend
+    assert program.circuit.__class__ is MyGaussianCircuit
     assert pq.B is MyBeamsplitter
 
 
-def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianBackend):
+def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
@@ -80,14 +80,14 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianBac
     import piquasso  # noqa: F401
 
     assert program.state.__class__ is MyGaussianState
-    assert program.backend.__class__ is MyGaussianBackend
+    assert program.circuit.__class__ is MyGaussianCircuit
     assert pq.B is MyBeamsplitter
 
 
 def test_untouched_classes_remain_to_be_accessible(
     MyGaussianState,
     MyBeamsplitter,
-    MyGaussianBackend,
+    MyGaussianCircuit,
 ):
     class Plugin:
         classes = {

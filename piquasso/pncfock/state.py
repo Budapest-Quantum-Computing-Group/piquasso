@@ -8,11 +8,11 @@ from piquasso.state import State
 
 from .space import FockSpace, direct_sum
 
-from .backend import PNCFockBackend
+from .circuit import PNCFockCircuit
 
 
 class PNCFockState(State):
-    _backend_class = PNCFockBackend
+    _circuit_class = PNCFockCircuit
 
     def __init__(self, density_matrix, *, d, cutoff):
         self._density_matrix = density_matrix

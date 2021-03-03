@@ -15,21 +15,21 @@ from piquasso.operations import Operation
 
 class TestProgramJSONParsing:
     @pytest.fixture
-    def FakeBackend(self):
+    def FakeCircuit(self):
 
         @registry.add
-        class FakeBackend:
+        class FakeCircuit:
             def __init__(self, state):
                 self.state = state
 
-        return FakeBackend
+        return FakeCircuit
 
     @pytest.fixture
-    def FakeState(self, FakeBackend):
+    def FakeState(self, FakeCircuit):
 
         @registry.add
         class FakeState(State):
-            _backend_class = FakeBackend
+            _circuit_class = FakeCircuit
 
             def __init__(self, foo, bar, d):
                 self.foo = foo
@@ -91,7 +91,7 @@ class TestProgramJSONParsing:
     def test_instantiation_using_mappings(
         self,
         FakeState,
-        FakeBackend,
+        FakeCircuit,
         FakeOperation,
         state_mapping,
         operations_mapping,
@@ -108,7 +108,7 @@ class TestProgramJSONParsing:
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
 
-        assert program.backend.__class__.__name__ == "FakeBackend"
+        assert program.circuit.__class__.__name__ == "FakeCircuit"
 
         assert program.operations[0].params == (
             "first_param_value", "second_param_value"
@@ -123,7 +123,7 @@ class TestProgramJSONParsing:
     def test_from_json(
         self,
         FakeState,
-        FakeBackend,
+        FakeCircuit,
         FakeOperation,
         state_mapping,
         operations_mapping,
@@ -142,7 +142,7 @@ class TestProgramJSONParsing:
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
 
-        assert program.backend.__class__.__name__ == "FakeBackend"
+        assert program.circuit.__class__.__name__ == "FakeCircuit"
 
         assert program.operations[0].params == (
             "first_param_value", "second_param_value"
@@ -158,7 +158,7 @@ class TestBlackbirdParsing:
     """
     TODO: Temporary solution to test `blackbird` code parsing.
 
-    Ideally, `blackbird` parsing should be done `Backend`-independently.
+    Ideally, `blackbird` parsing should be done `Circuit`-independently.
     """
 
     @pytest.fixture(autouse=True)

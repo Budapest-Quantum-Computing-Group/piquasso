@@ -7,13 +7,13 @@ from BoSS.BosonSamplingSimulator import BosonSamplingSimulator
 from BoSS.simulation_strategies.GeneralizedCliffordsSimulationStrategy \
     import GeneralizedCliffordsSimulationStrategy
 
-from piquasso.backend import Backend
+from piquasso.circuit import Circuit
 
 from piquasso import operations
 
 
-class SamplingBackend(Backend):
-    r"""A backend for fast boson sampling."""
+class SamplingCircuit(Circuit):
+    r"""A circuit for fast boson sampling."""
 
     def get_operation_map(self):
         return {
