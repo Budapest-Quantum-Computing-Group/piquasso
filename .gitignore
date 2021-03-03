@@ -6,6 +6,7 @@ __pycache__
 piquasso.egg-info/
 venv/
 coverage.xml
+.coverage
 
 # IDEs
 .vscode
