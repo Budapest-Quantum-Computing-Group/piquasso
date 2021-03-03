@@ -131,6 +131,60 @@ class R(Operation):
 
 
 @registry.add
+class MZ(Operation):
+    r"""Mach-Zehnder interferometer.
+
+    .. math::
+        MZ(\phi_{int}, \phi_{ext}) =
+            B(\pi/4, \pi/2) (R(\phi_{int}) \oplus \mathbb{1})
+            B(\pi/4, \pi/2) (R(\phi_{ext}) \oplus \mathbb{1})
+
+    where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
+
+    Let :math:`MZ(\phi_{int}, \phi_{ext}) =: MZ`. Then
+
+    .. math::
+        MZ a_i MZ^\dagger =
+            e^{i \phi_{ext}} (e^{i \phi_{int}} - 1) a_i + i (e^{i \phi_{int}} - 1) a_j
+
+    .. math::
+        MZ a_j MZ^\dagger =
+            i e^{i \phi_{ext}} (e^{i \phi_{int}} + 1) a_i + (1 - e^{i \phi_{int}}) a_j
+
+
+    Args:
+        int (float): The internal angle.
+        ext (float): The external angle.
+    """
+
+    def __init__(self, *, int_: float, ext: float):
+        super().__init__(int_, ext)
+
+        self._passive_representation = self._get_passive_representation()
+
+    def _get_passive_representation(self):
+        int_phase, ext_phase = np.exp(1j * np.array(self.params))
+
+        return 1/2 * np.array(
+            [
+                [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
+                [1j * ext_phase * (int_phase + 1), 1 - int_phase]
+            ]
+        )
+
+
+@registry.add
+class F(R):
+    r"""Fourier gate.
+
+    Corresponds to the Rotaton gate :class:`R` with :math:`\phi = \pi/2`.
+    """
+
+    def __init__(self):
+        super().__init__(phi=np.pi/2)
+
+
+@registry.add
 class GaussianTransform(Operation):
     """Applies a transformation to the state.
 
