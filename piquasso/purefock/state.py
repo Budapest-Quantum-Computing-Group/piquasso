@@ -22,7 +22,7 @@ class PureFockState(State):
         )
 
         if state_vector is None:
-            state_vector = np.zeros(shape=(space.cardinality, ))
+            state_vector = np.zeros(shape=(space.cardinality, ), dtype=complex)
 
             if vacuum is True:
                 state_vector[0] = 1.0
@@ -84,20 +84,25 @@ class PureFockState(State):
 
         self.normalize()
 
-    def __repr__(self):
-        ret = []
-
-        for (index, ket) in enumerate(self._space):
-            vector_element = self._state_vector[index]
-            if vector_element == 0:
-                continue
-
-            ret.append(
-                str(vector_element)
-                + str(ket)
+    def _apply_cross_kerr(self, xi, modes):
+        for index, basis_vector in enumerate(self._space):
+            coefficient = np.exp(
+                1j * xi * basis_vector[modes[0]] * basis_vector[modes[1]]
             )
+            self._state_vector[index] *= coefficient
 
-        return " + ".join(ret)
+    @property
+    def nonzero_state_vector(self):
+        for (index, basis_vector) in enumerate(self._space):
+            coefficient = self._state_vector[index]
+            if coefficient != 0:
+                yield coefficient, basis_vector
+
+    def __repr__(self):
+        return " + ".join([
+            str(coefficient) + str(basis_vector)
+            for coefficient, basis_vector in self.nonzero_state_vector
+        ])
 
     @property
     def fock_probabilities(self):

@@ -375,6 +375,25 @@ class D(Operation):
 
 
 @_register
+class CK(Operation):
+    r"""Cross-Kerr gate.
+
+    .. math::
+        CK(\xi) = \exp(i \xi \hat{n}_i \hat{n}_j)
+
+    .. math::
+        CK(\xi) a_i CK(\xi) &= a_i \exp(- i \xi n_j) \\
+        CK(\xi) a_j CK(\xi) &= a_j \exp(- i \xi n_i)
+
+    Args:
+        xi (float): The magnitude of the Cross-Kerr nonlinear term.
+    """
+
+    def __init__(self, *, xi: float):
+        super().__init__(xi)
+
+
+@_register
 class Interferometer(Operation):
     """Interferometer.
 
