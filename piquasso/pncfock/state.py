@@ -54,15 +54,12 @@ class PNCFockState(State):
         )
 
     def __str__(self):
-        basis = []
-
-        for subspace_basis in self._space._basis:
-            basis.extend(subspace_basis)
+        basis_vectors = self._space.basis_vectors
 
         ret = []
 
-        for (index1, ket) in enumerate(basis):
-            for (index2, bra) in enumerate(basis):
+        for (index1, ket) in enumerate(basis_vectors):
+            for (index2, bra) in enumerate(basis_vectors):
                 matrix_element = self._density_matrix[index1, index2]
                 if matrix_element == 0:
                     continue

@@ -7,21 +7,33 @@ from unittest.mock import Mock
 import json
 import pytest
 
-from piquasso import Program
-
 from piquasso.core.registry import _register
 from piquasso.operations import Operation
+from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
+from piquasso.api.program import Program
 
 
 class TestProgramJSONParsing:
     @pytest.fixture
-    def FakeCircuit(self):
+    def FakeOperation(self):
 
         @_register
-        class FakeCircuit:
-            def __init__(self, state):
-                self.state = state
+        class FakeOperation(Operation):
+            def __init__(self, first_param, second_param):
+                super().__init__(first_param, second_param)
+
+        return FakeOperation
+
+    @pytest.fixture
+    def FakeCircuit(self, FakeOperation):
+
+        @_register
+        class FakeCircuit(Circuit):
+            def get_operation_map(self):
+                return {
+                    "FakeOperation": FakeOperation,
+                }
 
         return FakeCircuit
 
@@ -38,16 +50,6 @@ class TestProgramJSONParsing:
                 self.d = d
 
         return FakeState
-
-    @pytest.fixture
-    def FakeOperation(self):
-
-        @_register
-        class FakeOperation(Operation):
-            def __init__(self, first_param, second_param):
-                super().__init__(first_param, second_param)
-
-        return FakeOperation
 
     @pytest.fixture
     def number_of_modes(self):

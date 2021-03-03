@@ -27,6 +27,7 @@ from .operations import (
     S2,
     Interferometer,
     Sampling,
+    MeasureParticleNumber,
 )
 
 
@@ -75,6 +76,7 @@ __all__ = [
     "S2",
     "Interferometer",
     "Sampling",
+    "MeasureParticleNumber",
 ]
 
 __version__ = "0.1.2"
