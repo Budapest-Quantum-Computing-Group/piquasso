@@ -2,20 +2,15 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+"""Module to store class definitions."""
 
-class _Registry:
-    """Class to store class definitions.
 
-    Attributes:
-        items (dict): A map of the classes to access them by their names.
-    """
-
-    items = {}
+_items = {}
 
 
 def add(class_):
-    if class_.__name__ not in _Registry.items:
-        _Registry.items[class_.__name__] = class_
+    if class_.__name__ not in _items:
+        _items[class_.__name__] = class_
 
     return class_
 
@@ -23,12 +18,12 @@ def add(class_):
 def use_plugin(plugin, override=False):
     for name, class_ in plugin.classes.items():
         class_.__name__ = name
-        if override or name not in _Registry.items:
-            _Registry.items[name] = class_
+        if override or name not in _items:
+            _items[name] = class_
 
 
 def retrieve_class(class_name):
-    class_ = _Registry.items.get(class_name)
+    class_ = _items.get(class_name)
 
     if class_ is None:
         raise NameError(f"Class with name '{class_name}' not found in registry.")
