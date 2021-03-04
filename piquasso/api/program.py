@@ -34,9 +34,12 @@ class Program:
         operations=None,
         hbar=constants.HBAR_DEFAULT
     ):
-        self.state = state
+        self._register_state(state)
         self.operations = operations or []
         self.hbar = hbar
+
+    def _register_state(self, state):
+        self.state = state
 
         self.circuit = state._circuit_class(state) if state else None
 
@@ -120,6 +123,8 @@ class Program:
 
     def __enter__(self):
         _context.current_program = self
+
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         _context.current_program = None

@@ -7,6 +7,7 @@ import copy
 from piquasso.core import _context
 
 from .program import Program
+from .state import State
 
 
 class Q:
@@ -44,6 +45,8 @@ class Q:
         """
         if isinstance(rhs, Program):
             self._register_program(rhs)
+        elif isinstance(rhs, State):
+            _context.current_program._register_state(rhs)
         else:
             rhs.modes = self.modes
             _context.current_program.operations.append(rhs)
