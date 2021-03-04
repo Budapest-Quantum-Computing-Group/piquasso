@@ -6,10 +6,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from piquasso.state import State
-from piquasso.circuit import Circuit
+from piquasso.api.circuit import Circuit
+from piquasso.api.state import State
+from piquasso.api.program import Program
 from piquasso.operations import Operation, ModelessOperation
-from piquasso.program import Program
 
 
 class TestProgramBase:

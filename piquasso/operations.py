@@ -6,13 +6,12 @@
 
 import numpy as np
 
-from . import registry
+from piquasso.core import _context
+from piquasso.core.registry import _register
+from piquasso.core.mixins import _PropertyMixin
 
-from piquasso._mixins import PropertyMixin
-from piquasso import context
 
-
-class Operation(PropertyMixin):
+class Operation(_PropertyMixin):
     def __init__(self, *params):
         self.params = params
         self.modes = None
@@ -40,10 +39,10 @@ class ModelessOperation(Operation):
     def __init__(self, *params):
         super().__init__(*params)
 
-        context.current_program.operations.append(self)
+        _context.current_program.operations.append(self)
 
 
-@registry.add
+@_register
 class PassiveTransform(Operation):
     r"""Applies a general passive transformation.
 
@@ -57,7 +56,7 @@ class PassiveTransform(Operation):
         self._passive_representation = T
 
 
-@registry.add
+@_register
 class B(Operation):
     r"""Applies a beamsplitter operation.
 
@@ -99,7 +98,7 @@ class B(Operation):
         ])
 
 
-@registry.add
+@_register
 class R(Operation):
     r"""Rotation or Phaseshifter operation.
 
@@ -130,7 +129,7 @@ class R(Operation):
         return np.array([[phase]])
 
 
-@registry.add
+@_register
 class MZ(Operation):
     r"""Mach-Zehnder interferometer.
 
@@ -173,7 +172,7 @@ class MZ(Operation):
         )
 
 
-@registry.add
+@_register
 class F(R):
     r"""Fourier gate.
 
@@ -184,7 +183,7 @@ class F(R):
         super().__init__(phi=np.pi/2)
 
 
-@registry.add
+@_register
 class GaussianTransform(Operation):
     """Applies a transformation to the state.
 
@@ -204,7 +203,7 @@ class GaussianTransform(Operation):
         self._active_representation = A
 
 
-@registry.add
+@_register
 class S(Operation):
     r"""Applies the squeezing operator.
 
@@ -266,7 +265,7 @@ class S(Operation):
         self._active_representation = np.array([[- beta]])
 
 
-@registry.add
+@_register
 class P(Operation):
     r"""Applies the quadratic phase operation to the state.
 
@@ -294,7 +293,7 @@ class P(Operation):
         self._active_representation = np.array([[s/2 * 1j]])
 
 
-@registry.add
+@_register
 class S2(Operation):
     r"""2-mode squeezing gate.
 
@@ -331,7 +330,7 @@ class S2(Operation):
         )
 
 
-@registry.add
+@_register
 class D(Operation):
     """Displacement operation."""
 
@@ -364,7 +363,7 @@ class D(Operation):
         super().__init__(alpha)
 
 
-@registry.add
+@_register
 class Interferometer(Operation):
     """Interferometer.
 
@@ -396,7 +395,7 @@ class Interferometer(Operation):
         super().__init__(interferometer_matrix)
 
 
-@registry.add
+@_register
 class Sampling(ModelessOperation):
     r"""Boson Sampling.
 

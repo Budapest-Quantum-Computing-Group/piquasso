@@ -7,9 +7,7 @@ from BoSS.BosonSamplingSimulator import BosonSamplingSimulator
 from BoSS.simulation_strategies.GeneralizedCliffordsSimulationStrategy \
     import GeneralizedCliffordsSimulationStrategy
 
-from piquasso.circuit import Circuit
-
-from piquasso import operations
+from piquasso.api.circuit import Circuit
 
 
 class SamplingCircuit(Circuit):
@@ -17,12 +15,12 @@ class SamplingCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            operations.B.__name__: self._multiply_interferometer,
-            operations.R.__name__: self._multiply_interferometer,
-            operations.MZ.__name__: self._multiply_interferometer,
-            operations.F.__name__: self._multiply_interferometer,
-            operations.Sampling.__name__: self.sampling,
-            operations.Interferometer.__name__: self.interferometer,
+            "B": self._multiply_interferometer,
+            "R": self._multiply_interferometer,
+            "MZ": self._multiply_interferometer,
+            "F": self._multiply_interferometer,
+            "Sampling": self.sampling,
+            "Interferometer": self.interferometer,
         }
 
     def _multiply_interferometer(self, operation):

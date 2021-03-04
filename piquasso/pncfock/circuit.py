@@ -2,20 +2,18 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.circuit import Circuit
-
-from piquasso import operations
+from piquasso.api.circuit import Circuit
 
 
 class PNCFockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            operations.PassiveTransform.__name__: self._apply,
-            operations.B.__name__: self._apply,
-            operations.R.__name__: self._apply,
-            operations.MZ.__name__: self._apply,
-            operations.F.__name__: self._apply,
+            "PassiveTransform": self._apply,
+            "B": self._apply,
+            "R": self._apply,
+            "MZ": self._apply,
+            "F": self._apply,
         }
 
     def _apply(self, operation):

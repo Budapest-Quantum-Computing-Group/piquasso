@@ -4,7 +4,11 @@
 
 import pytest
 
-from piquasso import registry
+from piquasso.core.registry import (
+    _register,
+    _retrieve_class,
+    _create_instance_from_mapping,
+)
 
 
 class TestRegistry:
@@ -12,7 +16,7 @@ class TestRegistry:
     @pytest.fixture
     def SomeClass(self):
 
-        @registry.add
+        @_register
         class SomeClass:
             def __init__(self, foo, bar):
                 self.foo = foo
@@ -27,7 +31,7 @@ class TestRegistry:
     @pytest.fixture
     def SomeSubClass(self, SomeClass):
 
-        @registry.add
+        @_register
         class SomeSubClass(SomeClass):
             pass
 
@@ -36,7 +40,7 @@ class TestRegistry:
     @pytest.fixture
     def SomeSubSubClass(self, SomeSubClass):
 
-        @registry.add
+        @_register
         class SomeSubSubClass(SomeSubClass):
             pass
 
@@ -44,15 +48,15 @@ class TestRegistry:
 
     def test_retrieving_existing_subclasses(self, SomeSubClass, SomeSubSubClass):
 
-        assert registry.retrieve_class("SomeSubClass") == SomeSubClass
-        assert registry.retrieve_class("SomeSubSubClass") == SomeSubSubClass
+        assert _retrieve_class("SomeSubClass") == SomeSubClass
+        assert _retrieve_class("SomeSubSubClass") == SomeSubSubClass
 
     def test_retrieving_nonexistent_class_raises_NameError(self):
         with pytest.raises(NameError):
-            registry.retrieve_class("nonexistent_class")
+            _retrieve_class("nonexistent_class")
 
     def test_creating_instance_from_properties(self, SomeClass):
-        instance = registry.create_instance_from_mapping(
+        instance = _create_instance_from_mapping(
             {
                 "type": "SomeClass",
                 "properties": {

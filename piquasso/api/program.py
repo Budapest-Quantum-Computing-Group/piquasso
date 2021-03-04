@@ -5,7 +5,11 @@
 import json
 import blackbird
 
-import piquasso as pq
+from piquasso import operations
+from piquasso.core import _context
+from piquasso.core.registry import _create_instance_from_mapping
+
+from . import constants
 
 
 class Program:
@@ -28,7 +32,7 @@ class Program:
         self,
         state=None,
         operations=None,
-        hbar=pq.constants.HBAR_DEFAULT
+        hbar=constants.HBAR_DEFAULT
     ):
         self.state = state
         self.operations = operations or []
@@ -84,9 +88,12 @@ class Program:
         """
 
         return cls(
-            state=pq.registry.create_instance_from_mapping(properties["state"]),
+            state=_create_instance_from_mapping(properties["state"]),
             operations=list(
-                map(pq.registry.create_instance_from_mapping, properties["operations"])
+                map(
+                    _create_instance_from_mapping,
+                    properties["operations"],
+                )
             )
         )
 
@@ -112,10 +119,10 @@ class Program:
         self.circuit.execute_operations(self.operations)
 
     def __enter__(self):
-        pq.context.current_program = self
+        _context.current_program = self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pq.context.current_program = None
+        _context.current_program = None
 
     def _blackbird_operation_to_operation(self, blackbird_operation):
         """
@@ -132,15 +139,15 @@ class Program:
         """
 
         operation_class = {
-            "Dgate": pq.D,
+            "Dgate": operations.D,
             "Xgate": None,
             "Zgate": None,
-            "Sgate": pq.S,
+            "Sgate": operations.S,
             "Pgate": None,
             "Vgate": None,
             "Kgate": None,
-            "Rgate": pq.R,
-            "BSgate": pq.B,
+            "Rgate": operations.R,
+            "BSgate": operations.B,
             "MZgate": None,
             "S2gate": None,
             "CXgate": None,

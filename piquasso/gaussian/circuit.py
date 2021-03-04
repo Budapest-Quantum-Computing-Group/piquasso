@@ -4,25 +4,23 @@
 
 import numpy as np
 
-from piquasso.circuit import Circuit
-
-from piquasso import operations
+from piquasso.api.circuit import Circuit
 
 
 class GaussianCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            operations.PassiveTransform.__name__: self._apply_passive,
-            operations.B.__name__: self._apply_passive,
-            operations.R.__name__: self._apply_passive,
-            operations.MZ.__name__: self._apply_passive,
-            operations.F.__name__: self._apply_passive,
-            operations.GaussianTransform.__name__: self._apply,
-            operations.S.__name__: self._apply,
-            operations.P.__name__: self._apply,
-            operations.S2.__name__: self._apply,
-            operations.D.__name__: self.displacement
+            "PassiveTransform": self._apply_passive,
+            "B": self._apply_passive,
+            "R": self._apply_passive,
+            "MZ": self._apply_passive,
+            "F": self._apply_passive,
+            "GaussianTransform": self._apply,
+            "S": self._apply,
+            "P": self._apply,
+            "S2": self._apply,
+            "D": self.displacement
         }
 
     def _apply_passive(self, operation):

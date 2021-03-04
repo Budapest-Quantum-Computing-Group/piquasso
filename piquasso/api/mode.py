@@ -4,8 +4,9 @@
 
 import copy
 
-from piquasso import context
-from piquasso import Program
+from piquasso.core import _context
+
+from .program import Program
 
 
 class Q:
@@ -45,12 +46,12 @@ class Q:
             self._register_program(rhs)
         else:
             rhs.modes = self.modes
-            context.current_program.operations.append(rhs)
+            _context.current_program.operations.append(rhs)
 
         return self
 
     def _register_program(self, program):
-        context.current_program.operations += \
+        _context.current_program.operations += \
             map(self._resolve_operation, program.operations)
 
     def _resolve_operation(self, operation):

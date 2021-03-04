@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from piquasso.state import State
+from piquasso.api.state import State
 
 from piquasso._math import fock, direct_sum
 
