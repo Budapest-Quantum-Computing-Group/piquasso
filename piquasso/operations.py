@@ -9,7 +9,7 @@ import numpy as np
 from . import registry
 
 from piquasso._mixins import PropertyMixin
-from piquasso.context import Context
+from piquasso import context
 
 
 class Operation(PropertyMixin):
@@ -40,7 +40,7 @@ class ModelessOperation(Operation):
     def __init__(self, *params):
         super().__init__(*params)
 
-        Context.current_program.operations.append(self)
+        context.current_program.operations.append(self)
 
 
 @registry.add

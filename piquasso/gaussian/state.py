@@ -5,7 +5,7 @@
 import numpy as np
 
 from piquasso import constants, functions
-from piquasso.context import Context
+from piquasso import context
 from piquasso.state import State
 
 from .circuit import GaussianCircuit
@@ -87,8 +87,8 @@ class GaussianState(State):
         Returns:
             float: The value of the reduced Planck constant.
         """
-        if Context.current_program:
-            return Context.current_program.hbar
+        if context.current_program:
+            return context.current_program.hbar
 
         return constants.HBAR_DEFAULT
 

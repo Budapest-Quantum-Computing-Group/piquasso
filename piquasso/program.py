@@ -112,10 +112,10 @@ class Program:
         self.circuit.execute_operations(self.operations)
 
     def __enter__(self):
-        pq.context.Context.current_program = self
+        pq.context.current_program = self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pq.context.Context.current_program = None
+        pq.context.current_program = None
 
     def _blackbird_operation_to_operation(self, blackbird_operation):
         """
