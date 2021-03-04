@@ -4,10 +4,10 @@
 
 import numpy as np
 
-from ._mixins import PropertyMixin
+from piquasso.core.mixins import _PropertyMixin
 
 
-class State(PropertyMixin):
+class State(_PropertyMixin):
     _circuit_class = None
 
     @classmethod

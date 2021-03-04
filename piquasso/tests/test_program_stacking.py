@@ -2,8 +2,8 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.mode import Q
-from piquasso.program import Program
+from piquasso import Q
+from piquasso import Program
 from piquasso.tests.test_program_base import TestProgramBase
 
 

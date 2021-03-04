@@ -8,21 +8,21 @@
 _items = {}
 
 
-def add(class_):
+def _register(class_):
     if class_.__name__ not in _items:
         _items[class_.__name__] = class_
 
     return class_
 
 
-def use_plugin(plugin, override=False):
+def _use_plugin(plugin, override=False):
     for name, class_ in plugin.classes.items():
         class_.__name__ = name
         if override or name not in _items:
             _items[name] = class_
 
 
-def retrieve_class(class_name):
+def _retrieve_class(class_name):
     class_ = _items.get(class_name)
 
     if class_ is None:
@@ -31,7 +31,7 @@ def retrieve_class(class_name):
     return class_
 
 
-def create_instance_from_mapping(mapping):
+def _create_instance_from_mapping(mapping):
     """Creates an instance using the `registry` classes from a mapping.
 
     The supported mapping format is:
@@ -54,6 +54,6 @@ def create_instance_from_mapping(mapping):
         The created instance corresponding to the `mapping` specified.
     """
 
-    class_ = retrieve_class(mapping["type"])
+    class_ = _retrieve_class(mapping["type"])
 
     return class_.from_properties(mapping["properties"])

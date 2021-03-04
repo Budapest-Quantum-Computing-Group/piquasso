@@ -4,9 +4,11 @@
 
 import numpy as np
 
-from piquasso import constants, functions
-from piquasso import context
-from piquasso.state import State
+from piquasso import functions
+
+from piquasso.api.state import State
+from piquasso.api.constants import HBAR_DEFAULT
+from piquasso.core import _context
 
 from .circuit import GaussianCircuit
 
@@ -82,15 +84,15 @@ class GaussianState(State):
         """Reduced Plack constant.
 
         TODO: It would be better to move this login into
-        :mod:`piquasso.context` after a proper context implementation.
+        :mod:`piquasso.core._context` after a proper context implementation.
 
         Returns:
             float: The value of the reduced Planck constant.
         """
-        if context.current_program:
-            return context.current_program.hbar
+        if _context.current_program:
+            return _context.current_program.hbar
 
-        return constants.HBAR_DEFAULT
+        return HBAR_DEFAULT
 
     @property
     def d(self):

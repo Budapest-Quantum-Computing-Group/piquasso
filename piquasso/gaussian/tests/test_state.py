@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from piquasso.gaussian.state import GaussianState
-from piquasso import constants
+from piquasso.api.constants import HBAR_DEFAULT
 
 
 class TestGaussianStateRepresentations:
@@ -41,7 +41,7 @@ class TestGaussianStateRepresentations:
 
     @pytest.fixture
     def mu(self):
-        return np.array([1, -2, 3, 4]) * np.sqrt(2 * constants.HBAR_DEFAULT)
+        return np.array([1, -2, 3, 4]) * np.sqrt(2 * HBAR_DEFAULT)
 
     @pytest.fixture
     def corr(self):
@@ -52,7 +52,7 @@ class TestGaussianStateRepresentations:
                 [ 4, -2, 17, -6],
                 [ 6,  0, -6,  9],
             ]
-        ) * constants.HBAR_DEFAULT
+        ) * HBAR_DEFAULT
 
     @pytest.fixture
     def cov(self):
@@ -63,11 +63,11 @@ class TestGaussianStateRepresentations:
                 [ -8,  22, -19, -54],
                 [-10,  32, -54, -55],
             ]
-        ) * constants.HBAR_DEFAULT
+        ) * HBAR_DEFAULT
 
     @pytest.fixture
     def xp_mean(self):
-        return np.array([1, 3, -2, 4]) * np.sqrt(2 * constants.HBAR_DEFAULT)
+        return np.array([1, 3, -2, 4]) * np.sqrt(2 * HBAR_DEFAULT)
 
     @pytest.fixture
     def xp_corr(self):
@@ -78,7 +78,7 @@ class TestGaussianStateRepresentations:
                 [ 2, -2, -3,  0],
                 [ 6, -6,  0,  9]
             ]
-        ) * constants.HBAR_DEFAULT
+        ) * HBAR_DEFAULT
 
     @pytest.fixture
     def xp_cov(self):
@@ -89,7 +89,7 @@ class TestGaussianStateRepresentations:
                 [ 10,  22, -19,  32],
                 [-10, -54,  32, -55],
             ]
-        ) * constants.HBAR_DEFAULT
+        ) * HBAR_DEFAULT
 
     @pytest.fixture(autouse=True)
     def setup(self, C, G, m):
@@ -292,7 +292,7 @@ class TestGaussianStateVacuum:
 
     def test_vacuum_covariance_is_proportional_to_identity(self):
         number_of_modes = 2
-        hbar = constants.HBAR_DEFAULT
+        hbar = HBAR_DEFAULT
 
         state = GaussianState.create_vacuum(d=number_of_modes)
 

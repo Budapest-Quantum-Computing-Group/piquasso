@@ -7,17 +7,18 @@ from unittest.mock import Mock
 import json
 import pytest
 
-from piquasso import registry
-from piquasso.state import State
-from piquasso.program import Program
+from piquasso import Program
+
+from piquasso.core.registry import _register
 from piquasso.operations import Operation
+from piquasso.api.state import State
 
 
 class TestProgramJSONParsing:
     @pytest.fixture
     def FakeCircuit(self):
 
-        @registry.add
+        @_register
         class FakeCircuit:
             def __init__(self, state):
                 self.state = state
@@ -27,7 +28,7 @@ class TestProgramJSONParsing:
     @pytest.fixture
     def FakeState(self, FakeCircuit):
 
-        @registry.add
+        @_register
         class FakeState(State):
             _circuit_class = FakeCircuit
 
@@ -41,7 +42,7 @@ class TestProgramJSONParsing:
     @pytest.fixture
     def FakeOperation(self):
 
-        @registry.add
+        @_register
         class FakeOperation(Operation):
             def __init__(self, first_param, second_param):
                 super().__init__(first_param, second_param)

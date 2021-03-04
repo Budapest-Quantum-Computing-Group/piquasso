@@ -4,11 +4,16 @@
 
 import sys
 
-from .plugin import Plugin, DefaultPlugin
+from piquasso.api.plugin import Plugin
+from piquasso.api.program import Program
+from piquasso.api.mode import Q
 
-from .program import Program
-from .mode import Q
-from .registry import use_plugin
+from piquasso.sampling import SamplingState
+from piquasso.gaussian import GaussianState
+from piquasso.pncfock import PNCFockState
+
+from piquasso.core.registry import _use_plugin, _retrieve_class
+
 from .operations import (
     PassiveTransform,
     GaussianTransform,
@@ -26,10 +31,18 @@ from .operations import (
 
 
 def use(plugin):
-    use_plugin(plugin, override=True)
+    _use_plugin(plugin, override=True)
 
 
-use_plugin(DefaultPlugin)
+class _DefaultPlugin(Plugin):
+    classes = {
+        "SamplingState": SamplingState,
+        "GaussianState": GaussianState,
+        "PNCFockState": PNCFockState,
+    }
+
+
+_use_plugin(_DefaultPlugin)
 
 
 class Piquasso:
@@ -38,7 +51,7 @@ class Piquasso:
 
     def __getattr__(self, attribute):
         try:
-            return registry.retrieve_class(attribute)
+            return _retrieve_class(attribute)
         except NameError:
             return getattr(self._module, attribute)
 

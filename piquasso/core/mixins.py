@@ -5,7 +5,7 @@
 import abc
 
 
-class PropertyMixin(abc.ABC):
+class _PropertyMixin(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
