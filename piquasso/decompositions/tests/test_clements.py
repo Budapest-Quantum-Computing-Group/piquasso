@@ -5,6 +5,8 @@
 import pytest
 import numpy as np
 
+from piquasso import _math
+
 from piquasso.decompositions.clements import T, Clements
 
 
@@ -14,7 +16,7 @@ def test_T_beamsplitter_is_unitary():
 
     beamsplitter = T({"params": [theta, phi], "modes": [0, 1]}, d=2)
 
-    assert beamsplitter.is_unitary()
+    assert _math.is_unitary(beamsplitter)
 
 
 def test_eliminate_lower_offdiagonal_2_modes(dummy_unitary, tolerance):
