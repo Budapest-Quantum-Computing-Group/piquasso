@@ -10,12 +10,13 @@ import abc
 class Circuit(abc.ABC):
     _operation_map = {}
 
-    def __init__(self, state):
+    def __init__(self, state, program):
         """
         Args:
             state (State): The initial quantum state.
         """
         self.state = state
+        self.program = program
         self._operation_map.update(self.get_operation_map())
 
     @abc.abstractmethod

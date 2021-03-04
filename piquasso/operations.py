@@ -34,6 +34,17 @@ class Operation(_PropertyMixin):
 
         return operation
 
+    def __repr__(self):
+        display_string = self.__class__.__name__
+
+        if self.modes:
+            display_string += f" on modes {self.modes}"
+
+        if self.params:
+            display_string += f" with params {self.params}"
+
+        return display_string
+
 
 class ModelessOperation(Operation):
     def __init__(self, *params):
@@ -420,3 +431,7 @@ class Sampling(ModelessOperation):
             shots > 0 and isinstance(shots, int),\
             "The number of shots should be a positive integer."
         super().__init__(shots)
+
+
+class MeasureParticleNumber(Operation):
+    pass

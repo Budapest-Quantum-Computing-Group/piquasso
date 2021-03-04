@@ -77,6 +77,15 @@ class FockSpace:
 
         self._basis = self._get_all_basis()
 
+    @property
+    def basis_vectors(self):
+        basis_vectors = []
+
+        for subspace_basis_vectors in self._basis:
+            basis_vectors.extend(subspace_basis_vectors)
+
+        return basis_vectors
+
     def get_fock_operator(self, operator):
         return direct_sum(
             *(

@@ -37,11 +37,12 @@ class Program:
         self._register_state(state)
         self.operations = operations or []
         self.hbar = hbar
+        self.results = []
 
     def _register_state(self, state):
         self.state = state
 
-        self.circuit = state._circuit_class(state) if state else None
+        self.circuit = state._circuit_class(state, program=self) if state else None
 
     @property
     def d(self):
@@ -120,6 +121,8 @@ class Program:
         """Executes the collected operations on the circuit."""
 
         self.circuit.execute_operations(self.operations)
+
+        return self.results
 
     def __enter__(self):
         _context.current_program = self
