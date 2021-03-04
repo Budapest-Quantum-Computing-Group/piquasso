@@ -3,16 +3,15 @@
 #
 
 import pytest
+import numpy as np
 
 from scipy.stats import unitary_group
-
-from piquasso.operator import BaseOperator
 
 
 @pytest.fixture
 def dummy_unitary():
     def func(d):
-        return BaseOperator(unitary_group.rvs(d))
+        return np.array(unitary_group.rvs(d))
 
     return func
 

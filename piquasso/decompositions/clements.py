@@ -14,10 +14,8 @@ References
 
 import numpy as np
 
-from piquasso.operator import BaseOperator
 
-
-class T(BaseOperator):
+class T(np.ndarray):
     """
     A definition for the representation
     of the beamsplitter.
@@ -54,7 +52,7 @@ class T(BaseOperator):
         self[j, i] = matrix[1, 0]
         self[j, j] = matrix[1, 1]
 
-        return self.view(BaseOperator)
+        return self.view(np.ndarray)
 
     @classmethod
     def transposed(cls, operation, d):
@@ -196,4 +194,4 @@ class Clements:
             beamsplitter = T.i(operation, d=decomposition.d)
             U = beamsplitter @ U
 
-        return BaseOperator(U)
+        return U
