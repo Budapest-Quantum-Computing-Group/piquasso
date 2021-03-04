@@ -6,7 +6,7 @@ import numpy as np
 
 from piquasso.state import State
 
-from .space import FockSpace, direct_sum
+from piquasso._math import fock, direct_sum
 
 from .circuit import PNCFockCircuit
 
@@ -16,14 +16,14 @@ class PNCFockState(State):
 
     def __init__(self, density_matrix, *, d, cutoff):
         self._density_matrix = density_matrix
-        self._space = FockSpace(
+        self._space = fock.FockSpace(
             d=d,
             cutoff=cutoff,
         )
 
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
-        array = np.zeros((FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2)
+        array = np.zeros((fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2)
 
         return cls(
             array,
