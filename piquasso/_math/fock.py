@@ -7,19 +7,7 @@ import numpy as np
 
 from scipy.special import factorial, comb
 
-
-def direct_sum(*args):
-    # TODO: Omit recursions!
-    if len(args) == 2:
-        a = args[0]
-        b = args[1]
-        dsum = np.zeros(np.add(a.shape, b.shape), dtype=complex)
-        dsum[: a.shape[0], : a.shape[1]] = a
-        dsum[a.shape[0]:, a.shape[1]:] = b
-
-        return dsum
-
-    return direct_sum(args[0], direct_sum(*args[1:]))
+from .linalg import direct_sum
 
 
 class FockBasis(np.ndarray):
