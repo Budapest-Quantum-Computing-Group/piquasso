@@ -2,27 +2,37 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import functools
 import itertools
 import numpy as np
 
+from operator import add
 from scipy.special import factorial, comb
 
 from .linalg import direct_sum
 
 
-class FockBasis(np.ndarray):
-    def __new__(cls, *args, **kwargs):
-        kwargs["dtype"] = int
-        return np.array(*args, **kwargs).view(cls)
+@functools.lru_cache()
+def cutoff_cardinality(*, cutoff, d):
+    r"""
+    ..math::
+        \sum_{n=0}^i {d + n - 1 \choose n} = \frac{(i + 1) {d + i \choose i + 1}}{d}
+    """
+    return int(
+        (cutoff + 1)
+        * comb(d + cutoff, cutoff + 1)
+        / d
+    )
 
-    def __hash__(self):
-        return hash(str(self))
 
+class FockBasis(tuple):
     def __str__(self):
         return self.display(template="|{}>")
 
-    def display(self, template):
-        return template.format("".join([str(element) for element in self]))
+    def display(self, template="{}"):
+        return template.format(
+            "".join([str(number) for number in self])
+        )
 
     def display_as_bra(self):
         return self.display("<{}|")
@@ -30,26 +40,26 @@ class FockBasis(np.ndarray):
     def __repr__(self):
         return str(self)
 
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__hash__() == other.__hash__()
-
-        return super().__eq__(other)
+    def __add__(self, other):
+        return FockBasis(map(add, self, other))
 
     @property
     def d(self):
         return len(self)
 
+    @property
+    def n(self):
+        return sum(self)
+
     @classmethod
     def create_all(cls, n, d):
         if n == 0:
-            yield np.zeros(d, dtype=int).view(cls)
-
+            yield cls([0] * d)
         else:
-            masks = np.rot90(np.identity(d, dtype=int)).view(cls)
+            masks = np.rot90(np.identity(d, dtype=int))
 
             for c in itertools.combinations_with_replacement(masks, n):
-                yield sum(c)
+                yield cls(sum(c))
 
     @property
     def first_quantized(self):
@@ -81,16 +91,7 @@ class FockSpace:
         self.d = d
         self.cutoff = cutoff
 
-        self._basis = self._get_all_basis()
-
-    @property
-    def basis_vectors(self):
-        basis_vectors = []
-
-        for subspace_basis_vectors in self._basis:
-            basis_vectors.extend(subspace_basis_vectors)
-
-        return basis_vectors
+        self.basis_vectors = self._get_all_basis()
 
     def get_fock_operator(self, operator):
         return direct_sum(
@@ -105,26 +106,23 @@ class FockSpace:
 
     @property
     def cardinality(self):
-        r"""
-        ..math::
-            \sum_{n=0}^i {d + n - 1 \choose n} = \frac{(i + 1) {d + i \choose i + 1}}{d}
-        """
-        return int(
-            (self.cutoff + 1)
-            * comb(self.d + self.cutoff, self.cutoff + 1)
-            / self.d
-        )
+        return cutoff_cardinality(cutoff=self.cutoff, d=self.d)
 
     def _get_all_basis(self):
         ret = []
 
         for n in range(self.cutoff + 1):
-            ret.append(list(FockBasis.create_all(n, self.d)))
+            ret.extend(list(FockBasis.create_all(n, self.d)))
 
         return ret
 
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))
+
+    def _get_subspace_basis(self, n):
+        begin = cutoff_cardinality(cutoff=n-1, d=self.d)
+        end = cutoff_cardinality(cutoff=n, d=self.d)
+        return list(self.basis_vectors)[begin:end]
 
     def _symmetric_tensorpower(self, operator, n):
         if n == 0:
@@ -135,7 +133,7 @@ class FockSpace:
 
         ret = np.zeros(shape=(self._symmetric_cardinality(n), )*2, dtype=complex)
 
-        basis = self._basis[n]
+        basis = self._get_subspace_basis(n)
 
         for index1, basis_vector1 in enumerate(basis):
             for index2, basis_vector2 in enumerate(basis):
@@ -168,4 +166,4 @@ class FockSpace:
         return ret
 
     def __repr__(self):
-        return str(self._basis)
+        return str(self.basis_vectors)
