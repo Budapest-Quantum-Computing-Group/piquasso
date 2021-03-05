@@ -9,8 +9,6 @@ from piquasso import operations
 from piquasso.core import _context
 from piquasso.core.registry import _create_instance_from_mapping
 
-from . import constants
-
 
 class Program:
     r"""The representation for a quantum program.
@@ -24,19 +22,15 @@ class Program:
             The circuit on which the quantum program should run.
         operations (list):
             The set of operations, e.g. quantum gates and measurements.
-        hbar (float):
-            The value of :math:`\hbar` throughout the program, defaults to `2`.
     """
 
     def __init__(
         self,
         state=None,
         operations=None,
-        hbar=constants.HBAR_DEFAULT
     ):
         self._register_state(state)
         self.operations = operations or []
-        self.hbar = hbar
         self.results = []
 
     def _register_state(self, state):

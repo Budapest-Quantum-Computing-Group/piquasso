@@ -7,8 +7,7 @@ import numpy as np
 from piquasso import functions
 
 from piquasso.api.state import State
-from piquasso.api.constants import HBAR_DEFAULT
-from piquasso.core import _context
+from piquasso.api import constants
 
 from .circuit import GaussianCircuit
 
@@ -80,21 +79,6 @@ class GaussianState(State):
         )
 
     @property
-    def hbar(self):
-        """Reduced Plack constant.
-
-        TODO: It would be better to move this login into
-        :mod:`piquasso.core._context` after a proper context implementation.
-
-        Returns:
-            float: The value of the reduced Planck constant.
-        """
-        if _context.current_program:
-            return _context.current_program.hbar
-
-        return HBAR_DEFAULT
-
-    @property
     def d(self):
         r"""The number of modes, on which the state is defined.
 
@@ -115,8 +99,8 @@ class GaussianState(State):
         """
 
         _xp_mean = np.empty(2 * self.d)
-        _xp_mean[:self.d] = self.m.real * np.sqrt(2 * self.hbar)
-        _xp_mean[self.d:] = self.m.imag * np.sqrt(2 * self.hbar)
+        _xp_mean[:self.d] = self.m.real * np.sqrt(2 * constants.HBAR)
+        _xp_mean[self.d:] = self.m.imag * np.sqrt(2 * constants.HBAR)
         return _xp_mean
 
     @property
@@ -153,7 +137,7 @@ class GaussianState(State):
         corr[d:, d:] = 2 * (-G + C).real + np.identity(d)
         corr[d:, :d] = 2 * (G - C).imag
 
-        return corr * self.hbar
+        return corr * constants.HBAR
 
     @property
     def xp_cov(self):
