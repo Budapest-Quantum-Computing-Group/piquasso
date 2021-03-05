@@ -435,7 +435,10 @@ class Sampling(ModelessOperation):
 
 @_register
 class MeasureParticleNumber(Operation):
-    pass
+    """Particle number measurement.
+
+    # TODO: Measure only certain modes!
+    """
 
 
 @_register

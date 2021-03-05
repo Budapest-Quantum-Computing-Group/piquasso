@@ -248,38 +248,12 @@ def test_measure_particle_number():
     program = pq.Program(state=state)
 
     with program:
-        pq.Q(0) | pq.MeasureParticleNumber()
+        pq.Q() | pq.MeasureParticleNumber()
 
     results = program.execute()
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
     assert len(results) == 1
-    assert results[0].measurement.modes == (0, )
 
     outcome = results[0].outcome
     assert outcome == (0, 0, 0) or outcome == (1, 0, 0) or outcome == (0, 0, 1)
-
-
-def test_measure_particle_number_on_multiple_modes():
-    state = pq.PureFockState(
-        state_vector=[
-            0.5,
-            0.5, 0, np.sqrt(1/2),
-        ],
-        d=3,
-        cutoff=1,
-    )
-
-    program = pq.Program(state=state)
-
-    with program:
-        pq.Q(0, 2) | pq.MeasureParticleNumber()
-
-    results = program.execute()
-
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results) == 1
-    assert results[0].measurement.modes == (0, 2)
-
-    outcome = results[0].outcome
-    assert outcome == (0, 0, 1) or outcome == (1, 0, 0) or outcome == (0, 0, 0)
