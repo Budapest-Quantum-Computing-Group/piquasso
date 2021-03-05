@@ -433,5 +433,20 @@ class Sampling(ModelessOperation):
         super().__init__(shots)
 
 
+@_register
 class MeasureParticleNumber(Operation):
     pass
+
+
+@_register
+class Number(Operation):
+    r"""State preparation with Fock basis vectors."""
+
+    def __init__(self, *occupation_numbers, probability=1.0):
+        super().__init__(occupation_numbers, probability)
+
+    def __mul__(self, probability):
+        self.params = (self.params[0], self.params[1] * probability)
+        return self
+
+    __rmul__ = __mul__

@@ -23,6 +23,7 @@ class PNCFockState(State):
 
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
+        # TODO: This is not really a vacuum, this has 0 probability.
         array = np.zeros((fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2)
 
         return cls(
@@ -32,6 +33,9 @@ class PNCFockState(State):
 
     @classmethod
     def from_pure(cls, coefficients, *, d, cutoff):
+        # TODO: The result is not necessarily the pure state we might expect.
+        # By applying a PNC operator to this or the true pure state, the result
+        # is the same, but still.
         density_matrix = direct_sum(
             *(
                 [np.outer(vector, vector) for vector in coefficients]
