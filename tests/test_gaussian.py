@@ -7,6 +7,8 @@ import numpy as np
 
 import piquasso as pq
 
+from piquasso.api import constants
+
 
 class TestGaussian:
     @pytest.fixture(autouse=True)
@@ -249,6 +251,64 @@ class TestGaussian:
         assert np.allclose(self.program.state.m, expected_m)
         assert np.allclose(self.program.state.G, expected_G)
         assert np.allclose(self.program.state.C, expected_C)
+
+    def test_mean_and_covariance(self):
+        with self.program:
+            pq.Q(0) | pq.P(0)
+            pq.Q(1) | pq.P(2)
+            pq.Q(2) | pq.P(1)
+
+        self.program.execute()
+
+        expected_mean = np.array(
+            [1, 0, 1, 2, 1, 1],
+            dtype=complex,
+        ) * np.sqrt(2 * constants.HBAR)
+
+        expected_cov = np.array(
+            [
+                [ 5,  0,  4,  8, -4, -4],
+                [ 0,  5,  0, -4,  0,  0],
+                [ 4,  0, -3, 18, -4, -4],
+                [ 8, -4,  2, 13, -8, -8],
+                [-4,  0, -4, -8,  0,  3],
+                [-4,  0, -4, -8, -1,  1],
+            ],
+            dtype=complex
+        ) * constants.HBAR
+
+        assert np.allclose(self.program.state.mu, expected_mean)
+        assert np.allclose(self.program.state.cov, expected_cov)
+
+    def test_mean_and_covariance_with_different_HBAR(self):
+        with self.program:
+            pq.Q(0) | pq.P(0)
+            pq.Q(1) | pq.P(2)
+            pq.Q(2) | pq.P(1)
+
+        self.program.execute()
+
+        constants.HBAR = 42
+
+        expected_mean = np.array(
+            [1, 0, 1, 2, 1, 1],
+            dtype=complex,
+        ) * np.sqrt(2 * constants.HBAR)
+
+        expected_cov = np.array(
+            [
+                [ 5,  0,  4,  8, -4, -4],
+                [ 0,  5,  0, -4,  0,  0],
+                [ 4,  0, -3, 18, -4, -4],
+                [ 8, -4,  2, 13, -8, -8],
+                [-4,  0, -4, -8,  0,  3],
+                [-4,  0, -4, -8, -1,  1],
+            ],
+            dtype=complex
+        ) * constants.HBAR
+
+        assert np.allclose(self.program.state.mu, expected_mean)
+        assert np.allclose(self.program.state.cov, expected_cov)
 
     def test_displacement_leaves_the_covariance_invariant(self):
         r = 1

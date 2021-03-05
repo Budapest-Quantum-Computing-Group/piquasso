@@ -4,4 +4,6 @@
 
 """Module for constants"""
 
-HBAR_DEFAULT = 2
+_HBAR_DEFAULT = 2
+
+HBAR = _HBAR_DEFAULT
