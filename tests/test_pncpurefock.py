@@ -9,15 +9,9 @@ import piquasso as pq
 
 def test_5050_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0],
-                [0, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | pq.Number(0, 1)
+
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
 
     program.execute()
@@ -30,15 +24,8 @@ def test_5050_beamsplitter():
 
 def test_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0],
-                [0, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | 1 * pq.Number(0, 1)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -52,15 +39,10 @@ def test_beamsplitter():
 
 def test_beamsplitter_multiple_particles():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [0.5, 0, np.sqrt(1/2)],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | pq.Number(0, 1) * (1/2)
+        pq.Q() | pq.Number(0, 2) * (1/2)
+        pq.Q() | pq.Number(2, 0) * np.sqrt(1/2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -79,15 +61,10 @@ def test_beamsplitter_multiple_particles():
 
 def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0.5],
-                [np.sqrt(1/2), 0],
-                [0.5, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | 0.5 * pq.Number(0, 0)
+        pq.Q() | np.sqrt(1/2) * pq.Number(0, 1)
+        pq.Q() | 0.5 * pq.Number(0, 2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -106,15 +83,8 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 
 def test_multiple_beamsplitters():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0, 0],
-                [0, 0, 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=3, cutoff=2)
+        pq.Q() | pq.Number(0, 0, 1) * 1
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -133,16 +103,10 @@ def test_multiple_beamsplitters():
 
 def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as program:
-
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=3, cutoff=2)
+        pq.Q() | pq.Number(0, 0, 1) * 0.5
+        pq.Q() | pq.Number(0, 0, 2) * 0.5
+        pq.Q() | pq.Number(0, 1, 1) * np.sqrt(1/2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -162,15 +126,10 @@ def test_multiple_beamsplitters_with_multiple_particles():
 
 def test_phaseshift():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | pq.Number(0, 1) * 0.5
+        pq.Q() | pq.Number(0, 2) * np.sqrt(1/2)
+        pq.Q() | pq.Number(1, 1) * 0.5
 
         pq.Q(0) | pq.R(phi=np.pi / 3)
 
@@ -185,15 +144,10 @@ def test_phaseshift():
 
 def test_fourier():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | pq.Number(0, 1) * 0.5
+        pq.Q() | pq.Number(0, 2) * np.sqrt(1/2)
+        pq.Q() | pq.Number(1, 1) * 0.5
 
         pq.Q(0) | pq.F()
 
@@ -208,15 +162,10 @@ def test_fourier():
 
 def test_mach_zehnder():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=2, cutoff=2)
+        pq.Q() | pq.Number(0, 1) * 0.5
+        pq.Q() | pq.Number(0, 2) * np.sqrt(1/2)
+        pq.Q() | pq.Number(1, 1) * 0.5
 
         pq.Q(0, 1) | pq.MZ(int_=np.pi/3, ext=np.pi/4)
 
@@ -231,15 +180,10 @@ def test_mach_zehnder():
 
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=3, cutoff=2)
+        pq.Q() | pq.Number(0, 0, 1) * 0.5
+        pq.Q() | pq.Number(0, 0, 2) * 0.5
+        pq.Q() | pq.Number(0, 1, 1) * np.sqrt(1/2)
 
         pq.Q(0) | pq.R(phi=np.pi/3)
         pq.Q(1) | pq.R(phi=np.pi/3)
@@ -271,15 +215,10 @@ def test_passive_transform():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCPureFockState(d=3, cutoff=2)
+        pq.Q() | pq.Number(0, 0, 1) * 0.5
+        pq.Q() | pq.Number(0, 0, 2) * 0.5
+        pq.Q() | pq.Number(0, 1, 1) * np.sqrt(1/2)
 
         pq.Q(0, 1, 2) | pq.PassiveTransform(T=T)
 
@@ -297,10 +236,10 @@ def test_passive_transform():
 
 
 def test_measure_particle_number():
-    state = pq.PNCFockState.from_pure(
-        coefficients=[
-            [0.5],
-            [0.5, 0, np.sqrt(1/2)],
+    state = pq.PNCPureFockState(
+        state_vector=[
+            0.5,
+            0.5, 0, np.sqrt(1/2),
         ],
         d=3,
         cutoff=1,
@@ -322,10 +261,10 @@ def test_measure_particle_number():
 
 
 def test_measure_particle_number_on_multiple_modes():
-    state = pq.PNCFockState.from_pure(
-        coefficients=[
-            [0.5],
-            [0.5, 0, np.sqrt(1/2)],
+    state = pq.PNCPureFockState(
+        state_vector=[
+            0.5,
+            0.5, 0, np.sqrt(1/2),
         ],
         d=3,
         cutoff=1,

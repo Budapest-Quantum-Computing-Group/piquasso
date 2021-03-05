@@ -30,6 +30,12 @@ class FockBasis(np.ndarray):
     def __repr__(self):
         return str(self)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__hash__() == other.__hash__()
+
+        return super().__eq__(other)
+
     @property
     def d(self):
         return len(self)
@@ -93,6 +99,9 @@ class FockSpace:
                 for n in range(self.cutoff + 1)
             )
         )
+
+    def get_index_by_occupation_basis(self, basis):
+        return self.basis_vectors.index(FockBasis(basis))
 
     @property
     def cardinality(self):

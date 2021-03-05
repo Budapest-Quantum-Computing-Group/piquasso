@@ -11,6 +11,7 @@ from piquasso.api.mode import Q
 from piquasso.sampling import SamplingState
 from piquasso.gaussian import GaussianState
 from piquasso.pncfock import PNCFockState
+from piquasso.pncpurefock import PNCPureFockState
 
 from piquasso.core.registry import _use_plugin, _retrieve_class
 
@@ -28,6 +29,7 @@ from .operations import (
     Interferometer,
     Sampling,
     MeasureParticleNumber,
+    Number,
 )
 
 
@@ -40,6 +42,7 @@ class _DefaultPlugin(Plugin):
         "SamplingState": SamplingState,
         "GaussianState": GaussianState,
         "PNCFockState": PNCFockState,
+        "PNCPureFockState": PNCPureFockState,
     }
 
 
@@ -77,6 +80,7 @@ __all__ = [
     "Interferometer",
     "Sampling",
     "MeasureParticleNumber",
+    "Number",
 ]
 
 __version__ = "0.1.2"
