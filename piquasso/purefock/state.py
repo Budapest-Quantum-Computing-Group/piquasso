@@ -8,11 +8,11 @@ from piquasso.api.state import State
 
 from piquasso._math import fock
 
-from .circuit import PNCPureFockCircuit
+from .circuit import PureFockCircuit
 
 
-class PNCPureFockState(State):
-    _circuit_class = PNCPureFockCircuit
+class PureFockState(State):
+    _circuit_class = PureFockCircuit
 
     def __init__(self, state_vector=None, *, d, cutoff, vacuum=False):
         space = fock.FockSpace(

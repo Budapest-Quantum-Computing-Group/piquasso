@@ -9,7 +9,7 @@ from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
 
 
-class PNCPureFockCircuit(Circuit):
+class PureFockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
