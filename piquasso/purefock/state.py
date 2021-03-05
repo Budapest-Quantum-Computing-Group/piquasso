@@ -2,6 +2,7 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import random
 import numpy as np
 
 from piquasso.api.state import State
@@ -43,6 +44,33 @@ class PureFockState(State):
         fock_operator = self._space.get_fock_operator(embedded_operator)
 
         self._state_vector = fock_operator @ self._state_vector
+
+    def _measure_particle_number(self):
+        basis_vectors = self._space.basis_vectors
+
+        probabilities = self.fock_probabilities
+
+        index = random.choices(range(len(basis_vectors)), probabilities)[0]
+
+        outcome_basis_vector = basis_vectors[index]
+
+        outcome = tuple(outcome_basis_vector)
+
+        new_state_vector = np.zeros(
+            shape=self._state_vector.shape,
+            dtype=complex,
+        )
+
+        new_state_vector[index] = self._state_vector[index]
+
+        self._state_vector = new_state_vector / np.sqrt(probabilities[index])
+
+        return outcome
+
+    def _add_occupation_number_basis(self, coefficient, occupation_numbers):
+        index = self._space.get_index_by_occupation_basis(occupation_numbers)
+
+        self._state_vector[index] = coefficient
 
     def __repr__(self):
         basis_vectors = self._space.basis_vectors

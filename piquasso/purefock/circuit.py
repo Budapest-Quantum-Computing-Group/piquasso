@@ -2,9 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import random
-import numpy as np
-
 from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
 
@@ -29,24 +26,7 @@ class PureFockCircuit(Circuit):
         )
 
     def _measure_particle_number(self, operation):
-        basis_vectors = self.state._space.basis_vectors
-
-        probabilities = self.state.fock_probabilities
-
-        index = random.choices(range(len(basis_vectors)), probabilities)[0]
-
-        outcome_basis_vector = basis_vectors[index]
-
-        outcome = tuple(outcome_basis_vector)
-
-        new_state_vector = np.zeros(
-            shape=self.state._state_vector.shape,
-            dtype=complex,
-        )
-
-        new_state_vector[index] = self.state._state_vector[index]
-
-        self.state._density_matrix = new_state_vector / probabilities[index]
+        outcome = self.state._measure_particle_number()
 
         # TODO: Better way of providing results
         self.program.results.append(
@@ -57,6 +37,4 @@ class PureFockCircuit(Circuit):
         occupation_numbers = operation.params[0]
         coefficient = operation.params[1]
 
-        index = self.state._space.get_index_by_occupation_basis(occupation_numbers)
-
-        self.state._state_vector[index] = coefficient
+        self.state._add_occupation_number_basis(coefficient, occupation_numbers)

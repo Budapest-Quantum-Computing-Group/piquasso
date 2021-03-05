@@ -2,6 +2,7 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import random
 import numpy as np
 
 from piquasso.api.state import State
@@ -56,6 +57,25 @@ class PNCFockState(State):
         self._density_matrix = (
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
+
+    def _measure_particle_number(self):
+        basis_vectors = self._space.basis_vectors
+
+        probabilities = self.fock_probabilities
+
+        index = random.choices(range(len(basis_vectors)), probabilities)[0]
+
+        outcome_basis_vector = basis_vectors[index]
+
+        outcome = tuple(outcome_basis_vector)
+
+        new_dm = np.zeros(shape=self._density_matrix.shape, dtype=complex)
+
+        new_dm[index, index] = self._density_matrix[index, index]
+
+        self._density_matrix = new_dm / probabilities[index]
+
+        return outcome
 
     def __str__(self):
         basis_vectors = self._space.basis_vectors
