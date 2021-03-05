@@ -453,3 +453,13 @@ class Number(Operation):
         return self
 
     __rmul__ = __mul__
+
+
+@_register
+class Create(Operation):
+    r"""Creation operator."""
+
+
+@_register
+class Annihilate(Operation):
+    r"""Annihilation operator."""
