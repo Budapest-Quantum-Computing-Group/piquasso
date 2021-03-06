@@ -380,9 +380,9 @@ def test_cross_kerr():
     program.execute()
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_state_vector = list(program.state.nonzero_state_vector)
+    nonzero_elements = list(program.state.nonzero_elements)
 
-    assert len(nonzero_state_vector) == 1
+    assert len(nonzero_elements) == 1
 
-    assert np.isclose(nonzero_state_vector[0][0], -1)
-    assert nonzero_state_vector[0][1] == (0, 2, 1)
+    assert np.isclose(nonzero_elements[0][0], -1)
+    assert nonzero_elements[0][1] == (0, 2, 1)

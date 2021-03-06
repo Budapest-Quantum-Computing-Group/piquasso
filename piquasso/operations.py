@@ -467,11 +467,25 @@ class MeasureParticleNumber(Operation):
 class Number(Operation):
     r"""State preparation with Fock basis vectors."""
 
-    def __init__(self, *occupation_numbers, probability=1.0):
-        super().__init__(occupation_numbers, probability)
+    def __init__(self, *occupation_numbers, coefficient=1.0):
+        super().__init__(occupation_numbers, coefficient)
 
-    def __mul__(self, probability):
-        self.params = (self.params[0], self.params[1] * probability)
+    def __mul__(self, coefficient):
+        self.params = (self.params[0], self.params[1] * coefficient)
+        return self
+
+    __rmul__ = __mul__
+
+
+@_register
+class DMNumber(Operation):
+    r"""State preparation with Fock basis vectors."""
+
+    def __init__(self, *, ket, bra, coefficient=1.0):
+        super().__init__(ket, bra, coefficient)
+
+    def __mul__(self, coefficient):
+        self.params = (*self.params[:2], self.params[2] * coefficient)
         return self
 
     __rmul__ = __mul__

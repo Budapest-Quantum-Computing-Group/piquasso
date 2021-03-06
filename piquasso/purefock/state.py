@@ -85,23 +85,23 @@ class PureFockState(State):
         self.normalize()
 
     def _apply_cross_kerr(self, xi, modes):
-        for index, basis_vector in enumerate(self._space):
+        for index, basis in self._space.basis:
             coefficient = np.exp(
-                1j * xi * basis_vector[modes[0]] * basis_vector[modes[1]]
+                1j * xi * basis[modes[0]] * basis[modes[1]]
             )
             self._state_vector[index] *= coefficient
 
     @property
-    def nonzero_state_vector(self):
-        for (index, basis_vector) in enumerate(self._space):
+    def nonzero_elements(self):
+        for index, basis in self._space.basis:
             coefficient = self._state_vector[index]
             if coefficient != 0:
-                yield coefficient, basis_vector
+                yield coefficient, basis
 
     def __repr__(self):
         return " + ".join([
-            str(coefficient) + str(basis_vector)
-            for coefficient, basis_vector in self.nonzero_state_vector
+            str(coefficient) + str(basis)
+            for coefficient, basis in self.nonzero_elements
         ])
 
     @property

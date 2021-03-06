@@ -24,7 +24,8 @@ class PNCFockState(State):
 
         if density_matrix is None:
             density_matrix = np.zeros(
-                (fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2
+                (fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2,
+                dtype=complex,
             )
 
             if vacuum is True:
@@ -94,22 +95,37 @@ class PNCFockState(State):
 
         self.normalize()
 
-    def __str__(self):
-        ret = []
+    def _add_occupation_number_basis(self, *, ket, bra, coefficient):
+        index = self._space.index(ket)
+        dual_index = self._space.index(bra)
 
-        for (index1, ket) in enumerate(self._space):
-            for (index2, bra) in enumerate(self._space):
-                matrix_element = self._density_matrix[index1, index2]
-                if matrix_element == 0:
-                    continue
+        self._density_matrix[index, dual_index] = coefficient
 
-                ret.append(
-                    str(matrix_element)
-                    + str(ket)
-                    + bra.display_as_bra()
+    def _apply_cross_kerr(self, xi, modes):
+        for index, (basis, dual_basis) in self._space.operator_basis:
+            coefficient = np.exp(
+                1j * xi * (
+                    basis[modes[0]] * basis[modes[1]]
+                    - dual_basis[modes[0]] * dual_basis[modes[1]]
                 )
+            )
 
-        return " + ".join(ret)
+            self._density_matrix[index] *= coefficient
+
+    @property
+    def nonzero_elements(self):
+        for index, basis in self._space.operator_basis:
+            coefficient = self._density_matrix[index]
+            if coefficient != 0:
+                yield coefficient, basis
+
+    def __str__(self):
+        return " + ".join(
+            [
+                str(coefficient) + str(ket) + bra.display_as_bra()
+                for coefficient, (ket, bra) in self.nonzero_elements
+            ]
+        )
 
     def __repr__(self):
         return str(self._density_matrix)
