@@ -16,6 +16,7 @@ class PNCFockCircuit(Circuit):
             "MZ": self._apply,
             "F": self._apply,
             "MeasureParticleNumber": self._measure_particle_number,
+            # TODO: Cross-Kerr gate.
         }
 
     def _apply(self, operation):
