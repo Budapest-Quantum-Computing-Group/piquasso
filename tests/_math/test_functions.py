@@ -5,7 +5,10 @@
 import pytest
 import numpy as np
 
-from piquasso import functions
+from piquasso._math.functions import (
+    gaussian_wigner_function,
+    gaussian_wigner_function_for_scalar,
+)
 
 
 @pytest.fixture
@@ -33,7 +36,7 @@ def test_wigner_function_at_scalar(d, mean, cov):
 
     expected = 0.10065842420897406
 
-    actual = functions._gaussian_wigner_function_for_scalar(
+    actual = gaussian_wigner_function_for_scalar(
         X=quadrature_array, d=d, mean=mean, cov=cov
     )
 
@@ -57,7 +60,7 @@ def test_gaussian_wigner_function_handles_vectors(d, mean, cov):
         ],
     )
 
-    actual = functions.gaussian_wigner_function(
+    actual = gaussian_wigner_function(
         quadrature_matrix, d=d, mean=mean, cov=cov
     )
 

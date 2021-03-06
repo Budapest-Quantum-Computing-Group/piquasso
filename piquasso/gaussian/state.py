@@ -4,10 +4,10 @@
 
 import numpy as np
 
-from piquasso import functions
 
 from piquasso.api.state import State
 from piquasso.api import constants
+from piquasso._math.functions import gaussian_wigner_function
 
 from .circuit import GaussianCircuit
 
@@ -373,14 +373,14 @@ class GaussianState(State):
 
         if modes:
             reduced_state = self.reduced(modes)
-            return functions.gaussian_wigner_function(
+            return gaussian_wigner_function(
                 quadrature_matrix,
                 d=reduced_state.d,
                 mean=reduced_state.mu,
                 cov=reduced_state.cov
             )
 
-        return functions.gaussian_wigner_function(
+        return gaussian_wigner_function(
             quadrature_matrix,
             d=self.d,
             mean=self.mu,
