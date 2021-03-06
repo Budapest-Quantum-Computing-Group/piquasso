@@ -43,6 +43,8 @@ class FockBasis(tuple):
     def __add__(self, other):
         return FockBasis(map(add, self, other))
 
+    __radd__ = __add__
+
     @property
     def d(self):
         return len(self)
@@ -52,14 +54,15 @@ class FockBasis(tuple):
         return sum(self)
 
     @classmethod
-    def create_all(cls, n, d):
-        if n == 0:
-            yield cls([0] * d)
-        else:
-            masks = np.rot90(np.identity(d, dtype=int))
+    def create_all(cls, *, d, cutoff):
+        for n in range(cutoff + 1):
+            if n == 0:
+                yield cls([0] * d)
+            else:
+                masks = np.rot90(np.identity(d, dtype=int))
 
-            for c in itertools.combinations_with_replacement(masks, n):
-                yield cls(sum(c))
+                for c in itertools.combinations_with_replacement(masks, n):
+                    yield cls(sum(c))
 
     @property
     def first_quantized(self):
@@ -70,12 +73,19 @@ class FockBasis(tuple):
 
         return ret
 
+    def increment_on_modes(self, modes):
+        a = [0] * self.d
+        for mode in modes:
+            a[mode] = 1
+
+        return self + a
+
     @property
     def all_possible_first_quantized_vectors(self):
         return list(set(itertools.permutations(self.first_quantized)))
 
 
-class FockSpace:
+class FockSpace(tuple):
     r"""
     Note, that when you symmetrize a tensor, i.e. use the superoperator
 
@@ -87,11 +97,14 @@ class FockSpace:
     transformation to acquire the symmetrized tensor in the symmetrized representation.
     """
 
+    def __new__(cls, d, cutoff):
+        return super().__new__(
+            cls, FockBasis.create_all(d=d, cutoff=cutoff)
+        )
+
     def __init__(self, *, d, cutoff):
         self.d = d
         self.cutoff = cutoff
-
-        self.basis_vectors = self._get_all_basis()
 
     def get_fock_operator(self, operator):
         return direct_sum(
@@ -101,20 +114,9 @@ class FockSpace:
             )
         )
 
-    def get_index_by_occupation_basis(self, basis):
-        return self.basis_vectors.index(FockBasis(basis))
-
     @property
     def cardinality(self):
         return cutoff_cardinality(cutoff=self.cutoff, d=self.d)
-
-    def _get_all_basis(self):
-        ret = []
-
-        for n in range(self.cutoff + 1):
-            ret.extend(list(FockBasis.create_all(n, self.d)))
-
-        return ret
 
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))
@@ -122,7 +124,7 @@ class FockSpace:
     def _get_subspace_basis(self, n):
         begin = cutoff_cardinality(cutoff=n-1, d=self.d)
         end = cutoff_cardinality(cutoff=n, d=self.d)
-        return list(self.basis_vectors)[begin:end]
+        return list(self)[begin:end]
 
     def _symmetric_tensorpower(self, operator, n):
         if n == 0:
@@ -165,5 +167,19 @@ class FockSpace:
 
         return ret
 
-    def __repr__(self):
-        return str(self.basis_vectors)
+    def get_creation_operator(self, modes):
+        operator = np.zeros(shape=(self.cardinality, ) * 2)
+
+        for index, basis in enumerate(self):
+            dual_basis = basis.increment_on_modes(modes)
+            try:
+                dual_index = self.index(dual_basis)
+                operator[dual_index, index] = 1
+            except ValueError:
+                # TODO: rethink.
+                continue
+
+        return operator
+
+    def get_annihilation_operator(self, modes):
+        return self.get_creation_operator(modes).transpose()

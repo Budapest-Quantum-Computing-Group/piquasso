@@ -17,6 +17,8 @@ class PureFockCircuit(Circuit):
             "F": self._apply,
             "MeasureParticleNumber": self._measure_particle_number,
             "Number": self._number,
+            "Create": self._create,
+            "Annihilate": self._annihilate,
         }
 
     def _apply(self, operation):
@@ -38,3 +40,13 @@ class PureFockCircuit(Circuit):
         coefficient = operation.params[1]
 
         self.state._add_occupation_number_basis(coefficient, occupation_numbers)
+
+    def _create(self, operation):
+        modes = operation.modes
+
+        self.state._apply_creation_operator(modes)
+
+    def _annihilate(self, operation):
+        modes = operation.modes
+
+        self.state._apply_annihilation_operator(modes)

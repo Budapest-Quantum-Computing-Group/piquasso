@@ -59,13 +59,11 @@ class PNCFockState(State):
         )
 
     def _measure_particle_number(self):
-        basis_vectors = self._space.basis_vectors
-
         probabilities = self.fock_probabilities
 
-        index = random.choices(range(len(basis_vectors)), probabilities)[0]
+        index = random.choices(range(len(self._space)), probabilities)[0]
 
-        outcome_basis_vector = basis_vectors[index]
+        outcome_basis_vector = self._space[index]
 
         outcome = tuple(outcome_basis_vector)
 
@@ -78,12 +76,10 @@ class PNCFockState(State):
         return outcome
 
     def __str__(self):
-        basis_vectors = self._space.basis_vectors
-
         ret = []
 
-        for (index1, ket) in enumerate(basis_vectors):
-            for (index2, bra) in enumerate(basis_vectors):
+        for (index1, ket) in enumerate(self._space):
+            for (index2, bra) in enumerate(self._space):
                 matrix_element = self._density_matrix[index1, index2]
                 if matrix_element == 0:
                     continue

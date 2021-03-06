@@ -46,13 +46,11 @@ class PureFockState(State):
         self._state_vector = fock_operator @ self._state_vector
 
     def _measure_particle_number(self):
-        basis_vectors = self._space.basis_vectors
-
         probabilities = self.fock_probabilities
 
-        index = random.choices(range(len(basis_vectors)), probabilities)[0]
+        index = random.choices(range(len(self._space)), probabilities)[0]
 
-        outcome_basis_vector = basis_vectors[index]
+        outcome_basis_vector = self._space[index]
 
         outcome = tuple(outcome_basis_vector)
 
@@ -68,16 +66,28 @@ class PureFockState(State):
         return outcome
 
     def _add_occupation_number_basis(self, coefficient, occupation_numbers):
-        index = self._space.get_index_by_occupation_basis(occupation_numbers)
+        index = self._space.index(occupation_numbers)
 
         self._state_vector[index] = coefficient
 
-    def __repr__(self):
-        basis_vectors = self._space.basis_vectors
+    def _apply_creation_operator(self, modes):
+        operator = self._space.get_creation_operator(modes)
 
+        self._state_vector = operator @ self._state_vector
+
+        self.normalize()
+
+    def _apply_annihilation_operator(self, modes):
+        operator = self._space.get_annihilation_operator(modes)
+
+        self._state_vector = operator @ self._state_vector
+
+        self.normalize()
+
+    def __repr__(self):
         ret = []
 
-        for (index, ket) in enumerate(basis_vectors):
+        for (index, ket) in enumerate(self._space):
             vector_element = self._state_vector[index]
             if vector_element == 0:
                 continue
@@ -91,4 +101,14 @@ class PureFockState(State):
 
     @property
     def fock_probabilities(self):
-        return self._state_vector * self._state_vector.conjugate()
+        return (self._state_vector * self._state_vector.conjugate()).real
+
+    @property
+    def norm(self):
+        return sum(self.fock_probabilities)
+
+    def normalize(self):
+        if np.isclose(self.norm, 0):
+            raise RuntimeError("The norm of the state is 0.")
+
+        self._state_vector = self._state_vector / np.sqrt(self.norm)
