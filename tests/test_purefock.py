@@ -368,3 +368,21 @@ def test_state_is_renormalized_after_overflow():
             0.4, 0.6, 0, 0, 0, 0
         ],
     )
+
+
+def test_cross_kerr():
+    with pq.Program() as program:
+        pq.Q() | pq.PureFockState(d=3, cutoff=3)
+        pq.Q() | pq.Number(0, 2, 1)
+
+        pq.Q(1, 2) | pq.CK(xi=np.pi / 2)
+
+    program.execute()
+
+    # TODO: Better way of presenting the resulting state.
+    nonzero_state_vector = list(program.state.nonzero_state_vector)
+
+    assert len(nonzero_state_vector) == 1
+
+    assert np.isclose(nonzero_state_vector[0][0], -1)
+    assert nonzero_state_vector[0][1] == (0, 2, 1)
