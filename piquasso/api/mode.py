@@ -54,8 +54,18 @@ class Q:
         return self
 
     def _register_program(self, program):
-        _context.current_program.operations += \
-            map(self._resolve_operation, program.operations)
+        if program.state is not None:
+            if _context.current_program.state is not None:
+                raise RuntimeError(
+                    "The current program already has a state registered of type "
+                    f"'{type(_context.current_program.state).__name__}'."
+                )
+
+            _context.current_program._register_state(copy.deepcopy(program.state))
+
+        _context.current_program.operations += map(
+            self._resolve_operation, program.operations
+        )
 
     def _resolve_operation(self, operation):
         new_operation = copy.deepcopy(operation)

@@ -2,6 +2,8 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import pytest
+
 from piquasso import Q
 from piquasso import Program
 from piquasso.tests.test_program_base import TestProgramBase
@@ -139,3 +141,29 @@ class TestProgramStacking(TestProgramBase):
         assert self.program.operations[3].params == (1,)
         assert self.program.operations[4].params == (2,)
         assert self.program.operations[5].params == (3,)
+
+    def test_main_program_inherits_state(self, FakeState):
+        with Program() as preparation:
+            Q() | FakeState()
+
+        with Program() as main:
+            Q() | preparation
+
+        assert main.state is not None
+        assert main.circuit.state is main.state
+        assert main.state is not preparation.state, (
+            "The state should be copied from the subprogram due to the state's "
+            "mutability."
+        )
+
+    def test_state_collision_raises_RuntimeError(self, FakeState):
+        with Program() as preparation:
+            Q() | FakeState()
+
+        with pytest.raises(RuntimeError) as error:
+            with self.program:
+                Q() | preparation
+
+        assert error.value.args[0] == (
+            "The current program already has a state registered of type '_FakeState'."
+        )
