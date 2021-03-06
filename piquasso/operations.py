@@ -459,6 +459,9 @@ class MeasureParticleNumber(Operation):
     # TODO: Measure only certain modes!
     """
 
+    def __init__(self):
+        pass
+
 
 @_register
 class Number(Operation):
@@ -476,9 +479,15 @@ class Number(Operation):
 
 @_register
 class Create(Operation):
-    r"""Creation operator."""
+    r"""Create a particle on a mode."""
+
+    def __init__(self):
+        pass
 
 
 @_register
 class Annihilate(Operation):
-    r"""Annihilation operator."""
+    r"""Annihilate a particle on a mode."""
+
+    def __init__(self):
+        pass
