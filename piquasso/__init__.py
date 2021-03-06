@@ -31,6 +31,7 @@ from .operations import (
     Sampling,
     MeasureParticleNumber,
     Number,
+    DMNumber,
 )
 
 
@@ -83,6 +84,7 @@ __all__ = [
     "Sampling",
     "MeasureParticleNumber",
     "Number",
+    "DMNumber",
 ]
 
 __version__ = "0.1.2"

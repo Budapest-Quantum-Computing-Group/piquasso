@@ -118,6 +118,16 @@ class FockSpace(tuple):
     def cardinality(self):
         return cutoff_cardinality(cutoff=self.cutoff, d=self.d)
 
+    @property
+    def basis(self):
+        yield from enumerate(self)
+
+    @property
+    def operator_basis(self):
+        for index, basis in self.basis:
+            for dual_index, dual_basis in self.basis:
+                yield (index, dual_index), (basis, dual_basis)
+
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))
 

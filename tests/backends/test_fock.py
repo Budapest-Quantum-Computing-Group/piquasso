@@ -444,3 +444,34 @@ def test_state_is_renormalized_after_overflow():
             0.4, 0.6, 0, 0, 0, 0
         ],
     )
+
+
+def test_cross_kerr():
+    xi = np.pi / 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.PNCFockState(d=3, cutoff=3)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
+        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
+
+        pq.Q(1, 2) | pq.CK(xi=xi)
+
+    program.execute()
+
+    # TODO: Better way of presenting the resulting state.
+    nonzero_elements = list(program.state.nonzero_elements)
+
+    assert np.isclose(program.state.norm, 1)
+
+    assert len(nonzero_elements) == 3
+
+    assert np.isclose(nonzero_elements[0][0], 1)
+    assert nonzero_elements[0][1] == ((0, 0, 3), (0, 0, 3))
+
+    assert np.isclose(nonzero_elements[1][0], 1j * np.exp(1j * xi))
+    assert nonzero_elements[1][1] == ((0, 0, 3), (0, 1, 2))
+
+    assert np.isclose(nonzero_elements[2][0], - 1j * np.exp(- 1j * xi))
+    assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
