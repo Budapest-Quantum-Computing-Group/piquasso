@@ -12,12 +12,12 @@ def gaussian_wigner_function(quadrature_matrix, *, d, mean, cov):
     )
 
     return [
-        _gaussian_wigner_function_for_scalar(quadrature_array, d=d, mean=mean, cov=cov)
+        gaussian_wigner_function_for_scalar(quadrature_array, d=d, mean=mean, cov=cov)
         for quadrature_array in quadrature_matrix
     ]
 
 
-def _gaussian_wigner_function_for_scalar(X, *, d, mean, cov):
+def gaussian_wigner_function_for_scalar(X, *, d, mean, cov):
     return (
         (1 / (np.pi ** d))
         * np.sqrt((1 / np.linalg.det(cov)))
