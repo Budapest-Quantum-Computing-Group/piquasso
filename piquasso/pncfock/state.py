@@ -15,22 +15,27 @@ from .circuit import PNCFockCircuit
 class PNCFockState(State):
     _circuit_class = PNCFockCircuit
 
-    def __init__(self, density_matrix, *, d, cutoff):
+    def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
         self._density_matrix = density_matrix
-        self._space = fock.FockSpace(
+        space = fock.FockSpace(
             d=d,
             cutoff=cutoff,
         )
 
+        if density_matrix is None:
+            density_matrix = np.zeros(
+                (fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2
+            )
+
+            if vacuum is True:
+                density_matrix[0, 0] = 1.0
+
+        self._density_matrix = density_matrix
+        self._space = space
+
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
-        # TODO: This is not really a vacuum, this has 0 probability.
-        array = np.zeros((fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2)
-
-        return cls(
-            array,
-            d=d, cutoff=cutoff
-        )
+        return cls(d=d, cutoff=cutoff, vacuum=True)
 
     @classmethod
     def from_pure(cls, coefficients, *, d, cutoff):
@@ -75,6 +80,20 @@ class PNCFockState(State):
 
         return outcome
 
+    def _apply_creation_operator(self, modes):
+        operator = self._space.get_creation_operator(modes)
+
+        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
+
+        self.normalize()
+
+    def _apply_annihilation_operator(self, modes):
+        operator = self._space.get_annihilation_operator(modes)
+
+        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
+
+        self.normalize()
+
     def __str__(self):
         ret = []
 
@@ -98,3 +117,13 @@ class PNCFockState(State):
     @property
     def fock_probabilities(self):
         return np.diag(self._density_matrix).real
+
+    @property
+    def norm(self):
+        return sum(self.fock_probabilities)
+
+    def normalize(self):
+        if np.isclose(self.norm, 0):
+            raise RuntimeError("The norm of the state is 0.")
+
+        self._density_matrix = self._density_matrix / self.norm
