@@ -43,14 +43,10 @@ class PureFockCircuit(Circuit):
         self.state._add_occupation_number_basis(coefficient, occupation_numbers)
 
     def _create(self, operation):
-        modes = operation.modes
-
-        self.state._apply_creation_operator(modes)
+        self.state._apply_creation_operator(operation.modes)
 
     def _annihilate(self, operation):
-        modes = operation.modes
-
-        self.state._apply_annihilation_operator(modes)
+        self.state._apply_annihilation_operator(operation.modes)
 
     def _cross_kerr(self, operation):
         self.state._apply_cross_kerr(

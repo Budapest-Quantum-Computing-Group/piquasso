@@ -350,9 +350,9 @@ def test_creation_on_multiple_modes():
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) * np.sqrt(2/5)
-        pq.Q() | pq.Number(0, 1, 0) * np.sqrt(3/5)
-        pq.Q() | pq.Number(0, 0, 2) * np.sqrt(1/5)
+        pq.Q() | pq.Number(0, 0, 1) * np.sqrt(2/6)
+        pq.Q() | pq.Number(0, 1, 0) * np.sqrt(3/6)
+        pq.Q() | pq.Number(0, 0, 2) * np.sqrt(1/6)
 
         pq.Q(2) | pq.Create()
 

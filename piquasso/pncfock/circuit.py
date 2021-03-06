@@ -17,6 +17,8 @@ class PNCFockCircuit(Circuit):
             "F": self._apply,
             "MeasureParticleNumber": self._measure_particle_number,
             # TODO: Cross-Kerr gate.
+            "Create": self._create,
+            "Annihilate": self._annihilate,
         }
 
     def _apply(self, operation):
@@ -32,3 +34,9 @@ class PNCFockCircuit(Circuit):
         self.program.results.append(
             Result(measurement=operation, outcome=outcome)
         )
+
+    def _create(self, operation):
+        self.state._apply_creation_operator(operation.modes)
+
+    def _annihilate(self, operation):
+        self.state._apply_annihilation_operator(operation.modes)
