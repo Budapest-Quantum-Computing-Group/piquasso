@@ -3,7 +3,7 @@
 #
 
 from piquasso import Q
-from piquasso.tests.test_program_base import TestProgramBase
+from .test_program_base import TestProgramBase
 
 
 class TestProgramRegistry(TestProgramBase):

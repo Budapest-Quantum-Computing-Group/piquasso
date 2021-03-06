@@ -6,7 +6,7 @@ import pytest
 
 from piquasso import Q
 from piquasso import Program
-from piquasso.tests.test_program_base import TestProgramBase
+from .test_program_base import TestProgramBase
 
 
 class TestProgramStacking(TestProgramBase):
