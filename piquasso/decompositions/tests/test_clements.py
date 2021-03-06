@@ -4,10 +4,24 @@
 
 import pytest
 import numpy as np
+from scipy.stats import unitary_group
 
 from piquasso import _math
 
 from piquasso.decompositions.clements import T, Clements
+
+
+@pytest.fixture
+def dummy_unitary():
+    def func(d):
+        return np.array(unitary_group.rvs(d))
+
+    return func
+
+
+@pytest.fixture(scope="session")
+def tolerance():
+    return 1E-9
 
 
 def test_T_beamsplitter_is_unitary():
