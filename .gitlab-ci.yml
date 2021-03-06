@@ -5,24 +5,41 @@ before_script:
 
 stages:
   - test
-  - build
+  - benchmark
+  - publish
+  - docs
 
-unittest:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
+test-py36:
   stage: test
+  image: python:3.6
   script:
     - pip install tox
-    - tox
+    - tox -e py36
   artifacts:
     reports:
       cobertura: coverage.xml
     expire_in: 15 days
 
-benchmark:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
+test-py37:
   stage: test
+  image: python:3.7
+  script:
+    - pip install tox
+    - tox -e py37
+  only:
+    - web
+
+test-py38:
+  stage: test
+  image: python:3.8
+  script:
+    - pip install tox
+    - tox -e py38
+  only:
+    - web
+
+benchmark:
+  stage: benchmark
   script:
     - apt update
     - apt-get install libeigen3-dev
@@ -30,10 +47,17 @@ benchmark:
     - echo "Piquasso vs. StrawberryFields vacuum homodyne benchmark"
     - poetry run python benchmarks/homodyne.py
 
-generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
-  stage: build
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "push"'
+publish:
+  stage: publish
+  script:
+    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
+    - poetry build
+    - poetry publish --repository gitlab -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+  only:
+    - web
+
+docs:
+  stage: docs
   script:
     - apt update
     - apt-get install libeigen3-dev
@@ -44,12 +68,3 @@ generatewebpage: #`pages` kellene ha szeretnenk gitlab pages-t
     paths:
       - docs/_build
     expire_in: 30 days
-
-buildpackage:
-  stage: build
-  script:
-    - poetry config repositories.gitlab https://gitlab.inf.elte.hu/api/v4/projects/73/packages/pypi
-    - poetry build
-    - poetry publish --repository gitlab -u gitlab-ci-token -p ${CI_JOB_TOKEN}
-  only:
-    - web
