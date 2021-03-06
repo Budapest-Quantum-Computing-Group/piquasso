@@ -53,6 +53,8 @@ class Q:
 
         return self
 
+    __ror__ = __or__
+
     def _register_program(self, program):
         if program.state is not None:
             if _context.current_program.state is not None:
