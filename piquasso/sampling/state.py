@@ -10,7 +10,7 @@ from .circuit import SamplingCircuit
 
 
 class SamplingState(State):
-    _circuit_class = SamplingCircuit
+    circuit_class = SamplingCircuit
 
     def __init__(self, *initial_state):
         self.initial_state = initial_state

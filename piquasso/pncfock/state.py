@@ -13,7 +13,7 @@ from .circuit import PNCFockCircuit
 
 
 class PNCFockState(State):
-    _circuit_class = PNCFockCircuit
+    circuit_class = PNCFockCircuit
 
     def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
         self._density_matrix = density_matrix

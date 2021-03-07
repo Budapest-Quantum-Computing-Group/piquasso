@@ -36,7 +36,7 @@ class Program:
     def _register_state(self, state):
         self.state = state
 
-        self.circuit = state._circuit_class(state, program=self) if state else None
+        self.circuit = state.circuit_class(state, program=self) if state else None
 
     @property
     def d(self):

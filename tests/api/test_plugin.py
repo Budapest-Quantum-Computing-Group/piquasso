@@ -11,8 +11,7 @@ import piquasso as pq
 
 @pytest.fixture
 def MyGaussianCircuit():
-    # TODO: better way to expose API
-    class _MyGaussianCircuit(pq.gaussian.circuit.GaussianCircuit):
+    class _MyGaussianCircuit(pq.GaussianState.circuit_class):
         pass
 
     _MyGaussianCircuit.__name__ = "MyGaussianCircuit"
@@ -23,7 +22,7 @@ def MyGaussianCircuit():
 @pytest.fixture
 def MyGaussianState(MyGaussianCircuit):
     class _MyGaussianState(pq.GaussianState):
-        _circuit_class = MyGaussianCircuit
+        circuit_class = MyGaussianCircuit
 
     _MyGaussianState.__name__ = "MyGaussianState"
 
