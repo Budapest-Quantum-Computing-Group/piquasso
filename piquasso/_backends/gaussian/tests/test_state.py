@@ -5,7 +5,7 @@
 import pytest
 import numpy as np
 
-from piquasso.gaussian.state import GaussianState
+import piquasso as pq
 from piquasso.api import constants
 
 
@@ -93,7 +93,7 @@ class TestGaussianStateRepresentations:
 
     @pytest.fixture(autouse=True)
     def setup(self, C, G, m):
-        self.state = GaussianState(C, G, m)
+        self.state = pq.GaussianState(C, G, m)
 
     def test_xp_representation(
         self,
@@ -182,7 +182,7 @@ class TestGaussianStateOperations:
 
     @pytest.fixture(autouse=True)
     def setup(self, C, G, m):
-        self.state = GaussianState(C, G, m)
+        self.state = pq.GaussianState(C, G, m)
 
     def test_rotated(self):
         phi = np.pi / 2
@@ -280,7 +280,7 @@ class TestGaussianStateVacuum:
     def test_create_vacuum(self):
         number_of_modes = 3
 
-        state = GaussianState.create_vacuum(d=number_of_modes)
+        state = pq.GaussianState.create_vacuum(d=number_of_modes)
 
         expected_m = np.zeros(number_of_modes, dtype=complex)
         expected_C = np.zeros((number_of_modes, number_of_modes), dtype=complex)
@@ -294,7 +294,7 @@ class TestGaussianStateVacuum:
         number_of_modes = 2
         hbar = constants.HBAR
 
-        state = GaussianState.create_vacuum(d=number_of_modes)
+        state = pq.GaussianState.create_vacuum(d=number_of_modes)
 
         expected_covariance = np.identity(2 * number_of_modes) * hbar
 
