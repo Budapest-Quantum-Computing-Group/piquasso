@@ -10,15 +10,9 @@ import piquasso as pq
 
 def test_5050_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0],
-                [0, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
+
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
 
     program.execute()
@@ -31,15 +25,8 @@ def test_5050_beamsplitter():
 
 def test_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0],
-                [0, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -52,16 +39,19 @@ def test_beamsplitter():
 
 
 def test_beamsplitter_multiple_particles():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) * (1/4)
+
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(2, 0), bra=(2, 0)) * (1/2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [0.5, 0, np.sqrt(1/2)],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -79,16 +69,15 @@ def test_beamsplitter_multiple_particles():
 
 
 def test_beamsplitter_leaves_vacuum_unchanged():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0), bra=(0, 0)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) * (1/2)
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) * (1/4)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0.5],
-                [np.sqrt(1/2), 0],
-                [0.5, 0, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -107,15 +96,9 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 
 def test_multiple_beamsplitters():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [1, 0, 0],
-                [0, 0, 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -133,17 +116,18 @@ def test_multiple_beamsplitters():
 
 
 def test_multiple_beamsplitters_with_multiple_particles():
-    with pq.Program() as program:
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
 
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) * (1/2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -162,16 +146,18 @@ def test_multiple_beamsplitters_with_multiple_particles():
 
 
 def test_phaseshift():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) * (1/2)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) * (1/4)
+
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0) | pq.R(phi=np.pi / 3)
 
@@ -185,16 +171,18 @@ def test_phaseshift():
 
 
 def test_fourier():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) * (1/2)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) * (1/4)
+
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0) | pq.F()
 
@@ -208,16 +196,18 @@ def test_fourier():
 
 
 def test_mach_zehnder():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) * (1/2)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) * (1/4)
+
+        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0],
-                [np.sqrt(1/2), 0.5, 0],
-            ],
-            d=2,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0, 1) | pq.MZ(int_=np.pi/3, ext=np.pi/4)
 
@@ -231,16 +221,18 @@ def test_mach_zehnder():
 
 
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) * (1/2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0) | pq.R(phi=np.pi/3)
         pq.Q(1) | pq.R(phi=np.pi/3)
@@ -263,6 +255,16 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
 
 def test_passive_transform():
 
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) * (1/2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+
     T = np.array(
         [
             [0.5, 0.53033009 + 0.53033009j, 0.21650635 + 0.375j],
@@ -272,15 +274,7 @@ def test_passive_transform():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            coefficients=[
-                [0],
-                [0.5, 0, 0],
-                [0.5, np.sqrt(1/2), 0, 0, 0, 0],
-            ],
-            d=3,
-            cutoff=2,
-        )
+        pq.Q() | preparation
 
         pq.Q(0, 1, 2) | pq.PassiveTransform(T=T)
 
@@ -298,18 +292,20 @@ def test_passive_transform():
 
 
 def test_measure_particle_number():
-    state = pq.PNCFockState.from_pure(
-        coefficients=[
-            [0.5],
-            [0.5, 0, np.sqrt(1/2)],
-        ],
-        d=3,
-        cutoff=1,
-    )
+    with pq.Program() as preparation:
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
 
-    program = pq.Program(state=state)
+        pq.Q() | pq.DMNumber(ket=(0, 0, 0), bra=(0, 0, 0)) * (1/4)
 
-    with program:
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (1/4)
+        pq.Q() | pq.DMNumber(ket=(1, 0, 0), bra=(1, 0, 0)) * (1/2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.DMNumber(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+
         pq.Q() | pq.MeasureParticleNumber()
 
     results = program.execute()
@@ -373,14 +369,10 @@ def test_create_annihilate_and_create():
 
 def test_overflow_with_zero_norm_raises_RuntimeError():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            d=3, cutoff=2,
-            coefficients=[
-                0,
-                np.sqrt(2/5), np.sqrt(3/5), 0,
-                0, 0, 0, 0, 0, 0,
-            ]
-        )
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (2/5)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * (3/5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -392,15 +384,10 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            d=3, cutoff=3,
-            coefficients=[
-                0,
-                np.sqrt(2/5), np.sqrt(3/5), 0,
-                *([0] * 6),
-                *([0] * 10),
-            ]
-        )
+        pq.Q() | pq.PNCFockState(d=3, cutoff=3)
+
+        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * (2/5)
+        pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * (3/5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -421,14 +408,11 @@ def test_creation_on_multiple_modes():
 
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.from_pure(
-            d=3, cutoff=2,
-            coefficients=[
-                0,
-                np.sqrt(2/6), np.sqrt(3/6), 0,
-                np.sqrt(1/6), 0, 0, 0, 0, 0,
-            ]
-        )
+        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+
+        pq.Q() | (2/6) * pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
+        pq.Q() | (3/6) * pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0))
+        pq.Q() | (1/6) * pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
 
         pq.Q(2) | pq.Create()
 

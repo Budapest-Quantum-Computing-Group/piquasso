@@ -106,6 +106,18 @@ class FockSpace(tuple):
         self.d = d
         self.cutoff = cutoff
 
+    def __deepcopy__(self, memo):
+        """
+        This method exists, because `copy.deepcopy` goes mad with classes defining both
+        `__new__` and `__init__`.
+
+        Defines the deepcopy of this object. Since its state (:attr:`d` and
+        :attr:`cutoff`) is immutable, we don't really need to deepcopy this object, we
+        could return with this instance, too.
+        """
+
+        return self
+
     def get_fock_operator(self, operator):
         return direct_sum(
             *(
