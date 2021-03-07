@@ -11,7 +11,7 @@ import piquasso as pq
 def test_5050_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 1)
+        pq.Q(1) | pq.Number(1)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
 
@@ -26,7 +26,7 @@ def test_5050_beamsplitter():
 def test_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | 1 * pq.Number(0, 1)
+        pq.Q(1) | 1 * pq.Number(1)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -41,9 +41,9 @@ def test_beamsplitter():
 def test_beamsplitter_multiple_particles():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 1) * (1/2)
-        pq.Q() | pq.Number(0, 2) * (1/2)
-        pq.Q() | pq.Number(2, 0) * np.sqrt(1/2)
+        pq.Q(1) | pq.Number(1) * (1/2)
+        pq.Q(1) | pq.Number(2) * (1/2)
+        pq.Q(0) | pq.Number(2) * np.sqrt(1/2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -85,7 +85,7 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 def test_multiple_beamsplitters():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) * 1
+        pq.Q(2) | pq.Number(1) * 1
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -313,8 +313,8 @@ def test_create_annihilate_and_create():
 def test_overflow_with_zero_norm_raises_RuntimeError():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) * np.sqrt(2/5)
-        pq.Q() | pq.Number(0, 1, 0) * np.sqrt(3/5)
+        pq.Q(2) | pq.Number(1) * np.sqrt(2/5)
+        pq.Q(1) | pq.Number(1) * np.sqrt(3/5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -327,8 +327,8 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=3)
-        pq.Q() | pq.Number(0, 0, 1) * np.sqrt(2/5)
-        pq.Q() | pq.Number(0, 1, 0) * np.sqrt(3/5)
+        pq.Q(2) | pq.Number(1) * np.sqrt(2/5)
+        pq.Q(1) | pq.Number(1) * np.sqrt(3/5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -350,9 +350,9 @@ def test_creation_on_multiple_modes():
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) * np.sqrt(2/6)
-        pq.Q() | pq.Number(0, 1, 0) * np.sqrt(3/6)
-        pq.Q() | pq.Number(0, 0, 2) * np.sqrt(1/6)
+        pq.Q(2) | pq.Number(1) * np.sqrt(2/6)
+        pq.Q(1) | pq.Number(1) * np.sqrt(3/6)
+        pq.Q(2) | pq.Number(2) * np.sqrt(1/6)
 
         pq.Q(2) | pq.Create()
 

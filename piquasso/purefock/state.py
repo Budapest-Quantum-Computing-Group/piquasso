@@ -65,7 +65,12 @@ class PureFockState(State):
 
         return outcome
 
-    def _add_occupation_number_basis(self, coefficient, occupation_numbers):
+    def _add_occupation_number_basis(self, coefficient, occupation_numbers, modes):
+        if modes:
+            occupation_numbers = self._space.get_occupied_basis(
+                modes=modes, occupation_numbers=occupation_numbers
+            )
+
         index = self._space.index(occupation_numbers)
 
         self._state_vector[index] = coefficient

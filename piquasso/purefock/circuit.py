@@ -37,10 +37,12 @@ class PureFockCircuit(Circuit):
         )
 
     def _number(self, operation):
-        occupation_numbers = operation.params[0]
-        coefficient = operation.params[1]
 
-        self.state._add_occupation_number_basis(coefficient, occupation_numbers)
+        self.state._add_occupation_number_basis(
+            occupation_numbers=operation.params[0],
+            coefficient=operation.params[1],
+            modes=operation.modes,
+        )
 
     def _create(self, operation):
         self.state._apply_creation_operator(operation.modes)
