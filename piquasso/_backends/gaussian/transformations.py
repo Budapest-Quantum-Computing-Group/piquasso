@@ -22,7 +22,7 @@ def quad_transformation(d):
         T \hat{Y} = T (x_1, \dots, x_d, p_1, \dots, p_d)^T
             = (x_1, p_1, \dots, x_d, p_d)^T,
 
-    which is very helpful in :mod:`piquasso.gaussian.state`.
+    which is very helpful in :mod:`piquasso._backends.gaussian.state`.
 
     Args:
         d (int): The number of modes.
