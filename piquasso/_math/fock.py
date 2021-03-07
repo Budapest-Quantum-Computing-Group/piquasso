@@ -140,6 +140,13 @@ class FockSpace(tuple):
             for dual_index, dual_basis in self.basis:
                 yield (index, dual_index), (basis, dual_basis)
 
+    def get_occupied_basis(self, *, modes, occupation_numbers):
+        temp = [0] * self.d
+        for index, mode in enumerate(modes):
+            temp[mode] = occupation_numbers[index]
+
+        return FockBasis(temp)
+
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))
 
