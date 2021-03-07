@@ -45,7 +45,7 @@ class TestProgramBase:
     @pytest.fixture
     def FakeState(self, FakeCircuit):
         class _FakeState(State):
-            _circuit_class = FakeCircuit
+            circuit_class = FakeCircuit
 
         return _FakeState
 

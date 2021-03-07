@@ -8,7 +8,7 @@ from piquasso.core.mixins import _PropertyMixin
 
 
 class State(_PropertyMixin):
-    _circuit_class = None
+    circuit_class = None
 
     @classmethod
     def from_properties(cls, properties):

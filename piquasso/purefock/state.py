@@ -13,7 +13,7 @@ from .circuit import PureFockCircuit
 
 
 class PureFockState(State):
-    _circuit_class = PureFockCircuit
+    circuit_class = PureFockCircuit
 
     def __init__(self, state_vector=None, *, d, cutoff, vacuum=False):
         space = fock.FockSpace(

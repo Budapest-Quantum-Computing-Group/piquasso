@@ -38,7 +38,7 @@ class GaussianState(State):
 
     """
 
-    _circuit_class = GaussianCircuit
+    circuit_class = GaussianCircuit
 
     def __init__(self, C, G, m):
         r"""

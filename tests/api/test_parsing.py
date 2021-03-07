@@ -42,7 +42,7 @@ class TestProgramJSONParsing:
 
         @_register
         class FakeState(State):
-            _circuit_class = FakeCircuit
+            circuit_class = FakeCircuit
 
             def __init__(self, foo, bar, d):
                 self.foo = foo
