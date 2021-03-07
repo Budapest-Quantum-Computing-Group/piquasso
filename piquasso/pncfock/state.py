@@ -7,7 +7,7 @@ import numpy as np
 
 from piquasso.api.state import State
 
-from piquasso._math import fock, direct_sum
+from piquasso._math import fock
 
 from .circuit import PNCFockCircuit
 
@@ -37,19 +37,6 @@ class PNCFockState(State):
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
         return cls(d=d, cutoff=cutoff, vacuum=True)
-
-    @classmethod
-    def from_pure(cls, coefficients, *, d, cutoff):
-        # TODO: The result is not necessarily the pure state we might expect.
-        # By applying a PNC operator to this or the true pure state, the result
-        # is the same, but still.
-        density_matrix = direct_sum(
-            *(
-                [np.outer(vector, vector) for vector in coefficients]
-            )
-        )
-
-        return cls(density_matrix, d=d, cutoff=cutoff)
 
     def _apply(self, operator, modes):
         index = self._get_operator_index(modes)
