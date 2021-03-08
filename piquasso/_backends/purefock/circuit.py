@@ -15,6 +15,7 @@ class PureFockCircuit(Circuit):
             "R": self._apply,
             "MZ": self._apply,
             "F": self._apply,
+            "K": self._kerr,
             "CK": self._cross_kerr,
             "MeasureParticleNumber": self._measure_particle_number,
             "Number": self._number,
@@ -49,6 +50,12 @@ class PureFockCircuit(Circuit):
 
     def _annihilate(self, operation):
         self.state._apply_annihilation_operator(operation.modes)
+
+    def _kerr(self, operation):
+        self.state._apply_kerr(
+            xi=operation.params[0],
+            mode=operation.modes[0],
+        )
 
     def _cross_kerr(self, operation):
         self.state._apply_cross_kerr(

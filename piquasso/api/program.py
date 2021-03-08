@@ -145,7 +145,7 @@ class Program:
             "Sgate": operations.gates.S,
             "Pgate": operations.gates.P,
             "Vgate": None,
-            "Kgate": None,
+            "Kgate": operations.gates.K,
             "Rgate": operations.gates.R,
             "BSgate": operations.gates.B,
             "MZgate": operations.gates.MZ,

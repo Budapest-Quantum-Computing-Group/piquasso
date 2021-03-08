@@ -319,6 +319,24 @@ class D(Operation):
 
 
 @_register
+class K(Operation):
+    r"""Kerr gate.
+
+    .. math::
+        K(\xi) = \exp(i \xi \hat{n} \hat{n})
+
+    .. math::
+        K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n))
+
+    Args:
+        xi (float): The magnitude of the Kerr nonlinear term.
+    """
+
+    def __init__(self, *, xi: float):
+        super().__init__(xi)
+
+
+@_register
 class CK(Operation):
     r"""Cross-Kerr gate.
 
