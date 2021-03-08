@@ -26,8 +26,9 @@ A fast and easy-to-use Photonic Quantum Computer Simulator.
    :caption: Operations:
    :hidden:
 
-   operations
-
+   operations/preparations
+   operations/gates
+   operations/measurements
 
 .. toctree::
    :maxdepth: 3

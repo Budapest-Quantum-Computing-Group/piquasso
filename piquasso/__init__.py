@@ -15,7 +15,14 @@ from piquasso._backends.purefock import PureFockState
 
 from piquasso.core.registry import _use_plugin, _retrieve_class
 
-from .operations import (
+from .operations.preparations import (
+    Number,
+    DMNumber,
+    Create,
+    Annihilate,
+)
+
+from .operations.gates import (
     PassiveTransform,
     GaussianTransform,
     R,
@@ -29,9 +36,10 @@ from .operations import (
     CK,
     Interferometer,
     Sampling,
+)
+
+from .operations.measurements import (
     MeasureParticleNumber,
-    Number,
-    DMNumber,
 )
 
 
@@ -85,6 +93,8 @@ __all__ = [
     "MeasureParticleNumber",
     "Number",
     "DMNumber",
+    "Create",
+    "Annihilate",
 ]
 
 __version__ = "0.1.3"

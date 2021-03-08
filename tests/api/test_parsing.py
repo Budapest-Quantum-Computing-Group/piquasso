@@ -8,7 +8,7 @@ import json
 import pytest
 
 from piquasso.core.registry import _register
-from piquasso.operations import Operation
+from piquasso.api.operation import Operation
 from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.program import Program

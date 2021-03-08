@@ -139,21 +139,21 @@ class Program:
         """
 
         operation_class = {
-            "Dgate": operations.D,
+            "Dgate": operations.gates.D,
             "Xgate": None,
             "Zgate": None,
-            "Sgate": operations.S,
-            "Pgate": None,
+            "Sgate": operations.gates.S,
+            "Pgate": operations.gates.P,
             "Vgate": None,
             "Kgate": None,
-            "Rgate": operations.R,
-            "BSgate": operations.B,
-            "MZgate": None,
-            "S2gate": None,
+            "Rgate": operations.gates.R,
+            "BSgate": operations.gates.B,
+            "MZgate": operations.gates.MZ,
+            "S2gate": operations.gates.S2,
             "CXgate": None,
             "CZgate": None,
-            "CKgate": None,
-            "Fouriergate": None
+            "CKgate": operations.gates.CK,
+            "Fouriergate": operations.gates.F,
         }.get(blackbird_operation["op"])
 
         operation = operation_class(*blackbird_operation.get("args", tuple()))
