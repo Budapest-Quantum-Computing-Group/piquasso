@@ -17,3 +17,14 @@ class _PropertyMixin(abc.ABC):
                 The desired instance in the format of a mapping.
         """
         pass
+
+
+class _WeightMixin:
+    def __mul__(self, coefficient):
+        self.params = (*self.params[:-1], self.params[-1] * coefficient)
+        return self
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, coefficient):
+        return self.__mul__(1 / coefficient)
