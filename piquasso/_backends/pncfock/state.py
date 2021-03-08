@@ -88,6 +88,20 @@ class PNCFockState(State):
 
         self._density_matrix[index, dual_index] = coefficient
 
+    def _apply_kerr(self, xi, mode):
+        for index, (basis, dual_basis) in self._space.operator_basis:
+            number = basis[mode]
+            dual_number = dual_basis[mode]
+
+            coefficient = np.exp(
+                1j * xi * (
+                   number * (2 * number + 1)
+                   - dual_number * (2 * dual_number + 1)
+                )
+            )
+
+            self._density_matrix[index] *= coefficient
+
     def _apply_cross_kerr(self, xi, modes):
         for index, (basis, dual_basis) in self._space.operator_basis:
             coefficient = np.exp(
