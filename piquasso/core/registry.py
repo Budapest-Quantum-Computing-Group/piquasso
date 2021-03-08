@@ -35,14 +35,15 @@ def _create_instance_from_mapping(mapping):
     """Creates an instance using the `registry` classes from a mapping.
 
     The supported mapping format is:
-    ```
-    {
-        "type": <CLASS_NAME>,
-        "properties": {
-            ...
+
+    .. code-block:: python
+
+        {
+            "type": <CLASS_NAME>,
+            "properties": {
+                ...
+            }
         }
-    }
-    ```
 
     The value under `"type"` will be searched in the `registry` for the corresponding
     class, and the `"properties"` will be used to initialize the class with.

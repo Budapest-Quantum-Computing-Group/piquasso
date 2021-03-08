@@ -52,30 +52,28 @@ class Program:
         """Creates a `Program` instance from a mapping.
 
         The currently supported format is
-        ```
-        {
-            "state": {
-                "type": <STATE_CLASS_NAME>,
-                "properties": {
-                    ...
-                }
-            },
-            "operations": [
-                {
-                    "type": <OPERATION_CLASS_NAME>,
+
+        .. code-block:: python
+
+            {
+                "state": {
+                    "type": <STATE_CLASS_NAME>,
                     "properties": {
                         ...
                     }
-                }
-            ]
-        }
-        ```
-
-        TODO: This docstring is quite verbose, put it into a separate Sphinx section
-            when present.
+                },
+                "operations": [
+                    {
+                        "type": <OPERATION_CLASS_NAME>,
+                        "properties": {
+                            ...
+                        }
+                    }
+                ]
+            }
 
         Note:
-            Numeric arrays and complex numbers are not supported yet.
+            Numeric arrays and complex numbers are not yet supported.
 
         Args:
             properties (collections.Mapping):

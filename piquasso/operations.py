@@ -13,6 +13,10 @@ from piquasso.core.mixins import _PropertyMixin
 
 class Operation(_PropertyMixin):
     def __init__(self, *params):
+        """
+        Args:
+            *params: Variable length argument list.
+        """
         self.params = params
         self.modes = None
 
@@ -82,17 +86,15 @@ class B(Operation):
 
     where :math:`t = \cos(\theta)` and :math:`r = e^{- i \phi} \sin(\theta)`.
 
+    Args:
+        phi (float): Phase angle of the beamsplitter.
+            (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
+        theta (float): The transmittivity angle of the beamsplitter.
+            (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
+
     """
 
     def __init__(self, theta=0., phi=np.pi / 4):
-        r"""Beamsplitter operation
-
-        Args:
-            phi (float): Phase angle of the beamsplitter.
-                (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
-            theta (float): The transmittivity angle of the beamsplitter.
-                (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
-        """
         super().__init__(theta, phi)
 
         self._passive_representation = self._get_passive_representation()
@@ -111,7 +113,7 @@ class B(Operation):
 
 @_register
 class R(Operation):
-    r"""Rotation or Phaseshifter operation.
+    r"""Rotation or phaseshift operation.
 
     The annihilation and creation operators are evolved in the following
     way:
@@ -121,14 +123,11 @@ class R(Operation):
         P(\phi) \hat{a}_k^\dagger P(\phi)^\dagger
             = e^{- i \phi} \hat{a}_k^\dagger
 
+    Args:
+        phi (float): The angle of the rotation.
     """
 
-    def __init__(self, phi):
-        r"""Rotation or Phaseshifter operation.
-
-        Args:
-            phi (float): The angle of the rotation.
-        """
+    def __init__(self, phi: float):
         super().__init__(phi)
 
         self._passive_representation = self._get_passive_representation()
@@ -221,42 +220,37 @@ class S(Operation):
     The definition of the operator is:
 
     .. math::
-            S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
+        S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
 
-    where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the squeezing
-    and :math:`\theta` is the angle of the squeezing.
+    where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the
+    squeezing and :math:`\theta` is the angle of the squeezing.
 
-    This act of squeezing at a given rotation angle :math:`\theta` results in a shrinkage in the
-    :math:`\hat{x}` quadrature and a stretching in the other quadrature :math:`\hat{p}` as follows:
+    This act of squeezing at a given rotation angle :math:`\theta` results in a
+    shrinkage in the :math:`\hat{x}` quadrature and a stretching in the other quadrature
+    :math:`\hat{p}` as follows:
 
     .. math::
-        S^\dagger(z) x_{\theta} S(z) = e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
+        S^\dagger(z) x_{\theta} S(z) =
+            e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
 
     The action of the :math:`\hat{S}(z)` gate on the ladder operators :math:`\hat{a}`
     and :math:`\hat{a}^\dagger` can be defined as follows:
 
     .. math::
-        {S(z)}^{\dagger}\hat{a}S(z) = \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
-            {S(z)}^{\dagger}\hat{a}^\dagger S(z) = \alpha\hat{a}^\dagger - \beta^* \hat{a}
+        {S(z)}^{\dagger}\hat{a}S(z) =
+            \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
+            {S(z)}^{\dagger}\hat{a}^\dagger S(z) =
+            \alpha\hat{a}^\dagger - \beta^* \hat{a}
 
-    where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`, :math:`e^{i\theta}\sinh(amp)`
-    respectively.
-    """  # noqa: E501
+    where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`,
+    :math:`e^{i\theta}\sinh(amp)` respectively.
+
+    Args:
+        amp (float): The amplitude of the squeezing operation.
+        theta (float): The squeezing angle.
+    """
 
     def __init__(self, amp, theta=0):
-        r"""
-        Squeezing operation.
-
-        The Hamiltonian of this operator is defined in terms of `z`:
-
-        .. math:
-            z = amp \exp(i\theta)
-
-        Args:
-            amp (float): The amplitude of the squeezing operation.
-            theta (float): The squeezing angle.
-        """
-
         super().__init__(amp, theta)
 
         self._calculate_representations()
@@ -343,25 +337,25 @@ class S2(Operation):
 
 @_register
 class D(Operation):
-    """Displacement operation."""
+    r"""Phase space displacement operation.
+
+    One must either specify `alpha` only, or the combination of `r` and `phi`.
+
+    When `r` and `phi` are the given parameters, `alpha` is calculated via:
+
+    .. math:
+        \alpha = r \exp(i \phi).
+
+    See:
+        :ref:`gaussian_displacement`
+
+    Args:
+        alpha (complex): The displacement.
+        r (float): The displacement magnitude.
+        phi (float): The displacement angle.
+    """
 
     def __init__(self, *, alpha=None, r=None, phi=None):
-        r"""Phase space displacement operation.
-
-        One must either specify :param:`alpha` only, or the combination of :param:`r`
-        and :param:`phi`.
-
-        When :param:`r` and :param:`phi` are the given parameters, `alpha` is calculated
-        via:
-
-        .. math:
-            \alpha = r \exp(i \phi)
-
-        Args:
-            alpha (complex): The displacement.
-            r (float): The displacement magnitude.
-            phi (float): The displacement angle.
-        """
         assert \
             alpha is not None and r is None and phi is None \
             or \
@@ -405,6 +399,10 @@ class Interferometer(Operation):
 
     Do note, that new interferometer matrix works as interferometer matrix on
     qumodes (provided as the arguments) and as an identity on every other mode.
+
+    Args:
+        interferometer_matrix (np.array):
+            A square matrix representing the interferometer.
     """
 
     @staticmethod
@@ -413,12 +411,6 @@ class Interferometer(Operation):
         return len(shape) == 2 and shape[0] == shape[1]
 
     def __init__(self, interferometer_matrix):
-        r"""Interferometer
-
-        Args:
-            interferometer_matrix (np.array): A square matrix representing the
-                interferometer
-        """
         assert \
             self._is_square(interferometer_matrix), \
             "The interferometer matrix should be a square matrix."
@@ -441,8 +433,8 @@ class Sampling(ModelessOperation):
     algorithm.
 
     Args:
-        shots (int): A positive integer value representing number of samples for the
-            experiment
+        shots (int):
+            A positive integer value representing number of samples for the experiment.
     """
 
     def __init__(self, shots=1):

@@ -16,6 +16,12 @@ class State(_PropertyMixin):
 
     @staticmethod
     def _get_operator_index(modes):
+        """
+        Note:
+            For indexing of numpy arrays, see
+            https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
+        """
+
         transformed_columns = np.array([modes] * len(modes))
         transformed_rows = transformed_columns.transpose()
 

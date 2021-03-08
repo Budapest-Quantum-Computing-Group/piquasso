@@ -6,9 +6,10 @@ calculated, which is the quadrature mean and the covariance after a rotation wit
 $`\pi/3`$ on the second mode.
 
 To run this script:
-```
-./benchmarks/homodyne.py [NUMBER_OF_ITERATIONS]
-```
+
+.. code-block:: bash
+
+    ./benchmarks/homodyne.py [NUMBER_OF_ITERATIONS]
 
 """
 

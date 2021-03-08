@@ -32,10 +32,9 @@ class GaussianState(State):
 
         G (numpy.array): A correlation matrix which is defined by
 
-                .. math::
-                    \langle \hat{G}_{ij} \rangle_{\rho} =
-                    \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
-
+            .. math::
+                \langle \hat{G}_{ij} \rangle_{\rho} =
+                \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
     """
 
     circuit_class = GaussianCircuit
@@ -54,7 +53,6 @@ class GaussianState(State):
             C (numpy.array): See :attr:`C`.
             G (numpy.array): See :attr:`G`.
             m (numpy.array): See :attr:`m`.
-
         """
 
         self.C = C
@@ -91,11 +89,12 @@ class GaussianState(State):
     def xp_mean(self):
         r"""The state's mean in the xp basis.
 
+        The expectation value of the quadrature operators in xp basis, i.e.
+        :math:`\operatorname{Tr} \rho \hat{Y}`, where
+        :math:`\hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
+
         Returns:
             np.array: A :math:`d`-vector.
-                The expectation value of the quadrature operators in xp basis,
-                i.e. :math:`\operatorname{Tr} \rho \hat{Y}` , where
-                :math:`\hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
         """
 
         _xp_mean = np.empty(2 * self.d)
@@ -228,8 +227,9 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array: The :math:`2d \times 2d` quadrature-ordered covariance matrix in
-                xp basis.
+            np.array:
+                The :math:`2d \times 2d` quadrature-ordered covariance matrix in
+                xp-ordered basis.
         """
         mu = self.mu
         return self.corr - 2 * np.outer(mu, mu)
@@ -388,48 +388,10 @@ class GaussianState(State):
         )
 
     def apply_passive(self, T, modes):
-        r"""Applies a passive transformation to the quantum state.
+        r"""Applies the passive transformation `T` to the quantum state.
 
-        Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
-        `modes`.
-
-        Let :math:`T \in \mathbb{C}^{k \times k},\, k \in [d]` be a transformation
-        which transforms the vector of annihilation operators in the following manner:
-
-        .. math::
-            \mathbf{a}_{\vec{m}} \mapsto T \mathbf{a}_{\vec{m}},
-
-        or in terms of vector elements:
-
-        .. math::
-            a_{i} \mapsto \sum_{j \in \vec{m}} T^{ij} a_j
-
-        Application to :attr:`m` is done by matrix multiplication.
-
-        The canonical commutation relations can be written as
-
-        .. math::
-            [a^\dagger_i, a_j] = \delta_{i j},
-
-        and then applying the transformation :math:`T` we get
-
-        .. math::
-            \sum_{i, j \in \vec{m}} [T^*_{ki} a^\dagger_i, T_{lj} a_j]
-                &= \sum_{i, j \in \vec{m}} T^*_{ki} T_{lj}
-                    [a^\dagger_i, a_j] \\
-                &= \sum_{i, j \in \vec{m}} T^*_{ki} T_{lj} \delta_{i j} \\
-                &= \sum_{i \in \vec{m}} T^*_{ki} T_{li} \\
-                &= \sum_{i \in \vec{m}} (T^\dagger)_{ik} T_{li} \\
-                &= \delta_{k l},
-
-        where the last line imposes, that any transformation should leave the canonical
-        commutation relations invariant.
-        The last line of the equation means, that :math:`T` should actually be a
-        unitary matrix.
-
-        Application to `C` and `G` is non-trivial however: one has to apply the
-        transformation for the external modes as well, see
-        :meth:`_apply_passive_to_C_and_G`.
+        See:
+            :ref:`passive_gaussian_transformations`
 
         Args:
             T (numpy.array): The matrix to be applied.
@@ -441,37 +403,6 @@ class GaussianState(State):
         self._apply_passive_to_C_and_G(T, modes=modes)
 
     def _apply_passive_to_C_and_G(self, T, modes):
-        r"""Applies the transformation :math:`T` to the :math:`C` and :math:`G`.
-
-        Let :math:`\vec{i}` denote an index set, which corresponds to `index`
-        in the implementation. E.g. for 2 modes denoted by :math:`n` and
-        :math:`m`:, one could write
-
-        .. math::
-            \vec{i} = \{n, m\} \times \{n, m\}.
-
-        From now on, I will use the notation
-        :math:`\{n, m\} := \mathrm{modes}`.
-
-        The transformation by :math:`T` can be prescribed in the following
-        manner:
-
-        .. math::
-                C_{\vec{i}} \mapsto T^* C_{\vec{i}} T^T \\
-                G_{\vec{i}} \mapsto T G_{\vec{i}} T^T
-
-        If there are other modes in the system, i.e. `modes` does not refer to all the
-        modes, :meth:`_apply_passive_to_auxiliary_modes` is called to handle those.
-
-        Note:
-            For indexing of numpy arrays, see
-            https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
-
-        Args:
-            T (np.array): The matrix to be applied.
-            modes (tuple): Qumodes on which the transformation directly operates.
-        """
-
         index = self._get_operator_index(modes)
 
         self.C[index] = T.conjugate() @ self.C[index] @ T.transpose()
@@ -483,49 +414,6 @@ class GaussianState(State):
             self._apply_passive_to_auxiliary_modes(T, modes, auxiliary_modes)
 
     def _apply_passive_to_auxiliary_modes(self, T, modes, auxiliary_modes):
-        r"""Applies the matrix :math:`T` to modes which are not directly transformed.
-
-        This method is applied for the correlation matrices :math:`C` and :math:`G`.
-        For context, visit :meth:`_apply_passive_to_C_and_G`.
-
-        Let us denote :math:`\vec{k}` the following:
-
-        .. math::
-                \vec{k} = \mathrm{modes}
-                        \times \big (
-                                [d]
-                                - \mathrm{modes}
-                        \big ).
-
-        For all the remaining modes, the following is applied regarding the
-        elements, where the **first** index corresponds to
-        :math:`\mathrm{modes}`:
-
-        .. math::
-                C_{\vec{k}} \mapsto T^* C_{\vec{k}} \\
-                G_{\vec{k}} \mapsto T G_{\vec{k}}
-
-        Regarding the case where the **second** index corresponds to
-        :math:`\mathrm{modes}`, i.e. where we use
-        :math:`\big ( [d] - \mathrm{modes} \big )
-        \times \mathrm{modes}`, the same has to be applied.
-
-        For :math:`n \in \mathrm{modes}` and :math:`m \in [d]`, we could
-        use
-
-        .. math::
-                C_{nm} := C^*_{mn} \\
-                G_{nm} := G_{mn}.
-
-
-        Args:
-            T (np.array): The matrix to be applied.
-            modes (tuple): Qumodes on which the transformation directly operates.
-            auxiliary_modes (tuple):
-                The modes, on which the transformation is not directly applied, but
-                should be accounted for in :math:`C` and :math:`G`.
-        """
-
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         self.C[auxiliary_index] = T.conjugate() @ self.C[auxiliary_index]
@@ -537,33 +425,12 @@ class GaussianState(State):
     def apply_active(self, P, A, modes):
         r"""Applies an active transformation to the quantum state.
 
-        Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
-        `modes`.
-
-        Let :math:`P, A \in \mathbb{C}^{k \times k},\, k \in [d]` be a passive and an
-        active transformation, respectively. An active operation transforms the vector
-        of annihilation operators in the following manner:
-
-        .. math::
-             \mathbf{a}_{\vec{m}}
-                P \mathbf{a}_{\vec{m}} + A \mathbf{a}_{\vec{m}^*},
-
-        or in terms of vector elements:
-
-        .. math::
-            a_{i} \mapsto
-                \sum_{j \in \vec{m}} P^{ij} a_j
-                + \sum_{j \in \vec{m}} A^{ij} a_j^\dagger
-
-        The vector of the means of the :math:`i`-th mode
-        :math:`m_i = \langle \hat{a}_i \rangle_\rho` is evolved as follows:
-
-        .. math::
-            m_i \mapsto P m_i + A m_i^*
+        See:
+            :ref:`active_gaussian_transformations`
 
         Args:
             P (np.array): A matrix that represents a (P)assive transformation.
-            A (np.array): A matrix that represents an (A)assive transformation.
+            A (np.array): A matrix that represents an (A)ctive transformation.
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
@@ -575,27 +442,6 @@ class GaussianState(State):
         self._apply_active_to_C_and_G(P, A, modes)
 
     def _apply_active_to_C_and_G(self, P, A, modes):
-        r"""Applies an active transformation to the C and G matrices.
-
-        The transformations in the terms of the transformation matrices are defined by
-
-        .. math::
-            G_{i j} \mapsto
-                (P G P^T + A G^\dagger A^T + P (1 + C^T) A^T + A C P^T)_{i j}
-
-        .. math::
-            C_{i j} \mapsto
-                (P^* C P^T + A^* (1 + C^T) P^T + P^* G^\dagger A^T + A^* G P^T)_{i j}
-
-        If there are other modes in the system, i.e. `modes` does not refer to all the
-        modes, :meth:`_apply_active_to_auxiliary_modes` is called to handle those.
-
-        Args:
-            P (np.array): A matrix that represents a (P)assive transformation.
-            A (np.array): A matrix that represents an (A)assive transformation.
-            modes (tuple): Qumodes on which the transformation directly operates.
-        """
-
         index = self._get_operator_index(modes)
 
         original_C = self.C[index]
@@ -623,26 +469,6 @@ class GaussianState(State):
             self._apply_active_to_auxiliary_modes(P, A, modes, auxiliary_modes)
 
     def _apply_active_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
-        r"""
-        This method updates the off diagonal elements of the :math:`G` and the :math:`C`
-        matrices.
-
-        The columns :math:`j` defined in `auxiliary_modes` associated with the mode
-        :math:`i` defined in `modes` evolve according to the linear transformation
-        defined in :meth:`apply_active`.
-
-        Then each row of the mode :math:`i` will be updated according to the fact that
-        :math:`C_{ij} = C_{ij}^*` and :math:`G_{ij} = G_{ij}^T`.
-
-        Args:
-            alpha (complex): A complex that represents the value of :math:`cosh(amp)`.
-            beta (complex):
-                A complex that represents the value of :math:`e^{i\theta}\sinh(amp)`.
-            modes (tuple): Qumodes on which the transformation directly operates.
-            auxiliary_modes (np.array): A vector that contains The modes, on which the
-                transformation is not directly applied, but should be accounted for in
-                :math:`C` and :math:`G`.
-        """
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         auxiliary_C = self.C[auxiliary_index]

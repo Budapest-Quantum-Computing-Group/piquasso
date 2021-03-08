@@ -26,12 +26,15 @@ help:
 apidoc:
 	@$(SPHINX_APIDOC) -f -o "$(APIDOC_OUTPUT_PATH)" "$(APIDOC_MODULE_PATH)" "$(APIDOC_EXCLUDE_PATTERN)"
 
-html:
+clean:
+	rm -rf "$(BUILDDIR)"
+
+html: clean
 	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)"
 
 html_all: apidoc html
 
-open: html_all
+open: html
 	@xdg-open $(BUILDDIR)/index.html
 
 # Catch-all target: route all unknown targets to Sphinx using the new

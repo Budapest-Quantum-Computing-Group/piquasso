@@ -1,7 +1,5 @@
 # Development Guide
 
-[[_TOC_]]
-
 ## Development requirements
 
 First and foremost, a `python3.6` is needed to be installed on your machine.
