@@ -2,59 +2,9 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-"""Simple passive linear optical elements."""
-
 import numpy as np
-
-from piquasso.core import _context
 from piquasso.core.registry import _register
-from piquasso.core.mixins import _PropertyMixin
-
-
-class Operation(_PropertyMixin):
-    def __init__(self, *params):
-        """
-        Args:
-            *params: Variable length argument list.
-        """
-        self.params = params
-        self.modes = None
-
-    @classmethod
-    def from_properties(cls, properties):
-        """Creates an `Operation` instance from a mapping specified.
-
-        Args:
-            properties (collections.Mapping):
-                The desired `Operator` instance in the format of a mapping.
-
-        Returns:
-            Operator: An `Operator` initialized using the specified mapping.
-        """
-
-        operation = cls(**properties["params"])
-
-        operation.modes = properties["modes"]
-
-        return operation
-
-    def __repr__(self):
-        display_string = self.__class__.__name__
-
-        if self.modes:
-            display_string += f" on modes {self.modes}"
-
-        if self.params:
-            display_string += f" with params {self.params}"
-
-        return display_string
-
-
-class ModelessOperation(Operation):
-    def __init__(self, *params):
-        super().__init__(*params)
-
-        _context.current_program.operations.append(self)
+from piquasso.api.operation import Operation, ModelessOperation
 
 
 @_register
@@ -442,58 +392,3 @@ class Sampling(ModelessOperation):
             shots > 0 and isinstance(shots, int),\
             "The number of shots should be a positive integer."
         super().__init__(shots)
-
-
-@_register
-class MeasureParticleNumber(Operation):
-    """Particle number measurement.
-
-    # TODO: Measure only certain modes!
-    """
-
-    def __init__(self):
-        pass
-
-
-@_register
-class Number(Operation):
-    r"""State preparation with Fock basis vectors."""
-
-    def __init__(self, *occupation_numbers, coefficient=1.0):
-        super().__init__(occupation_numbers, coefficient)
-
-    def __mul__(self, coefficient):
-        self.params = (self.params[0], self.params[1] * coefficient)
-        return self
-
-    __rmul__ = __mul__
-
-
-@_register
-class DMNumber(Operation):
-    r"""State preparation with Fock basis vectors."""
-
-    def __init__(self, *, ket, bra, coefficient=1.0):
-        super().__init__(ket, bra, coefficient)
-
-    def __mul__(self, coefficient):
-        self.params = (*self.params[:2], self.params[2] * coefficient)
-        return self
-
-    __rmul__ = __mul__
-
-
-@_register
-class Create(Operation):
-    r"""Create a particle on a mode."""
-
-    def __init__(self):
-        pass
-
-
-@_register
-class Annihilate(Operation):
-    r"""Annihilate a particle on a mode."""
-
-    def __init__(self):
-        pass

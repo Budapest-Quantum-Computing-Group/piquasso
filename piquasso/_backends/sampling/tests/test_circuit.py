@@ -5,16 +5,14 @@
 import numpy as np
 import pytest
 
-from piquasso import Program, Q
-from piquasso.operations import B, Interferometer, R, Sampling
-from ..state import SamplingState
+import piquasso as pq
 
 
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
-        initial_state = SamplingState(1, 1, 1, 0, 0)
-        self.program = Program(initial_state)
+        initial_state = pq.SamplingState(1, 1, 1, 0, 0)
+        self.program = pq.Program(initial_state)
 
     def test_program(self):
         U = np.array([
@@ -23,10 +21,10 @@ class TestSampling:
             [0, 0, -1]
         ], dtype=complex)
         with self.program:
-            Q(0, 1) | B(.5)
-            Q(1, 2, 3) | Interferometer(U)
-            Q(3) | R(.5)
-            Sampling(shots=10)
+            pq.Q(0, 1) | pq.B(.5)
+            pq.Q(1, 2, 3) | pq.Interferometer(U)
+            pq.Q(3) | pq.R(.5)
+            pq.Sampling(shots=10)
 
     def test_interferometer(self):
         U = np.array([
@@ -35,7 +33,7 @@ class TestSampling:
             [7, 8, 9]
         ], dtype=complex)
         with self.program:
-            Q(4, 3, 1) | Interferometer(U)
+            pq.Q(4, 3, 1) | pq.Interferometer(U)
         self.program.execute()
 
         expected_interferometer = np.array([
@@ -51,7 +49,7 @@ class TestSampling:
     def test_phaseshifter(self):
         phi = np.pi / 2
         with self.program:
-            Q(2) | R(phi)
+            pq.Q(2) | pq.R(phi)
         self.program.execute()
 
         x = np.exp(1j * phi)
@@ -69,7 +67,7 @@ class TestSampling:
         theta = np.pi / 4
         phi = np.pi / 3
         with self.program:
-            Q(1, 3) | B(theta, phi)
+            pq.Q(1, 3) | pq.B(theta, phi)
         self.program.execute()
 
         t = np.cos(theta)

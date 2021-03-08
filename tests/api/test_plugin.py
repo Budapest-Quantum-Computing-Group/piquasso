@@ -104,4 +104,4 @@ def test_untouched_classes_remain_to_be_accessible(
     program.execute()
 
     assert pq.B is MyBeamsplitter
-    assert pq.R is pq.operations.R
+    assert pq.R is pq.operations.gates.R

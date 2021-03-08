@@ -2,7 +2,7 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.operations import Operation
+from piquasso.api.operation import Operation
 
 
 class TestOperation:

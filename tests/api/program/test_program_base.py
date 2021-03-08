@@ -9,7 +9,7 @@ import pytest
 from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.program import Program
-from piquasso.operations import Operation, ModelessOperation
+from piquasso.api.operation import Operation, ModelessOperation
 
 
 class TestProgramBase:
