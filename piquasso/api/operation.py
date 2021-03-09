@@ -7,13 +7,16 @@ from piquasso.core.mixins import _PropertyMixin
 
 
 class Operation(_PropertyMixin):
+    """
+    Args:
+        *params: Variable length argument list.
+    """
+
     def __init__(self, *params):
-        """
-        Args:
-            *params: Variable length argument list.
-        """
+        self._set_params(*params)
+
+    def _set_params(self, *params):
         self.params = params
-        self.modes = None
 
     @classmethod
     def from_properties(cls, properties):
@@ -48,5 +51,7 @@ class Operation(_PropertyMixin):
 class ModelessOperation(Operation):
     def __init__(self, *params):
         super().__init__(*params)
+
+        self.modes = None
 
         _context.current_program.operations.append(self)

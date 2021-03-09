@@ -7,9 +7,20 @@ from piquasso.core.registry import _register
 from piquasso.api.operation import Operation, ModelessOperation
 
 
+class _PassiveLinearGate(Operation):
+    def __init__(self, passive_representation):
+        self._passive_representation = passive_representation
+
+
+class _LinearGate(Operation):
+    def __init__(self, passive_representation, active_representation):
+        self._passive_representation = passive_representation
+        self._active_representation = active_representation
+
+
 @_register
-class PassiveTransform(Operation):
-    r"""Applies a general passive transformation.
+class PassiveTransform(_PassiveLinearGate):
+    r"""Applies a general passive linear transformation.
 
     Args:
         T (np.array):
@@ -18,11 +29,12 @@ class PassiveTransform(Operation):
     """
 
     def __init__(self, T):
-        self._passive_representation = T
+        self._set_params(T)
+        super().__init__(T)
 
 
 @_register
-class B(Operation):
+class B(_PassiveLinearGate):
     r"""Applies a beamsplitter operation.
 
     The matrix representation of the beamsplitter operation
@@ -45,24 +57,23 @@ class B(Operation):
     """
 
     def __init__(self, theta=0., phi=np.pi / 4):
-        super().__init__(theta, phi)
-
-        self._passive_representation = self._get_passive_representation()
-
-    def _get_passive_representation(self):
-        theta, phi = self.params
+        self._set_params(theta, phi)
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)
 
-        return np.array([
-            [t, np.conj(r)],
-            [-r, t]
-        ])
+        super().__init__(
+            np.array(
+                [
+                    [t, np.conj(r)],
+                    [-r, t]
+                ]
+            )
+        )
 
 
 @_register
-class R(Operation):
+class R(_PassiveLinearGate):
     r"""Rotation or phaseshift operation.
 
     The annihilation and creation operators are evolved in the following
@@ -78,19 +89,13 @@ class R(Operation):
     """
 
     def __init__(self, phi: float):
-        super().__init__(phi)
+        self._set_params(phi)
 
-        self._passive_representation = self._get_passive_representation()
-
-    def _get_passive_representation(self):
-        phi = self.params[0]
-        phase = np.exp(1j * phi)
-
-        return np.array([[phase]])
+        super().__init__(np.array([[np.exp(1j * phi)]]))
 
 
 @_register
-class MZ(Operation):
+class MZ(_PassiveLinearGate):
     r"""Mach-Zehnder interferometer.
 
     .. math::
@@ -117,18 +122,17 @@ class MZ(Operation):
     """
 
     def __init__(self, *, int_: float, ext: float):
-        super().__init__(int_, ext)
+        self._set_params(int_, ext)
 
-        self._passive_representation = self._get_passive_representation()
+        int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
-    def _get_passive_representation(self):
-        int_phase, ext_phase = np.exp(1j * np.array(self.params))
-
-        return 1/2 * np.array(
-            [
-                [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
-                [1j * ext_phase * (int_phase + 1), 1 - int_phase]
-            ]
+        super().__init__(
+            1/2 * np.array(
+                [
+                    [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
+                    [1j * ext_phase * (int_phase + 1), 1 - int_phase]
+                ]
+            )
         )
 
 
@@ -144,7 +148,7 @@ class F(R):
 
 
 @_register
-class GaussianTransform(Operation):
+class GaussianTransform(_LinearGate):
     """Applies a transformation to the state.
 
     Args:
@@ -157,14 +161,16 @@ class GaussianTransform(Operation):
     """
 
     def __init__(self, P, A):
-        super().__init__(P, A)
+        self._set_params(P, A)
 
-        self._passive_representation = P
-        self._active_representation = A
+        super().__init__(
+            passive_representation=P,
+            active_representation=A,
+        )
 
 
 @_register
-class S(Operation):
+class S(_LinearGate):
     r"""Applies the squeezing operator.
 
     The definition of the operator is:
@@ -201,27 +207,24 @@ class S(Operation):
     """
 
     def __init__(self, amp, theta=0):
-        super().__init__(amp, theta)
+        self._set_params(amp, theta)
 
-        self._calculate_representations()
-
-    def _calculate_representations(self):
-        if len(self.params) == 1:
-            theta = 0
-        else:
-            theta = self.params[1]
-
-        alpha = np.cosh(self.params[0])
-
-        beta = np.sinh(self.params[0]) * np.exp(1j * theta)
-
-        self._passive_representation = np.array([[alpha]])
-
-        self._active_representation = np.array([[- beta]])
+        super().__init__(
+            passive_representation=np.array(
+                [
+                    [np.cosh(self.params[0])]
+                ]
+            ),
+            active_representation=np.array(
+                [
+                    [- np.sinh(self.params[0]) * np.exp(1j * theta)]
+                ]
+            ),
+        )
 
 
 @_register
-class P(Operation):
+class P(_LinearGate):
     r"""Applies the quadratic phase operation to the state.
 
     The operator of the quadratic phase gate is
@@ -236,20 +239,16 @@ class P(Operation):
     """
 
     def __init__(self, s):
-        super().__init__(s)
+        self._set_params(s)
 
-        self._calculate_representations()
-
-    def _calculate_representations(self):
-        s = self.params[0]
-
-        self._passive_representation = np.array([[1 + s/2 * 1j]])
-
-        self._active_representation = np.array([[s/2 * 1j]])
+        super().__init__(
+            passive_representation=np.array([[1 + s/2 * 1j]]),
+            active_representation=np.array([[s/2 * 1j]]),
+        )
 
 
 @_register
-class S2(Operation):
+class S2(_LinearGate):
     r"""2-mode squeezing gate.
 
     .. math::
@@ -262,26 +261,24 @@ class S2(Operation):
     """
 
     def __init__(self, r, phi):
-        super().__init__(r, phi)
+        self._set_params(r, phi)
 
-        self._calculate_representations()
-
-    def _calculate_representations(self):
         r = self.params[0]
         phi = self.params[1]
 
-        self._passive_representation = np.array(
-            [
-                [np.cosh(r), 0],
-                [0, np.cosh(r)],
-            ]
-        )
-
-        self._active_representation = np.array(
-            [
-                [0, np.sinh(r) * np.exp(1j * phi)],
-                [np.sinh(r) * np.exp(1j * phi), 0],
-            ]
+        super().__init__(
+            passive_representation=np.array(
+                [
+                    [np.cosh(r), 0],
+                    [0, np.cosh(r)],
+                ]
+            ),
+            active_representation=np.array(
+                [
+                    [0, np.sinh(r) * np.exp(1j * phi)],
+                    [np.sinh(r) * np.exp(1j * phi), 0],
+                ]
+            ),
         )
 
 
