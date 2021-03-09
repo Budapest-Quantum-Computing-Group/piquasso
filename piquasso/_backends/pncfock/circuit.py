@@ -10,11 +10,11 @@ class PNCFockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            "PassiveTransform": self._apply,
-            "B": self._apply,
-            "R": self._apply,
-            "MZ": self._apply,
-            "F": self._apply,
+            "PassiveTransform": self._passive_linear,
+            "B": self._passive_linear,
+            "R": self._passive_linear,
+            "MZ": self._passive_linear,
+            "F": self._passive_linear,
             "K": self._kerr,
             "CK": self._cross_kerr,
             "MeasureParticleNumber": self._measure_particle_number,
@@ -23,8 +23,8 @@ class PNCFockCircuit(Circuit):
             "DMNumber": self._dm_number,
         }
 
-    def _apply(self, operation):
-        self.state._apply(
+    def _passive_linear(self, operation):
+        self.state._apply_passive_linear(
             operator=operation._passive_representation,
             modes=operation.modes
         )

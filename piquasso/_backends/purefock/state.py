@@ -34,7 +34,7 @@ class PureFockState(State):
     def create_vacuum(cls, *, d, cutoff):
         return cls(d=d, cutoff=cutoff, vacuum=True)
 
-    def _apply(self, operator, modes):
+    def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
