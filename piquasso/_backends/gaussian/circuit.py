@@ -11,32 +11,32 @@ class GaussianCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            "PassiveTransform": self._apply_passive,
-            "B": self._apply_passive,
-            "R": self._apply_passive,
-            "MZ": self._apply_passive,
-            "F": self._apply_passive,
-            "GaussianTransform": self._apply,
-            "S": self._apply,
-            "P": self._apply,
-            "S2": self._apply,
-            "D": self.displacement
+            "PassiveTransform": self._passive_linear,
+            "B": self._passive_linear,
+            "R": self._passive_linear,
+            "MZ": self._passive_linear,
+            "F": self._passive_linear,
+            "GaussianTransform": self._linear,
+            "S": self._linear,
+            "P": self._linear,
+            "S2": self._linear,
+            "D": self._displacement
         }
 
-    def _apply_passive(self, operation):
-        self.state.apply_passive(
+    def _passive_linear(self, operation):
+        self.state._apply_passive_linear(
             operation._passive_representation,
             operation.modes
         )
 
-    def _apply(self, operation):
-        self.state.apply_active(
+    def _linear(self, operation):
+        self.state._apply_linear(
             P=operation._passive_representation,
             A=operation._active_representation,
             modes=operation.modes
         )
 
-    def displacement(self, operation):
+    def _displacement(self, operation):
         params = operation.params
         modes = operation.modes
 

@@ -387,7 +387,7 @@ class GaussianState(State):
             cov=self.cov,
         )
 
-    def apply_passive(self, T, modes):
+    def _apply_passive_linear(self, T, modes):
         r"""Applies the passive transformation `T` to the quantum state.
 
         See:
@@ -400,9 +400,9 @@ class GaussianState(State):
 
         self.m[modes, ] = T @ self.m[modes, ]
 
-        self._apply_passive_to_C_and_G(T, modes=modes)
+        self._apply_passive_linear_to_C_and_G(T, modes=modes)
 
-    def _apply_passive_to_C_and_G(self, T, modes):
+    def _apply_passive_linear_to_C_and_G(self, T, modes):
         index = self._get_operator_index(modes)
 
         self.C[index] = T.conjugate() @ self.C[index] @ T.transpose()
@@ -411,9 +411,9 @@ class GaussianState(State):
         auxiliary_modes = self._get_auxiliary_modes(modes)
 
         if auxiliary_modes.size != 0:
-            self._apply_passive_to_auxiliary_modes(T, modes, auxiliary_modes)
+            self._apply_passive_linear_to_auxiliary_modes(T, modes, auxiliary_modes)
 
-    def _apply_passive_to_auxiliary_modes(self, T, modes, auxiliary_modes):
+    def _apply_passive_linear_to_auxiliary_modes(self, T, modes, auxiliary_modes):
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         self.C[auxiliary_index] = T.conjugate() @ self.C[auxiliary_index]
@@ -422,7 +422,7 @@ class GaussianState(State):
         self.C[:, modes] = np.conj(self.C[modes, :]).transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
 
-    def apply_active(self, P, A, modes):
+    def _apply_linear(self, P, A, modes):
         r"""Applies an active transformation to the quantum state.
 
         See:
@@ -439,9 +439,9 @@ class GaussianState(State):
             + A @ np.conj(self.m[modes, ])
         )
 
-        self._apply_active_to_C_and_G(P, A, modes)
+        self._apply_linear_to_C_and_G(P, A, modes)
 
-    def _apply_active_to_C_and_G(self, P, A, modes):
+    def _apply_linear_to_C_and_G(self, P, A, modes):
         index = self._get_operator_index(modes)
 
         original_C = self.C[index]
@@ -466,9 +466,9 @@ class GaussianState(State):
         auxiliary_modes = self._get_auxiliary_modes(modes)
 
         if auxiliary_modes.size != 0:
-            self._apply_active_to_auxiliary_modes(P, A, modes, auxiliary_modes)
+            self._apply_linear_to_auxiliary_modes(P, A, modes, auxiliary_modes)
 
-    def _apply_active_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
+    def _apply_linear_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         auxiliary_C = self.C[auxiliary_index]
