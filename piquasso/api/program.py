@@ -140,8 +140,8 @@ class Program:
 
         operation_class = {
             "Dgate": operations.gates.D,
-            "Xgate": None,
-            "Zgate": None,
+            "Xgate": operations.gates.X,
+            "Zgate": operations.gates.Z,
             "Sgate": operations.gates.S,
             "Pgate": operations.gates.P,
             "Vgate": None,

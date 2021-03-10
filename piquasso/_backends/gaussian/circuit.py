@@ -22,7 +22,9 @@ class GaussianCircuit(Circuit):
             "S2": self._linear,
             "CX": self._linear,
             "CZ": self._linear,
-            "D": self._displacement
+            "D": self._displacement,
+            "X": self._displacement,
+            "Z": self._displacement,
         }
 
     def _passive_linear(self, operation):
