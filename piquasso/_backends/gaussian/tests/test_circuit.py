@@ -7,6 +7,8 @@ import numpy as np
 
 import piquasso as pq
 
+from piquasso.api.constants import HBAR
+
 
 class TestGaussian:
     @pytest.fixture(autouse=True)
@@ -210,6 +212,80 @@ class TestGaussian:
                     [4.535534 - 3.535534j, 34.071068, 3.535534 - 3.535534j],
                     [0,  3.535534 + 3.535534j, 1]
                 ]
+            )
+        )
+
+        assert self.program.state == expected_state
+
+    def test_position_displacement(self):
+        x = 4
+
+        with self.program:
+            pq.Q(1) | pq.X(x)
+
+        self.program.execute()
+
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1 + x / np.sqrt(2 * HBAR),
+                    1,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [ 1,  5,  0],
+                    [ 5, 10,  2],
+                    [ 0,  2,  1],
+                ],
+                dtype=complex,
+            ),
+            C=np.array(
+                [
+                    [ 3,  3, 0],
+                    [ 3, 10, 2],
+                    [ 0,  2, 1],
+                ],
+                dtype=complex,
+            )
+        )
+
+        assert self.program.state == expected_state
+
+    def test_momentum_displacement(self):
+        p = 5
+
+        with self.program:
+            pq.Q(1) | pq.Z(p)
+
+        self.program.execute()
+
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1 + 1j * p / np.sqrt(2 * HBAR),
+                    1,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [1, 3 + 2.5j, 0],
+                    [3 + 2.5j, -4.25 + 5j, 2.5j],
+                    [0, 2.5j, 1],
+                ],
+                dtype=complex,
+            ),
+            C=np.array(
+                [
+                    [3, 1 + 2.5j, 0],
+                    [1 - 2.5j, 8.25, - 2.5j],
+                    [0, 2.5j, 1],
+                ],
+                dtype=complex,
             )
         )
 

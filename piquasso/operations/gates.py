@@ -5,6 +5,7 @@
 import numpy as np
 from piquasso.core.registry import _register
 from piquasso.api.operation import Operation, ModelessOperation
+from piquasso.api.constants import HBAR
 
 
 class _PassiveLinearGate(Operation):
@@ -352,6 +353,26 @@ class D(Operation):
             alpha = r * np.exp(1j * phi)
 
         super().__init__(alpha)
+
+
+@_register
+class X(D):
+    r"""Position displacement gate."""
+
+    def __init__(self, x: float):
+        super().__init__(
+            alpha=(x / np.sqrt(2 * HBAR)),
+        )
+
+
+@_register
+class Z(D):
+    r"""Momentum displacement gate."""
+
+    def __init__(self, p: float):
+        super().__init__(
+            alpha=(1j * p / np.sqrt(2 * HBAR)),
+        )
 
 
 @_register
