@@ -149,16 +149,34 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1,
-                1 + alpha,
-                1,
-            ],
-            dtype=complex,
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1 + alpha,
+                    1,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [     1,  6 - 4j,      0],
+                    [6 - 4j, 1 - 32j, 3 - 4j],
+                    [     0,  3 - 4j,      1],
+                ],
+                dtype=complex,
+            ),
+            C=np.array(
+                [
+                    [      3,  4 - 4j,       0],
+                    [ 4 + 4j,      33,  3 + 4j],
+                    [      0,  3 - 4j,       1]
+                ],
+                dtype=complex,
+            )
         )
 
-        assert np.allclose(self.program.state.m, expected_m)
+        assert self.program.state == expected_state
 
     def test_displacement_with_r_and_phi(self):
         r = 5
@@ -169,13 +187,30 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1,
-                1 + r * np.exp(1j * phi),
-                1,
-            ],
-            dtype=complex,
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1 + r * np.exp(1j * phi),
+                    1,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [1, 6.535534 + 3.535534j, 0],
+                    [6.535534 + 3.535534j, 9.071068 + 32.071068j, 3.535534 + 3.535534j],
+                    [0, 3.535534 + 3.535534j, 1]
+                ],
+                dtype=complex,
+            ),
+            C=np.array(
+                [
+                    [3,  4.535534 + 3.535534j, 0],
+                    [4.535534 - 3.535534j, 34.071068, 3.535534 - 3.535534j],
+                    [0,  3.535534 + 3.535534j, 1]
+                ]
+            )
         )
 
-        assert np.allclose(self.program.state.m, expected_m)
+        assert self.program.state == expected_state

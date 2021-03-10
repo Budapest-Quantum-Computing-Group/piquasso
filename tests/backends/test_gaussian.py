@@ -8,6 +8,9 @@ import numpy as np
 import piquasso as pq
 
 from piquasso.api import constants
+from piquasso.api.errors import StatePreparationError
+
+from piquasso._math.linalg import is_selfadjoint, is_symmetric
 
 
 class TestGaussian:
@@ -72,35 +75,34 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1 + r * np.exp(1j * phi),
-                np.cosh(amp) - np.exp(1j * theta) * np.sinh(amp),
-                np.cosh(amp_1) - np.sinh(amp_1),
-            ],
-            dtype=complex,
-        )
-        expected_C = np.array(
-            [
-                [23, 7.411872 - 3.74266246j, 0.89865793 - 1.55652119j],
-                [7.411872 + 3.74266246j, 6.33563837, 0],
-                [0.89865793 + 1.55652119j, 0, 0.99062875],
-            ],
-            dtype=complex
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1 + r * np.exp(1j * phi),
+                    np.cosh(amp) - np.exp(1j * theta) * np.sinh(amp),
+                    np.cosh(amp_1) - np.sinh(amp_1),
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [-3 + 20.7846097j,  5.9673657 + 7.0238104j, 0.8986579 + 1.556521j],
+                    [5.9673659 + 7.0238104j,  5.8346897 + 3.2299146j, 0],
+                    [0.8986579 + 1.5565212j,  0, -0.9858875]
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [23, 7.411872 - 3.74266246j, 0.89865793 - 1.55652119j],
+                    [7.411872 + 3.74266246j, 6.33563837, 0],
+                    [0.89865793 + 1.55652119j, 0, 0.99062875],
+                ],
+                dtype=complex
+            )
         )
 
-        expected_G = np.array(
-            [
-                [-3 + 20.78460969j,  5.96736589 + 7.02381044j, 0.89865793 + 1.5565211j],
-                [5.96736589 + 7.02381044j,  5.83468969 + 3.22991457j, 0],
-                [0.89865793 + 1.55652119j,  0, -0.98588746]
-            ],
-            dtype=complex
-        )
-
-        assert np.allclose(self.program.state.m, expected_m)
-        assert np.allclose(self.program.state.G, expected_G)
-        assert np.allclose(self.program.state.C, expected_C)
+        assert self.program.state == expected_state
 
     def test_two_mode_squeezing(self):
         r = 4
@@ -111,35 +113,108 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1,
-                40.95319143 + 23.63376156j,
-                40.95319143 + 23.63376156j
-            ],
-            dtype=complex,
-        )
-        expected_C = np.array(
-            [
-                [3, 27.308232, 40.93487 + 70.901284j],
-                [27.308232, 2980.95832, 1117.859119 + 645.396263j],
-                [40.93487 - 70.901284j, 1117.859119 - 645.396263j, 2979.95832],
-            ],
-            dtype=complex
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    40.95319143 + 23.63376156j,
+                    40.95319143 + 23.63376156j
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [1, 81.92469, 13.64495 + 23.633761j],
+                    [81.92469, 1119.109 + 644.963396j, 1490.479 + 2581.5850j],
+                    [13.64495 + 23.633761j, 1490.479 + 2581.5850j, 1 + 1289.926792j]
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [3, 27.308232, 40.93487 + 70.901284j],
+                    [27.308232, 2980.95832, 1117.859119 + 645.396263j],
+                    [40.93487 - 70.901284j, 1117.859119 - 645.396263j, 2979.95832],
+                ],
+                dtype=complex,
+            ),
         )
 
-        expected_G = np.array(
-            [
-                [1, 81.92469, 13.64495 + 23.633761j],
-                [81.92469, 1119.109 + 644.963396j, 1490.479 + 2581.5850j],
-                [13.64495 + 23.633761j, 1490.479 + 2581.5850j, 1 + 1289.926792j]
-            ],
-            dtype=complex
+        assert self.program.state == expected_state
+
+    def test_controlled_X_gate(self):
+        s = 2
+
+        with self.program:
+            pq.Q(1, 2) | pq.CX(s=s)
+
+        self.program.execute()
+
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1,
+                    3,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [ 1, 3,  4],
+                    [ 3, 1,  5],
+                    [ 4, 5, 10]
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [ 3,  1,  4],
+                    [ 1,  3,  4],
+                    [ 4,  4, 10]
+                ],
+                dtype=complex
+            ),
         )
 
-        assert np.allclose(self.program.state.m, expected_m)
-        assert np.allclose(self.program.state.G, expected_G)
-        assert np.allclose(self.program.state.C, expected_C)
+        assert self.program.state == expected_state
+
+    def test_controlled_Z_gate(self):
+        s = 2
+
+        with self.program:
+            pq.Q(1, 2) | pq.CZ(s=s)
+
+        self.program.execute()
+
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    1 + 2j,
+                    1 + 2j,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [  1,  3, 4j],
+                    [  3, -3, 7j],
+                    [ 4j, 7j, -8],
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [  3,   1, 4j],
+                    [  1,   7, 2j],
+                    [-4j, -2j, 10]
+                ],
+                dtype=complex
+            ),
+        )
+
+        assert self.program.state == expected_state
 
     def test_fourier(self):
         with self.program:
@@ -147,35 +222,34 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1j,
-                1,
-                1,
-            ],
-            dtype=complex,
-        )
-        expected_C = np.array(
-            [
-                [3, -1j, 0],
-                [1j, 2, 0],
-                [0, 0, 1],
-            ],
-            dtype=complex
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1j,
+                    1,
+                    1,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [-1, 3j, 0],
+                    [3j, 2, 0],
+                    [0, 0, 1],
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [3, -1j, 0],
+                    [1j, 2, 0],
+                    [0, 0, 1],
+                ],
+                dtype=complex
+            ),
         )
 
-        expected_G = np.array(
-            [
-                [-1, 3j, 0],
-                [3j, 2, 0],
-                [0, 0, 1],
-            ],
-            dtype=complex
-        )
-
-        assert np.allclose(self.program.state.m, expected_m)
-        assert np.allclose(self.program.state.G, expected_G)
-        assert np.allclose(self.program.state.C, expected_C)
+        assert self.program.state == expected_state
 
     def test_mach_zehnder(self):
         int_ = np.pi/3
@@ -186,35 +260,34 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1,
-                -0.9159756 + 0.87940952j,
-                -0.5865163 - 0.20886883j,
-            ],
-            dtype=complex,
-        )
-        expected_C = np.array(
-            [
-                [3, -0.48296291 + 0.129409523j, -0.8365163 + 0.224143868j],
-                [-0.48296291 - 0.129409523j,  1.25, 0.4330127],
-                [-0.8365163 - 0.224143868j, 0.4330127, 1.75]
-            ],
-            dtype=complex
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1,
+                    -0.9159756 + 0.87940952j,
+                    -0.5865163 - 0.20886883j,
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [1, -1.4488887 + 0.3882286j, -2.5095489 + 0.672432j],
+                    [-1.448889 + 0.388229j, 0.058013 - 0.899519j, 0.966506 - 0.058013j],
+                    [-2.509549 + 0.672432j, 0.966506 - 0.058013j, 1.174038 - 0.966506j]
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [3, -0.48296291 + 0.129409523j, -0.8365163 + 0.224143868j],
+                    [-0.48296291 - 0.129409523j,  1.25, 0.4330127],
+                    [-0.8365163 - 0.224143868j, 0.4330127, 1.75]
+                ],
+                dtype=complex
+            ),
         )
 
-        expected_G = np.array(
-            [
-                [1, -1.4488887 + 0.3882286j, -2.5095489 + 0.672432j],
-                [-1.448889 + 0.388229j, 0.058013 - 0.899519j, 0.966506 - 0.058013j],
-                [-2.509549 + 0.672432j, 0.966506 - 0.058013j, 1.174038 - 0.966506j]
-            ],
-            dtype=complex
-        )
-
-        assert np.allclose(self.program.state.m, expected_m)
-        assert np.allclose(self.program.state.G, expected_G)
-        assert np.allclose(self.program.state.C, expected_C)
+        assert self.program.state == expected_state
 
     def test_quadratic_phase(self):
         with self.program:
@@ -224,33 +297,32 @@ class TestGaussian:
 
         self.program.execute()
 
-        expected_m = np.array(
-            [
-                1 + 0j, 1 + 2j, 1 + 1j
-            ],
-            dtype=complex,
-        )
-        expected_C = np.array(
-            [
-                [3 - 0j, 1 + 4j, 0 - 0j],
-                [1 - 4j, 7 + 4j, 0 - 0j],
-                [0 + 0j, 0 + 0j, 1.75 + 1j]
-            ],
-            dtype=complex,
+        expected_state = pq.GaussianState(
+            m=np.array(
+                [
+                    1 + 0j, 1 + 2j, 1 + 1j
+                ],
+                dtype=complex,
+            ),
+            G=np.array(
+                [
+                    [ 1 + 0j,  3 + 4j,  0 + 0j],
+                    [ 3 + 4j, -7 + 9j,  0 + 0j],
+                    [ 0 + 0j,  0 + 0j, -0.25 + 2.5j],
+                ],
+                dtype=complex
+            ),
+            C=np.array(
+                [
+                    [ 3 - 0j,  1 + 4j,    0 - 0j],
+                    [ 1 - 4j, 11 - 0j,    0 - 0j],
+                    [ 0 + 0j,  0 + 0j, 2.25 - 0j]
+                ],
+                dtype=complex,
+            ),
         )
 
-        expected_G = np.array(
-            [
-                [ 1 + 0j,  3 + 4j,  0 + 0j],
-                [ 3 + 4j, -7 + 9j,  0 + 0j],
-                [ 0 + 0j,  0 + 0j, -0.25 + 2.5j],
-            ],
-            dtype=complex
-        )
-
-        assert np.allclose(self.program.state.m, expected_m)
-        assert np.allclose(self.program.state.G, expected_G)
-        assert np.allclose(self.program.state.C, expected_C)
+        assert self.program.state == expected_state
 
     def test_mean_and_covariance(self):
         with self.program:
@@ -269,10 +341,10 @@ class TestGaussian:
             [
                 [ 5,  0,  4,  8, -4, -4],
                 [ 0,  5,  0, -4,  0,  0],
-                [ 4,  0, -3, 18, -4, -4],
-                [ 8, -4,  2, 13, -8, -8],
-                [-4,  0, -4, -8,  0,  3],
-                [-4,  0, -4, -8, -1,  1],
+                [ 4,  0,  5, 10, -4, -4],
+                [ 8, -4, 10, 21, -8, -8],
+                [-4,  0, -4, -8,  1,  1],
+                [-4,  0, -4, -8,  1,  2],
             ],
             dtype=complex
         ) * constants.HBAR
@@ -299,10 +371,10 @@ class TestGaussian:
             [
                 [ 5,  0,  4,  8, -4, -4],
                 [ 0,  5,  0, -4,  0,  0],
-                [ 4,  0, -3, 18, -4, -4],
-                [ 8, -4,  2, 13, -8, -8],
-                [-4,  0, -4, -8,  0,  3],
-                [-4,  0, -4, -8, -1,  1],
+                [ 4,  0,  5, 10, -4, -4],
+                [ 8, -4, 10, 21, -8, -8],
+                [-4,  0, -4, -8,  1,  1],
+                [-4,  0, -4, -8,  1,  2],
             ],
             dtype=complex
         ) * constants.HBAR
@@ -334,7 +406,7 @@ class TestTwoModeGaussian:
         C = np.array(
             [
                 [       1.0, 0.1 - 0.2j],
-                [0.1 - 0.2j,        1.0],
+                [0.1 + 0.2j,        1.0],
             ],
             dtype=complex,
         )
@@ -563,7 +635,7 @@ class TestGaussianTransform:
             state=pq.GaussianState(C, G, m)
         )
 
-    def test_apply_transform_for_1_modes(self, C, G):
+    def test_apply_gaussian_transform_for_1_modes(self, C, G):
         alpha = np.exp(1j * np.pi/3)
 
         beta = np.exp(1j * np.pi/4)
@@ -594,7 +666,7 @@ class TestGaussianTransform:
         expected_C = np.array(
             [
                 [1, 0.18216275 + 1.8660254j, 4 - 6j],
-                [0.182162 - 1.86602j, 9.416617 + 5.196152j, 9.587121 - 7.608301j],
+                [0.182162 - 1.86602j, 18.41661758, 9.587121 - 7.608301j],
                 [4 + 6j, 9.58712185 + 7.60830161j, -10]
             ]
         )
@@ -667,3 +739,87 @@ def test_apply_passive(
     assert np.allclose(program.state.m, expected_m)
     assert np.allclose(program.state.C, expected_C)
     assert np.allclose(program.state.G, expected_G)
+
+
+def test_complex_circuit():
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState.create_vacuum(d=5)
+
+        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+
+        pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
+        pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
+        pq.Q(1, 2) | pq.B(1.0152680371119776, 1.2863559998816205)
+        pq.Q(3, 4) | pq.B(1.3205517879465705, 0.5236836466492961)
+        pq.Q(0, 1) | pq.B(4.394480318177715, 4.481575657714487)
+        pq.Q(2, 3) | pq.B(2.2300919706807534, 1.5073556513699888)
+        pq.Q(1, 2) | pq.B(2.2679037068773673, 1.9550229282085838)
+        pq.Q(3, 4) | pq.B(3.340269832485504, 3.289367083610399)
+
+        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+
+        pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
+        pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
+        pq.Q(1, 2) | pq.B(1.0152680371119776, 1.2863559998816205)
+        pq.Q(3, 4) | pq.B(1.3205517879465705, 0.5236836466492961)
+        pq.Q(0, 1) | pq.B(4.394480318177715, 4.481575657714487)
+        pq.Q(2, 3) | pq.B(2.2300919706807534, 1.5073556513699888)
+        pq.Q(1, 2) | pq.B(2.2679037068773673, 1.9550229282085838)
+        pq.Q(3, 4) | pq.B(3.340269832485504, 3.289367083610399)
+
+    program.execute()
+
+    assert is_selfadjoint(program.state.C)
+    assert is_symmetric(program.state.G)
+
+
+def test_state_initialization_with_non_symmetric_G():
+    valid_m = np.array([1, 2])
+    valid_C = np.array(
+        [
+            [  1, 1j],
+            [-1j,  1],
+        ]
+    )
+
+    invalid_G = np.array(
+        [
+            [1, 2],
+            [1, 1],
+        ]
+    )
+
+    with pytest.raises(StatePreparationError):
+        pq.GaussianState(m=valid_m, G=invalid_G, C=valid_C)
+
+
+def test_state_initialization_with_non_selfadjoint_C():
+    valid_m = np.array([1, 2])
+    valid_G = np.array(
+        [
+            [1, 1],
+            [1, 1],
+        ]
+    )
+
+    invalid_C = np.array(
+        [
+            [ 1, 3 + 2j],
+            [1j,  1],
+        ]
+    )
+
+    with pytest.raises(StatePreparationError):
+        pq.GaussianState(
+            m=valid_m,
+            G=valid_G,
+            C=invalid_C
+        )

@@ -20,6 +20,8 @@ class GaussianCircuit(Circuit):
             "S": self._linear,
             "P": self._linear,
             "S2": self._linear,
+            "CX": self._linear,
+            "CZ": self._linear,
             "D": self._displacement
         }
 
@@ -63,7 +65,7 @@ class GaussianCircuit(Circuit):
         other_modes = np.delete(np.arange(self.state.d), modes)
 
         self.state.C[other_modes, mode] += alpha * mean_copy[other_modes]
-        self.state.C[mode, other_modes] += np.conj(alpha) * mean_copy[other_modes]
+        self.state.C[mode, other_modes] += np.conj(alpha * mean_copy[other_modes])
 
         self.state.G[other_modes, mode] += alpha * mean_copy[other_modes]
         self.state.G[mode, other_modes] += alpha * mean_copy[other_modes]

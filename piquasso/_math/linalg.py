@@ -20,6 +20,14 @@ def is_unitary(matrix, tol=1e-10):
     ).all()
 
 
+def is_symmetric(matrix):
+    return np.allclose(matrix, matrix.transpose())
+
+
+def is_selfadjoint(matrix):
+    return np.allclose(matrix, matrix.conjugate().transpose())
+
+
 def direct_sum(*args):
     # TODO: Omit recursions!
     if len(args) == 2:

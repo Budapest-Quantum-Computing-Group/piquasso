@@ -263,9 +263,6 @@ class S2(_LinearGate):
     def __init__(self, r, phi):
         self._set_params(r, phi)
 
-        r = self.params[0]
-        phi = self.params[1]
-
         super().__init__(
             passive_representation=np.array(
                 [
@@ -277,6 +274,48 @@ class S2(_LinearGate):
                 [
                     [0, np.sinh(r) * np.exp(1j * phi)],
                     [np.sinh(r) * np.exp(1j * phi), 0],
+                ]
+            ),
+        )
+
+
+@_register
+class CX(_LinearGate):
+    def __init__(self, s):
+        self._set_params(s)
+
+        super().__init__(
+            passive_representation=np.array(
+                [
+                    [    1, - s / 2],
+                    [s / 2,       1],
+                ]
+            ),
+            active_representation=np.array(
+                [
+                    [    0, s / 2],
+                    [s / 2,     0],
+                ]
+            ),
+        )
+
+
+@_register
+class CZ(_LinearGate):
+    def __init__(self, s):
+        self._set_params(s)
+
+        super().__init__(
+            passive_representation=np.array(
+                [
+                    [           1, 1j * (s / 2)],
+                    [1j * (s / 2),            1],
+                ]
+            ),
+            active_representation=np.array(
+                [
+                    [           0, 1j * (s / 2)],
+                    [1j * (s / 2),            0],
                 ]
             ),
         )

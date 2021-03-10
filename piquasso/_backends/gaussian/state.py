@@ -7,7 +7,9 @@ import numpy as np
 
 from piquasso.api.state import State
 from piquasso.api import constants
+from piquasso.api.errors import StatePreparationError
 from piquasso._math.functions import gaussian_wigner_function
+from piquasso._math.linalg import is_symmetric, is_selfadjoint
 
 from .circuit import GaussianCircuit
 
@@ -55,6 +57,11 @@ class GaussianState(State):
             m (numpy.array): See :attr:`m`.
         """
 
+        if not is_selfadjoint(C):
+            raise StatePreparationError("C should be self-adjoint matrix.")
+        if not is_symmetric(G):
+            raise StatePreparationError("G should be symmetric matrix.")
+
         self.C = C
         self.G = G
         self.m = m
@@ -75,6 +82,20 @@ class GaussianState(State):
             G=np.zeros((d, d), dtype=complex),
             m=np.zeros(d, dtype=complex),
         )
+
+    def __eq__(self, other):
+        return (
+            np.allclose(self.C, other.C)
+            and np.allclose(self.G, other.G)
+            and np.allclose(self.m, other.m)
+        )
+
+    def reset(self):
+        d = self.d
+
+        self.C = np.zeros((d, d), dtype=complex)
+        self.G = np.zeros((d, d), dtype=complex)
+        self.m = np.zeros(d, dtype=complex)
 
     @property
     def d(self):
@@ -455,7 +476,7 @@ class GaussianState(State):
         )
 
         self.C[index] = (
-            P.conjugate() @ original_C @ P.conjugate().transpose()
+            P.conjugate() @ original_C @ P.transpose()
             + A.conjugate() @ (
                 original_C.transpose() + np.identity(len(modes))
             ) @ A.transpose()

@@ -14,7 +14,6 @@ To run this script:
 """
 
 import timeit
-import cProfile
 
 import numpy as np
 import strawberryfields as sf
@@ -57,9 +56,15 @@ def piquasso_setup():
 def piquasso_benchmark(program):
     program.execute()
 
-    return program.state.reduced_rotated_mean_and_cov(
+    result = program.state.reduced_rotated_mean_and_cov(
         modes=(1,), phi=np.pi/3
     )
+
+    # TODO: The state has to be reset, because the setup runs only once at the beginning
+    # of the calculations, therefore the same `GaussianState` instance will be used.
+    program.state.reset()
+
+    return result
 
 
 def strawberryfields_setup():
@@ -97,11 +102,6 @@ def strawberryfields_benchmark(program, engine):
     return results.state.quad_expectation(mode=1, phi=np.pi/3)
 
 
-def profiling():
-    cProfile.run("piquasso_benchmark(piquasso_setup())")
-    cProfile.run("strawberryfields_benchmark(*strawberryfields_setup())")
-
-
 def main(iterations):
     pq_time = timeit.timeit(
         "homodyne.piquasso_benchmark(program)",
@@ -126,8 +126,6 @@ def main(iterations):
     print()
 
     print("Ratio (SF/PQ): {}".format(sf_time / pq_time))
-
-    profiling()
 
 
 if __name__ == "__main__":
