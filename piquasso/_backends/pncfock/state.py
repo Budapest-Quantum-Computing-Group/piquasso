@@ -23,9 +23,8 @@ class PNCFockState(State):
         )
 
         if density_matrix is None:
-            density_matrix = np.zeros(
-                (fock.FockSpace(d=d, cutoff=cutoff).cardinality, ) * 2,
-                dtype=complex,
+            density_matrix = self._get_empty_density_matrix(
+                cardinality=space.cardinality
             )
 
             if vacuum is True:
@@ -37,6 +36,28 @@ class PNCFockState(State):
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
         return cls(d=d, cutoff=cutoff, vacuum=True)
+
+    @classmethod
+    def from_number_preparations(cls, *, d, cutoff, number_preparations):
+        """
+        TODO: Remove coupling!
+        """
+
+        self = cls(d=d, cutoff=cutoff)
+
+        for number_preparation in number_preparations:
+            ket, bra, coefficient = number_preparation.params
+
+            self._add_occupation_number_basis(
+                ket=ket,
+                bra=bra,
+                coefficient=coefficient,
+            )
+
+        return self
+
+    def _get_empty_density_matrix(self, cardinality):
+        return np.zeros(shape=(cardinality, ) * 2, dtype=complex)
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)
@@ -51,22 +72,65 @@ class PNCFockState(State):
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
 
-    def _measure_particle_number(self):
-        probabilities = self.fock_probabilities
+    def _measure_particle_number(self, modes):
+        if not modes:
+            modes = tuple(range(self._space.d))
 
-        index = random.choices(range(len(self._space)), probabilities)[0]
+        outcome, probability = self._simulate_collapse_on_modes(modes=modes)
 
-        outcome_basis_vector = self._space[index]
-
-        outcome = tuple(outcome_basis_vector)
-
-        new_dm = np.zeros(shape=self._density_matrix.shape, dtype=complex)
-
-        new_dm[index, index] = self._density_matrix[index, index]
-
-        self._density_matrix = new_dm / probabilities[index]
+        self._project_to_subspace(
+            subspace_basis=outcome,
+            modes=modes,
+            normalization=(1 / probability),
+        )
 
         return outcome
+
+    def _simulate_collapse_on_modes(self, *, modes):
+        probability_map = {}
+
+        for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
+            coefficient = self._density_matrix[index]
+
+            if np.isclose(coefficient, 0):
+                # TODO: Do we need this?
+                continue
+
+            subspace_basis = basis.ket.on_modes(modes=modes)
+
+            if subspace_basis in probability_map:
+                probability_map[subspace_basis] += coefficient
+            else:
+                probability_map[subspace_basis] = coefficient
+
+        outcome = random.choices(
+            population=list(probability_map.keys()),
+            weights=probability_map.values(),
+        )[0]
+
+        return outcome, probability_map[outcome].real
+
+    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
+        projected_density_matrix = self._get_projected_density_matrix(
+            subspace_basis=subspace_basis,
+            modes=modes,
+        )
+
+        self._density_matrix = projected_density_matrix * normalization
+
+    def _get_projected_density_matrix(self, *, subspace_basis, modes):
+        new_density_matrix = self._get_empty_density_matrix(
+            cardinality=self._space.cardinality
+        )
+
+        index = self._space.get_projection_operator_indices(
+            subspace_basis=subspace_basis,
+            modes=modes,
+        )
+
+        new_density_matrix[index] = self._density_matrix[index]
+
+        return new_density_matrix
 
     def _apply_creation_operator(self, modes):
         operator = self._space.get_creation_operator(modes)
@@ -120,16 +184,16 @@ class PNCFockState(State):
             if coefficient != 0:
                 yield coefficient, basis
 
-    def __str__(self):
+    def __repr__(self):
         return " + ".join(
             [
-                str(coefficient) + str(ket) + bra.display_as_bra()
-                for coefficient, (ket, bra) in self.nonzero_elements
+                str(coefficient) + str(basis)
+                for coefficient, basis in self.nonzero_elements
             ]
         )
 
-    def __repr__(self):
-        return str(self._density_matrix)
+    def __eq__(self, other):
+        return np.allclose(self._density_matrix, other._density_matrix)
 
     @property
     def fock_probabilities(self):

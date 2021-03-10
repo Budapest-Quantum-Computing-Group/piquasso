@@ -73,6 +73,9 @@ class FockBasis(tuple):
 
         return ret
 
+    def on_modes(self, *, modes):
+        return FockBasis(self[mode] for mode in modes)
+
     def increment_on_modes(self, modes):
         a = [0] * self.d
         for mode in modes:
@@ -83,6 +86,27 @@ class FockBasis(tuple):
     @property
     def all_possible_first_quantized_vectors(self):
         return list(set(itertools.permutations(self.first_quantized)))
+
+
+class FockOperatorBasis(tuple):
+    def __new__(cls, *, ket, bra):
+        return super().__new__(
+            cls, (FockBasis(ket), FockBasis(bra))
+        )
+
+    def __str__(self):
+        return str(self.ket) + self.bra.display_as_bra()
+
+    @property
+    def ket(self) -> tuple:
+        return self[0]
+
+    @property
+    def bra(self) -> tuple:
+        return self[1]
+
+    def is_diagonal_on_modes(self, modes) -> bool:
+        return self.ket.on_modes(modes=modes) == self.bra.on_modes(modes=modes)
 
 
 class FockSpace(tuple):
@@ -138,7 +162,14 @@ class FockSpace(tuple):
     def operator_basis(self):
         for index, basis in self.basis:
             for dual_index, dual_basis in self.basis:
-                yield (index, dual_index), (basis, dual_basis)
+                yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
+
+    def operator_basis_diagonal_on_modes(self, *, modes):
+        yield from [
+            (index, basis)
+            for index, basis in self.operator_basis
+            if basis.is_diagonal_on_modes(modes=modes)
+        ]
 
     def get_occupied_basis(self, *, modes, occupation_numbers):
         temp = [0] * self.d
@@ -146,6 +177,25 @@ class FockSpace(tuple):
             temp[mode] = occupation_numbers[index]
 
         return FockBasis(temp)
+
+    def get_projection_operator_indices_for_pure(self, *, subspace_basis, modes):
+        return [
+            index
+            for index, basis in self.basis
+            if subspace_basis == basis.on_modes(modes=modes)
+        ]
+
+    def get_projection_operator_indices(self, *, subspace_basis, modes):
+        return tuple(
+            zip(
+                *[
+                    index
+                    for index, operator_basis in self.operator_basis
+                    if operator_basis.is_diagonal_on_modes(modes=modes)
+                    and subspace_basis == operator_basis.ket.on_modes(modes=modes)
+                ]
+            )
+        )
 
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))

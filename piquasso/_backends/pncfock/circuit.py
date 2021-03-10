@@ -30,7 +30,9 @@ class PNCFockCircuit(Circuit):
         )
 
     def _measure_particle_number(self, operation):
-        outcome = self.state._measure_particle_number()
+        outcome = self.state._measure_particle_number(
+            modes=operation.modes,
+        )
 
         # TODO: Better way of providing results
         self.program.results.append(
