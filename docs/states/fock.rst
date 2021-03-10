@@ -1,5 +1,5 @@
 Particle number conserving Fock State
 =====================================
 
-.. automodule:: piquasso._backends.pncfock.state
+.. automodule:: piquasso._backends.fock.state
    :members:
