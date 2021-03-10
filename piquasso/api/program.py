@@ -150,8 +150,8 @@ class Program:
             "BSgate": operations.gates.B,
             "MZgate": operations.gates.MZ,
             "S2gate": operations.gates.S2,
-            "CXgate": None,
-            "CZgate": None,
+            "CXgate": operations.gates.CX,
+            "CZgate": operations.gates.CZ,
             "CKgate": operations.gates.CK,
             "Fouriergate": operations.gates.F,
         }.get(blackbird_operation["op"])
