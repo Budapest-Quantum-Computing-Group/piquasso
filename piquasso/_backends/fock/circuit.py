@@ -6,7 +6,7 @@ from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
 
 
-class PNCFockCircuit(Circuit):
+class FockCircuit(Circuit):
 
     def get_operation_map(self):
         return {

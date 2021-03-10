@@ -18,7 +18,7 @@ A fast and easy-to-use Photonic Quantum Computer Simulator.
 
    states/gaussian
    states/purefock
-   states/pncfock
+   states/fock
    states/sampling
 
 .. toctree::

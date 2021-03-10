@@ -9,11 +9,11 @@ from piquasso.api.state import State
 
 from piquasso._math import fock
 
-from .circuit import PNCFockCircuit
+from .circuit import FockCircuit
 
 
-class PNCFockState(State):
-    circuit_class = PNCFockCircuit
+class FockState(State):
+    circuit_class = FockCircuit
 
     def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
         self._density_matrix = density_matrix

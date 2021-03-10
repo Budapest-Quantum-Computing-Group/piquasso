@@ -10,7 +10,7 @@ import piquasso as pq
 
 def test_5050_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
@@ -25,7 +25,7 @@ def test_5050_beamsplitter():
 
 def test_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
@@ -40,7 +40,7 @@ def test_beamsplitter():
 
 def test_beamsplitter_multiple_particles():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
 
@@ -70,7 +70,7 @@ def test_beamsplitter_multiple_particles():
 
 def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0), bra=(0, 0)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 2
@@ -96,7 +96,7 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 
 def test_multiple_beamsplitters():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
 
@@ -117,7 +117,7 @@ def test_multiple_beamsplitters():
 
 def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -147,7 +147,7 @@ def test_multiple_beamsplitters_with_multiple_particles():
 
 def test_phaseshift():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
@@ -172,7 +172,7 @@ def test_phaseshift():
 
 def test_fourier():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
@@ -197,7 +197,7 @@ def test_fourier():
 
 def test_mach_zehnder():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2)
+        pq.Q() | pq.FockState(d=2, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
@@ -222,7 +222,7 @@ def test_mach_zehnder():
 
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -256,7 +256,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
 def test_passive_transform():
 
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -293,7 +293,7 @@ def test_passive_transform():
 
 def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -319,7 +319,7 @@ def test_measure_particle_number_on_one_mode():
     assert outcome == (1, ) or outcome == (2, )
 
     if outcome == (1, ):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 1/3 * pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -332,7 +332,7 @@ def test_measure_particle_number_on_one_mode():
         )
 
     elif outcome == (2, ):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
@@ -344,7 +344,7 @@ def test_measure_particle_number_on_one_mode():
 
 def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -370,7 +370,7 @@ def test_measure_particle_number_on_two_modes():
     assert outcome == (0, 1) or outcome == (1, 1) or outcome == (0, 2)
 
     if outcome == (0, 1):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -380,7 +380,7 @@ def test_measure_particle_number_on_two_modes():
         )
 
     elif outcome == (1, 1):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)),
@@ -388,7 +388,7 @@ def test_measure_particle_number_on_two_modes():
         )
 
     elif outcome == (0, 2):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
@@ -400,7 +400,7 @@ def test_measure_particle_number_on_two_modes():
 
 def test_measure_particle_number_on_all_modes():
     with pq.Program() as preparation:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
@@ -424,7 +424,7 @@ def test_measure_particle_number_on_all_modes():
     assert outcome == (0, 0, 0) or outcome == (0, 0, 1) or outcome == (1, 0, 0)
 
     if outcome == (0, 0, 0):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 0, 0), bra=(0, 0, 0)),
@@ -432,7 +432,7 @@ def test_measure_particle_number_on_all_modes():
         )
 
     elif outcome == (0, 0, 1):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -440,7 +440,7 @@ def test_measure_particle_number_on_all_modes():
         )
 
     elif outcome == (1, 0, 0):
-        expected_state = pq.PNCFockState.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
                 pq.DMNumber(ket=(1, 0, 0), bra=(1, 0, 0)),
@@ -452,7 +452,7 @@ def test_measure_particle_number_on_all_modes():
 
 def test_create_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.FockState.create_vacuum(d=2, cutoff=2)
         pq.Q(1) | pq.Create()
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
@@ -468,7 +468,7 @@ def test_create_number_state():
 
 def test_create_and_annihilate_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.FockState.create_vacuum(d=2, cutoff=2)
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
@@ -483,7 +483,7 @@ def test_create_and_annihilate_number_state():
 
 def test_create_annihilate_and_create():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.FockState.create_vacuum(d=2, cutoff=2)
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
@@ -502,7 +502,7 @@ def test_create_annihilate_and_create():
 
 def test_overflow_with_zero_norm_raises_RuntimeError():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
         pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
@@ -517,7 +517,7 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=3)
+        pq.Q() | pq.FockState(d=3, cutoff=3)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
         pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
@@ -541,7 +541,7 @@ def test_creation_on_multiple_modes():
 
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=2)
+        pq.Q() | pq.FockState(d=3, cutoff=2)
 
         pq.Q() | (2/6) * pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
         pq.Q() | (3/6) * pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0))
@@ -567,7 +567,7 @@ def test_kerr():
     xi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=3)
+        pq.Q() | pq.FockState(d=3, cutoff=3)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
         pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
@@ -598,7 +598,7 @@ def test_cross_kerr():
     xi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=3, cutoff=3)
+        pq.Q() | pq.FockState(d=3, cutoff=3)
 
         pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
         pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
