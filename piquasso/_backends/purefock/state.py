@@ -22,7 +22,7 @@ class PureFockState(State):
         )
 
         if state_vector is None:
-            state_vector = np.zeros(shape=(space.cardinality, ), dtype=complex)
+            state_vector = self._get_empty_state_vector(cardinality=space.cardinality)
 
             if vacuum is True:
                 state_vector[0] = 1.0
@@ -33,6 +33,28 @@ class PureFockState(State):
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
         return cls(d=d, cutoff=cutoff, vacuum=True)
+
+    @classmethod
+    def from_number_preparations(cls, *, d, cutoff, number_preparations):
+        """
+        TODO: Remove coupling!
+        """
+
+        self = cls(d=d, cutoff=cutoff)
+
+        for number_preparation in number_preparations:
+            occupation_numbers, coefficient = number_preparation.params
+
+            self._add_occupation_number_basis(
+                occupation_numbers=occupation_numbers,
+                coefficient=coefficient,
+                modes=None,
+            )
+
+        return self
+
+    def _get_empty_state_vector(self, cardinality):
+        return np.zeros(shape=(cardinality, ), dtype=complex)
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)
@@ -45,25 +67,65 @@ class PureFockState(State):
 
         self._state_vector = fock_operator @ self._state_vector
 
-    def _measure_particle_number(self):
-        probabilities = self.fock_probabilities
+    def _measure_particle_number(self, modes):
+        if not modes:
+            modes = tuple(range(self._space.d))
 
-        index = random.choices(range(len(self._space)), probabilities)[0]
+        outcome, probability = self._simulate_collapse_on_modes(modes=modes)
 
-        outcome_basis_vector = self._space[index]
+        self._project_to_subspace(
+            subspace_basis=outcome,
+            modes=modes,
+            normalization=np.sqrt(1 / probability),
+        )
 
-        outcome = tuple(outcome_basis_vector)
+        return outcome
 
-        new_state_vector = np.zeros(
-            shape=self._state_vector.shape,
-            dtype=complex,
+    def _simulate_collapse_on_modes(self, *, modes):
+        probability_map = {}
+
+        for index, basis in self._space.basis:
+            coefficient = self._state_vector[index]
+
+            if np.isclose(coefficient, 0):
+                # TODO: Do we need this?
+                continue
+
+            subspace_basis = basis.on_modes(modes=modes)
+
+            if subspace_basis in probability_map:
+                probability_map[subspace_basis] += coefficient ** 2
+            else:
+                probability_map[subspace_basis] = coefficient ** 2
+
+        outcome = random.choices(
+            population=list(probability_map.keys()),
+            weights=probability_map.values(),
+        )[0]
+
+        return outcome, probability_map[outcome]
+
+    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
+        projected_state_vector = self._get_projected_state_vector(
+            subspace_basis=subspace_basis,
+            modes=modes,
+        )
+
+        self._state_vector = projected_state_vector * normalization
+
+    def _get_projected_state_vector(self, *, subspace_basis, modes):
+        new_state_vector = self._get_empty_state_vector(
+            cardinality=self._space.cardinality
+        )
+
+        index = self._space.get_projection_operator_indices_for_pure(
+            subspace_basis=subspace_basis,
+            modes=modes,
         )
 
         new_state_vector[index] = self._state_vector[index]
 
-        self._state_vector = new_state_vector / np.sqrt(probabilities[index])
-
-        return outcome
+        return new_state_vector
 
     def _add_occupation_number_basis(self, coefficient, occupation_numbers, modes):
         if modes:
@@ -116,6 +178,9 @@ class PureFockState(State):
             str(coefficient) + str(basis)
             for coefficient, basis in self.nonzero_elements
         ])
+
+    def __eq__(self, other):
+        return np.allclose(self._state_vector, other._state_vector)
 
     @property
     def fock_probabilities(self):
