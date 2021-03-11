@@ -4,6 +4,7 @@
 
 import numpy as np
 
+import scipy
 
 from piquasso.api.state import State
 from piquasso.api import constants
@@ -147,15 +148,17 @@ class GaussianState(State):
 
         d = self.d
 
-        corr = np.empty((2*d, 2*d), dtype=complex)
+        corr = np.empty((2*d, 2*d))
 
         C = self.C
         G = self.G
 
-        corr[:d, :d] = 2 * (G + C).real + np.identity(d)
-        corr[:d, d:] = 2 * (G + C).imag
-        corr[d:, d:] = 2 * (-G + C).real + np.identity(d)
-        corr[d:, :d] = 2 * (G - C).imag
+        corr[:d, :d] = (G + C).real
+        corr[:d, d:] = (G + C).imag
+        corr[d:, d:] = (-G + C).real
+        corr[d:, :d] = (G - C).imag
+
+        corr = 2 * corr + np.identity(2 * d)
 
         return corr * constants.HBAR
 
@@ -507,3 +510,93 @@ class GaussianState(State):
 
         self.C[:, modes] = self.C[modes, :].conjugate().transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
+
+    def _apply_generaldyne_measurement(self, *, detection_covariance, modes):
+        d = self.d
+
+        indices = []
+
+        for mode in modes:
+            indices.extend([2 * mode, 2 * mode + 1])
+
+        outer_indices = np.delete(np.arange(2 * d), indices)
+
+        r = self.mu
+
+        r_measured = r[indices]
+        r_outer = r[outer_indices]
+
+        rho = self.cov
+
+        rho_measured = rho[np.ix_(indices, indices)]
+        rho_outer = rho[np.ix_(outer_indices, outer_indices)]
+        rho_correlation = rho[np.ix_(outer_indices, indices)]
+
+        rho_m = scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+
+        # HACK: We need tol=1e-7 to avoid Numpy warnings at homodyne detection with
+        # squeezed detection covariance. Numpy warns
+        # 'covariance is not positive-semidefinite.', but it definitely is. In the SVG
+        # decomposition (which numpy uses for the multivariate normal distribution)
+        # the U^T and V matrices should equal, but our covariance might contain too
+        # large values leading to inequality, resulting in warning.
+        #
+        # We might be better of setting `check_valid='ignore'` and verifying
+        # postive-definiteness for ourselves.
+        outcome = np.random.multivariate_normal(
+            mean=r_measured,
+            cov=(rho_measured + rho_m),
+            tol=1e-7,
+        )
+
+        evolved_rho_outer = (
+            rho_outer
+            - rho_correlation
+            @ np.linalg.inv(rho_measured + rho_m)
+            @ rho_correlation.transpose()
+        )
+
+        evolved_r_A = (
+            r_outer
+            + rho_correlation
+            @ np.linalg.inv(rho_measured + rho_m)
+            @ (outcome - r_measured)
+        )
+
+        evolved_mean = np.zeros(shape=(2 * d, ))
+        evolved_mean[outer_indices] = evolved_r_A
+
+        evolved_cov = np.identity(2 * d)
+        evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
+
+        self._apply_mean_and_cov(mean=evolved_mean, cov=evolved_cov)
+
+        return outcome
+
+    def _apply_mean_and_cov(self, *, mean, cov):
+        self.reset()
+
+        d = self.d
+
+        m = (mean[::2] + 1j * mean[1::2]) / np.sqrt(2 * constants.HBAR)
+
+        T = quad_transformation(d)
+
+        corr = (
+            (T.transpose() @ (cov + 2 * np.outer(mean, mean)) @ T) / constants.HBAR
+        )
+
+        corr = (corr - np.identity(2 * d)) / 2
+
+        C_real = (corr[:d, :d] + corr[d:, d:]) / 2
+        G_real = (corr[:d, :d] - corr[d:, d:]) / 2
+
+        C_imag = (corr[:d, d:] - corr[d:, :d]) / 2
+        G_imag = (corr[:d, d:] + corr[d:, :d]) / 2
+
+        C = C_real + 1j * C_imag
+        G = G_real + 1j * G_imag
+
+        self.m = m
+        self.G = G
+        self.C = C

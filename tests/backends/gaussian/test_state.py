@@ -133,6 +133,20 @@ class TestGaussianStateRepresentations:
             self.state.cov,
         )
 
+    def test_representation_roundtrip(self):
+        m = self.state.m
+        G = self.state.G
+        C = self.state.C
+
+        mean = self.state.mu
+        cov = self.state.cov
+
+        self.state._apply_mean_and_cov(mean=mean, cov=cov)
+
+        assert np.allclose(self.state.m, m)
+        assert np.allclose(self.state.G, G)
+        assert np.allclose(self.state.C, C)
+
     def test_wigner_function(self, mu, cov):
         quadrature_array = np.array(
             [
