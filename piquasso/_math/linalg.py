@@ -4,6 +4,8 @@
 
 import numpy as np
 
+from scipy.linalg import block_diag
+
 
 def is_unitary(matrix, tol=1e-10):
     """
@@ -28,6 +30,10 @@ def is_selfadjoint(matrix):
     return np.allclose(matrix, matrix.conjugate().transpose())
 
 
+def is_positive_semidefinite(matrix):
+    return np.all(np.linalg.eigvals(matrix) >= 0)
+
+
 def direct_sum(*args):
     # TODO: Omit recursions!
     if len(args) == 2:
@@ -40,3 +46,11 @@ def direct_sum(*args):
         return dsum
 
     return direct_sum(args[0], direct_sum(*args[1:]))
+
+
+def symplectic_form(d):
+    one_mode_symplectic_form = np.array([[0, 1], [-1, 0]])
+
+    symplectic_form = block_diag(*([one_mode_symplectic_form] * d))
+
+    return symplectic_form

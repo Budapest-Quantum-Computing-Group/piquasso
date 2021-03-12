@@ -8,9 +8,14 @@ import scipy
 
 from piquasso.api.state import State
 from piquasso.api import constants
-from piquasso.api.errors import StatePreparationError
+from piquasso.api.errors import StatePreparationError, InvalidState
 from piquasso._math.functions import gaussian_wigner_function
-from piquasso._math.linalg import is_symmetric, is_selfadjoint
+from piquasso._math.linalg import (
+    is_symmetric,
+    is_selfadjoint,
+    symplectic_form,
+    is_positive_semidefinite,
+)
 
 from .circuit import GaussianCircuit
 
@@ -97,6 +102,31 @@ class GaussianState(State):
         self.C = np.zeros((d, d), dtype=complex)
         self.G = np.zeros((d, d), dtype=complex)
         self.m = np.zeros(d, dtype=complex)
+
+    def validate(self):
+        if not is_selfadjoint(self.C):
+            raise InvalidState(
+                "There might be some errors regarding the representation of the "
+                "Gaussian state.\n"
+                "Details:\n"
+                "The matrix 'GaussianState.C' is not self-adjoint."
+            )
+
+        if not is_symmetric(self.G):
+            raise InvalidState(
+                "There might be some errors regarding the representation of the "
+                "Gaussian state.\n"
+                "Details:\n"
+                "The matrix 'GaussianState.G' is not symmetric."
+            )
+
+        if not is_symmetric(self.cov):
+            raise InvalidState("The covariance matrix is not symmetric.")
+
+        if not is_positive_semidefinite(self.cov + 1j * symplectic_form(self.d)):
+            raise InvalidState(
+                "The covariance matrix is invalid. TODO: We should have a link here."
+            )
 
     @property
     def d(self):
