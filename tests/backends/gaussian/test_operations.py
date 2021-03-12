@@ -728,6 +728,22 @@ class TestDisplacementGate:
             "The covariance of any Gaussan quantum state should be positive definite."
         )
 
+    def test_multiple_displacements_leave_the_covariance_invariant(self):
+        vacuum = pq.GaussianState.create_vacuum(d=3)
+
+        initial_cov = vacuum.cov
+
+        with pq.Program() as program:
+            pq.Q() | vacuum
+
+            pq.Q(0) | pq.D(r=2, phi=np.pi/3)
+            pq.Q(1) | pq.D(r=1, phi=np.pi/4)
+            pq.Q(2) | pq.D(r=1 / 2, phi=np.pi/6)
+
+        program.execute()
+
+        assert np.allclose(program.state.cov, initial_cov)
+
 
 class TestGaussianPassiveTransform:
 
