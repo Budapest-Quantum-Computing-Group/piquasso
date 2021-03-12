@@ -26,6 +26,9 @@ class GaussianCircuit(Circuit):
             "D": self._displacement,
             "X": self._displacement,
             "Z": self._displacement,
+            "MeasureHomodyne": self._measure_dyne,
+            "MeasureHeterodyne": self._measure_dyne,
+            "MeasureDyne": self._measure_dyne,
         }
 
     def _passive_linear(self, operation):

@@ -39,10 +39,10 @@ class Operation(_PropertyMixin):
     def __repr__(self):
         display_string = self.__class__.__name__
 
-        if self.modes:
+        if getattr(self, "modes", None):
             display_string += f" on modes {self.modes}"
 
-        if self.params:
+        if getattr(self, "params", None):
             display_string += f" with params {self.params}"
 
         return display_string

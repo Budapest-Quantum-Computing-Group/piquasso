@@ -43,6 +43,9 @@ from .operations.gates import (
 
 from .operations.measurements import (
     MeasureParticleNumber,
+    MeasureHomodyne,
+    MeasureHeterodyne,
+    MeasureDyne,
 )
 
 
@@ -96,11 +99,14 @@ __all__ = [
     "CK",
     "Interferometer",
     "Sampling",
-    "MeasureParticleNumber",
     "Number",
     "DMNumber",
     "Create",
     "Annihilate",
+    "MeasureParticleNumber",
+    "MeasureHomodyne",
+    "MeasureHeterodyne",
+    "MeasureDyne",
 ]
 
 __version__ = "0.1.3"
