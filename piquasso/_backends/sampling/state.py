@@ -17,7 +17,7 @@ class SamplingState(State):
         self.interferometer = np.diag(np.ones(self.d, dtype=complex))
         self.results = None
 
-    def multiply_interferometer_on_modes(self, U, modes):
+    def _apply_passive_linear(self, U, modes):
         r"""
         Multiplies the interferometer of the state with the `U` matrix (representing
         the additional interferometer) in the qumodes specified in `modes`.
