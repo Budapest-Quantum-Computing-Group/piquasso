@@ -5,13 +5,13 @@
 import numpy as np
 import pytest
 
-from ..state import SamplingState
+import piquasso as pq
 
 
 class TestSamplingState:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.state = SamplingState(1, 1, 1, 0, 0)
+        self.state = pq.SamplingState(1, 1, 1, 0, 0)
 
     def test_initial_state(self):
         expected_initial_state = [1, 1, 1, 0, 0]
@@ -25,55 +25,91 @@ class TestSamplingState:
         assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_multiple_interferometer_on_neighbouring_modes(self):
-        U = np.array([
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ], dtype=complex)
-        self.state.multiply_interferometer_on_modes(U, [0, 1, 2])
+        U = np.array(
+            [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9],
+            ],
+            dtype=complex,
+        )
 
-        expected_interferometer = np.array([
-            [1, 2, 3, 0, 0],
-            [4, 5, 6, 0, 0],
-            [7, 8, 9, 0, 0],
-            [0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1]
-        ], dtype=complex)
+        with pq.Program() as program:
+            pq.Q() | self.state
 
-        assert np.allclose(self.state.interferometer, expected_interferometer)
+            pq.Q(0, 1, 2) | pq.Interferometer(U)
+
+        program.execute()
+
+        expected_interferometer = np.array(
+            [
+                [1, 2, 3, 0, 0],
+                [4, 5, 6, 0, 0],
+                [7, 8, 9, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 1],
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(program.state.interferometer, expected_interferometer)
 
     def test_multiple_interferometer_on_gaped_modes(self):
-        U = np.array([
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ], dtype=complex)
-        self.state.multiply_interferometer_on_modes(U, [0, 1, 4])
+        U = np.array(
+            [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9],
+            ],
+            dtype=complex,
+        )
 
-        expected_interferometer = np.array([
-            [1, 2, 0, 0, 3],
-            [4, 5, 0, 0, 6],
-            [0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0],
-            [7, 8, 0, 0, 9],
-        ], dtype=complex)
+        with pq.Program() as program:
+            pq.Q() | self.state
 
-        assert np.allclose(self.state.interferometer, expected_interferometer)
+            pq.Q(0, 1, 4) | pq.Interferometer(U)
+
+        program.execute()
+
+        expected_interferometer = np.array(
+            [
+                [1, 2, 0, 0, 3],
+                [4, 5, 0, 0, 6],
+                [0, 0, 1, 0, 0],
+                [0, 0, 0, 1, 0],
+                [7, 8, 0, 0, 9],
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(program.state.interferometer, expected_interferometer)
 
     def test_multiple_interferometer_on_reversed_gaped_modes(self):
-        U = np.array([
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ], dtype=complex)
-        self.state.multiply_interferometer_on_modes(U, [4, 3, 1])
+        U = np.array(
+            [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9]
+            ],
+            dtype=complex,
+        )
 
-        expected_interferometer = np.array([
-            [1, 0, 0, 0, 0],
-            [0, 9, 0, 8, 7],
-            [0, 0, 1, 0, 0],
-            [0, 6, 0, 5, 4],
-            [0, 3, 0, 2, 1],
-        ], dtype=complex)
+        with pq.Program() as program:
+            pq.Q() | self.state
 
-        assert np.allclose(self.state.interferometer, expected_interferometer)
+            pq.Q(4, 3, 1) | pq.Interferometer(U)
+
+        program.execute()
+
+        expected_interferometer = np.array(
+            [
+                [1, 0, 0, 0, 0],
+                [0, 9, 0, 8, 7],
+                [0, 0, 1, 0, 0],
+                [0, 6, 0, 5, 4],
+                [0, 3, 0, 2, 1],
+            ],
+            dtype=complex,
+        )
+
+        assert np.allclose(program.state.interferometer, expected_interferometer)
