@@ -5,14 +5,14 @@
 import random
 import numpy as np
 
-from piquasso.api.state import State
+from ..state import BaseFockState
 
 from piquasso._math import fock
 
 from .circuit import PureFockCircuit
 
 
-class PureFockState(State):
+class PureFockState(BaseFockState):
     circuit_class = PureFockCircuit
 
     def __init__(self, state_vector=None, *, d, cutoff, vacuum=False):
