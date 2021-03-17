@@ -16,7 +16,6 @@ from piquasso.core.registry import _use_plugin, _retrieve_class
 
 from .operations.preparations import (
     Number,
-    DMNumber,
     Create,
     Annihilate,
 )
@@ -97,7 +96,6 @@ __all__ = [
     "Interferometer",
     "Sampling",
     "Number",
-    "DMNumber",
     "Create",
     "Annihilate",
     "MeasureParticleNumber",
