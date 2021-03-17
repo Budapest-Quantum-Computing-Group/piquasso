@@ -6,6 +6,7 @@ import copy
 
 from piquasso.core import _context
 
+from .errors import InvalidModes
 from .program import Program
 from .state import State
 
@@ -23,7 +24,10 @@ class Q:
                 qumodes.
         """
 
-        assert self._is_distinct(modes)
+        if not self._is_distinct(modes):
+            raise InvalidModes(
+                f"Error registering modes: '{modes}' should be distinct."
+            )
 
         self.modes = modes
 

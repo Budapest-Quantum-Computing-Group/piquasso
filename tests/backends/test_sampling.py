@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 import piquasso as pq
+from piquasso.api.errors import InvalidParameter
 
 
 class TestSampling:
@@ -24,6 +25,13 @@ class TestSampling:
         ], dtype=complex)
 
         self.program.state.interferometer = permutation_matrix
+
+    def test_sampling_raises_InvalidParameter_for_negative_shot_value(self):
+        invalid_shots = -1
+
+        with self.program:
+            with pytest.raises(InvalidParameter):
+                pq.Sampling(invalid_shots)
 
     def test_sampling_samples_number(self):
         shots = 100
