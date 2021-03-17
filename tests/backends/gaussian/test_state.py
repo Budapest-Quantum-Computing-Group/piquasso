@@ -313,3 +313,31 @@ class TestGaussianStateVacuum:
         expected_covariance = np.identity(2 * number_of_modes) * hbar
 
         assert np.allclose(state.cov, expected_covariance)
+
+
+def test_mean_and_covariance(program, assets):
+    program.execute()
+    program.state.validate()
+
+    expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
+
+    expected_cov = assets.load("expected_cov") * constants.HBAR
+
+    assert np.allclose(program.state.mu, expected_mean)
+    assert np.allclose(program.state.cov, expected_cov)
+
+
+def test_mean_and_covariance_with_different_HBAR(program, assets):
+    program.execute()
+    program.state.validate()
+
+    constants.HBAR = 42
+
+    expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
+    expected_cov = assets.load("expected_cov") * constants.HBAR
+
+    assert np.allclose(program.state.mu, expected_mean)
+    assert np.allclose(program.state.cov, expected_cov)
+
+    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
+    constants.HBAR = constants._HBAR_DEFAULT
