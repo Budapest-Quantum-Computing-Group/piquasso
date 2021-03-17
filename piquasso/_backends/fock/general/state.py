@@ -16,7 +16,6 @@ class FockState(BaseFockState):
     circuit_class = FockCircuit
 
     def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
-        self._density_matrix = density_matrix
         space = fock.FockSpace(
             d=d,
             cutoff=cutoff,
