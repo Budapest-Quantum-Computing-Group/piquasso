@@ -352,11 +352,15 @@ class D(Operation):
     """
 
     def __init__(self, *, alpha=None, r=None, phi=None):
-        assert \
-            alpha is not None and r is None and phi is None \
-            or \
-            alpha is None and r is not None and phi is not None, \
-            "Either specify 'alpha' only, or the combination of 'r' and 'phi'."
+        if (
+            alpha is None and (phi is None or r is None)
+            or
+            alpha is not None and (phi is not None or r is not None)
+        ):
+            raise InvalidParameter(
+                "Either specify 'alpha' only, or the combination of 'r' and 'phi': "
+                f"alpha={alpha}, r={r}, phi={phi}."
+            )
 
         if alpha is None:
             alpha = r * np.exp(1j * phi)
@@ -442,7 +446,9 @@ class Sampling(ModelessOperation):
     """
 
     def __init__(self, shots=1):
-        assert \
-            shots > 0 and isinstance(shots, int),\
-            "The number of shots should be a positive integer."
+        if shots < 1 or not isinstance(shots, int):
+            raise InvalidParameter(
+                f"The number of shots should be a positive integer: shots={shots}."
+            )
+
         super().__init__(shots)

@@ -13,3 +13,7 @@ class InvalidState(Exception):
 
 class InvalidParameter(Exception):
     """Raised when an invalid parameter is specified."""
+
+
+class InvalidModes(Exception):
+    """Raised when invalid set of modes are encountered."""
