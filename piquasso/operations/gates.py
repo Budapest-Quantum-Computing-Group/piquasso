@@ -6,6 +6,9 @@ import numpy as np
 from piquasso.core.registry import _register
 from piquasso.api.operation import Operation, ModelessOperation
 from piquasso.api.constants import HBAR
+from piquasso.api.errors import InvalidParameter
+
+from piquasso._math.linalg import is_square
 
 
 class _PassiveLinearGate(Operation):
@@ -20,18 +23,24 @@ class _LinearGate(Operation):
 
 
 @_register
-class PassiveTransform(_PassiveLinearGate):
-    r"""Applies a general passive linear transformation.
+class Interferometer(_PassiveLinearGate):
+    r"""Applies a general interferometer.
 
     Args:
-        T (np.array):
-            The representation of the passive transformation on the one-particle
-            subspace.
+        matrix (np.array):
+            The representation of the interferometer matrix, corresponding to a
+            passive transformation on the one-particle subspace.
     """
 
-    def __init__(self, T):
-        self._set_params(T)
-        super().__init__(T)
+    def __init__(self, matrix):
+        if not is_square(matrix):
+            raise InvalidParameter(
+                "The interferometer matrix should be a square matrix."
+            )
+
+        self._set_params(matrix)
+
+        super().__init__(matrix)
 
 
 @_register
@@ -410,36 +419,6 @@ class CK(Operation):
 
     def __init__(self, *, xi: float):
         super().__init__(xi)
-
-
-@_register
-class Interferometer(Operation):
-    """Interferometer.
-
-    Adds additional interferometer to the effective interferometer.
-
-    This can be interpreted as placing another interferometer in the network, just
-    before performing the sampling. This operation is realized by multiplying
-    current effective interferometer matrix with new interferometer matrix.
-
-    Do note, that new interferometer matrix works as interferometer matrix on
-    qumodes (provided as the arguments) and as an identity on every other mode.
-
-    Args:
-        interferometer_matrix (np.array):
-            A square matrix representing the interferometer.
-    """
-
-    @staticmethod
-    def _is_square(matrix):
-        shape = matrix.shape
-        return len(shape) == 2 and shape[0] == shape[1]
-
-    def __init__(self, interferometer_matrix):
-        assert \
-            self._is_square(interferometer_matrix), \
-            "The interferometer matrix should be a square matrix."
-        super().__init__(interferometer_matrix)
 
 
 @_register

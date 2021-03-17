@@ -9,3 +9,7 @@ class StatePreparationError(Exception):
 
 class InvalidState(Exception):
     """Raised when an invalid state is encountered."""
+
+
+class InvalidParameter(Exception):
+    """Raised when an invalid parameter is specified."""

@@ -221,7 +221,7 @@ def test_passive_transform():
         pq.Q() | pq.Number(0, 0, 2) / 2
         pq.Q() | pq.Number(0, 1, 1) / np.sqrt(2)
 
-        pq.Q(0, 1, 2) | pq.PassiveTransform(T=T)
+        pq.Q(0, 1, 2) | pq.Interferometer(matrix=T)
 
     program.execute()
 

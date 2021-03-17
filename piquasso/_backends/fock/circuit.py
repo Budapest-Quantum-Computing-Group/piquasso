@@ -10,7 +10,7 @@ class FockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            "PassiveTransform": self._passive_linear,
+            "Interferometer": self._passive_linear,
             "B": self._passive_linear,
             "R": self._passive_linear,
             "MZ": self._passive_linear,
