@@ -7,8 +7,6 @@ import numpy as np
 
 from ..state import BaseFockState
 
-from piquasso._math import fock
-
 from .circuit import PureFockCircuit
 
 
@@ -16,19 +14,17 @@ class PureFockState(BaseFockState):
     circuit_class = PureFockCircuit
 
     def __init__(self, state_vector=None, *, d, cutoff, vacuum=False):
-        space = fock.FockSpace(
-            d=d,
-            cutoff=cutoff,
-        )
+        super().__init__(d=d, cutoff=cutoff)
 
         if state_vector is None:
-            state_vector = self._get_empty_state_vector(cardinality=space.cardinality)
+            state_vector = self._get_empty_state_vector(
+                cardinality=self._space.cardinality
+            )
 
             if vacuum is True:
                 state_vector[0] = 1.0
 
         self._state_vector = np.array(state_vector)
-        self._space = space
 
     @classmethod
     def create_vacuum(cls, *, d, cutoff):

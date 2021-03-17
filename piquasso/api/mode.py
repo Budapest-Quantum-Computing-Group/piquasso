@@ -46,7 +46,7 @@ class Q:
         if isinstance(rhs, Program):
             self._register_program(rhs)
         elif isinstance(rhs, State):
-            _context.current_program._register_state(rhs)
+            self._register_state(rhs)
         else:
             rhs.modes = self.modes
             _context.current_program.operations.append(rhs)
@@ -63,11 +63,15 @@ class Q:
                     f"'{type(_context.current_program.state).__name__}'."
                 )
 
-            _context.current_program._register_state(copy.deepcopy(program.state))
+            self._register_state(program.state)
 
         _context.current_program.operations += map(
             self._resolve_operation, program.operations
         )
+
+    def _register_state(self, state):
+        state_copy = copy.deepcopy(state)
+        _context.current_program._register_state(state_copy)
 
     def _resolve_operation(self, operation):
         new_operation = copy.deepcopy(operation)
