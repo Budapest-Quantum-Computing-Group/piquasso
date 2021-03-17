@@ -10,8 +10,7 @@ from piquasso.api.mode import Q
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
-from piquasso._backends.fock import FockState
-from piquasso._backends.purefock import PureFockState
+from piquasso._backends.fock import FockState, PureFockState
 
 from piquasso.core.registry import _use_plugin, _retrieve_class
 

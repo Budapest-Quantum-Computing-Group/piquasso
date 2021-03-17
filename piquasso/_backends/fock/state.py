@@ -2,209 +2,32 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import random
-import numpy as np
+import abc
 
 from piquasso.api.state import State
 
-from piquasso._math import fock
 
-from .circuit import FockCircuit
-
-
-class FockState(State):
-    circuit_class = FockCircuit
-
-    def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
-        self._density_matrix = density_matrix
-        space = fock.FockSpace(
-            d=d,
-            cutoff=cutoff,
-        )
-
-        if density_matrix is None:
-            density_matrix = self._get_empty_density_matrix(
-                cardinality=space.cardinality
-            )
-
-            if vacuum is True:
-                density_matrix[0, 0] = 1.0
-
-        self._density_matrix = density_matrix
-        self._space = space
-
-    @classmethod
-    def create_vacuum(cls, *, d, cutoff):
-        return cls(d=d, cutoff=cutoff, vacuum=True)
-
-    @classmethod
-    def from_number_preparations(cls, *, d, cutoff, number_preparations):
-        """
-        TODO: Remove coupling!
-        """
-
-        self = cls(d=d, cutoff=cutoff)
-
-        for number_preparation in number_preparations:
-            ket, bra, coefficient = number_preparation.params
-
-            self._add_occupation_number_basis(
-                ket=ket,
-                bra=bra,
-                coefficient=coefficient,
-            )
-
-        return self
-
-    def _get_empty_density_matrix(self, cardinality):
-        return np.zeros(shape=(cardinality, ) * 2, dtype=complex)
-
+class BaseFockState(State, abc.ABC):
+    @abc.abstractmethod
     def _apply_passive_linear(self, operator, modes):
-        index = self._get_operator_index(modes)
+        pass
 
-        embedded_operator = np.identity(self._space.d, dtype=complex)
-
-        embedded_operator[index] = operator
-
-        fock_operator = self._space.get_fock_operator(embedded_operator)
-
-        self._density_matrix = (
-            fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
-        )
-
+    @abc.abstractmethod
     def _measure_particle_number(self, modes):
-        if not modes:
-            modes = tuple(range(self._space.d))
+        pass
 
-        outcome, probability = self._simulate_collapse_on_modes(modes=modes)
-
-        self._project_to_subspace(
-            subspace_basis=outcome,
-            modes=modes,
-            normalization=(1 / probability),
-        )
-
-        return outcome
-
-    def _simulate_collapse_on_modes(self, *, modes):
-        probability_map = {}
-
-        for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
-            coefficient = self._density_matrix[index]
-
-            if np.isclose(coefficient, 0):
-                # TODO: Do we need this?
-                continue
-
-            subspace_basis = basis.ket.on_modes(modes=modes)
-
-            if subspace_basis in probability_map:
-                probability_map[subspace_basis] += coefficient
-            else:
-                probability_map[subspace_basis] = coefficient
-
-        outcome = random.choices(
-            population=list(probability_map.keys()),
-            weights=probability_map.values(),
-        )[0]
-
-        return outcome, probability_map[outcome].real
-
-    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
-        projected_density_matrix = self._get_projected_density_matrix(
-            subspace_basis=subspace_basis,
-            modes=modes,
-        )
-
-        self._density_matrix = projected_density_matrix * normalization
-
-    def _get_projected_density_matrix(self, *, subspace_basis, modes):
-        new_density_matrix = self._get_empty_density_matrix(
-            cardinality=self._space.cardinality
-        )
-
-        index = self._space.get_projection_operator_indices(
-            subspace_basis=subspace_basis,
-            modes=modes,
-        )
-
-        new_density_matrix[index] = self._density_matrix[index]
-
-        return new_density_matrix
-
+    @abc.abstractmethod
     def _apply_creation_operator(self, modes):
-        operator = self._space.get_creation_operator(modes)
+        pass
 
-        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
-
-        self.normalize()
-
+    @abc.abstractmethod
     def _apply_annihilation_operator(self, modes):
-        operator = self._space.get_annihilation_operator(modes)
+        pass
 
-        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
-
-        self.normalize()
-
-    def _add_occupation_number_basis(self, *, ket, bra, coefficient):
-        index = self._space.index(ket)
-        dual_index = self._space.index(bra)
-
-        self._density_matrix[index, dual_index] = coefficient
-
+    @abc.abstractmethod
     def _apply_kerr(self, xi, mode):
-        for index, (basis, dual_basis) in self._space.operator_basis:
-            number = basis[mode]
-            dual_number = dual_basis[mode]
+        pass
 
-            coefficient = np.exp(
-                1j * xi * (
-                   number * (2 * number + 1)
-                   - dual_number * (2 * dual_number + 1)
-                )
-            )
-
-            self._density_matrix[index] *= coefficient
-
+    @abc.abstractmethod
     def _apply_cross_kerr(self, xi, modes):
-        for index, (basis, dual_basis) in self._space.operator_basis:
-            coefficient = np.exp(
-                1j * xi * (
-                    basis[modes[0]] * basis[modes[1]]
-                    - dual_basis[modes[0]] * dual_basis[modes[1]]
-                )
-            )
-
-            self._density_matrix[index] *= coefficient
-
-    @property
-    def nonzero_elements(self):
-        for index, basis in self._space.operator_basis:
-            coefficient = self._density_matrix[index]
-            if coefficient != 0:
-                yield coefficient, basis
-
-    def __repr__(self):
-        return " + ".join(
-            [
-                str(coefficient) + str(basis)
-                for coefficient, basis in self.nonzero_elements
-            ]
-        )
-
-    def __eq__(self, other):
-        return np.allclose(self._density_matrix, other._density_matrix)
-
-    @property
-    def fock_probabilities(self):
-        return np.diag(self._density_matrix).real
-
-    @property
-    def norm(self):
-        return sum(self.fock_probabilities)
-
-    def normalize(self):
-        if np.isclose(self.norm, 0):
-            raise RuntimeError("The norm of the state is 0.")
-
-        self._density_matrix = self._density_matrix / self.norm
+        pass

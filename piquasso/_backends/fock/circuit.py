@@ -6,7 +6,7 @@ from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
 
 
-class FockCircuit(Circuit):
+class BaseFockCircuit(Circuit):
 
     def get_operation_map(self):
         return {
@@ -20,7 +20,6 @@ class FockCircuit(Circuit):
             "MeasureParticleNumber": self._measure_particle_number,
             "Create": self._create,
             "Annihilate": self._annihilate,
-            "DMNumber": self._dm_number,
         }
 
     def _passive_linear(self, operation):
@@ -55,11 +54,4 @@ class FockCircuit(Circuit):
         self.state._apply_cross_kerr(
             xi=operation.params[0],
             modes=operation.modes,
-        )
-
-    def _dm_number(self, operation):
-        self.state._add_occupation_number_basis(
-            ket=operation.params[0],
-            bra=operation.params[1],
-            coefficient=operation.params[2],
         )
