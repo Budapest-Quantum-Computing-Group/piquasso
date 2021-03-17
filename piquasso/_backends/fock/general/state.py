@@ -7,8 +7,6 @@ import numpy as np
 
 from ..state import BaseFockState
 
-from piquasso._math import fock
-
 from .circuit import FockCircuit
 
 
@@ -16,25 +14,32 @@ class FockState(BaseFockState):
     circuit_class = FockCircuit
 
     def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
-        space = fock.FockSpace(
-            d=d,
-            cutoff=cutoff,
-        )
+        super().__init__(d=d, cutoff=cutoff)
 
         if density_matrix is None:
             density_matrix = self._get_empty_density_matrix(
-                cardinality=space.cardinality
+                cardinality=self._space.cardinality
             )
 
             if vacuum is True:
                 density_matrix[0, 0] = 1.0
 
         self._density_matrix = density_matrix
-        self._space = space
 
     @classmethod
     def create_vacuum(cls, *, d, cutoff):
         return cls(d=d, cutoff=cutoff, vacuum=True)
+
+    @classmethod
+    def from_pure(cls, pure_fock_state):
+        state_vector = pure_fock_state._state_vector
+        density_matrix = np.outer(state_vector, state_vector)
+
+        return cls(
+            density_matrix=density_matrix,
+            d=pure_fock_state.d,
+            cutoff=pure_fock_state.cutoff,
+        )
 
     @classmethod
     def from_number_preparations(cls, *, d, cutoff, number_preparations):

@@ -8,8 +8,6 @@ import abc
 
 
 class Circuit(abc.ABC):
-    _operation_map = {}
-
     def __init__(self, state, program):
         """
         Args:
@@ -17,14 +15,13 @@ class Circuit(abc.ABC):
         """
         self.state = state
         self.program = program
-        self._operation_map.update(self.get_operation_map())
+        self._operation_map = self.get_operation_map()
 
     @abc.abstractmethod
     def get_operation_map(self):
         pass
 
-    @classmethod
-    def execute_operations(cls, operations):
+    def execute_operations(self, operations):
         """Executes the collected operations in order.
 
         Raises:
@@ -37,7 +34,7 @@ class Circuit(abc.ABC):
                 executed in order.
         """
         for operation in operations:
-            method = cls._operation_map.get(operation.__class__.__name__)
+            method = self._operation_map.get(operation.__class__.__name__)
 
             if not method:
                 raise NotImplementedError(
