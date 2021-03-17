@@ -24,7 +24,7 @@ class TestSampling:
             pq.Q(0, 1) | pq.B(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
             pq.Q(3) | pq.R(.5)
-            pq.Sampling(shots=10)
+            pq.Q() | pq.Sampling(shots=10)
 
     def test_interferometer(self):
         U = np.array([

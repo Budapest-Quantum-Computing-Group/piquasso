@@ -4,7 +4,7 @@
 
 import numpy as np
 from piquasso.core.registry import _register
-from piquasso.api.operation import Operation, ModelessOperation
+from piquasso.api.operation import Operation
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
@@ -426,7 +426,7 @@ class CK(Operation):
 
 
 @_register
-class Sampling(ModelessOperation):
+class Sampling(Operation):
     r"""Boson Sampling.
 
     Simulates a boson sampling using generalized Clifford&Clifford algorithm

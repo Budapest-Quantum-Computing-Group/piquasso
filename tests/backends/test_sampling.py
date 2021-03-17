@@ -31,13 +31,13 @@ class TestSampling:
 
         with self.program:
             with pytest.raises(InvalidParameter):
-                pq.Sampling(invalid_shots)
+                pq.Q() | pq.Sampling(invalid_shots)
 
     def test_sampling_samples_number(self):
         shots = 100
 
         with self.program:
-            pq.Sampling(shots)
+            pq.Q() | pq.Sampling(shots)
 
         self.program.execute()
 
@@ -49,7 +49,7 @@ class TestSampling:
         shots = 1
 
         with self.program:
-            pq.Sampling(shots)
+            pq.Q() | pq.Sampling(shots)
 
         self.program.execute()
 
@@ -61,7 +61,7 @@ class TestSampling:
         shots = 2
 
         with self.program:
-            pq.Sampling(shots)
+            pq.Q() | pq.Sampling(shots)
 
         self.program.execute()
 
@@ -77,13 +77,13 @@ class TestSampling:
 
         with self.program:
             pq.Q(0, 1) | pq.MZ(int_=int_, ext=ext)
-            pq.Sampling(shots=1)
+            pq.Q() | pq.Sampling(shots=1)
 
         self.program.execute()
 
     def test_fourier(self):
         with self.program:
             pq.Q(0) | pq.F()
-            pq.Sampling(shots=1)
+            pq.Q() | pq.Sampling(shots=1)
 
         self.program.execute()

@@ -2,7 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.core import _context
 from piquasso.core.mixins import _PropertyMixin
 
 
@@ -46,12 +45,3 @@ class Operation(_PropertyMixin):
             display_string += f" with params {self.params}"
 
         return display_string
-
-
-class ModelessOperation(Operation):
-    def __init__(self, *params):
-        super().__init__(*params)
-
-        self.modes = None
-
-        _context.current_program.operations.append(self)
