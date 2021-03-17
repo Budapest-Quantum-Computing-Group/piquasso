@@ -2,11 +2,13 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import abc
+
 from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
 
 
-class BaseFockCircuit(Circuit):
+class BaseFockCircuit(Circuit, abc.ABC):
 
     def get_operation_map(self):
         return {
@@ -20,6 +22,7 @@ class BaseFockCircuit(Circuit):
             "MeasureParticleNumber": self._measure_particle_number,
             "Create": self._create,
             "Annihilate": self._annihilate,
+            "Number": self._number,
         }
 
     def _passive_linear(self, operation):
@@ -55,3 +58,7 @@ class BaseFockCircuit(Circuit):
             xi=operation.params[0],
             modes=operation.modes,
         )
+
+    @abc.abstractmethod
+    def _number(self, operation):
+        pass

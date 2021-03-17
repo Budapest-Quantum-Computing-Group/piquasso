@@ -43,11 +43,9 @@ class PureFockState(BaseFockState):
         self = cls(d=d, cutoff=cutoff)
 
         for number_preparation in number_preparations:
-            occupation_numbers, coefficient = number_preparation.params
-
             self._add_occupation_number_basis(
-                occupation_numbers=occupation_numbers,
-                coefficient=coefficient,
+                occupation_numbers=number_preparation.params[0],
+                coefficient=number_preparation.params[-1],
                 modes=None,
             )
 

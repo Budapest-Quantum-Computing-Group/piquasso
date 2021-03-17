@@ -11,7 +11,7 @@ import piquasso as pq
 def test_5050_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=2, cutoff=2)
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
 
@@ -26,7 +26,7 @@ def test_5050_beamsplitter():
 def test_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=2, cutoff=2)
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1))
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -42,13 +42,13 @@ def test_beamsplitter_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=2, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
 
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 4
-        pq.Q() | pq.DMNumber(ket=(2, 0), bra=(2, 0)) / 2
+        pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.Number(ket=(2, 0), bra=(2, 0)) / 2
 
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -72,9 +72,9 @@ def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=2, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0), bra=(0, 0)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 2
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.Number(ket=(0, 0), bra=(0, 0)) / 4
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 2
+        pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 4
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -98,7 +98,7 @@ def test_multiple_beamsplitters():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -119,12 +119,12 @@ def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -149,12 +149,12 @@ def test_phaseshift():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=2, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
+        pq.Q() | pq.Number(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -174,12 +174,12 @@ def test_fourier():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=2, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
+        pq.Q() | pq.Number(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -199,12 +199,12 @@ def test_mach_zehnder():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=2, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1), bra=(0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(0, 2)) / 2
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(1, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
+        pq.Q() | pq.Number(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DMNumber(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -224,12 +224,12 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -258,12 +258,12 @@ def test_interferometer():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
 
     T = np.array(
         [
@@ -295,18 +295,18 @@ def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
-        pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
         pq.Q(2) | pq.MeasureParticleNumber()
 
@@ -322,12 +322,12 @@ def test_measure_particle_number_on_one_mode():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                1/3 * pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
-                4j * pq.DMNumber(ket=(0, 0, 1), bra=(0, 1, 1)),
-                -2j * pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 1)),
-                -4j * pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 1)),
-                2 / 3 * pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)),
-                2j * pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 1)),
+                1/3 * pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
+                4j * pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)),
+                -2j * pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)),
+                -4j * pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)),
+                2 / 3 * pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)),
+                2j * pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)),
             ]
         )
 
@@ -335,7 +335,7 @@ def test_measure_particle_number_on_one_mode():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
+                pq.Number(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
 
@@ -346,18 +346,18 @@ def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
-        pq.Q() | pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
 
-        pq.Q() | pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
-        pq.Q() | pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
+        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
+        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
         pq.Q(1, 2) | pq.MeasureParticleNumber()
 
@@ -373,9 +373,9 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
-                pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
-                pq.DMNumber(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
+                pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
+                pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
+                pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
             ]
         )
 
@@ -383,7 +383,7 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 1, 1), bra=(0, 1, 1)),
+                pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)),
             ]
         )
 
@@ -391,7 +391,7 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
+                pq.Number(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
 
@@ -402,13 +402,13 @@ def test_measure_particle_number_on_all_modes():
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
+        pq.Q() | pq.Number(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
-        pq.Q() | pq.DMNumber(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.Number(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DMNumber(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.Number(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -427,7 +427,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 0, 0), bra=(0, 0, 0)),
+                pq.Number(ket=(0, 0, 0), bra=(0, 0, 0)),
             ]
         )
 
@@ -435,7 +435,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)),
+                pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
             ]
         )
 
@@ -443,7 +443,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.DMNumber(ket=(1, 0, 0), bra=(1, 0, 0)),
+                pq.Number(ket=(1, 0, 0), bra=(1, 0, 0)),
             ]
         )
 
@@ -504,8 +504,8 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
-        pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
+        pq.Q() | pq.Number(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
 
         pq.Q(1, 2) | pq.Create()
 
@@ -519,8 +519,8 @@ def test_creation_on_multiple_modes():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=3)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
-        pq.Q() | pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
+        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
+        pq.Q() | pq.Number(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
 
         pq.Q(1, 2) | pq.Create()
 
@@ -543,9 +543,9 @@ def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=2)
 
-        pq.Q() | (2/6) * pq.DMNumber(ket=(0, 0, 1), bra=(0, 0, 1))
-        pq.Q() | (3/6) * pq.DMNumber(ket=(0, 1, 0), bra=(0, 1, 0))
-        pq.Q() | (1/6) * pq.DMNumber(ket=(0, 0, 2), bra=(0, 0, 2))
+        pq.Q() | (2/6) * pq.Number(ket=(0, 0, 1), bra=(0, 0, 1))
+        pq.Q() | (3/6) * pq.Number(ket=(0, 1, 0), bra=(0, 1, 0))
+        pq.Q() | (1/6) * pq.Number(ket=(0, 0, 2), bra=(0, 0, 2))
 
         pq.Q(2) | pq.Create()
 
@@ -569,9 +569,9 @@ def test_kerr():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=3)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
-        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
-        pq.Q() | pq.DMNumber(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
+        pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
+        pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
+        pq.Q() | pq.Number(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
 
         pq.Q(2) | pq.K(xi=xi)
 
@@ -600,9 +600,9 @@ def test_cross_kerr():
     with pq.Program() as program:
         pq.Q() | pq.FockState(d=3, cutoff=3)
 
-        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
-        pq.Q() | pq.DMNumber(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
-        pq.Q() | pq.DMNumber(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
+        pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
+        pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
+        pq.Q() | pq.Number(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
 
         pq.Q(1, 2) | pq.CK(xi=xi)
 
