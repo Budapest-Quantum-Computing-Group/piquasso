@@ -70,6 +70,18 @@ class SamplingCircuit(Circuit):
         )
 
     def interferometer(self, operation):
+        """Interferometer.
+
+        Adds additional interferometer to the effective interferometer.
+
+        This can be interpreted as placing another interferometer in the network, just
+        before performing the sampling. This operation is realized by multiplying
+        current effective interferometer matrix with new interferometer matrix.
+
+        Do note, that new interferometer matrix works as interferometer matrix on
+        qumodes (provided as the arguments) and as an identity on every other mode.
+        """
+
         J = operation.params[0]
         modes = operation.modes
 

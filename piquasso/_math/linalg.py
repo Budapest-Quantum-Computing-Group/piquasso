@@ -34,6 +34,11 @@ def is_positive_semidefinite(matrix):
     return np.all(np.linalg.eigvals(matrix) >= 0)
 
 
+def is_square(matrix):
+    shape = matrix.shape
+    return len(shape) == 2 and shape[0] == shape[1]
+
+
 def direct_sum(*args):
     # TODO: Omit recursions!
     if len(args) == 2:

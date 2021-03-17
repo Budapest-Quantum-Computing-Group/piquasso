@@ -23,7 +23,6 @@ from .operations.preparations import (
 )
 
 from .operations.gates import (
-    PassiveTransform,
     GaussianTransform,
     R,
     B,
@@ -82,7 +81,6 @@ sys.modules[__name__] = Piquasso(sys.modules[__name__])
 __all__ = [
     "Program",
     "Plugin",
-    "PassiveTransform",
     "GaussianTransform",
     "Q",
     "R",

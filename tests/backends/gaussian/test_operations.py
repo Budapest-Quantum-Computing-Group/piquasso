@@ -266,7 +266,7 @@ def test_passive_transform_for_1_modes(program, gaussian_state_assets):
     )
 
     with program:
-        pq.Q(1) | pq.PassiveTransform(T)
+        pq.Q(1) | pq.Interferometer(T)
 
     program.execute()
     program.state.validate()
@@ -288,7 +288,7 @@ def test_passive_transform_2_modes(program, gaussian_state_assets):
     )
 
     with program:
-        pq.Q(0, 1) | pq.PassiveTransform(random_unitary)
+        pq.Q(0, 1) | pq.Interferometer(random_unitary)
 
     program.execute()
     program.state.validate()
@@ -308,7 +308,7 @@ def test_passive_transform_for_all_modes(program, gaussian_state_assets):
     )
 
     with program:
-        pq.Q(0, 1, 2) | pq.PassiveTransform(random_unitary)
+        pq.Q(0, 1, 2) | pq.Interferometer(random_unitary)
 
     program.execute()
     program.state.validate()
@@ -443,7 +443,7 @@ def test_apply_passive(generate_random_gaussian_state, generate_unitary_matrix):
     expected_G[:, (0, 1, 3)] = expected_G[(0, 1, 3), :].transpose()
 
     with pq.Program(state=state) as program:
-        pq.Q(0, 1, 3) | pq.PassiveTransform(T)
+        pq.Q(0, 1, 3) | pq.Interferometer(T)
 
     program.execute()
     program.state.validate()

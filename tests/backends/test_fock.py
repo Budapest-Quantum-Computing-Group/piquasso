@@ -253,7 +253,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     )
 
 
-def test_passive_transform():
+def test_interferometer():
 
     with pq.Program() as preparation:
         pq.Q() | pq.FockState(d=3, cutoff=2)
@@ -276,7 +276,7 @@ def test_passive_transform():
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1, 2) | pq.PassiveTransform(T=T)
+        pq.Q(0, 1, 2) | pq.Interferometer(matrix=T)
 
     program.execute()
 
