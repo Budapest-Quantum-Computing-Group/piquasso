@@ -9,7 +9,7 @@ import pytest
 from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.program import Program
-from piquasso.api.operation import Operation, ModelessOperation
+from piquasso.api.operation import Operation
 
 
 class TestProgramBase:
@@ -21,23 +21,13 @@ class TestProgramBase:
         return _DummyOperation
 
     @pytest.fixture
-    def DummyModelessOperation(self):
-        class _DummyModelessOperation(ModelessOperation):
-            pass
-
-        return _DummyModelessOperation
-
-    @pytest.fixture
-    def FakeCircuit(self, DummyOperation, DummyModelessOperation):
+    def FakeCircuit(self, DummyOperation):
         class _FakeCircuit(Circuit):
             dummy_operation = Mock(name="dummy_operation")
-
-            dummy_modeless_operation = Mock(name="dummy_modeless_operation")
 
             def get_operation_map(self):
                 return {
                     DummyOperation.__name__: self.dummy_operation,
-                    DummyModelessOperation.__name__: self.dummy_modeless_operation,
                 }
 
         return _FakeCircuit
