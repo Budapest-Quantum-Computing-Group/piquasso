@@ -24,12 +24,42 @@ class BaseFockState(State, abc.ABC):
     def cutoff(self):
         return self._space.cutoff
 
+    @classmethod
+    def create_vacuum(cls, *, d, cutoff):
+        return cls(d=d, cutoff=cutoff, vacuum=True)
+
+    @property
+    def norm(self):
+        return sum(self.fock_probabilities)
+
+    def _measure_particle_number(self, modes):
+        if not modes:
+            modes = tuple(range(self._space.d))
+
+        outcome, normalization = self._simulate_collapse_on_modes(modes=modes)
+
+        self._project_to_subspace(
+            subspace_basis=outcome,
+            modes=modes,
+            normalization=normalization,
+        )
+
+        return outcome
+
+    @abc.abstractclassmethod
+    def _get_empty(cls):
+        pass
+
     @abc.abstractmethod
     def _apply_passive_linear(self, operator, modes):
         pass
 
     @abc.abstractmethod
-    def _measure_particle_number(self, modes):
+    def _simulate_collapse_on_modes(*, modes):
+        pass
+
+    @abc.abstractmethod
+    def _project_to_subspace(*, subspace_basis, modes, normalization):
         pass
 
     @abc.abstractmethod
@@ -46,4 +76,18 @@ class BaseFockState(State, abc.ABC):
 
     @abc.abstractmethod
     def _apply_cross_kerr(self, xi, modes):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def nonzero_elements(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def fock_probabilities(self):
+        pass
+
+    @abc.abstractmethod
+    def normalize(self):
         pass

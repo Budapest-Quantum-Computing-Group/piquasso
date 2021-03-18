@@ -10,7 +10,7 @@ from piquasso.api.mode import Q
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
-from piquasso._backends.fock import FockState, PureFockState
+from piquasso._backends.fock import FockState, PureFockState, PNCFockState
 
 from piquasso.core.registry import _use_plugin, _retrieve_class
 
@@ -56,6 +56,7 @@ class _DefaultPlugin(Plugin):
         "GaussianState": GaussianState,
         "FockState": FockState,
         "PureFockState": PureFockState,
+        "PNCFockState": PNCFockState,
     }
 
 
