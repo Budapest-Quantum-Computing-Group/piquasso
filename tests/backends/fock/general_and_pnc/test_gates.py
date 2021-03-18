@@ -2,14 +2,17 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import pytest
+
 import numpy as np
 
 import piquasso as pq
 
 
-def test_5050_beamsplitter():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_5050_beamsplitter(StateClass):
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
@@ -22,9 +25,10 @@ def test_5050_beamsplitter():
     )
 
 
-def test_beamsplitter():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_beamsplitter(StateClass):
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
@@ -37,9 +41,10 @@ def test_beamsplitter():
     )
 
 
-def test_beamsplitter_multiple_particles():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_beamsplitter_multiple_particles(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
 
@@ -67,9 +72,10 @@ def test_beamsplitter_multiple_particles():
     )
 
 
-def test_beamsplitter_leaves_vacuum_unchanged():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_beamsplitter_leaves_vacuum_unchanged(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 0), bra=(0, 0)) / 4
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 2
@@ -93,9 +99,10 @@ def test_beamsplitter_leaves_vacuum_unchanged():
     )
 
 
-def test_multiple_beamsplitters():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_multiple_beamsplitters(StateClass):
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1))
 
@@ -114,9 +121,10 @@ def test_multiple_beamsplitters():
     )
 
 
-def test_multiple_beamsplitters_with_multiple_particles():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_multiple_beamsplitters_with_multiple_particles(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -144,9 +152,10 @@ def test_multiple_beamsplitters_with_multiple_particles():
     )
 
 
-def test_phaseshift():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_phaseshift(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
@@ -169,9 +178,10 @@ def test_phaseshift():
     )
 
 
-def test_fourier():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_fourier(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
@@ -194,9 +204,10 @@ def test_fourier():
     )
 
 
-def test_mach_zehnder():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_mach_zehnder(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 2), bra=(0, 2)) / 2
@@ -219,9 +230,10 @@ def test_mach_zehnder():
     )
 
 
-def test_beamsplitters_and_phaseshifters_with_multiple_particles():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -252,10 +264,11 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     )
 
 
-def test_interferometer():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_interferometer(StateClass):
 
     with pq.Program() as preparation:
-        pq.Q() | pq.FockState(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=2)
 
         pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -290,11 +303,12 @@ def test_interferometer():
     )
 
 
-def test_kerr():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_kerr(StateClass):
     xi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=3, cutoff=3)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
         pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
@@ -321,11 +335,12 @@ def test_kerr():
     assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
 
 
-def test_cross_kerr():
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_cross_kerr(StateClass):
     xi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=3, cutoff=3)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 0, 3)) * 1
         pq.Q() | pq.Number(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)

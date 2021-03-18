@@ -145,7 +145,7 @@ class FockSpace(tuple):
     def get_fock_operator(self, operator):
         return direct_sum(
             *(
-                self._symmetric_tensorpower(operator, n)
+                self.symmetric_tensorpower(operator, n)
                 for n in range(self.cutoff + 1)
             )
         )
@@ -168,6 +168,13 @@ class FockSpace(tuple):
         yield from [
             (index, basis)
             for index, basis in self.operator_basis
+            if basis.is_diagonal_on_modes(modes=modes)
+        ]
+
+    def subspace_operator_basis_diagonal_on_modes(self, *, modes, n):
+        yield from [
+            (index, basis)
+            for index, basis in self.enumerate_subspace_operator_basis(n)
             if basis.is_diagonal_on_modes(modes=modes)
         ]
 
@@ -197,15 +204,42 @@ class FockSpace(tuple):
             )
         )
 
+    def get_projection_operator_indices_on_subspace(self, *, subspace_basis, modes, n):
+        return tuple(
+            zip(
+                *[
+                    index
+                    for index, operator_basis in (
+                        self.enumerate_subspace_operator_basis(n)
+                    )
+                    if operator_basis.is_diagonal_on_modes(modes=modes)
+                    and subspace_basis == operator_basis.ket.on_modes(modes=modes)
+                ]
+            )
+        )
+
     def _symmetric_cardinality(self, n):
         return int(comb(self.d + n - 1, n))
 
-    def _get_subspace_basis(self, n):
+    def get_subspace_indices(self, n):
         begin = cutoff_cardinality(cutoff=n-1, d=self.d)
         end = cutoff_cardinality(cutoff=n, d=self.d)
+
+        return begin, end
+
+    def get_subspace_operator_basis(self, n):
+        begin, end = self.get_subspace_indices(n)
+
         return list(self)[begin:end]
 
-    def _symmetric_tensorpower(self, operator, n):
+    def enumerate_subspace_operator_basis(self, n):
+        subspace_operator_basis = self.get_subspace_operator_basis(n)
+
+        for index, basis in enumerate(subspace_operator_basis):
+            for dual_index, dual_basis in enumerate(subspace_operator_basis):
+                yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
+
+    def symmetric_tensorpower(self, operator, n):
         if n == 0:
             return np.array([[1]])
 
@@ -214,35 +248,31 @@ class FockSpace(tuple):
 
         ret = np.zeros(shape=(self._symmetric_cardinality(n), )*2, dtype=complex)
 
-        basis = self._get_subspace_basis(n)
+        for index, basis in self.enumerate_subspace_operator_basis(n):
+            sum_ = 0
 
-        for index1, basis_vector1 in enumerate(basis):
-            for index2, basis_vector2 in enumerate(basis):
+            for permutation1 in basis.ket.all_possible_first_quantized_vectors:
+                for permutation2 in (
+                    basis.bra.all_possible_first_quantized_vectors
+                ):
+                    prod = 1
 
-                sum_ = 0
+                    for i in range(len(permutation1)):
+                        i1 = permutation1[i]
+                        i2 = permutation2[i]
+                        prod *= operator[i1 - 1, i2 - 1]
 
-                for permutation1 in basis_vector1.all_possible_first_quantized_vectors:
-                    for permutation2 in (
-                        basis_vector2.all_possible_first_quantized_vectors
-                    ):
-                        prod = 1
+                    sum_ += prod
 
-                        for i in range(len(permutation1)):
-                            i1 = permutation1[i]
-                            i2 = permutation2[i]
-                            prod *= operator[i1 - 1, i2 - 1]
+            normalization = (
+                np.power(
+                    np.prod(list(factorial(basis.ket)))
+                    * np.prod(list(factorial(basis.bra))),
+                    1/2
+                ) / factorial(n)
+            )
 
-                        sum_ += prod
-
-                normalization = (
-                    np.power(
-                        np.prod(list(factorial(basis_vector1)))
-                        * np.prod(list(factorial(basis_vector2))),
-                        1/2
-                    ) / factorial(n)
-                )
-
-                ret[index1, index2] = normalization * sum_
+            ret[index] = normalization * sum_
 
         return ret
 

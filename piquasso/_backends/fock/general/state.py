@@ -17,18 +17,12 @@ class FockState(BaseFockState):
         super().__init__(d=d, cutoff=cutoff)
 
         if density_matrix is None:
-            density_matrix = self._get_empty_density_matrix(
-                cardinality=self._space.cardinality
-            )
+            density_matrix = self._get_empty()
 
             if vacuum is True:
                 density_matrix[0, 0] = 1.0
 
         self._density_matrix = density_matrix
-
-    @classmethod
-    def create_vacuum(cls, *, d, cutoff):
-        return cls(d=d, cutoff=cutoff, vacuum=True)
 
     @classmethod
     def from_pure(cls, pure_fock_state):
@@ -60,8 +54,8 @@ class FockState(BaseFockState):
 
         return self
 
-    def _get_empty_density_matrix(self, cardinality):
-        return np.zeros(shape=(cardinality, ) * 2, dtype=complex)
+    def _get_empty(self):
+        return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)
@@ -75,20 +69,6 @@ class FockState(BaseFockState):
         self._density_matrix = (
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
-
-    def _measure_particle_number(self, modes):
-        if not modes:
-            modes = tuple(range(self._space.d))
-
-        outcome, probability = self._simulate_collapse_on_modes(modes=modes)
-
-        self._project_to_subspace(
-            subspace_basis=outcome,
-            modes=modes,
-            normalization=(1 / probability),
-        )
-
-        return outcome
 
     def _simulate_collapse_on_modes(self, *, modes):
         probability_map = {}
@@ -112,7 +92,9 @@ class FockState(BaseFockState):
             weights=probability_map.values(),
         )[0]
 
-        return outcome, probability_map[outcome].real
+        normalization = 1 / probability_map[outcome].real
+
+        return outcome, normalization
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_density_matrix = self._get_projected_density_matrix(
@@ -123,9 +105,7 @@ class FockState(BaseFockState):
         self._density_matrix = projected_density_matrix * normalization
 
     def _get_projected_density_matrix(self, *, subspace_basis, modes):
-        new_density_matrix = self._get_empty_density_matrix(
-            cardinality=self._space.cardinality
-        )
+        new_density_matrix = self._get_empty()
 
         index = self._space.get_projection_operator_indices(
             subspace_basis=subspace_basis,
@@ -202,10 +182,6 @@ class FockState(BaseFockState):
     @property
     def fock_probabilities(self):
         return np.diag(self._density_matrix).real
-
-    @property
-    def norm(self):
-        return sum(self.fock_probabilities)
 
     def normalize(self):
         if np.isclose(self.norm, 0):

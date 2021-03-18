@@ -17,18 +17,12 @@ class PureFockState(BaseFockState):
         super().__init__(d=d, cutoff=cutoff)
 
         if state_vector is None:
-            state_vector = self._get_empty_state_vector(
-                cardinality=self._space.cardinality
-            )
+            state_vector = self._get_empty()
 
             if vacuum is True:
                 state_vector[0] = 1.0
 
         self._state_vector = np.array(state_vector)
-
-    @classmethod
-    def create_vacuum(cls, *, d, cutoff):
-        return cls(d=d, cutoff=cutoff, vacuum=True)
 
     @classmethod
     def from_number_preparations(cls, *, d, cutoff, number_preparations):
@@ -47,8 +41,8 @@ class PureFockState(BaseFockState):
 
         return self
 
-    def _get_empty_state_vector(self, cardinality):
-        return np.zeros(shape=(cardinality, ), dtype=complex)
+    def _get_empty(self):
+        return np.zeros(shape=(self._space.cardinality, ), dtype=complex)
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)
@@ -65,12 +59,12 @@ class PureFockState(BaseFockState):
         if not modes:
             modes = tuple(range(self._space.d))
 
-        outcome, probability = self._simulate_collapse_on_modes(modes=modes)
+        outcome, normalization = self._simulate_collapse_on_modes(modes=modes)
 
         self._project_to_subspace(
             subspace_basis=outcome,
             modes=modes,
-            normalization=np.sqrt(1 / probability),
+            normalization=normalization,
         )
 
         return outcome
@@ -97,7 +91,9 @@ class PureFockState(BaseFockState):
             weights=probability_map.values(),
         )[0]
 
-        return outcome, probability_map[outcome]
+        normalization = np.sqrt(1 / probability_map[outcome])
+
+        return outcome, normalization
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_state_vector = self._get_projected_state_vector(
@@ -108,9 +104,7 @@ class PureFockState(BaseFockState):
         self._state_vector = projected_state_vector * normalization
 
     def _get_projected_state_vector(self, *, subspace_basis, modes):
-        new_state_vector = self._get_empty_state_vector(
-            cardinality=self._space.cardinality
-        )
+        new_state_vector = self._get_empty()
 
         index = self._space.get_projection_operator_indices_for_pure(
             subspace_basis=subspace_basis,
@@ -179,10 +173,6 @@ class PureFockState(BaseFockState):
     @property
     def fock_probabilities(self):
         return (self._state_vector * self._state_vector.conjugate()).real
-
-    @property
-    def norm(self):
-        return sum(self.fock_probabilities)
 
     def normalize(self):
         if np.isclose(self.norm, 0):
