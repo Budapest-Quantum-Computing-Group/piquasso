@@ -39,20 +39,6 @@ def is_square(matrix):
     return len(shape) == 2 and shape[0] == shape[1]
 
 
-def direct_sum(*args):
-    # TODO: Omit recursions!
-    if len(args) == 2:
-        a = args[0]
-        b = args[1]
-        dsum = np.zeros(np.add(a.shape, b.shape), dtype=complex)
-        dsum[: a.shape[0], : a.shape[1]] = a
-        dsum[a.shape[0]:, a.shape[1]:] = b
-
-        return dsum
-
-    return direct_sum(args[0], direct_sum(*args[1:]))
-
-
 def symplectic_form(d):
     one_mode_symplectic_form = np.array([[0, 1], [-1, 0]])
 
