@@ -27,9 +27,8 @@ def gaussian_state_assets(AssetHandler):
             state_map = {
                 "class": "GaussianState",
                 "properties": {
-                    "m": obj.m,
-                    "G": obj.G,
-                    "C": obj.C,
+                    "mean": obj.mu,
+                    "cov": obj.cov,
                 }
             }
 
@@ -41,7 +40,7 @@ def gaussian_state_assets(AssetHandler):
         def _load_gaussian_state(filename):
             """
             Note:
-                Do not the `eval` approach ever in production code, it's insecure!
+                Do not use the `eval` approach ever in production code, it's insecure!
             """
             with open(filename, "r") as f:
                 data = f.read()
@@ -52,7 +51,13 @@ def gaussian_state_assets(AssetHandler):
 
             properties = eval(data)["properties"]
 
-            return pq.GaussianState(**properties)
+            d = len(properties["mean"]) // 2
+
+            state = pq.GaussianState.create_vacuum(d=d)
+
+            state._apply_mean_and_cov(**properties)
+
+            return state
 
     return GaussianStateAssetHandler()
 
