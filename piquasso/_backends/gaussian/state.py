@@ -176,19 +176,15 @@ class GaussianState(State):
             np.array: The :math:`2d \times 2d` correlation matrix in the xp basis.
         """
 
-        d = self.d
-
-        corr = np.empty((2*d, 2*d))
-
         C = self.C
         G = self.G
 
-        corr[:d, :d] = (G + C).real
-        corr[:d, d:] = (G + C).imag
-        corr[d:, d:] = (-G + C).real
-        corr[d:, :d] = (G - C).imag
-
-        corr = 2 * corr + np.identity(2 * d)
+        corr = 2 * np.block(
+            [
+                [(G + C).real, (G + C).imag],
+                [(G - C).imag, (-G + C).real],
+            ]
+        ) + np.identity(2 * self.d)
 
         return corr * constants.HBAR
 
