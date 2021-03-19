@@ -255,7 +255,7 @@ def test_displacement_leaves_the_covariance_invariant(program):
     assert np.allclose(initial_cov, final_cov)
 
 
-def test_passive_transform_for_1_modes(program, gaussian_state_assets):
+def test_interferometer_for_1_modes(program, gaussian_state_assets):
     alpha = np.exp(1j * np.pi/3)
 
     T = np.array(
@@ -275,7 +275,7 @@ def test_passive_transform_for_1_modes(program, gaussian_state_assets):
     assert program.state == expected_state
 
 
-def test_passive_transform_2_modes(program, gaussian_state_assets):
+def test_interferometer_for_2_modes(program, gaussian_state_assets):
     theta = np.pi/4
     phi = np.pi/3
 
@@ -297,7 +297,7 @@ def test_passive_transform_2_modes(program, gaussian_state_assets):
     assert program.state == expected_state
 
 
-def test_passive_transform_for_all_modes(program, gaussian_state_assets):
+def test_interferometer_for_all_modes(program, gaussian_state_assets):
     random_unitary = np.array(
         [
             [-0.000299 - 0.248251j, -0.477889 - 0.502114j, -0.1605961 - 0.657331j],
@@ -401,56 +401,17 @@ def test_multiple_displacements_leave_the_covariance_invariant():
     assert np.allclose(program.state.cov, initial_cov)
 
 
-def test_apply_passive(generate_random_gaussian_state, generate_unitary_matrix):
+@pytest.mark.monkey
+def test_random_interferometer(generate_random_gaussian_state, generate_unitary_matrix):
     state = generate_random_gaussian_state(d=5)
 
-    expected_m = state.m.copy()
-    expected_C = state.C.copy()
-    expected_G = state.G.copy()
-
     T = generate_unitary_matrix(3)
-
-    # TODO: The algorithm is re-implemented here, unfortunately, it should be removed.
-
-    expected_m[(0, 1, 3), ] = T @ expected_m[(0, 1, 3), ]
-
-    columns = np.array(
-        [
-            [0, 1, 3],
-            [0, 1, 3],
-            [0, 1, 3],
-        ]
-    )
-
-    rows = np.array(
-        [
-            [0, 0, 0],
-            [1, 1, 1],
-            [3, 3, 3],
-        ]
-    )
-
-    index = rows, columns
-
-    expected_C[index] = T.conjugate() @ expected_C[index] @ T.transpose()
-    expected_C[(0, 1, 3), 2] = T.conjugate() @ expected_C[(0, 1, 3), 2]
-    expected_C[(0, 1, 3), 4] = T.conjugate() @ expected_C[(0, 1, 3), 4]
-    expected_C[:, (0, 1, 3)] = np.conj(expected_C[(0, 1, 3), :]).transpose()
-
-    expected_G[index] = T @ expected_G[index] @ T.transpose()
-    expected_G[(0, 1, 3), 2] = T @ expected_G[(0, 1, 3), 2]
-    expected_G[(0, 1, 3), 4] = T @ expected_G[(0, 1, 3), 4]
-    expected_G[:, (0, 1, 3)] = expected_G[(0, 1, 3), :].transpose()
 
     with pq.Program(state=state) as program:
         pq.Q(0, 1, 3) | pq.Interferometer(T)
 
     program.execute()
     program.state.validate()
-
-    assert np.allclose(program.state.m, expected_m)
-    assert np.allclose(program.state.C, expected_C)
-    assert np.allclose(program.state.G, expected_G)
 
 
 def test_complex_circuit(gaussian_state_assets):

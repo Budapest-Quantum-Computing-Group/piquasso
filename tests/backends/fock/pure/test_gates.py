@@ -204,7 +204,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     )
 
 
-def test_passive_transform():
+def test_interferometer():
 
     T = np.array(
         [
