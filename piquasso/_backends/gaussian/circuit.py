@@ -56,24 +56,7 @@ class GaussianCircuit(Circuit):
 
         mode = modes[0]
 
-        m_copy = np.copy(self.state.m)
-
         self.state.m[mode] += alpha
-
-        self.state.C[mode, mode] += (
-            2 * (np.conj(alpha) * m_copy[mode]).real
-            + np.conj(alpha) * alpha
-        )
-
-        self.state.G[mode, mode] += 2 * alpha * m_copy[mode] + alpha * alpha
-
-        other_modes = np.delete(np.arange(self.state.d), modes)
-
-        self.state.C[other_modes, mode] += alpha * np.conj(m_copy[other_modes])
-        self.state.G[other_modes, mode] += alpha * m_copy[other_modes]
-
-        self.state.C[mode, :] = self.state.C[:, mode].conjugate().transpose()
-        self.state.G[mode, :] = self.state.G[:, mode].transpose()
 
     def _measure_dyne(self, operation):
         outcome = self.state._apply_generaldyne_measurement(
