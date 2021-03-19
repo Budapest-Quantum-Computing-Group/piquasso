@@ -9,165 +9,89 @@ import piquasso as pq
 from piquasso.api import constants
 
 
-class TestGaussianStateRepresentations:
-    """
-    TODO: Beware, the `m`, `C` and `G` are not realistic in a sense that they cannot
-        be acquired by Gaussian transformations.
-    """
+@pytest.fixture
+def state(program):
+    return program.state
 
-    @pytest.fixture
-    def m(self):
-        return np.array([1 - 2j, 3 + 4j], dtype=complex)
 
-    @pytest.fixture
-    def C(self):
-        return np.array(
-            [
-                [     1, 1 + 2j],
-                [1 - 2j,      6],
-            ],
-            dtype=complex,
-        )
+def test_xp_representation(state, assets):
+    assert np.allclose(
+        assets.load("expected_xp_mean"),
+        state.xp_mean,
+    )
+    assert np.allclose(
+        assets.load("expected_xp_corr"),
+        state.xp_corr,
+    )
+    assert np.allclose(
+        assets.load("expected_xp_cov"),
+        state.xp_cov,
+    )
 
-    @pytest.fixture
-    def G(self):
-        return np.array(
-            [
-                [3 + 1j, 1 + 1j],
-                [1 + 1j, 2 - 3j],
-            ],
-            dtype=complex,
-        )
 
-    @pytest.fixture
-    def mu(self):
-        return np.array([1, -2, 3, 4]) * np.sqrt(2 * constants.HBAR)
+def test_quad_representation(state, assets):
+    assert np.allclose(
+        assets.load("expected_mean"),
+        state.mu,
+    )
+    assert np.allclose(
+        assets.load("expected_corr"),
+        state.corr,
+    )
+    assert np.allclose(
+        assets.load("expected_cov"),
+        state.cov,
+    )
 
-    @pytest.fixture
-    def corr(self):
-        return np.array(
-            [
-                [ 9,  2,  4,  6],
-                [ 2, -3, -2,  0],
-                [ 4, -2, 17, -6],
-                [ 6,  0, -6,  9],
-            ]
-        ) * constants.HBAR
 
-    @pytest.fixture
-    def cov(self):
-        return np.array(
-            [
-                [  5,  10,  -8, -10],
-                [ 10, -19,  22,  32],
-                [ -8,  22, -19, -54],
-                [-10,  32, -54, -55],
-            ]
-        ) * constants.HBAR
+def test_representation_roundtrip(state):
+    m = state.m
+    G = state.G
+    C = state.C
 
-    @pytest.fixture
-    def xp_mean(self):
-        return np.array([1, 3, -2, 4]) * np.sqrt(2 * constants.HBAR)
+    mean = state.mu
+    cov = state.cov
 
-    @pytest.fixture
-    def xp_corr(self):
-        return np.array(
-            [
-                [ 9,  4,  2,  6],
-                [ 4, 17, -2, -6],
-                [ 2, -2, -3,  0],
-                [ 6, -6,  0,  9]
-            ]
-        ) * constants.HBAR
+    state._apply_mean_and_cov(mean=mean, cov=cov)
 
-    @pytest.fixture
-    def xp_cov(self):
-        return np.array(
-            [
-                [  5,  -8,  10, -10],
-                [ -8, -19,  22, -54],
-                [ 10,  22, -19,  32],
-                [-10, -54,  32, -55],
-            ]
-        ) * constants.HBAR
+    assert np.allclose(state.m, m)
+    assert np.allclose(state.G, G)
+    assert np.allclose(state.C, C)
 
-    @pytest.fixture(autouse=True)
-    def setup(self, C, G, m):
-        self.state = pq.GaussianState(C, G, m)
 
-    def test_xp_representation(
-        self,
-        xp_mean,
-        xp_corr,
-        xp_cov,
-    ):
-        assert np.allclose(
-            xp_mean,
-            self.state.xp_mean,
-        )
-        assert np.allclose(
-            xp_corr,
-            self.state.xp_corr,
-        )
-        assert np.allclose(
-            xp_cov,
-            self.state.xp_cov,
-        )
+def test_wigner_function(state, assets):
+    quadrature_array = np.array(
+        [
+            [1, 2, 3, 4, 5, 6],
+            [5, 6, 7, 8, 9, 0],
+        ]
+    )
 
-    def test_quad_representation(
-        self,
-        mu,
-        corr,
-        cov,
-    ):
-        assert np.allclose(
-            mu,
-            self.state.mu,
-        )
-        assert np.allclose(
-            corr,
-            self.state.corr,
-        )
-        assert np.allclose(
-            cov,
-            self.state.cov,
-        )
+    actual_result = state.wigner_function(quadrature_array)
 
-    def test_representation_roundtrip(self):
-        m = self.state.m
-        G = self.state.G
-        C = self.state.C
+    expected_result = assets.load("expected_wigner_function_result")
 
-        mean = self.state.mu
-        cov = self.state.cov
+    assert np.allclose(expected_result, actual_result)
 
-        self.state._apply_mean_and_cov(mean=mean, cov=cov)
 
-        assert np.allclose(self.state.m, m)
-        assert np.allclose(self.state.G, G)
-        assert np.allclose(self.state.C, C)
+def test_reduced_rotated_mean_and_cov(state, assets):
+    modes = (0, 2)
+    phi = np.pi/2
 
-    def test_wigner_function(self, mu, cov):
-        quadrature_array = np.array(
-            [
-                [1, 2, 3, 4],
-                [5, 6, 7, 8],
-            ]
-        )
+    mean, cov = state.reduced_rotated_mean_and_cov(modes, phi)
 
-        expected_result = np.array(
-            [
-                0.00040656676635938727,
-                0.01037619639200025,
-            ]
-        )
+    expected_mean = assets.load("expected_mean")
+    expected_cov = assets.load("expected_cov")
 
-        actual_result = self.state.wigner_function(quadrature_array)
-
-        assert np.allclose(expected_result, actual_result)
+    assert np.allclose(mean, expected_mean)
+    assert np.allclose(cov, expected_cov)
 
 
 class TestGaussianStateOperations:
+    """
+    NOTE: The m, C, G matrices are not real in this test class.
+    """
+
     @pytest.fixture
     def m(self):
         return np.array([1 - 2j, 3 + 4j, 2 - 5j], dtype=complex)
@@ -268,26 +192,6 @@ class TestGaussianStateOperations:
             reduced_m,
             reduced_state.m,
         )
-
-    def test_reduced_rotated_mean_and_cov(self):
-        modes = (0, 2)
-        phi = np.pi/2
-
-        mean, cov = self.state.reduced_rotated_mean_and_cov(modes, phi)
-
-        expected_mean = np.array([ -4,  -2, -10,  -4])
-
-        expected_cov = np.array(
-            [
-                [ -38, -20,  -72, -64],
-                [ -20,  10,  -24,   8],
-                [ -72, -24, -266, -80],
-                [ -64,   8,  -80, -42],
-            ]
-        )
-
-        assert np.allclose(mean, expected_mean)
-        assert np.allclose(cov, expected_cov)
 
 
 class TestGaussianStateVacuum:
