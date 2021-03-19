@@ -67,20 +67,6 @@ class PNCFockState(BaseFockState):
                 @ tensorpower_operator.conjugate().transpose()
             )
 
-    def _measure_particle_number(self, modes):
-        if not modes:
-            modes = tuple(range(self._space.d))
-
-        outcome, normalization = self._simulate_collapse_on_modes(modes=modes)
-
-        self._project_to_subspace(
-            subspace_basis=outcome,
-            modes=modes,
-            normalization=normalization,
-        )
-
-        return outcome
-
     def _simulate_collapse_on_modes(self, *, modes):
         probability_map = {}
 
@@ -89,10 +75,6 @@ class PNCFockState(BaseFockState):
                 modes=modes, n=n
             ):
                 coefficient = self._representation[n][index]
-
-                if np.isclose(coefficient, 0):
-                    # TODO: Do we need this?
-                    continue
 
                 subspace_basis = basis.ket.on_modes(modes=modes)
 

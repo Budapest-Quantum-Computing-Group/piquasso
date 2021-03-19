@@ -76,10 +76,6 @@ class FockState(BaseFockState):
         for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
             coefficient = self._density_matrix[index]
 
-            if np.isclose(coefficient, 0):
-                # TODO: Do we need this?
-                continue
-
             subspace_basis = basis.ket.on_modes(modes=modes)
 
             if subspace_basis in probability_map:
