@@ -30,7 +30,7 @@ def test_T_beamsplitter_is_unitary():
 
     beamsplitter = T({"params": [theta, phi], "modes": [0, 1]}, d=2)
 
-    assert _math.is_unitary(beamsplitter)
+    assert _math.linalg.is_unitary(beamsplitter)
 
 
 def test_eliminate_lower_offdiagonal_2_modes(dummy_unitary, tolerance):

@@ -8,8 +8,7 @@ import numpy as np
 
 from operator import add
 from scipy.special import factorial, comb
-
-from .linalg import direct_sum
+from scipy.linalg import block_diag
 
 
 @functools.lru_cache()
@@ -143,7 +142,7 @@ class FockSpace(tuple):
         return self
 
     def get_fock_operator(self, operator):
-        return direct_sum(
+        return block_diag(
             *(
                 self.symmetric_tensorpower(operator, n)
                 for n in range(self.cutoff + 1)
