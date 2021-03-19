@@ -55,29 +55,11 @@ class PureFockState(BaseFockState):
 
         self._state_vector = fock_operator @ self._state_vector
 
-    def _measure_particle_number(self, modes):
-        if not modes:
-            modes = tuple(range(self._space.d))
-
-        outcome, normalization = self._simulate_collapse_on_modes(modes=modes)
-
-        self._project_to_subspace(
-            subspace_basis=outcome,
-            modes=modes,
-            normalization=normalization,
-        )
-
-        return outcome
-
     def _simulate_collapse_on_modes(self, *, modes):
         probability_map = {}
 
         for index, basis in self._space.basis:
             coefficient = self._state_vector[index]
-
-            if np.isclose(coefficient, 0):
-                # TODO: Do we need this?
-                continue
 
             subspace_basis = basis.on_modes(modes=modes)
 
