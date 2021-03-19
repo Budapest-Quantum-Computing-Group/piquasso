@@ -5,7 +5,6 @@ before_script:
 
 stages:
   - test
-  - benchmark
   - publish
   - docs
 
@@ -37,15 +36,6 @@ test-py38:
     - tox -e py38
   only:
     - web
-
-benchmark:
-  stage: benchmark
-  script:
-    - apt update
-    - apt-get install libeigen3-dev
-    - poetry install
-    - echo "Piquasso vs. StrawberryFields vacuum homodyne benchmark"
-    - poetry run python benchmarks/homodyne.py
 
 publish:
   stage: publish
