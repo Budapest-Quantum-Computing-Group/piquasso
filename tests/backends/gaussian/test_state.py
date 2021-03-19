@@ -32,7 +32,7 @@ def test_xp_representation(state, assets):
 def test_quad_representation(state, assets):
     assert np.allclose(
         assets.load("expected_mean"),
-        state.mu,
+        state.mean,
     )
     assert np.allclose(
         assets.load("expected_corr"),
@@ -49,7 +49,7 @@ def test_representation_roundtrip(state):
     G = state.G
     C = state.C
 
-    mean = state.mu
+    mean = state.mean
     cov = state.cov
 
     state._apply_mean_and_cov(mean=mean, cov=cov)
@@ -227,7 +227,7 @@ def test_mean_and_covariance(program, assets):
 
     expected_cov = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(program.state.mu, expected_mean)
+    assert np.allclose(program.state.mean, expected_mean)
     assert np.allclose(program.state.cov, expected_cov)
 
 
@@ -240,7 +240,7 @@ def test_mean_and_covariance_with_different_HBAR(program, assets):
     expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
     expected_cov = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(program.state.mu, expected_mean)
+    assert np.allclose(program.state.mean, expected_mean)
     assert np.allclose(program.state.cov, expected_cov)
 
     # TODO: We need to reset the value of HBAR. Create a better teardown for it!
