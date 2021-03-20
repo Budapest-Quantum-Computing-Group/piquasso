@@ -576,6 +576,9 @@ class GaussianState(State):
         self.C[:, modes] = self.C[modes, :].conjugate().transpose()
         self.G[:, modes] = self.G[modes, :].transpose()
 
+    def _apply_displacement(self, alpha, mode):
+        self.m[mode] += alpha
+
     def _apply_generaldyne_measurement(self, *, detection_covariance, modes):
         d = self.d
 

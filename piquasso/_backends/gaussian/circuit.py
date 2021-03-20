@@ -2,8 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import numpy as np
-
 from piquasso.api.circuit import Circuit
 from piquasso.api.result import Result
 
@@ -46,18 +44,10 @@ class GaussianCircuit(Circuit):
         )
 
     def _displacement(self, operation):
-        params = operation.params
-        modes = operation.modes
-
-        if len(params) == 1:
-            alpha = params[0]
-        else:
-            r, phi = params
-            alpha = r * np.exp(1j * phi)
-
-        mode = modes[0]
-
-        self.state.m[mode] += alpha
+        self.state._apply_displacement(
+            alpha=operation.params[0],
+            mode=operation.modes[0],
+        )
 
     def _measure_dyne(self, operation):
         outcome = self.state._apply_generaldyne_measurement(
