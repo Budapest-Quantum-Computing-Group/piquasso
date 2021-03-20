@@ -11,7 +11,7 @@ from piquasso._math.linalg import is_selfadjoint, is_symmetric
 
 def test_measure_homodyne():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)
@@ -33,7 +33,7 @@ def test_measure_homodyne():
 
 def test_measure_homodyne_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)
@@ -55,7 +55,7 @@ def test_measure_homodyne_on_multiple_modes():
 
 def test_measure_heterodyne():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)
@@ -77,7 +77,7 @@ def test_measure_heterodyne():
 
 def test_measure_heterodyne_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)
@@ -106,7 +106,7 @@ def test_measure_dyne():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)

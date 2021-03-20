@@ -15,7 +15,7 @@ import piquasso as pq
 @pytest.mark.parametrize("d", [2, 3, 4, 5])
 def test_random_gaussianstate(d):
     with pq.Program() as prepare_random_state:
-        pq.Q() | pq.GaussianState.create_vacuum(d=d)
+        pq.Q() | pq.GaussianState(d=d)
 
         for i in range(d):
             r = np.random.normal()

@@ -9,6 +9,14 @@ from piquasso.api.operation import Operation
 
 
 @_register
+class Vacuum(Operation):
+    r"""Prepare the system in a vacuum state."""
+
+    def __init__(self):
+        pass
+
+
+@_register
 class Number(Operation, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 

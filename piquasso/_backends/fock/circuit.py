@@ -20,6 +20,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
             "K": self._kerr,
             "CK": self._cross_kerr,
             "MeasureParticleNumber": self._measure_particle_number,
+            "Vacuum": self._vacuum,
             "Create": self._create,
             "Annihilate": self._annihilate,
             "Number": self._number,
@@ -40,6 +41,9 @@ class BaseFockCircuit(Circuit, abc.ABC):
         self.program.results.append(
             Result(measurement=operation, outcome=outcome)
         )
+
+    def _vacuum(self, operation):
+        self.state._apply_vacuum()
 
     def _create(self, operation):
         self.state._apply_creation_operator(operation.modes)

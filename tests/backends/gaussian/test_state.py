@@ -52,7 +52,8 @@ def test_representation_roundtrip(state):
     mean = state.mean
     cov = state.cov
 
-    state._apply_mean_and_cov(mean=mean, cov=cov)
+    state.mean = mean
+    state.cov = cov
 
     assert np.allclose(state.m, m)
     assert np.allclose(state.G, G)
@@ -119,8 +120,8 @@ class TestGaussianStateOperations:
         )
 
     @pytest.fixture(autouse=True)
-    def setup(self, C, G, m):
-        self.state = pq.GaussianState(C, G, m)
+    def setup(self, m, G, C):
+        self.state = pq.GaussianState(m=m, G=G, C=C)
 
     def test_rotated(self):
         phi = np.pi / 2
@@ -198,7 +199,7 @@ class TestGaussianStateVacuum:
     def test_create_vacuum(self):
         number_of_modes = 3
 
-        state = pq.GaussianState.create_vacuum(d=number_of_modes)
+        state = pq.GaussianState(d=number_of_modes)
 
         expected_m = np.zeros(number_of_modes, dtype=complex)
         expected_C = np.zeros((number_of_modes, number_of_modes), dtype=complex)
@@ -212,7 +213,7 @@ class TestGaussianStateVacuum:
         number_of_modes = 2
         hbar = constants.HBAR
 
-        state = pq.GaussianState.create_vacuum(d=number_of_modes)
+        state = pq.GaussianState(d=number_of_modes)
 
         expected_covariance = np.identity(2 * number_of_modes) * hbar
 

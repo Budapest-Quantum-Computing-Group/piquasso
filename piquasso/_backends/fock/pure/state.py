@@ -13,16 +13,14 @@ from .circuit import PureFockCircuit
 class PureFockState(BaseFockState):
     circuit_class = PureFockCircuit
 
-    def __init__(self, state_vector=None, *, d, cutoff, vacuum=False):
+    def __init__(self, state_vector=None, *, d, cutoff):
         super().__init__(d=d, cutoff=cutoff)
 
-        if state_vector is None:
-            state_vector = self._get_empty()
-
-            if vacuum is True:
-                state_vector[0] = 1.0
-
-        self._state_vector = np.array(state_vector)
+        self._state_vector = (
+            np.array(state_vector)
+            if state_vector is not None
+            else self._get_empty()
+        )
 
     @classmethod
     def from_number_preparations(cls, *, d, cutoff, number_preparations):
@@ -43,6 +41,10 @@ class PureFockState(BaseFockState):
 
     def _get_empty(self):
         return np.zeros(shape=(self._space.cardinality, ), dtype=complex)
+
+    def _apply_vacuum(self):
+        self._state_vector = self._get_empty()
+        self._state_vector[0] = 1.0
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)

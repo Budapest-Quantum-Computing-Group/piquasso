@@ -15,16 +15,14 @@ from scipy.linalg import block_diag
 class PNCFockState(BaseFockState):
     circuit_class = PNCFockCircuit
 
-    def __init__(self, representation=None, *, d, cutoff, vacuum=False):
+    def __init__(self, representation=None, *, d, cutoff):
         super().__init__(d=d, cutoff=cutoff)
 
-        if representation is None:
-            representation = self._get_empty()
-
-            if vacuum is True:
-                representation[0][0, 0] = 1.0
-
-        self._representation = representation
+        self._representation = (
+            np.array(representation)
+            if representation is not None
+            else self._get_empty()
+        )
 
     @classmethod
     def from_number_preparations(cls, *, d, cutoff, number_preparations):
@@ -50,6 +48,10 @@ class PNCFockState(BaseFockState):
             np.zeros(shape=(self._space._symmetric_cardinality(n), ) * 2, dtype=complex)
             for n in range(self._space.cutoff + 1)
         ]
+
+    def _apply_vacuum(self):
+        self._representation = self._get_empty()
+        self._representation[0][0, 0] = 1.0
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)

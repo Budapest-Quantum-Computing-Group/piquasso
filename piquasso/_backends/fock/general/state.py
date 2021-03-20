@@ -13,16 +13,14 @@ from .circuit import FockCircuit
 class FockState(BaseFockState):
     circuit_class = FockCircuit
 
-    def __init__(self, density_matrix=None, *, d, cutoff, vacuum=False):
+    def __init__(self, density_matrix=None, *, d, cutoff):
         super().__init__(d=d, cutoff=cutoff)
 
-        if density_matrix is None:
-            density_matrix = self._get_empty()
-
-            if vacuum is True:
-                density_matrix[0, 0] = 1.0
-
-        self._density_matrix = density_matrix
+        self._density_matrix = (
+            np.array(density_matrix)
+            if density_matrix is not None
+            else self._get_empty()
+        )
 
     @classmethod
     def from_pure(cls, pure_fock_state):
@@ -56,6 +54,10 @@ class FockState(BaseFockState):
 
     def _get_empty(self):
         return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
+
+    def _apply_vacuum(self):
+        self._density_matrix = self._get_empty()
+        self._density_matrix[0, 0] = 1.0
 
     def _apply_passive_linear(self, operator, modes):
         index = self._get_operator_index(modes)

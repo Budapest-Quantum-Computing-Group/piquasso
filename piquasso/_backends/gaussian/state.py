@@ -50,7 +50,7 @@ class GaussianState(State):
 
     circuit_class = GaussianCircuit
 
-    def __init__(self, C, G, m):
+    def __init__(self, *, d=None, C=None, G=None, m=None):
         r"""
         A Gaussian state is fully characterised by its m and correlation
         matrix, i.e. its first and second moments with the quadrature
@@ -66,31 +66,51 @@ class GaussianState(State):
             m (numpy.array): See :attr:`m`.
         """
 
-        if not is_selfadjoint(C):
-            raise StatePreparationError("C should be self-adjoint matrix.")
-        if not is_symmetric(G):
-            raise StatePreparationError("G should be symmetric matrix.")
+        if d is None and m is None:
+            raise StatePreparationError("Specify at least 'd' or 'm'.")
 
-        self.C = C
-        self.G = G
-        self.m = m
+        self.d = d or len(m)
 
-    @classmethod
-    def create_vacuum(cls, d):
-        r"""Creates a Gaussian vacuum state.
+        self._set_representation(m=m, G=G, C=C)
 
-        Args:
-            d (int): The number of modes.
+    def _set_representation(self, *, m=None, G=None, C=None):
+        vector_shape = (self.d, )
 
-        Returns:
-            GaussianState: A Gaussan vacuum state.
-        """
+        if m is None:
+            self.m = np.zeros(vector_shape, dtype=complex)
+        elif m.shape != vector_shape:
+            raise StatePreparationError(
+                "Invalid 'm' vector shape; expected={vector_shape}, actual={m.shape}."
+            )
+        else:
+            self.m = m
 
-        return cls(
-            C=np.zeros((d, d), dtype=complex),
-            G=np.zeros((d, d), dtype=complex),
-            m=np.zeros(d, dtype=complex),
-        )
+        matrix_shape = vector_shape * 2
+
+        if G is None:
+            self.G = np.zeros(matrix_shape, dtype=complex)
+        elif G.shape != matrix_shape:
+            raise StatePreparationError(
+                "Invalid 'G' matrix shape; expected={matrix_shape}, actual={G.shape}."
+            )
+        elif not is_symmetric(G):
+            raise StatePreparationError("'G' should be symmetric matrix.")
+        else:
+            self.G = G
+
+        if C is None:
+            self.C = np.zeros(matrix_shape, dtype=complex)
+        elif C.shape != matrix_shape:
+            raise StatePreparationError(
+                "Invalid 'C' matrix shape; expected={matrix_shape}, actual={C.shape}."
+            )
+        elif not is_selfadjoint(C):
+            raise StatePreparationError("'C' should be self-adjoint matrix.")
+        else:
+            self.C = C
+
+    def reset(self):
+        self._set_representation()
 
     def __eq__(self, other):
         return (
@@ -98,13 +118,6 @@ class GaussianState(State):
             and np.allclose(self.G, other.G)
             and np.allclose(self.m, other.m)
         )
-
-    def reset(self):
-        d = self.d
-
-        self.C = np.zeros((d, d), dtype=complex)
-        self.G = np.zeros((d, d), dtype=complex)
-        self.m = np.zeros(d, dtype=complex)
 
     def validate(self):
         if not is_selfadjoint(self.C):
@@ -130,15 +143,6 @@ class GaussianState(State):
             raise InvalidState(
                 "The covariance matrix is invalid. TODO: We should have a link here."
             )
-
-    @property
-    def d(self):
-        r"""The number of modes, on which the state is defined.
-
-        Returns:
-            int: The number of modes.
-        """
-        return len(self.m)
 
     @property
     def xp_mean(self):
@@ -238,6 +242,12 @@ class GaussianState(State):
         T = quad_transformation(self.d)
         return T @ self.xp_mean
 
+    @mean.setter
+    def mean(self, new_mean):
+        m = (new_mean[::2] + 1j * new_mean[1::2]) / np.sqrt(2 * constants.HBAR)
+
+        self.m = m
+
     @property
     def cov(self):
         r"""The quadrature-ordered coveriance matrix of the state.
@@ -263,6 +273,30 @@ class GaussianState(State):
 
         T = quad_transformation(self.d)
         return T @ self.xp_cov @ T.transpose()
+
+    @cov.setter
+    def cov(self, new_cov):
+        d = self.d
+
+        T = quad_transformation(d)
+
+        xp_cov = (
+            (T.transpose() @ new_cov @ T) / constants.HBAR
+        )
+
+        xp_cov = (xp_cov - np.identity(2 * d)) / 2
+
+        C_real = (xp_cov[:d, :d] + xp_cov[d:, d:]) / 2
+        G_real = (xp_cov[:d, :d] - xp_cov[d:, d:]) / 2
+
+        C_imag = (xp_cov[:d, d:] - xp_cov[d:, :d]) / 2
+        G_imag = (xp_cov[:d, d:] + xp_cov[d:, :d]) / 2
+
+        C = C_real + 1j * C_imag
+        G = G_real + 1j * G_imag
+
+        self.G = G
+        self.C = C
 
     @property
     def corr(self):
@@ -600,34 +634,7 @@ class GaussianState(State):
         evolved_cov = np.identity(2 * d)
         evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
 
-        self._apply_mean_and_cov(mean=evolved_mean, cov=evolved_cov)
+        self.mean = evolved_mean
+        self.cov = evolved_cov
 
         return outcome
-
-    def _apply_mean_and_cov(self, *, mean, cov):
-        self.reset()
-
-        d = self.d
-
-        m = (mean[::2] + 1j * mean[1::2]) / np.sqrt(2 * constants.HBAR)
-
-        T = quad_transformation(d)
-
-        xp_cov = (
-            (T.transpose() @ cov @ T) / constants.HBAR
-        )
-
-        xp_cov = (xp_cov - np.identity(2 * d)) / 2
-
-        C_real = (xp_cov[:d, :d] + xp_cov[d:, d:]) / 2
-        G_real = (xp_cov[:d, :d] - xp_cov[d:, d:]) / 2
-
-        C_imag = (xp_cov[:d, d:] - xp_cov[d:, :d]) / 2
-        G_imag = (xp_cov[:d, d:] + xp_cov[d:, :d]) / 2
-
-        C = C_real + 1j * C_imag
-        G = G_real + 1j * G_imag
-
-        self.m = m
-        self.G = G
-        self.C = C

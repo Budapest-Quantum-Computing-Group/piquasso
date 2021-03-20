@@ -10,7 +10,8 @@ import piquasso as pq
 
 def test_create_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
@@ -26,7 +27,8 @@ def test_create_number_state():
 
 def test_create_and_annihilate_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
@@ -41,7 +43,8 @@ def test_create_and_annihilate_number_state():
 
 def test_create_annihilate_and_create():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState.create_vacuum(d=2, cutoff=2)
+        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
