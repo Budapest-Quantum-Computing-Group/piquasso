@@ -77,18 +77,18 @@ class GaussianState(State):
         vector_shape = (self.d, )
 
         if m is None:
-            self.m = np.zeros(vector_shape, dtype=complex)
+            self._m = np.zeros(vector_shape, dtype=complex)
         elif m.shape != vector_shape:
             raise StatePreparationError(
                 "Invalid 'm' vector shape; expected={vector_shape}, actual={m.shape}."
             )
         else:
-            self.m = m
+            self._m = m
 
         matrix_shape = vector_shape * 2
 
         if G is None:
-            self.G = np.zeros(matrix_shape, dtype=complex)
+            self._G = np.zeros(matrix_shape, dtype=complex)
         elif G.shape != matrix_shape:
             raise StatePreparationError(
                 "Invalid 'G' matrix shape; expected={matrix_shape}, actual={G.shape}."
@@ -96,10 +96,10 @@ class GaussianState(State):
         elif not is_symmetric(G):
             raise StatePreparationError("'G' should be symmetric matrix.")
         else:
-            self.G = G
+            self._G = G
 
         if C is None:
-            self.C = np.zeros(matrix_shape, dtype=complex)
+            self._C = np.zeros(matrix_shape, dtype=complex)
         elif C.shape != matrix_shape:
             raise StatePreparationError(
                 "Invalid 'C' matrix shape; expected={matrix_shape}, actual={C.shape}."
@@ -107,20 +107,20 @@ class GaussianState(State):
         elif not is_selfadjoint(C):
             raise StatePreparationError("'C' should be self-adjoint matrix.")
         else:
-            self.C = C
+            self._C = C
 
     def reset(self):
         self._set_representation()
 
     def __eq__(self, other):
         return (
-            np.allclose(self.C, other.C)
-            and np.allclose(self.G, other.G)
-            and np.allclose(self.m, other.m)
+            np.allclose(self._C, other._C)
+            and np.allclose(self._G, other._G)
+            and np.allclose(self._m, other._m)
         )
 
     def validate(self):
-        if not is_selfadjoint(self.C):
+        if not is_selfadjoint(self._C):
             raise InvalidState(
                 "There might be some errors regarding the representation of the "
                 "Gaussian state.\n"
@@ -128,7 +128,7 @@ class GaussianState(State):
                 "The matrix 'GaussianState.C' is not self-adjoint."
             )
 
-        if not is_symmetric(self.G):
+        if not is_symmetric(self._G):
             raise InvalidState(
                 "There might be some errors regarding the representation of the "
                 "Gaussian state.\n"
@@ -157,8 +157,8 @@ class GaussianState(State):
         """
 
         _xp_mean = np.empty(2 * self.d)
-        _xp_mean[:self.d] = self.m.real * np.sqrt(2 * constants.HBAR)
-        _xp_mean[self.d:] = self.m.imag * np.sqrt(2 * constants.HBAR)
+        _xp_mean[:self.d] = self._m.real * np.sqrt(2 * constants.HBAR)
+        _xp_mean[self.d:] = self._m.imag * np.sqrt(2 * constants.HBAR)
         return _xp_mean
 
     @property
@@ -182,8 +182,8 @@ class GaussianState(State):
             np.array: The :math:`2d \times 2d` xp-ordered covariance matrix in xp basis.
         """
 
-        C = self.C
-        G = self.G
+        C = self._C
+        G = self._G
 
         corr = 2 * np.block(
             [
@@ -246,7 +246,7 @@ class GaussianState(State):
     def mean(self, new_mean):
         m = (new_mean[::2] + 1j * new_mean[1::2]) / np.sqrt(2 * constants.HBAR)
 
-        self.m = m
+        self._m = m
 
     @property
     def cov(self):
@@ -295,8 +295,8 @@ class GaussianState(State):
         C = C_real + 1j * C_imag
         G = G_real + 1j * G_imag
 
-        self.G = G
-        self.C = C
+        self._G = G
+        self._C = C
 
     @property
     def corr(self):
@@ -376,9 +376,9 @@ class GaussianState(State):
         phase = np.exp(- 1j * phi)
 
         return GaussianState(
-            C=self.C,
-            G=(self.G * phase**2),
-            m=(self.m * phase),
+            C=self._C,
+            G=(self._G * phase**2),
+            m=(self._m * phase),
         )
 
     def reduced(self, modes):
@@ -394,9 +394,9 @@ class GaussianState(State):
             GaussianState: The reduced `GaussianState` instance.
         """
         return GaussianState(
-            C=self.C[np.ix_(modes, modes)],
-            G=self.G[np.ix_(modes, modes)],
-            m=self.m[np.ix_(modes)],
+            C=self._C[np.ix_(modes, modes)],
+            G=self._G[np.ix_(modes, modes)],
+            m=self._m[np.ix_(modes)],
         )
 
     def reduced_rotated_mean_and_cov(self, modes, phi):
@@ -487,15 +487,15 @@ class GaussianState(State):
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
-        self.m[modes, ] = T @ self.m[modes, ]
+        self._m[modes, ] = T @ self._m[modes, ]
 
         self._apply_passive_linear_to_C_and_G(T, modes=modes)
 
     def _apply_passive_linear_to_C_and_G(self, T, modes):
         index = self._get_operator_index(modes)
 
-        self.C[index] = T.conjugate() @ self.C[index] @ T.transpose()
-        self.G[index] = T @ self.G[index] @ T.transpose()
+        self._C[index] = T.conjugate() @ self._C[index] @ T.transpose()
+        self._G[index] = T @ self._G[index] @ T.transpose()
 
         auxiliary_modes = self._get_auxiliary_modes(modes)
 
@@ -505,11 +505,11 @@ class GaussianState(State):
     def _apply_passive_linear_to_auxiliary_modes(self, T, modes, auxiliary_modes):
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
-        self.C[auxiliary_index] = T.conjugate() @ self.C[auxiliary_index]
-        self.G[auxiliary_index] = T @ self.G[auxiliary_index]
+        self._C[auxiliary_index] = T.conjugate() @ self._C[auxiliary_index]
+        self._G[auxiliary_index] = T @ self._G[auxiliary_index]
 
-        self.C[:, modes] = np.conj(self.C[modes, :]).transpose()
-        self.G[:, modes] = self.G[modes, :].transpose()
+        self._C[:, modes] = np.conj(self._C[modes, :]).transpose()
+        self._G[:, modes] = self._G[modes, :].transpose()
 
     def _apply_linear(self, P, A, modes):
         r"""Applies an active transformation to the quantum state.
@@ -523,9 +523,9 @@ class GaussianState(State):
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
-        self.m[modes, ] = (
-            P @ self.m[modes, ]
-            + A @ np.conj(self.m[modes, ])
+        self._m[modes, ] = (
+            P @ self._m[modes, ]
+            + A @ np.conj(self._m[modes, ])
         )
 
         self._apply_linear_to_C_and_G(P, A, modes)
@@ -533,17 +533,17 @@ class GaussianState(State):
     def _apply_linear_to_C_and_G(self, P, A, modes):
         index = self._get_operator_index(modes)
 
-        original_C = self.C[index]
-        original_G = self.G[index]
+        original_C = self._C[index]
+        original_G = self._G[index]
 
-        self.G[index] = (
+        self._G[index] = (
             P @ original_G @ P.transpose()
             + A @ original_G.conjugate().transpose() @ A.transpose()
             + P @ (original_C.transpose() + np.identity(len(modes))) @ A.transpose()
             + A @ original_C @ P.transpose()
         )
 
-        self.C[index] = (
+        self._C[index] = (
             P.conjugate() @ original_C @ P.transpose()
             + A.conjugate() @ (
                 original_C.transpose() + np.identity(len(modes))
@@ -560,24 +560,24 @@ class GaussianState(State):
     def _apply_linear_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
-        auxiliary_C = self.C[auxiliary_index]
-        auxiliary_G = self.G[auxiliary_index]
+        auxiliary_C = self._C[auxiliary_index]
+        auxiliary_G = self._G[auxiliary_index]
 
-        self.C[auxiliary_index] = (
+        self._C[auxiliary_index] = (
             P.conjugate() @ auxiliary_C
             + A.conjugate() @ auxiliary_G
         )
 
-        self.G[auxiliary_index] = (
+        self._G[auxiliary_index] = (
             P @ auxiliary_G
             + A @ auxiliary_C
         )
 
-        self.C[:, modes] = self.C[modes, :].conjugate().transpose()
-        self.G[:, modes] = self.G[modes, :].transpose()
+        self._C[:, modes] = self._C[modes, :].conjugate().transpose()
+        self._G[:, modes] = self._G[modes, :].transpose()
 
     def _apply_displacement(self, alpha, mode):
-        self.m[mode] += alpha
+        self._m[mode] += alpha
 
     def _apply_generaldyne_measurement(self, *, detection_covariance, modes):
         d = self.d
