@@ -17,6 +17,22 @@ class Vacuum(Operation):
 
 
 @_register
+class Mean(Operation):
+    r"""Set the first canonical moment of the state."""
+
+    def __init__(self, mean):
+        super().__init__(mean)
+
+
+@_register
+class Covariance(Operation):
+    r"""Sets the covariance matrix of the state."""
+
+    def __init__(self, cov):
+        super().__init__(cov)
+
+
+@_register
 class Number(Operation, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 
