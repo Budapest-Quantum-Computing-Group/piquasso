@@ -226,7 +226,7 @@ class GaussianState(State):
         return self.xp_mean, self.xp_corr
 
     @property
-    def mu(self):
+    def mean(self):
         r"""Returns the xp-ordered mean of the state.
 
         Returns:
@@ -286,18 +286,18 @@ class GaussianState(State):
             np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
         """
 
-        mu = self.mu
-        return self.cov + 2 * np.outer(mu, mu)
+        T = quad_transformation(self.d)
+        return T @ self.xp_corr @ T.transpose()
 
     @property
     def quad_representation(self):
         r"""The state's mean and correlation matrix ordered by the quadrature basis.
 
         Returns:
-            tuple: :meth:`mu`, :meth:`corr`.
+            tuple: :meth:`mean`, :meth:`corr`.
         """
 
-        return self.mu, self.corr
+        return self.mean, self.corr
 
     def rotated(self, phi):
         r"""Returns the copy of the current state, rotated by `phi`.
@@ -403,7 +403,7 @@ class GaussianState(State):
         """
         transformed_state = self.reduced(modes).rotated(phi)
 
-        return transformed_state.mu, transformed_state.cov
+        return transformed_state.mean, transformed_state.cov
 
     def wigner_function(self, quadrature_matrix, modes=None):
         r"""
@@ -431,14 +431,14 @@ class GaussianState(State):
             return gaussian_wigner_function(
                 quadrature_matrix,
                 d=reduced_state.d,
-                mean=reduced_state.mu,
+                mean=reduced_state.mean,
                 cov=reduced_state.cov
             )
 
         return gaussian_wigner_function(
             quadrature_matrix,
             d=self.d,
-            mean=self.mu,
+            mean=self.mean,
             cov=self.cov,
         )
 
@@ -552,7 +552,7 @@ class GaussianState(State):
 
         outer_indices = np.delete(np.arange(2 * d), indices)
 
-        r = self.mu
+        r = self.mean
 
         r_measured = r[indices]
         r_outer = r[outer_indices]
