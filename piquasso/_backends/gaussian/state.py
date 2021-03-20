@@ -36,13 +36,16 @@ class GaussianState(State):
 
             .. math::
                 \langle \hat{C}_{ij} \rangle_{\rho} =
-                \langle \hat{a}^\dagger_i \hat{a}_j \rangle_{\rho}.
+                \langle \hat{a}^\dagger_i \hat{a}_j \rangle_{\rho}
+                - \langle \hat{a}^\dagger_i \rangle_{\rho}
+                \langle \hat{a}_j \rangle_{\rho}.
 
         G (numpy.array): A correlation matrix which is defined by
 
             .. math::
                 \langle \hat{G}_{ij} \rangle_{\rho} =
-                \langle \hat{a}_i \hat{a}_j \rangle_{\rho}.
+                \langle \hat{a}_i \hat{a}_j \rangle_{\rho}
+                - \langle \hat{a}_i \rangle_{\rho} \langle \hat{a}_j \rangle_{\rho}.
     """
 
     circuit_class = GaussianCircuit
@@ -155,6 +158,39 @@ class GaussianState(State):
         return _xp_mean
 
     @property
+    def xp_cov(self):
+        r"""The xp-ordered coveriance matrix of the state.
+
+        The xp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
+
+        .. math::
+            \sigma_{xp, ij} := \langle Y_i Y_j + Y_j Y_i \rangle_\rho
+                - 2 \langle Y_i \rangle_\rho \langle Y_j \rangle_\rho,
+
+        where
+
+        .. math::
+            \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
+
+        and :math:`\rho` is the density operator of the currently represented state.
+
+        Returns:
+            np.array: The :math:`2d \times 2d` xp-ordered covariance matrix in xp basis.
+        """
+
+        C = self.C
+        G = self.G
+
+        corr = 2 * np.block(
+            [
+                [(G + C).real, (G + C).imag],
+                [(G - C).imag, (-G + C).real],
+            ]
+        ) + np.identity(2 * self.d)
+
+        return corr * constants.HBAR
+
+    @property
     def xp_corr(self):
         r"""The state's correlation matrix in the xp basis.
 
@@ -175,41 +211,8 @@ class GaussianState(State):
         Returns:
             np.array: The :math:`2d \times 2d` correlation matrix in the xp basis.
         """
-
-        C = self.C
-        G = self.G
-
-        corr = 2 * np.block(
-            [
-                [(G + C).real, (G + C).imag],
-                [(G - C).imag, (-G + C).real],
-            ]
-        ) + np.identity(2 * self.d)
-
-        return corr * constants.HBAR
-
-    @property
-    def xp_cov(self):
-        r"""The xp-ordered coveriance matrix of the state.
-
-        The xp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
-
-        .. math::
-            \sigma_{xp, ij} := \langle Y_i Y_j + Y_j Y_i \rangle_\rho
-                - 2 \langle Y_i \rangle_\rho \langle Y_j \rangle_\rho,
-
-        where
-
-        .. math::
-            \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
-
-        and :math:`\rho` is the density operator of the currently represented state.
-
-        Returns:
-            np.array: The :math:`2d \times 2d` xp-ordered covariance matrix in xp basis.
-        """
         xp_mean = self.xp_mean
-        return self.xp_corr - 2 * np.outer(xp_mean, xp_mean)
+        return self.xp_cov + 2 * np.outer(xp_mean, xp_mean)
 
     @property
     def xp_representation(self):
@@ -236,30 +239,6 @@ class GaussianState(State):
         return T @ self.xp_mean
 
     @property
-    def corr(self):
-        r"""Returns the quadrature-ordered correlation matrix of the state.
-
-        Let :math:`M` be the correlation matrix in the quadrature basis.
-        Then
-
-        .. math::
-            M_{ij} = \langle R_i R_j + R_j R_i \rangle_\rho,
-
-        where :math:`M_{ij}` denotes the matrix element in the
-        :math:`i`-th row and :math:`j`-th column,
-
-        .. math::
-            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
-
-        and :math:`\rho` is the density operator of the currently represented state.
-
-        Returns:
-            np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
-        """
-        T = quad_transformation(self.d)
-        return T @ self.xp_corr @ T.transpose()
-
-    @property
     def cov(self):
         r"""The quadrature-ordered coveriance matrix of the state.
 
@@ -281,8 +260,34 @@ class GaussianState(State):
                 The :math:`2d \times 2d` quadrature-ordered covariance matrix in
                 xp-ordered basis.
         """
+
+        T = quad_transformation(self.d)
+        return T @ self.xp_cov @ T.transpose()
+
+    @property
+    def corr(self):
+        r"""Returns the quadrature-ordered correlation matrix of the state.
+
+        Let :math:`M` be the correlation matrix in the quadrature basis.
+        Then
+
+        .. math::
+            M_{ij} = \langle R_i R_j + R_j R_i \rangle_\rho,
+
+        where :math:`M_{ij}` denotes the matrix element in the
+        :math:`i`-th row and :math:`j`-th column,
+
+        .. math::
+            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+
+        and :math:`\rho` is the density operator of the currently represented state.
+
+        Returns:
+            np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
+        """
+
         mu = self.mu
-        return self.corr - 2 * np.outer(mu, mu)
+        return self.cov + 2 * np.outer(mu, mu)
 
     @property
     def quad_representation(self):
@@ -608,17 +613,17 @@ class GaussianState(State):
 
         T = quad_transformation(d)
 
-        corr = (
-            (T.transpose() @ (cov + 2 * np.outer(mean, mean)) @ T) / constants.HBAR
+        xp_cov = (
+            (T.transpose() @ cov @ T) / constants.HBAR
         )
 
-        corr = (corr - np.identity(2 * d)) / 2
+        xp_cov = (xp_cov - np.identity(2 * d)) / 2
 
-        C_real = (corr[:d, :d] + corr[d:, d:]) / 2
-        G_real = (corr[:d, :d] - corr[d:, d:]) / 2
+        C_real = (xp_cov[:d, :d] + xp_cov[d:, d:]) / 2
+        G_real = (xp_cov[:d, :d] - xp_cov[d:, d:]) / 2
 
-        C_imag = (corr[:d, d:] - corr[d:, :d]) / 2
-        G_imag = (corr[:d, d:] + corr[d:, :d]) / 2
+        C_imag = (xp_cov[:d, d:] - xp_cov[d:, :d]) / 2
+        G_imag = (xp_cov[:d, d:] + xp_cov[d:, :d]) / 2
 
         C = C_real + 1j * C_imag
         G = G_real + 1j * G_imag
