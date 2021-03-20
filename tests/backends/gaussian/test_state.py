@@ -45,19 +45,17 @@ def test_quad_representation(state, assets):
 
 
 def test_representation_roundtrip(state):
-    m = state.m
-    G = state.G
-    C = state.C
+    initial_mean = state.mean
+    initial_cov = state.cov
 
-    mean = state.mean
-    cov = state.cov
+    state.mean = initial_mean
+    state.cov = initial_cov
 
-    state.mean = mean
-    state.cov = cov
+    final_mean = state.mean
+    final_cov = state.cov
 
-    assert np.allclose(state.m, m)
-    assert np.allclose(state.G, G)
-    assert np.allclose(state.C, C)
+    assert np.allclose(final_mean, initial_mean)
+    assert np.allclose(final_cov, initial_cov)
 
 
 def test_wigner_function(state, assets):
@@ -90,72 +88,55 @@ def test_reduced_rotated_mean_and_cov(state, assets):
 
 class TestGaussianStateOperations:
     """
-    NOTE: The m, C, G matrices are not real in this test class.
+    NOTE: The mean, cov matrices are not real in this test class.
     """
 
     @pytest.fixture
-    def m(self):
-        return np.array([1 - 2j, 3 + 4j, 2 - 5j], dtype=complex)
+    def mean(self):
+        return np.array([  2.,  -4.,   6.,   8.,   4., -10.])
 
     @pytest.fixture
-    def C(self):
+    def cov(self):
         return np.array(
             [
-                [     1, 1 + 2j, 4 - 6j],
-                [1 - 2j,      6, 5 + 9j],
-                [4 + 6j, 5 - 9j,    -10],
-            ],
-            dtype=complex,
-        )
-
-    @pytest.fixture
-    def G(self):
-        return np.array(
-            [
-                [3 + 1j, 1 + 1j, 2 + 2j],
-                [1 + 1j, 2 - 3j, 5 - 6j],
-                [2 + 2j, 5 - 6j,      7]
-            ],
-            dtype=complex,
+                [ 18.,   4.,   8.,  12.,  24., -16.],
+                [  4.,  -6.,  -4.,   0.,  32.,   8.],
+                [  8.,  -4.,  34., -12.,  40.,  12.],
+                [ 12.,   0., -12.,  18., -60.,   0.],
+                [ 24.,  32.,  40., -60., -10.,   0.],
+                [-16.,   8.,  12.,   0.,   0., -66.],
+            ]
         )
 
     @pytest.fixture(autouse=True)
-    def setup(self, m, G, C):
-        self.state = pq.GaussianState(m=m, G=G, C=C)
+    def setup(self, mean, cov):
+        self.state = pq.GaussianState(d=(len(mean) // 2))
+        self.state.mean = mean
+        self.state.cov = cov
 
     def test_rotated(self):
         phi = np.pi / 2
         rotated_state = self.state.rotated(phi)
 
-        rotated_C = np.array(
+        expected_rotated_mean = np.array([ -4.,  -2.,   8.,  -6., -10.,  -4.])
+        expected_rotated_cov = np.array(
             [
-                [     1, 1 + 2j, 4 - 6j],
-                [1 - 2j,      6, 5 + 9j],
-                [4 + 6j, 5 - 9j,    -10],
+                [ -6.,  -4.,   0.,   4.,   8., -32.],
+                [ -4.,  18., -12.,   8.,  16.,  24.],
+                [  0., -12.,  18.,  12.,   0.,  60.],
+                [  4.,   8.,  12.,  34., -12.,  40.],
+                [  8.,  16.,   0., -12., -66.,   0.],
+                [-32.,  24.,  60.,  40.,   0., -10.],
             ]
         )
 
-        rotated_G = np.array(
-            [
-                [-3 - 1j, -1 - 1j, -2 - 2j],
-                [-1 - 1j, -2 + 3j, -5 + 6j],
-                [-2 - 2j, -5 + 6j,      -7],
-            ]
-        )
-
-        rotated_m = np.array([-2 - 1j,  4 - 3j, -5 - 2j])
-
         assert np.allclose(
-            rotated_C,
-            rotated_state.C,
+            expected_rotated_mean,
+            rotated_state.mean,
         )
         assert np.allclose(
-            rotated_G,
-            rotated_state.G,
-        )
-        assert np.allclose(
-            rotated_m,
-            rotated_state.m,
+            expected_rotated_cov,
+            rotated_state.cov,
         )
 
     def test_reduced(self):
@@ -163,60 +144,36 @@ class TestGaussianStateOperations:
 
         reduced_state = self.state.reduced(modes)
 
-        reduced_C = np.array(
+        expected_reduced_mean = np.array([ 2.,  -4.,   4., -10.])
+        expected_reduced_cov = np.array(
             [
-                [     1,   4 - 6j],
-                [4 + 6j,      -10],
-            ],
-            dtype=complex
+                [ 18.,   4.,  24., -16.],
+                [  4.,  -6.,  32.,   8.],
+                [ 24.,  32., -10.,   0.],
+                [-16.,   8.,   0., -66.],
+            ]
         )
 
-        reduced_G = np.array(
-            [
-                [3 + 1j, 2 + 2j],
-                [2 + 2j, 7 + 0j],
-            ],
-            dtype=complex
-        )
-
-        reduced_m = np.array([1 - 2j, 2 - 5j], dtype=complex)
-
         assert np.allclose(
-            reduced_C,
-            reduced_state.C,
+            expected_reduced_mean,
+            reduced_state.mean,
         )
         assert np.allclose(
-            reduced_G,
-            reduced_state.G,
-        )
-        assert np.allclose(
-            reduced_m,
-            reduced_state.m,
+            expected_reduced_cov,
+            reduced_state.cov,
         )
 
 
 class TestGaussianStateVacuum:
-    def test_create_vacuum(self):
-        number_of_modes = 3
-
-        state = pq.GaussianState(d=number_of_modes)
-
-        expected_m = np.zeros(number_of_modes, dtype=complex)
-        expected_C = np.zeros((number_of_modes, number_of_modes), dtype=complex)
-        expected_G = np.zeros((number_of_modes, number_of_modes), dtype=complex)
-
-        assert np.allclose(state.m, expected_m)
-        assert np.allclose(state.C, expected_C)
-        assert np.allclose(state.G, expected_G)
-
     def test_vacuum_covariance_is_proportional_to_identity(self):
-        number_of_modes = 2
-        hbar = constants.HBAR
+        d = 2
 
-        state = pq.GaussianState(d=number_of_modes)
+        state = pq.GaussianState(d=d)
 
-        expected_covariance = np.identity(2 * number_of_modes) * hbar
+        expected_mean = np.zeros(2 * d)
+        expected_covariance = np.identity(2 * d) * constants.HBAR
 
+        assert np.allclose(state.mean, expected_mean)
         assert np.allclose(state.cov, expected_covariance)
 
 
