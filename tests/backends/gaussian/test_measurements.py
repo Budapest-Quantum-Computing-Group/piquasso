@@ -6,8 +6,6 @@ import numpy as np
 
 import piquasso as pq
 
-from piquasso._math.linalg import is_selfadjoint, is_symmetric
-
 
 def test_measure_homodyne():
     with pq.Program() as program:
@@ -27,8 +25,7 @@ def test_measure_homodyne():
     assert len(results) == 1
     assert results[0].measurement.modes == (0, )
 
-    assert is_symmetric(program.state.G)
-    assert is_selfadjoint(program.state.C)
+    program.state.validate()
 
 
 def test_measure_homodyne_on_multiple_modes():
@@ -49,8 +46,7 @@ def test_measure_homodyne_on_multiple_modes():
     assert len(results) == 1
     assert results[0].measurement.modes == (0, 1)
 
-    assert is_symmetric(program.state.G)
-    assert is_selfadjoint(program.state.C)
+    program.state.validate()
 
 
 def test_measure_heterodyne():
@@ -71,8 +67,7 @@ def test_measure_heterodyne():
     assert len(results) == 1
     assert results[0].measurement.modes == (0, )
 
-    assert is_symmetric(program.state.G)
-    assert is_selfadjoint(program.state.C)
+    program.state.validate()
 
 
 def test_measure_heterodyne_on_multiple_modes():
@@ -93,8 +88,7 @@ def test_measure_heterodyne_on_multiple_modes():
     assert len(results) == 1
     assert results[0].measurement.modes == (0, 1)
 
-    assert is_symmetric(program.state.G)
-    assert is_selfadjoint(program.state.C)
+    program.state.validate()
 
 
 def test_measure_dyne():
@@ -122,5 +116,4 @@ def test_measure_dyne():
     assert len(results) == 1
     assert results[0].measurement.modes == (0, )
 
-    assert is_symmetric(program.state.G)
-    assert is_selfadjoint(program.state.C)
+    program.state.validate()
