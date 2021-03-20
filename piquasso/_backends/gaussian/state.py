@@ -8,11 +8,10 @@ import scipy
 
 from piquasso.api.state import State
 from piquasso.api import constants
-from piquasso.api.errors import StatePreparationError, InvalidState
+from piquasso.api.errors import InvalidState
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
-    is_selfadjoint,
     symplectic_form,
     is_positive_semidefinite,
 )
@@ -24,6 +23,14 @@ from .transformations import quad_transformation
 
 class GaussianState(State):
     r"""Object to represent a Gaussian state.
+
+    A Gaussian state is fully characterised by its m and correlation
+    matrix, i.e. its first and second moments with the quadrature
+    operators.
+
+    However, for computations, we only use the
+    :math:`C, G \in \mathbb{C}^{d \times d}`
+    and the :math:`m \in \mathbb{C}^d` vector.
 
     Attributes:
         m (numpy.array): The expectation value of the annihilation operators on all
@@ -50,67 +57,27 @@ class GaussianState(State):
 
     circuit_class = GaussianCircuit
 
-    def __init__(self, *, d=None, C=None, G=None, m=None):
-        r"""
-        A Gaussian state is fully characterised by its m and correlation
-        matrix, i.e. its first and second moments with the quadrature
-        operators.
-
-        However, for computations, we only use the
-        :math:`C, G \in \mathbb{C}^{d \times d}`
-        and the :math:`m \in \mathbb{C}^d` vector.
-
-        Args:
-            C (numpy.array): See :attr:`C`.
-            G (numpy.array): See :attr:`G`.
-            m (numpy.array): See :attr:`m`.
-        """
-
-        if d is None and m is None:
-            raise StatePreparationError("Specify at least 'd' or 'm'.")
-
-        self.d = d or len(m)
-
-        self._set_representation(m=m, G=G, C=C)
-
-    def _set_representation(self, *, m=None, G=None, C=None):
-        vector_shape = (self.d, )
-
-        if m is None:
-            self._m = np.zeros(vector_shape, dtype=complex)
-        elif m.shape != vector_shape:
-            raise StatePreparationError(
-                "Invalid 'm' vector shape; expected={vector_shape}, actual={m.shape}."
-            )
-        else:
-            self._m = m
-
-        matrix_shape = vector_shape * 2
-
-        if G is None:
-            self._G = np.zeros(matrix_shape, dtype=complex)
-        elif G.shape != matrix_shape:
-            raise StatePreparationError(
-                "Invalid 'G' matrix shape; expected={matrix_shape}, actual={G.shape}."
-            )
-        elif not is_symmetric(G):
-            raise StatePreparationError("'G' should be symmetric matrix.")
-        else:
-            self._G = G
-
-        if C is None:
-            self._C = np.zeros(matrix_shape, dtype=complex)
-        elif C.shape != matrix_shape:
-            raise StatePreparationError(
-                "Invalid 'C' matrix shape; expected={matrix_shape}, actual={C.shape}."
-            )
-        elif not is_selfadjoint(C):
-            raise StatePreparationError("'C' should be self-adjoint matrix.")
-        else:
-            self._C = C
+    def __init__(self, *, d):
+        self.d = d
+        self.reset()
 
     def reset(self):
-        self._set_representation()
+        vector_shape = (self.d, )
+        matrix_shape = vector_shape * 2
+
+        self._m = np.zeros(vector_shape, dtype=complex)
+        self._G = np.zeros(matrix_shape, dtype=complex)
+        self._C = np.zeros(matrix_shape, dtype=complex)
+
+    @classmethod
+    def _from_representation(cls, *, m, G, C):
+        obj = cls(d=len(m))
+
+        obj._m = m
+        obj._G = G
+        obj._C = C
+
+        return obj
 
     def __eq__(self, other):
         return (
@@ -120,26 +87,33 @@ class GaussianState(State):
         )
 
     def validate(self):
-        if not is_selfadjoint(self._C):
+        self._validate_mean(self.mean, self.d)
+        self._validate_cov(self.cov, self.d)
+
+    @staticmethod
+    def _validate_mean(mean, d):
+        expected_shape = (2 * d, )
+
+        if not mean.shape == expected_shape:
             raise InvalidState(
-                "There might be some errors regarding the representation of the "
-                "Gaussian state.\n"
-                "Details:\n"
-                "The matrix 'GaussianState.C' is not self-adjoint."
+                f"Invalid 'mean' vector shape; "
+                f"expected={expected_shape}, actual={mean.shape}."
             )
 
-        if not is_symmetric(self._G):
+    @staticmethod
+    def _validate_cov(cov, d):
+        expected_shape = (2 * d, ) * 2
+
+        if not cov.shape == expected_shape:
             raise InvalidState(
-                "There might be some errors regarding the representation of the "
-                "Gaussian state.\n"
-                "Details:\n"
-                "The matrix 'GaussianState.G' is not symmetric."
+                f"Invalid 'cov' matrix shape; "
+                f"expected={expected_shape}, actual={cov.shape}."
             )
 
-        if not is_symmetric(self.cov):
+        if not is_symmetric(cov):
             raise InvalidState("The covariance matrix is not symmetric.")
 
-        if not is_positive_semidefinite(self.cov + 1j * symplectic_form(self.d)):
+        if not is_positive_semidefinite(cov + 1j * symplectic_form(d)):
             raise InvalidState(
                 "The covariance matrix is invalid. TODO: We should have a link here."
             )
@@ -244,6 +218,8 @@ class GaussianState(State):
 
     @mean.setter
     def mean(self, new_mean):
+        self._validate_mean(new_mean, self.d)
+
         m = (new_mean[::2] + 1j * new_mean[1::2]) / np.sqrt(2 * constants.HBAR)
 
         self._m = m
@@ -277,6 +253,8 @@ class GaussianState(State):
     @cov.setter
     def cov(self, new_cov):
         d = self.d
+
+        self._validate_cov(new_cov, d)
 
         T = quad_transformation(d)
 
@@ -375,7 +353,7 @@ class GaussianState(State):
         """
         phase = np.exp(- 1j * phi)
 
-        return GaussianState(
+        return GaussianState._from_representation(
             C=self._C,
             G=(self._G * phase**2),
             m=(self._m * phase),
@@ -393,7 +371,7 @@ class GaussianState(State):
         Returns:
             GaussianState: The reduced `GaussianState` instance.
         """
-        return GaussianState(
+        return GaussianState._from_representation(
             C=self._C[np.ix_(modes, modes)],
             G=self._G[np.ix_(modes, modes)],
             m=self._m[np.ix_(modes)],

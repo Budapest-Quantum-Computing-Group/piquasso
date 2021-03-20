@@ -61,4 +61,4 @@ class GaussianCircuit(Circuit):
         )
 
     def _vacuum(self, operation):
-        self.state._set_representation()
+        self.state.reset()
