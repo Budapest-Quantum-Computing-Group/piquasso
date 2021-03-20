@@ -12,7 +12,7 @@ import piquasso as pq
 def generate_random_gaussian_state():
     def func(*, d):
         with pq.Program() as random_state_generator:
-            pq.Q() | pq.GaussianState.create_vacuum(d=d)
+            pq.Q() | pq.GaussianState(d=d)
 
             for i in range(d):
                 alpha = 2 * (np.random.rand() + 1j * np.random.rand()) - 1
@@ -346,7 +346,7 @@ def test_gaussian_transform_for_1_modes(program, gaussian_state_assets):
 
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(alpha=np.exp(1j * np.pi/4))
         pq.Q(1) | pq.D(alpha=1)
@@ -376,7 +376,7 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
 
 def test_displaced_vacuum_stays_valid():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
         pq.Q(0) | pq.D(r=2, phi=np.pi/3)
 
     program.execute()
@@ -384,7 +384,7 @@ def test_displaced_vacuum_stays_valid():
 
 
 def test_multiple_displacements_leave_the_covariance_invariant():
-    vacuum = pq.GaussianState.create_vacuum(d=3)
+    vacuum = pq.GaussianState(d=3)
 
     initial_cov = vacuum.cov
 
@@ -416,7 +416,7 @@ def test_random_interferometer(generate_random_gaussian_state, generate_unitary_
 
 def test_complex_circuit(gaussian_state_assets):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=5)
+        pq.Q() | pq.GaussianState(d=5)
 
         pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
         pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)

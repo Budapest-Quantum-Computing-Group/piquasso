@@ -17,7 +17,7 @@ def d():
 @pytest.fixture
 def example_gaussian_pq_program(d):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState.create_vacuum(d=d)
+        pq.Q() | pq.GaussianState(d=d)
 
         pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
         pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)

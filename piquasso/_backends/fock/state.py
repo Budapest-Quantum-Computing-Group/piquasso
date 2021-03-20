@@ -24,10 +24,6 @@ class BaseFockState(State, abc.ABC):
     def cutoff(self):
         return self._space.cutoff
 
-    @classmethod
-    def create_vacuum(cls, *, d, cutoff):
-        return cls(d=d, cutoff=cutoff, vacuum=True)
-
     @property
     def norm(self):
         return sum(self.fock_probabilities)

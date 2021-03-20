@@ -53,9 +53,10 @@ def gaussian_state_assets(AssetHandler):
 
             d = len(properties["mean"]) // 2
 
-            state = pq.GaussianState.create_vacuum(d=d)
+            state = pq.GaussianState(d=d)
 
-            state._apply_mean_and_cov(**properties)
+            state.mean = properties["mean"]
+            state.cov = properties["cov"]
 
             return state
 
@@ -65,7 +66,7 @@ def gaussian_state_assets(AssetHandler):
 @pytest.fixture
 def program():
     with pq.Program() as initialization:
-        pq.Q() | pq.GaussianState.create_vacuum(d=3)
+        pq.Q() | pq.GaussianState(d=3)
 
         pq.Q(0) | pq.D(alpha=1)
         pq.Q(1) | pq.D(alpha=1j)

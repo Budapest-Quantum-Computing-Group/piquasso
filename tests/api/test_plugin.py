@@ -48,7 +48,7 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState.create_vacuum(3))
+    program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
         pq.Q(0, 1) | pq.B(theta=np.pi/3)
@@ -69,7 +69,7 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState.create_vacuum(3))
+    program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
         pq.Q(0, 1) | pq.B(theta=np.pi/3)
@@ -96,7 +96,7 @@ def test_untouched_classes_remain_to_be_accessible(
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState.create_vacuum(3))
+    program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
         pq.Q(0, 1) | pq.B(theta=np.pi/3)

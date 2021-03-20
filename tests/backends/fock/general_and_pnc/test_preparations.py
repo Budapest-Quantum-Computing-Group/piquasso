@@ -11,7 +11,8 @@ import piquasso as pq
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_number_state(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass.create_vacuum(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
@@ -28,7 +29,8 @@ def test_create_number_state(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_and_annihilate_number_state(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass.create_vacuum(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
@@ -44,7 +46,8 @@ def test_create_and_annihilate_number_state(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_annihilate_and_create(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass.create_vacuum(d=2, cutoff=2)
+        pq.Q() | StateClass(d=2, cutoff=2) | pq.Vacuum()
+
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 

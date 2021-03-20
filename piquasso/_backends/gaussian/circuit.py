@@ -29,6 +29,7 @@ class GaussianCircuit(Circuit):
             "MeasureHomodyne": self._measure_dyne,
             "MeasureHeterodyne": self._measure_dyne,
             "MeasureDyne": self._measure_dyne,
+            "Vacuum": self._vacuum,
         }
 
     def _passive_linear(self, operation):
@@ -68,3 +69,6 @@ class GaussianCircuit(Circuit):
         self.program.results.append(
             Result(measurement=operation, outcome=outcome)
         )
+
+    def _vacuum(self, operation):
+        self.state._set_representation()
