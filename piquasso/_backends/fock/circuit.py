@@ -23,7 +23,6 @@ class BaseFockCircuit(Circuit, abc.ABC):
             "Vacuum": self._vacuum,
             "Create": self._create,
             "Annihilate": self._annihilate,
-            "Number": self._number,
         }
 
     def _passive_linear(self, operation):
@@ -62,7 +61,3 @@ class BaseFockCircuit(Circuit, abc.ABC):
             xi=operation.params[0],
             modes=operation.modes,
         )
-
-    @abc.abstractmethod
-    def _number(self, operation):
-        pass

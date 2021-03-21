@@ -33,14 +33,18 @@ class Covariance(Operation):
 
 
 @_register
-class Number(Operation, _WeightMixin):
+class StateVector(Operation, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 
-    def __init__(self, *occupation_numbers, ket=None, bra=None, coefficient=1.0):
+    def __init__(self, *occupation_numbers, coefficient=1.0):
+        super().__init__(occupation_numbers, coefficient)
 
-        if occupation_numbers:
-            ket = bra = occupation_numbers
 
+@_register
+class DensityMatrix(Operation, _WeightMixin):
+    r"""State preparation with density matrix elements."""
+
+    def __init__(self, ket=None, bra=None, coefficient=1.0):
         super().__init__(ket, bra, coefficient)
 
 

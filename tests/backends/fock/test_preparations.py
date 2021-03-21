@@ -11,7 +11,7 @@ def test_from_pure_preserves_fock_probabilities():
     with pq.Program() as pure_state_preparation:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
 
-        pq.Q(1) | pq.Number(1)
+        pq.Q(1) | pq.StateVector(1)
 
     pure_state_preparation.execute()
 

@@ -11,10 +11,10 @@ def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
 
-        pq.Q() | pq.Number(0, 1, 1) * np.sqrt(2/6)
+        pq.Q() | pq.StateVector(0, 1, 1) * np.sqrt(2/6)
 
-        pq.Q(2) | pq.Number(1) * np.sqrt(1/6)
-        pq.Q(2) | pq.Number(2) * np.sqrt(3/6)
+        pq.Q(2) | pq.StateVector(1) * np.sqrt(1/6)
+        pq.Q(2) | pq.StateVector(2) * np.sqrt(3/6)
 
         pq.Q(2) | pq.MeasureParticleNumber()
 
@@ -30,8 +30,8 @@ def test_measure_particle_number_on_one_mode():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                0.5773502691896258 * pq.Number(0, 0, 1),
-                0.816496580927726 * pq.Number(0, 1, 1),
+                0.5773502691896258 * pq.StateVector(0, 0, 1),
+                0.816496580927726 * pq.StateVector(0, 1, 1),
             ]
         )
 
@@ -39,7 +39,7 @@ def test_measure_particle_number_on_one_mode():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(0, 0, 2)
+                pq.StateVector(0, 0, 2)
             ]
         )
 
@@ -50,9 +50,9 @@ def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
 
-        pq.Q(1, 2) | pq.Number(1, 1) * np.sqrt(2/6)
-        pq.Q(1, 2) | pq.Number(0, 1) * np.sqrt(1/6)
-        pq.Q(1, 2) | pq.Number(0, 2) * np.sqrt(3/6)
+        pq.Q(1, 2) | pq.StateVector(1, 1) * np.sqrt(2/6)
+        pq.Q(1, 2) | pq.StateVector(0, 1) * np.sqrt(1/6)
+        pq.Q(1, 2) | pq.StateVector(0, 2) * np.sqrt(3/6)
 
         pq.Q(1, 2) | pq.MeasureParticleNumber()
 
@@ -68,7 +68,7 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(0, 0, 1)
+                pq.StateVector(0, 0, 1)
             ]
         )
 
@@ -76,7 +76,7 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(0, 1, 1)
+                pq.StateVector(0, 1, 1)
             ]
         )
 
@@ -84,7 +84,7 @@ def test_measure_particle_number_on_two_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(0, 0, 2)
+                pq.StateVector(0, 0, 2)
             ]
         )
 
@@ -118,7 +118,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=1,
             number_preparations=[
-                pq.Number(0, 0, 0),
+                pq.StateVector(0, 0, 0),
             ]
         )
 
@@ -126,7 +126,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=1,
             number_preparations=[
-                pq.Number(0, 0, 1),
+                pq.StateVector(0, 0, 1),
             ]
         )
 
@@ -134,7 +134,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=1,
             number_preparations=[
-                pq.Number(1, 0, 0),
+                pq.StateVector(1, 0, 0),
             ]
         )
 
