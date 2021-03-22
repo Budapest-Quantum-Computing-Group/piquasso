@@ -14,18 +14,18 @@ def test_measure_particle_number_on_one_mode(StateClass):
     with pq.Program() as program:
         pq.Q() | StateClass(d=3, cutoff=2)
 
-        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
-        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
 
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
 
-        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
-        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
         pq.Q(2) | pq.MeasureParticleNumber()
 
@@ -41,12 +41,12 @@ def test_measure_particle_number_on_one_mode(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                1/3 * pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
-                4j * pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)),
-                -2j * pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)),
-                -4j * pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)),
-                2 / 3 * pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)),
-                2j * pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)),
+                1/3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
+                4j * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)),
+                -2j * pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)),
+                -4j * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)),
+                2 / 3 * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
+                2j * pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)),
             ]
         )
 
@@ -54,7 +54,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 0, 2), bra=(0, 0, 2))
+                pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
 
@@ -66,18 +66,18 @@ def test_measure_particle_number_on_two_modes(StateClass):
     with pq.Program() as program:
         pq.Q() | StateClass(d=3, cutoff=2)
 
-        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
-        pq.Q() | pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
 
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
 
-        pq.Q() | pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
-        pq.Q() | pq.Number(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
         pq.Q(1, 2) | pq.MeasureParticleNumber()
 
@@ -93,9 +93,9 @@ def test_measure_particle_number_on_two_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
-                pq.Number(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
-                pq.Number(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
+                pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
+                pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
+                pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
             ]
         )
 
@@ -103,7 +103,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 1, 1), bra=(0, 1, 1)),
+                pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
             ]
         )
 
@@ -111,7 +111,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 0, 2), bra=(0, 0, 2))
+                pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
 
@@ -123,13 +123,13 @@ def test_measure_particle_number_on_all_modes(StateClass):
     with pq.Program() as preparation:
         pq.Q() | StateClass(d=3, cutoff=2)
 
-        pq.Q() | pq.Number(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
-        pq.Q() | pq.Number(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
 
-        pq.Q() | pq.Number(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.Number(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -148,7 +148,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 0, 0), bra=(0, 0, 0)),
+                pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
             ]
         )
 
@@ -156,7 +156,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(0, 0, 1), bra=(0, 0, 1)),
+                pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
             ]
         )
 
@@ -164,7 +164,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
         expected_state = StateClass.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
-                pq.Number(ket=(1, 0, 0), bra=(1, 0, 0)),
+                pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
             ]
         )
 

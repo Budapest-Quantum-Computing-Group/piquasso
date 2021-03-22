@@ -10,7 +10,7 @@ import piquasso as pq
 def test_5050_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q(1) | pq.Number(1)
+        pq.Q(1) | pq.StateVector(1)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
 
@@ -25,7 +25,7 @@ def test_5050_beamsplitter():
 def test_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q(1) | 1 * pq.Number(1)
+        pq.Q(1) | 1 * pq.StateVector(1)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -40,9 +40,9 @@ def test_beamsplitter():
 def test_beamsplitter_multiple_particles():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q(1) | pq.Number(1) / 2
-        pq.Q(1) | pq.Number(2) / 2
-        pq.Q(0) | pq.Number(2) / np.sqrt(2)
+        pq.Q(1) | pq.StateVector(1) / 2
+        pq.Q(1) | pq.StateVector(2) / 2
+        pq.Q(0) | pq.StateVector(2) / np.sqrt(2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -62,9 +62,9 @@ def test_beamsplitter_multiple_particles():
 def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 0) / 2
-        pq.Q() | pq.Number(0, 1) / np.sqrt(2)
-        pq.Q() | pq.Number(0, 2) / 2
+        pq.Q() | pq.StateVector(0, 0) / 2
+        pq.Q() | pq.StateVector(0, 1) / np.sqrt(2)
+        pq.Q() | pq.StateVector(0, 2) / 2
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
 
@@ -84,7 +84,7 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 def test_multiple_beamsplitters():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q(2) | pq.Number(1) * 1
+        pq.Q(2) | pq.StateVector(1) * 1
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -104,9 +104,9 @@ def test_multiple_beamsplitters():
 def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) / 2
-        pq.Q() | pq.Number(0, 0, 2) / 2
-        pq.Q() | pq.Number(0, 1, 1) / np.sqrt(2)
+        pq.Q() | pq.StateVector(0, 0, 1) / 2
+        pq.Q() | pq.StateVector(0, 0, 2) / 2
+        pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
 
         pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
@@ -127,9 +127,9 @@ def test_multiple_beamsplitters_with_multiple_particles():
 def test_phaseshift():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 1) / 2
-        pq.Q() | pq.Number(0, 2) / np.sqrt(2)
-        pq.Q() | pq.Number(1, 1) / 2
+        pq.Q() | pq.StateVector(0, 1) / 2
+        pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
+        pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0) | pq.R(phi=np.pi / 3)
 
@@ -145,9 +145,9 @@ def test_phaseshift():
 def test_fourier():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 1) / 2
-        pq.Q() | pq.Number(0, 2) / np.sqrt(2)
-        pq.Q() | pq.Number(1, 1) / 2
+        pq.Q() | pq.StateVector(0, 1) / 2
+        pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
+        pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0) | pq.F()
 
@@ -163,9 +163,9 @@ def test_fourier():
 def test_mach_zehnder():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=2, cutoff=2)
-        pq.Q() | pq.Number(0, 1) / 2
-        pq.Q() | pq.Number(0, 2) / np.sqrt(2)
-        pq.Q() | pq.Number(1, 1) / 2
+        pq.Q() | pq.StateVector(0, 1) / 2
+        pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
+        pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0, 1) | pq.MZ(int_=np.pi/3, ext=np.pi/4)
 
@@ -181,9 +181,9 @@ def test_mach_zehnder():
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) / 2
-        pq.Q() | pq.Number(0, 0, 2) / 2
-        pq.Q() | pq.Number(0, 1, 1) / np.sqrt(2)
+        pq.Q() | pq.StateVector(0, 0, 1) / 2
+        pq.Q() | pq.StateVector(0, 0, 2) / 2
+        pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
 
         pq.Q(0) | pq.R(phi=np.pi/3)
         pq.Q(1) | pq.R(phi=np.pi/3)
@@ -216,9 +216,9 @@ def test_interferometer():
 
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=2)
-        pq.Q() | pq.Number(0, 0, 1) / 2
-        pq.Q() | pq.Number(0, 0, 2) / 2
-        pq.Q() | pq.Number(0, 1, 1) / np.sqrt(2)
+        pq.Q() | pq.StateVector(0, 0, 1) / 2
+        pq.Q() | pq.StateVector(0, 0, 2) / 2
+        pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
 
         pq.Q(0, 1, 2) | pq.Interferometer(matrix=T)
 
@@ -240,7 +240,7 @@ def test_kerr():
 
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=3)
-        pq.Q() | pq.Number(0, 2, 1)
+        pq.Q() | pq.StateVector(0, 2, 1)
 
         pq.Q(1) | pq.K(xi=xi)
 
@@ -258,7 +258,7 @@ def test_kerr():
 def test_cross_kerr():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=3)
-        pq.Q() | pq.Number(0, 2, 1)
+        pq.Q() | pq.StateVector(0, 2, 1)
 
         pq.Q(1, 2) | pq.CK(xi=np.pi / 2)
 
