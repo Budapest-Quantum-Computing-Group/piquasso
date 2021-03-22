@@ -28,6 +28,8 @@ class GaussianCircuit(Circuit):
             "MeasureHeterodyne": self._measure_dyne,
             "MeasureDyne": self._measure_dyne,
             "Vacuum": self._vacuum,
+            "Mean": self._mean,
+            "Covariance": self._covariance,
         }
 
     def _passive_linear(self, operation):
@@ -62,3 +64,9 @@ class GaussianCircuit(Circuit):
 
     def _vacuum(self, operation):
         self.state.reset()
+
+    def _mean(self, operation):
+        self.state.mean = operation.params[0]
+
+    def _covariance(self, operation):
+        self.state.cov = operation.params[0]

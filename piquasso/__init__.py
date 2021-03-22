@@ -15,6 +15,9 @@ from piquasso._backends.fock import FockState, PureFockState, PNCFockState
 from piquasso.core.registry import _use_plugin, _retrieve_class
 
 from .operations.preparations import (
+    Vacuum,
+    Mean,
+    Covariance,
     Number,
     Create,
     Annihilate,
@@ -96,6 +99,9 @@ __all__ = [
     "CK",
     "Interferometer",
     "Sampling",
+    "Vacuum",
+    "Mean",
+    "Covariance",
     "Number",
     "Create",
     "Annihilate",
