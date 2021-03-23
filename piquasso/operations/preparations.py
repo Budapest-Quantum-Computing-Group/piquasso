@@ -21,7 +21,7 @@ class Mean(Operation):
     r"""Set the first canonical moment of the state."""
 
     def __init__(self, mean):
-        super().__init__(mean)
+        super().__init__(mean=mean)
 
 
 @_register
@@ -29,7 +29,7 @@ class Covariance(Operation):
     r"""Sets the covariance matrix of the state."""
 
     def __init__(self, cov):
-        super().__init__(cov)
+        super().__init__(cov=cov)
 
 
 @_register
@@ -37,7 +37,7 @@ class StateVector(Operation, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 
     def __init__(self, *occupation_numbers, coefficient=1.0):
-        super().__init__(occupation_numbers, coefficient)
+        super().__init__(occupation_numbers=occupation_numbers, coefficient=coefficient)
 
 
 @_register
@@ -45,7 +45,7 @@ class DensityMatrix(Operation, _WeightMixin):
     r"""State preparation with density matrix elements."""
 
     def __init__(self, ket=None, bra=None, coefficient=1.0):
-        super().__init__(ket, bra, coefficient)
+        super().__init__(ket=ket, bra=bra, coefficient=coefficient)
 
 
 @_register

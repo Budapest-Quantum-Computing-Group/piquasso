@@ -21,7 +21,7 @@ class _PropertyMixin(abc.ABC):
 
 class _WeightMixin:
     def __mul__(self, coefficient):
-        self.params = (*self.params[:-1], self.params[-1] * coefficient)
+        self.params["coefficient"] *= coefficient
         return self
 
     __rmul__ = __mul__

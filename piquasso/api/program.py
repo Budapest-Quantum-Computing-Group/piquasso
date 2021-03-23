@@ -4,6 +4,8 @@
 
 import json
 import blackbird
+import inspect
+import collections
 
 from piquasso import operations
 from piquasso.core import _context
@@ -138,7 +140,7 @@ class Program:
                 in Blackbird.
         """
 
-        operation_class = {
+        pq_operation_class = {
             "Dgate": operations.gates.D,
             "Xgate": operations.gates.X,
             "Zgate": operations.gates.Z,
@@ -156,11 +158,37 @@ class Program:
             "Fouriergate": operations.gates.F,
         }.get(blackbird_operation["op"])
 
-        operation = operation_class(*blackbird_operation.get("args", tuple()))
+        params = self._get_operation_params(
+            pq_operation_class=pq_operation_class, bb_operation=blackbird_operation
+        )
+
+        operation = pq_operation_class(**params)
 
         operation.modes = blackbird_operation["modes"]
 
         return operation
+
+    @staticmethod
+    def _get_operation_params(pq_operation_class, bb_operation):
+        bb_params = bb_operation.get("args", None)
+
+        if bb_params is None:
+            return {}
+
+        parameters = inspect.signature(pq_operation_class).parameters
+
+        operation_params = collections.OrderedDict()
+
+        for param_name, param in parameters.items():
+            if param_name == "self":
+                continue
+
+            operation_params[param_name] = param.default
+
+        for pq_param_name, bb_param in zip(operation_params.keys(), bb_params):
+            operation_params[pq_param_name] = bb_param
+
+        return operation_params
 
     def from_blackbird(self, bb):
         """

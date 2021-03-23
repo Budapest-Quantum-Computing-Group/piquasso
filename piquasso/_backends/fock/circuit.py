@@ -34,7 +34,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
     def _measure_particle_number(self, operation):
         outcomes = self.state._measure_particle_number(
             modes=operation.modes,
-            shots=operation.params[1],
+            shots=operation.params["shots"],
         )
 
         self._add_result(
@@ -55,12 +55,12 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _kerr(self, operation):
         self.state._apply_kerr(
-            xi=operation.params[0],
+            **operation.params,
             mode=operation.modes[0],
         )
 
     def _cross_kerr(self, operation):
         self.state._apply_cross_kerr(
-            xi=operation.params[0],
+            **operation.params,
             modes=operation.modes,
         )

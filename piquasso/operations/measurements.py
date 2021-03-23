@@ -16,7 +16,7 @@ class MeasureParticleNumber(Operation):
     """
 
     def __init__(self, cutoff=3, shots=1):
-        super().__init__(cutoff, shots)
+        super().__init__(cutoff=cutoff, shots=shots)
 
 
 @_register
@@ -24,7 +24,7 @@ class MeasureDyne(Operation):
     """General-dyne measurement."""
 
     def __init__(self, detection_covariance, *, shots=1):
-        super().__init__(detection_covariance, shots)
+        super().__init__(detection_covariance=detection_covariance, shots=shots)
 
 
 @_register

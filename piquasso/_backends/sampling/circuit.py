@@ -40,14 +40,13 @@ class SamplingCircuit(Circuit):
         )
 
     def sampling(self, operation):
-        params = operation.params
-
-        simulation_strategy = \
-            GeneralizedCliffordsSimulationStrategy(self.state.interferometer)
+        simulation_strategy = GeneralizedCliffordsSimulationStrategy(
+            self.state.interferometer
+        )
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
         initial_state = np.array(self.state.initial_state)
-        shots = params[0]
-        self.state.results = \
-            sampling_simulator.get_classical_simulation_results(initial_state,
-                                                                samples_number=shots)
+        self.state.results = sampling_simulator.get_classical_simulation_results(
+            initial_state,
+            samples_number=operation.params["shots"]
+        )
