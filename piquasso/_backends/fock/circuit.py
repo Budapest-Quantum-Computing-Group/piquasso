@@ -34,7 +34,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
     def _measure_particle_number(self, operation):
         outcomes = self.state._measure_particle_number(
             modes=operation.modes,
-            shots=operation.params[0],
+            shots=operation.params[1],
         )
 
         # TODO: Better way of providing results

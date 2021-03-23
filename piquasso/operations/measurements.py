@@ -15,8 +15,8 @@ class MeasureParticleNumber(Operation):
     # TODO: Measure only certain modes!
     """
 
-    def __init__(self, shots=1):
-        super().__init__(shots)
+    def __init__(self, cutoff=3, shots=1):
+        super().__init__(cutoff, shots)
 
 
 @_register

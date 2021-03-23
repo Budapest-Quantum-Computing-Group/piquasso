@@ -8,27 +8,6 @@ import numpy as np
 
 
 @pytest.fixture
-def generate_symmetric_matrix():
-    def func(N):
-        A = np.random.rand(N, N)
-
-        return A + A.T
-
-    return func
-
-
-@pytest.fixture
-def generate_complex_symmetric_matrix(generate_symmetric_matrix):
-    def func(N):
-        real = generate_symmetric_matrix(N)
-        imaginary = generate_symmetric_matrix(N)
-
-        return real + 1j * imaginary
-
-    return func
-
-
-@pytest.fixture
 def generate_unitary_matrix():
     from scipy.stats import unitary_group
 

@@ -45,3 +45,19 @@ def symplectic_form(d):
     symplectic_form = block_diag(*([one_mode_symplectic_form] * d))
 
     return symplectic_form
+
+
+def block_reduce(matrix, *, reduction_indices):
+    d = matrix.shape[0] // 2
+
+    rows = []
+
+    for idx, index in enumerate(reduction_indices):
+        rows.extend([idx] * index)
+
+    return np.block(
+        [
+            [matrix[:d, :d][:, rows][rows], matrix[:d, d:][:, rows][rows]],
+            [matrix[d:, :d][:, rows][rows], matrix[d:, d:][:, rows][rows]],
+        ]
+    )
