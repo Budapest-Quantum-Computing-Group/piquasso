@@ -52,15 +52,17 @@ class GaussianCircuit(Circuit):
         )
 
     def _measure_dyne(self, operation):
-        outcome = self.state._apply_generaldyne_measurement(
+        outcomes = self.state._apply_generaldyne_measurement(
             detection_covariance=operation.params[0],
             modes=operation.modes,
+            shots=operation.params[1],
         )
 
         # TODO: Better way of providing results
-        self.program.results.append(
-            Result(measurement=operation, outcome=outcome)
-        )
+        for outcome in outcomes:
+            self.program.results.append(
+                Result(measurement=operation, outcome=outcome)
+            )
 
     def _vacuum(self, operation):
         self.state.reset()

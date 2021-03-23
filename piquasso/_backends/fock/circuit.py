@@ -32,14 +32,16 @@ class BaseFockCircuit(Circuit, abc.ABC):
         )
 
     def _measure_particle_number(self, operation):
-        outcome = self.state._measure_particle_number(
+        outcomes = self.state._measure_particle_number(
             modes=operation.modes,
+            shots=operation.params[0],
         )
 
         # TODO: Better way of providing results
-        self.program.results.append(
-            Result(measurement=operation, outcome=outcome)
-        )
+        for outcome in outcomes:
+            self.program.results.append(
+                Result(measurement=operation, outcome=outcome)
+            )
 
     def _vacuum(self, operation):
         self.state._apply_vacuum()

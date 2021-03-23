@@ -15,30 +15,31 @@ class MeasureParticleNumber(Operation):
     # TODO: Measure only certain modes!
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, shots=1):
+        super().__init__(shots)
 
 
 @_register
 class MeasureDyne(Operation):
     """General-dyne measurement."""
 
-    def __init__(self, detection_covariance):
-        super().__init__(detection_covariance)
+    def __init__(self, detection_covariance, *, shots=1):
+        super().__init__(detection_covariance, shots)
 
 
 @_register
 class MeasureHomodyne(MeasureDyne):
     """Homodyne measurement."""
 
-    def __init__(self, *, z=1e-4):
+    def __init__(self, *, z=1e-4, shots=1):
         super().__init__(
             detection_covariance=np.array(
                 [
                     [z ** 2, 0],
                     [0, (1 / z) ** 2],
                 ]
-            )
+            ),
+            shots=shots,
         )
 
 
@@ -46,7 +47,8 @@ class MeasureHomodyne(MeasureDyne):
 class MeasureHeterodyne(MeasureDyne):
     """Heterodyne measurement."""
 
-    def __init__(self):
+    def __init__(self, shots=1):
         super().__init__(
-            detection_covariance=np.identity(2)
+            detection_covariance=np.identity(2),
+            shots=shots,
         )

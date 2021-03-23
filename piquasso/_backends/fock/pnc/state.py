@@ -2,7 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import random
 import numpy as np
 
 from ..state import BaseFockState
@@ -69,7 +68,7 @@ class PNCFockState(BaseFockState):
                 @ tensorpower_operator.conjugate().transpose()
             )
 
-    def _simulate_collapse_on_modes(self, *, modes):
+    def _get_probability_map(self, *, modes):
         probability_map = {}
 
         for n, subrep in enumerate(self._representation):
@@ -85,14 +84,11 @@ class PNCFockState(BaseFockState):
                 else:
                     probability_map[subspace_basis] = coefficient
 
-        outcome = random.choices(
-            population=list(probability_map.keys()),
-            weights=probability_map.values(),
-        )[0]
+        return probability_map
 
-        normalization = 1 / probability_map[outcome].real
-
-        return outcome, normalization
+    @staticmethod
+    def _get_normalization(probability_map, outcome):
+        return 1 / probability_map[outcome].real
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_representation = self._get_projected(

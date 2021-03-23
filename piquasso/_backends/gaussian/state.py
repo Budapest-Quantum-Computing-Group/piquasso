@@ -557,7 +557,7 @@ class GaussianState(State):
     def _apply_displacement(self, alpha, mode):
         self._m[mode] += alpha
 
-    def _apply_generaldyne_measurement(self, *, detection_covariance, modes):
+    def _apply_generaldyne_measurement(self, *, detection_covariance, modes, shots):
         d = self.d
 
         indices = []
@@ -589,11 +589,15 @@ class GaussianState(State):
         #
         # We might be better of setting `check_valid='ignore'` and verifying
         # postive-definiteness for ourselves.
-        outcome = np.random.multivariate_normal(
+        outcomes = np.random.multivariate_normal(
             mean=r_measured,
             cov=(rho_measured + rho_m),
+            size=shots,
             tol=1e-7,
         )
+
+        # NOTE: We choose the last outcome for multiple shots.
+        outcome = outcomes[-1]
 
         evolved_rho_outer = (
             rho_outer
@@ -618,4 +622,4 @@ class GaussianState(State):
         self.mean = evolved_mean
         self.cov = evolved_cov
 
-        return outcome
+        return outcomes

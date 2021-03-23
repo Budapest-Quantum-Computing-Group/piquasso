@@ -2,7 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import random
 import numpy as np
 
 from ..state import BaseFockState
@@ -57,7 +56,7 @@ class PureFockState(BaseFockState):
 
         self._state_vector = fock_operator @ self._state_vector
 
-    def _simulate_collapse_on_modes(self, *, modes):
+    def _get_probability_map(self, *, modes):
         probability_map = {}
 
         for index, basis in self._space.basis:
@@ -70,14 +69,11 @@ class PureFockState(BaseFockState):
             else:
                 probability_map[subspace_basis] = coefficient ** 2
 
-        outcome = random.choices(
-            population=list(probability_map.keys()),
-            weights=probability_map.values(),
-        )[0]
+        return probability_map
 
-        normalization = np.sqrt(1 / probability_map[outcome])
-
-        return outcome, normalization
+    @staticmethod
+    def _get_normalization(probability_map, outcome):
+        return np.sqrt(1 / probability_map[outcome])
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_state_vector = self._get_projected_state_vector(

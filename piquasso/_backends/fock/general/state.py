@@ -2,7 +2,6 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import random
 import numpy as np
 
 from ..state import BaseFockState
@@ -72,7 +71,7 @@ class FockState(BaseFockState):
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
 
-    def _simulate_collapse_on_modes(self, *, modes):
+    def _get_probability_map(self, *, modes):
         probability_map = {}
 
         for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
@@ -85,14 +84,11 @@ class FockState(BaseFockState):
             else:
                 probability_map[subspace_basis] = coefficient
 
-        outcome = random.choices(
-            population=list(probability_map.keys()),
-            weights=probability_map.values(),
-        )[0]
+        return probability_map
 
-        normalization = 1 / probability_map[outcome].real
-
-        return outcome, normalization
+    @staticmethod
+    def _get_normalization(probability_map, outcome):
+        return 1 / probability_map[outcome].real
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_density_matrix = self._get_projected_density_matrix(
