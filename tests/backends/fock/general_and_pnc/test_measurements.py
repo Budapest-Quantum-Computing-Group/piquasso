@@ -169,3 +169,29 @@ def test_measure_particle_number_on_all_modes(StateClass):
         )
 
     assert program.state == expected_state
+
+
+@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
+def test_measure_particle_number_with_multiple_shots(StateClass):
+    shots = 4
+
+    with pq.Program() as preparation:
+        pq.Q() | StateClass(d=3, cutoff=2)
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+
+        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+
+    results = program.execute()
+
+    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert len(results) == shots

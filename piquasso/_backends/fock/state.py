@@ -3,6 +3,7 @@
 #
 
 import abc
+import random
 
 from piquasso.api.state import State
 
@@ -28,11 +29,24 @@ class BaseFockState(State, abc.ABC):
     def norm(self):
         return sum(self.fock_probabilities)
 
-    def _measure_particle_number(self, modes):
+    def _measure_particle_number(self, modes, shots):
         if not modes:
             modes = tuple(range(self._space.d))
 
-        outcome, normalization = self._simulate_collapse_on_modes(modes=modes)
+        probability_map = self._get_probability_map(
+            modes=modes,
+        )
+
+        outcomes = random.choices(
+            population=list(probability_map.keys()),
+            weights=probability_map.values(),
+            k=shots,
+        )
+
+        # NOTE: We choose the last outcome for multiple shots.
+        outcome = outcomes[-1]
+
+        normalization = self._get_normalization(probability_map, outcome)
 
         self._project_to_subspace(
             subspace_basis=outcome,
@@ -40,7 +54,7 @@ class BaseFockState(State, abc.ABC):
             normalization=normalization,
         )
 
-        return outcome
+        return outcomes
 
     @abc.abstractclassmethod
     def _get_empty(cls):
@@ -51,7 +65,11 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _simulate_collapse_on_modes(*, modes):
+    def _get_probability_map(*, modes, shots):
+        pass
+
+    @abc.abstractmethod
+    def _get_normalization(outcome):
         pass
 
     @abc.abstractmethod

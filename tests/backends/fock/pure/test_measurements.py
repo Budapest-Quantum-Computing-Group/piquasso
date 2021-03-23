@@ -139,3 +139,26 @@ def test_measure_particle_number_on_all_modes():
         )
 
     assert program.state == expected_state
+
+
+def test_measure_particle_number_with_multiple_shots():
+    shots = 4
+
+    state = pq.PureFockState(
+        state_vector=[
+            0.5,
+            0.5, 0, np.sqrt(1/2),
+        ],
+        d=3,
+        cutoff=1,
+    )
+
+    program = pq.Program(state=state)
+
+    with program:
+        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+
+    results = program.execute()
+
+    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert len(results) == shots
