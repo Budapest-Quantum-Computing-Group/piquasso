@@ -2,11 +2,23 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import numpy as np
+
 import pytest
 
 import os
 
 from pathlib import Path
+
+
+@pytest.fixture
+def generate_symmetric_matrix():
+    def func(N):
+        A = np.random.rand(N, N)
+
+        return A + A.T
+
+    return func
 
 
 @pytest.fixture

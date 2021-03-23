@@ -30,6 +30,7 @@ class GaussianCircuit(Circuit):
             "Vacuum": self._vacuum,
             "Mean": self._mean,
             "Covariance": self._covariance,
+            "MeasureParticleNumber": self._measure_particle_number,
         }
 
     def _passive_linear(self, operation):
@@ -72,3 +73,14 @@ class GaussianCircuit(Circuit):
 
     def _covariance(self, operation):
         self.state.cov = operation.params[0]
+
+    def _measure_particle_number(self, operation):
+        outcome = self.state._apply_particle_number_measurement(
+            cutoff=operation.params[0],
+            modes=operation.modes,
+        )
+
+        # TODO: Better way of providing results
+        self.program.results.append(
+            Result(measurement=operation, outcome=outcome)
+        )
