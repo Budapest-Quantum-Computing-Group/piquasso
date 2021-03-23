@@ -4,9 +4,9 @@
 
 
 class Result:
-    def __init__(self, measurement, outcome):
-        self.measurement = measurement
+    def __init__(self, operation, outcome):
+        self.operation = operation
         self.outcome = outcome
 
     def __repr__(self):
-        return f"Result of {self.measurement} with outcome '{self.outcome}'."
+        return f"<Result operation={self.operation} outcome={self.outcome}>"

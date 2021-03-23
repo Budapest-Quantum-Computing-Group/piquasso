@@ -6,6 +6,8 @@
 
 import abc
 
+import collections
+
 
 class Circuit(abc.ABC):
     def __init__(self, state, program):
@@ -42,3 +44,9 @@ class Circuit(abc.ABC):
                 )
 
             method(operation)
+
+    def _add_result(self, result):
+        if isinstance(result, collections.Iterable):
+            self.program.results.extend(result)
+        else:
+            self.program.results.append(result)
