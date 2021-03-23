@@ -40,9 +40,9 @@ class SamplingState(State):
         equal to the size of the `U` matrix
 
         Args:
-            U (np.array): A square matrix to multiply to the interferometer.
-            modes (list): Distinct positive integer values which are used to represent
-                qumodes.
+            U (numpy.ndarray): A square matrix to multiply to the interferometer.
+            modes (tuple[int]):
+                Distinct positive integer values which are used to represent qumodes.
         """
         J = np.diag(np.ones(self.d, dtype=complex))
         J[np.ix_(modes, modes)] = U

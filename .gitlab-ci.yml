@@ -50,7 +50,7 @@ docs:
   stage: docs
   script:
     - apt update
-    - apt-get install libeigen3-dev
+    - apt-get install -y libeigen3-dev pandoc
     - poetry install
     - cd docs
     - poetry run make html_all

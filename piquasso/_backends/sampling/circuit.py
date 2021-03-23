@@ -22,7 +22,7 @@ from piquasso.api.circuit import Circuit
 
 
 class SamplingCircuit(Circuit):
-    r"""A circuit for fast boson sampling."""
+    r"""Circuit for Boson Sampling."""
 
     def get_instruction_map(self):
         return {
@@ -30,7 +30,7 @@ class SamplingCircuit(Circuit):
             "Phaseshifter": self._passive_linear,
             "MachZehnder": self._passive_linear,
             "Fourier": self._passive_linear,
-            "Sampling": self.sampling,
+            "Sampling": self._sampling,
             "Interferometer": self._passive_linear,
         }
 
@@ -50,7 +50,7 @@ class SamplingCircuit(Circuit):
             instruction.modes,
         )
 
-    def sampling(self, instruction):
+    def _sampling(self, instruction):
         simulation_strategy = GeneralizedCliffordsSimulationStrategy(
             self.state.interferometer
         )

@@ -25,6 +25,18 @@ from .circuit import FockCircuit
 
 
 class FockState(BaseFockState):
+    """Object to represent a general bosonic state in the Fock basis.
+
+    Note:
+        If you only work with pure states, it is advised to use
+        :class:`~piquasso._backends.fock.pure.state.PureFockState` instead.
+
+    Args:
+        density_matrix (numpy.ndarray, optional): The initial density matrix.
+        d (int): The number of modes.
+        cutoff (int): The Fock space cutoff.
+    """
+
     circuit_class = FockCircuit
 
     def __init__(self, density_matrix=None, *, d, cutoff):
@@ -38,6 +50,12 @@ class FockState(BaseFockState):
 
     @classmethod
     def from_pure(cls, pure_fock_state):
+        """Instantiation from a pure state vector.
+
+        Args:
+            pure_fock_state (numpy.ndarray):
+                The pure state vector, from which the density matrix is constructed.
+        """
         state_vector = pure_fock_state._state_vector
         density_matrix = np.outer(state_vector, state_vector)
 
@@ -203,23 +221,43 @@ class FockState(BaseFockState):
         return self.get_fock_probabilities()
 
     def normalize(self):
+        """Normalizes the density matrix to have a trace of 1.
+
+        Raises:
+            RuntimeError: Raised if the current norm of the state is too close to 0.
+        """
         if np.isclose(self.norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
         self._density_matrix = self._density_matrix / self.norm
 
     def validate(self):
+        """Validates the represented state.
+
+        Raises:
+            InvalidState:
+                Raised, if the density matrix is not positive semidefinite, not
+                self-adjoint or the trace of the density matrix is not 1.
+        """
         if not is_selfadjoint(self._density_matrix):
             raise InvalidState(
                 "The density matrix is not self-adjoint:\n"
                 f"density_matrix={self._density_matrix}"
             )
 
-        trace_of_density_matrix = sum(self.fock_probabilities)
+        fock_probabilities = self.fock_probabilities
+
+        if not np.all(fock_probabilities >= 0.0):
+            raise InvalidState(
+                "The density matrix is not positive semidefinite.\n"
+                f"fock_probabilities={fock_probabilities}"
+            )
+
+        trace_of_density_matrix = sum(fock_probabilities)
 
         if not np.isclose(trace_of_density_matrix, 1.0):
             raise InvalidState(
                 f"The trace of the density matrix is {trace_of_density_matrix}, "
                 "instead of 1.0:\n"
-                f"fock_probabilities={self.fock_probabilities}"
+                f"fock_probabilities={fock_probabilities}"
             )

@@ -39,7 +39,7 @@ def quad_transformation(d):
         d (int): The number of modes.
 
     Returns:
-        np.array: The basis changing matrix.
+        numpy.ndarray: The basis changing matrix.
     """
 
     T = np.zeros((2 * d, 2 * d))

@@ -44,7 +44,7 @@ def create_instance_from_mapping(mapping):
     class, and the `"properties"` will be used to initialize the class with.
 
     Args:
-        mapping (collections.Mapping): The instance represented in a mapping.
+        mapping (~collections.abc.Mapping): The instance represented in a mapping.
 
     Returns:
         The created instance corresponding to the `mapping` specified.

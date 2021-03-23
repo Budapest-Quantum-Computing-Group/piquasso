@@ -13,6 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+r"""
+Gates can be characterized by a unitary operator :math:`\hat{U}`, which evolves the
+quantum state in the following manner
+
+.. math::
+    \rho' = \hat{U} \rho \hat{U}^\dagger
+
+Gates with at most quadratic Hamiltonians are called linear gates. Evolution of the
+ladder operators by linear gates could be expressed in the form
+
+.. math::
+
+    \hat{U} \hat{\xi} \hat{U}^\dagger = S_{(c)} \hat{\xi} + \vec{d},
+
+where :math:`S_{(c)} \in \operatorname{Sp}(2d, \mathbb{R})`,
+:math:`\vec{d} \in \mathbb{C}^{2d}`,
+
+.. math::
+    \hat{\xi} = \begin{bmatrix}
+        \hat{a} \\
+        \hat{a}^\dagger
+    \end{bmatrix},
+
+where :math:`\hat{a}^\dagger` and :math:`\hat{a}` are the multimode creation and
+annihilation operators, respectively.
+
+Most of the gates defined here are linear gates, which can be characterized by
+:math:`S_{(c)}` and :math:`\vec{d}`.
+"""
+
 import numpy as np
 
 from scipy.optimize import root_scalar
@@ -92,11 +122,21 @@ class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
 
 
 class Interferometer(_BogoliubovTransformation):
-    r"""Applies a general interferometer.
+    r"""Applies a general interferometer gate.
+
+    The evolution of the ladder operators can be described by
+
+    .. math::
+        S_{(c)} = \begin{bmatrix}
+            U & 0_{d \times d} \\
+            0_{d \times d} & U^*
+        \end{bmatrix},
+
+    where :math:`U \in \mathbb{C}^{d \times d}` is a unitary matrix.
 
     Args:
-        matrix (np.array):
-            The representation of the interferometer matrix, corresponding to a
+        matrix (numpy.ndarray):
+            The unitary interferometer matrix, corresponding to a
             passive transformation on the one-particle subspace.
     """
 
@@ -112,25 +152,27 @@ class Interferometer(_BogoliubovTransformation):
 
 
 class Beamsplitter(_BogoliubovTransformation):
-    r"""Applies a beamsplitter instruction.
+    r"""Applies a beamsplitter gate.
 
-    The matrix representation of the beamsplitter instruction
-    is
+    The symplectic representation of the beamsplitter gate is
 
     .. math::
-        B = \begin{bmatrix}
-            t  & r^* \\
-            -r & t
+        S_{(c)} = \begin{bmatrix}
+            t  & -r^* &    & \\
+            r & t   &    & \\
+               &     & t  & -r \\
+               &     & r^* & t
         \end{bmatrix},
 
-    where :math:`t = \cos(\theta)` and :math:`r = e^{- i \phi} \sin(\theta)`.
+    where :math:`t = \cos(\theta)` and :math:`r = e^{i \phi} \sin(\theta)`.
 
     Args:
-        phi (float): Phase angle of the beamsplitter.
+        phi (float):
+            Phase angle of the beamsplitter.
             (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
-        theta (float): The transmittivity angle of the beamsplitter.
+        theta (float):
+            The transmittivity angle of the beamsplitter.
             (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
-
     """
 
     def __init__(self, theta=0., phi=np.pi / 4):
@@ -150,15 +192,15 @@ class Beamsplitter(_BogoliubovTransformation):
 
 
 class Phaseshifter(_ScalableBogoliubovTransformation):
-    r"""Rotation or phaseshift instruction.
+    r"""Applies a rotation or phaseshift gate.
 
-    The annihilation and creation operators are evolved in the following
-    way:
+    The symplectic representation of the phaseshifter gate is
 
     .. math::
-        P(\phi) \hat{a}_k P(\phi)^\dagger = e^{i \phi} \hat{a}_k \\
-        P(\phi) \hat{a}_k^\dagger P(\phi)^\dagger
-            = e^{- i \phi} \hat{a}_k^\dagger
+        S_{(c)} = \begin{bmatrix}
+            e^{i \phi} & 0 \\
+            0 & e^{- i \phi}
+        \end{bmatrix}
 
     Args:
         phi (float): The angle of the rotation.
@@ -176,21 +218,21 @@ class MachZehnder(_BogoliubovTransformation):
     r"""Mach-Zehnder interferometer.
 
     .. math::
-        MZ(\phi_{int}, \phi_{ext}) =
-            B(\pi/4, \pi/2) (R(\phi_{int}) \oplus \mathbb{1})
-            B(\pi/4, \pi/2) (R(\phi_{ext}) \oplus \mathbb{1})
+        S_{(c)} = \begin{bmatrix}
+        e^{i \phi_{ext} } (e^{i \phi_{int} } - 1)   & i (e^{i \phi_{int} } + 1) & & \\
+        i e^{i \phi_{ext} } (e^{i \phi_{int} } + 1) & 1 - e^{i \phi_{int} }     & & \\
+        & & e^{-i \phi_{ext} } (e^{-i \phi_{int} } - 1) & -i (e^{-i \phi_{int} } + 1) \\
+        & & -i e^{-i \phi_{ext} } (e^{-i \phi_{int} } + 1) & 1 - e^{-i \phi_{int} }
+        \end{bmatrix},
 
     where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
 
-    Let :math:`MZ(\phi_{int}, \phi_{ext}) =: MZ`. Then
+    The Mach-Zehnder interferometer is equivalent to
 
     .. math::
-        MZ a_i MZ^\dagger =
-            e^{i \phi_{ext}} (e^{i \phi_{int}} - 1) a_i + i (e^{i \phi_{int}} - 1) a_j
-
-    .. math::
-        MZ a_j MZ^\dagger =
-            i e^{i \phi_{ext}} (e^{i \phi_{int}} + 1) a_i + (1 - e^{i \phi_{int}}) a_j
+        MZ(\phi_{int}, \phi_{ext}) =
+            B(\pi/4, \pi/2) (R(\phi_{int}) \oplus \mathbb{1})
+            B(\pi/4, \pi/2) (R(\phi_{ext}) \oplus \mathbb{1})
 
 
     Args:
@@ -198,7 +240,7 @@ class MachZehnder(_BogoliubovTransformation):
         ext (float): The external angle.
     """
 
-    def __init__(self, *, int_: float, ext: float):
+    def __init__(self, int_: float, ext: float):
         self._set_params(int_=int_, ext=ext)
 
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
@@ -214,9 +256,19 @@ class MachZehnder(_BogoliubovTransformation):
 
 
 class Fourier(_ScalableBogoliubovTransformation):
-    r"""Fourier gate.
+    r"""Applies a Fourier gate.
 
-    Corresponds to the Rotaton gate :class:`R` with :math:`\phi = \pi/2`.
+    The symplectic representation of the phaseshifter gate is
+
+    .. math::
+        S_{(c)} = \begin{bmatrix}
+            i & 0  \\
+            0 & -i \\
+        \end{bmatrix}
+
+    Note:
+        Corresponds to the :class:`Phaseshifter` gate :class:`R` with
+        :math:`\phi = \pi/2`.
     """
 
     def __init__(self):
@@ -224,15 +276,32 @@ class Fourier(_ScalableBogoliubovTransformation):
 
 
 class GaussianTransform(_BogoliubovTransformation):
-    """Applies a Gaussian transformation to the state.
+    r"""Applies a Gaussian transformation gate.
+
+    The symplectic representation of the Gaussian gate is
+
+    .. math::
+        S_{(c)} = \begin{bmatrix}
+            P & A \\
+            A^* & P^*
+        \end{bmatrix},
+
+    where :math:`P, A \in C^{d \times d}` fulfilling the relations
+
+    .. math::
+        P P^\dagger - A A^\dagger &= I_{d \times d} \\
+        P A^T &= A P^T
 
     Args:
-        passive (np.ndarray):
+        passive (numpy.ndarray):
             The passive submatrix of the symplectic matrix corresponding to the
             transformation.
-        active (np.ndarray):
+        active (numpy.ndarray):
             The active submatrix of the symplectic matrix corresponding to the
             transformation.
+
+    Raises:
+        InvalidParameters: Raised if the parameters do not form a symplectic matrix.
     """
 
     def __init__(self, passive, active):
@@ -253,35 +322,22 @@ class GaussianTransform(_BogoliubovTransformation):
 
 
 class Squeezing(_ScalableBogoliubovTransformation):
-    r"""Applies the squeezing operator.
+    r"""Applies the squeezing gate.
 
-    The definition of the operator is:
-
-    .. math::
-        S(z) = \exp\left(\frac{1}{2}(z^* a^2 -z {a^\dagger}^2)\right)
-
-    where :math:`z = r e^{i\theta}`. The :math:`r` parameter is the amplitude of the
-    squeezing and :math:`\theta` is the angle of the squeezing.
-
-    This act of squeezing at a given rotation angle :math:`\theta` results in a
-    shrinkage in the :math:`\hat{x}` quadrature and a stretching in the other quadrature
-    :math:`\hat{p}` as follows:
+    The symplectic representation of the squeezing gate is
 
     .. math::
-        S^\dagger(z) x_{\theta} S(z) =
-            e^{-r} x_{\theta}, \: S^\dagger(z) p_{\theta} S(z) = e^{r} p_{\theta}
+        S_{(c)} = \begin{bmatrix}
+            \cosh r & - e^{i phi} \sinh r \\
+            - e^{- i phi} \sinh r & \cosh r
+        \end{bmatrix}.
 
-    The action of the :math:`\hat{S}(z)` gate on the ladder operators :math:`\hat{a}`
-    and :math:`\hat{a}^\dagger` can be defined as follows:
+    The unitary squeezing operator is
 
     .. math::
-        {S(z)}^{\dagger}\hat{a}S(z) =
-            \alpha\hat{a} - \beta \hat{a}^{\dagger} \\
-            {S(z)}^{\dagger}\hat{a}^\dagger S(z) =
-            \alpha\hat{a}^\dagger - \beta^* \hat{a}
+        S(z) = \exp ( \frac{1}{2}(z^* a^2 -z a^{\dagger 2} ),
 
-    where :math:`\alpha` and :math:`\beta` are :math:`\cosh(amp)`,
-    :math:`e^{i\theta}\sinh(amp)` respectively.
+    where :math:`z \in \mathbb{C}^{d \times d}` is a symmetric matrix.
 
     Args:
         r (float): The amplitude of the squeezing instruction.
@@ -304,15 +360,12 @@ class Squeezing(_ScalableBogoliubovTransformation):
 class QuadraticPhase(_ScalableBogoliubovTransformation):
     r"""Applies the quadratic phase instruction to the state.
 
-    The operator of the quadratic phase gate is
-
     .. math::
-        P(s) = \exp (i \frac{s \hat{x}}{2\hbar}),
+        S_{(c)} = \begin{bmatrix}
+            1 + i \frac{s}{2} & i \frac{s}{2} \\
+            -i \frac{s}{2} & 1 - i \frac{s}{2}
+        \end{bmatrix}.
 
-    and it evolves the annihilation operator as
-
-    .. math::
-        P(s)^\dagger a_i P(s) = (1 + i \frac{s}{2}) a_i + i \frac{s}{2} a_i^\dagger.
     """
 
     def __init__(self, s):
@@ -325,11 +378,15 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
 
 
 class Squeezing2(_BogoliubovTransformation):
-    r"""2-mode squeezing gate.
+    r"""Applies the two-mode squeezing gate to the state.
 
     .. math::
-        S a_1 S^\dagger = a_1 \cosh r + a_2^\dagger \exp(i \phi)
-        S a_2 S^\dagger = a_2 \cosh r + a_1^\dagger \exp(i \phi)
+        S_{(c)} = \begin{bmatrix}
+            \cosh r & 0 & 0 & e^{i \phi} \sinh r \\
+            0 & \cosh r & e^{i \phi} \sinh r & 0 \\
+            0 & e^{- i \phi} \sinh r & \cosh r & 0 \\
+            e^{- i \phi} \sinh r & 0 & 0 & \cosh r
+        \end{bmatrix}.
 
     Args:
         r (float): The amplitude of the squeezing instruction.
@@ -356,6 +413,17 @@ class Squeezing2(_BogoliubovTransformation):
 
 
 class ControlledX(_BogoliubovTransformation):
+    r"""Applies the controlled X gate to the state.
+
+    .. math::
+        S_{(z)} = \begin{bmatrix}
+            1            & - \frac{s}{2} & 0           & \frac{s}{2} \\
+            \frac{s}{2} & 1              & \frac{s}{2} & 0            \\
+            0            & \frac{s}{2} & 1            & - \frac{s}{2} \\
+            \frac{s}{2} & 0            & \frac{s}{2} & 1
+        \end{bmatrix}.
+    """
+
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -376,6 +444,16 @@ class ControlledX(_BogoliubovTransformation):
 
 
 class ControlledZ(_BogoliubovTransformation):
+    r"""Applies the controlled Z gate to the state.
+
+    .. math::
+        S_{(z)} = \begin{bmatrix}
+            1            & i \frac{s}{2} & 0            & i \frac{s}{2}    \\
+            i \frac{s}{2} & 1              & i \frac{s}{2} & 0             \\
+            0            & -i \frac{s}{2} & 1            & - i \frac{s}{2} \\
+            -i \frac{s}{2} & 0            & -i \frac{s}{2} & 1
+        \end{bmatrix}.
+    """
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -398,15 +476,18 @@ class ControlledZ(_BogoliubovTransformation):
 class Displacement(_ScalableBogoliubovTransformation):
     r"""Phase space displacement instruction.
 
-    One must either specify `alpha` only, or the combination of `r` and `phi`.
+    Evolves the ladder operators by
 
+    .. math::
+        \hat{\xi} \mapsto \hat{\xi} + \begin{bmatrix} \alpha \\ \alpha^* \end{bmatrix},
+
+    where :math:`\alpha \in \mathbb{C}^{d \times d}`.
+
+    One must either specify `alpha` only, or the combination of `r` and `phi`.
     When `r` and `phi` are the given parameters, `alpha` is calculated via:
 
     .. math:
         \alpha = r \exp(i \phi).
-
-    See:
-        :ref:`gaussian_displacement`
 
     Args:
         alpha (complex): The displacement.
@@ -456,6 +537,10 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
 class Kerr(Instruction):
     r"""Kerr gate.
 
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+
     .. math::
         K(\xi) = \exp(i \xi \hat{n} \hat{n})
 
@@ -466,12 +551,16 @@ class Kerr(Instruction):
         xi (float): The magnitude of the Kerr nonlinear term.
     """
 
-    def __init__(self, *, xi: float):
+    def __init__(self, xi: float):
         super().__init__(xi=xi)
 
 
 class CrossKerr(Instruction):
     r"""Cross-Kerr gate.
+
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
 
     .. math::
         CK(\xi) = \exp(i \xi \hat{n}_i \hat{n}_j)
@@ -484,7 +573,7 @@ class CrossKerr(Instruction):
         xi (float): The magnitude of the Cross-Kerr nonlinear term.
     """
 
-    def __init__(self, *, xi: float):
+    def __init__(self, xi: float):
         super().__init__(xi=xi)
 
 

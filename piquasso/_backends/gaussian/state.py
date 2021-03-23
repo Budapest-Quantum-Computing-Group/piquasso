@@ -32,7 +32,7 @@ from piquasso._math.linalg import (
     block_reduce,
 )
 from piquasso._math._random import choose_from_cumulated_probabilities
-
+from piquasso._math.combinatorics import partitions
 
 from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.torontonian import torontonian
@@ -43,46 +43,28 @@ from .transformations import quad_transformation
 
 
 class GaussianState(State):
-    r"""Object to represent a Gaussian state.
+    r"""Class to represent a Gaussian state.
 
-    A Gaussian state is fully characterised by its m and correlation
-    matrix, i.e. its first and second moments with the quadrature
-    operators.
+    Example usage:
 
-    However, for computations, we only use the
-    :math:`C, G \in \mathbb{C}^{d \times d}`
-    and the :math:`m \in \mathbb{C}^d` vector.
+    .. code-block:: python
 
-    Attributes:
-        m (numpy.array): The expectation value of the annihilation operators on all
-            modes (a vector, essentially), and is defined by
+        with pq.Program() as program:
+            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
 
-            .. math::
-                m = \langle \hat{a}_i \rangle_{\rho}.
-
-        C (numpy.array): A correlation matrix which is defined by
-
-            .. math::
-                \langle \hat{C}_{ij} \rangle_{\rho} =
-                \langle \hat{a}^\dagger_i \hat{a}_j \rangle_{\rho}
-                - \langle \hat{a}^\dagger_i \rangle_{\rho}
-                \langle \hat{a}_j \rangle_{\rho}.
-
-        G (numpy.array): A correlation matrix which is defined by
-
-            .. math::
-                \langle \hat{G}_{ij} \rangle_{\rho} =
-                \langle \hat{a}_i \hat{a}_j \rangle_{\rho}
-                - \langle \hat{a}_i \rangle_{\rho} \langle \hat{a}_j \rangle_{\rho}.
     """
 
     circuit_class = GaussianCircuit
 
-    def __init__(self, *, d):
+    def __init__(self, d):
         self.d = d
         self.reset()
 
     def reset(self):
+        """
+        Resets this object to a vacuum state.
+        """
+
         vector_shape = (self.d, )
         matrix_shape = vector_shape * 2
 
@@ -108,6 +90,18 @@ class GaussianState(State):
         )
 
     def validate(self):
+        """
+        Validates the Gaussian state.
+
+        Raises:
+            InvalidState:
+                Raised if the underlying Gaussian state is invalid, which could mean
+                - ill-shaped mean and covariance;
+                - non-symmetric covariance matrix;
+                - the covariance matrix doesn't fulfill the Robertson-Schrödinger
+                  uncertainty relations.
+        """
+
         self._validate_mean(self.mean, self.d)
         self._validate_cov(self.cov, self.d)
 
@@ -143,14 +137,14 @@ class GaussianState(State):
 
     @property
     def xp_mean(self):
-        r"""The state's mean in the xp basis.
+        r"""The state's mean in the xp-ordered basis.
 
         The expectation value of the quadrature operators in xp basis, i.e.
         :math:`\operatorname{Tr} \rho \hat{Y}`, where
         :math:`\hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
 
         Returns:
-            np.array: A :math:`d`-vector.
+            numpy.ndarray: A :math:`d`-vector.
         """
 
         dimensionless_xp_mean = np.concatenate(
@@ -177,7 +171,8 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array: The :math:`2d \times 2d` xp-ordered covariance matrix in xp basis.
+            numpy.ndarray:
+                The :math:`2d \times 2d` xp-ordered covariance matrix.
         """
 
         C = self._C
@@ -211,7 +206,7 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array: The :math:`2d \times 2d` correlation matrix in the xp basis.
+            numpy.ndarray: The :math:`2d \times 2d` correlation matrix in the xp basis.
         """
         xp_mean = self.xp_mean
         return self.xp_cov + 2 * np.outer(xp_mean, xp_mean)
@@ -232,7 +227,7 @@ class GaussianState(State):
         r"""Returns the xp-ordered mean of the state.
 
         Returns:
-            np.array: A :math:`2d`-vector.
+            numpy.ndarray: A :math:`2d`-vector.
                 The expectation value of the quadrature operators in
                 xp-ordering, i.e. :math:`\operatorname{Tr} \rho \hat{R}`, where
                 :math:`\hat{R} = (x_1, p_1, \dots, x_d, p_d)^T`.
@@ -266,7 +261,7 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array:
+            numpy.ndarray:
                 The :math:`2d \times 2d` quadrature-ordered covariance matrix in
                 xp-ordered basis.
         """
@@ -301,7 +296,7 @@ class GaussianState(State):
 
     @property
     def corr(self):
-        r"""Returns the quadrature-ordered correlation matrix of the state.
+        r"""The quadrature-ordered correlation matrix of the state.
 
         Let :math:`M` be the correlation matrix in the quadrature basis.
         Then
@@ -318,7 +313,7 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            np.array: The :math:`2d \times 2d` quad-ordered correlation matrix.
+            numpy.ndarray: The :math:`2d \times 2d` quad-ordered correlation matrix.
         """
 
         T = quad_transformation(self.d)
@@ -348,31 +343,29 @@ class GaussianState(State):
         ) + np.identity(2 * self.d)
 
     def rotated(self, phi):
-        r"""Returns the copy of the current state, rotated by `phi`.
+        r"""Returns the copy of the current state, rotated by angle `phi`.
 
         Let :math:`\phi \in [ 0, 2 \pi )`. Let us define the following:
 
         .. math::
             x_{i, \phi} = \cos\phi~x_i + \sin\phi~p_i,
 
-        which is a generalized quadrature operator. One could rotate the whole state by
-        this simple, phase space transformation.
-
-        Using the transformation rules between the ladder operators and quadrature
-        operators, i.e.
+        which is a generalized quadrature operator. One could rotate the state by a
+        simple complex phase, which can be shown by using the transformation rules
+        between the ladder operators and quadrature operators, i.e.
 
         .. math::
             x_i &= \sqrt{\frac{\hbar}{2}} (a_i + a_i^\dagger) \\
             p_i &= -i \sqrt{\frac{\hbar}{2}} (a_i - a_i^\dagger),
 
-        we could rewrite :math:`x_{i, \phi}` to the following form:
+        which we could rewrite :math:`x_{i, \phi}` to
 
         .. math::
             x_{i, \phi} = \sqrt{\frac{\hbar}{2}} \left(
                 a_i \exp(-i \phi) + a_i^\dagger \exp(i \phi)
-            \right)
+            \right),
 
-        which means, that e.g. the annihilation operators `a_i` are transformed just
+        meaning that e.g. the annihilation operators `a_i` are transformed just
         multiplied by a phase factor :math:`\exp(-i \phi)` under this phase space
         rotation, i.e.
 
@@ -402,7 +395,7 @@ class GaussianState(State):
         of the Gaussian state, but cuts out the other modes.
 
         Args:
-            modes (tuple): The modes to reduce the state to.
+            modes (tuple[int]): The modes to reduce the state to.
 
         Returns:
             GaussianState: The reduced `GaussianState` instance.
@@ -414,7 +407,7 @@ class GaussianState(State):
         )
 
     def reduced_rotated_mean_and_cov(self, modes, phi):
-        r"""The quadrature operator's mean and covariance on a rotated and reduced state.
+        r"""The mean and covariance on a rotated and reduced state.
 
         Let the index set :math:`\vec{i}` correspond to `modes`, and the angle
         :math:`\phi` correspond to `phi`. The current :class:`GaussianState` instance
@@ -441,11 +434,11 @@ class GaussianState(State):
         specified by :math:`\vec{i}`.
 
         Args:
-            modes (tuple): The modes to reduce the state to.
+            modes (tuple[int]): The modes to reduce the state to.
             phi (float): The angle to rotate the state with.
 
         Returns:
-            tuple:
+            (numpy.ndarray, numpy.ndarray):
                 Quadrature ordered mean and covariance of the reduced and rotated
                 version of the current :class:`GaussianState`.
         """
@@ -467,11 +460,13 @@ class GaussianState(State):
                 \big ).
 
         Args:
-            quadrature_matrix (list): list of canonical coordinates vectors.
-            modes (tuple or None): modes where Wigner function should be calculcated.
+            quadrature_matrix (list[numpy.ndarray]):
+                List of canonical coordinate vectors.
+            modes (tuple[int], optional):
+                Modes where Wigner function should be calculcated.
 
         Returns:
-            tuple: The Wigner function values in the shape of `quadrature_matrix`.
+            list[float]: The Wigner function values in the shape of `quadrature_matrix`.
         """
 
         if modes:
@@ -491,16 +486,6 @@ class GaussianState(State):
         )
 
     def _apply_passive_linear(self, T, modes):
-        r"""Applies the passive transformation `T` to the quantum state.
-
-        See:
-            :ref:`passive_gaussian_transformations`
-
-        Args:
-            T (numpy.array): The matrix to be applied.
-            modes (tuple): Qumodes on which the transformation directly operates.
-        """
-
         self._m[modes, ] = T @ self._m[modes, ]
 
         self._apply_passive_linear_to_C_and_G(T, modes=modes)
@@ -526,21 +511,6 @@ class GaussianState(State):
         self._G[:, modes] = self._G[modes, :].transpose()
 
     def _apply_linear(self, passive_block, active_block, modes):
-        r"""Applies an active transformation to the quantum state.
-
-        See:
-            :ref:`active_gaussian_transformations`
-
-        Args:
-            passive_block (np.ndarray):
-                The passive submatrix of the symplectic matrix corresponding to the
-                transformation.
-            active_block (np.ndarray):
-                The active submatrix of the symplectic matrix corresponding to the
-                transformation.
-            modes (tuple): Qumodes on which the transformation directly operates.
-        """
-
         self._m[modes, ] = (
             passive_block @ self._m[modes, ]
             + active_block @ np.conj(self._m[modes, ])
@@ -776,8 +746,6 @@ class GaussianState(State):
         modes = tuple(range(self.d))
 
         ret = []
-
-        from piquasso._math.combinatorics import partitions
 
         for particle_number in range(cutoff):
             for occupation_numbers in partitions(self.d, particle_number):

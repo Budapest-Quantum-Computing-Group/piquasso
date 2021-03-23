@@ -49,19 +49,22 @@ class Instruction(_PropertyMixin, _RegisterMixin, _CodeMixin):
         self.modes = modes
         return self
 
-    def apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program, register):
         program.instructions.append(self.on_modes(*register.modes))
 
     @classmethod
-    def from_properties(cls, properties):
-        """Creates an `Instruction` instance from a mapping specified.
+    def from_properties(cls, properties: dict):
+        """Creates an :class:`Instruction` instance from a mapping specified.
 
         Args:
-            properties (collections.Mapping):
-                The desired `Operator` instance in the format of a mapping.
+            properties (dict):
+                The desired :class:`Instruction` instance in
+                the format of a mapping.
 
         Returns:
-            Operator: An `Operator` initialized using the specified mapping.
+            Instruction:
+                An :class:`Instruction` initialized using the
+                specified mapping.
         """
 
         instruction = cls(**properties["params"])

@@ -15,14 +15,23 @@
 
 
 class Result:
-    def __init__(self, instruction, samples):
+    """Class for collecting results.
+
+    Args:
+        instruction (~piquasso.api.instruction.Instruction):
+            The instruction corresponding to the measurement result.
+        samples (list[tuple[int or float]]):
+            The generated samples.
+    """
+
+    def __init__(self, instruction, samples: list):
         self.instruction = instruction
         self.samples = samples
 
     def __repr__(self):
         return f"<Result instruction={self.instruction} samples={self.samples}>"
 
-    def to_subgraph_nodes(self):
+    def to_subgraph_nodes(self) -> list:
         """Convert samples to subgraph modes.
 
         Assuming that a graph's adjacency matrix is embedded into the circuit, the
@@ -40,8 +49,9 @@ class Result:
             - https://arxiv.org/abs/1803.10730
 
         Returns:
-            list: The list of subgraph node indices.
+            list[list[int]]: The list of subgraph node indices.
         """
+
         subgraphs = []
 
         for sample in self.samples:

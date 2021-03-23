@@ -25,6 +25,17 @@ from scipy.linalg import block_diag
 
 
 class PNCFockState(BaseFockState):
+    """Object to represent a particle number conserving bosonic state in the Fock basis.
+
+    Note:
+        If you only work with pure states, it is advised to use
+        :class:`~piquasso._backends.fock.pure.state.PureFockState` instead.
+
+    Args:
+        representation (numpy.ndarray, optional): The initial representation.
+        d (int): The number of modes.
+        cutoff (int): The Fock space cutoff.
+    """
     circuit_class = PNCFockCircuit
 
     def __init__(self, representation=None, *, d, cutoff):

@@ -26,42 +26,71 @@ class Vacuum(Instruction):
 
 
 class Mean(Instruction):
-    r"""Set the first canonical moment of the state."""
+    r"""Set the first canonical moment of the state.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    """
 
     def __init__(self, mean):
         super().__init__(mean=mean)
 
 
 class Covariance(Instruction):
-    r"""Sets the covariance matrix of the state."""
+    r"""Sets the covariance matrix of the state.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    """
 
     def __init__(self, cov):
         super().__init__(cov=cov)
 
 
 class StateVector(Instruction, _WeightMixin):
-    r"""State preparation with Fock basis vectors."""
+    r"""State preparation with Fock basis vectors.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
+    """
 
     def __init__(self, *occupation_numbers, coefficient=1.0):
         super().__init__(occupation_numbers=occupation_numbers, coefficient=coefficient)
 
 
 class DensityMatrix(Instruction, _WeightMixin):
-    r"""State preparation with density matrix elements."""
+    r"""State preparation with density matrix elements.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.fock.general.state.FockState`,
+    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    """
 
     def __init__(self, ket=None, bra=None, coefficient=1.0):
         super().__init__(ket=ket, bra=bra, coefficient=coefficient)
 
 
 class Create(Instruction):
-    r"""Create a particle on a mode."""
+    r"""Create a particle on a mode.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.fock.general.state.FockState`,
+    :class:`~piquasso._backends.fock.pure.state.PureFockState`,
+    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    """
 
     def __init__(self):
         pass
 
 
 class Annihilate(Instruction):
-    r"""Annihilate a particle on a mode."""
+    r"""Annihilate a particle on a mode.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.fock.general.state.FockState`,
+    :class:`~piquasso._backends.fock.pure.state.PureFockState`,
+    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    """
 
     def __init__(self):
         pass

@@ -20,14 +20,24 @@ from piquasso.core.mixins import _PropertyMixin, _RegisterMixin, _CodeMixin
 
 
 class State(_PropertyMixin, _RegisterMixin, _CodeMixin, abc.ABC):
+    """The base class from which all `*State` classes are derived.
+
+    Attributes:
+        circuit_class (~piquasso.api.circuit.Circuit):
+            Class attribute for specifying corresponding circuit. The circuit is
+            responsible to execute the specified instructions on the :class:`State`
+            instance.
+        d (int): Instance attribute specifying the number of modes.
+    """
+
     circuit_class = None
     d: int = None
 
-    def apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program, register):
         program.state = self.copy()
 
     @classmethod
-    def from_properties(cls, properties):
+    def from_properties(cls, properties: dict):
         return cls(**properties)
 
     def _as_code(self):
