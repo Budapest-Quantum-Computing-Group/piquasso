@@ -453,3 +453,26 @@ def test_complex_circuit(gaussian_state_assets):
 
     expected_state = gaussian_state_assets.load()
     assert program.state == expected_state
+
+
+def test_program_stacking_with_measurement():
+    with pq.Program() as preparation:
+        pq.Q() | pq.GaussianState(d=5)
+
+        pq.Q(0, 1) | pq.S2(r=1, phi=np.pi / 4)
+        pq.Q(2, 3) | pq.S2(r=2, phi=np.pi / 3)
+
+    with pq.Program() as interferometer:
+        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
+        pq.Q(1) | pq.R(phi=np.pi / 2)
+        pq.Q(1, 2) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+
+    with pq.Program() as program:
+        pq.Q(0, 1, 2, 3, 4) | preparation
+
+        pq.Q(0, 1, 2) | interferometer
+        pq.Q(2, 3, 4) | interferometer
+
+        pq.Q(3) | pq.MeasureHeterodyne()
+
+    program.execute()

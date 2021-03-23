@@ -612,7 +612,7 @@ class GaussianState(State):
         evolved_mean = np.zeros(shape=(2 * d, ))
         evolved_mean[outer_indices] = evolved_r_A
 
-        evolved_cov = np.identity(2 * d)
+        evolved_cov = np.identity(2 * d) * constants.HBAR
         evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
 
         self.mean = evolved_mean
