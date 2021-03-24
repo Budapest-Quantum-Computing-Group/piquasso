@@ -41,13 +41,7 @@ class FockState(BaseFockState):
         self = cls(d=d, cutoff=cutoff)
 
         for number_preparation in number_preparations:
-            ket, bra, coefficient = number_preparation.params
-
-            self._add_occupation_number_basis(
-                ket=ket,
-                bra=bra,
-                coefficient=coefficient,
-            )
+            self._add_occupation_number_basis(**number_preparation.params)
 
         return self
 

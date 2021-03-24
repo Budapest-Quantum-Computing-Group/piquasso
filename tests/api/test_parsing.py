@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import json
 import pytest
+import numpy as np
 
 from piquasso.core.registry import _register
 from piquasso.api.operation import Operation
@@ -21,7 +22,7 @@ class TestProgramJSONParsing:
         @_register
         class FakeOperation(Operation):
             def __init__(self, first_param, second_param):
-                super().__init__(first_param, second_param)
+                super().__init__(first_param=first_param, second_param=second_param)
 
         return FakeOperation
 
@@ -113,14 +114,16 @@ class TestProgramJSONParsing:
 
         assert program.circuit.__class__.__name__ == "FakeCircuit"
 
-        assert program.operations[0].params == (
-            "first_param_value", "second_param_value"
-        )
+        assert program.operations[0].params == {
+            "first_param": "first_param_value",
+            "second_param": "second_param_value",
+        }
         assert program.operations[0].modes == ["some", "modes"]
 
-        assert program.operations[1].params == (
-            "2nd_operations_1st_param_value", "2nd_operations_2nd_param_value"
-        )
+        assert program.operations[1].params == {
+            "first_param": "2nd_operations_1st_param_value",
+            "second_param": "2nd_operations_2nd_param_value",
+        }
         assert program.operations[1].modes == ["some", "other", "modes"]
 
     def test_from_json(
@@ -147,13 +150,15 @@ class TestProgramJSONParsing:
 
         assert program.circuit.__class__.__name__ == "FakeCircuit"
 
-        assert program.operations[0].params == (
-            "first_param_value", "second_param_value"
-        )
+        assert program.operations[0].params == {
+            "first_param": "first_param_value",
+            "second_param": "second_param_value",
+        }
         assert program.operations[0].modes == ["some", "modes"]
-        assert program.operations[1].params == (
-            "2nd_operations_1st_param_value", "2nd_operations_2nd_param_value"
-        )
+        assert program.operations[1].params == {
+            "first_param": "2nd_operations_1st_param_value",
+            "second_param": "2nd_operations_2nd_param_value",
+        }
         assert program.operations[1].modes == ["some", "other", "modes"]
 
 
@@ -184,8 +189,38 @@ class TestBlackbirdParsing:
 
         bs_gate = self.program.operations[0]
         assert bs_gate.modes == [1, 2]
-        assert bs_gate.params == (0.7853981633974483, 0)
+        assert bs_gate.params == {
+            "theta": 0.7853981633974483,
+            "phi": 0,
+        }
 
         r_gate = self.program.operations[1]
         assert r_gate.modes == [1]
-        assert r_gate.params == (0.7853981633974483,)
+        assert r_gate.params == {
+            "phi": 0.7853981633974483,
+        }
+
+    def test_from_blackbird_with_default_arguments(self):
+        string = \
+            """name StateTeleportation
+            version 1.0
+
+            BSgate() | [1, 2]
+            Rgate(0.7853981633974483) | 1
+            """
+        self.program.loads_blackbird(string)
+
+        assert len(self.program.operations) == 2
+
+        bs_gate = self.program.operations[0]
+        assert bs_gate.modes == [1, 2]
+        assert bs_gate.params == {
+            "theta": 0.0,
+            "phi": np.pi / 4,
+        }
+
+        r_gate = self.program.operations[1]
+        assert r_gate.modes == [1]
+        assert r_gate.params == {
+            "phi": 0.7853981633974483,
+        }

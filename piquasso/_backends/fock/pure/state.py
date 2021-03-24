@@ -31,8 +31,7 @@ class PureFockState(BaseFockState):
 
         for number_preparation in number_preparations:
             self._add_occupation_number_basis(
-                occupation_numbers=number_preparation.params[0],
-                coefficient=number_preparation.params[-1],
+                **number_preparation.params,
                 modes=None,
             )
 

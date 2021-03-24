@@ -48,15 +48,14 @@ class GaussianCircuit(Circuit):
 
     def _displacement(self, operation):
         self.state._apply_displacement(
-            alpha=operation.params[0],
+            **operation.params,
             mode=operation.modes[0],
         )
 
     def _measure_dyne(self, operation):
         outcomes = self.state._apply_generaldyne_measurement(
-            detection_covariance=operation.params[0],
+            **operation.params,
             modes=operation.modes,
-            shots=operation.params[1],
         )
 
         self._add_result(
@@ -70,14 +69,14 @@ class GaussianCircuit(Circuit):
         self.state.reset()
 
     def _mean(self, operation):
-        self.state.mean = operation.params[0]
+        self.state.mean = operation.params["mean"]
 
     def _covariance(self, operation):
-        self.state.cov = operation.params[0]
+        self.state.cov = operation.params["cov"]
 
     def _measure_particle_number(self, operation):
         outcome = self.state._apply_particle_number_measurement(
-            cutoff=operation.params[0],
+            cutoff=operation.params["cutoff"],
             modes=operation.modes,
         )
 

@@ -8,7 +8,7 @@ from .test_program_base import TestProgramBase
 
 class TestProgramExecution(TestProgramBase):
     def test_operation_execution(self, DummyOperation):
-        operation = DummyOperation(420)
+        operation = DummyOperation(param=420)
         with self.program:
             Q(0, 1) | operation
 
@@ -19,7 +19,7 @@ class TestProgramExecution(TestProgramBase):
         )
 
     def test_register_operation_from_left_hand_side(self, DummyOperation):
-        operation = DummyOperation(420)
+        operation = DummyOperation(param=420)
         with self.program:
             operation | Q(0, 1)
 

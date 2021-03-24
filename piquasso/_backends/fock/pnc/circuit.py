@@ -13,8 +13,4 @@ class PNCFockCircuit(BaseFockCircuit):
         }
 
     def _density_matrix(self, operation):
-        self.state._add_occupation_number_basis(
-            ket=operation.params[0],
-            bra=operation.params[1],
-            coefficient=operation.params[-1],
-        )
+        self.state._add_occupation_number_basis(**operation.params)

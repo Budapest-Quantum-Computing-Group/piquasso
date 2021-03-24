@@ -11,10 +11,10 @@ class Operation(_PropertyMixin):
         *params: Variable length argument list.
     """
 
-    def __init__(self, *params):
-        self._set_params(*params)
+    def __init__(self, **params):
+        self._set_params(**params)
 
-    def _set_params(self, *params):
+    def _set_params(self, **params):
         self.params = params
 
     @classmethod

@@ -38,9 +38,9 @@ class Interferometer(_PassiveLinearGate):
                 "The interferometer matrix should be a square matrix."
             )
 
-        self._set_params(matrix)
+        self._set_params(matrix=matrix)
 
-        super().__init__(matrix)
+        super().__init__(passive_representation=matrix)
 
 
 @_register
@@ -67,7 +67,7 @@ class B(_PassiveLinearGate):
     """
 
     def __init__(self, theta=0., phi=np.pi / 4):
-        self._set_params(theta, phi)
+        self._set_params(theta=theta, phi=phi)
 
         t = np.cos(theta)
         r = np.exp(-1j * phi) * np.sin(theta)
@@ -99,7 +99,7 @@ class R(_PassiveLinearGate):
     """
 
     def __init__(self, phi: float):
-        self._set_params(phi)
+        self._set_params(phi=phi)
 
         super().__init__(np.array([[np.exp(1j * phi)]]))
 
@@ -132,7 +132,7 @@ class MZ(_PassiveLinearGate):
     """
 
     def __init__(self, *, int_: float, ext: float):
-        self._set_params(int_, ext)
+        self._set_params(int_=int_, ext=ext)
 
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
@@ -171,7 +171,7 @@ class GaussianTransform(_LinearGate):
     """
 
     def __init__(self, P, A):
-        self._set_params(P, A)
+        self._set_params(P=P, A=A)
 
         super().__init__(
             passive_representation=P,
@@ -217,17 +217,17 @@ class S(_LinearGate):
     """
 
     def __init__(self, amp, theta=0):
-        self._set_params(amp, theta)
+        self._set_params(amp=amp, theta=theta)
 
         super().__init__(
             passive_representation=np.array(
                 [
-                    [np.cosh(self.params[0])]
+                    [np.cosh(amp)]
                 ]
             ),
             active_representation=np.array(
                 [
-                    [- np.sinh(self.params[0]) * np.exp(1j * theta)]
+                    [- np.sinh(amp) * np.exp(1j * theta)]
                 ]
             ),
         )
@@ -249,7 +249,7 @@ class P(_LinearGate):
     """
 
     def __init__(self, s):
-        self._set_params(s)
+        self._set_params(s=s)
 
         super().__init__(
             passive_representation=np.array([[1 + s/2 * 1j]]),
@@ -271,7 +271,7 @@ class S2(_LinearGate):
     """
 
     def __init__(self, r, phi):
-        self._set_params(r, phi)
+        self._set_params(r=r, phi=phi)
 
         super().__init__(
             passive_representation=np.array(
@@ -292,7 +292,7 @@ class S2(_LinearGate):
 @_register
 class CX(_LinearGate):
     def __init__(self, s):
-        self._set_params(s)
+        self._set_params(s=s)
 
         super().__init__(
             passive_representation=np.array(
@@ -313,7 +313,7 @@ class CX(_LinearGate):
 @_register
 class CZ(_LinearGate):
     def __init__(self, s):
-        self._set_params(s)
+        self._set_params(s=s)
 
         super().__init__(
             passive_representation=np.array(
@@ -365,7 +365,7 @@ class D(Operation):
         if alpha is None:
             alpha = r * np.exp(1j * phi)
 
-        super().__init__(alpha)
+        super().__init__(alpha=alpha)
 
 
 @_register
@@ -403,7 +403,7 @@ class K(Operation):
     """
 
     def __init__(self, *, xi: float):
-        super().__init__(xi)
+        super().__init__(xi=xi)
 
 
 @_register
@@ -422,7 +422,7 @@ class CK(Operation):
     """
 
     def __init__(self, *, xi: float):
-        super().__init__(xi)
+        super().__init__(xi=xi)
 
 
 @_register
@@ -451,4 +451,4 @@ class Sampling(Operation):
                 f"The number of shots should be a positive integer: shots={shots}."
             )
 
-        super().__init__(shots)
+        super().__init__(shots=shots)
