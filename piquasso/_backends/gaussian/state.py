@@ -5,22 +5,16 @@
 import numpy as np
 
 import scipy
-from scipy.special import factorial
-
-import random
-
-from itertools import repeat
 
 from piquasso.api.state import State
 from piquasso.api import constants
 from piquasso.api.errors import InvalidState
 from piquasso._math.functions import gaussian_wigner_function
-from piquasso._math.hafnian import hafnian
+from piquasso._math.hafnian import generate_gaussian_state_samples
 from piquasso._math.linalg import (
     is_symmetric,
     symplectic_form,
     is_positive_semidefinite,
-    block_reduce,
 )
 
 from .circuit import GaussianCircuit
@@ -320,7 +314,7 @@ class GaussianState(State):
 
     @property
     def husimi(self):
-        return self.cov + np.identity(2 * self.d, dtype=complex)
+        return self.cov + np.identity(2 * self.d, dtype=np.float64)
 
     def rotated(self, phi):
         r"""Returns the copy of the current state, rotated by `phi`.
@@ -637,59 +631,17 @@ class GaussianState(State):
 
         return outcome
 
-    def _apply_particle_number_measurement(self, *, cutoff, modes):
+    def _apply_particle_number_measurement(self, *, cutoff, modes, shots):
         if not modes:
             modes = tuple(range(self.d))
 
-        d = len(modes)
-
-        identity = np.identity(d)
-        zeros = np.zeros_like(identity)
-        X = np.block(
-            [
-                [zeros, identity],
-                [identity, zeros]
-            ]
-        )
-
         husimi = self.reduced(modes).husimi
 
-        A = X @ ((np.identity(2 * d) - np.linalg.inv(husimi)))
+        samples = generate_gaussian_state_samples(
+            husimi=husimi,
+            cutoff=cutoff,
+            shots=shots,
+            modes=modes,
+        )
 
-        acc_modes = []
-
-        for index in range(1, len(modes)):
-            acc_modes.append(modes[:index])
-
-        outcome = []
-
-        previous_probability = 1
-
-        for _ in repeat(None, len(modes)):
-
-            probabilities = []
-
-            for n in range(cutoff + 1):
-                reduction_indices = outcome + [n]
-
-                A_reduced = block_reduce(A, reduction_indices=reduction_indices)
-
-                probability = (
-                    hafnian(A_reduced) / (
-                        np.prod(factorial(reduction_indices))
-                        * np.sqrt(np.linalg.det(husimi))
-                    )
-                ).real / previous_probability
-
-                previous_probability = probability
-
-                probabilities.append(probability)
-
-            choice = random.choices(
-                population=range(len(probabilities)),
-                weights=probabilities,
-            )[0]
-
-            outcome.append(choice)
-
-        return outcome
+        return samples
