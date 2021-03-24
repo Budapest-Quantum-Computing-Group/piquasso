@@ -19,9 +19,9 @@ def test_random_gaussianstate(d):
 
         for i in range(d):
             r = np.random.normal()
-            theta = random.uniform(0, 2 * np.pi)
+            phi = random.uniform(0, 2 * np.pi)
 
-            pq.Q(i) | pq.S(amp=r, theta=theta)
+            pq.Q(i) | pq.S(r=r, phi=phi)
 
         random_unitary = np.array(unitary_group.rvs(d))
 

@@ -212,22 +212,22 @@ class S(_LinearGate):
     :math:`e^{i\theta}\sinh(amp)` respectively.
 
     Args:
-        amp (float): The amplitude of the squeezing operation.
-        theta (float): The squeezing angle.
+        r (float): The amplitude of the squeezing operation.
+        phi (float): The squeezing angle.
     """
 
-    def __init__(self, amp, theta=0):
-        self._set_params(amp=amp, theta=theta)
+    def __init__(self, r, phi=0):
+        self._set_params(r=r, phi=phi)
 
         super().__init__(
             passive_representation=np.array(
                 [
-                    [np.cosh(amp)]
+                    [np.cosh(r)]
                 ]
             ),
             active_representation=np.array(
                 [
-                    [- np.sinh(amp) * np.exp(1j * theta)]
+                    [- np.sinh(r) * np.exp(1j * phi)]
                 ]
             ),
         )

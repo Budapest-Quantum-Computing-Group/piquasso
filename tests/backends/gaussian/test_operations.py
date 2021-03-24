@@ -19,8 +19,8 @@ def generate_random_gaussian_state():
                 displacement_gate = pq.D(alpha=alpha)
 
                 r = 2 * np.random.rand() - 1
-                theta = np.random.rand() * 2 * np.pi
-                squeezing_gate = pq.S(r, theta=theta)
+                phi = np.random.rand() * 2 * np.pi
+                squeezing_gate = pq.S(r, phi=phi)
 
                 pq.Q(i) | displacement_gate | squeezing_gate
 
@@ -36,11 +36,11 @@ def generate_random_gaussian_state():
 
 
 def test_squeezing(program, gaussian_state_assets):
-    amp = -0.6
-    theta = 0.7
+    r = -0.6
+    phi = 0.7
 
     with program:
-        pq.Q(1) | pq.S(amp, theta)
+        pq.Q(1) | pq.S(r, phi)
 
     program.execute()
     program.state.validate()
@@ -150,8 +150,8 @@ def test_displacement_and_squeezing(program, gaussian_state_assets):
 
     with program:
         pq.Q(0) | pq.D(r=r, phi=phi)
-        pq.Q(1) | pq.S(amp=-0.6, theta=0.7)
-        pq.Q(2) | pq.S(amp=0.8)
+        pq.Q(1) | pq.S(r=-0.6, phi=0.7)
+        pq.Q(2) | pq.S(r=0.8)
 
     program.execute()
     program.state.validate()
@@ -352,9 +352,9 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
         pq.Q(1) | pq.D(alpha=1)
         pq.Q(2) | pq.D(alpha=1j)
 
-        pq.Q(0) | pq.S(amp=1, theta=np.pi/2)
-        pq.Q(1) | pq.S(amp=2, theta=np.pi/3)
-        pq.Q(2) | pq.S(amp=2, theta=np.pi/4)
+        pq.Q(0) | pq.S(r=1, phi=np.pi/2)
+        pq.Q(1) | pq.S(r=2, phi=np.pi/3)
+        pq.Q(2) | pq.S(r=2, phi=np.pi/4)
 
     initialization.execute()
     initialization.state.validate()
@@ -418,11 +418,11 @@ def test_complex_circuit(gaussian_state_assets):
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=5)
 
-        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
 
         pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
@@ -433,11 +433,11 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.B(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.B(3.340269832485504, 3.289367083610399)
 
-        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
 
         pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
