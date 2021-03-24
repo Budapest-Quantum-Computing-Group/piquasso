@@ -17,6 +17,22 @@ class BaseFockState(State, abc.ABC):
             cutoff=cutoff,
         )
 
+    @classmethod
+    def from_number_preparations(cls, *, d, cutoff, number_preparations):
+        """
+        NOTE: Here is a small coupling between :class:`Operation` and :class:`State`.
+        This is the only case (so far) where the user could specify operations directly.
+
+        Is this needed?
+        """
+
+        self = cls(d=d, cutoff=cutoff)
+
+        for number_preparation in number_preparations:
+            self._add_occupation_number_basis(**number_preparation.params)
+
+        return self
+
     @property
     def d(self):
         return self._space.d

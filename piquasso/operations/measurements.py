@@ -10,10 +10,7 @@ from piquasso.api.operation import Operation
 
 @_register
 class MeasureParticleNumber(Operation):
-    """Particle number measurement.
-
-    # TODO: Measure only certain modes!
-    """
+    """Particle number measurement."""
 
     def __init__(self, cutoff=3, shots=1):
         super().__init__(cutoff=cutoff, shots=shots)
