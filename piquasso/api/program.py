@@ -4,11 +4,8 @@
 
 import json
 import blackbird
-import inspect
-import collections
 
-from piquasso import operations
-from piquasso.core import _context
+from piquasso.core import _context, _blackbird
 from piquasso.core.registry import _create_instance_from_mapping
 
 
@@ -126,80 +123,6 @@ class Program:
     def __exit__(self, exc_type, exc_val, exc_tb):
         _context.current_program = None
 
-    def _blackbird_operation_to_operation(self, blackbird_operation):
-        """
-        Maps one element of the `operations` of a `BlackbirdProgram` into an
-        element of `self.operations`.
-
-        Args:
-            blackbird_operation (dict): An element of the `BlackbirdProgram.operations`
-
-        Returns:
-            Operation:
-                Instance of :class:`Operation` corresponding to the operation defined
-                in Blackbird.
-        """
-
-        pq_operation_class = {
-            "Dgate": operations.gates.D,
-            "Xgate": operations.gates.X,
-            "Zgate": operations.gates.Z,
-            "Sgate": operations.gates.S,
-            "Pgate": operations.gates.P,
-            "Vgate": None,
-            "Kgate": operations.gates.K,
-            "Rgate": operations.gates.R,
-            "BSgate": operations.gates.B,
-            "MZgate": operations.gates.MZ,
-            "S2gate": operations.gates.S2,
-            "CXgate": operations.gates.CX,
-            "CZgate": operations.gates.CZ,
-            "CKgate": operations.gates.CK,
-            "Fouriergate": operations.gates.F,
-        }.get(blackbird_operation["op"])
-
-        params = self._get_operation_params(
-            pq_operation_class=pq_operation_class, bb_operation=blackbird_operation
-        )
-
-        operation = pq_operation_class(**params)
-
-        operation.modes = blackbird_operation["modes"]
-
-        return operation
-
-    @staticmethod
-    def _get_operation_params(pq_operation_class, bb_operation):
-        bb_params = bb_operation.get("args", None)
-
-        if bb_params is None:
-            return {}
-
-        parameters = inspect.signature(pq_operation_class).parameters
-
-        operation_params = collections.OrderedDict()
-
-        for param_name, param in parameters.items():
-            if param_name == "self":
-                continue
-
-            operation_params[param_name] = param.default
-
-        for pq_param_name, bb_param in zip(operation_params.keys(), bb_params):
-            operation_params[pq_param_name] = bb_param
-
-        return operation_params
-
-    def from_blackbird(self, bb):
-        """
-        Loads the gates to apply into `self.operations` from a
-        :class:`blackbird.BlackbirdProgram`
-
-        Args:
-            bb (blackbird.BlackbirdProgram): the BlackbirdProgram to use
-        """
-        self.operations = [*map(self._blackbird_operation_to_operation, bb.operations)]
-
     def load_blackbird(self, filename: str):
         """
         Loads the gates to apply into `self.operations` from a BlackBird file
@@ -208,8 +131,9 @@ class Program:
         Args:
             filename (str): file location of a valid Blackbird program
         """
-        bb = blackbird.load(filename)
-        return self.from_blackbird(bb)
+        blackbird_program = blackbird.load(filename)
+
+        self.operations.extend(_blackbird.load_operations(blackbird_program))
 
     def loads_blackbird(self, string):
         """
@@ -219,5 +143,6 @@ class Program:
         Args:
             string (str): string containing a valid Blackbird Program
         """
-        bb = blackbird.loads(string)
-        return self.from_blackbird(bb)
+        blackbird_program = blackbird.loads(string)
+
+        self.operations.extend(_blackbird.load_operations(blackbird_program))

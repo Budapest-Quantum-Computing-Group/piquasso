@@ -2,11 +2,8 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from unittest.mock import Mock
-
 import json
 import pytest
-import numpy as np
 
 from piquasso.core.registry import _register
 from piquasso.api.operation import Operation
@@ -160,67 +157,3 @@ class TestProgramJSONParsing:
             "second_param": "2nd_operations_2nd_param_value",
         }
         assert program.operations[1].modes == ["some", "other", "modes"]
-
-
-class TestBlackbirdParsing:
-    """
-    TODO: Temporary solution to test `blackbird` code parsing.
-
-    Ideally, `blackbird` parsing should be done `Circuit`-independently.
-    """
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.program = Program(
-            state=Mock(name="State"),
-        )
-
-    def test_from_blackbird(self):
-        string = \
-            """name StateTeleportation
-            version 1.0
-
-            BSgate(0.7853981633974483, 0) | [1, 2]
-            Rgate(0.7853981633974483) | 1
-            """
-        self.program.loads_blackbird(string)
-
-        assert len(self.program.operations) == 2
-
-        bs_gate = self.program.operations[0]
-        assert bs_gate.modes == [1, 2]
-        assert bs_gate.params == {
-            "theta": 0.7853981633974483,
-            "phi": 0,
-        }
-
-        r_gate = self.program.operations[1]
-        assert r_gate.modes == [1]
-        assert r_gate.params == {
-            "phi": 0.7853981633974483,
-        }
-
-    def test_from_blackbird_with_default_arguments(self):
-        string = \
-            """name StateTeleportation
-            version 1.0
-
-            BSgate() | [1, 2]
-            Rgate(0.7853981633974483) | 1
-            """
-        self.program.loads_blackbird(string)
-
-        assert len(self.program.operations) == 2
-
-        bs_gate = self.program.operations[0]
-        assert bs_gate.modes == [1, 2]
-        assert bs_gate.params == {
-            "theta": 0.0,
-            "phi": np.pi / 4,
-        }
-
-        r_gate = self.program.operations[1]
-        assert r_gate.modes == [1]
-        assert r_gate.params == {
-            "phi": 0.7853981633974483,
-        }

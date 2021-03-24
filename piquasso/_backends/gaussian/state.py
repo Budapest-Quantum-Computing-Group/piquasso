@@ -122,8 +122,8 @@ class GaussianState(State):
 
         if not is_positive_semidefinite(cov + 1j * symplectic_form(d)):
             raise InvalidState(
-                "The covariance matrix is invalid. TODO: We should have a link here."
-            )
+                "The covariance matrix is invalid."
+            )  # TODO: We should have a link here.
 
     @property
     def xp_mean(self):
