@@ -23,19 +23,6 @@ class PNCFockState(BaseFockState):
             else self._get_empty()
         )
 
-    @classmethod
-    def from_number_preparations(cls, *, d, cutoff, number_preparations):
-        """
-        TODO: Remove coupling!
-        """
-
-        self = cls(d=d, cutoff=cutoff)
-
-        for number_preparation in number_preparations:
-            self._add_occupation_number_basis(**number_preparation.params)
-
-        return self
-
     def _get_empty(self):
         return [
             np.zeros(shape=(self._space._symmetric_cardinality(n), ) * 2, dtype=complex)
