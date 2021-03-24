@@ -59,11 +59,12 @@ class GaussianCircuit(Circuit):
             shots=operation.params[1],
         )
 
-        # TODO: Better way of providing results
-        for outcome in outcomes:
-            self.program.results.append(
-                Result(measurement=operation, outcome=outcome)
-            )
+        self._add_result(
+            [
+                Result(operation=operation, outcome=outcome)
+                for outcome in outcomes
+            ]
+        )
 
     def _vacuum(self, operation):
         self.state.reset()
@@ -80,7 +81,6 @@ class GaussianCircuit(Circuit):
             modes=operation.modes,
         )
 
-        # TODO: Better way of providing results
-        self.program.results.append(
-            Result(measurement=operation, outcome=outcome)
+        self._add_result(
+            Result(operation=operation, outcome=outcome)
         )

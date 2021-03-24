@@ -36,12 +36,16 @@ class Operation(_PropertyMixin):
         return operation
 
     def __repr__(self):
-        display_string = self.__class__.__name__
+        if hasattr(self, "modes"):
+            modes = "modes={}".format(self.modes)
+        else:
+            modes = ""
 
-        if getattr(self, "modes", None):
-            display_string += f" on modes {self.modes}"
+        if hasattr(self, "params"):
+            params = "{}".format(", ".join([str(param) for param in self.params]))
+        else:
+            params = ""
 
-        if getattr(self, "params", None):
-            display_string += f" with params {self.params}"
+        classname = self.__class__.__name__
 
-        return display_string
+        return f"<pq.{classname}({params}, {modes})>"
