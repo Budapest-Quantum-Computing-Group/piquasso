@@ -38,6 +38,8 @@ from .operations.gates import (
     S2,
     K,
     CK,
+    CX,
+    CZ,
     Interferometer,
     Sampling,
 )
@@ -98,6 +100,8 @@ __all__ = [
     "S2",
     "K",
     "CK",
+    "CX",
+    "CZ",
     "Interferometer",
     "Sampling",
     "Vacuum",

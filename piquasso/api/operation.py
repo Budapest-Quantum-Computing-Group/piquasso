@@ -17,6 +17,10 @@ class Operation(_PropertyMixin):
     def _set_params(self, **params):
         self.params = params
 
+    def on_modes(self, *modes):
+        self.modes = modes
+        return self
+
     @classmethod
     def from_properties(cls, properties):
         """Creates an `Operation` instance from a mapping specified.
@@ -42,10 +46,21 @@ class Operation(_PropertyMixin):
             modes = ""
 
         if hasattr(self, "params"):
-            params = "{}".format(", ".join([str(param) for param in self.params]))
+            params = "{}".format(
+                ", ".join(
+                    [f"{key}={value}" for key, value in self.params.items()]
+                )
+            )
         else:
             params = ""
 
         classname = self.__class__.__name__
 
         return f"<pq.{classname}({params}, {modes})>"
+
+    def __eq__(self, other):
+        return (
+            self.modes == other.modes
+            and
+            self.params == other.params
+        )
