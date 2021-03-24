@@ -18,8 +18,8 @@ def program():
         pq.Q(1) | pq.D(r=1, phi=np.pi/4)
         pq.Q(2) | pq.D(r=1 / 2, phi=np.pi/6)
 
-        pq.Q(1) | pq.S(amp=1 / 2, theta=np.pi/4)
-        pq.Q(2) | pq.S(amp=3 / 4)
+        pq.Q(1) | pq.S(r=1 / 2, phi=np.pi/4)
+        pq.Q(2) | pq.S(r=3 / 4)
 
     return program
 

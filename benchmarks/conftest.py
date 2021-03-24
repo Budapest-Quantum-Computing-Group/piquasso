@@ -19,11 +19,11 @@ def example_gaussian_pq_program(d):
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=d)
 
-        pq.Q(0) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(amp=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(amp=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
 
         # NOTE: we need to tweak the parameters here a bit, because we use a different
         # definition for the beamsplitter.
