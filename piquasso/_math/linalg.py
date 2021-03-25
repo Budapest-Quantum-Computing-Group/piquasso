@@ -61,3 +61,15 @@ def block_reduce(matrix, *, reduction_indices):
             [matrix[d:, :d][:, rows][rows], matrix[d:, d:][:, rows][rows]],
         ]
     )
+
+
+def blocks_on_subspace(*, matrix, subspace_indices):
+    index = np.ix_(subspace_indices, subspace_indices)
+    d = matrix.shape[0] // 2
+
+    return np.block(
+        [
+            [matrix[:d, :d][index], matrix[:d, d:][index]],
+            [matrix[d:, :d][index], matrix[d:, d:][index]],
+        ]
+    )

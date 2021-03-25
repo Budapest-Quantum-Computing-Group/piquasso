@@ -77,6 +77,7 @@ class GaussianCircuit(Circuit):
     def _measure_particle_number(self, operation):
         outcome = self.state._apply_particle_number_measurement(
             cutoff=operation.params["cutoff"],
+            shots=operation.params["shots"],
             modes=operation.modes,
         )
 

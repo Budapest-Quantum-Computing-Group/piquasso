@@ -3,14 +3,18 @@
 #
 
 import math
+import random
 
 import numpy as np
 
 from scipy.linalg import block_diag
+from scipy.special import factorial
 
-import functools
+from functools import lru_cache
+from itertools import chain, repeat, combinations, combinations_with_replacement
 
-from itertools import chain, combinations, combinations_with_replacement
+from .linalg import block_reduce, blocks_on_subspace
+from ._random import choose_from_cumulated_probabilities
 
 
 def powerset(iterable):
@@ -18,7 +22,7 @@ def powerset(iterable):
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
-@functools.lru_cache()
+@lru_cache()
 def get_partitions(boxes, particles):
     particles = particles - boxes
 
@@ -35,7 +39,7 @@ def get_partitions(boxes, particles):
     return ret
 
 
-@functools.lru_cache()
+@lru_cache()
 def X(d):
     sigma_x = np.array([[0, 1], [1, 0]])
     return block_diag(*([sigma_x] * d))
@@ -101,3 +105,94 @@ def hafnian(A):
         _hafnian += factor * result
 
     return _hafnian
+
+
+def generate_gaussian_state_samples(*, husimi, modes, shots, cutoff):
+    d = len(modes)
+
+    identity = np.identity(d)
+    zeros = np.zeros_like(identity)
+    X = np.block(
+        [
+            [zeros, identity],
+            [identity, zeros],
+        ],
+    )
+
+    A = X @ ((np.identity(2 * d) - np.linalg.inv(husimi)))
+
+    @lru_cache(maxsize=None)
+    def get_A_on_subspace(subspace_modes):
+        return blocks_on_subspace(
+            matrix=A,
+            subspace_indices=subspace_modes,
+        )
+
+    @lru_cache(maxsize=None)
+    def get_husimi_factor_on_subspace(subspace_modes):
+        husimi_on_subspace = blocks_on_subspace(
+            matrix=husimi,
+            subspace_indices=subspace_modes,
+        )
+
+        return np.sqrt(np.linalg.det(husimi_on_subspace))
+
+    @lru_cache(maxsize=None)
+    def get_probability(*, subspace_modes, occupation_numbers):
+        A_on_subspace = get_A_on_subspace(subspace_modes=subspace_modes)
+        A_reduced = block_reduce(
+            A_on_subspace, reduction_indices=occupation_numbers
+        )
+        husimi_factor = get_husimi_factor_on_subspace(subspace_modes=subspace_modes)
+
+        return hafnian(A_reduced) / (
+            husimi_factor
+            * np.prod(factorial(occupation_numbers))
+        )
+
+    samples = []
+
+    for _ in repeat(None, shots):
+        outcome = []
+
+        previous_probability = 1.0
+
+        for k in range(len(modes)):
+            subspace_modes = tuple(modes[:(k + 1)])
+
+            cumulated_probabilities = [0.0]
+
+            guess = random.uniform(0.0, 1.0)
+
+            choice = None
+
+            for n in range(cutoff + 1):
+                occupation_numbers = tuple(outcome + [n])
+
+                probability = get_probability(
+                    subspace_modes=subspace_modes,
+                    occupation_numbers=occupation_numbers
+                )
+                conditional_probability = probability / previous_probability
+                cumulated_probabilities.append(
+                    conditional_probability + cumulated_probabilities[-1]
+                )
+                if guess < cumulated_probabilities[-1]:
+                    choice = n
+                    break
+
+            else:
+                choice = choose_from_cumulated_probabilities(cumulated_probabilities)
+
+            previous_probability = (
+                cumulated_probabilities[choice + 1]
+                - cumulated_probabilities[choice]
+            ) * previous_probability
+
+            outcome.append(choice)
+
+        samples.append(outcome)
+
+    print("PQ OUTCOME", samples)
+
+    return samples
