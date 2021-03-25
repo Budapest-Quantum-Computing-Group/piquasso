@@ -7,6 +7,7 @@ import sys
 from piquasso.api.plugin import Plugin
 from piquasso.api.program import Program
 from piquasso.api.mode import Q
+from piquasso.api import constants
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
@@ -50,6 +51,9 @@ from .instructions.measurements import (
     MeasureHeterodyne,
     MeasureDyne,
 )
+
+
+constants.seed()
 
 
 def use(plugin):
