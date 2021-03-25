@@ -8,7 +8,7 @@ from piquasso.api.result import Result
 
 class GaussianCircuit(Circuit):
 
-    def get_operation_map(self):
+    def get_instruction_map(self):
         return {
             "Interferometer": self._passive_linear,
             "Beamsplitter": self._passive_linear,
@@ -33,54 +33,54 @@ class GaussianCircuit(Circuit):
             "MeasureParticleNumber": self._measure_particle_number,
         }
 
-    def _passive_linear(self, operation):
+    def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            operation._passive_representation,
-            operation.modes
+            instruction._passive_representation,
+            instruction.modes
         )
 
-    def _linear(self, operation):
+    def _linear(self, instruction):
         self.state._apply_linear(
-            P=operation._passive_representation,
-            A=operation._active_representation,
-            modes=operation.modes
+            P=instruction._passive_representation,
+            A=instruction._active_representation,
+            modes=instruction.modes
         )
 
-    def _displacement(self, operation):
+    def _displacement(self, instruction):
         self.state._apply_displacement(
-            **operation.params,
-            mode=operation.modes[0],
+            **instruction.params,
+            mode=instruction.modes[0],
         )
 
-    def _measure_dyne(self, operation):
+    def _measure_dyne(self, instruction):
         outcomes = self.state._apply_generaldyne_measurement(
-            **operation.params,
-            modes=operation.modes,
+            **instruction.params,
+            modes=instruction.modes,
         )
 
         self._add_result(
             [
-                Result(operation=operation, outcome=outcome)
+                Result(instruction=instruction, outcome=outcome)
                 for outcome in outcomes
             ]
         )
 
-    def _vacuum(self, operation):
+    def _vacuum(self, instruction):
         self.state.reset()
 
-    def _mean(self, operation):
-        self.state.mean = operation.params["mean"]
+    def _mean(self, instruction):
+        self.state.mean = instruction.params["mean"]
 
-    def _covariance(self, operation):
-        self.state.cov = operation.params["cov"]
+    def _covariance(self, instruction):
+        self.state.cov = instruction.params["cov"]
 
-    def _measure_particle_number(self, operation):
+    def _measure_particle_number(self, instruction):
         outcome = self.state._apply_particle_number_measurement(
-            cutoff=operation.params["cutoff"],
-            shots=operation.params["shots"],
-            modes=operation.modes,
+            cutoff=instruction.params["cutoff"],
+            shots=instruction.params["shots"],
+            modes=instruction.modes,
         )
 
         self._add_result(
-            Result(operation=operation, outcome=outcome)
+            Result(instruction=instruction, outcome=outcome)
         )

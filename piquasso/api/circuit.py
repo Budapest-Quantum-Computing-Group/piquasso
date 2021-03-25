@@ -17,39 +17,39 @@ class Circuit(abc.ABC):
         """
         self.state = state
         self.program = program
-        self._operation_map = self.get_operation_map()
+        self._instruction_map = self.get_instruction_map()
 
     @abc.abstractmethod
-    def get_operation_map(self):
+    def get_instruction_map(self):
         pass
 
-    def execute_operations(self, operations):
-        """Executes the collected operations in order.
+    def execute_instructions(self, instructions):
+        """Executes the collected instructions in order.
 
         Raises:
             NotImplementedError:
                 If no such method is implemented on the `Circuit` class.
 
         Args:
-            operations (list):
+            instructions (list):
                 The methods along with keyword arguments of the current circuit to be
                 executed in order.
         """
-        for operation in operations:
-            method = self._operation_map.get(operation.__class__.__name__)
+        for instruction in instructions:
+            method = self._instruction_map.get(instruction.__class__.__name__)
 
             if not method:
                 raise NotImplementedError(
                     "\n"
-                    "No such operation implemented for this state.\n"
+                    "No such instruction implemented for this state.\n"
                     "Details:\n"
-                    f"operation={operation}\n"
+                    f"instruction={instruction}\n"
                     f"state={self.state}\n"
-                    f"Available operations:\n"
-                    + str(", ".join(self._operation_map.keys())) + "."
+                    f"Available instructions:\n"
+                    + str(", ".join(self._instruction_map.keys())) + "."
                 )
 
-            method(operation)
+            method(instruction)
 
     def _add_result(self, result):
         if isinstance(result, Iterable):

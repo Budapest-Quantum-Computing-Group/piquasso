@@ -6,7 +6,7 @@ import json
 import pytest
 
 from piquasso.core.registry import _register
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.program import Program
@@ -14,23 +14,23 @@ from piquasso.api.program import Program
 
 class TestProgramJSONParsing:
     @pytest.fixture
-    def FakeOperation(self):
+    def FakeInstruction(self):
 
         @_register
-        class FakeOperation(Operation):
+        class FakeInstruction(Instruction):
             def __init__(self, first_param, second_param):
                 super().__init__(first_param=first_param, second_param=second_param)
 
-        return FakeOperation
+        return FakeInstruction
 
     @pytest.fixture
-    def FakeCircuit(self, FakeOperation):
+    def FakeCircuit(self, FakeInstruction):
 
         @_register
         class FakeCircuit(Circuit):
-            def get_operation_map(self):
+            def get_instruction_map(self):
                 return {
-                    "FakeOperation": FakeOperation,
+                    "FakeInstruction": FakeInstruction,
                 }
 
         return FakeCircuit
@@ -65,10 +65,10 @@ class TestProgramJSONParsing:
         }
 
     @pytest.fixture
-    def operations_mapping(self):
+    def instructions_mapping(self):
         return [
             {
-                "type": "FakeOperation",
+                "type": "FakeInstruction",
                 "properties": {
                     "params": {
                         "first_param": "first_param_value",
@@ -78,11 +78,11 @@ class TestProgramJSONParsing:
                 }
             },
             {
-                "type": "FakeOperation",
+                "type": "FakeInstruction",
                 "properties": {
                     "params": {
-                        "first_param": "2nd_operations_1st_param_value",
-                        "second_param": "2nd_operations_2nd_param_value",
+                        "first_param": "2nd_instructions_1st_param_value",
+                        "second_param": "2nd_instructions_2nd_param_value",
                     },
                     "modes": ["some", "other", "modes"],
                 }
@@ -93,15 +93,15 @@ class TestProgramJSONParsing:
         self,
         FakeState,
         FakeCircuit,
-        FakeOperation,
+        FakeInstruction,
         state_mapping,
-        operations_mapping,
+        instructions_mapping,
         number_of_modes,
     ):
         program = Program.from_properties(
             {
                 "state": state_mapping,
-                "operations": operations_mapping,
+                "instructions": instructions_mapping,
             }
         )
 
@@ -111,31 +111,31 @@ class TestProgramJSONParsing:
 
         assert program.circuit.__class__.__name__ == "FakeCircuit"
 
-        assert program.operations[0].params == {
+        assert program.instructions[0].params == {
             "first_param": "first_param_value",
             "second_param": "second_param_value",
         }
-        assert program.operations[0].modes == ["some", "modes"]
+        assert program.instructions[0].modes == ["some", "modes"]
 
-        assert program.operations[1].params == {
-            "first_param": "2nd_operations_1st_param_value",
-            "second_param": "2nd_operations_2nd_param_value",
+        assert program.instructions[1].params == {
+            "first_param": "2nd_instructions_1st_param_value",
+            "second_param": "2nd_instructions_2nd_param_value",
         }
-        assert program.operations[1].modes == ["some", "other", "modes"]
+        assert program.instructions[1].modes == ["some", "other", "modes"]
 
     def test_from_json(
         self,
         FakeState,
         FakeCircuit,
-        FakeOperation,
+        FakeInstruction,
         state_mapping,
-        operations_mapping,
+        instructions_mapping,
         number_of_modes,
     ):
         json_ = json.dumps(
             {
                 "state": state_mapping,
-                "operations": operations_mapping,
+                "instructions": instructions_mapping,
             }
         )
 
@@ -147,13 +147,13 @@ class TestProgramJSONParsing:
 
         assert program.circuit.__class__.__name__ == "FakeCircuit"
 
-        assert program.operations[0].params == {
+        assert program.instructions[0].params == {
             "first_param": "first_param_value",
             "second_param": "second_param_value",
         }
-        assert program.operations[0].modes == ["some", "modes"]
-        assert program.operations[1].params == {
-            "first_param": "2nd_operations_1st_param_value",
-            "second_param": "2nd_operations_2nd_param_value",
+        assert program.instructions[0].modes == ["some", "modes"]
+        assert program.instructions[1].params == {
+            "first_param": "2nd_instructions_1st_param_value",
+            "second_param": "2nd_instructions_2nd_param_value",
         }
-        assert program.operations[1].modes == ["some", "other", "modes"]
+        assert program.instructions[1].modes == ["some", "other", "modes"]

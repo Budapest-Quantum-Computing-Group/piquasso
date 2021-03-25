@@ -5,7 +5,7 @@
 from piquasso.core.mixins import _PropertyMixin
 
 
-class Operation(_PropertyMixin):
+class Instruction(_PropertyMixin):
     """
     Args:
         *params: Variable length argument list.
@@ -23,7 +23,7 @@ class Operation(_PropertyMixin):
 
     @classmethod
     def from_properties(cls, properties):
-        """Creates an `Operation` instance from a mapping specified.
+        """Creates an `Instruction` instance from a mapping specified.
 
         Args:
             properties (collections.Mapping):
@@ -33,11 +33,11 @@ class Operation(_PropertyMixin):
             Operator: An `Operator` initialized using the specified mapping.
         """
 
-        operation = cls(**properties["params"])
+        instruction = cls(**properties["params"])
 
-        operation.modes = properties["modes"]
+        instruction.modes = properties["modes"]
 
-        return operation
+        return instruction
 
     def __repr__(self):
         if hasattr(self, "modes"):

@@ -32,17 +32,17 @@ class Q:
         self.modes = modes
 
     def __or__(self, rhs):
-        """Registers an `Operation` or `Program` to the current program.
+        """Registers an `Instruction` or `Program` to the current program.
 
-        If `rhs` is an `Operation`, then it is appended to the current program's
-        `operations`.
+        If `rhs` is an `Instruction`, then it is appended to the current program's
+        `instructions`.
 
-        If `rhs` is a `Program`, then the current program's `operations` is extended
-        with `rhs.operations`.
+        If `rhs` is a `Program`, then the current program's `instructions` is extended
+        with `rhs.instructions`.
 
         Args:
-            rhs (Operation or Program): An `Operation` or a `Program` to be added to the
-                current program.
+            rhs (Instruction or Program):
+                An `Instruction` or a `Program` to be added to the current program.
 
         Returns:
             (Q): The current qumode.
@@ -53,7 +53,7 @@ class Q:
             self._register_state(rhs)
         else:
             rhs.modes = self.modes
-            _context.current_program.operations.append(rhs)
+            _context.current_program.instructions.append(rhs)
 
         return self
 
@@ -69,21 +69,21 @@ class Q:
 
             self._register_state(program.state)
 
-        _context.current_program.operations += map(
-            self._resolve_operation, program.operations
+        _context.current_program.instructions += map(
+            self._resolve_instruction, program.instructions
         )
 
     def _register_state(self, state):
         state_copy = copy.deepcopy(state)
         _context.current_program._register_state(state_copy)
 
-    def _resolve_operation(self, operation):
-        new_operation = copy.deepcopy(operation)
-        new_operation.modes = (
-            None if operation.modes is None
-            else tuple(self.modes[m] for m in operation.modes)
+    def _resolve_instruction(self, instruction):
+        new_instruction = copy.deepcopy(instruction)
+        new_instruction.modes = (
+            None if instruction.modes is None
+            else tuple(self.modes[m] for m in instruction.modes)
         )
-        return new_operation
+        return new_instruction
 
     @staticmethod
     def _is_distinct(iterable):

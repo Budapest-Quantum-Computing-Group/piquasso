@@ -5,11 +5,11 @@
 import numpy as np
 
 from piquasso.core.registry import _register
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 
 
 @_register
-class MeasureParticleNumber(Operation):
+class MeasureParticleNumber(Instruction):
     """Particle number measurement."""
 
     def __init__(self, cutoff=3, shots=1):
@@ -17,7 +17,7 @@ class MeasureParticleNumber(Operation):
 
 
 @_register
-class MeasureDyne(Operation):
+class MeasureDyne(Instruction):
     """General-dyne measurement."""
 
     def __init__(self, detection_covariance, *, shots=1):

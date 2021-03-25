@@ -4,19 +4,19 @@
 
 import numpy as np
 from piquasso.core.registry import _register
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
 from piquasso._math.linalg import is_square
 
 
-class _PassiveLinearGate(Operation):
+class _PassiveLinearGate(Instruction):
     def __init__(self, passive_representation):
         self._passive_representation = passive_representation
 
 
-class _LinearGate(Operation):
+class _LinearGate(Instruction):
     def __init__(self, passive_representation, active_representation):
         self._passive_representation = passive_representation
         self._active_representation = active_representation
@@ -45,9 +45,9 @@ class Interferometer(_PassiveLinearGate):
 
 @_register
 class Beamsplitter(_PassiveLinearGate):
-    r"""Applies a beamsplitter operation.
+    r"""Applies a beamsplitter instruction.
 
-    The matrix representation of the beamsplitter operation
+    The matrix representation of the beamsplitter instruction
     is
 
     .. math::
@@ -84,7 +84,7 @@ class Beamsplitter(_PassiveLinearGate):
 
 @_register
 class Phaseshifter(_PassiveLinearGate):
-    r"""Rotation or phaseshift operation.
+    r"""Rotation or phaseshift instruction.
 
     The annihilation and creation operators are evolved in the following
     way:
@@ -212,7 +212,7 @@ class Squeezing(_LinearGate):
     :math:`e^{i\theta}\sinh(amp)` respectively.
 
     Args:
-        r (float): The amplitude of the squeezing operation.
+        r (float): The amplitude of the squeezing instruction.
         phi (float): The squeezing angle.
     """
 
@@ -235,7 +235,7 @@ class Squeezing(_LinearGate):
 
 @_register
 class QuadraticPhase(_LinearGate):
-    r"""Applies the quadratic phase operation to the state.
+    r"""Applies the quadratic phase instruction to the state.
 
     The operator of the quadratic phase gate is
 
@@ -266,7 +266,7 @@ class Squeezing2(_LinearGate):
         S a_2 S^\dagger = a_2 \cosh r + a_1^\dagger \exp(i \phi)
 
     Args:
-        r (float): The amplitude of the squeezing operation.
+        r (float): The amplitude of the squeezing instruction.
         phi (float): The squeezing angle.
     """
 
@@ -332,8 +332,8 @@ class ControlledZ(_LinearGate):
 
 
 @_register
-class Displacement(Operation):
-    r"""Phase space displacement operation.
+class Displacement(Instruction):
+    r"""Phase space displacement instruction.
 
     One must either specify `alpha` only, or the combination of `r` and `phi`.
 
@@ -389,7 +389,7 @@ class MomentumDisplacement(Displacement):
 
 
 @_register
-class Kerr(Operation):
+class Kerr(Instruction):
     r"""Kerr gate.
 
     .. math::
@@ -407,7 +407,7 @@ class Kerr(Operation):
 
 
 @_register
-class CrossKerr(Operation):
+class CrossKerr(Instruction):
     r"""Cross-Kerr gate.
 
     .. math::
@@ -426,7 +426,7 @@ class CrossKerr(Operation):
 
 
 @_register
-class Sampling(Operation):
+class Sampling(Instruction):
     r"""Boson Sampling.
 
     Simulates a boson sampling using generalized Clifford&Clifford algorithm

@@ -9,25 +9,25 @@ import pytest
 from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.program import Program
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 
 
 class TestProgramBase:
     @pytest.fixture
-    def DummyOperation(self):
-        class _DummyOperation(Operation):
+    def DummyInstruction(self):
+        class _DummyInstruction(Instruction):
             pass
 
-        return _DummyOperation
+        return _DummyInstruction
 
     @pytest.fixture
-    def FakeCircuit(self, DummyOperation):
+    def FakeCircuit(self, DummyInstruction):
         class _FakeCircuit(Circuit):
-            dummy_operation = Mock(name="dummy_operation")
+            dummy_instruction = Mock(name="dummy_instruction")
 
-            def get_operation_map(self):
+            def get_instruction_map(self):
                 return {
-                    DummyOperation.__name__: self.dummy_operation,
+                    DummyInstruction.__name__: self.dummy_instruction,
                 }
 
         return _FakeCircuit

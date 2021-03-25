@@ -8,16 +8,16 @@ from collections import OrderedDict
 from . import registry
 
 
-def load_operations(blackbird_program):
+def load_instructions(blackbird_program):
     """
-    Loads the gates to apply into :attr:`Program.operations` from a
+    Loads the gates to apply into :attr:`Program.instructions` from a
     :class:`blackbird.BlackbirdProgram`
 
     Args:
         blackbird_program (blackbird.BlackbirdProgram): The BlackbirdProgram to use.
     """
 
-    operation_map = {
+    instruction_map = {
         "Dgate": registry._retrieve_class("Displacement"),
         "Xgate": registry._retrieve_class("PositionDisplacement"),
         "Zgate": registry._retrieve_class("MomentumDisplacement"),
@@ -36,42 +36,42 @@ def load_operations(blackbird_program):
     }
 
     return [
-        _blackbird_operation_to_operation(operation_map, operation)
+        _blackbird_operation_to_instruction(instruction_map, operation)
         for operation in blackbird_program.operations
     ]
 
 
-def _blackbird_operation_to_operation(operation_map, blackbird_operation):
-    pq_operation_class = operation_map.get(blackbird_operation["op"])
+def _blackbird_operation_to_instruction(instruction_map, blackbird_operation):
+    pq_instruction_class = instruction_map.get(blackbird_operation["op"])
 
-    params = _get_operation_params(
-        pq_operation_class=pq_operation_class, bb_operation=blackbird_operation
+    params = _get_instruction_params(
+        pq_instruction_class=pq_instruction_class, bb_operation=blackbird_operation
     )
 
-    operation = pq_operation_class(**params)
+    instruction = pq_instruction_class(**params)
 
-    operation.modes = tuple(blackbird_operation["modes"])
+    instruction.modes = tuple(blackbird_operation["modes"])
 
-    return operation
+    return instruction
 
 
-def _get_operation_params(pq_operation_class, bb_operation):
+def _get_instruction_params(pq_instruction_class, bb_operation):
     bb_params = bb_operation.get("args", None)
 
     if bb_params is None:
         return {}
 
-    parameters = inspect.signature(pq_operation_class).parameters
+    parameters = inspect.signature(pq_instruction_class).parameters
 
-    operation_params = OrderedDict()
+    instruction_params = OrderedDict()
 
     for param_name, param in parameters.items():
         if param_name == "self":
             continue
 
-        operation_params[param_name] = param.default
+        instruction_params[param_name] = param.default
 
-    for pq_param_name, bb_param in zip(operation_params.keys(), bb_params):
-        operation_params[pq_param_name] = bb_param
+    for pq_param_name, bb_param in zip(instruction_params.keys(), bb_params):
+        instruction_params[pq_param_name] = bb_param
 
-    return operation_params
+    return instruction_params

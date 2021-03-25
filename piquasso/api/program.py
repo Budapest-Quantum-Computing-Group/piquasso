@@ -12,24 +12,24 @@ from piquasso.core.registry import _create_instance_from_mapping
 class Program:
     r"""The representation for a quantum program.
 
-    This also specifies a context in which all the operations should be
+    This also specifies a context in which all the instructions should be
     specified.
 
     Attributes:
         state (State): The initial quantum state.
         circuit (Circuit):
             The circuit on which the quantum program should run.
-        operations (list):
-            The set of operations, e.g. quantum gates and measurements.
+        instructions (list):
+            The set of instructions, e.g. quantum gates and measurements.
     """
 
     def __init__(
         self,
         state=None,
-        operations=None,
+        instructions=None,
     ):
         self._register_state(state)
-        self.operations = operations or []
+        self.instructions = instructions or []
         self.results = []
 
     def _register_state(self, state):
@@ -61,9 +61,9 @@ class Program:
                         ...
                     }
                 },
-                "operations": [
+                "instructions": [
                     {
-                        "type": <OPERATION_CLASS_NAME>,
+                        "type": <INSTRUCTION_CLASS_NAME>,
                         "properties": {
                             ...
                         }
@@ -84,10 +84,10 @@ class Program:
 
         return cls(
             state=_create_instance_from_mapping(properties["state"]),
-            operations=list(
+            instructions=list(
                 map(
                     _create_instance_from_mapping,
-                    properties["operations"],
+                    properties["instructions"],
                 )
             )
         )
@@ -109,9 +109,9 @@ class Program:
         return cls.from_properties(properties)
 
     def execute(self):
-        """Executes the collected operations on the circuit."""
+        """Executes the collected instructions on the circuit."""
 
-        self.circuit.execute_operations(self.operations)
+        self.circuit.execute_instructions(self.instructions)
 
         return self.results
 
@@ -125,7 +125,7 @@ class Program:
 
     def load_blackbird(self, filename: str):
         """
-        Loads the gates to apply into `self.operations` from a BlackBird file
+        Loads the gates to apply into `self.instructions` from a BlackBird file
         (.xbb).
 
         Args:
@@ -133,11 +133,11 @@ class Program:
         """
         blackbird_program = blackbird.load(filename)
 
-        self.operations.extend(_blackbird.load_operations(blackbird_program))
+        self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
     def loads_blackbird(self, string):
         """
-        Loads the gates to apply into `self.operations` from a string
+        Loads the gates to apply into `self.instructions` from a string
         representing a :class:`blackbird.BlackbirdProgram`.
 
         Args:
@@ -145,4 +145,4 @@ class Program:
         """
         blackbird_program = blackbird.loads(string)
 
-        self.operations.extend(_blackbird.load_operations(blackbird_program))
+        self.instructions.extend(_blackbird.load_instructions(blackbird_program))

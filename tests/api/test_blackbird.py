@@ -19,12 +19,12 @@ def test_loads_blackbird_parses_operations():
 
     program.loads_blackbird(blackbird_code)
 
-    assert len(program.operations) == 2
+    assert len(program.instructions) == 2
 
-    assert program.operations[0] == pq.Beamsplitter(
+    assert program.instructions[0] == pq.Beamsplitter(
         theta=np.pi / 4, phi=0.0
     ).on_modes(1, 2)
-    assert program.operations[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
+    assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
 
 
 def test_loads_blackbird_parses_operations_with_default_arguments():
@@ -40,12 +40,12 @@ def test_loads_blackbird_parses_operations_with_default_arguments():
 
     program.loads_blackbird(blackbird_code)
 
-    assert len(program.operations) == 2
+    assert len(program.instructions) == 2
 
-    assert program.operations[0] == pq.Beamsplitter(
+    assert program.instructions[0] == pq.Beamsplitter(
         theta=0.0, phi=np.pi / 4
     ).on_modes(1, 2)
-    assert program.operations[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
+    assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
 
 
 def test_loads_blackbird_parses_operations_with_classes_from_plugin():
@@ -71,9 +71,9 @@ def test_loads_blackbird_parses_operations_with_classes_from_plugin():
 
     program.loads_blackbird(blackbird_code)
 
-    assert len(program.operations) == 2
+    assert len(program.instructions) == 2
 
-    assert program.operations[0].__class__ is MyBeamsplitter
+    assert program.instructions[0].__class__ is MyBeamsplitter
 
 
 def test_loads_blackbird_preserves_exising_operations():
@@ -96,13 +96,13 @@ def test_loads_blackbird_preserves_exising_operations():
 
     program.loads_blackbird(blackbird_code)
 
-    assert len(program.operations) == 3
+    assert len(program.instructions) == 3
 
-    assert program.operations[0] == squeezing
-    assert program.operations[1] == pq.Beamsplitter(
+    assert program.instructions[0] == squeezing
+    assert program.instructions[1] == pq.Beamsplitter(
         theta=np.pi / 4, phi=0.0
     ).on_modes(1, 2)
-    assert program.operations[2] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
+    assert program.instructions[2] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
 
 
 def test_loads_blackbird_with_execution(gaussian_state_assets):
