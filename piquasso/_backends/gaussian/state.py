@@ -629,8 +629,6 @@ class GaussianState(State):
 
         return outcomes
 
-        return outcome
-
     def _apply_particle_number_measurement(self, *, cutoff, modes, shots):
         if not modes:
             modes = tuple(range(self.d))
