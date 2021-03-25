@@ -31,7 +31,7 @@ def MyGaussianState(MyGaussianCircuit):
 
 @pytest.fixture
 def MyBeamsplitter():
-    class _MyBeamsplitter(pq.B):
+    class _MyBeamsplitter(pq.Beamsplitter):
         pass
 
     _MyBeamsplitter.__name__ = "MyBeamsplitter"
@@ -43,7 +43,7 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
-            "B": MyBeamsplitter,
+            "Beamsplitter": MyBeamsplitter,
         }
 
     pq.use(Plugin)
@@ -51,20 +51,20 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
-        pq.Q(0, 1) | pq.B(theta=np.pi/3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
     program.execute()
 
     assert program.state.__class__ is MyGaussianState
     assert program.circuit.__class__ is MyGaussianCircuit
-    assert pq.B is MyBeamsplitter
+    assert pq.Beamsplitter is MyBeamsplitter
 
 
 def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
-            "B": MyBeamsplitter,
+            "Beamsplitter": MyBeamsplitter,
         }
 
     pq.use(Plugin)
@@ -72,7 +72,7 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
     program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
-        pq.Q(0, 1) | pq.B(theta=np.pi/3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
     program.execute()
 
@@ -80,7 +80,7 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
 
     assert program.state.__class__ is MyGaussianState
     assert program.circuit.__class__ is MyGaussianCircuit
-    assert pq.B is MyBeamsplitter
+    assert pq.Beamsplitter is MyBeamsplitter
 
 
 def test_untouched_classes_remain_to_be_accessible(
@@ -91,7 +91,7 @@ def test_untouched_classes_remain_to_be_accessible(
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
-            "B": MyBeamsplitter,
+            "Beamsplitter": MyBeamsplitter,
         }
 
     pq.use(Plugin)
@@ -99,9 +99,9 @@ def test_untouched_classes_remain_to_be_accessible(
     program = pq.Program(state=pq.GaussianState(d=3))
 
     with program:
-        pq.Q(0, 1) | pq.B(theta=np.pi/3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
     program.execute()
 
-    assert pq.B is MyBeamsplitter
-    assert pq.R is pq.operations.gates.R
+    assert pq.Beamsplitter is MyBeamsplitter
+    assert pq.Phaseshifter is pq.operations.gates.Phaseshifter

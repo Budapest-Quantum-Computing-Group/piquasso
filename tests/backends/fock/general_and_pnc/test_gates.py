@@ -15,7 +15,7 @@ def test_5050_beamsplitter(StateClass):
         pq.Q() | StateClass(d=2, cutoff=2)
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1))
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
 
     program.execute()
 
@@ -31,7 +31,7 @@ def test_beamsplitter(StateClass):
         pq.Q() | StateClass(d=2, cutoff=2)
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1))
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     program.execute()
 
@@ -57,7 +57,7 @@ def test_beamsplitter_multiple_particles(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     program.execute()
 
@@ -84,7 +84,7 @@ def test_beamsplitter_leaves_vacuum_unchanged(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     program.execute()
 
@@ -106,8 +106,8 @@ def test_multiple_beamsplitters(StateClass):
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1))
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
-        pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
     program.execute()
 
@@ -136,8 +136,8 @@ def test_multiple_beamsplitters_with_multiple_particles(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
-        pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
     program.execute()
 
@@ -167,7 +167,7 @@ def test_phaseshift(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0) | pq.R(phi=np.pi / 3)
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
     program.execute()
 
@@ -193,7 +193,7 @@ def test_fourier(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0) | pq.F()
+        pq.Q(0) | pq.Fourier()
 
     program.execute()
 
@@ -219,7 +219,7 @@ def test_mach_zehnder(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.MZ(int_=np.pi/3, ext=np.pi/4)
+        pq.Q(0, 1) | pq.MachZehnder(int_=np.pi/3, ext=np.pi/4)
 
     program.execute()
 
@@ -245,11 +245,11 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0) | pq.R(phi=np.pi/3)
-        pq.Q(1) | pq.R(phi=np.pi/3)
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi/3)
+        pq.Q(1) | pq.Phaseshifter(phi=np.pi/3)
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 5)
-        pq.Q(1, 2) | pq.B(theta=np.pi / 6, phi=1.5 * np.pi)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
     program.execute()
 
@@ -314,7 +314,7 @@ def test_kerr(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
 
-        pq.Q(2) | pq.K(xi=xi)
+        pq.Q(2) | pq.Kerr(xi=xi)
 
     program.execute()
 
@@ -346,7 +346,7 @@ def test_cross_kerr(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 3), bra=(0, 1, 2)) * (-1j)
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 2), bra=(0, 0, 3)) * 1j
 
-        pq.Q(1, 2) | pq.CK(xi=xi)
+        pq.Q(1, 2) | pq.CrossKerr(xi=xi)
 
     program.execute()
 

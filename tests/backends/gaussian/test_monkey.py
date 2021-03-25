@@ -21,7 +21,7 @@ def test_random_gaussianstate(d):
             r = np.random.normal()
             phi = random.uniform(0, 2 * np.pi)
 
-            pq.Q(i) | pq.S(r=r, phi=phi)
+            pq.Q(i) | pq.Squeezing(r=r, phi=phi)
 
         random_unitary = np.array(unitary_group.rvs(d))
 

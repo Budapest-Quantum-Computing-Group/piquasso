@@ -13,4 +13,4 @@ def test_try_registering_nondistinct_modes():
 
     with pq.Program():
         with pytest.raises(InvalidModes):
-            pq.Q(*nondistinct_modes) | pq.F()
+            pq.Q(*nondistinct_modes) | pq.Fourier()

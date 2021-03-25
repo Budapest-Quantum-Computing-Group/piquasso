@@ -14,7 +14,7 @@ def test_create_number_state():
 
         pq.Q(1) | pq.Create()
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     program.execute()
 
@@ -50,7 +50,7 @@ def test_create_annihilate_and_create():
 
         pq.Q(1) | pq.Create()
 
-        pq.Q(0, 1) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     program.execute()
 

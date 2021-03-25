@@ -15,10 +15,10 @@ class SamplingCircuit(Circuit):
 
     def get_operation_map(self):
         return {
-            "B": self._passive_linear,
-            "R": self._passive_linear,
-            "MZ": self._passive_linear,
-            "F": self._passive_linear,
+            "Beamsplitter": self._passive_linear,
+            "Phaseshifter": self._passive_linear,
+            "MachZehnder": self._passive_linear,
+            "Fourier": self._passive_linear,
             "Sampling": self.sampling,
             "Interferometer": self._passive_linear,
         }

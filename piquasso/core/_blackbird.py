@@ -18,21 +18,21 @@ def load_operations(blackbird_program):
     """
 
     operation_map = {
-        "Dgate": registry._retrieve_class("D"),
-        "Xgate": registry._retrieve_class("X"),
-        "Zgate": registry._retrieve_class("Z"),
-        "Sgate": registry._retrieve_class("S"),
-        "Pgate": registry._retrieve_class("P"),
+        "Dgate": registry._retrieve_class("Displacement"),
+        "Xgate": registry._retrieve_class("PositionDisplacement"),
+        "Zgate": registry._retrieve_class("MomentumDisplacement"),
+        "Sgate": registry._retrieve_class("Squeezing"),
+        "Pgate": registry._retrieve_class("QuadraticPhase"),
         "Vgate": None,
-        "Kgate": registry._retrieve_class("K"),
-        "Rgate": registry._retrieve_class("R"),
-        "BSgate": registry._retrieve_class("B"),
-        "MZgate": registry._retrieve_class("MZ"),
-        "S2gate": registry._retrieve_class("S2"),
-        "CXgate": registry._retrieve_class("CX"),
-        "CZgate": registry._retrieve_class("CZ"),
-        "CKgate": registry._retrieve_class("CK"),
-        "Fouriergate": registry._retrieve_class("F"),
+        "Kgate": registry._retrieve_class("Kerr"),
+        "Rgate": registry._retrieve_class("Phaseshifter"),
+        "BSgate": registry._retrieve_class("Beamsplitter"),
+        "MZgate": registry._retrieve_class("MachZehnder"),
+        "S2gate": registry._retrieve_class("Squeezing2"),
+        "CXgate": registry._retrieve_class("ControlledX"),
+        "CZgate": registry._retrieve_class("ControlledZ"),
+        "CKgate": registry._retrieve_class("CrossKerr"),
+        "Fouriergate": registry._retrieve_class("Fourier"),
     }
 
     return [

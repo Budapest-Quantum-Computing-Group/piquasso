@@ -40,7 +40,13 @@ class Circuit(abc.ABC):
 
             if not method:
                 raise NotImplementedError(
-                    "No such operation implemented on this circuit."
+                    "\n"
+                    "No such operation implemented for this state.\n"
+                    "Details:\n"
+                    f"operation={operation}\n"
+                    f"state={self.state}\n"
+                    f"Available operations:\n"
+                    + str(", ".join(self._operation_map.keys())) + "."
                 )
 
             method(operation)

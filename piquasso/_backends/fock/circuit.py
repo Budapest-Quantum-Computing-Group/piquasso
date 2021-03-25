@@ -13,12 +13,12 @@ class BaseFockCircuit(Circuit, abc.ABC):
     def get_operation_map(self):
         return {
             "Interferometer": self._passive_linear,
-            "B": self._passive_linear,
-            "R": self._passive_linear,
-            "MZ": self._passive_linear,
-            "F": self._passive_linear,
-            "K": self._kerr,
-            "CK": self._cross_kerr,
+            "Beamsplitter": self._passive_linear,
+            "Phaseshifter": self._passive_linear,
+            "MachZehnder": self._passive_linear,
+            "Fourier": self._passive_linear,
+            "Kerr": self._kerr,
+            "CrossKerr": self._cross_kerr,
             "MeasureParticleNumber": self._measure_particle_number,
             "Vacuum": self._vacuum,
             "Create": self._create,
