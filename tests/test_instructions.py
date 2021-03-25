@@ -6,11 +6,11 @@ import pytest
 
 import piquasso as pq
 
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidParameter
 
 
-def test_operation_initialization_from_properties():
+def test_instruction_initialization_from_properties():
     properties = {
         "params": {
             "first_param": "first_param_value",
@@ -19,17 +19,17 @@ def test_operation_initialization_from_properties():
         "modes": ["some", "modes"],
     }
 
-    class DummyOperation(Operation):
+    class DummyInstruction(Instruction):
         def __init__(self, first_param, second_param):
             super().__init__(first_param=first_param, second_param=second_param)
 
-    operation = DummyOperation.from_properties(properties)
+    instruction = DummyInstruction.from_properties(properties)
 
-    assert operation.params == {
+    assert instruction.params == {
         "first_param": "first_param_value",
         "second_param": "second_param_value"
     }
-    assert operation.modes == ["some", "modes"]
+    assert instruction.modes == ["some", "modes"]
 
 
 def test_displacement_raises_InvalidParameter_for_redundant_parameters():

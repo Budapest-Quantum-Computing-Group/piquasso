@@ -10,7 +10,7 @@ from piquasso.api.circuit import Circuit
 
 class BaseFockCircuit(Circuit, abc.ABC):
 
-    def get_operation_map(self):
+    def get_instruction_map(self):
         return {
             "Interferometer": self._passive_linear,
             "Beamsplitter": self._passive_linear,
@@ -25,42 +25,42 @@ class BaseFockCircuit(Circuit, abc.ABC):
             "Annihilate": self._annihilate,
         }
 
-    def _passive_linear(self, operation):
+    def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            operator=operation._passive_representation,
-            modes=operation.modes
+            operator=instruction._passive_representation,
+            modes=instruction.modes
         )
 
-    def _measure_particle_number(self, operation):
+    def _measure_particle_number(self, instruction):
         outcomes = self.state._measure_particle_number(
-            modes=operation.modes,
-            shots=operation.params["shots"],
+            modes=instruction.modes,
+            shots=instruction.params["shots"],
         )
 
         self._add_result(
             [
-                Result(operation=operation, outcome=outcome)
+                Result(instruction=instruction, outcome=outcome)
                 for outcome in outcomes
             ]
         )
 
-    def _vacuum(self, operation):
+    def _vacuum(self, instruction):
         self.state._apply_vacuum()
 
-    def _create(self, operation):
-        self.state._apply_creation_operator(operation.modes)
+    def _create(self, instruction):
+        self.state._apply_creation_operator(instruction.modes)
 
-    def _annihilate(self, operation):
-        self.state._apply_annihilation_operator(operation.modes)
+    def _annihilate(self, instruction):
+        self.state._apply_annihilation_operator(instruction.modes)
 
-    def _kerr(self, operation):
+    def _kerr(self, instruction):
         self.state._apply_kerr(
-            **operation.params,
-            mode=operation.modes[0],
+            **instruction.params,
+            mode=instruction.modes[0],
         )
 
-    def _cross_kerr(self, operation):
+    def _cross_kerr(self, instruction):
         self.state._apply_cross_kerr(
-            **operation.params,
-            modes=operation.modes,
+            **instruction.params,
+            modes=instruction.modes,
         )

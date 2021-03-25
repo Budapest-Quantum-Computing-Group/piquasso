@@ -104,4 +104,4 @@ def test_untouched_classes_remain_to_be_accessible(
     program.execute()
 
     assert pq.Beamsplitter is MyBeamsplitter
-    assert pq.Phaseshifter is pq.operations.gates.Phaseshifter
+    assert pq.Phaseshifter is pq.instructions.gates.Phaseshifter

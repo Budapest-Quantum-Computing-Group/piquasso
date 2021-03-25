@@ -5,11 +5,11 @@
 
 from piquasso.core.mixins import _WeightMixin
 from piquasso.core.registry import _register
-from piquasso.api.operation import Operation
+from piquasso.api.instruction import Instruction
 
 
 @_register
-class Vacuum(Operation):
+class Vacuum(Instruction):
     r"""Prepare the system in a vacuum state."""
 
     def __init__(self):
@@ -17,7 +17,7 @@ class Vacuum(Operation):
 
 
 @_register
-class Mean(Operation):
+class Mean(Instruction):
     r"""Set the first canonical moment of the state."""
 
     def __init__(self, mean):
@@ -25,7 +25,7 @@ class Mean(Operation):
 
 
 @_register
-class Covariance(Operation):
+class Covariance(Instruction):
     r"""Sets the covariance matrix of the state."""
 
     def __init__(self, cov):
@@ -33,7 +33,7 @@ class Covariance(Operation):
 
 
 @_register
-class StateVector(Operation, _WeightMixin):
+class StateVector(Instruction, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 
     def __init__(self, *occupation_numbers, coefficient=1.0):
@@ -41,7 +41,7 @@ class StateVector(Operation, _WeightMixin):
 
 
 @_register
-class DensityMatrix(Operation, _WeightMixin):
+class DensityMatrix(Instruction, _WeightMixin):
     r"""State preparation with density matrix elements."""
 
     def __init__(self, ket=None, bra=None, coefficient=1.0):
@@ -49,7 +49,7 @@ class DensityMatrix(Operation, _WeightMixin):
 
 
 @_register
-class Create(Operation):
+class Create(Instruction):
     r"""Create a particle on a mode."""
 
     def __init__(self):
@@ -57,7 +57,7 @@ class Create(Operation):
 
 
 @_register
-class Annihilate(Operation):
+class Annihilate(Instruction):
     r"""Annihilate a particle on a mode."""
 
     def __init__(self):

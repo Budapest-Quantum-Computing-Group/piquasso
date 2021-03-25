@@ -13,7 +13,7 @@ from piquasso.api.circuit import Circuit
 class SamplingCircuit(Circuit):
     r"""A circuit for fast boson sampling."""
 
-    def get_operation_map(self):
+    def get_instruction_map(self):
         return {
             "Beamsplitter": self._passive_linear,
             "Phaseshifter": self._passive_linear,
@@ -23,11 +23,11 @@ class SamplingCircuit(Circuit):
             "Interferometer": self._passive_linear,
         }
 
-    def _passive_linear(self, operation):
+    def _passive_linear(self, instruction):
         r"""Applies an interferometer to the circuit.
 
         This can be interpreted as placing another interferometer in the network, just
-        before performing the sampling. This operation is realized by multiplying
+        before performing the sampling. This instruction is realized by multiplying
         current effective interferometer matrix with new interferometer matrix.
 
         Do note, that new interferometer matrix works as interferometer matrix on
@@ -35,11 +35,11 @@ class SamplingCircuit(Circuit):
         """
 
         self.state._apply_passive_linear(
-            operation._passive_representation,
-            operation.modes,
+            instruction._passive_representation,
+            instruction.modes,
         )
 
-    def sampling(self, operation):
+    def sampling(self, instruction):
         simulation_strategy = GeneralizedCliffordsSimulationStrategy(
             self.state.interferometer
         )
@@ -48,5 +48,5 @@ class SamplingCircuit(Circuit):
         initial_state = np.array(self.state.initial_state)
         self.state.results = sampling_simulator.get_classical_simulation_results(
             initial_state,
-            samples_number=operation.params["shots"]
+            samples_number=instruction.params["shots"]
         )

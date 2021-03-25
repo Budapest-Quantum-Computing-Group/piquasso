@@ -6,14 +6,14 @@ from ..circuit import BaseFockCircuit
 
 
 class PureFockCircuit(BaseFockCircuit):
-    def get_operation_map(self):
+    def get_instruction_map(self):
         return {
             "StateVector": self._state_vector,
-            **super().get_operation_map()
+            **super().get_instruction_map()
         }
 
-    def _state_vector(self, operation):
+    def _state_vector(self, instruction):
         self.state._add_occupation_number_basis(
-            **operation.params,
-            modes=operation.modes,
+            **instruction.params,
+            modes=instruction.modes,
         )

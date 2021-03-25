@@ -14,7 +14,7 @@ from piquasso._backends.fock import FockState, PureFockState, PNCFockState
 
 from piquasso.core.registry import _use_plugin, _retrieve_class
 
-from .operations.preparations import (
+from .instructions.preparations import (
     Vacuum,
     Mean,
     Covariance,
@@ -24,7 +24,7 @@ from .operations.preparations import (
     Annihilate,
 )
 
-from .operations.gates import (
+from .instructions.gates import (
     GaussianTransform,
     Phaseshifter,
     Beamsplitter,
@@ -44,7 +44,7 @@ from .operations.gates import (
     Sampling,
 )
 
-from .operations.measurements import (
+from .instructions.measurements import (
     MeasureParticleNumber,
     MeasureHomodyne,
     MeasureHeterodyne,

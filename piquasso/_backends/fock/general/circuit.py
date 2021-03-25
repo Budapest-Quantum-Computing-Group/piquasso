@@ -6,11 +6,11 @@ from ..circuit import BaseFockCircuit
 
 
 class FockCircuit(BaseFockCircuit):
-    def get_operation_map(self):
+    def get_instruction_map(self):
         return {
             "DensityMatrix": self._density_matrix,
-            **super().get_operation_map()
+            **super().get_instruction_map()
         }
 
-    def _density_matrix(self, operation):
-        self.state._add_occupation_number_basis(**operation.params)
+    def _density_matrix(self, instruction):
+        self.state._add_occupation_number_basis(**instruction.params)

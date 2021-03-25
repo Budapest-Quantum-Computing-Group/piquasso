@@ -31,7 +31,7 @@ def test_measure_homodyne(program):
     results = program.execute()
 
     assert len(results) == 1
-    assert results[0].operation.modes == (0, )
+    assert results[0].instruction.modes == (0, )
 
     program.state.validate()
 
@@ -43,7 +43,7 @@ def test_measure_homodyne_on_multiple_modes(program):
     results = program.execute()
 
     assert len(results) == 1
-    assert results[0].operation.modes == (0, 1)
+    assert results[0].instruction.modes == (0, 1)
 
     program.state.validate()
 
@@ -66,7 +66,7 @@ def test_measure_heterodyne(program):
     results = program.execute()
 
     assert len(results) == 1
-    assert results[0].operation.modes == (0, )
+    assert results[0].instruction.modes == (0, )
 
     program.state.validate()
 
@@ -78,7 +78,7 @@ def test_measure_heterodyne_on_multiple_modes(program):
     results = program.execute()
 
     assert len(results) == 1
-    assert results[0].operation.modes == (0, 1)
+    assert results[0].instruction.modes == (0, 1)
 
     program.state.validate()
 
@@ -108,7 +108,7 @@ def test_measure_dyne(program):
     results = program.execute()
 
     assert len(results) == 1
-    assert results[0].operation.modes == (0, )
+    assert results[0].instruction.modes == (0, )
 
     program.state.validate()
 

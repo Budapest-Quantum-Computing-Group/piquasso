@@ -95,7 +95,7 @@ Let :math:`\vec{m}` denote an index set, which corresponds to the parameter
 `modes`.
 
 Let :math:`P, A \in \mathbb{C}^{k \times k},\, k \in [d]` be a passive and an
-active transformation, respectively. An active operation transforms the vector
+active transformation, respectively. An active transformation transforms the vector
 of annihilation operators in the following manner:
 
 .. math::
@@ -136,7 +136,7 @@ Then each row of the mode :math:`i` will be updated according to the fact that
 Displacement
 ~~~~~~~~~~~~
 
-Applies the displacement operation to the state.
+Applies the displacement instruction to the state.
 
 .. math::
     D(\alpha) = \exp(\alpha \hat{a}_i^\dagger - \alpha^* \hat{a}_i),
@@ -145,7 +145,7 @@ where :math:`\alpha \in \mathbb{C}` is a parameter, :math:`\hat{a}_i` and
 :math:`\hat{a}_i^\dagger` are the annihilation and creation operators on the
 :math:`i`-th mode, respectively.
 
-The displacement operation acts on the annihilation and creation operators
+The displacement instruction acts on the annihilation and creation operators
 in the following way:
 
 .. math::
@@ -180,7 +180,7 @@ Note, that :math:`\alpha` is often written in the form
     \alpha = r \exp(i \phi),
 
 where :math:`r \geq 0` and :math:`\phi \in [ 0, 2 \pi )`. When two parameters
-are specified for this operation, the first is interpreted as :math:`r`, and the
+are specified for this instruction, the first is interpreted as :math:`r`, and the
 second one as :math:`\phi`.
 
 Also note, that the displacement cannot be categorized as an active or passive

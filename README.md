@@ -148,7 +148,7 @@ in their `__init__()` function: they are expected to accept a named parameter
 `qnode_type` but they don't. If you add the parameter by hand it will work
 fine.
 
-**The benchmarks, as of now, only work for qubit operations!**
+**The benchmarks, as of now, only work for qubit instructions!**
 
 ## Generating documentation
 

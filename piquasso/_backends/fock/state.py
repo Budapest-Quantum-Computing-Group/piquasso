@@ -20,8 +20,9 @@ class BaseFockState(State, abc.ABC):
     @classmethod
     def from_number_preparations(cls, *, d, cutoff, number_preparations):
         """
-        NOTE: Here is a small coupling between :class:`Operation` and :class:`State`.
-        This is the only case (so far) where the user could specify operations directly.
+        NOTE: Here is a small coupling between :class:`Instruction` and :class:`State`.
+        This is the only case (so far) where the user could specify instructions
+        directly.
 
         Is this needed?
         """
