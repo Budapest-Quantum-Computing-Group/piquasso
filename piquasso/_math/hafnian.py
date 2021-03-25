@@ -193,6 +193,4 @@ def generate_gaussian_state_samples(*, husimi, modes, shots, cutoff):
 
         samples.append(outcome)
 
-    print("PQ OUTCOME", samples)
-
     return samples
