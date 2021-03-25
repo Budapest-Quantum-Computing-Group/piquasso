@@ -19,22 +19,22 @@ def example_gaussian_pq_program(d):
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=d)
 
-        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(1) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(2) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(3) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(4) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
         # NOTE: we need to tweak the parameters here a bit, because we use a different
         # definition for the beamsplitter.
-        pq.Q(0, 1) | pq.B(0.0959408065906761, np.pi - 0.06786053071484363)
-        pq.Q(2, 3) | pq.B(0.7730047654405018, np.pi - 1.453770233324797)
-        pq.Q(1, 2) | pq.B(1.0152680371119776, np.pi - 1.2863559998816205)
-        pq.Q(3, 4) | pq.B(1.3205517879465705, np.pi - 0.5236836466492961)
-        pq.Q(0, 1) | pq.B(4.394480318177715,  np.pi - 4.481575657714487)
-        pq.Q(2, 3) | pq.B(2.2300919706807534, np.pi - 1.5073556513699888)
-        pq.Q(1, 2) | pq.B(2.2679037068773673, np.pi - 1.9550229282085838)
-        pq.Q(3, 4) | pq.B(3.340269832485504,  np.pi - 3.289367083610399)
+        pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, np.pi - 0.06786053071484363)
+        pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, np.pi - 1.453770233324797)
+        pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, np.pi - 1.2863559998816205)
+        pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, np.pi - 0.5236836466492961)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715,  np.pi - 4.481575657714487)
+        pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, np.pi - 1.5073556513699888)
+        pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, np.pi - 1.9550229282085838)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  np.pi - 3.289367083610399)
 
     yield program
 

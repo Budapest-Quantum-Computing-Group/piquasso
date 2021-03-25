@@ -15,7 +15,7 @@ def test_from_pure_preserves_fock_probabilities():
 
     pure_state_preparation.execute()
 
-    beamsplitter = pq.B(theta=np.pi / 4, phi=np.pi / 3)
+    beamsplitter = pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
 
     with pq.Program() as pure_state_program:
         pq.Q() | pure_state_preparation.state

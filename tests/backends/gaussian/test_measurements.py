@@ -14,12 +14,12 @@ def program():
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=3)
 
-        pq.Q(0) | pq.D(r=2, phi=np.pi/3)
-        pq.Q(1) | pq.D(r=1, phi=np.pi/4)
-        pq.Q(2) | pq.D(r=1 / 2, phi=np.pi/6)
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
+        pq.Q(1) | pq.Displacement(r=1, phi=np.pi/4)
+        pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi/6)
 
-        pq.Q(1) | pq.S(r=1 / 2, phi=np.pi/4)
-        pq.Q(2) | pq.S(r=3 / 4)
+        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
+        pq.Q(2) | pq.Squeezing(r=3 / 4)
 
     return program
 

@@ -44,7 +44,7 @@ class Interferometer(_PassiveLinearGate):
 
 
 @_register
-class B(_PassiveLinearGate):
+class Beamsplitter(_PassiveLinearGate):
     r"""Applies a beamsplitter operation.
 
     The matrix representation of the beamsplitter operation
@@ -83,7 +83,7 @@ class B(_PassiveLinearGate):
 
 
 @_register
-class R(_PassiveLinearGate):
+class Phaseshifter(_PassiveLinearGate):
     r"""Rotation or phaseshift operation.
 
     The annihilation and creation operators are evolved in the following
@@ -105,7 +105,7 @@ class R(_PassiveLinearGate):
 
 
 @_register
-class MZ(_PassiveLinearGate):
+class MachZehnder(_PassiveLinearGate):
     r"""Mach-Zehnder interferometer.
 
     .. math::
@@ -147,7 +147,7 @@ class MZ(_PassiveLinearGate):
 
 
 @_register
-class F(R):
+class Fourier(Phaseshifter):
     r"""Fourier gate.
 
     Corresponds to the Rotaton gate :class:`R` with :math:`\phi = \pi/2`.
@@ -180,7 +180,7 @@ class GaussianTransform(_LinearGate):
 
 
 @_register
-class S(_LinearGate):
+class Squeezing(_LinearGate):
     r"""Applies the squeezing operator.
 
     The definition of the operator is:
@@ -234,7 +234,7 @@ class S(_LinearGate):
 
 
 @_register
-class P(_LinearGate):
+class QuadraticPhase(_LinearGate):
     r"""Applies the quadratic phase operation to the state.
 
     The operator of the quadratic phase gate is
@@ -258,7 +258,7 @@ class P(_LinearGate):
 
 
 @_register
-class S2(_LinearGate):
+class Squeezing2(_LinearGate):
     r"""2-mode squeezing gate.
 
     .. math::
@@ -290,7 +290,7 @@ class S2(_LinearGate):
 
 
 @_register
-class CX(_LinearGate):
+class ControlledX(_LinearGate):
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -311,7 +311,7 @@ class CX(_LinearGate):
 
 
 @_register
-class CZ(_LinearGate):
+class ControlledZ(_LinearGate):
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -332,7 +332,7 @@ class CZ(_LinearGate):
 
 
 @_register
-class D(Operation):
+class Displacement(Operation):
     r"""Phase space displacement operation.
 
     One must either specify `alpha` only, or the combination of `r` and `phi`.
@@ -369,7 +369,7 @@ class D(Operation):
 
 
 @_register
-class X(D):
+class PositionDisplacement(Displacement):
     r"""Position displacement gate."""
 
     def __init__(self, x: float):
@@ -379,7 +379,7 @@ class X(D):
 
 
 @_register
-class Z(D):
+class MomentumDisplacement(Displacement):
     r"""Momentum displacement gate."""
 
     def __init__(self, p: float):
@@ -389,7 +389,7 @@ class Z(D):
 
 
 @_register
-class K(Operation):
+class Kerr(Operation):
     r"""Kerr gate.
 
     .. math::
@@ -407,7 +407,7 @@ class K(Operation):
 
 
 @_register
-class CK(Operation):
+class CrossKerr(Operation):
     r"""Cross-Kerr gate.
 
     .. math::

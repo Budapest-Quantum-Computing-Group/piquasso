@@ -21,9 +21,9 @@ class TestSampling:
             [0, 0, -1]
         ], dtype=complex)
         with self.program:
-            pq.Q(0, 1) | pq.B(.5)
+            pq.Q(0, 1) | pq.Beamsplitter(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
-            pq.Q(3) | pq.R(.5)
+            pq.Q(3) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling(shots=10)
 
     def test_interferometer(self):
@@ -49,7 +49,7 @@ class TestSampling:
     def test_phaseshifter(self):
         phi = np.pi / 2
         with self.program:
-            pq.Q(2) | pq.R(phi)
+            pq.Q(2) | pq.Phaseshifter(phi)
         self.program.execute()
 
         x = np.exp(1j * phi)
@@ -67,7 +67,7 @@ class TestSampling:
         theta = np.pi / 4
         phi = np.pi / 3
         with self.program:
-            pq.Q(1, 3) | pq.B(theta, phi)
+            pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
         self.program.execute()
 
         t = np.cos(theta)

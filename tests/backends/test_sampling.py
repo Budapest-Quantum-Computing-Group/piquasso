@@ -76,14 +76,14 @@ class TestSampling:
         ext = np.pi/4
 
         with self.program:
-            pq.Q(0, 1) | pq.MZ(int_=int_, ext=ext)
+            pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
             pq.Q() | pq.Sampling(shots=1)
 
         self.program.execute()
 
     def test_fourier(self):
         with self.program:
-            pq.Q(0) | pq.F()
+            pq.Q(0) | pq.Fourier()
             pq.Q() | pq.Sampling(shots=1)
 
         self.program.execute()

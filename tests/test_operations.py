@@ -34,4 +34,4 @@ def test_operation_initialization_from_properties():
 
 def test_displacement_raises_InvalidParameter_for_redundant_parameters():
     with pytest.raises(InvalidParameter):
-        pq.D(alpha=1, r=2, phi=3)
+        pq.Displacement(alpha=1, r=2, phi=3)

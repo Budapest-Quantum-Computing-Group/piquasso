@@ -16,11 +16,11 @@ def generate_random_gaussian_state():
 
             for i in range(d):
                 alpha = 2 * (np.random.rand() + 1j * np.random.rand()) - 1
-                displacement_gate = pq.D(alpha=alpha)
+                displacement_gate = pq.Displacement(alpha=alpha)
 
                 r = 2 * np.random.rand() - 1
                 phi = np.random.rand() * 2 * np.pi
-                squeezing_gate = pq.S(r, phi=phi)
+                squeezing_gate = pq.Squeezing(r, phi=phi)
 
                 pq.Q(i) | displacement_gate | squeezing_gate
 
@@ -40,7 +40,7 @@ def test_squeezing(program, gaussian_state_assets):
     phi = 0.7
 
     with program:
-        pq.Q(1) | pq.S(r, phi)
+        pq.Q(1) | pq.Squeezing(r, phi)
 
     program.execute()
     program.state.validate()
@@ -51,7 +51,7 @@ def test_squeezing(program, gaussian_state_assets):
 
 def test_phaseshift(program, gaussian_state_assets):
     with program:
-        pq.Q(0) | pq.R(phi=np.pi/3)
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi/3)
 
     program.execute()
     program.state.validate()
@@ -65,7 +65,7 @@ def test_beamsplitter(program, gaussian_state_assets):
     phi = np.pi/3
 
     with program:
-        pq.Q(0, 1) | pq.B(theta=theta, phi=phi)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
 
     program.execute()
     program.state.validate()
@@ -78,7 +78,7 @@ def test_displacement_with_alpha(program, gaussian_state_assets):
     alpha = 3 - 4j
 
     with program:
-        pq.Q(1) | pq.D(alpha=alpha)
+        pq.Q(1) | pq.Displacement(alpha=alpha)
 
     program.execute()
     program.state.validate()
@@ -92,7 +92,7 @@ def test_displacement_with_r_and_phi(program, gaussian_state_assets):
     phi = np.pi / 4
 
     with program:
-        pq.Q(1) | pq.D(r=r, phi=phi)
+        pq.Q(1) | pq.Displacement(r=r, phi=phi)
 
     program.execute()
     program.state.validate()
@@ -105,7 +105,7 @@ def test_position_displacement(program, gaussian_state_assets):
     x = 4
 
     with program:
-        pq.Q(1) | pq.X(x)
+        pq.Q(1) | pq.PositionDisplacement(x)
 
     program.execute()
     program.state.validate()
@@ -118,7 +118,7 @@ def test_momentum_displacement(program, gaussian_state_assets):
     p = 5
 
     with program:
-        pq.Q(1) | pq.Z(p)
+        pq.Q(1) | pq.MomentumDisplacement(p)
 
     program.execute()
     program.state.validate()
@@ -133,9 +133,9 @@ def test_displacement(program, gaussian_state_assets):
     phi = np.pi/3
 
     with program:
-        pq.Q(0) | pq.D(r=r, phi=phi)
-        pq.Q(1) | pq.D(alpha=alpha)
-        pq.Q(2) | pq.D(r=r, phi=phi) | pq.D(alpha=alpha)
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
+        pq.Q(1) | pq.Displacement(alpha=alpha)
+        pq.Q(2) | pq.Displacement(r=r, phi=phi) | pq.Displacement(alpha=alpha)
 
     program.execute()
     program.state.validate()
@@ -149,9 +149,9 @@ def test_displacement_and_squeezing(program, gaussian_state_assets):
     phi = np.pi/3
 
     with program:
-        pq.Q(0) | pq.D(r=r, phi=phi)
-        pq.Q(1) | pq.S(r=-0.6, phi=0.7)
-        pq.Q(2) | pq.S(r=0.8)
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
+        pq.Q(1) | pq.Squeezing(r=-0.6, phi=0.7)
+        pq.Q(2) | pq.Squeezing(r=0.8)
 
     program.execute()
     program.state.validate()
@@ -165,7 +165,7 @@ def test_two_mode_squeezing(program, gaussian_state_assets):
     phi = np.pi/3
 
     with program:
-        pq.Q(1, 2) | pq.S2(r=r, phi=phi)
+        pq.Q(1, 2) | pq.Squeezing2(r=r, phi=phi)
 
     program.execute()
     program.state.validate()
@@ -178,7 +178,7 @@ def test_controlled_X_gate(program, gaussian_state_assets):
     s = 2
 
     with program:
-        pq.Q(1, 2) | pq.CX(s=s)
+        pq.Q(1, 2) | pq.ControlledX(s=s)
 
     program.execute()
     program.state.validate()
@@ -191,7 +191,7 @@ def test_controlled_Z_gate(program, gaussian_state_assets):
     s = 2
 
     with program:
-        pq.Q(1, 2) | pq.CZ(s=s)
+        pq.Q(1, 2) | pq.ControlledZ(s=s)
 
     program.execute()
     program.state.validate()
@@ -202,7 +202,7 @@ def test_controlled_Z_gate(program, gaussian_state_assets):
 
 def test_fourier(program, gaussian_state_assets):
     with program:
-        pq.Q(0) | pq.F()
+        pq.Q(0) | pq.Fourier()
 
     program.execute()
     program.state.validate()
@@ -216,7 +216,7 @@ def test_mach_zehnder(program, gaussian_state_assets):
     ext = np.pi/4
 
     with program:
-        pq.Q(1, 2) | pq.MZ(int_=int_, ext=ext)
+        pq.Q(1, 2) | pq.MachZehnder(int_=int_, ext=ext)
 
     program.execute()
     program.state.validate()
@@ -227,9 +227,9 @@ def test_mach_zehnder(program, gaussian_state_assets):
 
 def test_quadratic_phase(program, gaussian_state_assets):
     with program:
-        pq.Q(0) | pq.P(0)
-        pq.Q(1) | pq.P(2)
-        pq.Q(2) | pq.P(1)
+        pq.Q(0) | pq.QuadraticPhase(0)
+        pq.Q(1) | pq.QuadraticPhase(2)
+        pq.Q(2) | pq.QuadraticPhase(1)
 
     program.execute()
     program.state.validate()
@@ -245,7 +245,7 @@ def test_displacement_leaves_the_covariance_invariant(program):
     initial_cov = program.state.cov
 
     with program:
-        pq.Q(0) | pq.D(r=r, phi=phi)
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
 
     program.execute()
     program.state.validate()
@@ -348,13 +348,13 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
         pq.Q() | pq.GaussianState(d=3)
 
-        pq.Q(0) | pq.D(alpha=np.exp(1j * np.pi/4))
-        pq.Q(1) | pq.D(alpha=1)
-        pq.Q(2) | pq.D(alpha=1j)
+        pq.Q(0) | pq.Displacement(alpha=np.exp(1j * np.pi/4))
+        pq.Q(1) | pq.Displacement(alpha=1)
+        pq.Q(2) | pq.Displacement(alpha=1j)
 
-        pq.Q(0) | pq.S(r=1, phi=np.pi/2)
-        pq.Q(1) | pq.S(r=2, phi=np.pi/3)
-        pq.Q(2) | pq.S(r=2, phi=np.pi/4)
+        pq.Q(0) | pq.Squeezing(r=1, phi=np.pi/2)
+        pq.Q(1) | pq.Squeezing(r=2, phi=np.pi/3)
+        pq.Q(2) | pq.Squeezing(r=2, phi=np.pi/4)
 
     initialization.execute()
     initialization.state.validate()
@@ -364,7 +364,7 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as program:
         pq.Q(0, 1, 2) | initialization.state
 
-        pq.Q(0) | pq.D(r=1, phi=1)
+        pq.Q(0) | pq.Displacement(r=1, phi=1)
 
     program.execute()
     program.state.validate()
@@ -377,7 +377,7 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
 def test_displaced_vacuum_stays_valid():
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=3)
-        pq.Q(0) | pq.D(r=2, phi=np.pi/3)
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
 
     program.execute()
     program.state.validate()
@@ -391,9 +391,9 @@ def test_multiple_displacements_leave_the_covariance_invariant():
     with pq.Program() as program:
         pq.Q() | vacuum
 
-        pq.Q(0) | pq.D(r=2, phi=np.pi/3)
-        pq.Q(1) | pq.D(r=1, phi=np.pi/4)
-        pq.Q(2) | pq.D(r=1 / 2, phi=np.pi/6)
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
+        pq.Q(1) | pq.Displacement(r=1, phi=np.pi/4)
+        pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi/6)
 
     program.execute()
     program.state.validate()
@@ -418,35 +418,35 @@ def test_complex_circuit(gaussian_state_assets):
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=5)
 
-        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(1) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(2) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(3) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(4) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
-        pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
-        pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
-        pq.Q(1, 2) | pq.B(1.0152680371119776, 1.2863559998816205)
-        pq.Q(3, 4) | pq.B(1.3205517879465705, 0.5236836466492961)
-        pq.Q(0, 1) | pq.B(4.394480318177715, 4.481575657714487)
-        pq.Q(2, 3) | pq.B(2.2300919706807534, 1.5073556513699888)
-        pq.Q(1, 2) | pq.B(2.2679037068773673, 1.9550229282085838)
-        pq.Q(3, 4) | pq.B(3.340269832485504, 3.289367083610399)
+        pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
+        pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
+        pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, 1.2863559998816205)
+        pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, 0.5236836466492961)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715, 4.481575657714487)
+        pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, 1.5073556513699888)
+        pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-        pq.Q(0) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(1) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(2) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(3) | pq.S(r=0.1) | pq.D(alpha=1)
-        pq.Q(4) | pq.S(r=0.1) | pq.D(alpha=1)
+        pq.Q(0) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(1) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(2) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(3) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(4) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
-        pq.Q(0, 1) | pq.B(0.0959408065906761, 0.06786053071484363)
-        pq.Q(2, 3) | pq.B(0.7730047654405018, 1.453770233324797)
-        pq.Q(1, 2) | pq.B(1.0152680371119776, 1.2863559998816205)
-        pq.Q(3, 4) | pq.B(1.3205517879465705, 0.5236836466492961)
-        pq.Q(0, 1) | pq.B(4.394480318177715, 4.481575657714487)
-        pq.Q(2, 3) | pq.B(2.2300919706807534, 1.5073556513699888)
-        pq.Q(1, 2) | pq.B(2.2679037068773673, 1.9550229282085838)
-        pq.Q(3, 4) | pq.B(3.340269832485504, 3.289367083610399)
+        pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
+        pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
+        pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, 1.2863559998816205)
+        pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, 0.5236836466492961)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715, 4.481575657714487)
+        pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, 1.5073556513699888)
+        pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
     program.execute()
     program.state.validate()
@@ -459,13 +459,13 @@ def test_program_stacking_with_measurement():
     with pq.Program() as preparation:
         pq.Q() | pq.GaussianState(d=5)
 
-        pq.Q(0, 1) | pq.S2(r=1, phi=np.pi / 4)
-        pq.Q(2, 3) | pq.S2(r=2, phi=np.pi / 3)
+        pq.Q(0, 1) | pq.Squeezing2(r=1, phi=np.pi / 4)
+        pq.Q(2, 3) | pq.Squeezing2(r=2, phi=np.pi / 3)
 
     with pq.Program() as interferometer:
-        pq.Q(0, 1) | pq.B(theta=np.pi / 4, phi=np.pi / 3)
-        pq.Q(1) | pq.R(phi=np.pi / 2)
-        pq.Q(1, 2) | pq.B(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
+        pq.Q(1) | pq.Phaseshifter(phi=np.pi / 2)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
     with pq.Program() as program:
         pq.Q(0, 1, 2, 3, 4) | preparation
