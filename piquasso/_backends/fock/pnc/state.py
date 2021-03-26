@@ -26,7 +26,7 @@ class PNCFockState(BaseFockState):
     def _get_empty(self):
         return [
             np.zeros(shape=(self._space._symmetric_cardinality(n), ) * 2, dtype=complex)
-            for n in range(self._space.cutoff + 1)
+            for n in range(self._space.cutoff)
         ]
 
     def _apply_vacuum(self):

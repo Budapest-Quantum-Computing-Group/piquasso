@@ -12,7 +12,7 @@ from piquasso.api.instruction import Instruction
 class MeasureParticleNumber(Instruction):
     """Particle number measurement."""
 
-    def __init__(self, cutoff=3, shots=1):
+    def __init__(self, cutoff=5, shots=1):
         super().__init__(cutoff=cutoff, shots=shots)
 
 

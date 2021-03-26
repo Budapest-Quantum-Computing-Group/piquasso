@@ -133,7 +133,7 @@ def test_measure_dyne_with_multiple_shots(program):
 
 def test_measure_particle_number_on_one_modes(program):
     with program:
-        pq.Q(0) | pq.MeasureParticleNumber(cutoff=3)
+        pq.Q(0) | pq.MeasureParticleNumber(cutoff=4)
 
     results = program.execute()
 
@@ -142,7 +142,7 @@ def test_measure_particle_number_on_one_modes(program):
 
 def test_measure_particle_number_on_two_modes(program):
     with program:
-        pq.Q(0, 1) | pq.MeasureParticleNumber(cutoff=3)
+        pq.Q(0, 1) | pq.MeasureParticleNumber(cutoff=4)
 
     results = program.execute()
 
@@ -151,7 +151,7 @@ def test_measure_particle_number_on_two_modes(program):
 
 def test_measure_particle_number_on_all_modes(program):
     with program:
-        pq.Q() | pq.MeasureParticleNumber(cutoff=3)
+        pq.Q() | pq.MeasureParticleNumber(cutoff=4)
 
     results = program.execute()
 

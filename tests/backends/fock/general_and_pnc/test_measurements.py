@@ -12,7 +12,7 @@ import piquasso as pq
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_one_mode(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -39,7 +39,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
 
     if outcome == (1, ):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 1/3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
                 4j * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)),
@@ -52,7 +52,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
 
     elif outcome == (2, ):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
@@ -64,7 +64,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_two_modes(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -91,7 +91,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
 
     if outcome == (0, 1):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
@@ -101,7 +101,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
 
     elif outcome == (1, 1):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
             ]
@@ -109,7 +109,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
 
     elif outcome == (0, 2):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
@@ -121,7 +121,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_all_modes(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | StateClass(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
@@ -146,7 +146,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
 
     if outcome == (0, 0, 0):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
             ]
@@ -154,7 +154,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
 
     elif outcome == (0, 0, 1):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
             ]
@@ -162,7 +162,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
 
     elif outcome == (1, 0, 0):
         expected_state = StateClass.from_number_preparations(
-            d=3, cutoff=2,
+            d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
             ]
@@ -176,7 +176,7 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
     shots = 4
 
     with pq.Program() as preparation:
-        pq.Q() | StateClass(d=3, cutoff=2)
+        pq.Q() | StateClass(d=3, cutoff=3)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 

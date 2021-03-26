@@ -21,9 +21,8 @@ def piquasso_benchmark(
         with pq.Program() as new_program:
             pq.Q() | example_pq_gaussian_state
 
-            # NOTE: cutoff=4 in PQ corresponds to cutoff=5 in SF.
-            # Moreover, in SF we couldn't specify the cutoff, unfortunately.
-            pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=4, shots=4)
+            # NOTE: In SF the cutoff is 5, and couldn't be changed
+            pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=5, shots=4)
 
         new_program.execute()
 

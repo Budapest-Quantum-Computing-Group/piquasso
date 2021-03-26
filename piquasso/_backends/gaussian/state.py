@@ -707,7 +707,7 @@ class GaussianState(State):
 
                 choice = None
 
-                for n in range(cutoff + 1):
+                for n in range(cutoff):
                     occupation_numbers = tuple(outcome + [n])
 
                     probability = get_probability(

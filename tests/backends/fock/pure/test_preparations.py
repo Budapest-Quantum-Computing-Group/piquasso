@@ -10,7 +10,7 @@ import piquasso as pq
 
 def test_create_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
 
@@ -27,7 +27,7 @@ def test_create_number_state():
 
 def test_create_and_annihilate_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
@@ -43,7 +43,7 @@ def test_create_and_annihilate_number_state():
 
 def test_create_annihilate_and_create():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=2) | pq.Vacuum()
+        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
@@ -63,7 +63,7 @@ def test_create_annihilate_and_create():
 
 def test_overflow_with_zero_norm_raises_RuntimeError():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=2)
+        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
 
@@ -77,7 +77,7 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
+        pq.Q() | pq.PureFockState(d=3, cutoff=4)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
 
@@ -100,7 +100,7 @@ def test_creation_on_multiple_modes():
 
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=2)
+        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/6)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/6)
         pq.Q(2) | pq.StateVector(2) * np.sqrt(1/6)
