@@ -36,9 +36,8 @@ with pq.Program() as pq_program:
     pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, np.pi - 1.9550229282085838)
     pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  np.pi - 3.289367083610399)
 
-    # NOTE: cutoff=4 in PQ corresponds to cutoff=5 in SF.
-    # Moreover, in SF we couldn't specify the cutoff, unfortunately.
-    pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=4, shots=shots)
+    # NOTE: In SF the cutoff is 5, and couldn't be changed
+    pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=5, shots=shots)
 
 
 sf_program = sf.Program(d)

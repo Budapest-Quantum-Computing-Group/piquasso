@@ -9,7 +9,7 @@ import piquasso as pq
 
 def test_from_pure_preserves_fock_probabilities():
     with pq.Program() as pure_state_preparation:
-        pq.Q() | pq.PureFockState(d=2, cutoff=2)
+        pq.Q() | pq.PureFockState(d=2, cutoff=4)
 
         pq.Q(1) | pq.StateVector(1)
 

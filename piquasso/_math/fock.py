@@ -18,8 +18,8 @@ def cutoff_cardinality(*, cutoff, d):
         \sum_{n=0}^i {d + n - 1 \choose n} = \frac{(i + 1) {d + i \choose i + 1}}{d}
     """
     return int(
-        (cutoff + 1)
-        * comb(d + cutoff, cutoff + 1)
+        cutoff
+        * comb(d + cutoff - 1, cutoff)
         / d
     )
 
@@ -54,7 +54,7 @@ class FockBasis(tuple):
 
     @classmethod
     def create_all(cls, *, d, cutoff):
-        for n in range(cutoff + 1):
+        for n in range(cutoff):
             if n == 0:
                 yield cls([0] * d)
             else:
@@ -145,7 +145,7 @@ class FockSpace(tuple):
         return block_diag(
             *(
                 self.symmetric_tensorpower(operator, n)
-                for n in range(self.cutoff + 1)
+                for n in range(self.cutoff)
             )
         )
 
@@ -221,8 +221,8 @@ class FockSpace(tuple):
         return int(comb(self.d + n - 1, n))
 
     def get_subspace_indices(self, n):
-        begin = cutoff_cardinality(cutoff=n-1, d=self.d)
-        end = cutoff_cardinality(cutoff=n, d=self.d)
+        begin = cutoff_cardinality(cutoff=n, d=self.d)
+        end = cutoff_cardinality(cutoff=n + 1, d=self.d)
 
         return begin, end
 
