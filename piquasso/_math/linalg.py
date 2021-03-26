@@ -47,29 +47,15 @@ def symplectic_form(d):
     return symplectic_form
 
 
-def block_reduce(matrix, *, reduction_indices):
-    d = matrix.shape[0] // 2
+def block_reduce(array, reduce_on):
+    reduce_on *= 2
 
-    rows = []
+    proper_index = []
 
-    for idx, index in enumerate(reduction_indices):
-        rows.extend([idx] * index)
+    for index, multiplier in enumerate(reduce_on):
+        proper_index.extend([index] * multiplier)
 
-    return np.block(
-        [
-            [matrix[:d, :d][:, rows][rows], matrix[:d, d:][:, rows][rows]],
-            [matrix[d:, :d][:, rows][rows], matrix[d:, d:][:, rows][rows]],
-        ]
-    )
+    if array.ndim == 1:
+        return array[proper_index]
 
-
-def blocks_on_subspace(*, matrix, subspace_indices):
-    index = np.ix_(subspace_indices, subspace_indices)
-    d = matrix.shape[0] // 2
-
-    return np.block(
-        [
-            [matrix[:d, :d][index], matrix[:d, d:][index]],
-            [matrix[d:, :d][index], matrix[d:, d:][index]],
-        ]
-    )
+    return array[np.ix_(proper_index, proper_index)]

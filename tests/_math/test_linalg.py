@@ -16,7 +16,7 @@ def test_block_reduce_on_2_by_2_matrix():
         dtype=float,
     )
 
-    result = block_reduce(matrix, reduction_indices=(2,))
+    result = block_reduce(matrix, reduce_on=(2,))
 
     assert np.allclose(
         result,
@@ -42,7 +42,7 @@ def test_block_reduce_on_4_by_4_matrix():
         dtype=float,
     )
 
-    result = block_reduce(matrix, reduction_indices=(1, 2))
+    result = block_reduce(matrix, reduce_on=(1, 2))
 
     assert np.allclose(
         result,
@@ -72,7 +72,7 @@ def test_hafnian_on_6_by_6_matrix():
         dtype=float,
     )
 
-    result = block_reduce(matrix, reduction_indices=(1, 0, 2))
+    result = block_reduce(matrix, reduce_on=(1, 0, 2))
 
     assert np.allclose(
         result,

@@ -2,20 +2,28 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import scipy
+import random
 import numpy as np
 
-import scipy
+from itertools import repeat
+from functools import lru_cache
+from scipy.special import factorial
 
 from piquasso.api.state import State
 from piquasso.api import constants
 from piquasso.api.errors import InvalidState
 from piquasso._math.functions import gaussian_wigner_function
-from piquasso._math.hafnian import generate_gaussian_state_samples
 from piquasso._math.linalg import (
     is_symmetric,
     symplectic_form,
     is_positive_semidefinite,
+    block_reduce,
 )
+from piquasso._math._random import choose_from_cumulated_probabilities
+
+
+from piquasso._math.hafnian import loop_hafnian
 
 from .circuit import GaussianCircuit
 
@@ -115,9 +123,11 @@ class GaussianState(State):
             raise InvalidState("The covariance matrix is not symmetric.")
 
         if not is_positive_semidefinite(cov + 1j * symplectic_form(d)):
+            # NOTE: There is something funny going on here.
             raise InvalidState(
-                "The covariance matrix is invalid."
-            )  # TODO: We should have a link here.
+                "The covariance matrix is invalid, since it doesn't fulfill the "
+                "Robertson-Schrödinger uncertainty relation."
+            )
 
     @property
     def xp_mean(self):
@@ -131,10 +141,11 @@ class GaussianState(State):
             np.array: A :math:`d`-vector.
         """
 
-        _xp_mean = np.empty(2 * self.d)
-        _xp_mean[:self.d] = self._m.real * np.sqrt(2 * constants.HBAR)
-        _xp_mean[self.d:] = self._m.imag * np.sqrt(2 * constants.HBAR)
-        return _xp_mean
+        dimensionless_xp_mean = np.concatenate(
+            [self._m.real, self._m.imag]
+        ) * np.sqrt(2)
+
+        return dimensionless_xp_mean * np.sqrt(constants.HBAR)
 
     @property
     def xp_cov(self):
@@ -160,14 +171,14 @@ class GaussianState(State):
         C = self._C
         G = self._G
 
-        corr = 2 * np.block(
+        dimensionless_xp_cov = 2 * np.block(
             [
                 [(G + C).real, (G + C).imag],
                 [(G - C).imag, (-G + C).real],
             ]
         ) + np.identity(2 * self.d)
 
-        return corr * constants.HBAR
+        return dimensionless_xp_cov * constants.HBAR
 
     @property
     def xp_corr(self):
@@ -259,17 +270,16 @@ class GaussianState(State):
 
         T = quad_transformation(d)
 
-        xp_cov = (
-            (T.transpose() @ new_cov @ T) / constants.HBAR
-        )
+        dimensionless_cov = new_cov / constants.HBAR
+        dimensionless_xp_cov = T.transpose() @ dimensionless_cov @ T
 
-        xp_cov = (xp_cov - np.identity(2 * d)) / 2
+        blocks = (dimensionless_xp_cov - np.identity(2 * d)) / 4
 
-        C_real = (xp_cov[:d, :d] + xp_cov[d:, d:]) / 2
-        G_real = (xp_cov[:d, :d] - xp_cov[d:, d:]) / 2
+        C_real = blocks[:d, :d] + blocks[d:, d:]
+        G_real = blocks[:d, :d] - blocks[d:, d:]
 
-        C_imag = (xp_cov[:d, d:] - xp_cov[d:, :d]) / 2
-        G_imag = (xp_cov[:d, d:] + xp_cov[d:, :d]) / 2
+        C_imag = blocks[:d, d:] - blocks[d:, :d]
+        G_imag = blocks[:d, d:] + blocks[d:, :d]
 
         C = C_real + 1j * C_imag
         G = G_real + 1j * G_imag
@@ -313,8 +323,17 @@ class GaussianState(State):
         return self.mean, self.corr
 
     @property
-    def husimi(self):
-        return self.cov + np.identity(2 * self.d, dtype=np.float64)
+    def complex_displacements(self):
+        return np.concatenate([self._m, self._m.conj()])
+
+    @property
+    def husimi_cov(self):
+        return np.block(
+            [
+                [self._C, self._G.conj()],
+                [self._G, self._C.conj()]
+            ]
+        ) + np.identity(2 * self.d)
 
     def rotated(self, phi):
         r"""Returns the copy of the current state, rotated by `phi`.
@@ -633,13 +652,88 @@ class GaussianState(State):
         if not modes:
             modes = tuple(range(self.d))
 
-        husimi = self.reduced(modes).husimi
+        state = self.reduced(modes)
 
-        samples = generate_gaussian_state_samples(
-            husimi=husimi,
-            cutoff=cutoff,
-            shots=shots,
-            modes=modes,
-        )
+        @lru_cache(maxsize=None)
+        def get_probability(*, subspace_modes, occupation_numbers):
+            reduced_state = state.reduced(subspace_modes)
+
+            Q = reduced_state.husimi_cov
+            Qinv = np.linalg.inv(Q)
+
+            d = len(subspace_modes)
+            identity = np.identity(d)
+            zeros = np.zeros_like(identity)
+
+            X = np.block(
+                [
+                    [zeros, identity],
+                    [identity, zeros],
+                ],
+            )
+
+            A = X @ (np.identity(2 * d, dtype=complex) - Qinv).conj()
+
+            alpha = reduced_state.complex_displacements
+            gamma = alpha.conj() - A @ alpha
+
+            A_reduced = block_reduce(A, reduce_on=occupation_numbers)
+
+            np.fill_diagonal(
+                A_reduced,
+                block_reduce(
+                    gamma, reduce_on=occupation_numbers
+                )
+            )
+
+            return (
+                loop_hafnian(A_reduced) * np.exp(-0.5 * alpha @ Qinv @ alpha.conj())
+                / (np.prod(factorial(occupation_numbers)) * np.sqrt(np.linalg.det(Q)))
+            ).real
+
+        samples = []
+
+        for _ in repeat(None, shots):
+            outcome = []
+
+            previous_probability = 1.0
+
+            for k in range(1, len(modes) + 1):
+                subspace_modes = tuple(modes[:k])
+
+                cumulated_probabilities = [0.0]
+
+                guess = random.uniform(0.0, 1.0)
+
+                choice = None
+
+                for n in range(cutoff + 1):
+                    occupation_numbers = tuple(outcome + [n])
+
+                    probability = get_probability(
+                        subspace_modes=subspace_modes,
+                        occupation_numbers=occupation_numbers
+                    )
+                    conditional_probability = probability / previous_probability
+                    cumulated_probabilities.append(
+                        conditional_probability + cumulated_probabilities[-1]
+                    )
+                    if guess < cumulated_probabilities[-1]:
+                        choice = n
+                        break
+
+                else:
+                    choice = choose_from_cumulated_probabilities(
+                        cumulated_probabilities
+                    )
+
+                previous_probability = (
+                    cumulated_probabilities[choice + 1]
+                    - cumulated_probabilities[choice]
+                ) * previous_probability
+
+                outcome.append(choice)
+
+            samples.append(outcome)
 
         return samples

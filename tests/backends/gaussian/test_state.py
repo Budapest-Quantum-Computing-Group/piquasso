@@ -58,6 +58,24 @@ def test_representation_roundtrip(state):
     assert np.allclose(final_cov, initial_cov)
 
 
+def test_representation_roundtrip_at_different_HBAR(state):
+    constants.HBAR = 42
+
+    initial_mean = state.mean
+    initial_cov = state.cov
+
+    state.mean = initial_mean
+    state.cov = initial_cov
+
+    final_mean = state.mean
+    final_cov = state.cov
+
+    assert np.allclose(final_mean, initial_mean)
+    assert np.allclose(final_cov, initial_cov)
+
+    constants.reset_hbar()  # Teardown
+
+
 def test_wigner_function(state, assets):
     quadrature_array = np.array(
         [
@@ -196,6 +214,81 @@ def test_mean_and_covariance_with_different_HBAR(program, assets):
 
     assert np.allclose(program.state.mean, expected_mean)
     assert np.allclose(program.state.cov, expected_cov)
+
+    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
+    constants.HBAR = constants._HBAR_DEFAULT
+
+
+def test_mean_is_scaled_with_squared_HBAR(state, assets):
+    scaling = 14
+
+    mean_default_hbar = state.mean
+
+    constants.HBAR *= scaling
+
+    mean_different_hbar = state.mean
+
+    assert np.allclose(mean_default_hbar * np.sqrt(scaling), mean_different_hbar)
+
+    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
+    constants.HBAR = constants._HBAR_DEFAULT
+
+
+def test_cov_is_scaled_with_HBAR(state, assets):
+    scaling = 14
+
+    cov_default_hbar = state.cov
+
+    constants.HBAR *= scaling
+
+    cov_different_hbar = state.cov
+
+    assert np.allclose(cov_default_hbar * scaling, cov_different_hbar)
+
+    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
+    constants.HBAR = constants._HBAR_DEFAULT
+
+
+def test_husimi_cov(state, assets):
+
+    expected_husimi_cov = assets.load("expected_husimi_cov")
+
+    assert np.allclose(state.husimi_cov, expected_husimi_cov)
+
+
+def test_husimi_cov_does_not_scale_with_HBAR(state, assets):
+    husimi_cov_default_hbar = state.husimi_cov
+
+    constants.HBAR = 42
+
+    husimi_cov_different_hbar = state.husimi_cov
+
+    assert np.allclose(husimi_cov_default_hbar, husimi_cov_different_hbar)
+
+    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
+    constants.HBAR = constants._HBAR_DEFAULT
+
+
+def test_complex_displacements(state, assets):
+    expected_complex_displacements = assets.load("expected_complex_displacements")
+
+    assert np.allclose(
+        state.complex_displacements,
+        expected_complex_displacements,
+    )
+
+
+def test_complex_displacements_do_not_scale_with_HBAR(state, assets):
+    complex_displacements_default_hbar = state.complex_displacements
+
+    constants.HBAR = 42
+
+    complex_displacements_different_hbar = state.complex_displacements
+
+    assert np.allclose(
+        complex_displacements_default_hbar,
+        complex_displacements_different_hbar,
+    )
 
     # TODO: We need to reset the value of HBAR. Create a better teardown for it!
     constants.HBAR = constants._HBAR_DEFAULT
