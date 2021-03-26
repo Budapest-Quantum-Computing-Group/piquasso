@@ -14,33 +14,30 @@ pytestmark = pytest.mark.benchmark(
 
 
 def piquasso_benchmark(
-    benchmark, example_gaussian_pq_program
+    benchmark, example_pq_gaussian_state
 ):
-    example_gaussian_pq_program.execute()
+    @benchmark
+    def func():
+        with pq.Program() as new_program:
+            pq.Q() | example_pq_gaussian_state
 
-    with pq.Program() as new_program:
-        pq.Q() | example_gaussian_pq_program.state
+            # TODO: Support rotation by an angle, too.
+            pq.Q(0) | pq.MeasureHomodyne()
 
-        # TODO: Support rotation by an angle, too.
-        pq.Q(0) | pq.MeasureHomodyne()
-
-    results = benchmark(new_program.execute)
-
-    assert results
+            new_program.execute()
 
 
 def strawberryfields_benchmark(
-    benchmark, example_gaussian_sf_program_and_engine, d
+    benchmark, example_sf_gaussian_state, d
 ):
-    program, engine = example_gaussian_sf_program_and_engine
+    @benchmark
+    def func():
+        new_program = sf.Program(d)
+        new_engine = sf.Engine(backend="gaussian")
 
-    results = engine.run(program)
+        new_program.state = example_sf_gaussian_state
 
-    new_program = sf.Program(d)
+        with new_program.context as q:
+            sf.ops.MeasureHomodyne(phi=0) | q[0]
 
-    new_program.state = results.state
-
-    with new_program.context as q:
-        sf.ops.MeasureHomodyne(phi=0) | q[0]
-
-    benchmark(engine.run, new_program)
+        new_engine.run(new_program)

@@ -14,33 +14,31 @@ pytestmark = pytest.mark.benchmark(
 
 
 def piquasso_benchmark(
-    benchmark, example_gaussian_pq_program
+    benchmark, example_pq_gaussian_state
 ):
-    example_gaussian_pq_program.execute()
+    @benchmark
+    def func():
+        with pq.Program() as new_program:
+            pq.Q() | example_pq_gaussian_state
 
-    with pq.Program() as new_program:
-        pq.Q() | example_gaussian_pq_program.state
+            # NOTE: cutoff=4 in PQ corresponds to cutoff=5 in SF.
+            # Moreover, in SF we couldn't specify the cutoff, unfortunately.
+            pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=4, shots=4)
 
-        # NOTE: cutoff=5 in PQ corresponds to cutoff=6 in SF.
-        # Moreover, in SF we couldn't specify the cutoff, unfortunately.
-        pq.Q(0, 1, 2) | pq.MeasureParticleNumber(cutoff=5, shots=4)
-
-    benchmark(new_program.execute)
+        new_program.execute()
 
 
 def strawberryfields_benchmark(
-    benchmark, example_gaussian_sf_program_and_engine, d
+    benchmark, example_sf_gaussian_state, d
 ):
-    program, engine = example_gaussian_sf_program_and_engine
+    @benchmark
+    def func():
+        new_program = sf.Program(d)
+        new_engine = sf.Engine(backend="gaussian")
 
-    results = engine.run(program)
+        new_program.state = example_sf_gaussian_state
 
-    new_program = sf.Program(d)
+        with new_program.context as q:
+            sf.ops.MeasureFock() | (q[0], q[1], q[2])
 
-    new_program.state = results.state
-
-    with new_program.context as q:
-        sf.ops.MeasureFock() | (q[0], q[1], q[2])
-
-    # NOTE: With 5 modes, SF couldn't support more than 4 shots, due to a bug (?)
-    results = benchmark(engine.run, new_program, shots=4)
+        new_engine.run(new_program, shots=4)

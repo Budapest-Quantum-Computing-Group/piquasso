@@ -44,6 +44,13 @@ def example_gaussian_pq_program(d):
 
 
 @pytest.fixture
+def example_pq_gaussian_state(example_gaussian_pq_program):
+    example_gaussian_pq_program.execute()
+
+    return example_gaussian_pq_program.state
+
+
+@pytest.fixture
 def example_gaussian_sf_program_and_engine(d):
     """
     NOTE: the covariance matrix SF is returning is half of ours...
@@ -76,3 +83,11 @@ def example_gaussian_sf_program_and_engine(d):
         sf.ops.BSgate(3.340269832485504, 3.289367083610399) | (q[3], q[4])
 
     return program, engine
+
+
+@pytest.fixture
+def example_sf_gaussian_state(example_gaussian_sf_program_and_engine):
+    program, engine = example_gaussian_sf_program_and_engine
+    results = engine.run(program)
+
+    return results.state
