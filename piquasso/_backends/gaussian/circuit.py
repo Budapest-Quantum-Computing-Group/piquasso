@@ -2,6 +2,8 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import numpy as np
+
 from piquasso.api.circuit import Circuit
 from piquasso.api.result import Result
 
@@ -24,7 +26,7 @@ class GaussianCircuit(Circuit):
             "Displacement": self._displacement,
             "PositionDisplacement": self._displacement,
             "MomentumDisplacement": self._displacement,
-            "MeasureHomodyne": self._measure_dyne,
+            "MeasureHomodyne": self._measure_homodyne,
             "MeasureHeterodyne": self._measure_dyne,
             "MeasureDyne": self._measure_dyne,
             "Vacuum": self._vacuum,
@@ -53,9 +55,28 @@ class GaussianCircuit(Circuit):
             modes=instruction.modes,
         )
 
+    def _measure_homodyne(self, instruction):
+        phi = instruction.params["phi"]
+
+        phaseshift = np.identity(self.state.d) * np.exp(- 1j * phi)
+
+        self.state._apply_passive_linear(
+            phaseshift,
+            modes=tuple(range(self.state.d)),
+        )
+
+        samples = self.state._apply_generaldyne_measurement(
+            detection_covariance=instruction.params["detection_covariance"],
+            shots=instruction.params["shots"],
+            modes=instruction.modes,
+        )
+
+        self._add_result(Result(instruction=instruction, samples=samples))
+
     def _measure_dyne(self, instruction):
         samples = self.state._apply_generaldyne_measurement(
-            **instruction.params,
+            detection_covariance=instruction.params["detection_covariance"],
+            shots=instruction.params["shots"],
             modes=instruction.modes,
         )
 

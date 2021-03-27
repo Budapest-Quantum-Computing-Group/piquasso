@@ -52,6 +52,49 @@ def test_measure_homodyne(program):
     program.state.validate()
 
 
+def test_measure_homodyne_zeroes_state_on_measured_modes(program):
+    with program:
+        pq.Q(0) | pq.MeasureHomodyne()
+
+    program.execute()
+    program.state.validate()
+
+    assert program.state.mean[0] == 0
+    assert program.state.cov[0][0] == pq.constants.HBAR
+
+
+def test_measure_homodyne_with_rotation(program):
+    angle = np.pi / 3
+
+    with program:
+        pq.Q(0) | pq.MeasureHomodyne(angle)
+
+    results = program.execute()
+
+    assert len(results) == 1
+    assert results[0].instruction.modes == (0, )
+
+
+def test_measure_homodyne_rotates_the_state(program):
+    angle = np.pi / 3
+
+    program_with_rotation = program.copy()
+
+    with program:
+        pq.Q(0) | pq.MeasureHomodyne()
+
+    program.execute()
+    program.state.validate()
+
+    with program_with_rotation:
+        pq.Q(0) | pq.MeasureHomodyne(angle)
+
+    program_with_rotation.execute()
+    program_with_rotation.state.validate()
+
+    assert program.state.rotated(angle) == program_with_rotation.state
+
+
 def test_measure_homodyne_on_multiple_modes(program):
     with program:
         pq.Q(0, 1) | pq.MeasureHomodyne()
@@ -60,6 +103,18 @@ def test_measure_homodyne_on_multiple_modes(program):
 
     assert len(results) == 1
     assert results[0].instruction.modes == (0, 1)
+
+    program.state.validate()
+
+
+def test_measure_homodyne_on_all_modes(program, d):
+    with program:
+        pq.Q(*tuple(range(d))) | pq.MeasureHomodyne()
+
+    results = program.execute()
+
+    assert len(results) == 1
+    assert results[0].instruction.modes == tuple(range(d))
 
     program.state.validate()
 
@@ -87,6 +142,17 @@ def test_measure_heterodyne(program):
     program.state.validate()
 
 
+def test_measure_heterodyne_zeroes_state_on_measured_modes(program):
+    with program:
+        pq.Q(0) | pq.MeasureHeterodyne()
+
+    program.execute()
+    program.state.validate()
+
+    assert program.state.mean[0] == 0
+    assert program.state.cov[0][0] == pq.constants.HBAR
+
+
 def test_measure_heterodyne_on_multiple_modes(program):
     with program:
         pq.Q(0, 1) | pq.MeasureHeterodyne()
@@ -95,6 +161,18 @@ def test_measure_heterodyne_on_multiple_modes(program):
 
     assert len(results) == 1
     assert results[0].instruction.modes == (0, 1)
+
+    program.state.validate()
+
+
+def test_measure_heterodyne_on_all_modes(program, d):
+    with program:
+        pq.Q(*tuple(range(d))) | pq.MeasureHeterodyne()
+
+    results = program.execute()
+
+    assert len(results) == 1
+    assert results[0].instruction.modes == tuple(range(d))
 
     program.state.validate()
 
