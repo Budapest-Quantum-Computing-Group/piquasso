@@ -50,7 +50,7 @@ class GaussianCircuit(Circuit):
     def _displacement(self, instruction):
         self.state._apply_displacement(
             **instruction.params,
-            mode=instruction.modes[0],
+            modes=instruction.modes,
         )
 
     def _measure_dyne(self, instruction):

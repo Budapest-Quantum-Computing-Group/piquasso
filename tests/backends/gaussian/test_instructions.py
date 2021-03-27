@@ -101,6 +101,32 @@ def test_displacement_with_r_and_phi(program, gaussian_state_assets):
     assert program.state == expected_state
 
 
+def test_displacement_on_multiple_modes(program, gaussian_state_assets):
+    alpha = 3 - 4j
+
+    with program:
+        pq.Q(0, 1) | pq.Displacement(alpha=alpha)
+
+    program.execute()
+    program.state.validate()
+
+    expected_state = gaussian_state_assets.load()
+    assert program.state == expected_state
+
+
+def test_displacement_on_all_modes(program, gaussian_state_assets):
+    alpha = 3 - 4j
+
+    with program:
+        pq.Q(0, 1, 2) | pq.Displacement(alpha=alpha)
+
+    program.execute()
+    program.state.validate()
+
+    expected_state = gaussian_state_assets.load()
+    assert program.state == expected_state
+
+
 def test_position_displacement(program, gaussian_state_assets):
     x = 4
 
