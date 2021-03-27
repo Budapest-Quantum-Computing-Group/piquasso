@@ -22,6 +22,27 @@ def generate_symmetric_matrix():
 
 
 @pytest.fixture
+def generate_complex_symmetric_matrix(generate_symmetric_matrix):
+    def func(N):
+        real = generate_symmetric_matrix(N)
+        imaginary = generate_symmetric_matrix(N)
+
+        return real + 1j * imaginary
+
+    return func
+
+
+@pytest.fixture
+def generate_unitary_matrix():
+    from scipy.stats import unitary_group
+
+    def func(N):
+        return np.array(unitary_group.rvs(N), dtype=complex)
+
+    return func
+
+
+@pytest.fixture
 def AssetHandler(request):
     class _AssetHandler:
 

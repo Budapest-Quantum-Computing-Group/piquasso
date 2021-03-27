@@ -4,18 +4,6 @@
 
 import pytest
 
-import numpy as np
-
-
-@pytest.fixture
-def generate_unitary_matrix():
-    from scipy.stats import unitary_group
-
-    def func(N):
-        return np.array(unitary_group.rvs(N), dtype=complex)
-
-    return func
-
 
 @pytest.fixture
 def generate_hermitian_matrix(generate_unitary_matrix):
