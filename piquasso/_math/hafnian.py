@@ -9,12 +9,9 @@ import numpy as np
 from scipy.linalg import block_diag
 
 from functools import lru_cache, partial
-from itertools import chain, combinations, combinations_with_replacement
+from itertools import combinations_with_replacement
 
-
-def powerset(iterable):
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+from .combinatorics import powerset
 
 
 @lru_cache()
