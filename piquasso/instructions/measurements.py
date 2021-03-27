@@ -17,6 +17,14 @@ class MeasureParticleNumber(Instruction):
 
 
 @_register
+class MeasureThreshold(Instruction):
+    """Threshold measurement."""
+
+    def __init__(self, shots=1):
+        super().__init__(shots=shots)
+
+
+@_register
 class MeasureDyne(Instruction):
     """General-dyne measurement."""
 

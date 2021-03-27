@@ -24,6 +24,7 @@ from piquasso._math._random import choose_from_cumulated_probabilities
 
 
 from piquasso._math.hafnian import loop_hafnian
+from piquasso._math.torontonian import torontonian
 
 from .circuit import GaussianCircuit
 
@@ -648,7 +649,56 @@ class GaussianState(State):
 
         return outcomes
 
-    def _apply_particle_number_measurement(self, *, cutoff, modes, shots):
+    def _apply_particle_number_measurement(
+        self,
+        *,
+        cutoff,
+        modes,
+        shots,
+    ):
+        return self._apply_general_particle_number_measurement(
+            cutoff=cutoff,
+            modes=modes,
+            shots=shots,
+            calculation=calculate_particle_number_detection_probability,
+        )
+
+    def _apply_threshold_measurement(
+        self,
+        *,
+        shots,
+        modes,
+    ):
+        """
+        NOTE: The same logic is used here, as for the particle number measurement.
+        However, at threshold measurement there is no sense of cutoff, therefore it is
+        set to 2 to make the logic sensible in this case as well.
+
+        Also note, that one could speed up this calculation by not calculating the
+        probability of clicks (i.e. 1 as outcome), and argue that the probability of a
+        click is equal to one minus the probability of no click.
+        """
+        if not np.allclose(self.mean, np.zeros_like(self.mean)):
+            raise NotImplementedError(
+                "Threshold measurement for displaced states are not supported: "
+                f"mean={self.mean}"
+            )
+
+        return self._apply_general_particle_number_measurement(
+            cutoff=2,
+            modes=modes,
+            shots=shots,
+            calculation=calculate_threshold_detection_probability,
+        )
+
+    def _apply_general_particle_number_measurement(
+        self,
+        *,
+        cutoff,
+        modes,
+        shots,
+        calculation,
+    ):
         if not modes:
             modes = tuple(range(self.d))
 
@@ -657,39 +707,11 @@ class GaussianState(State):
         @lru_cache(maxsize=None)
         def get_probability(*, subspace_modes, occupation_numbers):
             reduced_state = state.reduced(subspace_modes)
-
-            Q = reduced_state.husimi_cov
-            Qinv = np.linalg.inv(Q)
-
-            d = len(subspace_modes)
-            identity = np.identity(d)
-            zeros = np.zeros_like(identity)
-
-            X = np.block(
-                [
-                    [zeros, identity],
-                    [identity, zeros],
-                ],
+            return calculation(
+                reduced_state,
+                subspace_modes,
+                occupation_numbers,
             )
-
-            A = X @ (np.identity(2 * d, dtype=complex) - Qinv).conj()
-
-            alpha = reduced_state.complex_displacements
-            gamma = alpha.conj() - A @ alpha
-
-            A_reduced = block_reduce(A, reduce_on=occupation_numbers)
-
-            np.fill_diagonal(
-                A_reduced,
-                block_reduce(
-                    gamma, reduce_on=occupation_numbers
-                )
-            )
-
-            return (
-                loop_hafnian(A_reduced) * np.exp(-0.5 * alpha @ Qinv @ alpha.conj())
-                / (np.prod(factorial(occupation_numbers)) * np.sqrt(np.linalg.det(Q)))
-            ).real
 
         samples = []
 
@@ -737,3 +759,60 @@ class GaussianState(State):
             samples.append(outcome)
 
         return samples
+
+
+def calculate_particle_number_detection_probability(
+    state,
+    subspace_modes,
+    occupation_numbers,
+):
+    Q = state.husimi_cov
+    Qinv = np.linalg.inv(Q)
+
+    d = len(subspace_modes)
+    identity = np.identity(d)
+    zeros = np.zeros_like(identity)
+
+    X = np.block(
+        [
+            [zeros, identity],
+            [identity, zeros],
+        ],
+    )
+
+    A = X @ (np.identity(2 * d, dtype=complex) - Qinv).conj()
+
+    alpha = state.complex_displacements
+    gamma = alpha.conj() - A @ alpha
+
+    A_reduced = block_reduce(A, reduce_on=occupation_numbers)
+
+    np.fill_diagonal(
+        A_reduced,
+        block_reduce(
+            gamma, reduce_on=occupation_numbers
+        )
+    )
+
+    return (
+        loop_hafnian(A_reduced) * np.exp(-0.5 * alpha @ Qinv @ alpha.conj())
+        / (np.prod(factorial(occupation_numbers)) * np.sqrt(np.linalg.det(Q)))
+    ).real
+
+
+def calculate_threshold_detection_probability(
+    state,
+    subspace_modes,
+    occupation_numbers,
+):
+    Q = state.husimi_cov
+
+    d = len(subspace_modes)
+
+    OS = (np.identity(2 * d, dtype=complex) - np.linalg.inv(Q)).conj()
+
+    OS_reduced = block_reduce(OS, reduce_on=occupation_numbers)
+
+    return (
+        torontonian(OS_reduced.astype(complex))
+    ).real / np.sqrt(np.linalg.det(Q).real)
