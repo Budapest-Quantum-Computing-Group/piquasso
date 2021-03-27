@@ -55,8 +55,8 @@ class PureFockState(BaseFockState):
         return probability_map
 
     @staticmethod
-    def _get_normalization(probability_map, outcome):
-        return np.sqrt(1 / probability_map[outcome])
+    def _get_normalization(probability_map, sample):
+        return np.sqrt(1 / probability_map[sample])
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_state_vector = self._get_projected_state_vector(

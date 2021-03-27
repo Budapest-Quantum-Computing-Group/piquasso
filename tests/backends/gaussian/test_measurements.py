@@ -72,7 +72,7 @@ def test_measure_homodyne_with_multiple_shots(program):
 
     results = program.execute()
 
-    assert len(results) == shots
+    assert len(results[0].samples) == shots
 
 
 def test_measure_heterodyne(program):
@@ -107,7 +107,7 @@ def test_measure_heterodyne_with_multiple_shots(program):
 
     results = program.execute()
 
-    assert len(results) == shots
+    assert len(results[0].samples) == shots
 
 
 def test_measure_dyne(program):
@@ -144,7 +144,7 @@ def test_measure_dyne_with_multiple_shots(program):
 
     results = program.execute()
 
-    assert len(results) == shots
+    assert len(results[0].samples) == shots
 
 
 def test_measure_particle_number_on_one_modes(program):

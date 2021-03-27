@@ -23,10 +23,10 @@ def test_measure_particle_number_on_one_mode():
     assert np.isclose(sum(program.state.fock_probabilities), 1)
     assert len(results) == 1
 
-    outcome = results[0].outcome
-    assert outcome == (1, ) or outcome == (2, )
+    sample = results[0].samples[0]
+    assert sample == (1, ) or sample == (2, )
 
-    if outcome == (1, ):
+    if sample == (1, ):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
@@ -35,7 +35,7 @@ def test_measure_particle_number_on_one_mode():
             ]
         )
 
-    elif outcome == (2, ):
+    elif sample == (2, ):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
@@ -61,10 +61,10 @@ def test_measure_particle_number_on_two_modes():
     assert np.isclose(sum(program.state.fock_probabilities), 1)
     assert len(results) == 1
 
-    outcome = results[0].outcome
-    assert outcome == (0, 1) or outcome == (1, 1) or outcome == (0, 2)
+    sample = results[0].samples[0]
+    assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
-    if outcome == (0, 1):
+    if sample == (0, 1):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
@@ -72,7 +72,7 @@ def test_measure_particle_number_on_two_modes():
             ]
         )
 
-    elif outcome == (1, 1):
+    elif sample == (1, 1):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
@@ -80,7 +80,7 @@ def test_measure_particle_number_on_two_modes():
             ]
         )
 
-    elif outcome == (0, 2):
+    elif sample == (0, 2):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
@@ -111,10 +111,10 @@ def test_measure_particle_number_on_all_modes():
     assert np.isclose(sum(program.state.fock_probabilities), 1)
     assert len(results) == 1
 
-    outcome = results[0].outcome
-    assert outcome == (0, 0, 0) or outcome == (1, 0, 0) or outcome == (0, 0, 1)
+    sample = results[0].samples[0]
+    assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
 
-    if outcome == (0, 0, 0):
+    if sample == (0, 0, 0):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
@@ -122,7 +122,7 @@ def test_measure_particle_number_on_all_modes():
             ]
         )
 
-    elif outcome == (0, 0, 1):
+    elif sample == (0, 0, 1):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
@@ -130,7 +130,7 @@ def test_measure_particle_number_on_all_modes():
             ]
         )
 
-    elif outcome == (1, 0, 0):
+    elif sample == (1, 0, 0):
         expected_state = pq.PureFockState.from_number_preparations(
             d=3, cutoff=2,
             number_preparations=[
@@ -161,4 +161,4 @@ def test_measure_particle_number_with_multiple_shots():
     results = program.execute()
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results) == shots
+    assert len(results[0].samples) == shots

@@ -68,8 +68,8 @@ class PNCFockState(BaseFockState):
         return probability_map
 
     @staticmethod
-    def _get_normalization(probability_map, outcome):
-        return 1 / probability_map[outcome].real
+    def _get_normalization(probability_map, sample):
+        return 1 / probability_map[sample].real
 
     def _project_to_subspace(self, *, subspace_basis, modes, normalization):
         projected_representation = self._get_projected(

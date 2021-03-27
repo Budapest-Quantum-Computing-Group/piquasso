@@ -54,24 +54,24 @@ class BaseFockState(State, abc.ABC):
             modes=modes,
         )
 
-        outcomes = random.choices(
+        samples = random.choices(
             population=list(probability_map.keys()),
             weights=probability_map.values(),
             k=shots,
         )
 
-        # NOTE: We choose the last outcome for multiple shots.
-        outcome = outcomes[-1]
+        # NOTE: We choose the last sample for multiple shots.
+        sample = samples[-1]
 
-        normalization = self._get_normalization(probability_map, outcome)
+        normalization = self._get_normalization(probability_map, sample)
 
         self._project_to_subspace(
-            subspace_basis=outcome,
+            subspace_basis=sample,
             modes=modes,
             normalization=normalization,
         )
 
-        return outcomes
+        return samples
 
     @abc.abstractclassmethod
     def _get_empty(cls):
@@ -86,7 +86,7 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _get_normalization(outcome):
+    def _get_normalization(sample):
         pass
 
     @abc.abstractmethod

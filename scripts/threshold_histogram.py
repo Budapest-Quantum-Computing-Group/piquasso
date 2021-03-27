@@ -62,7 +62,7 @@ with sf_program.context as q:
 
 
 if __name__ == "__main__":
-    pq_results = np.array(pq_program.execute()[0].outcome)
+    pq_results = np.array(pq_program.execute()[0].samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     N_points = 100000
