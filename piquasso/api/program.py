@@ -41,14 +41,20 @@ class Program:
     def copy(self):
         return copy.deepcopy(self)
 
-    @property
-    def d(self):
-        """The number of modes, on which the state of the program is defined.
+    def __enter__(self):
+        _context.current_program = self
 
-        Returns:
-            int: The number of modes.
-        """
-        return self.state.d
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _context.current_program = None
+
+    def execute(self):
+        """Executes the collected instructions on the circuit."""
+
+        self.circuit.execute_instructions(self.instructions)
+
+        return self.results
 
     @classmethod
     def from_properties(cls, properties):
@@ -111,21 +117,6 @@ class Program:
         properties = json.loads(json_)
 
         return cls.from_properties(properties)
-
-    def execute(self):
-        """Executes the collected instructions on the circuit."""
-
-        self.circuit.execute_instructions(self.instructions)
-
-        return self.results
-
-    def __enter__(self):
-        _context.current_program = self
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        _context.current_program = None
 
     def load_blackbird(self, filename: str):
         """
