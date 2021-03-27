@@ -54,17 +54,12 @@ class GaussianCircuit(Circuit):
         )
 
     def _measure_dyne(self, instruction):
-        outcomes = self.state._apply_generaldyne_measurement(
+        samples = self.state._apply_generaldyne_measurement(
             **instruction.params,
             modes=instruction.modes,
         )
 
-        self._add_result(
-            [
-                Result(instruction=instruction, outcome=outcome)
-                for outcome in outcomes
-            ]
-        )
+        self._add_result(Result(instruction=instruction, samples=samples))
 
     def _vacuum(self, instruction):
         self.state.reset()
@@ -76,22 +71,18 @@ class GaussianCircuit(Circuit):
         self.state.cov = instruction.params["cov"]
 
     def _measure_particle_number(self, instruction):
-        outcome = self.state._apply_particle_number_measurement(
+        samples = self.state._apply_particle_number_measurement(
             cutoff=instruction.params["cutoff"],
             shots=instruction.params["shots"],
             modes=instruction.modes,
         )
 
-        self._add_result(
-            Result(instruction=instruction, outcome=outcome)
-        )
+        self._add_result(Result(instruction=instruction, samples=samples))
 
     def _measure_threshold(self, instruction):
-        outcome = self.state._apply_threshold_measurement(
+        samples = self.state._apply_threshold_measurement(
             shots=instruction.params["shots"],
             modes=instruction.modes,
         )
 
-        self._add_result(
-            Result(instruction=instruction, outcome=outcome)
-        )
+        self._add_result(Result(instruction=instruction, samples=samples))

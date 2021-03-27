@@ -614,15 +614,15 @@ class GaussianState(State):
         #
         # We might be better of setting `check_valid='ignore'` and verifying
         # postive-definiteness for ourselves.
-        outcomes = np.random.multivariate_normal(
+        samples = np.random.multivariate_normal(
             mean=r_measured,
             cov=(rho_measured + rho_m),
             size=shots,
             tol=1e-7,
         )
 
-        # NOTE: We choose the last outcome for multiple shots.
-        outcome = outcomes[-1]
+        # NOTE: We choose the last sample for multiple shots.
+        sample = samples[-1]
 
         evolved_rho_outer = (
             rho_outer
@@ -635,7 +635,7 @@ class GaussianState(State):
             r_outer
             + rho_correlation
             @ np.linalg.inv(rho_measured + rho_m)
-            @ (outcome - r_measured)
+            @ (sample - r_measured)
         )
 
         evolved_mean = np.zeros(shape=(2 * d, ))
@@ -647,7 +647,7 @@ class GaussianState(State):
         self.mean = evolved_mean
         self.cov = evolved_cov
 
-        return outcomes
+        return samples
 
     def _apply_particle_number_measurement(
         self,
@@ -675,7 +675,7 @@ class GaussianState(State):
         set to 2 to make the logic sensible in this case as well.
 
         Also note, that one could speed up this calculation by not calculating the
-        probability of clicks (i.e. 1 as outcome), and argue that the probability of a
+        probability of clicks (i.e. 1 as sample), and argue that the probability of a
         click is equal to one minus the probability of no click.
         """
         if not np.allclose(self.mean, np.zeros_like(self.mean)):
@@ -716,7 +716,7 @@ class GaussianState(State):
         samples = []
 
         for _ in repeat(None, shots):
-            outcome = []
+            sample = []
 
             previous_probability = 1.0
 
@@ -730,7 +730,7 @@ class GaussianState(State):
                 choice = None
 
                 for n in range(cutoff):
-                    occupation_numbers = tuple(outcome + [n])
+                    occupation_numbers = tuple(sample + [n])
 
                     probability = get_probability(
                         subspace_modes=subspace_modes,
@@ -754,9 +754,9 @@ class GaussianState(State):
                     - cumulated_probabilities[choice]
                 ) * previous_probability
 
-                outcome.append(choice)
+                sample.append(choice)
 
-            samples.append(outcome)
+            samples.append(sample)
 
         return samples
 

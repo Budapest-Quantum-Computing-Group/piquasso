@@ -4,9 +4,9 @@
 
 
 class Result:
-    def __init__(self, instruction, outcome):
+    def __init__(self, instruction, samples):
         self.instruction = instruction
-        self.outcome = outcome
+        self.samples = samples
 
     def __repr__(self):
-        return f"<Result instruction={self.instruction} outcome={self.outcome}>"
+        return f"<Result instruction={self.instruction} samples={self.samples}>"
