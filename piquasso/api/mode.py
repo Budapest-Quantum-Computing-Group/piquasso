@@ -29,7 +29,7 @@ class Q:
                 f"Error registering modes: '{modes}' should be distinct."
             )
 
-        self.modes = modes
+        self.modes = modes if modes != (all, ) else tuple()
 
     def __or__(self, rhs):
         """Registers an `Instruction` or `Program` to the current program.
@@ -74,15 +74,15 @@ class Q:
         )
 
     def _register_state(self, state):
+        if self.modes == tuple():
+            self.modes = tuple(range(state.d))
+
         state_copy = copy.deepcopy(state)
         _context.current_program._register_state(state_copy)
 
     def _resolve_instruction(self, instruction):
         new_instruction = copy.deepcopy(instruction)
-        new_instruction.modes = (
-            None if instruction.modes is None
-            else tuple(self.modes[m] for m in instruction.modes)
-        )
+        new_instruction.modes = tuple(self.modes[m] for m in instruction.modes)
         return new_instruction
 
     @staticmethod

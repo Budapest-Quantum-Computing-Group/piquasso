@@ -2,13 +2,15 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
+import abc
 import numpy as np
 
 from piquasso.core.mixins import _PropertyMixin
 
 
-class State(_PropertyMixin):
+class State(_PropertyMixin, abc.ABC):
     circuit_class = None
+    d: int = None
 
     @classmethod
     def from_properties(cls, properties):

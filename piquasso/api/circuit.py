@@ -6,8 +6,6 @@
 
 import abc
 
-from collections.abc import Iterable
-
 
 class Circuit(abc.ABC):
     def __init__(self, state, program):
@@ -36,6 +34,9 @@ class Circuit(abc.ABC):
                 executed in order.
         """
         for instruction in instructions:
+            if instruction.modes is tuple():
+                instruction.modes = tuple(range(self.state.d))
+
             method = self._instruction_map.get(instruction.__class__.__name__)
 
             if not method:
@@ -52,7 +53,4 @@ class Circuit(abc.ABC):
             method(instruction)
 
     def _add_result(self, result):
-        if isinstance(result, Iterable):
-            self.program.results.extend(result)
-        else:
-            self.program.results.append(result)
+        self.program.results.append(result)

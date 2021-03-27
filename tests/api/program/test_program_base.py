@@ -36,6 +36,7 @@ class TestProgramBase:
     def FakeState(self, FakeCircuit):
         class _FakeState(State):
             circuit_class = FakeCircuit
+            d = 42
 
         return _FakeState
 

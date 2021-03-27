@@ -47,9 +47,6 @@ class BaseFockState(State, abc.ABC):
         return sum(self.fock_probabilities)
 
     def _measure_particle_number(self, modes, shots):
-        if not modes:
-            modes = tuple(range(self._space.d))
-
         probability_map = self._get_probability_map(
             modes=modes,
         )

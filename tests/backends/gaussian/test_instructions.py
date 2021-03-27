@@ -118,7 +118,7 @@ def test_displacement_on_all_modes(program, gaussian_state_assets):
     alpha = 3 - 4j
 
     with program:
-        pq.Q(0, 1, 2) | pq.Displacement(alpha=alpha)
+        pq.Q() | pq.Displacement(alpha=alpha)
 
     program.execute()
     program.state.validate()

@@ -109,7 +109,7 @@ def test_measure_homodyne_on_multiple_modes(program):
 
 def test_measure_homodyne_on_all_modes(program, d):
     with program:
-        pq.Q(*tuple(range(d))) | pq.MeasureHomodyne()
+        pq.Q() | pq.MeasureHomodyne()
 
     results = program.execute()
 
@@ -167,7 +167,7 @@ def test_measure_heterodyne_on_multiple_modes(program):
 
 def test_measure_heterodyne_on_all_modes(program, d):
     with program:
-        pq.Q(*tuple(range(d))) | pq.MeasureHeterodyne()
+        pq.Q() | pq.MeasureHeterodyne()
 
     results = program.execute()
 
