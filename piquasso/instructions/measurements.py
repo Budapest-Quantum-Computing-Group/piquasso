@@ -33,11 +33,12 @@ class MeasureDyne(Instruction):
 
 
 @_register
-class MeasureHomodyne(MeasureDyne):
+class MeasureHomodyne(Instruction):
     """Homodyne measurement."""
 
-    def __init__(self, *, z=1e-4, shots=1):
+    def __init__(self, phi=0.0, z=1e-4, shots=1):
         super().__init__(
+            phi=phi,
             detection_covariance=np.array(
                 [
                     [z ** 2, 0],

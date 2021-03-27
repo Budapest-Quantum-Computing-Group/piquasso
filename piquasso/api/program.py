@@ -3,6 +3,7 @@
 #
 
 import json
+import copy
 import blackbird
 
 from piquasso.core import _context, _blackbird
@@ -36,6 +37,9 @@ class Program:
         self.state = state
 
         self.circuit = state.circuit_class(state, program=self) if state else None
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     @property
     def d(self):

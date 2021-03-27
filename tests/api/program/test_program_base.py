@@ -44,3 +44,11 @@ class TestProgramBase:
         self.state = FakeState()
 
         self.program = Program(state=self.state)
+
+
+def test_program_copy():
+    program = Program()
+
+    program_copy = program.copy()
+
+    assert program_copy is not program
