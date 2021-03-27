@@ -31,6 +31,7 @@ class GaussianCircuit(Circuit):
             "Mean": self._mean,
             "Covariance": self._covariance,
             "MeasureParticleNumber": self._measure_particle_number,
+            "MeasureThreshold": self._measure_threshold,
         }
 
     def _passive_linear(self, instruction):
@@ -77,6 +78,16 @@ class GaussianCircuit(Circuit):
     def _measure_particle_number(self, instruction):
         outcome = self.state._apply_particle_number_measurement(
             cutoff=instruction.params["cutoff"],
+            shots=instruction.params["shots"],
+            modes=instruction.modes,
+        )
+
+        self._add_result(
+            Result(instruction=instruction, outcome=outcome)
+        )
+
+    def _measure_threshold(self, instruction):
+        outcome = self.state._apply_threshold_measurement(
             shots=instruction.params["shots"],
             modes=instruction.modes,
         )

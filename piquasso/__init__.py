@@ -47,6 +47,7 @@ from .instructions.gates import (
 
 from .instructions.measurements import (
     MeasureParticleNumber,
+    MeasureThreshold,
     MeasureHomodyne,
     MeasureHeterodyne,
     MeasureDyne,
@@ -120,6 +121,7 @@ __all__ = [
     "Sampling",
     # Measurements
     "MeasureParticleNumber",
+    "MeasureThreshold",
     "MeasureHomodyne",
     "MeasureHeterodyne",
     "MeasureDyne",

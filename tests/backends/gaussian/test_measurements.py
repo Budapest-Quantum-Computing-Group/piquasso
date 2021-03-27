@@ -10,13 +10,29 @@ import piquasso as pq
 
 
 @pytest.fixture
-def program():
+def d():
+    return 3
+
+
+@pytest.fixture
+def program(d):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
+        pq.Q() | pq.GaussianState(d=d)
 
         pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
         pq.Q(1) | pq.Displacement(r=1, phi=np.pi/4)
         pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi/6)
+
+        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
+        pq.Q(2) | pq.Squeezing(r=3 / 4)
+
+    return program
+
+
+@pytest.fixture
+def nondisplaced_program(d):
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=d)
 
         pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
@@ -154,5 +170,53 @@ def test_measure_particle_number_on_all_modes(program):
         pq.Q() | pq.MeasureParticleNumber(cutoff=4)
 
     results = program.execute()
+
+    assert results
+
+
+def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
+    program,
+):
+    program_with_nonzero_displacements = program
+
+    with program_with_nonzero_displacements:
+        pq.Q(0) | pq.MeasureThreshold()
+
+    with pytest.raises(NotImplementedError):
+        program_with_nonzero_displacements.execute()
+
+
+def test_measure_threshold_on_one_modes(nondisplaced_program):
+    with nondisplaced_program:
+        pq.Q(0) | pq.MeasureThreshold()
+
+    results = nondisplaced_program.execute()
+
+    assert results
+
+
+def test_measure_threshold_with_multiple_shots(nondisplaced_program):
+    with nondisplaced_program:
+        pq.Q(0) | pq.MeasureThreshold(shots=20)
+
+    results = nondisplaced_program.execute()
+
+    assert results
+
+
+def test_measure_threshold_on_two_modes(nondisplaced_program):
+    with nondisplaced_program:
+        pq.Q(0, 1) | pq.MeasureThreshold()
+
+    results = nondisplaced_program.execute()
+
+    assert results
+
+
+def test_measure_threshold_on_all_modes(nondisplaced_program):
+    with nondisplaced_program:
+        pq.Q() | pq.MeasureThreshold()
+
+    results = nondisplaced_program.execute()
 
     assert results
