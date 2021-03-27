@@ -73,3 +73,25 @@ class TestProgramRegistry(TestProgramBase):
 
         assert self.program.instructions[4].modes == (1, 0)
         assert self.program.instructions[4].params == {"param": 9}
+
+    def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
+        self,
+        DummyInstruction,
+    ):
+        with self.program:
+            Q() | DummyInstruction(param="some-parameter")
+
+        self.program.execute()
+
+        assert self.program.instructions[0].modes == tuple(range(self.program.state.d))
+
+    def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes(
+        self,
+        DummyInstruction,
+    ):
+        with self.program:
+            Q(all) | DummyInstruction(param="some-parameter")
+
+        self.program.execute()
+
+        assert self.program.instructions[0].modes == tuple(range(self.program.state.d))

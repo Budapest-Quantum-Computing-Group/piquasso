@@ -88,6 +88,53 @@ class TestProgramStacking(TestProgramBase):
             "mutability."
         )
 
+    def test_main_program_inherits_state_and_instructions(
+        self, FakeState, DummyInstruction
+    ):
+        with Program() as preparation:
+            Q() | FakeState()
+
+            Q(0, 1) | DummyInstruction(param=10)
+            Q(2, 3) | DummyInstruction(param=20)
+
+        with Program() as main:
+            Q(0, 1, 2, 3) | preparation
+
+        assert main.state is not None
+        assert main.circuit.state is main.state
+        assert main.state is not preparation.state, (
+            "The state should be copied from the subprogram due to the state's "
+            "mutability."
+        )
+
+        assert main.instructions[0] == DummyInstruction(param=10).on_modes(0, 1)
+        assert main.instructions[1] == DummyInstruction(param=20).on_modes(2, 3)
+
+    def test_main_program_inherits_state_and_instructions_without_modes_specified(
+        self, FakeState, DummyInstruction
+    ):
+        state = FakeState()
+        with Program() as preparation:
+            Q() | state
+
+            Q(0, 1) | DummyInstruction(param=10)
+            Q(2, 3) | DummyInstruction(param=20)
+
+        with Program() as main:
+            first_instruction = Q() | preparation
+
+        assert first_instruction.modes == tuple(range(state.d))
+
+        assert main.state is not None
+        assert main.circuit.state is main.state
+        assert main.state is not preparation.state, (
+            "The state should be copied from the subprogram due to the state's "
+            "mutability."
+        )
+
+        assert main.instructions[0] == DummyInstruction(param=10).on_modes(0, 1)
+        assert main.instructions[1] == DummyInstruction(param=20).on_modes(2, 3)
+
     def test_state_collision_raises_RuntimeError(self, FakeState):
         with Program() as preparation:
             Q() | FakeState()

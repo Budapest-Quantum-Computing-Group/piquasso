@@ -699,9 +699,6 @@ class GaussianState(State):
         shots,
         calculation,
     ):
-        if not modes:
-            modes = tuple(range(self.d))
-
         state = self.reduced(modes)
 
         @lru_cache(maxsize=None)

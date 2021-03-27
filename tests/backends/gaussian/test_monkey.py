@@ -25,9 +25,9 @@ def test_random_gaussianstate(d):
 
         random_unitary = np.array(unitary_group.rvs(d))
 
-        pq.Q(*range(d)) | pq.Interferometer(random_unitary)
+        pq.Q(all) | pq.Interferometer(random_unitary)
 
     with pq.Program() as program:
-        pq.Q(*range(d)) | prepare_random_state
+        pq.Q(all) | prepare_random_state
 
     program.state.validate()
