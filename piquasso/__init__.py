@@ -4,10 +4,13 @@
 
 import sys
 
+from piquasso.api import constants
+from piquasso.api.mode import Q
+from piquasso.api.state import State
 from piquasso.api.plugin import Plugin
 from piquasso.api.program import Program
-from piquasso.api.mode import Q
-from piquasso.api import constants
+from piquasso.api.circuit import Circuit
+from piquasso.api.instruction import Instruction
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
@@ -93,6 +96,9 @@ __all__ = [
     "Program",
     "Plugin",
     "Q",
+    "Instruction",
+    "State",
+    "Circuit",
     # Preparations
     "Vacuum",
     "Mean",
