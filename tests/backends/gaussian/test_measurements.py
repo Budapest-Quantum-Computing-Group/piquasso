@@ -75,7 +75,7 @@ def test_measure_homodyne_with_rotation(program):
     assert results[0].instruction.modes == (0, )
 
 
-def test_measure_homodyne_rotates_the_state(program):
+def test_measure_homodyne_with_angle_does_not_alter_the_state(program):
     angle = np.pi / 3
 
     program_with_rotation = program.copy()
@@ -92,7 +92,7 @@ def test_measure_homodyne_rotates_the_state(program):
     program_with_rotation.execute()
     program_with_rotation.state.validate()
 
-    assert program.state.rotated(angle) == program_with_rotation.state
+    assert program.state == program_with_rotation.state
 
 
 def test_measure_homodyne_on_multiple_modes(program):

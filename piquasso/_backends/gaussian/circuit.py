@@ -57,18 +57,19 @@ class GaussianCircuit(Circuit):
 
     def _measure_homodyne(self, instruction):
         phi = instruction.params["phi"]
+        modes = instruction.modes
 
-        phaseshift = np.identity(self.state.d) * np.exp(- 1j * phi)
+        phaseshift = np.identity(len(modes)) * np.exp(- 1j * phi)
 
         self.state._apply_passive_linear(
             phaseshift,
-            modes=tuple(range(self.state.d)),
+            modes=modes,
         )
 
         samples = self.state._apply_generaldyne_measurement(
             detection_covariance=instruction.params["detection_covariance"],
             shots=instruction.params["shots"],
-            modes=instruction.modes,
+            modes=modes,
         )
 
         self._add_result(Result(instruction=instruction, samples=samples))
