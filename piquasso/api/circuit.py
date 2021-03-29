@@ -16,6 +16,7 @@ class Circuit(abc.ABC):
         self.state = state
         self.program = program
         self._instruction_map = self.get_instruction_map()
+        self.results = []
 
     @abc.abstractmethod
     def get_instruction_map(self):
@@ -52,5 +53,4 @@ class Circuit(abc.ABC):
 
             method(instruction)
 
-    def _add_result(self, result):
-        self.program.results.append(result)
+        return self.results

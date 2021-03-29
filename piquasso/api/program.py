@@ -31,12 +31,11 @@ class Program:
     ):
         self._register_state(state)
         self.instructions = instructions or []
-        self.results = []
 
     def _register_state(self, state):
         self.state = state
 
-        self.circuit = state.circuit_class(state, program=self) if state else None
+        self._circuit = state.circuit_class(state, program=self) if state else None
 
     def copy(self):
         return copy.deepcopy(self)
@@ -52,9 +51,11 @@ class Program:
     def execute(self):
         """Executes the collected instructions on the circuit."""
 
-        self.circuit.execute_instructions(self.instructions)
+        return self._circuit.execute_instructions(self.instructions)
 
-        return self.results
+    @property
+    def results(self):
+        return self._circuit.results
 
     @classmethod
     def from_properties(cls, properties):

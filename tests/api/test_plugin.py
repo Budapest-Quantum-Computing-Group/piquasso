@@ -56,7 +56,6 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     program.execute()
 
     assert program.state.__class__ is MyGaussianState
-    assert program.circuit.__class__ is MyGaussianCircuit
     assert pq.Beamsplitter is MyBeamsplitter
 
 
@@ -79,7 +78,6 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
     import piquasso  # noqa: F401
 
     assert program.state.__class__ is MyGaussianState
-    assert program.circuit.__class__ is MyGaussianCircuit
     assert pq.Beamsplitter is MyBeamsplitter
 
 
