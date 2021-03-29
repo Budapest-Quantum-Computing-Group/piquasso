@@ -109,8 +109,6 @@ class TestProgramJSONParsing:
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
 
-        assert program.circuit.__class__.__name__ == "FakeCircuit"
-
         assert program.instructions[0].params == {
             "first_param": "first_param_value",
             "second_param": "second_param_value",
@@ -144,8 +142,6 @@ class TestProgramJSONParsing:
         assert program.state.foo == "fee"
         assert program.state.bar == "beer"
         assert program.state.d == number_of_modes
-
-        assert program.circuit.__class__.__name__ == "FakeCircuit"
 
         assert program.instructions[0].params == {
             "first_param": "first_param_value",

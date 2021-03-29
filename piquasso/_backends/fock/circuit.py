@@ -37,7 +37,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
             shots=instruction.params["shots"],
         )
 
-        self._add_result(Result(instruction=instruction, samples=samples))
+        self.results.append(Result(instruction=instruction, samples=samples))
 
     def _vacuum(self, instruction):
         self.state._apply_vacuum()

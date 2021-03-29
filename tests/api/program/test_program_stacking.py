@@ -82,7 +82,6 @@ def test_main_program_inherits_state(program):
         pq.Q() | preparation
 
     assert main.state is not None
-    assert main.circuit.state is main.state
     assert main.state is not preparation.state, (
         "The state should be copied from the subprogram due to the state's "
         "mutability."
@@ -102,7 +101,6 @@ def test_main_program_inherits_state_and_instructions(
         pq.Q(0, 1, 2, 3) | preparation
 
     assert main.state is not None
-    assert main.circuit.state is main.state
     assert main.state is not preparation.state, (
         "The state should be copied from the subprogram due to the state's "
         "mutability."
@@ -128,7 +126,6 @@ def test_main_program_inherits_state_and_instructions_without_modes_specified(
     assert first_instruction.modes == tuple(range(state.d))
 
     assert main.state is not None
-    assert main.circuit.state is main.state
     assert main.state is not preparation.state, (
         "The state should be copied from the subprogram due to the state's "
         "mutability."
