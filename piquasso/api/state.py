@@ -5,12 +5,15 @@
 import abc
 import numpy as np
 
-from piquasso.core.mixins import _PropertyMixin
+from piquasso.core.mixins import _PropertyMixin, _RegisterMixin
 
 
-class State(_PropertyMixin, abc.ABC):
+class State(_PropertyMixin, _RegisterMixin, abc.ABC):
     circuit_class = None
     d: int = None
+
+    def apply_to_program_on_register(self, program, register):
+        program.state = self.copy()
 
     @classmethod
     def from_properties(cls, properties):

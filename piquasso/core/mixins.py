@@ -3,6 +3,7 @@
 #
 
 import abc
+import copy
 
 
 class _PropertyMixin(abc.ABC):
@@ -28,3 +29,23 @@ class _WeightMixin:
 
     def __truediv__(self, coefficient):
         return self.__mul__(1 / coefficient)
+
+
+class _RegisterMixin(abc.ABC):
+    @abc.abstractmethod
+    def apply_to_program_on_register(self, *, program, register):
+        """Applies the current object to the specifed program on its specified register.
+
+        Args:
+            program (Program): [description]
+            register (Q): [description]
+        """
+        pass
+
+    def copy(self):
+        """Copies the current object with :func:`copy.deepcopy`.
+
+        Returns:
+            A deepcopy of the current object.
+        """
+        return copy.deepcopy(self)

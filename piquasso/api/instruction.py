@@ -2,10 +2,10 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-from piquasso.core.mixins import _PropertyMixin
+from piquasso.core.mixins import _PropertyMixin, _RegisterMixin
 
 
-class Instruction(_PropertyMixin):
+class Instruction(_PropertyMixin, _RegisterMixin):
     """
     Args:
         *params: Variable length argument list.
@@ -20,6 +20,9 @@ class Instruction(_PropertyMixin):
     def on_modes(self, *modes):
         self.modes = modes
         return self
+
+    def apply_to_program_on_register(self, program, register):
+        program.instructions.append(self.on_modes(*register.modes))
 
     @classmethod
     def from_properties(cls, properties):

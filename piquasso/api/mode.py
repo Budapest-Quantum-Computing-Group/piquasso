@@ -2,13 +2,9 @@
 # Copyright (C) 2020 by TODO - All rights reserved.
 #
 
-import copy
-
 from piquasso.core import _context
 
 from .errors import InvalidModes
-from .program import Program
-from .state import State
 
 
 class Q:
@@ -47,43 +43,12 @@ class Q:
         Returns:
             (Q): The current qumode.
         """
-        if isinstance(rhs, Program):
-            self._register_program(rhs)
-        elif isinstance(rhs, State):
-            self._register_state(rhs)
-        else:
-            rhs.modes = self.modes
-            _context.current_program.instructions.append(rhs)
+
+        rhs.apply_to_program_on_register(_context.current_program, register=self)
 
         return self
 
     __ror__ = __or__
-
-    def _register_program(self, program):
-        if program.state is not None:
-            if _context.current_program.state is not None:
-                raise RuntimeError(
-                    "The current program already has a state registered of type "
-                    f"'{type(_context.current_program.state).__name__}'."
-                )
-
-            self._register_state(program.state)
-
-        _context.current_program.instructions += map(
-            self._resolve_instruction, program.instructions
-        )
-
-    def _register_state(self, state):
-        if self.modes == tuple():
-            self.modes = tuple(range(state.d))
-
-        state_copy = copy.deepcopy(state)
-        _context.current_program._register_state(state_copy)
-
-    def _resolve_instruction(self, instruction):
-        new_instruction = copy.deepcopy(instruction)
-        new_instruction.modes = tuple(self.modes[m] for m in instruction.modes)
-        return new_instruction
 
     @staticmethod
     def _is_distinct(iterable):

@@ -3,14 +3,15 @@
 #
 
 import json
-import copy
 import blackbird
 
 from piquasso.core import _context, _blackbird
 from piquasso.core.registry import _create_instance_from_mapping
+from piquasso.core.mixins import _RegisterMixin
+from .mode import Q
 
 
-class Program:
+class Program(_RegisterMixin):
     r"""The representation for a quantum program.
 
     This also specifies a context in which all the instructions should be
@@ -29,16 +30,43 @@ class Program:
         state=None,
         instructions=None,
     ):
-        self._register_state(state)
+        self.state = state
         self.instructions = instructions or []
 
-    def _register_state(self, state):
-        self.state = state
+    @property
+    def state(self):
+        return self._state
 
-        self._circuit = state.circuit_class(state, program=self) if state else None
+    @state.setter
+    def state(self, new_state):
+        self._state = new_state
 
-    def copy(self):
-        return copy.deepcopy(self)
+        self._circuit = (
+            new_state.circuit_class(new_state, program=self)
+            if new_state
+            else None
+        )
+
+    def apply_to_program_on_register(self, program, register):
+        if self.state is not None:
+            if program.state is not None:
+                raise RuntimeError(
+                    "The program already has a state registered of type "
+                    f"'{type(program.state).__name__}'."
+                )
+
+            if register.modes == tuple():
+                register.modes = tuple(range(self.state.d))
+
+            self.state.apply_to_program_on_register(program, register)
+
+        for instruction in self.instructions:
+            instruction_copy = instruction.copy()
+
+            instruction_copy.apply_to_program_on_register(
+                program,
+                register=Q(*(register.modes[m] for m in instruction.modes))
+            )
 
     def __enter__(self):
         _context.current_program = self
