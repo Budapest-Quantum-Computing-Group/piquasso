@@ -144,5 +144,5 @@ def test_state_collision_raises_RuntimeError(program):
             pq.Q() | preparation
 
     assert error.value.args[0] == (
-        "The current program already has a state registered of type 'FakeState'."
+        "The program already has a state registered of type 'FakeState'."
     )
