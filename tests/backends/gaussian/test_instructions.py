@@ -370,6 +370,23 @@ def test_gaussian_transform_for_1_modes(program, gaussian_state_assets):
     assert program.state == expected_state
 
 
+def test_graph_embedding(program, gaussian_state_assets):
+    adjacency_matrix = np.array(
+        [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=3)
+        pq.Q() | pq.Graph(adjacency_matrix)
+
+    program.execute()
+    program.state.validate()
+
+
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
         pq.Q() | pq.GaussianState(d=3)

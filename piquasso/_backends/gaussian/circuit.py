@@ -26,6 +26,7 @@ class GaussianCircuit(Circuit):
             "Displacement": self._displacement,
             "PositionDisplacement": self._displacement,
             "MomentumDisplacement": self._displacement,
+            "Graph": self._graph,
             "MeasureHomodyne": self._measure_homodyne,
             "MeasureHeterodyne": self._measure_dyne,
             "MeasureDyne": self._measure_dyne,
@@ -108,3 +109,13 @@ class GaussianCircuit(Circuit):
         )
 
         self.results.append(Result(instruction=instruction, samples=samples))
+
+    def _graph(self, instruction):
+        """
+        TODO: Find a better solution for multiple operations.
+        """
+        instruction._squeezing.modes = instruction.modes
+        instruction._interferometer.modes = instruction.modes
+
+        self._linear(instruction._squeezing)
+        self._passive_linear(instruction._interferometer)
