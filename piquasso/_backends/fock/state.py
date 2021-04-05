@@ -106,6 +106,14 @@ class BaseFockState(State, abc.ABC):
     def _apply_cross_kerr(self, xi, modes):
         pass
 
+    @abc.abstractmethod
+    def _apply_squeezing(self, passive_representation, active_representation, modes):
+        pass
+
+    @abc.abstractmethod
+    def _apply_displacement(self, alpha, modes):
+        pass
+
     @property
     @abc.abstractmethod
     def nonzero_elements(self):
@@ -118,4 +126,8 @@ class BaseFockState(State, abc.ABC):
 
     @abc.abstractmethod
     def normalize(self):
+        pass
+
+    @abc.abstractmethod
+    def validate(self):
         pass

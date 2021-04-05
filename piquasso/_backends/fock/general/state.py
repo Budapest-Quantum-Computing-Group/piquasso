@@ -4,6 +4,9 @@
 
 import numpy as np
 
+from piquasso.api.errors import InvalidState
+from piquasso._math.linalg import is_selfadjoint
+
 from ..state import BaseFockState
 
 from .circuit import FockCircuit
@@ -136,6 +139,49 @@ class FockState(BaseFockState):
 
             self._density_matrix[index] *= coefficient
 
+    def _apply_squeezing(self, passive_representation, active_representation, modes):
+        mode = modes[0]
+
+        squeezing_amplitude = np.arcsinh(np.abs(active_representation[0][0]))
+        squeezing_phase = np.angle(-active_representation[0][0])
+
+        squeezing = squeezing_amplitude * np.exp(1j * squeezing_phase)
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        operator = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            squeezing=squeezing,
+        )
+
+        self._density_matrix = (
+            operator
+            @ self._density_matrix
+            @ operator.conjugate().transpose()
+        )
+
+        self.normalize()
+
+    def _apply_displacement(self, alpha, modes):
+        mode = modes[0]
+
+        displacement = alpha
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        operator = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            displacement=displacement,
+        )
+
+        self._density_matrix = (
+            operator
+            @ self._density_matrix
+            @ operator.conjugate().transpose()
+        )
+
+        self.normalize()
+
     @property
     def nonzero_elements(self):
         for index, basis in self._space.operator_basis:
@@ -163,3 +209,19 @@ class FockState(BaseFockState):
             raise RuntimeError("The norm of the state is 0.")
 
         self._density_matrix = self._density_matrix / self.norm
+
+    def validate(self):
+        if not is_selfadjoint(self._density_matrix):
+            raise InvalidState(
+                "The density matrix is not self-adjoint:\n"
+                f"density_matrix={self._density_matrix}"
+            )
+
+        trace_of_density_matrix = sum(self.fock_probabilities)
+
+        if not np.isclose(trace_of_density_matrix, 1.0):
+            raise InvalidState(
+                f"The trace of the density matrix is {trace_of_density_matrix}, "
+                "instead of 1.0:\n"
+                f"fock_probabilities={self.fock_probabilities}"
+            )

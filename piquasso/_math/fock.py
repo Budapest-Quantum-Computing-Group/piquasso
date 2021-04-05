@@ -10,6 +10,8 @@ from operator import add
 from scipy.special import factorial, comb
 from scipy.linalg import block_diag
 
+from piquasso._math.hermite import hermite_kampe_2dim
+
 
 @functools.lru_cache()
 def cutoff_cardinality(*, cutoff, d):
@@ -148,6 +150,57 @@ class FockSpace(tuple):
                 for n in range(self.cutoff)
             )
         )
+
+    def get_linear_fock_operator(
+        self,
+        *,
+        mode,
+        auxiliary_modes,
+        squeezing=0.0,
+        displacement=0.0,
+        phaseshift=0.0,
+    ):
+        """Creates a linear operator in the Fock basis.
+
+        See https://arxiv.org/abs/1905.10873
+        """
+        squeezing_amplitude = np.abs(squeezing)
+        squeezing_angle = np.angle(squeezing)
+
+        S = np.sqrt(1 - np.tanh(squeezing_amplitude) ** 2)
+        T = np.exp(1j * squeezing_angle) * np.tanh(squeezing_amplitude)
+
+        K0 = np.sqrt(S) * np.exp(
+            - (
+                np.abs(displacement) ** 2
+                + np.conj(T) * displacement ** 2
+            ) / 2
+        )
+
+        x = displacement * S
+        y = T / 2
+        z = - (
+            displacement * np.conj(T) + np.conj(displacement)
+        ) * np.exp(1j * phaseshift)
+        u = - np.conj(T) * np.exp(1j * 2 * phaseshift) / 2
+
+        X = S * np.exp(1j * phaseshift)
+
+        transformation = np.zeros( (self.cardinality, ) * 2, dtype=complex)
+
+        for index, operator_basis in self.operator_basis_diagonal_on_modes(
+            modes=auxiliary_modes
+        ):
+            n = operator_basis.ket[mode]
+            m = operator_basis.bra[mode]
+
+            transformation[index] = (
+                K0 * hermite_kampe_2dim(
+                    n=n, m=m, x=x, y=y, z=z, u=u, tau=X
+                ) / np.sqrt(factorial(n) * factorial(m))
+            )
+
+        return transformation
 
     @property
     def cardinality(self):

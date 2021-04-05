@@ -7,7 +7,7 @@ import numpy as np
 from scipy.linalg import block_diag
 
 
-def is_unitary(matrix, tol=1e-10):
+def is_unitary(matrix):
     """
     Args:
         tol (float, optional): The tolerance for testing the unitarity.
@@ -17,9 +17,9 @@ def is_unitary(matrix, tol=1e-10):
         bool: `True` if the current object is unitary within the specified
             tolerance `tol`, else `False`.
     """
-    return (
-        matrix @ matrix.conjugate().transpose() - np.identity(matrix.shape[0]) < tol
-    ).all()
+    return np.allclose(
+        matrix @ matrix.conjugate().transpose(), np.identity(matrix.shape[0])
+    )
 
 
 def is_symmetric(matrix):
