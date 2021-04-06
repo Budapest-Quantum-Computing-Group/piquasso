@@ -15,19 +15,21 @@ from piquasso.decompositions.takagi import takagi
 from piquasso._math.linalg import is_square, is_symmetric
 
 
-class _PassiveLinearGate(Instruction):
-    def __init__(self, passive_representation):
-        self._passive_representation = passive_representation
-
-
-class _LinearGate(Instruction):
-    def __init__(self, passive_representation, active_representation):
+class _BogoliubovTransformation(Instruction):
+    def __init__(
+        self,
+        *,
+        passive_representation=None,
+        active_representation=None,
+        displacement_vector=None,
+    ):
         self._passive_representation = passive_representation
         self._active_representation = active_representation
+        self._displacement_vector = displacement_vector
 
 
 @_register
-class Interferometer(_PassiveLinearGate):
+class Interferometer(_BogoliubovTransformation):
     r"""Applies a general interferometer.
 
     Args:
@@ -48,7 +50,7 @@ class Interferometer(_PassiveLinearGate):
 
 
 @_register
-class Beamsplitter(_PassiveLinearGate):
+class Beamsplitter(_BogoliubovTransformation):
     r"""Applies a beamsplitter instruction.
 
     The matrix representation of the beamsplitter instruction
@@ -77,7 +79,7 @@ class Beamsplitter(_PassiveLinearGate):
         r = np.exp(-1j * phi) * np.sin(theta)
 
         super().__init__(
-            np.array(
+            passive_representation=np.array(
                 [
                     [t, np.conj(r)],
                     [-r, t]
@@ -87,7 +89,7 @@ class Beamsplitter(_PassiveLinearGate):
 
 
 @_register
-class Phaseshifter(_PassiveLinearGate):
+class Phaseshifter(_BogoliubovTransformation):
     r"""Rotation or phaseshift instruction.
 
     The annihilation and creation operators are evolved in the following
@@ -105,11 +107,11 @@ class Phaseshifter(_PassiveLinearGate):
     def __init__(self, phi: float):
         self._set_params(phi=phi)
 
-        super().__init__(np.array([[np.exp(1j * phi)]]))
+        super().__init__(passive_representation=np.array([[np.exp(1j * phi)]]))
 
 
 @_register
-class MachZehnder(_PassiveLinearGate):
+class MachZehnder(_BogoliubovTransformation):
     r"""Mach-Zehnder interferometer.
 
     .. math::
@@ -141,7 +143,7 @@ class MachZehnder(_PassiveLinearGate):
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
-            1/2 * np.array(
+            passive_representation=1/2 * np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
                     [1j * ext_phase * (int_phase + 1), 1 - int_phase]
@@ -162,7 +164,7 @@ class Fourier(Phaseshifter):
 
 
 @_register
-class GaussianTransform(_LinearGate):
+class GaussianTransform(_BogoliubovTransformation):
     """Applies a transformation to the state.
 
     Args:
@@ -184,7 +186,7 @@ class GaussianTransform(_LinearGate):
 
 
 @_register
-class Squeezing(_LinearGate):
+class Squeezing(_BogoliubovTransformation):
     r"""Applies the squeezing operator.
 
     The definition of the operator is:
@@ -238,7 +240,7 @@ class Squeezing(_LinearGate):
 
 
 @_register
-class QuadraticPhase(_LinearGate):
+class QuadraticPhase(_BogoliubovTransformation):
     r"""Applies the quadratic phase instruction to the state.
 
     The operator of the quadratic phase gate is
@@ -262,7 +264,7 @@ class QuadraticPhase(_LinearGate):
 
 
 @_register
-class Squeezing2(_LinearGate):
+class Squeezing2(_BogoliubovTransformation):
     r"""2-mode squeezing gate.
 
     .. math::
@@ -294,7 +296,7 @@ class Squeezing2(_LinearGate):
 
 
 @_register
-class ControlledX(_LinearGate):
+class ControlledX(_BogoliubovTransformation):
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -315,7 +317,7 @@ class ControlledX(_LinearGate):
 
 
 @_register
-class ControlledZ(_LinearGate):
+class ControlledZ(_BogoliubovTransformation):
     def __init__(self, s):
         self._set_params(s=s)
 
@@ -336,7 +338,7 @@ class ControlledZ(_LinearGate):
 
 
 @_register
-class Displacement(Instruction):
+class Displacement(_BogoliubovTransformation):
     r"""Phase space displacement instruction.
 
     One must either specify `alpha` only, or the combination of `r` and `phi`.
@@ -369,7 +371,9 @@ class Displacement(Instruction):
         if alpha is None:
             alpha = r * np.exp(1j * phi)
 
-        super().__init__(alpha=alpha)
+        self._set_params(alpha=alpha)
+
+        super().__init__(displacement_vector=np.array([alpha]))
 
 
 @_register
