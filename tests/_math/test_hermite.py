@@ -6,7 +6,11 @@ import numpy as np
 
 from scipy.special import factorial
 
-from piquasso._math.hermite import hermite_kampe, hermite_kampe_2dim
+from piquasso._math.hermite import (
+    hermite_kampe,
+    hermite_kampe_2dim,
+    hermite_multidim,
+)
 
 
 def test_hermite_kampe():
@@ -49,3 +53,45 @@ def test_hermite_kampe_2dim():
     result = hermite_kampe_2dim(n=2, m=3, x=0.75, y=0.25, z=0.3, u=0.7, tau=1.5)
 
     assert np.isclose(result, 15.29859375)
+
+
+def test_hermite_multidim_for_one_dimension_zeros():
+    result = hermite_multidim(np.array([[1.0]]), [0], np.array([0.5]))
+
+    assert np.isclose(result, 1.0)
+
+
+def test_hermite_multidim_for_one_dimension_basis():
+    result = hermite_multidim(np.array([[1.0]]), [1], np.array([0.5]))
+
+    assert np.isclose(result, 0.5)
+
+
+def test_hermite_multidim_for_two_dimension_zeros():
+    result = hermite_multidim(
+        B=np.array(
+            [
+                [1.0, 2.0],
+                [3.0, 4.0],
+            ]
+        ),
+        n=[0, 0],
+        alpha=np.array([0.5, 0.6]),
+    )
+
+    assert np.isclose(result, 1.0)
+
+
+def test_hermite_multidim_for_two_dimension_basis():
+    result = hermite_multidim(
+        B=np.array(
+            [
+                [1.0, 2.0],
+                [3.0, 4.0],
+            ]
+        ),
+        n=[0, 1],
+        alpha=np.array([0.5, 0.6]),
+    )
+
+    assert np.isclose(result, 3.9)

@@ -19,6 +19,31 @@ def hermite_kampe(n: int, x: complex, y: complex):
     return factorial(n) * sum_
 
 
+def hermite_multidim(B, n, alpha):
+    try:
+        index = n.index(next(filter(lambda x: x != 0, n)))
+    except StopIteration:
+        return 1.0
+
+    if sum(n) == 1:
+        return np.dot(B[index, :], alpha)
+
+    m = n[index] - 1
+
+    m_prime = np.array(
+        [
+            value * hermite_multidim(B, m[index] - 1, alpha)
+            for index, value
+            in enumerate(m)
+        ]
+    )
+
+    return (
+        np.dot(B[index, :], alpha) * hermite_multidim(B, m, alpha)
+        - np.dot(B[index, :], m_prime)
+    )
+
+
 def hermite_kampe_2dim(
     *,
     n: int, m: int,
