@@ -3,12 +3,16 @@
 #
 
 import numpy as np
+
+from scipy.optimize import root_scalar
+
 from piquasso.core.registry import _register
 from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
+from piquasso.decompositions.takagi import takagi
 
-from piquasso._math.linalg import is_square
+from piquasso._math.linalg import is_square, is_symmetric
 
 
 class _PassiveLinearGate(Instruction):
@@ -452,3 +456,82 @@ class Sampling(Instruction):
             )
 
         super().__init__(shots=shots)
+
+
+@_register
+class Graph(Instruction):
+    r"""Applies a graph given its adjacency matrix, see
+    https://arxiv.org/pdf/1612.01199.pdf
+    """
+
+    def __init__(self, adjacency_matrix, mean_photon_number=1.0):
+        super().__init__(
+            adjacency_matrix=adjacency_matrix,
+            mean_photon_number=mean_photon_number
+        )
+
+        if not is_symmetric(adjacency_matrix):
+            raise InvalidParameter("The adjacency matrix should be symmetric.")
+
+        singular_values, unitary = takagi(adjacency_matrix)
+
+        scaling = self._get_scaling(singular_values, mean_photon_number)
+
+        squeezing_parameters = np.arctanh(scaling * singular_values)
+
+        # TODO: find a better solution for these.
+        self._squeezing = GaussianTransform(
+            P=np.diag(np.cosh(squeezing_parameters)),
+            A=np.diag(np.sinh(squeezing_parameters)),
+        )
+
+        self._interferometer = Interferometer(unitary)
+
+    def _get_scaling(self, singular_values, mean_photon_number):
+        r"""
+        For a squeezed state :math:`rho` the mean photon number is calculated by
+
+        .. math::
+            \langle \hat{n} \rangle_\rho = \sum_{i = 0}^d \mathrm{sinh}(r_i)^2
+
+        where :math:`r_i = \mathrm{arctan}(s_i)`, where :math:`s_i` are the singular
+        values of the adjacency matrix.
+        """
+
+        def mean_photon_number_equation(scaling):
+            return sum(
+                (scaling * singular_value) ** 2 / (1 - (scaling * singular_value) ** 2)
+                for singular_value
+                in singular_values
+            ) / len(singular_values) - mean_photon_number
+
+        def mean_photon_number_gradient(scaling):
+            return (
+                (2.0 / scaling)
+                * np.sum(
+                    (
+                        singular_values * scaling
+                        / (1 - (singular_values * scaling) ** 2)
+                    ) ** 2
+                )
+            )
+
+        lower_bound = 0.0
+
+        tolerance = 1e-10  # Needed to avoid zero division.
+
+        upper_bound = 1.0 / (max(singular_values) + tolerance)
+
+        result = root_scalar(
+            mean_photon_number_equation,
+            fprime=mean_photon_number_gradient,
+            x0=(lower_bound - upper_bound) / 2.0,
+            bracket=(lower_bound, upper_bound),
+        )
+
+        if not result.converged:
+            raise InvalidParameter(
+                f"No scaling found for adjacency matrix: {self.adjacency_matrix}."
+            )
+
+        return result.root
