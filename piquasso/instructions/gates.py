@@ -153,14 +153,14 @@ class MachZehnder(_BogoliubovTransformation):
 
 
 @_register
-class Fourier(Phaseshifter):
+class Fourier(_BogoliubovTransformation):
     r"""Fourier gate.
 
     Corresponds to the Rotaton gate :class:`R` with :math:`\phi = \pi/2`.
     """
 
     def __init__(self):
-        super().__init__(phi=np.pi/2)
+        super().__init__(passive_representation=np.array([[1j]]))
 
 
 @_register
@@ -377,22 +377,26 @@ class Displacement(_BogoliubovTransformation):
 
 
 @_register
-class PositionDisplacement(Displacement):
+class PositionDisplacement(_BogoliubovTransformation):
     r"""Position displacement gate."""
 
     def __init__(self, x: float):
+        self._set_params(x=x)
+
         super().__init__(
-            alpha=(x / np.sqrt(2 * HBAR)),
+            displacement_vector=np.array([x / np.sqrt(2 * HBAR)]),
         )
 
 
 @_register
-class MomentumDisplacement(Displacement):
+class MomentumDisplacement(_BogoliubovTransformation):
     r"""Momentum displacement gate."""
 
     def __init__(self, p: float):
+        self._set_params(p=p)
+
         super().__init__(
-            alpha=(1j * p / np.sqrt(2 * HBAR)),
+            displacement_vector=np.array([1j * p / np.sqrt(2 * HBAR)]),
         )
 
 
