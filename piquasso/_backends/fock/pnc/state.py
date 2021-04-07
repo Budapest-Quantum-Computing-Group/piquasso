@@ -4,6 +4,8 @@
 
 import numpy as np
 
+from piquasso.api.errors import InvalidState
+
 from ..state import BaseFockState
 
 from .circuit import PNCFockCircuit
@@ -103,7 +105,7 @@ class PNCFockState(BaseFockState):
 
         density_matrix = block_diag(*self._representation)
 
-        density_matrix = operator @ density_matrix @ operator.transpose()
+        density_matrix = operator @ density_matrix @ operator.conjugate().transpose()
 
         for n, subrep in enumerate(self._representation):
             begin, end = self._space.get_subspace_indices(n)
@@ -174,6 +176,41 @@ class PNCFockState(BaseFockState):
 
                 self._representation[n][index] *= coefficient
 
+    def _apply_squeezing(self, passive_representation, active_representation, modes):
+        mode = modes[0]
+
+        squeezing_amplitude = np.arcsinh(np.abs(active_representation[0][0]))
+        squeezing_phase = np.angle(-active_representation[0][0])
+
+        squeezing = squeezing_amplitude * np.exp(1j * squeezing_phase)
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        operator = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            squeezing=squeezing,
+        )
+
+        self._hacky_apply_operator(operator)
+
+        self.normalize()
+
+    def _apply_displacement(self, alpha, modes):
+        mode = modes[0]
+
+        displacement = alpha
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        operator = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            displacement=displacement,
+        )
+
+        self._hacky_apply_operator(operator)
+
+        self.normalize()
+
     @property
     def nonzero_elements(self):
         for n, subrep in enumerate(self._representation):
@@ -213,3 +250,13 @@ class PNCFockState(BaseFockState):
 
         for n, subrep in enumerate(self._representation):
             self._representation[n] = subrep / norm
+
+    def validate(self):
+        sum_of_probabilities = sum(self.fock_probabilities)
+
+        if not np.isclose(sum_of_probabilities, 1.0):
+            raise InvalidState(
+                f"The sum of probabilities is {sum_of_probabilities}, "
+                "instead of 1.0:\n"
+                f"fock_probabilities={self.fock_probabilities}"
+            )

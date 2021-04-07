@@ -4,6 +4,8 @@
 
 import numpy as np
 
+from piquasso.api.errors import InvalidState
+
 from ..state import BaseFockState
 
 from .circuit import PureFockCircuit
@@ -117,6 +119,41 @@ class PureFockState(BaseFockState):
             )
             self._state_vector[index] *= coefficient
 
+    def _apply_squeezing(self, passive_representation, active_representation, modes):
+        mode = modes[0]
+
+        squeezing_amplitude = np.arcsinh(np.abs(active_representation[0][0]))
+        squeezing_phase = np.angle(-active_representation[0][0])
+
+        squeezing = squeezing_amplitude * np.exp(1j * squeezing_phase)
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        transformation = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            squeezing=squeezing,
+        )
+
+        self._state_vector = transformation @ self._state_vector
+
+        self.normalize()
+
+    def _apply_displacement(self, alpha, modes):
+        mode = modes[0]
+
+        displacement = alpha
+
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+
+        transformation = self._space.get_linear_fock_operator(
+            mode=mode, auxiliary_modes=auxiliary_modes,
+            displacement=displacement,
+        )
+
+        self._state_vector = transformation @ self._state_vector
+
+        self.normalize()
+
     @property
     def nonzero_elements(self):
         for index, basis in self._space.basis:
@@ -142,3 +179,13 @@ class PureFockState(BaseFockState):
             raise RuntimeError("The norm of the state is 0.")
 
         self._state_vector = self._state_vector / np.sqrt(self.norm)
+
+    def validate(self):
+        sum_of_probabilities = sum(self.fock_probabilities)
+
+        if not np.isclose(sum_of_probabilities, 1.0):
+            raise InvalidState(
+                f"The sum of probabilities is {sum_of_probabilities}, "
+                "instead of 1.0:\n"
+                f"fock_probabilities={self.fock_probabilities}"
+            )
