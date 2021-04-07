@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "Piquasso"
-copyright = "2021, TODO"
-author = "TODO"
+copyright = "2021, Budapest Quantum Computing Group"
+author = "Budapest Quantum Computing Group"
 
 
 # -- General configuration ---------------------------------------------------
