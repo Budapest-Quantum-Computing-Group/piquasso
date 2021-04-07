@@ -16,8 +16,7 @@
 import pytest
 import numpy as np
 
-from piquasso.decompositions.takagi import takagi
-
+from piquasso._math.takagi import takagi
 from piquasso._math.linalg import is_unitary
 
 

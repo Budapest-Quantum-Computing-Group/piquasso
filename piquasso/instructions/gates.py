@@ -21,8 +21,8 @@ from piquasso.core.registry import _register
 from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
-from piquasso.decompositions.takagi import takagi
 
+from piquasso._math.takagi import takagi
 from piquasso._math.linalg import is_square, is_symmetric
 
 
