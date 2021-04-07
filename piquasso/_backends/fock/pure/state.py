@@ -138,10 +138,10 @@ class PureFockState(BaseFockState):
 
         self.normalize()
 
-    def _apply_displacement(self, alpha, modes):
+    def _apply_displacement(self, displacement_vector, modes):
         mode = modes[0]
 
-        displacement = alpha
+        displacement = displacement_vector[0]
 
         auxiliary_modes = self._get_auxiliary_modes(modes)
 

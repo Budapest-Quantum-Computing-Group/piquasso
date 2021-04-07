@@ -111,7 +111,7 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _apply_displacement(self, alpha, modes):
+    def _apply_displacement(self, displacement_vector, modes):
         pass
 
     @property

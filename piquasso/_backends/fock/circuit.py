@@ -71,6 +71,6 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _displacement(self, instruction):
         self.state._apply_displacement(
-            alpha=instruction.params["alpha"],
+            displacement_vector=instruction._displacement_vector,
             modes=instruction.modes,
         )

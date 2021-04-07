@@ -52,7 +52,7 @@ class GaussianCircuit(Circuit):
 
     def _displacement(self, instruction):
         self.state._apply_displacement(
-            **instruction.params,
+            displacement_vector=instruction._displacement_vector,
             modes=instruction.modes,
         )
 
