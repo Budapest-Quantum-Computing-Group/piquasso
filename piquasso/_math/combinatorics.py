@@ -13,9 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import chain, combinations
+import numpy as np
+
+from itertools import chain, combinations, combinations_with_replacement
 
 
 def powerset(iterable):
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+def partitions(boxes, particles):
+    if particles == 0:
+        return [np.zeros(boxes, dtype=int)]
+
+    masks = np.rot90(np.identity(boxes, dtype=int))
+
+    ret = []
+
+    for c in combinations_with_replacement(masks, particles):
+        ret.append(sum(c))
+
+    return ret

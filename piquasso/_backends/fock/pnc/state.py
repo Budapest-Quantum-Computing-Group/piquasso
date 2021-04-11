@@ -244,14 +244,19 @@ class PNCFockState(BaseFockState):
             for n, subrep in enumerate(self._representation)
         ])
 
-    @property
-    def fock_probabilities(self):
+    def get_fock_probabilities(self, cutoff=None):
+        cutoff = cutoff or self._space.cutoff
+
         ret = []
 
-        for subrep in self._representation:
+        for subrep in self._representation[:cutoff]:
             ret.extend(np.diag(subrep))
 
         return ret
+
+    @property
+    def fock_probabilities(self):
+        return self.get_fock_probabilities()
 
     def normalize(self):
         if np.isclose(self.norm, 0):

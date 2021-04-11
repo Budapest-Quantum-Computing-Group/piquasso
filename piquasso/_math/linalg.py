@@ -59,11 +59,11 @@ def symplectic_form(d):
 
 
 def block_reduce(array, reduce_on):
-    reduce_on *= 2
+    reduction_indices = reduce_on * 2
 
     proper_index = []
 
-    for index, multiplier in enumerate(reduce_on):
+    for index, multiplier in enumerate(reduction_indices):
         proper_index.extend([index] * multiplier)
 
     if array.ndim == 1:

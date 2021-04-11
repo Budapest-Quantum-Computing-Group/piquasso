@@ -130,6 +130,10 @@ class BaseFockState(State, abc.ABC):
     def nonzero_elements(self):
         pass
 
+    @abc.abstractmethod
+    def get_fock_probabilities(self, cutoff):
+        pass
+
     @property
     @abc.abstractmethod
     def fock_probabilities(self):
