@@ -126,7 +126,7 @@ def test_multiple_beamsplitters(StateClass):
         program.state.fock_probabilities,
         [
             0,
-            0.5, 0.375, 0.125,
+            0.75, 0.25, 0,
             0, 0, 0, 0, 0, 0
         ],
     )
@@ -157,7 +157,7 @@ def test_multiple_beamsplitters_with_multiple_particles(StateClass):
         program.state.fock_probabilities,
         [
             0,
-            0.125, 0.09375, 0.03125,
+            0.1875, 0.0625, 0,
             0.234375, 0.15625, 0.1875, 0.109375, 0.0625, 0
         ],
     )
@@ -269,7 +269,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
         program.state.fock_probabilities,
         [
             0,
-            0.125, 0.09375, 0.03125,
+            0.1875, 0.0625, 0,
             0.43324878, 0.02366748, 0.1875, 0.04308374, 0.0625, 0
         ],
     )
@@ -308,7 +308,7 @@ def test_interferometer(StateClass):
         program.state.fock_probabilities,
         [
             0,
-            0.0625, 0.1875, 0,
+            0.1875, 0.0625, 0,
             0.01443139, 0.10696977, 0.32090931, 0.0192306, 0.11538358, 0.17307537
         ],
     )

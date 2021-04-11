@@ -100,3 +100,73 @@ def test_get_fock_probabilities_with_displaced_state(StateClass):
             0., 0., 0., 0., 0., 0., 0., 0., 0., 0.1403739,
         ]
     )
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=1 + 2j)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(
+        probabilities,
+        [
+            0.00673795,
+            0., 0.0252673, 0.00842243,
+            0., 0., 0., 0.04737619, 0.03158413, 0.00526402,
+            0., 0., 0., 0., 0., 0., 0.05922024, 0.05922024, 0.01974008, 0.00219334
+        ]
+    )
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=0.6)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(
+        probabilities,
+        [
+            0.99502075,
+            0., 0., 0.,
+            0., 0., 0., 0.00277994, 0.0018533, 0.00030888,
+            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        ]
+    )
