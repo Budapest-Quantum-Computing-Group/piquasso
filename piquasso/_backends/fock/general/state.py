@@ -17,6 +17,7 @@ import numpy as np
 
 from piquasso.api.errors import InvalidState
 from piquasso._math.linalg import is_selfadjoint
+from piquasso._math.fock import cutoff_cardinality
 
 from ..state import BaseFockState
 
@@ -211,9 +212,16 @@ class FockState(BaseFockState):
     def __eq__(self, other):
         return np.allclose(self._density_matrix, other._density_matrix)
 
+    def get_fock_probabilities(self, cutoff=None):
+        cutoff = cutoff or self._space.cutoff
+
+        cardinality = cutoff_cardinality(d=self._space.d, cutoff=cutoff)
+
+        return np.diag(self._density_matrix).real[:cardinality]
+
     @property
     def fock_probabilities(self):
-        return np.diag(self._density_matrix).real
+        return self.get_fock_probabilities()
 
     def normalize(self):
         if np.isclose(self.norm, 0):

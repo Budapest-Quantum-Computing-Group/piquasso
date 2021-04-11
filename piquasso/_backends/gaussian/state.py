@@ -768,11 +768,33 @@ class GaussianState(State):
 
         return samples
 
+    def get_fock_probabilities(self, cutoff):
+        modes = tuple(range(self.d))
+
+        ret = []
+
+        from piquasso._math.combinatorics import partitions
+
+        for particle_number in range(cutoff):
+            for occupation_numbers in partitions(self.d, particle_number):
+                probability = calculate_particle_number_detection_probability(
+                    self.copy(),
+                    subspace_modes=modes,
+                    occupation_numbers=tuple(occupation_numbers),
+                )
+                ret.append(probability)
+
+        ret = np.array(ret)
+
+        ret[abs(ret) < 1e-10] = 0.0
+
+        return ret
+
 
 def calculate_particle_number_detection_probability(
     state,
-    subspace_modes,
-    occupation_numbers,
+    subspace_modes: tuple,
+    occupation_numbers: tuple,
 ):
     Q = state.husimi_cov
     Qinv = np.linalg.inv(Q)
