@@ -307,7 +307,13 @@ class FockSpace(tuple):
             return np.array([[1]])
 
         if n == 1:
-            return operator
+            # TODO: This stuff is really awkward.
+            # The operator in the one-particle-subspace is ordered by e.g.
+            # |100>, |010>, |001>, but here we need the order
+            # |001>, |010>, |100>.
+            # Perhaps we should change the ordering of the Fock space, since it is not
+            # really logical currently.
+            return operator[::-1, ::-1].transpose()
 
         ret = np.zeros(shape=(self._symmetric_cardinality(n), )*2, dtype=complex)
 
