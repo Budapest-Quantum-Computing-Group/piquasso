@@ -22,6 +22,7 @@ from scipy.special import factorial, comb
 from scipy.linalg import block_diag
 
 from piquasso._math.hermite import hermite_kampe_2dim
+from piquasso._math.combinatorics import partitions
 
 
 @functools.lru_cache()
@@ -67,14 +68,12 @@ class FockBasis(tuple):
 
     @classmethod
     def create_all(cls, *, d, cutoff):
-        for n in range(cutoff):
-            if n == 0:
-                yield cls([0] * d)
-            else:
-                masks = np.rot90(np.identity(d, dtype=int))
+        ret = []
 
-                for c in itertools.combinations_with_replacement(masks, n):
-                    yield cls(sum(c))
+        for n in range(cutoff):
+            ret.extend(partitions(boxes=d, particles=n, class_=cls))
+
+        return ret
 
     @property
     def first_quantized(self):
@@ -307,12 +306,10 @@ class FockSpace(tuple):
             return np.array([[1]])
 
         if n == 1:
-            # TODO: This stuff is really awkward.
+            # NOTE: This stuff is really awkward.
             # The operator in the one-particle-subspace is ordered by e.g.
             # |100>, |010>, |001>, but here we need the order
             # |001>, |010>, |100>.
-            # Perhaps we should change the ordering of the Fock space, since it is not
-            # really logical currently.
             return operator[::-1, ::-1].transpose()
 
         ret = np.zeros(shape=(self._symmetric_cardinality(n), )*2, dtype=complex)
