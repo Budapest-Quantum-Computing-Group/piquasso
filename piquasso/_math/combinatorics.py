@@ -23,15 +23,12 @@ def powerset(iterable):
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
-def partitions(boxes, particles):
+def partitions(boxes, particles, class_=tuple):
     if particles == 0:
-        return [np.zeros(boxes, dtype=int)]
+        return [class_([0] * boxes)]
 
     masks = np.rot90(np.identity(boxes, dtype=int))
 
-    ret = []
-
-    for c in combinations_with_replacement(masks, particles):
-        ret.append(sum(c))
-
-    return ret
+    return sorted(
+        class_(sum(c)) for c in combinations_with_replacement(masks, particles)
+    )
