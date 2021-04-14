@@ -21,8 +21,10 @@ from operator import add
 from scipy.special import factorial, comb
 from scipy.linalg import block_diag
 
-from piquasso._math.hermite import hermite_kampe_2dim
 from piquasso._math.combinatorics import partitions
+
+from scipy.linalg import polar, logm, funm
+from piquasso._math.hermite import modified_hermite_multidim
 
 
 @functools.lru_cache()
@@ -36,6 +38,11 @@ def cutoff_cardinality(*, cutoff, d):
         * comb(d + cutoff - 1, cutoff)
         / d
     )
+
+
+@functools.lru_cache()
+def symmetric_subspace_cardinality(*, d, n):
+    return int(comb(d + n - 1, n))
 
 
 class FockBasis(tuple):
@@ -67,11 +74,15 @@ class FockBasis(tuple):
         return sum(self)
 
     @classmethod
+    def create_on_particle_subspace(cls, *, boxes, particles):
+        return partitions(boxes=boxes, particles=particles, class_=cls)
+
+    @classmethod
     def create_all(cls, *, d, cutoff):
         ret = []
 
         for n in range(cutoff):
-            ret.extend(partitions(boxes=d, particles=n, class_=cls))
+            ret.extend(cls.create_on_particle_subspace(boxes=d, particles=n))
 
         return ret
 
@@ -153,7 +164,7 @@ class FockSpace(tuple):
 
         return self
 
-    def get_fock_operator(self, operator):
+    def get_passive_fock_operator(self, operator):
         return block_diag(
             *(
                 self.symmetric_tensorpower(operator, n)
@@ -164,53 +175,104 @@ class FockSpace(tuple):
     def get_linear_fock_operator(
         self,
         *,
-        mode,
+        modes,
         auxiliary_modes,
-        squeezing=0.0,
-        displacement=0.0,
-        phaseshift=0.0,
+        active_representation=None,
+        passive_representation=None,
+        displacement=None,
     ):
-        """Creates a linear operator in the Fock basis.
+        if active_representation is None and passive_representation is None:
+            phase = np.identity(len(modes), dtype=complex)
+            S = np.identity(len(modes), dtype=complex)
+            T = np.zeros(shape=(len(modes), ) * 2)
 
-        See https://arxiv.org/abs/1905.10873
-        """
-        squeezing_amplitude = np.abs(squeezing)
-        squeezing_angle = np.angle(squeezing)
+        else:
+            phase, _ = polar(passive_representation)
+            active_phase, active_squeezing = polar(active_representation)
 
-        S = np.sqrt(1 - np.tanh(squeezing_amplitude) ** 2)
-        T = np.exp(1j * squeezing_angle) * np.tanh(squeezing_amplitude)
+            S = funm(
+                active_squeezing,
+                lambda x: 1 / np.sqrt(1 + x ** 2)
+            )
+            T = (
+                active_phase
+                @ funm(
+                    active_squeezing,
+                    lambda x: x / np.sqrt(1 + x ** 2)
+                )
+                @ phase.transpose()
+            )
 
-        K0 = np.sqrt(S) * np.exp(
-            - (
-                np.abs(displacement) ** 2
-                + np.conj(T) * displacement ** 2
-            ) / 2
+        alpha = displacement or np.zeros(shape=(len(modes), ))
+
+        normalization = np.exp(
+            np.trace(logm(S)) - (
+                alpha.conjugate() + alpha @ T.conjugate().transpose()
+            ) @ alpha / 2
         )
 
-        x = displacement * S
-        y = T / 2
-        z = - (
-            displacement * np.conj(T) + np.conj(displacement)
-        ) * np.exp(1j * phaseshift)
-        u = - np.conj(T) * np.exp(1j * 2 * phaseshift) / 2
+        left_matrix = - T
+        left_vector = alpha @ S.transpose()
 
-        X = S * np.exp(1j * phaseshift)
+        right_matrix = phase.transpose() @ T.conjugate().transpose() @ phase
+        right_vector = - (
+            alpha @ T.conjugate().transpose() + alpha.conjugate()
+        ) @ phase
 
-        transformation = np.zeros( (self.cardinality, ) * 2, dtype=complex)
+        def get_f_vector(upper_bound, matrix, vector):
+            subspace_basis = self._get_subspace_basis_on_modes(modes=modes)
+            elements = np.empty(shape=(len(subspace_basis), ), dtype=complex)
+
+            for index, basis_vector in enumerate(subspace_basis):
+                basis_vector = np.array(basis_vector)
+                if any(
+                    qelem > relem for qelem, relem in zip(basis_vector, upper_bound)
+                ):
+                    elements[index] = 0.0
+                    continue
+
+                difference = upper_bound - basis_vector
+
+                elements[index] = (
+                    np.sqrt(
+                        np.prod(factorial(upper_bound))
+                        / np.prod(factorial(basis_vector))
+                    )
+                    *
+                    modified_hermite_multidim(B=matrix, n=difference, alpha=vector)
+                ) / np.prod(factorial(difference))
+
+            return elements
+
+        @functools.lru_cache(maxsize=None)
+        def calculate_left(upper_bound):
+            return get_f_vector(
+                upper_bound=upper_bound,
+                matrix=left_matrix,
+                vector=left_vector,
+            )
+
+        @functools.lru_cache(maxsize=None)
+        def calculate_right(upper_bound):
+            return get_f_vector(
+                upper_bound=upper_bound,
+                matrix=right_matrix,
+                vector=right_vector,
+            )
+
+        fock_operator = self.get_passive_fock_operator(operator=S @ phase)
+        transformation = np.zeros((self.cardinality, ) * 2, dtype=complex)
 
         for index, operator_basis in self.operator_basis_diagonal_on_modes(
             modes=auxiliary_modes
         ):
-            n = operator_basis.ket[mode]
-            m = operator_basis.bra[mode]
-
             transformation[index] = (
-                K0 * hermite_kampe_2dim(
-                    n=n, m=m, x=x, y=y, z=z, u=u, tau=X
-                ) / np.sqrt(factorial(n) * factorial(m))
+                calculate_left(upper_bound=operator_basis.ket.on_modes(modes=modes))
+                @ fock_operator
+                @ calculate_right(upper_bound=operator_basis.bra.on_modes(modes=modes))
             )
 
-        return transformation
+        return normalization * transformation
 
     @property
     def cardinality(self):
@@ -281,7 +343,7 @@ class FockSpace(tuple):
         )
 
     def _symmetric_cardinality(self, n):
-        return int(comb(self.d + n - 1, n))
+        return symmetric_subspace_cardinality(d=self.d, n=n)
 
     def get_subspace_indices(self, n):
         begin = cutoff_cardinality(cutoff=n, d=self.d)
@@ -289,13 +351,25 @@ class FockSpace(tuple):
 
         return begin, end
 
-    def get_subspace_operator_basis(self, n):
-        begin, end = self.get_subspace_indices(n)
+    def _get_subspace_basis_on_modes(self, modes=None):
+        modes = modes or tuple(range(self.d))
 
-        return list(self)[begin:end]
+        subspace_vectors = []
 
-    def enumerate_subspace_operator_basis(self, n):
-        subspace_operator_basis = self.get_subspace_operator_basis(n)
+        for vector in list(self):
+            subspace_vectors.append(
+                vector.on_modes(modes=modes)
+            )
+
+        return sorted(list(set(subspace_vectors)))
+
+    def get_subspace_basis(self, n, d=None):
+        d = d or self.d
+        return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
+
+    def enumerate_subspace_operator_basis(self, n, d=None):
+        d = d or self.d
+        subspace_operator_basis = self.get_subspace_basis(n, d)
 
         for index, basis in enumerate(subspace_operator_basis):
             for dual_index, dual_basis in enumerate(subspace_operator_basis):
@@ -312,15 +386,18 @@ class FockSpace(tuple):
             # |001>, |010>, |100>.
             return operator[::-1, ::-1].transpose()
 
-        ret = np.zeros(shape=(self._symmetric_cardinality(n), )*2, dtype=complex)
+        d = len(operator)
 
-        for index, basis in self.enumerate_subspace_operator_basis(n):
+        ret = np.empty(
+            shape=(symmetric_subspace_cardinality(d=d, n=n), ) * 2,
+            dtype=complex,
+        )
+
+        for index, basis in self.enumerate_subspace_operator_basis(n, d):
             sum_ = 0
 
             for permutation1 in basis.ket.all_possible_first_quantized_vectors:
-                for permutation2 in (
-                    basis.bra.all_possible_first_quantized_vectors
-                ):
+                for permutation2 in basis.bra.all_possible_first_quantized_vectors:
                     prod = 1
 
                     for i in range(len(permutation1)):
@@ -331,10 +408,9 @@ class FockSpace(tuple):
                     sum_ += prod
 
             normalization = (
-                np.power(
-                    np.prod(list(factorial(basis.ket)))
-                    * np.prod(list(factorial(basis.bra))),
-                    1/2
+                np.sqrt(
+                    np.prod(factorial(basis.ket))
+                    * np.prod(factorial(basis.bra))
                 ) / factorial(n)
             )
 

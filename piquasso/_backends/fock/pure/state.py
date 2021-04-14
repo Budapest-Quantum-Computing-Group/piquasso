@@ -49,7 +49,7 @@ class PureFockState(BaseFockState):
 
         embedded_operator[index] = operator
 
-        fock_operator = self._space.get_fock_operator(embedded_operator)
+        fock_operator = self._space.get_passive_fock_operator(embedded_operator)
 
         self._state_vector = fock_operator @ self._state_vector
 
@@ -131,38 +131,21 @@ class PureFockState(BaseFockState):
             )
             self._state_vector[index] *= coefficient
 
-    def _apply_squeezing(self, passive_representation, active_representation, modes):
-        mode = modes[0]
-
-        squeezing_amplitude = np.arcsinh(np.abs(active_representation[0][0]))
-        squeezing_phase = np.angle(-active_representation[0][0])
-
-        squeezing = squeezing_amplitude * np.exp(1j * squeezing_phase)
-
-        auxiliary_modes = self._get_auxiliary_modes(modes)
-
-        transformation = self._space.get_linear_fock_operator(
-            mode=mode, auxiliary_modes=auxiliary_modes,
-            squeezing=squeezing,
-        )
-
-        self._state_vector = transformation @ self._state_vector
-
-        self.normalize()
-
-    def _apply_displacement(self, displacement_vector, modes):
-        mode = modes[0]
-
-        displacement = displacement_vector[0]
-
-        auxiliary_modes = self._get_auxiliary_modes(modes)
-
-        transformation = self._space.get_linear_fock_operator(
-            mode=mode, auxiliary_modes=auxiliary_modes,
+    def _apply_linear(
+        self,
+        passive_representation,
+        active_representation,
+        displacement,
+        modes
+    ):
+        operator = self._space.get_linear_fock_operator(
+            modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
+            passive_representation=passive_representation,
+            active_representation=active_representation,
             displacement=displacement,
         )
 
-        self._state_vector = transformation @ self._state_vector
+        self._state_vector = operator @ self._state_vector
 
         self.normalize()
 

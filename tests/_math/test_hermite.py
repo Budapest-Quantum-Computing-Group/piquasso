@@ -15,94 +15,62 @@
 
 import numpy as np
 
-from scipy.special import factorial
-
-from piquasso._math.hermite import (
-    hermite_kampe,
-    hermite_kampe_2dim,
-    hermite_multidim,
-)
+from piquasso._math.hermite import modified_hermite_multidim
 
 
-def test_hermite_kampe():
-    result = hermite_kampe(n=3, x=0.5, y=0.2)
-
-    assert np.isclose(result, 0.725)
-
-
-def test_hermite_kampe_first_argument():
-    x = 1.2
-    n = 3
-
-    result = hermite_kampe(n=n, x=x, y=0)
-
-    assert np.isclose(result, x ** n)
-
-
-def test_hermite_kampe_secund_argument_even():
-    y = 1.2
-    n = 4
-
-    result = hermite_kampe(n=n, x=0, y=y)
-
-    assert np.isclose(
-        result,
-        y ** (n // 2) * factorial(n) / factorial(n // 2)
-    )
-
-
-def test_hermite_kampe_secund_argument_odd():
-    y = 1.2
-    n = 3
-
-    result = hermite_kampe(n=n, x=0, y=y)
-
-    assert np.isclose(result, 0.0)
-
-
-def test_hermite_kampe_2dim():
-    result = hermite_kampe_2dim(n=2, m=3, x=0.75, y=0.25, z=0.3, u=0.7, tau=1.5)
-
-    assert np.isclose(result, 15.29859375)
-
-
-def test_hermite_multidim_for_one_dimension_zeros():
-    result = hermite_multidim(np.array([[1.0]]), [0], np.array([0.5]))
+def test_modified_hermite_multidim_for_one_dimension_zeros():
+    result = modified_hermite_multidim(np.array([[1.0]]), [0], np.array([0.5]))
 
     assert np.isclose(result, 1.0)
 
 
-def test_hermite_multidim_for_one_dimension_basis():
-    result = hermite_multidim(np.array([[1.0]]), [1], np.array([0.5]))
+def test_modified_hermite_multidim_for_one_dimension_basis():
+    B = np.array([[1.0]])
+
+    n = [1]
+
+    alpha = np.array([0.5])
+
+    result = modified_hermite_multidim(B, n, alpha)
 
     assert np.isclose(result, 0.5)
 
 
-def test_hermite_multidim_for_two_dimension_zeros():
-    result = hermite_multidim(
-        B=np.array(
-            [
-                [1.0, 2.0],
-                [3.0, 4.0],
-            ]
-        ),
-        n=[0, 0],
-        alpha=np.array([0.5, 0.6]),
+def test_modified_hermite_multidim_for_two_dimension_zeros():
+    B = np.array(
+        [
+            [1.0, 2.0],
+            [2.0, 4.0],
+        ]
+    )
+    n = [0, 0]
+    alpha = np.array([0.5, 0.6])
+
+    result = modified_hermite_multidim(
+        B=B,
+        n=n,
+        alpha=alpha,
     )
 
     assert np.isclose(result, 1.0)
 
 
-def test_hermite_multidim_for_two_dimension_basis():
-    result = hermite_multidim(
-        B=np.array(
-            [
-                [1.0, 2.0],
-                [3.0, 4.0],
-            ]
-        ),
-        n=[0, 1],
-        alpha=np.array([0.5, 0.6]),
+def test_modified_hermite_multidim_for_two_dimension_basis():
+    B = np.array(
+        [
+            [1.0, 2.0],
+            [2.0, 4.0],
+        ]
     )
 
-    assert np.isclose(result, 3.9)
+    n = [0, 2]
+
+    alpha = np.array([0.5, 0.6])
+
+    result = modified_hermite_multidim(
+        B=B,
+        n=n,
+        alpha=alpha,
+    )
+
+    assert np.isclose(result, -3.64)

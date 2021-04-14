@@ -30,8 +30,10 @@ class BaseFockCircuit(Circuit, abc.ABC):
             "Fourier": self._passive_linear,
             "Kerr": self._kerr,
             "CrossKerr": self._cross_kerr,
-            "Squeezing": self._squeezing,
-            "Displacement": self._displacement,
+            "Squeezing": self._linear,
+            "Displacement": self._linear,
+            "Squeezing2": self._linear,
+            "GaussianTransform": self._linear,
             "MeasureParticleNumber": self._measure_particle_number,
             "Vacuum": self._vacuum,
             "Create": self._create,
@@ -73,15 +75,10 @@ class BaseFockCircuit(Circuit, abc.ABC):
             modes=instruction.modes,
         )
 
-    def _squeezing(self, instruction):
-        self.state._apply_squeezing(
+    def _linear(self, instruction):
+        self.state._apply_linear(
             passive_representation=instruction._passive_representation,
             active_representation=instruction._active_representation,
-            modes=instruction.modes,
-        )
-
-    def _displacement(self, instruction):
-        self.state._apply_displacement(
-            displacement_vector=instruction._displacement_vector,
+            displacement=instruction._displacement_vector,
             modes=instruction.modes,
         )
