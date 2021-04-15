@@ -28,11 +28,7 @@ shots = 1000
 with pq.Program() as pq_program:
     pq.Q() | pq.GaussianState(d=d)
 
-    pq.Q(0) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
-    pq.Q(1) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
-    pq.Q(2) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
-    pq.Q(3) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
-    pq.Q(4) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+    pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
     # NOTE: we need to tweak the parameters here a bit, because we use a different
     # definition for the beamsplitter.

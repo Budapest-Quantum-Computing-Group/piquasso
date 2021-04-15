@@ -39,6 +39,59 @@ class _BogoliubovTransformation(Instruction):
         self._displacement_vector = displacement_vector
 
 
+class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
+    ERROR_MESSAGE_TEMPLATE = (
+        "The instruction {instruction} is not applicable to modes {modes} with the "
+        "specified parameters."
+    )
+
+    def _autoscale(self):
+        if (
+            self._passive_representation is None
+            or len(self.modes) == len(self._passive_representation)
+        ):
+            pass
+        elif len(self._passive_representation) == 1:
+            from scipy.linalg import block_diag
+            self._passive_representation = block_diag(
+                *[self._passive_representation] * len(self.modes)
+            )
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
+
+        if (
+            self._active_representation is None
+            or len(self.modes) == len(self._active_representation)
+        ):
+            pass
+        elif len(self._active_representation) == 1:
+            from scipy.linalg import block_diag
+            self._active_representation = block_diag(
+                *[self._active_representation] * len(self.modes)
+            )
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
+
+        if (
+            self._displacement_vector is None
+            or len(self.modes) == len(self._displacement_vector)
+        ):
+            pass
+        elif len(self._displacement_vector) == 1:
+            self._displacement_vector = np.array(
+                [self._displacement_vector[0]] * len(self.modes),
+                dtype=complex,
+            )
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
+
+
 @_register
 class Interferometer(_BogoliubovTransformation):
     r"""Applies a general interferometer.
@@ -100,7 +153,7 @@ class Beamsplitter(_BogoliubovTransformation):
 
 
 @_register
-class Phaseshifter(_BogoliubovTransformation):
+class Phaseshifter(_ScalableBogoliubovTransformation):
     r"""Rotation or phaseshift instruction.
 
     The annihilation and creation operators are evolved in the following
@@ -118,7 +171,9 @@ class Phaseshifter(_BogoliubovTransformation):
     def __init__(self, phi: float):
         self._set_params(phi=phi)
 
-        super().__init__(passive_representation=np.array([[np.exp(1j * phi)]]))
+        super().__init__(
+            passive_representation=np.diag(np.exp(1j * np.atleast_1d(phi)))
+        )
 
 
 @_register
@@ -164,7 +219,7 @@ class MachZehnder(_BogoliubovTransformation):
 
 
 @_register
-class Fourier(_BogoliubovTransformation):
+class Fourier(_ScalableBogoliubovTransformation):
     r"""Fourier gate.
 
     Corresponds to the Rotaton gate :class:`R` with :math:`\phi = \pi/2`.
@@ -197,7 +252,7 @@ class GaussianTransform(_BogoliubovTransformation):
 
 
 @_register
-class Squeezing(_BogoliubovTransformation):
+class Squeezing(_ScalableBogoliubovTransformation):
     r"""Applies the squeezing operator.
 
     The definition of the operator is:
@@ -237,21 +292,17 @@ class Squeezing(_BogoliubovTransformation):
         self._set_params(r=r, phi=phi)
 
         super().__init__(
-            passive_representation=np.array(
-                [
-                    [np.cosh(r)]
-                ]
+            passive_representation=np.diag(
+                np.atleast_1d(np.cosh(r))
             ),
-            active_representation=np.array(
-                [
-                    [- np.sinh(r) * np.exp(1j * phi)]
-                ]
+            active_representation=np.diag(
+                - np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
             ),
         )
 
 
 @_register
-class QuadraticPhase(_BogoliubovTransformation):
+class QuadraticPhase(_ScalableBogoliubovTransformation):
     r"""Applies the quadratic phase instruction to the state.
 
     The operator of the quadratic phase gate is
@@ -269,8 +320,8 @@ class QuadraticPhase(_BogoliubovTransformation):
         self._set_params(s=s)
 
         super().__init__(
-            passive_representation=np.array([[1 + s/2 * 1j]]),
-            active_representation=np.array([[s/2 * 1j]]),
+            passive_representation=np.diag(1 + np.atleast_1d(s)/2 * 1j),
+            active_representation=np.diag(np.atleast_1d(s)/2 * 1j),
         )
 
 
@@ -349,7 +400,7 @@ class ControlledZ(_BogoliubovTransformation):
 
 
 @_register
-class Displacement(_BogoliubovTransformation):
+class Displacement(_ScalableBogoliubovTransformation):
     r"""Phase space displacement instruction.
 
     One must either specify `alpha` only, or the combination of `r` and `phi`.
@@ -369,45 +420,43 @@ class Displacement(_BogoliubovTransformation):
     """
 
     def __init__(self, *, alpha=None, r=None, phi=None):
-        if (
-            alpha is None and (phi is None or r is None)
-            or
-            alpha is not None and (phi is not None or r is not None)
-        ):
+
+        if alpha is not None and r is None and phi is None:
+            self._set_params(alpha=alpha)
+            alpha = np.atleast_1d(alpha)
+        elif alpha is None and r is not None and phi is not None:
+            self._set_params(r=r, phi=phi)
+            alpha = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
+        else:
             raise InvalidParameter(
                 "Either specify 'alpha' only, or the combination of 'r' and 'phi': "
                 f"alpha={alpha}, r={r}, phi={phi}."
             )
 
-        if alpha is None:
-            alpha = r * np.exp(1j * phi)
-
-        self._set_params(alpha=alpha)
-
-        super().__init__(displacement_vector=np.array([alpha]))
+        super().__init__(displacement_vector=alpha)
 
 
 @_register
-class PositionDisplacement(_BogoliubovTransformation):
+class PositionDisplacement(_ScalableBogoliubovTransformation):
     r"""Position displacement gate."""
 
     def __init__(self, x: float):
         self._set_params(x=x)
 
         super().__init__(
-            displacement_vector=np.array([x / np.sqrt(2 * HBAR)]),
+            displacement_vector=np.atleast_1d(x) / np.sqrt(2 * HBAR),
         )
 
 
 @_register
-class MomentumDisplacement(_BogoliubovTransformation):
+class MomentumDisplacement(_ScalableBogoliubovTransformation):
     r"""Momentum displacement gate."""
 
     def __init__(self, p: float):
         self._set_params(p=p)
 
         super().__init__(
-            displacement_vector=np.array([1j * p / np.sqrt(2 * HBAR)]),
+            displacement_vector=1j * np.atleast_1d(p) / np.sqrt(2 * HBAR),
         )
 
 

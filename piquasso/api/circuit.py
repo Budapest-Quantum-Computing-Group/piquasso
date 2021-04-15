@@ -49,6 +49,9 @@ class Circuit(abc.ABC):
             if instruction.modes is tuple():
                 instruction.modes = tuple(range(self.state.d))
 
+            if hasattr(instruction, "_autoscale"):
+                instruction._autoscale()
+
             method = self._instruction_map.get(instruction.__class__.__name__)
 
             if not method:
