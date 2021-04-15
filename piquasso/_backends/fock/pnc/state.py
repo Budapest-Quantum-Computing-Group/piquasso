@@ -149,7 +149,7 @@ class PNCFockState(BaseFockState):
 
         n = ket_n
 
-        subspace_basis = self._space.get_subspace_operator_basis(n)
+        subspace_basis = self._space.get_subspace_basis(n)
 
         index = subspace_basis.index(ket)
         dual_index = subspace_basis.index(bra)
@@ -187,34 +187,17 @@ class PNCFockState(BaseFockState):
 
                 self._representation[n][index] *= coefficient
 
-    def _apply_squeezing(self, passive_representation, active_representation, modes):
-        mode = modes[0]
-
-        squeezing_amplitude = np.arcsinh(np.abs(active_representation[0][0]))
-        squeezing_phase = np.angle(-active_representation[0][0])
-
-        squeezing = squeezing_amplitude * np.exp(1j * squeezing_phase)
-
-        auxiliary_modes = self._get_auxiliary_modes(modes)
-
+    def _apply_linear(
+        self,
+        passive_representation,
+        active_representation,
+        displacement,
+        modes
+    ):
         operator = self._space.get_linear_fock_operator(
-            mode=mode, auxiliary_modes=auxiliary_modes,
-            squeezing=squeezing,
-        )
-
-        self._hacky_apply_operator(operator)
-
-        self.normalize()
-
-    def _apply_displacement(self, displacement_vector, modes):
-        mode = modes[0]
-
-        displacement = displacement_vector[0]
-
-        auxiliary_modes = self._get_auxiliary_modes(modes)
-
-        operator = self._space.get_linear_fock_operator(
-            mode=mode, auxiliary_modes=auxiliary_modes,
+            modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
+            passive_representation=passive_representation,
+            active_representation=active_representation,
             displacement=displacement,
         )
 

@@ -118,11 +118,13 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _apply_squeezing(self, passive_representation, active_representation, modes):
-        pass
-
-    @abc.abstractmethod
-    def _apply_displacement(self, displacement_vector, modes):
+    def _apply_linear(
+        self,
+        passive_representation,
+        active_representation,
+        displacement,
+        modes,
+    ):
         pass
 
     @property
