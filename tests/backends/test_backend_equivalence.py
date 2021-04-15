@@ -254,6 +254,102 @@ def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateCl
         partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
+def test_get_fock_probabilities_with_quadratic_phase(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.QuadraticPhase(s=0.4)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+    expected_probabilities = [
+        0.98058068,
+        0., 0., 0.,
+        0., 0., 0., 0., 0., 0.01885732,
+        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+    ]
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(probabilities, expected_probabilities)
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_position_displacement(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.PositionDisplacement(x=0.4)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+    expected_probabilities = [
+        0.96078944,
+        0., 0., 0.03843158,
+        0., 0., 0., 0., 0., 0.00076863,
+        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.00001025,
+    ]
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(probabilities, expected_probabilities)
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_momentum_displacement(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.MomentumDisplacement(p=0.4)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+    expected_probabilities = [
+        0.96078944,
+        0., 0., 0.03843158,
+        0., 0., 0., 0., 0., 0.00076863,
+        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.00001025,
+    ]
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(probabilities, expected_probabilities)
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
 def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
     from scipy.linalg import polar, sinhm, coshm, expm
     squeezing_matrix = np.array(

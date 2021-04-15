@@ -203,7 +203,10 @@ class FockSpace(tuple):
                 @ phase.transpose()
             )
 
-        alpha = displacement or np.zeros(shape=(len(modes), ))
+        if displacement is None:
+            alpha = np.zeros(shape=(len(modes), ))
+        else:
+            alpha = displacement
 
         normalization = np.exp(
             np.trace(logm(S)) - (
