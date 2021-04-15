@@ -23,6 +23,15 @@ from scipy.linalg import polar, sinhm, coshm
 from functools import partial
 
 
+# NOTE: If the warning message is too long, only the beginning of the string could
+# be matched for some reason.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:" + "["
+    "Gaussian evolution of the state with instruction.*"
+    + "|" + ".*may not result in the desired state.*"
+    + "]"
+)
+
 CUTOFF = 4
 
 
@@ -37,7 +46,6 @@ def is_proportional(first, second):
     return np.allclose(first, proportion * second)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -71,7 +79,6 @@ def test_get_fock_probabilities_with_squeezed_state(StateClass):
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -105,7 +112,6 @@ def test_get_fock_probabilities_with_displaced_state(StateClass):
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -140,7 +146,6 @@ def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClas
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -175,7 +180,6 @@ def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -209,7 +213,6 @@ def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -244,7 +247,6 @@ def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateCl
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -276,7 +278,6 @@ def test_get_fock_probabilities_with_quadratic_phase(StateClass):
     assert is_proportional(probabilities, expected_probabilities)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -308,7 +309,6 @@ def test_get_fock_probabilities_with_position_displacement(StateClass):
     assert is_proportional(probabilities, expected_probabilities)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
@@ -340,7 +340,6 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     assert is_proportional(probabilities, expected_probabilities)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "StateClass",
     (
