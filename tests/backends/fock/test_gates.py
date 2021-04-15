@@ -20,7 +20,7 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.filterwarnings("ignore:.*may not result in the desired state.*")
 @pytest.mark.parametrize(
     "StateClass", (pq.PureFockState, pq.PNCFockState, pq.FockState)
 )
@@ -44,7 +44,7 @@ def test_squeezing_probabilities(StateClass):
     )
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.filterwarnings("ignore:.*may not result in the desired state.*")
 @pytest.mark.parametrize(
     "StateClass", (pq.PureFockState, pq.PNCFockState, pq.FockState)
 )
