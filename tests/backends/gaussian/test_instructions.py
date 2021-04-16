@@ -430,6 +430,35 @@ def test_graph_embedding(program, gaussian_state_assets):
     program.state.validate()
 
 
+def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets):
+    adjacency_matrix = np.array(
+        [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0],
+        ]
+    )
+    shots = 2
+
+    pq.constants.seed(40)
+
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=3)
+        pq.Q() | pq.Graph(adjacency_matrix)
+
+        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+
+    results = program.execute()
+    program.state.validate()
+
+    subgraphs = results[0].to_subgraph_nodes()
+
+    assert len(subgraphs) == shots
+    assert subgraphs == [[1, 2], [1, 2]]
+
+    pq.constants.seed()  # Teardown! NOTE: this deserves a fixture.
+
+
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
         pq.Q() | pq.GaussianState(d=3)
