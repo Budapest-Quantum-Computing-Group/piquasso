@@ -456,8 +456,6 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
     assert len(subgraphs) == shots
     assert subgraphs == [[1, 2], [1, 2]]
 
-    pq.constants.seed()  # Teardown! NOTE: this deserves a fixture.
-
 
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:

@@ -84,8 +84,6 @@ def test_representation_roundtrip_at_different_HBAR(state):
     assert np.allclose(final_mean, initial_mean)
     assert np.allclose(final_cov, initial_cov)
 
-    constants.reset_hbar()  # Teardown
-
 
 def test_wigner_function(state, assets):
     quadrature_array = np.array(
@@ -226,9 +224,6 @@ def test_mean_and_covariance_with_different_HBAR(program, assets):
     assert np.allclose(program.state.mean, expected_mean)
     assert np.allclose(program.state.cov, expected_cov)
 
-    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
-    constants.HBAR = constants._HBAR_DEFAULT
-
 
 def test_mean_is_scaled_with_squared_HBAR(state, assets):
     scaling = 14
@@ -241,9 +236,6 @@ def test_mean_is_scaled_with_squared_HBAR(state, assets):
 
     assert np.allclose(mean_default_hbar * np.sqrt(scaling), mean_different_hbar)
 
-    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
-    constants.HBAR = constants._HBAR_DEFAULT
-
 
 def test_cov_is_scaled_with_HBAR(state, assets):
     scaling = 14
@@ -255,9 +247,6 @@ def test_cov_is_scaled_with_HBAR(state, assets):
     cov_different_hbar = state.cov
 
     assert np.allclose(cov_default_hbar * scaling, cov_different_hbar)
-
-    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
-    constants.HBAR = constants._HBAR_DEFAULT
 
 
 def test_husimi_cov(state, assets):
@@ -275,9 +264,6 @@ def test_husimi_cov_does_not_scale_with_HBAR(state, assets):
     husimi_cov_different_hbar = state.husimi_cov
 
     assert np.allclose(husimi_cov_default_hbar, husimi_cov_different_hbar)
-
-    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
-    constants.HBAR = constants._HBAR_DEFAULT
 
 
 def test_complex_displacements(state, assets):
@@ -300,6 +286,3 @@ def test_complex_displacements_do_not_scale_with_HBAR(state, assets):
         complex_displacements_default_hbar,
         complex_displacements_different_hbar,
     )
-
-    # TODO: We need to reset the value of HBAR. Create a better teardown for it!
-    constants.HBAR = constants._HBAR_DEFAULT

@@ -22,6 +22,15 @@ import piquasso as pq
 from pathlib import Path
 
 
+@pytest.fixture(autouse=True)
+def _reset_constants():
+
+    yield
+
+    pq.constants.seed()
+    pq.constants.reset_hbar()
+
+
 @pytest.fixture
 def generate_symmetric_matrix():
     def func(N):
