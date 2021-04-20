@@ -446,7 +446,7 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
         pq.Q() | pq.GaussianState(d=3)
         pq.Q() | pq.Graph(adjacency_matrix)
 
-        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+        pq.Q() | pq.ParticleNumberMeasurement(shots=shots)
 
     results = program.execute()
     program.state.validate()
