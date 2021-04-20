@@ -574,6 +574,6 @@ def test_program_stacking_with_measurement():
         pq.Q(0, 1, 2) | interferometer
         pq.Q(2, 3, 4) | interferometer
 
-        pq.Q(3) | pq.MeasureHeterodyne()
+        pq.Q(3) | pq.HeterodyneMeasurement()
 
     program.execute()

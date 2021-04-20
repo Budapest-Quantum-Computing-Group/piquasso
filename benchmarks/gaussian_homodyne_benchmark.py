@@ -33,7 +33,7 @@ def piquasso_benchmark(
             pq.Q() | example_pq_gaussian_state
 
             # TODO: Support rotation by an angle, too.
-            pq.Q(0) | pq.MeasureHomodyne()
+            pq.Q(0) | pq.HomodyneMeasurement()
 
             new_program.execute()
 

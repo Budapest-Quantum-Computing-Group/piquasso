@@ -53,7 +53,7 @@ def nondisplaced_program(d):
 
 def test_measure_homodyne(program):
     with program:
-        pq.Q(0) | pq.MeasureHomodyne()
+        pq.Q(0) | pq.HomodyneMeasurement()
 
     results = program.execute()
 
@@ -65,7 +65,7 @@ def test_measure_homodyne(program):
 
 def test_measure_homodyne_zeroes_state_on_measured_modes(program):
     with program:
-        pq.Q(0) | pq.MeasureHomodyne()
+        pq.Q(0) | pq.HomodyneMeasurement()
 
     program.execute()
     program.state.validate()
@@ -78,7 +78,7 @@ def test_measure_homodyne_with_rotation(program):
     angle = np.pi / 3
 
     with program:
-        pq.Q(0) | pq.MeasureHomodyne(angle)
+        pq.Q(0) | pq.HomodyneMeasurement(angle)
 
     results = program.execute()
 
@@ -92,13 +92,13 @@ def test_measure_homodyne_with_angle_does_not_alter_the_state(program):
     program_with_rotation = program.copy()
 
     with program:
-        pq.Q(0) | pq.MeasureHomodyne()
+        pq.Q(0) | pq.HomodyneMeasurement()
 
     program.execute()
     program.state.validate()
 
     with program_with_rotation:
-        pq.Q(0) | pq.MeasureHomodyne(angle)
+        pq.Q(0) | pq.HomodyneMeasurement(angle)
 
     program_with_rotation.execute()
     program_with_rotation.state.validate()
@@ -108,7 +108,7 @@ def test_measure_homodyne_with_angle_does_not_alter_the_state(program):
 
 def test_measure_homodyne_on_multiple_modes(program):
     with program:
-        pq.Q(0, 1) | pq.MeasureHomodyne()
+        pq.Q(0, 1) | pq.HomodyneMeasurement()
 
     results = program.execute()
 
@@ -120,7 +120,7 @@ def test_measure_homodyne_on_multiple_modes(program):
 
 def test_measure_homodyne_on_all_modes(program, d):
     with program:
-        pq.Q() | pq.MeasureHomodyne()
+        pq.Q() | pq.HomodyneMeasurement()
 
     results = program.execute()
 
@@ -134,7 +134,7 @@ def test_measure_homodyne_with_multiple_shots(program):
     shots = 4
 
     with program:
-        pq.Q(0, 1) | pq.MeasureHomodyne(shots=shots)
+        pq.Q(0, 1) | pq.HomodyneMeasurement(shots=shots)
 
     results = program.execute()
 
@@ -143,7 +143,7 @@ def test_measure_homodyne_with_multiple_shots(program):
 
 def test_measure_heterodyne(program):
     with program:
-        pq.Q(0) | pq.MeasureHeterodyne()
+        pq.Q(0) | pq.HeterodyneMeasurement()
 
     results = program.execute()
 
@@ -155,7 +155,7 @@ def test_measure_heterodyne(program):
 
 def test_measure_heterodyne_zeroes_state_on_measured_modes(program):
     with program:
-        pq.Q(0) | pq.MeasureHeterodyne()
+        pq.Q(0) | pq.HeterodyneMeasurement()
 
     program.execute()
     program.state.validate()
@@ -166,7 +166,7 @@ def test_measure_heterodyne_zeroes_state_on_measured_modes(program):
 
 def test_measure_heterodyne_on_multiple_modes(program):
     with program:
-        pq.Q(0, 1) | pq.MeasureHeterodyne()
+        pq.Q(0, 1) | pq.HeterodyneMeasurement()
 
     results = program.execute()
 
@@ -178,7 +178,7 @@ def test_measure_heterodyne_on_multiple_modes(program):
 
 def test_measure_heterodyne_on_all_modes(program, d):
     with program:
-        pq.Q() | pq.MeasureHeterodyne()
+        pq.Q() | pq.HeterodyneMeasurement()
 
     results = program.execute()
 
@@ -192,7 +192,7 @@ def test_measure_heterodyne_with_multiple_shots(program):
     shots = 4
 
     with program:
-        pq.Q(0, 1) | pq.MeasureHeterodyne(shots=shots)
+        pq.Q(0, 1) | pq.HeterodyneMeasurement(shots=shots)
 
     results = program.execute()
 
@@ -208,7 +208,7 @@ def test_measure_dyne(program):
     )
 
     with program:
-        pq.Q(0) | pq.MeasureDyne(detection_covariance)
+        pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
     results = program.execute()
 
@@ -229,7 +229,7 @@ def test_measure_dyne_with_multiple_shots(program):
     )
 
     with program:
-        pq.Q(0) | pq.MeasureDyne(detection_covariance, shots=shots)
+        pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance, shots=shots)
 
     results = program.execute()
 
@@ -238,7 +238,7 @@ def test_measure_dyne_with_multiple_shots(program):
 
 def test_measure_particle_number_on_one_modes(program):
     with program:
-        pq.Q(0) | pq.MeasureParticleNumber(cutoff=4)
+        pq.Q(0) | pq.ParticleNumberMeasurement(cutoff=4)
 
     results = program.execute()
 
@@ -247,7 +247,7 @@ def test_measure_particle_number_on_one_modes(program):
 
 def test_measure_particle_number_on_two_modes(program):
     with program:
-        pq.Q(0, 1) | pq.MeasureParticleNumber(cutoff=4)
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=4)
 
     results = program.execute()
 
@@ -256,7 +256,7 @@ def test_measure_particle_number_on_two_modes(program):
 
 def test_measure_particle_number_on_all_modes(program):
     with program:
-        pq.Q() | pq.MeasureParticleNumber(cutoff=4)
+        pq.Q() | pq.ParticleNumberMeasurement(cutoff=4)
 
     results = program.execute()
 
@@ -269,7 +269,7 @@ def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
     program_with_nonzero_displacements = program
 
     with program_with_nonzero_displacements:
-        pq.Q(0) | pq.MeasureThreshold()
+        pq.Q(0) | pq.ThresholdMeasurement()
 
     with pytest.raises(NotImplementedError):
         program_with_nonzero_displacements.execute()
@@ -277,7 +277,7 @@ def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
 
 def test_measure_threshold_on_one_modes(nondisplaced_program):
     with nondisplaced_program:
-        pq.Q(0) | pq.MeasureThreshold()
+        pq.Q(0) | pq.ThresholdMeasurement()
 
     results = nondisplaced_program.execute()
 
@@ -286,7 +286,7 @@ def test_measure_threshold_on_one_modes(nondisplaced_program):
 
 def test_measure_threshold_with_multiple_shots(nondisplaced_program):
     with nondisplaced_program:
-        pq.Q(0) | pq.MeasureThreshold(shots=20)
+        pq.Q(0) | pq.ThresholdMeasurement(shots=20)
 
     results = nondisplaced_program.execute()
 
@@ -295,7 +295,7 @@ def test_measure_threshold_with_multiple_shots(nondisplaced_program):
 
 def test_measure_threshold_on_two_modes(nondisplaced_program):
     with nondisplaced_program:
-        pq.Q(0, 1) | pq.MeasureThreshold()
+        pq.Q(0, 1) | pq.ThresholdMeasurement()
 
     results = nondisplaced_program.execute()
 
@@ -304,7 +304,7 @@ def test_measure_threshold_on_two_modes(nondisplaced_program):
 
 def test_measure_threshold_on_all_modes(nondisplaced_program):
     with nondisplaced_program:
-        pq.Q() | pq.MeasureThreshold()
+        pq.Q() | pq.ThresholdMeasurement()
 
     results = nondisplaced_program.execute()
 

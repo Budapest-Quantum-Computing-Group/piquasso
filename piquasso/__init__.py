@@ -61,11 +61,11 @@ from .instructions.gates import (
 )
 
 from .instructions.measurements import (
-    MeasureParticleNumber,
-    MeasureThreshold,
-    MeasureHomodyne,
-    MeasureHeterodyne,
-    MeasureDyne,
+    ParticleNumberMeasurement,
+    ThresholdMeasurement,
+    HomodyneMeasurement,
+    HeterodyneMeasurement,
+    GeneraldyneMeasurement,
 )
 
 
@@ -139,11 +139,11 @@ __all__ = [
     "Sampling",
     "Graph",
     # Measurements
-    "MeasureParticleNumber",
-    "MeasureThreshold",
-    "MeasureHomodyne",
-    "MeasureHeterodyne",
-    "MeasureDyne",
+    "ParticleNumberMeasurement",
+    "ThresholdMeasurement",
+    "HomodyneMeasurement",
+    "HeterodyneMeasurement",
+    "GeneraldyneMeasurement",
 ]
 
 __version__ = "0.1.3"

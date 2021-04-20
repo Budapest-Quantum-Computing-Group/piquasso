@@ -38,14 +38,14 @@ class GaussianCircuit(Circuit):
             "PositionDisplacement": self._displacement,
             "MomentumDisplacement": self._displacement,
             "Graph": self._graph,
-            "MeasureHomodyne": self._measure_homodyne,
-            "MeasureHeterodyne": self._measure_dyne,
-            "MeasureDyne": self._measure_dyne,
+            "HomodyneMeasurement": self._homodyne_measurement,
+            "HeterodyneMeasurement": self._generaldyne_measurement,
+            "GeneraldyneMeasurement": self._generaldyne_measurement,
             "Vacuum": self._vacuum,
             "Mean": self._mean,
             "Covariance": self._covariance,
-            "MeasureParticleNumber": self._measure_particle_number,
-            "MeasureThreshold": self._measure_threshold,
+            "ParticleNumberMeasurement": self._particle_number_measurement,
+            "ThresholdMeasurement": self._threshold_measurement,
         }
 
     def _passive_linear(self, instruction):
@@ -67,7 +67,7 @@ class GaussianCircuit(Circuit):
             modes=instruction.modes,
         )
 
-    def _measure_homodyne(self, instruction):
+    def _homodyne_measurement(self, instruction):
         phi = instruction.params["phi"]
         modes = instruction.modes
 
@@ -86,7 +86,7 @@ class GaussianCircuit(Circuit):
 
         self.results.append(Result(instruction=instruction, samples=samples))
 
-    def _measure_dyne(self, instruction):
+    def _generaldyne_measurement(self, instruction):
         samples = self.state._apply_generaldyne_measurement(
             detection_covariance=instruction.params["detection_covariance"],
             shots=instruction.params["shots"],
@@ -104,7 +104,7 @@ class GaussianCircuit(Circuit):
     def _covariance(self, instruction):
         self.state.cov = instruction.params["cov"]
 
-    def _measure_particle_number(self, instruction):
+    def _particle_number_measurement(self, instruction):
         samples = self.state._apply_particle_number_measurement(
             cutoff=instruction.params["cutoff"],
             shots=instruction.params["shots"],
@@ -113,7 +113,7 @@ class GaussianCircuit(Circuit):
 
         self.results.append(Result(instruction=instruction, samples=samples))
 
-    def _measure_threshold(self, instruction):
+    def _threshold_measurement(self, instruction):
         samples = self.state._apply_threshold_measurement(
             shots=instruction.params["shots"],
             modes=instruction.modes,
