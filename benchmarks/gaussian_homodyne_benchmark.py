@@ -15,6 +15,7 @@
 
 import pytest
 
+import numpy as np
 import piquasso as pq
 import strawberryfields as sf
 
@@ -32,8 +33,7 @@ def piquasso_benchmark(
         with pq.Program() as new_program:
             pq.Q() | example_pq_gaussian_state
 
-            # TODO: Support rotation by an angle, too.
-            pq.Q(0) | pq.HomodyneMeasurement()
+            pq.Q(0) | pq.HomodyneMeasurement(phi=np.pi / 4)
 
             new_program.execute()
 
@@ -49,6 +49,6 @@ def strawberryfields_benchmark(
         new_program.state = example_sf_gaussian_state
 
         with new_program.context as q:
-            sf.ops.MeasureHomodyne(phi=0) | q[0]
+            sf.ops.MeasureHomodyne(phi=np.pi / 4) | q[0]
 
         new_engine.run(new_program)
