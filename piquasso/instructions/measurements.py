@@ -20,7 +20,7 @@ from piquasso.api.instruction import Instruction
 
 
 @_register
-class MeasureParticleNumber(Instruction):
+class ParticleNumberMeasurement(Instruction):
     """Particle number measurement."""
 
     def __init__(self, cutoff=5, shots=1):
@@ -28,7 +28,7 @@ class MeasureParticleNumber(Instruction):
 
 
 @_register
-class MeasureThreshold(Instruction):
+class ThresholdMeasurement(Instruction):
     """Threshold measurement."""
 
     def __init__(self, shots=1):
@@ -36,7 +36,7 @@ class MeasureThreshold(Instruction):
 
 
 @_register
-class MeasureDyne(Instruction):
+class GeneraldyneMeasurement(Instruction):
     """General-dyne measurement."""
 
     def __init__(self, detection_covariance, *, shots=1):
@@ -44,7 +44,7 @@ class MeasureDyne(Instruction):
 
 
 @_register
-class MeasureHomodyne(Instruction):
+class HomodyneMeasurement(Instruction):
     """Homodyne measurement."""
 
     def __init__(self, phi=0.0, z=1e-4, shots=1):
@@ -61,7 +61,7 @@ class MeasureHomodyne(Instruction):
 
 
 @_register
-class MeasureHeterodyne(MeasureDyne):
+class HeterodyneMeasurement(GeneraldyneMeasurement):
     """Heterodyne measurement."""
 
     def __init__(self, shots=1):

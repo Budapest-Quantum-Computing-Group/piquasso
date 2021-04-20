@@ -37,7 +37,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
             "MomentumDisplacement": self._linear,
             "Squeezing2": self._linear,
             "GaussianTransform": self._linear,
-            "MeasureParticleNumber": self._measure_particle_number,
+            "ParticleNumberMeasurement": self._particle_number_measurement,
             "Vacuum": self._vacuum,
             "Create": self._create,
             "Annihilate": self._annihilate,
@@ -49,8 +49,8 @@ class BaseFockCircuit(Circuit, abc.ABC):
             modes=instruction.modes
         )
 
-    def _measure_particle_number(self, instruction):
-        samples = self.state._measure_particle_number(
+    def _particle_number_measurement(self, instruction):
+        samples = self.state._particle_number_measurement(
             modes=instruction.modes,
             shots=instruction.params["shots"],
         )

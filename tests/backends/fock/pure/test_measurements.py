@@ -27,7 +27,7 @@ def test_measure_particle_number_on_one_mode():
         pq.Q(2) | pq.StateVector(1) * np.sqrt(1/6)
         pq.Q(2) | pq.StateVector(2) * np.sqrt(3/6)
 
-        pq.Q(2) | pq.MeasureParticleNumber()
+        pq.Q(2) | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -65,7 +65,7 @@ def test_measure_particle_number_on_two_modes():
         pq.Q(1, 2) | pq.StateVector(0, 1) * np.sqrt(1/6)
         pq.Q(1, 2) | pq.StateVector(0, 2) * np.sqrt(3/6)
 
-        pq.Q(1, 2) | pq.MeasureParticleNumber()
+        pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -115,7 +115,7 @@ def test_measure_particle_number_on_all_modes():
     program = pq.Program(state=state)
 
     with program:
-        pq.Q() | pq.MeasureParticleNumber()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -167,7 +167,7 @@ def test_measure_particle_number_with_multiple_shots():
     program = pq.Program(state=state)
 
     with program:
-        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+        pq.Q() | pq.ParticleNumberMeasurement(shots=shots)
 
     results = program.execute()
 

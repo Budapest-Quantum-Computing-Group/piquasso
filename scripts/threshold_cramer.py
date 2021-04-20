@@ -45,7 +45,7 @@ with pq.Program() as pq_program:
     pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, np.pi - 1.9550229282085838)
     pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  np.pi - 3.289367083610399)
 
-    pq.Q(0, 1, 2) | pq.MeasureThreshold(shots=shots)
+    pq.Q(0, 1, 2) | pq.ThresholdMeasurement(shots=shots)
 
 
 sf_program = sf.Program(d)

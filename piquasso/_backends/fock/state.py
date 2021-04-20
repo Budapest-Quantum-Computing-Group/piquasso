@@ -57,7 +57,7 @@ class BaseFockState(State, abc.ABC):
     def norm(self):
         return sum(self.fock_probabilities)
 
-    def _measure_particle_number(self, modes, shots):
+    def _particle_number_measurement(self, modes, shots):
         probability_map = self._get_probability_map(
             modes=modes,
         )

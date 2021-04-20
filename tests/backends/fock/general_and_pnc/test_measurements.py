@@ -38,7 +38,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
-        pq.Q(2) | pq.MeasureParticleNumber()
+        pq.Q(2) | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -90,7 +90,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) * 3 / 6
 
-        pq.Q(1, 2) | pq.MeasureParticleNumber()
+        pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -145,7 +145,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q() | pq.MeasureParticleNumber()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     results = program.execute()
 
@@ -200,7 +200,7 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q() | pq.MeasureParticleNumber(shots=shots)
+        pq.Q() | pq.ParticleNumberMeasurement(shots=shots)
 
     results = program.execute()
 
