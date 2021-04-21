@@ -50,6 +50,17 @@ def is_square(matrix):
     return len(shape) == 2 and shape[0] == shape[1]
 
 
+def is_symplectic(matrix):
+    if not is_square(matrix):
+        return False
+
+    d = len(matrix) // 2
+
+    K = block_diag(np.identity(d), -np.identity(d))
+
+    return np.allclose(matrix @ K @ matrix.conj().T, K)
+
+
 def symplectic_form(d):
     one_mode_symplectic_form = np.array([[0, 1], [-1, 0]])
 
