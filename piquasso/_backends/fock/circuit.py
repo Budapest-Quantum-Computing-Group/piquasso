@@ -45,7 +45,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            operator=instruction._passive_representation,
+            operator=instruction._passive_block,
             modes=instruction.modes
         )
 
@@ -80,8 +80,8 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _linear(self, instruction):
         self.state._apply_linear(
-            passive_representation=instruction._passive_representation,
-            active_representation=instruction._active_representation,
+            passive_block=instruction._passive_block,
+            active_block=instruction._active_block,
             displacement=instruction._displacement_vector,
             modes=instruction.modes,
         )

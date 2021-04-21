@@ -177,18 +177,18 @@ class FockSpace(tuple):
         *,
         modes,
         auxiliary_modes,
-        active_representation=None,
-        passive_representation=None,
+        active_block=None,
+        passive_block=None,
         displacement=None,
     ):
-        if active_representation is None and passive_representation is None:
+        if active_block is None and passive_block is None:
             phase = np.identity(len(modes), dtype=complex)
             S = np.identity(len(modes), dtype=complex)
             T = np.zeros(shape=(len(modes), ) * 2)
 
         else:
-            phase, _ = polar(passive_representation)
-            active_phase, active_squeezing = polar(active_representation)
+            phase, _ = polar(passive_block)
+            active_phase, active_squeezing = polar(active_block)
 
             S = funm(
                 active_squeezing,

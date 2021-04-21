@@ -120,8 +120,8 @@ class BaseFockState(State, abc.ABC):
     @abc.abstractmethod
     def _apply_linear(
         self,
-        passive_representation,
-        active_representation,
+        passive_block,
+        active_block,
         displacement,
         modes,
     ):
