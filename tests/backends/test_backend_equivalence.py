@@ -374,7 +374,7 @@ def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
     with pq.Program() as program:
         pq.Q() | StateClass(d=3) | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.GaussianTransform(P=passive, A=active)
+        pq.Q(0, 1) | pq.GaussianTransform(passive=passive, active=active)
 
     program.execute()
 
@@ -408,7 +408,7 @@ def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
     with pq.Program() as fock_program:
         pq.Q() | pq.FockState(d=d, cutoff=CUTOFF) | pq.Vacuum()
 
-        pq.Q(all) | pq.GaussianTransform(P=passive, A=active)
+        pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
     fock_program.execute()
 
@@ -419,7 +419,7 @@ def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
     with pq.Program() as gaussian_program:
         pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
 
-        pq.Q(all) | pq.GaussianTransform(P=passive, A=active)
+        pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
     gaussian_program.execute()
 

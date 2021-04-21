@@ -30,12 +30,12 @@ class _BogoliubovTransformation(Instruction):
     def __init__(
         self,
         *,
-        passive_representation=None,
-        active_representation=None,
+        passive_block=None,
+        active_block=None,
         displacement_vector=None,
     ):
-        self._passive_representation = passive_representation
-        self._active_representation = active_representation
+        self._passive_block = passive_block
+        self._active_block = active_block
         self._displacement_vector = displacement_vector
 
 
@@ -47,14 +47,14 @@ class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
 
     def _autoscale(self):
         if (
-            self._passive_representation is None
-            or len(self.modes) == len(self._passive_representation)
+            self._passive_block is None
+            or len(self.modes) == len(self._passive_block)
         ):
             pass
-        elif len(self._passive_representation) == 1:
+        elif len(self._passive_block) == 1:
             from scipy.linalg import block_diag
-            self._passive_representation = block_diag(
-                *[self._passive_representation] * len(self.modes)
+            self._passive_block = block_diag(
+                *[self._passive_block] * len(self.modes)
             )
         else:
             raise InvalidParameter(
@@ -62,14 +62,14 @@ class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
             )
 
         if (
-            self._active_representation is None
-            or len(self.modes) == len(self._active_representation)
+            self._active_block is None
+            or len(self.modes) == len(self._active_block)
         ):
             pass
-        elif len(self._active_representation) == 1:
+        elif len(self._active_block) == 1:
             from scipy.linalg import block_diag
-            self._active_representation = block_diag(
-                *[self._active_representation] * len(self.modes)
+            self._active_block = block_diag(
+                *[self._active_block] * len(self.modes)
             )
         else:
             raise InvalidParameter(
@@ -110,7 +110,7 @@ class Interferometer(_BogoliubovTransformation):
 
         self._set_params(matrix=matrix)
 
-        super().__init__(passive_representation=matrix)
+        super().__init__(passive_block=matrix)
 
 
 @_register
@@ -143,7 +143,7 @@ class Beamsplitter(_BogoliubovTransformation):
         r = np.exp(-1j * phi) * np.sin(theta)
 
         super().__init__(
-            passive_representation=np.array(
+            passive_block=np.array(
                 [
                     [t, np.conj(r)],
                     [-r, t]
@@ -172,7 +172,7 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
         self._set_params(phi=phi)
 
         super().__init__(
-            passive_representation=np.diag(np.exp(1j * np.atleast_1d(phi)))
+            passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
         )
 
 
@@ -209,7 +209,7 @@ class MachZehnder(_BogoliubovTransformation):
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
-            passive_representation=1/2 * np.array(
+            passive_block=1/2 * np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
                     [1j * ext_phase * (int_phase + 1), 1 - int_phase]
@@ -226,34 +226,36 @@ class Fourier(_ScalableBogoliubovTransformation):
     """
 
     def __init__(self):
-        super().__init__(passive_representation=np.array([[1j]]))
+        super().__init__(passive_block=np.array([[1j]]))
 
 
 @_register
 class GaussianTransform(_BogoliubovTransformation):
-    """Applies a transformation to the state.
+    """Applies a Gaussian transformation to the state.
 
     Args:
-        P (np.array):
-            The representation of the passive transformation on the one-particle
-            subspace.
-        A (np.array):
-            The representation of the active transformation on the one-particle
-            subspace.
+        passive (np.ndarray):
+            The passive submatrix of the symplectic matrix corresponding to the
+            transformation.
+        active (np.ndarray):
+            The active submatrix of the symplectic matrix corresponding to the
+            transformation.
     """
 
-    def __init__(self, P, A):
-        if not is_symplectic(np.block([[P, A], [A.conj(), P.conj()]])):
+    def __init__(self, passive, active):
+        if not is_symplectic(
+            np.block([[passive, active], [active.conj(), passive.conj()]])
+        ):
             raise InvalidParameter(
                 "The input parameters for instruction 'GaussianTransform' do not form "
                 "a symplectic matrix."
             )
 
-        self._set_params(P=P, A=A)
+        self._set_params(passive=passive, active=active)
 
         super().__init__(
-            passive_representation=P,
-            active_representation=A,
+            passive_block=passive,
+            active_block=active,
         )
 
 
@@ -298,10 +300,10 @@ class Squeezing(_ScalableBogoliubovTransformation):
         self._set_params(r=r, phi=phi)
 
         super().__init__(
-            passive_representation=np.diag(
+            passive_block=np.diag(
                 np.atleast_1d(np.cosh(r))
             ),
-            active_representation=np.diag(
+            active_block=np.diag(
                 - np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
             ),
         )
@@ -326,8 +328,8 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
         self._set_params(s=s)
 
         super().__init__(
-            passive_representation=np.diag(1 + np.atleast_1d(s)/2 * 1j),
-            active_representation=np.diag(np.atleast_1d(s)/2 * 1j),
+            passive_block=np.diag(1 + np.atleast_1d(s)/2 * 1j),
+            active_block=np.diag(np.atleast_1d(s)/2 * 1j),
         )
 
 
@@ -348,13 +350,13 @@ class Squeezing2(_BogoliubovTransformation):
         self._set_params(r=r, phi=phi)
 
         super().__init__(
-            passive_representation=np.array(
+            passive_block=np.array(
                 [
                     [np.cosh(r), 0],
                     [0, np.cosh(r)],
                 ]
             ),
-            active_representation=np.array(
+            active_block=np.array(
                 [
                     [0, np.sinh(r) * np.exp(1j * phi)],
                     [np.sinh(r) * np.exp(1j * phi), 0],
@@ -369,13 +371,13 @@ class ControlledX(_BogoliubovTransformation):
         self._set_params(s=s)
 
         super().__init__(
-            passive_representation=np.array(
+            passive_block=np.array(
                 [
                     [    1, - s / 2],
                     [s / 2,       1],
                 ]
             ),
-            active_representation=np.array(
+            active_block=np.array(
                 [
                     [    0, s / 2],
                     [s / 2,     0],
@@ -390,13 +392,13 @@ class ControlledZ(_BogoliubovTransformation):
         self._set_params(s=s)
 
         super().__init__(
-            passive_representation=np.array(
+            passive_block=np.array(
                 [
                     [           1, 1j * (s / 2)],
                     [1j * (s / 2),            1],
                 ]
             ),
-            active_representation=np.array(
+            active_block=np.array(
                 [
                     [           0, 1j * (s / 2)],
                     [1j * (s / 2),            0],
@@ -555,8 +557,8 @@ class Graph(Instruction):
 
         # TODO: find a better solution for these.
         self._squeezing = GaussianTransform(
-            P=np.diag(np.cosh(squeezing_parameters)),
-            A=np.diag(np.sinh(squeezing_parameters)),
+            passive=np.diag(np.cosh(squeezing_parameters)),
+            active=np.diag(np.sinh(squeezing_parameters)),
         )
 
         self._interferometer = Interferometer(unitary)

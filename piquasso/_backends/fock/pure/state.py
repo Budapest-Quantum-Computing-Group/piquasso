@@ -133,15 +133,15 @@ class PureFockState(BaseFockState):
 
     def _apply_linear(
         self,
-        passive_representation,
-        active_representation,
+        passive_block,
+        active_block,
         displacement,
         modes
     ):
         operator = self._space.get_linear_fock_operator(
             modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
-            passive_representation=passive_representation,
-            active_representation=active_representation,
+            passive_block=passive_block,
+            active_block=active_block,
             displacement=displacement,
         )
 

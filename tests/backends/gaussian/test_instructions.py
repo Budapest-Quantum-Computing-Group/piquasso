@@ -394,13 +394,13 @@ def test_GaussianTransform_for_1_modes(program, gaussian_state_assets):
     alpha = np.exp(1j * np.pi/3)
     beta = np.exp(1j * np.pi/4)
 
-    passive_transform = np.array(
+    passive = np.array(
         [
             [alpha * np.cosh(r)]
         ],
         dtype=complex,
     )
-    active_transform = np.array(
+    active = np.array(
         [
             [beta * np.sinh(r)]
         ],
@@ -408,7 +408,7 @@ def test_GaussianTransform_for_1_modes(program, gaussian_state_assets):
     )
 
     with program:
-        pq.Q(1) | pq.GaussianTransform(P=passive_transform, A=active_transform)
+        pq.Q(1) | pq.GaussianTransform(passive=passive, active=active)
 
     program.execute()
     program.state.validate()
@@ -447,7 +447,7 @@ def test_GaussianTransform_with_general_squeezing_matrix():
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
 
-        pq.Q(all) | pq.GaussianTransform(P=passive, A=active)
+        pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
     program.execute()
 
@@ -473,7 +473,7 @@ def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
         pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
 
         with pytest.raises(pq.api.errors.InvalidParameter):
-            pq.Q(all) | pq.GaussianTransform(P=zero_matrix, A=zero_matrix)
+            pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
 
 
 def test_graph_embedding(program, gaussian_state_assets):

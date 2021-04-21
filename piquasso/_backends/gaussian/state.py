@@ -525,24 +525,28 @@ class GaussianState(State):
         self._C[:, modes] = np.conj(self._C[modes, :]).transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
 
-    def _apply_linear(self, P, A, modes):
+    def _apply_linear(self, passive_block, active_block, modes):
         r"""Applies an active transformation to the quantum state.
 
         See:
             :ref:`active_gaussian_transformations`
 
         Args:
-            P (np.array): A matrix that represents a (P)assive transformation.
-            A (np.array): A matrix that represents an (A)ctive transformation.
+            passive_block (np.ndarray):
+                The passive submatrix of the symplectic matrix corresponding to the
+                transformation.
+            active_block (np.ndarray):
+                The active submatrix of the symplectic matrix corresponding to the
+                transformation.
             modes (tuple): Qumodes on which the transformation directly operates.
         """
 
         self._m[modes, ] = (
-            P @ self._m[modes, ]
-            + A @ np.conj(self._m[modes, ])
+            passive_block @ self._m[modes, ]
+            + active_block @ np.conj(self._m[modes, ])
         )
 
-        self._apply_linear_to_C_and_G(P, A, modes)
+        self._apply_linear_to_C_and_G(passive_block, active_block, modes)
 
     def _apply_linear_to_C_and_G(self, P, A, modes):
         index = self._get_operator_index(modes)

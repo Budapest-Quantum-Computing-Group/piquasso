@@ -50,14 +50,14 @@ class GaussianCircuit(Circuit):
 
     def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            instruction._passive_representation,
+            instruction._passive_block,
             instruction.modes
         )
 
     def _linear(self, instruction):
         self.state._apply_linear(
-            P=instruction._passive_representation,
-            A=instruction._active_representation,
+            passive_block=instruction._passive_block,
+            active_block=instruction._active_block,
             modes=instruction.modes
         )
 
