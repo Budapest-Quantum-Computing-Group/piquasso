@@ -18,6 +18,8 @@ import numpy as np
 
 import piquasso as pq
 
+from scipy.linalg import polar, sinhm, coshm
+
 
 @pytest.fixture
 def generate_random_gaussian_state():
@@ -386,19 +388,21 @@ def test_interferometer_for_all_modes(program, gaussian_state_assets):
     assert program.state == expected_state
 
 
-def test_gaussian_transform_for_1_modes(program, gaussian_state_assets):
+def test_GaussianTransform_for_1_modes(program, gaussian_state_assets):
+    r = 0.4
+
     alpha = np.exp(1j * np.pi/3)
     beta = np.exp(1j * np.pi/4)
 
     passive_transform = np.array(
         [
-            [alpha]
+            [alpha * np.cosh(r)]
         ],
         dtype=complex,
     )
     active_transform = np.array(
         [
-            [beta]
+            [beta * np.sinh(r)]
         ],
         dtype=complex,
     )
@@ -411,6 +415,65 @@ def test_gaussian_transform_for_1_modes(program, gaussian_state_assets):
 
     expected_state = gaussian_state_assets.load()
     assert program.state == expected_state
+
+
+def test_GaussianTransform_with_general_squeezing_matrix():
+    d = 3
+    cutoff = 4
+
+    squeezing_matrix = np.array(
+        [
+            [0.1, 0.2j, 0.3],
+            [0.2j, 0.2, 0.4],
+            [0.3, 0.4, 0.1j],
+        ],
+        dtype=complex
+    )
+    U, r = polar(squeezing_matrix)
+
+    theta = np.pi / 3
+
+    global_phase = np.array(
+        [
+            [np.cos(theta), -np.sin(theta) * np.exp(1j * np.pi/4), 0],
+            [np.sin(theta) * np.exp(- 1j * np.pi/4), np.cos(theta), 0],
+            [0, 0, 1],
+        ]
+    )
+
+    passive = global_phase @ coshm(r)
+    active = global_phase @ sinhm(r) @ U.conj()
+
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+
+        pq.Q(all) | pq.GaussianTransform(P=passive, A=active)
+
+    program.execute()
+
+    program.state.validate()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=cutoff)
+
+    assert all(
+        probability >= 0
+        for probability
+        in probabilities
+    )
+
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+
+def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
+    d = 3
+
+    zero_matrix = np.zeros(shape=(d,) * 2)
+
+    with pq.Program():
+        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+
+        with pytest.raises(pq.api.errors.InvalidParameter):
+            pq.Q(all) | pq.GaussianTransform(P=zero_matrix, A=zero_matrix)
 
 
 def test_graph_embedding(program, gaussian_state_assets):

@@ -23,7 +23,7 @@ from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
 from piquasso._math.takagi import takagi
-from piquasso._math.linalg import is_square, is_symmetric
+from piquasso._math.linalg import is_square, is_symmetric, is_symplectic
 
 
 class _BogoliubovTransformation(Instruction):
@@ -243,6 +243,12 @@ class GaussianTransform(_BogoliubovTransformation):
     """
 
     def __init__(self, P, A):
+        if not is_symplectic(np.block([[P, A], [A.conj(), P.conj()]])):
+            raise InvalidParameter(
+                "The input parameters for instruction 'GaussianTransform' do not form "
+                "a symplectic matrix."
+            )
+
         self._set_params(P=P, A=A)
 
         super().__init__(

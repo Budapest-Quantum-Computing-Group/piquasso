@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
 import pytest
 import numpy as np
 import piquasso as pq
@@ -395,26 +394,16 @@ def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
 
 @pytest.mark.monkey
 def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
-    generate_unitary_matrix
+    generate_unitary_matrix, generate_complex_symmetric_matrix
 ):
     d = 3
 
-    # TODO: General symmetric rotation squeezing matrices don't do the trick for
-    # some reason: there might be an issue with the GaussianState, because we get
-    # negative probabilities in that case.
-    squeezing_param = random.uniform(0, 1) + 1j * random.uniform(0, 1)
-    some_unitary = generate_unitary_matrix(d)
-    squeezing_matrix = (
-        some_unitary
-        @ np.diag([squeezing_param] * d)
-        @ some_unitary.conjugate().transpose()
-    )
-
+    squeezing_matrix = generate_complex_symmetric_matrix(3)
     U, r = polar(squeezing_matrix)
 
     global_phase = generate_unitary_matrix(d)
     passive = global_phase @ coshm(r)
-    active = global_phase @ U @ sinhm(r)
+    active = global_phase @ sinhm(r) @ U.conj()
 
     with pq.Program() as fock_program:
         pq.Q() | pq.FockState(d=d, cutoff=CUTOFF) | pq.Vacuum()
