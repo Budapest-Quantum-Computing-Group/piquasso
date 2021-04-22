@@ -72,6 +72,48 @@ from .instructions.measurements import (
 constants.seed()
 
 
+_default_preparations = {
+    "Vacuum": Vacuum,
+    "Mean": Mean,
+    "Covariance": Covariance,
+    "StateVector": StateVector,
+    "DensityMatrix": DensityMatrix,
+    "Create": Create,
+    "Annihilate": Annihilate,
+}
+
+
+_default_gates = {
+    "GaussianTransform": GaussianTransform,
+    "Phaseshifter": Phaseshifter,
+    "Beamsplitter": Beamsplitter,
+    "MachZehnder": MachZehnder,
+    "Fourier": Fourier,
+    "Displacement": Displacement,
+    "PositionDisplacement": PositionDisplacement,
+    "MomentumDisplacement": MomentumDisplacement,
+    "Squeezing": Squeezing,
+    "QuadraticPhase": QuadraticPhase,
+    "Squeezing2": Squeezing2,
+    "Kerr": Kerr,
+    "CrossKerr": CrossKerr,
+    "ControlledX": ControlledX,
+    "ControlledZ": ControlledZ,
+    "Interferometer": Interferometer,
+    "Sampling": Sampling,
+    "Graph": Graph,
+}
+
+
+_default_measurements = {
+    "ParticleNumberMeasurement": ParticleNumberMeasurement,
+    "ThresholdMeasurement": ThresholdMeasurement,
+    "HomodyneMeasurement": HomodyneMeasurement,
+    "HeterodyneMeasurement": HeterodyneMeasurement,
+    "GeneraldyneMeasurement": GeneraldyneMeasurement,
+}
+
+
 def use(plugin):
     _use_plugin(plugin, override=True)
 
@@ -83,6 +125,9 @@ class _DefaultPlugin(Plugin):
         "FockState": FockState,
         "PureFockState": PureFockState,
         "PNCFockState": PNCFockState,
+        **_default_preparations,
+        **_default_gates,
+        **_default_measurements,
     }
 
 
@@ -111,39 +156,9 @@ __all__ = [
     "Instruction",
     "State",
     "Circuit",
-    # Preparations
-    "Vacuum",
-    "Mean",
-    "Covariance",
-    "StateVector",
-    "DensityMatrix",
-    "Create",
-    "Annihilate",
-    # Gates
-    "GaussianTransform",
-    "Phaseshifter",
-    "Beamsplitter",
-    "MachZehnder",
-    "Fourier",
-    "Displacement",
-    "PositionDisplacement",
-    "MomentumDisplacement",
-    "Squeezing",
-    "QuadraticPhase",
-    "Squeezing2",
-    "Kerr",
-    "CrossKerr",
-    "ControlledX",
-    "ControlledZ",
-    "Interferometer",
-    "Sampling",
-    "Graph",
-    # Measurements
-    "ParticleNumberMeasurement",
-    "ThresholdMeasurement",
-    "HomodyneMeasurement",
-    "HeterodyneMeasurement",
-    "GeneraldyneMeasurement",
+    *_default_preparations.keys(),
+    *_default_gates.keys(),
+    *_default_measurements.keys(),
 ]
 
 __version__ = "0.1.3"

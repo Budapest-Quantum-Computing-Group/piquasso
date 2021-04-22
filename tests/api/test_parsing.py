@@ -16,19 +16,14 @@
 import json
 import pytest
 
-from piquasso.core.registry import _register
-from piquasso.api.instruction import Instruction
-from piquasso.api.circuit import Circuit
-from piquasso.api.state import State
-from piquasso.api.program import Program
+import piquasso as pq
 
 
 class TestProgramJSONParsing:
     @pytest.fixture
     def FakeInstruction(self):
 
-        @_register
-        class FakeInstruction(Instruction):
+        class FakeInstruction(pq.Instruction):
             def __init__(self, first_param, second_param):
                 super().__init__(first_param=first_param, second_param=second_param)
 
@@ -37,8 +32,7 @@ class TestProgramJSONParsing:
     @pytest.fixture
     def FakeCircuit(self, FakeInstruction):
 
-        @_register
-        class FakeCircuit(Circuit):
+        class FakeCircuit(pq.Circuit):
             def get_instruction_map(self):
                 return {
                     "FakeInstruction": FakeInstruction,
@@ -49,8 +43,7 @@ class TestProgramJSONParsing:
     @pytest.fixture
     def FakeState(self, FakeCircuit):
 
-        @_register
-        class FakeState(State):
+        class FakeState(pq.State):
             circuit_class = FakeCircuit
 
             def __init__(self, foo, bar, d):
@@ -59,6 +52,16 @@ class TestProgramJSONParsing:
                 self.d = d
 
         return FakeState
+
+    @pytest.fixture(autouse=True)
+    def setup(self, FakeState, FakeInstruction):
+        class FakePlugin(pq.Plugin):
+            classes = {
+                "FakeState": FakeState,
+                "FakeInstruction": FakeInstruction,
+            }
+
+        pq.use(FakePlugin)
 
     @pytest.fixture
     def number_of_modes(self):
@@ -103,13 +106,12 @@ class TestProgramJSONParsing:
     def test_instantiation_using_mappings(
         self,
         FakeState,
-        FakeCircuit,
         FakeInstruction,
         state_mapping,
         instructions_mapping,
         number_of_modes,
     ):
-        program = Program.from_properties(
+        program = pq.Program.from_properties(
             {
                 "state": state_mapping,
                 "instructions": instructions_mapping,
@@ -135,7 +137,6 @@ class TestProgramJSONParsing:
     def test_from_json(
         self,
         FakeState,
-        FakeCircuit,
         FakeInstruction,
         state_mapping,
         instructions_mapping,
@@ -148,7 +149,7 @@ class TestProgramJSONParsing:
             }
         )
 
-        program = Program.from_json(json_)
+        program = pq.Program.from_json(json_)
 
         assert program.state.foo == "fee"
         assert program.state.bar == "beer"

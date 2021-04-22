@@ -15,11 +15,9 @@
 
 
 from piquasso.core.mixins import _WeightMixin
-from piquasso.core.registry import _register
 from piquasso.api.instruction import Instruction
 
 
-@_register
 class Vacuum(Instruction):
     r"""Prepare the system in a vacuum state."""
 
@@ -27,7 +25,6 @@ class Vacuum(Instruction):
         pass
 
 
-@_register
 class Mean(Instruction):
     r"""Set the first canonical moment of the state."""
 
@@ -35,7 +32,6 @@ class Mean(Instruction):
         super().__init__(mean=mean)
 
 
-@_register
 class Covariance(Instruction):
     r"""Sets the covariance matrix of the state."""
 
@@ -43,7 +39,6 @@ class Covariance(Instruction):
         super().__init__(cov=cov)
 
 
-@_register
 class StateVector(Instruction, _WeightMixin):
     r"""State preparation with Fock basis vectors."""
 
@@ -51,7 +46,6 @@ class StateVector(Instruction, _WeightMixin):
         super().__init__(occupation_numbers=occupation_numbers, coefficient=coefficient)
 
 
-@_register
 class DensityMatrix(Instruction, _WeightMixin):
     r"""State preparation with density matrix elements."""
 
@@ -59,7 +53,6 @@ class DensityMatrix(Instruction, _WeightMixin):
         super().__init__(ket=ket, bra=bra, coefficient=coefficient)
 
 
-@_register
 class Create(Instruction):
     r"""Create a particle on a mode."""
 
@@ -67,7 +60,6 @@ class Create(Instruction):
         pass
 
 
-@_register
 class Annihilate(Instruction):
     r"""Annihilate a particle on a mode."""
 
