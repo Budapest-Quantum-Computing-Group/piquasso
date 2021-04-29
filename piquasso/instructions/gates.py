@@ -17,7 +17,6 @@ import numpy as np
 
 from scipy.optimize import root_scalar
 
-from piquasso.core.registry import _register
 from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
@@ -92,7 +91,6 @@ class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
             )
 
 
-@_register
 class Interferometer(_BogoliubovTransformation):
     r"""Applies a general interferometer.
 
@@ -113,7 +111,6 @@ class Interferometer(_BogoliubovTransformation):
         super().__init__(passive_block=matrix)
 
 
-@_register
 class Beamsplitter(_BogoliubovTransformation):
     r"""Applies a beamsplitter instruction.
 
@@ -152,7 +149,6 @@ class Beamsplitter(_BogoliubovTransformation):
         )
 
 
-@_register
 class Phaseshifter(_ScalableBogoliubovTransformation):
     r"""Rotation or phaseshift instruction.
 
@@ -176,7 +172,6 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
         )
 
 
-@_register
 class MachZehnder(_BogoliubovTransformation):
     r"""Mach-Zehnder interferometer.
 
@@ -218,7 +213,6 @@ class MachZehnder(_BogoliubovTransformation):
         )
 
 
-@_register
 class Fourier(_ScalableBogoliubovTransformation):
     r"""Fourier gate.
 
@@ -229,7 +223,6 @@ class Fourier(_ScalableBogoliubovTransformation):
         super().__init__(passive_block=np.array([[1j]]))
 
 
-@_register
 class GaussianTransform(_BogoliubovTransformation):
     """Applies a Gaussian transformation to the state.
 
@@ -259,7 +252,6 @@ class GaussianTransform(_BogoliubovTransformation):
         )
 
 
-@_register
 class Squeezing(_ScalableBogoliubovTransformation):
     r"""Applies the squeezing operator.
 
@@ -309,7 +301,6 @@ class Squeezing(_ScalableBogoliubovTransformation):
         )
 
 
-@_register
 class QuadraticPhase(_ScalableBogoliubovTransformation):
     r"""Applies the quadratic phase instruction to the state.
 
@@ -333,7 +324,6 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
         )
 
 
-@_register
 class Squeezing2(_BogoliubovTransformation):
     r"""2-mode squeezing gate.
 
@@ -365,7 +355,6 @@ class Squeezing2(_BogoliubovTransformation):
         )
 
 
-@_register
 class ControlledX(_BogoliubovTransformation):
     def __init__(self, s):
         self._set_params(s=s)
@@ -386,7 +375,6 @@ class ControlledX(_BogoliubovTransformation):
         )
 
 
-@_register
 class ControlledZ(_BogoliubovTransformation):
     def __init__(self, s):
         self._set_params(s=s)
@@ -407,7 +395,6 @@ class ControlledZ(_BogoliubovTransformation):
         )
 
 
-@_register
 class Displacement(_ScalableBogoliubovTransformation):
     r"""Phase space displacement instruction.
 
@@ -444,7 +431,6 @@ class Displacement(_ScalableBogoliubovTransformation):
         super().__init__(displacement_vector=alpha)
 
 
-@_register
 class PositionDisplacement(_ScalableBogoliubovTransformation):
     r"""Position displacement gate."""
 
@@ -456,7 +442,6 @@ class PositionDisplacement(_ScalableBogoliubovTransformation):
         )
 
 
-@_register
 class MomentumDisplacement(_ScalableBogoliubovTransformation):
     r"""Momentum displacement gate."""
 
@@ -468,7 +453,6 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
         )
 
 
-@_register
 class Kerr(Instruction):
     r"""Kerr gate.
 
@@ -486,7 +470,6 @@ class Kerr(Instruction):
         super().__init__(xi=xi)
 
 
-@_register
 class CrossKerr(Instruction):
     r"""Cross-Kerr gate.
 
@@ -505,7 +488,6 @@ class CrossKerr(Instruction):
         super().__init__(xi=xi)
 
 
-@_register
 class Sampling(Instruction):
     r"""Boson Sampling.
 
@@ -534,7 +516,6 @@ class Sampling(Instruction):
         super().__init__(shots=shots)
 
 
-@_register
 class Graph(Instruction):
     r"""Applies a graph given its adjacency matrix, see
     https://arxiv.org/pdf/1612.01199.pdf

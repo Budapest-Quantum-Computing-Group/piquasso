@@ -15,11 +15,9 @@
 
 import numpy as np
 
-from piquasso.core.registry import _register
 from piquasso.api.instruction import Instruction
 
 
-@_register
 class ParticleNumberMeasurement(Instruction):
     """Particle number measurement."""
 
@@ -27,7 +25,6 @@ class ParticleNumberMeasurement(Instruction):
         super().__init__(cutoff=cutoff, shots=shots)
 
 
-@_register
 class ThresholdMeasurement(Instruction):
     """Threshold measurement."""
 
@@ -35,7 +32,6 @@ class ThresholdMeasurement(Instruction):
         super().__init__(shots=shots)
 
 
-@_register
 class GeneraldyneMeasurement(Instruction):
     """General-dyne measurement."""
 
@@ -43,7 +39,6 @@ class GeneraldyneMeasurement(Instruction):
         super().__init__(detection_covariance=detection_covariance, shots=shots)
 
 
-@_register
 class HomodyneMeasurement(Instruction):
     """Homodyne measurement."""
 
@@ -60,7 +55,6 @@ class HomodyneMeasurement(Instruction):
         )
 
 
-@_register
 class HeterodyneMeasurement(GeneraldyneMeasurement):
     """Heterodyne measurement."""
 

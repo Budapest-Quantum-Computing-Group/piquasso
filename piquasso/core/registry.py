@@ -19,13 +19,6 @@
 _items = {}
 
 
-def _register(class_):
-    if class_.__name__ not in _items:
-        _items[class_.__name__] = class_
-
-    return class_
-
-
 def _use_plugin(plugin, override=False):
     for name, class_ in plugin.classes.items():
         class_.__name__ = name
