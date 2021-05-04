@@ -86,6 +86,10 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _apply_vacuum(self):
+        pass
+
+    @abc.abstractmethod
     def _apply_passive_linear(self, operator, modes):
         pass
 
@@ -148,3 +152,6 @@ class BaseFockState(State, abc.ABC):
     @abc.abstractmethod
     def validate(self):
         pass
+
+    def reset(self):
+        self._apply_vacuum()
