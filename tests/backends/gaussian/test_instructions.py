@@ -107,7 +107,7 @@ def test_phaseshift_modes_are_shifted_from_original(program):
 
 def test_beamsplitter(program, gaussian_state_assets):
     theta = np.pi/4
-    phi = np.pi/3
+    phi = 2 * np.pi/3
 
     with program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)

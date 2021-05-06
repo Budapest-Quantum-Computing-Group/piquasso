@@ -77,19 +77,24 @@ class TestSampling:
     def test_beamsplitter(self):
         theta = np.pi / 4
         phi = np.pi / 3
+
         with self.program:
             pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
+
         self.program.execute()
 
         t = np.cos(theta)
-        r = np.exp(-1j * phi) * np.sin(theta)
+        r = np.exp(1j * phi) * np.sin(theta)
         rc = np.conj(r)
-        expected_interferometer = np.array([
-            [1, 0, 0, 0, 0],
-            [0, t, 0, rc, 0],
-            [0, 0, 1, 0, 0],
-            [0, -r, 0, t, 0],
-            [0, 0, 0, 0, 1],
-        ], dtype=complex)
+        expected_interferometer = np.array(
+            [
+                [1, 0, 0,   0, 0],
+                [0, t, 0, -rc, 0],
+                [0, 0, 1,   0, 0],
+                [0, r, 0,   t, 0],
+                [0, 0, 0,   0, 1],
+            ],
+            dtype=complex
+        )
 
         assert np.allclose(self.program.state.interferometer, expected_interferometer)

@@ -199,8 +199,8 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
         pq.Q(0) | pq.Phaseshifter(phi=np.pi/3)
         pq.Q(1) | pq.Phaseshifter(phi=np.pi/3)
 
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
-        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=4 * np.pi / 5)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=3 * np.pi / 2)
 
     program.execute()
 

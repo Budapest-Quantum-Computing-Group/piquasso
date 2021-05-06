@@ -137,13 +137,13 @@ class Beamsplitter(_BogoliubovTransformation):
         self._set_params(theta=theta, phi=phi)
 
         t = np.cos(theta)
-        r = np.exp(-1j * phi) * np.sin(theta)
+        r = np.exp(1j * phi) * np.sin(theta)
 
         super().__init__(
             passive_block=np.array(
                 [
-                    [t, np.conj(r)],
-                    [-r, t]
+                    [t, -np.conj(r)],
+                    [r, t],
                 ]
             )
         )
