@@ -121,7 +121,7 @@ def test_loads_blackbird_with_execution(gaussian_state_assets):
         """name StateTeleportation
         version 1.0
 
-        BSgate(0.7853981633974483, 0) | [1, 2]
+        BSgate(0.7853981633974483, 3.141592653589793) | [1, 2]
         Rgate(0.7853981633974483) | 1
         """
 
@@ -148,7 +148,7 @@ def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
         """name StateTeleportation
         version 1.0
 
-        BSgate(0.7853981633974483, 0) | [1, 2]
+        BSgate(0.7853981633974483, 3.141592653589793) | [1, 2]
         Rgate(0.7853981633974483) | 1
         """
 
