@@ -55,6 +55,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
             shots=instruction.params["shots"],
         )
 
+        self.update_measured_modes(instruction.modes)
         self.results.append(Result(instruction=instruction, samples=samples))
 
     def _vacuum(self, instruction):

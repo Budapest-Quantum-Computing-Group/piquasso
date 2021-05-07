@@ -17,6 +17,8 @@
 
 import abc
 
+from piquasso.api.errors import InvalidModes
+
 
 class Circuit(abc.ABC):
     def __init__(self, state, program):
@@ -28,10 +30,21 @@ class Circuit(abc.ABC):
         self.program = program
         self._instruction_map = self.get_instruction_map()
         self.results = []
+        self._measured_modes = set()
 
     @abc.abstractmethod
     def get_instruction_map(self):
         pass
+
+    def update_measured_modes(self, modes):
+        self._measured_modes.update(set(modes))
+
+    def validate_modes(self, modes):
+        if any(mode in self._measured_modes for mode in modes):
+            raise InvalidModes(
+                f"The modes {modes} contains a mode which is already measured.\n"
+                f"Already mesured modes: {self._measured_modes}"
+            )
 
     def execute_instructions(self, instructions):
         """Executes the collected instructions in order.
@@ -48,6 +61,8 @@ class Circuit(abc.ABC):
         for instruction in instructions:
             if instruction.modes is tuple():
                 instruction.modes = tuple(range(self.state.d))
+
+            self.validate_modes(instruction.modes)
 
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()
