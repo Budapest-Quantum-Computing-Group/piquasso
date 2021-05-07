@@ -16,10 +16,10 @@
 import abc
 import numpy as np
 
-from piquasso.core.mixins import _PropertyMixin, _RegisterMixin
+from piquasso.core.mixins import _PropertyMixin, _RegisterMixin, _CodeMixin
 
 
-class State(_PropertyMixin, _RegisterMixin, abc.ABC):
+class State(_PropertyMixin, _RegisterMixin, _CodeMixin, abc.ABC):
     circuit_class = None
     d: int = None
 
@@ -29,6 +29,9 @@ class State(_PropertyMixin, _RegisterMixin, abc.ABC):
     @classmethod
     def from_properties(cls, properties):
         return cls(**properties)
+
+    def _as_code(self):
+        return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
     @staticmethod
     def _get_operator_index(modes):

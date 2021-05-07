@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.core.mixins import _PropertyMixin, _RegisterMixin
+from piquasso.core.mixins import _PropertyMixin, _RegisterMixin, _CodeMixin
 
 
-class Instruction(_PropertyMixin, _RegisterMixin):
+class Instruction(_PropertyMixin, _RegisterMixin, _CodeMixin):
     """
     Args:
         *params: Variable length argument list.
@@ -27,6 +27,23 @@ class Instruction(_PropertyMixin, _RegisterMixin):
 
     def _set_params(self, **params):
         self.params = params
+
+    def _as_code(self):
+        if hasattr(self, "modes"):
+            mode_string = ", ".join([str(mode) for mode in self.modes])
+        else:
+            mode_string = ""
+
+        if hasattr(self, "params"):
+            params_string = "{}".format(
+                ", ".join(
+                    [f"{key}={value}" for key, value in self.params.items()]
+                )
+            )
+        else:
+            params_string = ""
+
+        return f"pq.Q({mode_string}) | pq.{self.__class__.__name__}({params_string})"
 
     def on_modes(self, *modes):
         self.modes = modes

@@ -181,3 +181,24 @@ class Program(_RegisterMixin):
         blackbird_program = blackbird.loads(string)
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
+
+    def as_code(self):
+        """Export the :class:`Program` instance as Python code."""
+
+        with_statement = f"with pq.{self.__class__.__name__}() as program:"
+
+        script = (
+            f"import piquasso as pq\n\n\n{with_statement}\n"
+        )
+
+        four_space = " " * 4
+
+        if self.state is not None:
+            script += four_space + self.state._as_code() + "\n"
+
+        script += "\n"
+
+        for instruction in self.instructions:
+            script += four_space + instruction._as_code() + "\n"
+
+        return script

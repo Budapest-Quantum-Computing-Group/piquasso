@@ -81,6 +81,11 @@ class BaseFockState(State, abc.ABC):
 
         return samples
 
+    def _as_code(self):
+        return (
+            f"pq.Q() | pq.{self.__class__.__name__}(d={self.d}, cutoff={self.cutoff})"
+        )
+
     @abc.abstractclassmethod
     def _get_empty(cls):
         pass

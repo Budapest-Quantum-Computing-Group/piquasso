@@ -60,3 +60,9 @@ class _RegisterMixin(abc.ABC):
             A deepcopy of the current object.
         """
         return copy.deepcopy(self)
+
+
+class _CodeMixin(abc.ABC):
+    @abc.abstractmethod
+    def _as_code(self):
+        pass
