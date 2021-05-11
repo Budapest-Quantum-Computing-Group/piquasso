@@ -76,7 +76,7 @@ def test_create_annihilate_and_create(StateClass):
 
 
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_overflow_with_zero_norm_raises_RuntimeError(StateClass):
+def test_overflow_with_zero_norm_raises_InvalidState(StateClass):
     with pq.Program() as program:
         pq.Q() | StateClass(d=3, cutoff=3)
 
@@ -85,7 +85,7 @@ def test_overflow_with_zero_norm_raises_RuntimeError(StateClass):
 
         pq.Q(1, 2) | pq.Create()
 
-    with pytest.raises(RuntimeError) as error:
+    with pytest.raises(pq.api.errors.InvalidState) as error:
         program.execute()
 
     assert error.value.args[0] == "The norm of the state is 0."

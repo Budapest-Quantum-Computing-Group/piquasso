@@ -27,7 +27,7 @@ from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
 from piquasso._backends.fock import FockState, PureFockState, PNCFockState
 
-from piquasso.core.registry import _use_plugin, _retrieve_class
+from piquasso.core import _registry
 
 from .instructions.preparations import (
     Vacuum,
@@ -115,7 +115,7 @@ _default_measurements = {
 
 
 def use(plugin):
-    _use_plugin(plugin, override=True)
+    _registry.use_plugin(plugin, override=True)
 
 
 class _DefaultPlugin(Plugin):
@@ -131,7 +131,7 @@ class _DefaultPlugin(Plugin):
     }
 
 
-_use_plugin(_DefaultPlugin)
+_registry.use_plugin(_DefaultPlugin)
 
 
 class Piquasso:
@@ -140,8 +140,8 @@ class Piquasso:
 
     def __getattr__(self, attribute):
         try:
-            return _retrieve_class(attribute)
-        except NameError:
+            return _registry.items[attribute]
+        except KeyError:
             return getattr(self._module, attribute)
 
 

@@ -72,7 +72,7 @@ def test_create_annihilate_and_create():
     )
 
 
-def test_overflow_with_zero_norm_raises_RuntimeError():
+def test_overflow_with_zero_norm_raises_InvalidState():
     with pq.Program() as program:
         pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
@@ -80,7 +80,7 @@ def test_overflow_with_zero_norm_raises_RuntimeError():
 
         pq.Q(1, 2) | pq.Create()
 
-    with pytest.raises(RuntimeError) as error:
+    with pytest.raises(pq.api.errors.InvalidState) as error:
         program.execute()
 
     assert error.value.args[0] == "The norm of the state is 0."

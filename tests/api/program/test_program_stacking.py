@@ -146,11 +146,11 @@ def test_main_program_inherits_state_and_instructions_without_modes_specified(
     assert main.instructions[1] == pq.DummyInstruction(param=20).on_modes(2, 3)
 
 
-def test_state_collision_raises_RuntimeError(program):
+def test_state_collision_raises_InvalidProgram(program):
     with pq.Program() as preparation:
         pq.Q() | pq.FakeState()
 
-    with pytest.raises(RuntimeError) as error:
+    with pytest.raises(pq.api.errors.InvalidProgram) as error:
         with program:
             pq.Q() | preparation
 

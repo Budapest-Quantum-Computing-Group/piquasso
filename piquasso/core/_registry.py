@@ -16,26 +16,17 @@
 """Module to store class definitions."""
 
 
-_items = {}
+items = {}
 
 
-def _use_plugin(plugin, override=False):
+def use_plugin(plugin, override=False):
     for name, class_ in plugin.classes.items():
         class_.__name__ = name
-        if override or name not in _items:
-            _items[name] = class_
+        if override or name not in items:
+            items[name] = class_
 
 
-def _retrieve_class(class_name):
-    class_ = _items.get(class_name)
-
-    if class_ is None:
-        raise NameError(f"Class with name '{class_name}' not found in registry.")
-
-    return class_
-
-
-def _create_instance_from_mapping(mapping):
+def create_instance_from_mapping(mapping):
     """Creates an instance using the `registry` classes from a mapping.
 
     The supported mapping format is:
@@ -59,6 +50,6 @@ def _create_instance_from_mapping(mapping):
         The created instance corresponding to the `mapping` specified.
     """
 
-    class_ = _retrieve_class(mapping["type"])
+    class_ = items[mapping["type"]]
 
     return class_.from_properties(mapping["properties"])

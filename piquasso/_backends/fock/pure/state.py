@@ -178,7 +178,7 @@ class PureFockState(BaseFockState):
 
     def normalize(self):
         if np.isclose(self.norm, 0):
-            raise RuntimeError("The norm of the state is 0.")
+            raise InvalidState("The norm of the state is 0.")
 
         self._state_vector = self._state_vector / np.sqrt(self.norm)
 
