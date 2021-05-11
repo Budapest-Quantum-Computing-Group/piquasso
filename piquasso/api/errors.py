@@ -13,13 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class InvalidState(Exception):
+class PiquassoException(Exception):
+    """Base class for all exceptions raised by Piquasso."""
+
+
+class InvalidState(PiquassoException):
     """Raised when an invalid state is encountered or being prepared."""
 
 
-class InvalidParameter(Exception):
+class InvalidParameter(PiquassoException):
     """Raised when an invalid parameter is specified."""
 
 
-class InvalidModes(Exception):
+class InvalidModes(PiquassoException):
     """Raised when invalid set of modes are encountered."""
+
+
+class InvalidProgram(PiquassoException):
+    """Raised when an invalid program is being created or used."""

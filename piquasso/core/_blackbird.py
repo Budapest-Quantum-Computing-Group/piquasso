@@ -16,7 +16,7 @@
 import inspect
 from collections import OrderedDict
 
-from . import registry
+from . import _registry
 
 
 def load_instructions(blackbird_program):
@@ -29,21 +29,21 @@ def load_instructions(blackbird_program):
     """
 
     instruction_map = {
-        "Dgate": registry._retrieve_class("Displacement"),
-        "Xgate": registry._retrieve_class("PositionDisplacement"),
-        "Zgate": registry._retrieve_class("MomentumDisplacement"),
-        "Sgate": registry._retrieve_class("Squeezing"),
-        "Pgate": registry._retrieve_class("QuadraticPhase"),
+        "Dgate": _registry.items["Displacement"],
+        "Xgate": _registry.items["PositionDisplacement"],
+        "Zgate": _registry.items["MomentumDisplacement"],
+        "Sgate": _registry.items["Squeezing"],
+        "Pgate": _registry.items["QuadraticPhase"],
         "Vgate": None,
-        "Kgate": registry._retrieve_class("Kerr"),
-        "Rgate": registry._retrieve_class("Phaseshifter"),
-        "BSgate": registry._retrieve_class("Beamsplitter"),
-        "MZgate": registry._retrieve_class("MachZehnder"),
-        "S2gate": registry._retrieve_class("Squeezing2"),
-        "CXgate": registry._retrieve_class("ControlledX"),
-        "CZgate": registry._retrieve_class("ControlledZ"),
-        "CKgate": registry._retrieve_class("CrossKerr"),
-        "Fouriergate": registry._retrieve_class("Fourier"),
+        "Kgate": _registry.items["Kerr"],
+        "Rgate": _registry.items["Phaseshifter"],
+        "BSgate": _registry.items["Beamsplitter"],
+        "MZgate": _registry.items["MachZehnder"],
+        "S2gate": _registry.items["Squeezing2"],
+        "CXgate": _registry.items["ControlledX"],
+        "CZgate": _registry.items["ControlledZ"],
+        "CKgate": _registry.items["CrossKerr"],
+        "Fouriergate": _registry.items["Fourier"],
     }
 
     return [

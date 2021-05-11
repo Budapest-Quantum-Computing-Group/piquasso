@@ -16,8 +16,8 @@
 import json
 import blackbird
 
-from piquasso.core import _context, _blackbird
-from piquasso.core.registry import _create_instance_from_mapping
+from piquasso.api.errors import InvalidProgram
+from piquasso.core import _context, _blackbird, _registry
 from piquasso.core.mixins import _RegisterMixin
 from .mode import Q
 
@@ -61,7 +61,7 @@ class Program(_RegisterMixin):
     def apply_to_program_on_register(self, program, register):
         if self.state is not None:
             if program.state is not None:
-                raise RuntimeError(
+                raise InvalidProgram(
                     "The program already has a state registered of type "
                     f"'{type(program.state).__name__}'."
                 )
@@ -133,10 +133,10 @@ class Program(_RegisterMixin):
         """
 
         return cls(
-            state=_create_instance_from_mapping(properties["state"]),
+            state=_registry.create_instance_from_mapping(properties["state"]),
             instructions=list(
                 map(
-                    _create_instance_from_mapping,
+                    _registry.create_instance_from_mapping,
                     properties["instructions"],
                 )
             )

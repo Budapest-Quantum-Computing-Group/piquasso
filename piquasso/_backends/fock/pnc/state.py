@@ -243,7 +243,7 @@ class PNCFockState(BaseFockState):
 
     def normalize(self):
         if np.isclose(self.norm, 0):
-            raise RuntimeError("The norm of the state is 0.")
+            raise InvalidState("The norm of the state is 0.")
 
         norm = self.norm
 
