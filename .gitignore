@@ -1,5 +1,6 @@
 .tox
 dist
+build
 
 __pycache__
 .pytest_cache
