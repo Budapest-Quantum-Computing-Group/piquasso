@@ -24,6 +24,17 @@ from .circuit import PureFockCircuit
 
 
 class PureFockState(BaseFockState):
+    """A simulated pure Fock state.
+
+    If no mixed states are needed for a Fock simulation, then this state is the most
+    appropriate currently.
+
+    Args:
+        state_vector (numpy.ndarray, optional): The initial state vector.
+        d (int): The number of modes.
+        cutoff (int): The Fock space cutoff.
+    """
+
     circuit_class = PureFockCircuit
 
     def __init__(self, state_vector=None, *, d, cutoff):

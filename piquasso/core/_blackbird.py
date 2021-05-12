@@ -22,10 +22,11 @@ from . import _registry
 def load_instructions(blackbird_program):
     """
     Loads the gates to apply into :attr:`Program.instructions` from a
-    :class:`blackbird.BlackbirdProgram`
+    :class:`~blackbird.program.BlackbirdProgram`.
 
     Args:
-        blackbird_program (blackbird.BlackbirdProgram): The BlackbirdProgram to use.
+        blackbird_program (~blackbird.program.BlackbirdProgram):
+            The Blackbird program to use.
     """
 
     instruction_map = {

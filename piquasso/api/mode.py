@@ -22,21 +22,65 @@ class Q:
     """
     The implementation of qumodes, which is used to track on which qumodes are
     the operators placed in the circuit.
+
+    A simple example usage:
+
+    .. code-block:: python
+
+        import numpy as np
+        import piquasso as pq
+
+        with pq.Program() as program:
+            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
+
+            pq.Q(0, 1) | pq.Squeezing(r=0.5)
+
+        results = program.execute()
+
+    In the above example, the :class:`~piquasso.instructions.gates.Beamsplitter` gate
+    is applied to modes `0, 1`.
+
+    Note, that it is not necessarily required to specify any modes, if the context
+    permits, e.g. when registering states.
+
+    One could use the `all` keyword to indicate that the registered
+    :class:`~piquasso.api.instruction.Instruction` mashould be applied to all modes,
+    i.e.
+
+    .. code-block:: python
+
+        with pq.Program() as program:
+            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
+
+            pq.Q(0, 1) | pq.Squeezing(r=0.5)
+
+            pq.Q(all) | pq.ParticleNumberMeasurement()
+
+    Args:
+        *modes (int):
+            Variable length list of non-negative integers specifying the modes.
+
+    Raises:
+        InvalidModes:
+            Raised if
+            - the specified modes are not distinct;
+            - negative integers were specified.
     """
 
     def __init__(self, *modes):
-        """
-        Args:
-            modes: Distinct positive integer values which are used to represent
-                qumodes.
-        """
+        is_all = (modes == (all, ))
 
-        if not self._is_distinct(modes):
+        if not is_all and any(mode < 0 for mode in modes):
+            raise InvalidModes(
+                f"Error registering modes: '{modes}' should be non-negative."
+            )
+
+        if not is_all and not self._is_distinct(modes):
             raise InvalidModes(
                 f"Error registering modes: '{modes}' should be distinct."
             )
 
-        self.modes = modes if modes != (all, ) else tuple()
+        self.modes = modes if not is_all else tuple()
 
     def __or__(self, rhs):
         """Registers an `Instruction` or `Program` to the current program.
@@ -55,12 +99,12 @@ class Q:
             (Q): The current qumode.
         """
 
-        rhs.apply_to_program_on_register(_context.current_program, register=self)
+        rhs._apply_to_program_on_register(_context.current_program, register=self)
 
         return self
 
     __ror__ = __or__
 
     @staticmethod
-    def _is_distinct(iterable):
+    def _is_distinct(iterable) -> bool:
         return len(iterable) == len(set(iterable))

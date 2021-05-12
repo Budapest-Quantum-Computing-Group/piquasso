@@ -31,8 +31,19 @@ add_module_names = False
 # ones.
 extensions = [
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
     "recommonmark",
+    "nbsphinx",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
+
+
+# Intersphinx setup
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "blackbird": ("https://quantum-blackbird.readthedocs.io/en/latest/", None)
+}
 
 
 # Napoleon settings
@@ -73,3 +84,20 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+
+# NBSPHINX
+
+nbsphinx_prompt_width = "0"
+
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. note::
+    .. raw:: html
+
+        <div>
+            You can download this notebook
+            <a href="/{{ docname }}" download>here</a>.
+        </div>
+"""  # TODO: get base path.

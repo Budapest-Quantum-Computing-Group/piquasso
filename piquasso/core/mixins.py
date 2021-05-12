@@ -21,11 +21,11 @@ class _PropertyMixin(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_properties(cls, properties):
+    def from_properties(cls, properties: dict):
         """Creates an instance from a mapping specified.
 
         Args:
-            properties (collections.Mapping):
+            properties (dict):
                 The desired instance in the format of a mapping.
         """
         pass
@@ -44,7 +44,7 @@ class _WeightMixin:
 
 class _RegisterMixin(abc.ABC):
     @abc.abstractmethod
-    def apply_to_program_on_register(self, *, program, register):
+    def _apply_to_program_on_register(self, *, program, register):
         """Applies the current object to the specifed program on its specified register.
 
         Args:

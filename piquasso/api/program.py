@@ -23,29 +23,43 @@ from .mode import Q
 
 
 class Program(_RegisterMixin):
-    r"""The representation for a quantum program.
+    r"""The class representing the quantum program.
 
-    This also specifies a context in which all the instructions should be
-    specified.
+    A `Program` object can be used with the `with` statement. In this context, the state
+    and all the instructions could be specified.
 
-    Attributes:
+    A simple example usage:
+
+    .. code-block:: python
+
+        import numpy as np
+        import piquasso as pq
+
+        with pq.Program() as program:
+            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
+
+            pq.Q(0, 1) | pq.Squeezing(r=0.5)
+
+        results = program.execute()
+
+    Args:
         state (State): The initial quantum state.
-        circuit (Circuit):
-            The circuit on which the quantum program should run.
-        instructions (list):
+        instructions (list[~piquasso.api.instruction.Instruction], optional):
             The set of instructions, e.g. quantum gates and measurements.
     """
 
     def __init__(
         self,
         state=None,
-        instructions=None,
+        instructions: list = None,
     ):
         self.state = state
         self.instructions = instructions or []
 
     @property
     def state(self):
+        """The quantum state corresponding to the program."""
+
         return self._state
 
     @state.setter
@@ -58,7 +72,7 @@ class Program(_RegisterMixin):
             else None
         )
 
-    def apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program, register):
         if self.state is not None:
             if program.state is not None:
                 raise InvalidProgram(
@@ -69,12 +83,12 @@ class Program(_RegisterMixin):
             if register.modes == tuple():
                 register.modes = tuple(range(self.state.d))
 
-            self.state.apply_to_program_on_register(program, register)
+            self.state._apply_to_program_on_register(program, register)
 
         for instruction in self.instructions:
             instruction_copy = instruction.copy()
 
-            instruction_copy.apply_to_program_on_register(
+            instruction_copy._apply_to_program_on_register(
                 program,
                 register=Q(*(register.modes[m] for m in instruction.modes))
             )
@@ -87,17 +101,21 @@ class Program(_RegisterMixin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         _context.current_program = None
 
-    def execute(self):
-        """Executes the collected instructions on the circuit."""
+    def execute(self) -> list:
+        """Executes the collected instructions on the circuit.
+
+        Returns:
+            list[Result]: A list of the execution results.
+        """
 
         return self._circuit.execute_instructions(self.instructions)
 
     @property
-    def results(self):
+    def results(self) -> list:
         return self._circuit.results
 
     @classmethod
-    def from_properties(cls, properties):
+    def from_properties(cls, properties: dict):
         """Creates a `Program` instance from a mapping.
 
         The currently supported format is
@@ -125,7 +143,7 @@ class Program(_RegisterMixin):
             Numeric arrays and complex numbers are not yet supported.
 
         Args:
-            properties (collections.Mapping):
+            properties (dict):
                 The desired `Program` instance in the format of a mapping.
 
         Returns:
@@ -164,19 +182,21 @@ class Program(_RegisterMixin):
         (.xbb).
 
         Args:
-            filename (str): file location of a valid Blackbird program
+            filename (str):
+                Location of a Blackbird program (.xbb).
         """
         blackbird_program = blackbird.load(filename)
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
-    def loads_blackbird(self, string):
+    def loads_blackbird(self, string: str):
         """
         Loads the gates to apply into `self.instructions` from a string
-        representing a :class:`blackbird.BlackbirdProgram`.
+        representing a :class:`~blackbird.program.BlackbirdProgram`.
 
         Args:
-            string (str): string containing a valid Blackbird Program
+            string (str):
+                String containing a valid Blackbird program.
         """
         blackbird_program = blackbird.loads(string)
 

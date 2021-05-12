@@ -159,4 +159,8 @@ class BaseFockState(State, abc.ABC):
         pass
 
     def reset(self):
+        """
+        Resets this object to a vacuum state.
+        """
+
         self._apply_vacuum()
