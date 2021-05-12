@@ -13,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""The Piquasso module.
+
+One can access all the instructions and states from here as attributes.
+
+Important:
+    It is preferred to access every Piquasso object from this module directly if
+    possible, especially when you're using a plugin.
+"""
+
 import sys
 
 from piquasso.api import constants
@@ -144,7 +153,11 @@ class Piquasso:
         except KeyError:
             return getattr(self._module, attribute)
 
+    def __dir__(self):
+        return dir(self._module)
 
+
+Piquasso.__doc__ = sys.modules[__name__].__doc__
 sys.modules[__name__] = Piquasso(sys.modules[__name__])
 
 
