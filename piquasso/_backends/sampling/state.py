@@ -28,6 +28,8 @@ class SamplingState(State):
         self.interferometer = np.diag(np.ones(self.d, dtype=complex))
         self.results = None
 
+        self.is_lossy = False
+
     def _apply_passive_linear(self, U, modes):
         r"""
         Multiplies the interferometer of the state with the `U` matrix (representing
@@ -44,10 +46,19 @@ class SamplingState(State):
             modes (tuple[int]):
                 Distinct positive integer values which are used to represent qumodes.
         """
-        J = np.diag(np.ones(self.d, dtype=complex))
-        J[np.ix_(modes, modes)] = U
+        self._apply_matrix_on_modes(U, modes)
 
-        self.interferometer = J @  self.interferometer
+    def _apply_loss(self, transmissivity, modes):
+        self.is_lossy = True
+
+        transmission_matrix = np.diag(transmissivity)
+
+        self._apply_matrix_on_modes(transmission_matrix, modes)
+
+    def _apply_matrix_on_modes(self, matrix, modes):
+        self.interferometer[np.ix_(modes, modes)] = (
+            matrix @ self.interferometer[np.ix_(modes, modes)]
+        )
 
     @property
     def d(self):

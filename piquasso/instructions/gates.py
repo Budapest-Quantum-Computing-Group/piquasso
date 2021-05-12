@@ -54,6 +54,8 @@ from piquasso.api.errors import InvalidParameter
 from piquasso._math.takagi import takagi
 from piquasso._math.linalg import is_square, is_symmetric, is_symplectic
 
+from piquasso.core.mixins import _ScalingMixin
+
 
 class _BogoliubovTransformation(Instruction):
     def __init__(
@@ -68,7 +70,7 @@ class _BogoliubovTransformation(Instruction):
         self._displacement_vector = displacement_vector
 
 
-class _ScalableBogoliubovTransformation(_BogoliubovTransformation):
+class _ScalableBogoliubovTransformation(_BogoliubovTransformation, _ScalingMixin):
     ERROR_MESSAGE_TEMPLATE = (
         "The instruction {instruction} is not applicable to modes {modes} with the "
         "specified parameters."
