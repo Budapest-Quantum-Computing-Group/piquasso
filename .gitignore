@@ -15,3 +15,4 @@ coverage.xml
 
 # Sphinx
 docs/_build
+.ipynb_checkpoints/

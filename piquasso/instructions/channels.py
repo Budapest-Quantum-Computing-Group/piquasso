@@ -26,7 +26,7 @@ class Loss(Instruction, _ScalingMixin):
 
     Note:
         Currently, this instruction can only be used along with
-        `~piquasso._backends.sampling.state.SamplingState`.
+        :class:`~piquasso._backends.sampling.state.SamplingState`.
 
     Args:
         transmissivity (numpy.ndarray): The transmissivity array.
