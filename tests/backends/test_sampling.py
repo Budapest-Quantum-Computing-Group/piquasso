@@ -98,3 +98,13 @@ class TestSampling:
             pq.Q() | pq.Sampling(shots=1)
 
         self.program.execute()
+
+    def test_loss(self):
+        with self.program:
+            pq.Q(all) | pq.Loss(transmissivity=0.9)
+
+            pq.Q() | pq.Sampling(shots=1)
+
+        self.program.execute()
+
+        assert self.program.state.is_lossy

@@ -32,6 +32,7 @@ class SamplingCircuit(Circuit):
             "Fourier": self._passive_linear,
             "Sampling": self._sampling,
             "Interferometer": self._passive_linear,
+            "Loss": self._loss,
         }
 
     def _passive_linear(self, instruction):
@@ -60,4 +61,10 @@ class SamplingCircuit(Circuit):
         self.state.results = sampling_simulator.get_classical_simulation_results(
             initial_state,
             samples_number=instruction.params["shots"]
+        )
+
+    def _loss(self, instruction):
+        self.state._apply_loss(
+            transmissivity=instruction._transmissivity,
+            modes=instruction.modes,
         )

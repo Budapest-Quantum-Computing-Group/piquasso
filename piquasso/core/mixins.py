@@ -66,3 +66,9 @@ class _CodeMixin(abc.ABC):
     @abc.abstractmethod
     def _as_code(self):
         pass
+
+
+class _ScalingMixin(abc.ABC):
+    @abc.abstractmethod
+    def _autoscale(self):
+        pass

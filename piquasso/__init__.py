@@ -77,6 +77,10 @@ from .instructions.measurements import (
     GeneraldyneMeasurement,
 )
 
+from .instructions.channels import (
+    Loss,
+)
+
 
 constants.seed()
 
@@ -123,6 +127,11 @@ _default_measurements = {
 }
 
 
+_default_channels = {
+    "Loss": Loss,
+}
+
+
 def use(plugin):
     _registry.use_plugin(plugin, override=True)
 
@@ -137,6 +146,7 @@ class _DefaultPlugin(Plugin):
         **_default_preparations,
         **_default_gates,
         **_default_measurements,
+        **_default_channels,
     }
 
 
@@ -172,6 +182,7 @@ __all__ = [
     *_default_preparations.keys(),
     *_default_gates.keys(),
     *_default_measurements.keys(),
+    *_default_channels.keys(),
 ]
 
 __version__ = "0.1.3"
