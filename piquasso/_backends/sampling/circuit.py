@@ -58,7 +58,8 @@ class SamplingCircuit(Circuit):
         )
 
     def _sampling(self, instruction):
-        permanent_calculator = RyserGuanPermanentCalculator(matrix=self.state.interferometer)
+        initial_state = np.array(self.state.initial_state)
+        permanent_calculator = RyserGuanPermanentCalculator(matrix=self.state.interferometer, input_state=initial_state)
 
         if self.state.is_lossy:
             simulation_strategy = LossyNetworksGeneralizedCliffordsSimulationStrategy(
@@ -70,11 +71,17 @@ class SamplingCircuit(Circuit):
             )
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
-        initial_state = np.array(self.state.initial_state)
-        self.state.results = sampling_simulator.get_classical_simulation_results(
+        samples = sampling_simulator.get_classical_simulation_results(
             initial_state,
             samples_number=instruction.params["shots"]
         )
+
+        from piquasso.api.result import Result
+
+        self.results.append(
+            Result(instruction=instruction, samples=samples)
+        )
+
 
     def _loss(self, instruction):
         self.state._apply_loss(
