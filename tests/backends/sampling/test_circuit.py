@@ -18,7 +18,6 @@ import pytest
 
 import piquasso as pq
 
-
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -35,7 +34,11 @@ class TestSampling:
             pq.Q(0, 1) | pq.Beamsplitter(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
             pq.Q(3) | pq.Phaseshifter(.5)
+            pq.Q(4) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling(shots=10)
+        r = self.program.execute()
+        print()
+        print(r)
 
     def test_interferometer(self):
         U = np.array([
@@ -98,3 +101,20 @@ class TestSampling:
         )
 
         assert np.allclose(self.program.state.interferometer, expected_interferometer)
+
+    def test_lossy_program(self):
+        U = np.eye(5) * 0.5
+        samples_number = 10
+        self.program.state.is_lossy = True
+
+        with self.program:
+            pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
+            pq.Q() | pq.Sampling(shots=samples_number)
+        r = self.program.execute()
+        average_output_particles_number = 0
+        for samples in r[0].samples:
+            average_output_particles_number += sum(samples)
+        average_output_particles_number /= samples_number
+        assert average_output_particles_number < sum(self.program.state.initial_state)
+
+
