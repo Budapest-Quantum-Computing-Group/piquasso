@@ -103,7 +103,12 @@ class TestSampling:
         assert np.allclose(self.program.state.interferometer, expected_interferometer)
 
     def test_lossy_program(self):
-        U = np.eye(5) * 0.5
+        r'''
+            This test checks the average number of particles in the lossy BS.
+            We expect average number to be smaller than initial one.
+        '''
+        losses = 0.5
+        U = np.eye(5) * losses
         samples_number = 10
         self.program.state.is_lossy = True
 
@@ -117,4 +122,16 @@ class TestSampling:
         average_output_particles_number /= samples_number
         assert average_output_particles_number < sum(self.program.state.initial_state)
 
+    def test_distribution(self):
+        input_state = pq.SamplingState(1, 1, 0)
+
+        U = np.asarray([[1, 0, 0, ], [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
+                        [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
+
+        input_state.interferometer = U
+
+        pr = input_state.get_fock_probabilities()
+        expected_result = [0.0, 0.30545762086020883, 0.6945423895038292, 0.0, 0.0, 0.0]
+
+        assert np.allclose(pr, expected_result)
 
