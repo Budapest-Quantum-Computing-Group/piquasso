@@ -21,36 +21,35 @@ from piquasso.api.circuit import Circuit
 
 class BaseFockCircuit(Circuit, abc.ABC):
 
-    def get_instruction_map(self):
-        return {
-            "Interferometer": self._passive_linear,
-            "Beamsplitter": self._passive_linear,
-            "Phaseshifter": self._passive_linear,
-            "MachZehnder": self._passive_linear,
-            "Fourier": self._passive_linear,
-            "Kerr": self._kerr,
-            "CrossKerr": self._cross_kerr,
-            "Squeezing": self._linear,
-            "QuadraticPhase": self._linear,
-            "Displacement": self._linear,
-            "PositionDisplacement": self._linear,
-            "MomentumDisplacement": self._linear,
-            "Squeezing2": self._linear,
-            "GaussianTransform": self._linear,
-            "ParticleNumberMeasurement": self._particle_number_measurement,
-            "Vacuum": self._vacuum,
-            "Create": self._create,
-            "Annihilate": self._annihilate,
-        }
+    instruction_map = {
+        "Interferometer": "_passive_linear",
+        "Beamsplitter": "_passive_linear",
+        "Phaseshifter": "_passive_linear",
+        "MachZehnder": "_passive_linear",
+        "Fourier": "_passive_linear",
+        "Kerr": "_kerr",
+        "CrossKerr": "_cross_kerr",
+        "Squeezing": "_linear",
+        "QuadraticPhase": "_linear",
+        "Displacement": "_linear",
+        "PositionDisplacement": "_linear",
+        "MomentumDisplacement": "_linear",
+        "Squeezing2": "_linear",
+        "GaussianTransform": "_linear",
+        "ParticleNumberMeasurement": "_particle_number_measurement",
+        "Vacuum": "_vacuum",
+        "Create": "_create",
+        "Annihilate": "_annihilate",
+    }
 
-    def _passive_linear(self, instruction):
-        self.state._apply_passive_linear(
+    def _passive_linear(self, instruction, state):
+        state._apply_passive_linear(
             operator=instruction._all_params["passive_block"],
             modes=instruction.modes
         )
 
-    def _particle_number_measurement(self, instruction):
-        samples = self.state._particle_number_measurement(
+    def _particle_number_measurement(self, instruction, state):
+        samples = state._particle_number_measurement(
             modes=instruction.modes,
             shots=instruction._all_params["shots"],
         )
@@ -58,29 +57,29 @@ class BaseFockCircuit(Circuit, abc.ABC):
         self.update_measured_modes(instruction.modes)
         self.results.append(Result(instruction=instruction, samples=samples))
 
-    def _vacuum(self, instruction):
-        self.state._apply_vacuum()
+    def _vacuum(self, instruction, state):
+        state._apply_vacuum()
 
-    def _create(self, instruction):
-        self.state._apply_creation_operator(instruction.modes)
+    def _create(self, instruction, state):
+        state._apply_creation_operator(instruction.modes)
 
-    def _annihilate(self, instruction):
-        self.state._apply_annihilation_operator(instruction.modes)
+    def _annihilate(self, instruction, state):
+        state._apply_annihilation_operator(instruction.modes)
 
-    def _kerr(self, instruction):
-        self.state._apply_kerr(
+    def _kerr(self, instruction, state):
+        state._apply_kerr(
             **instruction._all_params,
             mode=instruction.modes[0],
         )
 
-    def _cross_kerr(self, instruction):
-        self.state._apply_cross_kerr(
+    def _cross_kerr(self, instruction, state):
+        state._apply_cross_kerr(
             **instruction._all_params,
             modes=instruction.modes,
         )
 
-    def _linear(self, instruction):
-        self.state._apply_linear(
+    def _linear(self, instruction, state):
+        state._apply_linear(
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],
             displacement=instruction._all_params["displacement_vector"],

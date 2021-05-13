@@ -17,14 +17,13 @@ from ..circuit import BaseFockCircuit
 
 
 class PureFockCircuit(BaseFockCircuit):
-    def get_instruction_map(self):
-        return {
-            "StateVector": self._state_vector,
-            **super().get_instruction_map()
-        }
+    instruction_map = {
+        "StateVector": "_state_vector",
+        **BaseFockCircuit.instruction_map
+    }
 
-    def _state_vector(self, instruction):
-        self.state._add_occupation_number_basis(
+    def _state_vector(self, instruction, state):
+        state._add_occupation_number_basis(
             **instruction._all_params,
             modes=instruction.modes,
         )

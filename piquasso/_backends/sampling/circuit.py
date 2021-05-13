@@ -33,18 +33,17 @@ from piquasso.api.result import Result
 class SamplingCircuit(Circuit):
     r"""Circuit for Boson Sampling."""
 
-    def get_instruction_map(self):
-        return {
-            "Beamsplitter": self._passive_linear,
-            "Phaseshifter": self._passive_linear,
-            "MachZehnder": self._passive_linear,
-            "Fourier": self._passive_linear,
-            "Sampling": self._sampling,
-            "Interferometer": self._passive_linear,
-            "Loss": self._loss,
-        }
+    instruction_map = {
+        "Beamsplitter": "_passive_linear",
+        "Phaseshifter": "_passive_linear",
+        "MachZehnder": "_passive_linear",
+        "Fourier": "_passive_linear",
+        "Sampling": "_sampling",
+        "Interferometer": "_passive_linear",
+        "Loss": "_loss",
+    }
 
-    def _passive_linear(self, instruction):
+    def _passive_linear(self, instruction, state):
         r"""Applies an interferometer to the circuit.
 
         This can be interpreted as placing another interferometer in the network, just
@@ -55,19 +54,19 @@ class SamplingCircuit(Circuit):
         qumodes (provided as the arguments) and as an identity on every other mode.
         """
 
-        self.state._apply_passive_linear(
+        state._apply_passive_linear(
             instruction._all_params["passive_block"],
             instruction.modes,
         )
 
-    def _sampling(self, instruction):
-        initial_state = np.array(self.state.initial_state)
+    def _sampling(self, instruction, state):
+        initial_state = np.array(state.initial_state)
         permanent_calculator = RyserGuanPermanentCalculator(
-            matrix=self.state.interferometer, input_state=initial_state)
+            matrix=state.interferometer, input_state=initial_state)
 
         simulation_strategy = (
             LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
-            if self.state.is_lossy else
+            if state.is_lossy else
             GeneralizedCliffordsSimulationStrategy(permanent_calculator)
         )
 
@@ -82,8 +81,8 @@ class SamplingCircuit(Circuit):
             Result(instruction=instruction, samples=samples)
         )
 
-    def _loss(self, instruction):
-        self.state._apply_loss(
+    def _loss(self, instruction, state):
+        state._apply_loss(
             transmissivity=instruction._all_params["transmissivity"],
             modes=instruction.modes,
         )

@@ -29,10 +29,9 @@ def setup_plugin():
     class FakeCircuit(pq.Circuit):
         dummy_instruction = Mock(name="dummy_instruction")
 
-        def get_instruction_map(self):
-            return {
-                DummyInstruction.__name__: self.dummy_instruction,
-            }
+        instruction_map = {
+            "DummyInstruction": "dummy_instruction",
+        }
 
     class FakeState(pq.State):
         circuit_class = FakeCircuit
