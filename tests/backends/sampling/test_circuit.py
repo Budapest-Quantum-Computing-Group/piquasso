@@ -30,15 +30,18 @@ class TestSampling:
             [0, .5j, 0],
             [0, 0, -1]
         ], dtype=complex)
+
         with self.program:
             pq.Q(0, 1) | pq.Beamsplitter(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
             pq.Q(3) | pq.Phaseshifter(.5)
             pq.Q(4) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling(shots=10)
-        r = self.program.execute()
-        print()
-        print(r)
+
+        results = self.program.execute()
+
+        assert len(results) == 1
+        assert len(results[0].samples) == 10
 
     def test_interferometer(self):
         U = np.array([
@@ -115,18 +118,20 @@ class TestSampling:
         with self.program:
             pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
             pq.Q() | pq.Sampling(shots=samples_number)
-        r = self.program.execute()
-        average_output_particles_number = 0
-        for samples in r[0].samples:
-            average_output_particles_number += sum(samples)
-        average_output_particles_number /= samples_number
-        assert average_output_particles_number < sum(self.program.state.initial_state)
+
+        results = self.program.execute()
+        samples = results[0].samples
+        initial_number_of_particles = sum(self.program.state.initial_state)
+
+        assert any(sum(sample) < initial_number_of_particles for sample in samples)
+
 
     def test_distribution(self):
         input_state = pq.SamplingState(1, 1, 0)
 
-        U = np.asarray([[1, 0, 0, ], [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-                        [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
+        U = np.asarray([[1,                         0,                        0],
+                        [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
+                        [0,  0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
 
         input_state.interferometer = U
 

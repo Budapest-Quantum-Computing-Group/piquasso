@@ -14,13 +14,18 @@
 # limitations under the License.
 
 import numpy as np
+from piquasso.api.result import Result
 from BoSS.boson_sampling_simulator import BosonSamplingSimulator
 # Fastest boson sampling algorithm generalized for bunched states
-from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import GeneralizedCliffordsSimulationStrategy
+from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import\
+    GeneralizedCliffordsSimulationStrategy
 # Fastest boson sampling algorithm generalized for bunched states, but with lossy network
-from BoSS.simulation_strategies.lossy_networks_generalized_cliffords_simulation_strategy import LossyNetworksGeneralizedCliffordsSimulationStrategy
+from BoSS.simulation_strategies.\
+    lossy_networks_generalized_cliffords_simulation_strategy import\
+    LossyNetworksGeneralizedCliffordsSimulationStrategy
 # The fastest implemented permanent calculator is currently Ryser-Guan
-from BoSS.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
+from BoSS.boson_sampling_utilities.permanent_calculators.\
+    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
 
 
 
@@ -59,24 +64,21 @@ class SamplingCircuit(Circuit):
 
     def _sampling(self, instruction):
         initial_state = np.array(self.state.initial_state)
-        permanent_calculator = RyserGuanPermanentCalculator(matrix=self.state.interferometer, input_state=initial_state)
+        permanent_calculator = RyserGuanPermanentCalculator(
+            matrix=self.state.interferometer, input_state=initial_state)
 
-        if self.state.is_lossy:
-            simulation_strategy = LossyNetworksGeneralizedCliffordsSimulationStrategy(
-                permanent_calculator
-            )
-        else:
-            simulation_strategy = GeneralizedCliffordsSimulationStrategy(
-                permanent_calculator
-            )
+        simulation_strategy = (
+            LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
+            if self.state.is_lossy else
+            GeneralizedCliffordsSimulationStrategy(permanent_calculator)
+        )
+
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
         samples = sampling_simulator.get_classical_simulation_results(
             initial_state,
             samples_number=instruction.params["shots"]
         )
-
-        from piquasso.api.result import Result
 
         self.results.append(
             Result(instruction=instruction, samples=samples)

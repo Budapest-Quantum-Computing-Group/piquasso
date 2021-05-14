@@ -16,8 +16,12 @@
 import numpy as np
 
 from piquasso.api.state import State
-from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import BSDistributionCalculatorWithFixedLosses, BosonSamplingExperimentConfiguration
-from BoSS.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
+from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (
+    BSDistributionCalculatorWithFixedLosses,
+    BosonSamplingExperimentConfiguration
+)
+from BoSS.boson_sampling_utilities.permanent_calculators.\
+    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
 from .circuit import SamplingCircuit
 
 
