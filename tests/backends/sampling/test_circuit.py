@@ -113,15 +113,13 @@ class TestSampling:
         '''
         losses = 0.5
         U = np.eye(5) * losses
-        samples_number = 10
+        U[0][0] = 0  # Ensure that at least one particle is lost.
         self.program.state.is_lossy = True
 
         with self.program:
             pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
-            pq.Q() | pq.Sampling(shots=samples_number)
+            pq.Q() | pq.Sampling(shots=1)
 
         results = self.program.execute()
-        samples = results[0].samples
-        initial_number_of_particles = sum(self.program.state.initial_state)
-
-        assert any(sum(sample) < initial_number_of_particles for sample in samples)
+        sample = results[0].samples[0]
+        assert sum(sample) < sum(self.program.state.initial_state)
