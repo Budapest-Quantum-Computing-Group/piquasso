@@ -126,6 +126,16 @@ class _ScalableBogoliubovTransformation(_BogoliubovTransformation, _ScalingMixin
 class Interferometer(_BogoliubovTransformation):
     r"""Applies a general interferometer gate.
 
+    The general unitary operator can be written as
+
+    .. math::
+        \hat{U} = \exp ( i \hat{a}^dagger H \hat{a} ),
+
+    where the parameter `U` and :math:`H` is related by
+
+    .. math::
+        U = \exp ( i H ).
+
     The evolution of the ladder operators can be described by
 
     .. math::
@@ -155,6 +165,14 @@ class Interferometer(_BogoliubovTransformation):
 
 class Beamsplitter(_BogoliubovTransformation):
     r"""Applies a beamsplitter gate.
+
+    The general unitary operator can be written as
+
+    .. math::
+        \hat{U} = \exp (
+            \theta e^{i \phi} \hat{a}^\dagger_i \hat{a}_j
+            - \theta e^{- i \phi} \hat{a}^\dagger_j \hat{a}_i
+        ).
 
     The symplectic representation of the beamsplitter gate is
 
@@ -194,7 +212,12 @@ class Beamsplitter(_BogoliubovTransformation):
 
 
 class Phaseshifter(_ScalableBogoliubovTransformation):
-    r"""Applies a rotation or phaseshift gate.
+    r"""Applies a rotation or phaseshifter gate.
+
+    The unitary operator corresponding to the phaseshifter gate is
+
+    .. math::
+        \hat{U} = \exp ( i \phi \hat{a}^\dagger \hat{a} ).
 
     The symplectic representation of the phaseshifter gate is
 
@@ -219,6 +242,15 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
 class MachZehnder(_BogoliubovTransformation):
     r"""Mach-Zehnder interferometer.
 
+    The Mach-Zehnder interferometer is equivalent to
+
+    .. math::
+        MZ(\phi_{int}, \phi_{ext}) =
+            B(\pi/4, \pi/2) (R(\phi_{int}) \oplus \mathbb{1})
+            B(\pi/4, \pi/2) (R(\phi_{ext}) \oplus \mathbb{1}).
+
+    The symplectic representation of the Mach-Zehnder interferometer is
+
     .. math::
         S_{(c)} = \begin{bmatrix}
         e^{i \phi_{ext} } (e^{i \phi_{int} } - 1)   & i (e^{i \phi_{int} } + 1) & & \\
@@ -228,14 +260,6 @@ class MachZehnder(_BogoliubovTransformation):
         \end{bmatrix},
 
     where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
-
-    The Mach-Zehnder interferometer is equivalent to
-
-    .. math::
-        MZ(\phi_{int}, \phi_{ext}) =
-            B(\pi/4, \pi/2) (R(\phi_{int}) \oplus \mathbb{1})
-            B(\pi/4, \pi/2) (R(\phi_{ext}) \oplus \mathbb{1})
-
 
     Args:
         int (float): The internal angle.
@@ -260,7 +284,12 @@ class MachZehnder(_BogoliubovTransformation):
 class Fourier(_ScalableBogoliubovTransformation):
     r"""Applies a Fourier gate.
 
-    The symplectic representation of the phaseshifter gate is
+    The unitary operator corresponding to the Fourier gate is
+
+    .. math::
+        \hat{U} = \exp ( i \frac{\pi}{2} \hat{a}^\dagger \hat{a} ).
+
+    The symplectic representation of the Fourier gate is
 
     .. math::
         S_{(c)} = \begin{bmatrix}
@@ -326,6 +355,11 @@ class GaussianTransform(_BogoliubovTransformation):
 class Squeezing(_ScalableBogoliubovTransformation):
     r"""Applies the squeezing gate.
 
+    The unitary operator corresponding to the squeezing gate is
+
+    .. math::
+        \hat{U} = \exp ( \frac{1}{2}(z^* \hat{a}^2 - z \hat{a}^{\dagger 2} ).
+
     The symplectic representation of the squeezing gate is
 
     .. math::
@@ -362,6 +396,15 @@ class Squeezing(_ScalableBogoliubovTransformation):
 class QuadraticPhase(_ScalableBogoliubovTransformation):
     r"""Applies the quadratic phase instruction to the state.
 
+    The unitary operator corresponding to the Fourier gate is
+
+    .. math::
+        \hat{U} = \exp (
+            i \frac{s}{2 \hbar} \hat{x}^2
+        ).
+
+    The symplectic representation of the quadratic phase gate is
+
     .. math::
         S_{(c)} = \begin{bmatrix}
             1 + i \frac{s}{2} & i \frac{s}{2} \\
@@ -381,6 +424,13 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
 
 class Squeezing2(_BogoliubovTransformation):
     r"""Applies the two-mode squeezing gate to the state.
+
+    The unitary operator corresponding to the two-mode squeezing gate is
+
+      .. math::
+        \hat{U} = \exp ( \frac{1}{2}(z^* \hat{a}^2 - z \hat{a}^{\dagger 2} ).
+
+    The symplectic representation of the two-mode squeezing gate is
 
     .. math::
         S_{(c)} = \begin{bmatrix}
@@ -417,6 +467,13 @@ class Squeezing2(_BogoliubovTransformation):
 class ControlledX(_BogoliubovTransformation):
     r"""Applies the controlled X gate to the state.
 
+    The unitary operator corresponding to the controlled X gate is
+
+    .. math::
+        \hat{U} = \exp ( -i \frac{s}{\hbar} \hat{x}_i \hat{p}_j ).
+
+    The symplectic representation of the controlled X gate is
+
     .. math::
         S_{(z)} = \begin{bmatrix}
             1            & - \frac{s}{2} & 0           & \frac{s}{2} \\
@@ -447,6 +504,13 @@ class ControlledX(_BogoliubovTransformation):
 
 class ControlledZ(_BogoliubovTransformation):
     r"""Applies the controlled Z gate to the state.
+
+    The unitary operator corresponding to the controlled Z gate is
+
+    .. math::
+        \hat{U} = \exp ( -i \frac{s}{\hbar} \hat{x}_i \hat{x}_j ).
+
+    The symplectic representation of the controlled Z gate is
 
     .. math::
         S_{(z)} = \begin{bmatrix}
