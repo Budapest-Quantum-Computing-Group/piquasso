@@ -14,22 +14,20 @@
 # limitations under the License.
 
 import numpy as np
-from piquasso.api.result import Result
 from BoSS.boson_sampling_simulator import BosonSamplingSimulator
-# Fastest boson sampling algorithm generalized for bunched states
-from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import\
-    GeneralizedCliffordsSimulationStrategy
-# Fastest boson sampling algorithm generalized for bunched states, but with lossy network
-from BoSS.simulation_strategies.\
-    lossy_networks_generalized_cliffords_simulation_strategy import\
-    LossyNetworksGeneralizedCliffordsSimulationStrategy
 # The fastest implemented permanent calculator is currently Ryser-Guan
-from BoSS.boson_sampling_utilities.permanent_calculators.\
+from BoSS.boson_sampling_utilities.permanent_calculators. \
     ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
-
-
+# Fastest boson sampling algorithm generalized for bunched states
+from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import \
+    GeneralizedCliffordsSimulationStrategy
+# Fastest BS algorithm generalized for bunched states, but with lossy network
+from BoSS.simulation_strategies. \
+    lossy_networks_generalized_cliffords_simulation_strategy import \
+    LossyNetworksGeneralizedCliffordsSimulationStrategy
 
 from piquasso.api.circuit import Circuit
+from piquasso.api.result import Result
 
 
 class SamplingCircuit(Circuit):
@@ -83,7 +81,6 @@ class SamplingCircuit(Circuit):
         self.results.append(
             Result(instruction=instruction, samples=samples)
         )
-
 
     def _loss(self, instruction):
         self.state._apply_loss(

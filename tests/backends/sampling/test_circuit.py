@@ -18,6 +18,7 @@ import pytest
 
 import piquasso as pq
 
+
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):

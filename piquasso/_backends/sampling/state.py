@@ -84,7 +84,9 @@ class SamplingState(State):
             number_of_particles_lost=0,
             number_of_particles_left=sum(self.initial_state)
         )
-        distribution_calculator = BSDistributionCalculatorWithFixedLosses(config, permanent_calculator)
+        distribution_calculator = BSDistributionCalculatorWithFixedLosses(
+            config, permanent_calculator)
         # The order of the probabilities is according to
-        # BoSS.boson_sampling_utilities.boson_sampling_utilities.generate_possible_outputs
+        # BoSS.boson_sampling_utilities.boson_sampling_utilities
+        # .generate_possible_outputs
         return distribution_calculator.calculate_distribution()

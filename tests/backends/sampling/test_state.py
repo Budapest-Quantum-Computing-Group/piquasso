@@ -128,9 +128,9 @@ class TestSamplingState:
     def test_distribution(self):
         input_state = pq.SamplingState(1, 1, 0)
 
-        U = np.asarray([[1,                         0,                        0],
+        U = np.asarray([[1, 0, 0],
                         [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-                        [0,  0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
+                        [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
 
         input_state.interferometer = U
 
