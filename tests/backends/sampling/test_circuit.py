@@ -31,11 +31,18 @@ class TestSampling:
             [0, .5j, 0],
             [0, 0, -1]
         ], dtype=complex)
+
         with self.program:
             pq.Q(0, 1) | pq.Beamsplitter(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
             pq.Q(3) | pq.Phaseshifter(.5)
+            pq.Q(4) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling(shots=10)
+
+        results = self.program.execute()
+
+        assert len(results) == 1
+        assert len(results[0].samples) == 10
 
     def test_interferometer(self):
         U = np.array([
@@ -98,3 +105,21 @@ class TestSampling:
         )
 
         assert np.allclose(self.program.state.interferometer, expected_interferometer)
+
+    def test_lossy_program(self):
+        r'''
+            This test checks the average number of particles in the lossy BS.
+            We expect average number to be smaller than initial one.
+        '''
+        losses = 0.5
+        U = np.eye(5) * losses
+        U[0][0] = 0  # Ensure that at least one particle is lost.
+        self.program.state.is_lossy = True
+
+        with self.program:
+            pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
+            pq.Q() | pq.Sampling(shots=1)
+
+        results = self.program.execute()
+        sample = results[0].samples[0]
+        assert sum(sample) < sum(self.program.state.initial_state)

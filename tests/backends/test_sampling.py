@@ -52,7 +52,7 @@ class TestSampling:
 
         self.program.execute()
 
-        assert len(self.program.state.results) == shots,\
+        assert len(self.program.results[-1].samples) == shots,\
             f'Expected {shots} samples, ' \
             f'got: {len(self.program.state.results)}'
 
@@ -64,7 +64,7 @@ class TestSampling:
 
         self.program.execute()
 
-        sample = self.program.state.results[0]
+        sample = self.program.results[-1].samples[0]
         assert np.allclose(sample, [1, 0, 0, 1, 1]),\
             f'Expected [1, 0, 0, 1, 1], got: {sample}'
 
@@ -76,8 +76,9 @@ class TestSampling:
 
         self.program.execute()
 
-        first_sample = self.program.state.results[0]
-        second_sample = self.program.state.results[1]
+        samples = self.program.results[-1].samples
+        first_sample = samples[0]
+        second_sample = samples[1]
 
         assert np.allclose(first_sample, second_sample),\
             f'Expected same samples, got: {first_sample} & {second_sample}'

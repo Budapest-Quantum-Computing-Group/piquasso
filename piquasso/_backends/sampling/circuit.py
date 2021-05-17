@@ -14,11 +14,20 @@
 # limitations under the License.
 
 import numpy as np
-from BoSS.BosonSamplingSimulator import BosonSamplingSimulator
-from BoSS.simulation_strategies.GeneralizedCliffordsSimulationStrategy \
-    import GeneralizedCliffordsSimulationStrategy
+from BoSS.boson_sampling_simulator import BosonSamplingSimulator
+# The fastest implemented permanent calculator is currently Ryser-Guan
+from BoSS.boson_sampling_utilities.permanent_calculators. \
+    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
+# Fastest boson sampling algorithm generalized for bunched states
+from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import \
+    GeneralizedCliffordsSimulationStrategy
+# Fastest BS algorithm generalized for bunched states, but with lossy network
+from BoSS.simulation_strategies. \
+    lossy_networks_generalized_cliffords_simulation_strategy import \
+    LossyNetworksGeneralizedCliffordsSimulationStrategy
 
 from piquasso.api.circuit import Circuit
+from piquasso.api.result import Result
 
 
 class SamplingCircuit(Circuit):
@@ -52,15 +61,25 @@ class SamplingCircuit(Circuit):
         )
 
     def _sampling(self, instruction):
-        simulation_strategy = GeneralizedCliffordsSimulationStrategy(
-            self.state.interferometer
+        initial_state = np.array(self.state.initial_state)
+        permanent_calculator = RyserGuanPermanentCalculator(
+            matrix=self.state.interferometer, input_state=initial_state)
+
+        simulation_strategy = (
+            LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
+            if self.state.is_lossy else
+            GeneralizedCliffordsSimulationStrategy(permanent_calculator)
         )
+
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
-        initial_state = np.array(self.state.initial_state)
-        self.state.results = sampling_simulator.get_classical_simulation_results(
+        samples = sampling_simulator.get_classical_simulation_results(
             initial_state,
             samples_number=instruction.params["shots"]
+        )
+
+        self.results.append(
+            Result(instruction=instruction, samples=samples)
         )
 
     def _loss(self, instruction):

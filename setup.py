@@ -31,7 +31,7 @@ setup(
     url="https://github.com/Budapest-Quantum-Computing-Group/piquasso",
     keywords=["python", "piquasso"],
     install_requires=[
-        'boss-tomev==0.0.6; python_version >= "3.6"',
+        'boss-tomev==1.0.2; python_version >= "3.6"',
         'numpy>=1.19.5; python_version >= "3.6"',
         'scipy>=1.5.4; python_version >= "3.6"',
         'quantum-blackbird==0.2.4',
