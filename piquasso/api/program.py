@@ -18,11 +18,11 @@ import blackbird
 
 from piquasso.api.errors import InvalidProgram
 from piquasso.core import _context, _blackbird, _registry
-from piquasso.core.mixins import _RegisterMixin
+from piquasso.core import _mixins
 from .mode import Q
 
 
-class Program(_RegisterMixin):
+class Program(_mixins.RegisterMixin):
     r"""The class representing the quantum program.
 
     A `Program` object can be used with the `with` statement. In this context, the state

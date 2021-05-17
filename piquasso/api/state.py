@@ -16,10 +16,10 @@
 import abc
 import numpy as np
 
-from piquasso.core.mixins import _PropertyMixin, _RegisterMixin, _CodeMixin
+from piquasso.core import _mixins
 
 
-class State(_PropertyMixin, _RegisterMixin, _CodeMixin, abc.ABC):
+class State(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin, abc.ABC):
     """The base class from which all `*State` classes are derived.
 
     Attributes:
