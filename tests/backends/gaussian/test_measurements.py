@@ -309,3 +309,24 @@ def test_measure_threshold_on_all_modes(nondisplaced_program):
     results = nondisplaced_program.execute()
 
     assert results
+
+
+def test_multiple_particle_number_measurements_in_one_program():
+    first_measurement_shots = 3
+    second_measurement_shots = 4
+
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=3)
+
+        pq.Q(0) | pq.Squeezing(r=1, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=np.pi / 4)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=1, phi=np.pi / 4)
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=5, shots=3)
+        pq.Q(2) | pq.ParticleNumberMeasurement(cutoff=5, shots=4)
+
+    results = program.execute()
+
+    assert len(results) == 2
+
+    assert len(results[0].samples) == first_measurement_shots
+    assert len(results[1].samples) == second_measurement_shots
