@@ -140,8 +140,8 @@ class GaussianState(State):
         r"""The state's mean in the xp-ordered basis.
 
         The expectation value of the quadrature operators in xp basis, i.e.
-        :math:`\operatorname{Tr} \rho \hat{Y}`, where
-        :math:`\hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
+        :math:`\operatorname{Tr} \rho Y`, where
+        :math:`Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
 
         Returns:
             numpy.ndarray: A :math:`d`-vector.
@@ -166,7 +166,7 @@ class GaussianState(State):
         where
 
         .. math::
-            \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
+            Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
 
         and :math:`\rho` is the density operator of the currently represented state.
 
@@ -201,7 +201,7 @@ class GaussianState(State):
         :math:`i`-th row and :math:`j`-th column,
 
         .. math::
-            \hat{Y} = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
+            Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T,
 
         and :math:`\rho` is the density operator of the currently represented state.
 
@@ -229,8 +229,8 @@ class GaussianState(State):
         Returns:
             numpy.ndarray: A :math:`2d`-vector.
                 The expectation value of the quadrature operators in
-                xp-ordering, i.e. :math:`\operatorname{Tr} \rho \hat{R}`, where
-                :math:`\hat{R} = (x_1, p_1, \dots, x_d, p_d)^T`.
+                xp-ordering, i.e. :math:`\operatorname{Tr} \rho R`, where
+                :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
         """
         T = quad_transformation(self.d)
         return T @ self.xp_mean
@@ -256,7 +256,7 @@ class GaussianState(State):
         where
 
         .. math::
-            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+            R = (x_1, p_1, \dots, x_d, p_d)^T,
 
         and :math:`\rho` is the density operator of the currently represented state.
 
@@ -308,7 +308,7 @@ class GaussianState(State):
         :math:`i`-th row and :math:`j`-th column,
 
         .. math::
-            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+            R = (x_1, p_1, \dots, x_d, p_d)^T,
 
         and :math:`\rho` is the density operator of the currently represented state.
 
@@ -418,19 +418,19 @@ class GaussianState(State):
 
         .. math::
             \mu_{\vec{i}, \phi}
-                &:= \langle \hat{R}_{\vec{i}} \rangle_{\rho_{\vec{i}, \phi}}, \\
+                &:= \langle R_{\vec{i}} \rangle_{\rho_{\vec{i}, \phi}}, \\
             \sigma_{\vec{i}, \phi}
                 &:=  \langle
-                    \hat{R}_{\vec{i}} \hat{R}_{\vec{i}}^T
+                    R_{\vec{i}} R_{\vec{i}}^T
                 \rangle_{\rho_{\vec{i}, \phi}}
                 - \mu_{\vec{i}, \phi} \mu_{\vec{i}, \phi}^T,
 
         where
 
         .. math::
-            \hat{R} = (x_1, p_1, \dots, x_d, p_d)^T,
+            R = (x_1, p_1, \dots, x_d, p_d)^T,
 
-        and :math:`\hat{R}_{\vec{i}}` is just the same vector, reduced to a subsystem
+        and :math:`R_{\vec{i}}` is just the same vector, reduced to a subsystem
         specified by :math:`\vec{i}`.
 
         Args:

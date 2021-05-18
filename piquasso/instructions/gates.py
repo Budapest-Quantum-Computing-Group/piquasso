@@ -14,33 +14,32 @@
 # limitations under the License.
 
 r"""
-Gates can be characterized by a unitary operator :math:`\hat{U}`, which evolves the
+Gates can be characterized by a unitary operator :math:`U`, which evolves the
 quantum state in the following manner
 
 .. math::
-    \rho' = \hat{U} \rho \hat{U}^\dagger
+    \rho' = U \rho U^\dagger
 
 Gates with at most quadratic Hamiltonians are called linear gates. Evolution of the
 ladder operators by linear gates could be expressed in the form
 
 .. math::
 
-    \hat{U} \hat{\xi} \hat{U}^\dagger = S_{(c)} \hat{\xi} + \vec{d},
+    U \xi U^\dagger = S_{(c)} \xi + d,
 
 where :math:`S_{(c)} \in \operatorname{Sp}(2d, \mathbb{R})`,
-:math:`\vec{d} \in \mathbb{C}^{2d}`,
+:math:`d \in \mathbb{C}^{2d}`,
 
 .. math::
-    \hat{\xi} = \begin{bmatrix}
-        \hat{a} \\
-        \hat{a}^\dagger
-    \end{bmatrix},
+    \xi = \begin{bmatrix}
+        a_1, \dots, a_d, a_1^\dagger, \dots, a_d^\dagger
+    \end{bmatrix}^T,
 
-where :math:`\hat{a}^\dagger` and :math:`\hat{a}` are the multimode creation and
-annihilation operators, respectively.
+where :math:`a_1^\dagger, ..., a_d^\dagger` and :math:`a_1, \dots, a_d` are the
+creation and annihilation operators, respectively.
 
 Most of the gates defined here are linear gates, which can be characterized by
-:math:`S_{(c)}` and :math:`\vec{d}`.
+:math:`S_{(c)}` and :math:`d`.
 """
 
 import numpy as np
@@ -132,12 +131,16 @@ class Interferometer(_BogoliubovTransformation):
     The general unitary operator can be written as
 
     .. math::
-        \hat{U} = \exp ( i \hat{a}^dagger H \hat{a} ),
+        U = \exp \left (
+            i \sum_{i, j = 1}^d H_{i j} a_i^\dagger a_j
+        \right ),
 
     where the parameter `U` and :math:`H` is related by
 
     .. math::
-        U = \exp ( i H ).
+        U = \exp \left (
+            i H \right
+        ).
 
     The evolution of the ladder operators can be described by
 
@@ -172,10 +175,10 @@ class Beamsplitter(_BogoliubovTransformation):
     The general unitary operator can be written as
 
     .. math::
-        \hat{U} = \exp (
-            \theta e^{i \phi} \hat{a}^\dagger_i \hat{a}_j
-            - \theta e^{- i \phi} \hat{a}^\dagger_j \hat{a}_i
-        ).
+        BS_{ij} (\theta, \phi) = \exp \left (
+            \theta e^{i \phi} a^\dagger_i a_j
+            - \theta e^{- i \phi} a^\dagger_j a_i
+        \right ).
 
     The symplectic representation of the beamsplitter gate is
 
@@ -217,10 +220,13 @@ class Beamsplitter(_BogoliubovTransformation):
 class Phaseshifter(_ScalableBogoliubovTransformation):
     r"""Applies a rotation or phaseshifter gate.
 
-    The unitary operator corresponding to the phaseshifter gate is
+    The unitary operator corresponding to the phaseshifter gate on the :math:`i`-th mode
+    is
 
     .. math::
-        \hat{U} = \exp ( i \phi \hat{a}^\dagger \hat{a} ).
+        R_i (\phi) = \exp \left (
+            i \phi a_i^\dagger a_i
+        \right ).
 
     The symplectic representation of the phaseshifter gate is
 
@@ -287,10 +293,12 @@ class MachZehnder(_BogoliubovTransformation):
 class Fourier(_ScalableBogoliubovTransformation):
     r"""Applies a Fourier gate.
 
-    The unitary operator corresponding to the Fourier gate is
+    The unitary operator corresponding to the Fourier gate on the :math:`i`-th mode is
 
     .. math::
-        \hat{U} = \exp ( i \frac{\pi}{2} \hat{a}^\dagger \hat{a} ).
+        F_{i} = \exp \left (
+            i \frac{\pi}{2} a_i^\dagger a_i
+        \right ).
 
     The symplectic representation of the Fourier gate is
 
@@ -361,7 +369,9 @@ class Squeezing(_ScalableBogoliubovTransformation):
     The unitary operator corresponding to the squeezing gate is
 
     .. math::
-        \hat{U} = \exp ( \frac{1}{2}(z^* \hat{a}^2 - z \hat{a}^{\dagger 2} ).
+        S_{i} (z) = \exp \left (
+            \frac{1}{2}(z^* a_i^2 - z a_i^{\dagger 2} )
+        \right ).
 
     The symplectic representation of the squeezing gate is
 
@@ -374,7 +384,9 @@ class Squeezing(_ScalableBogoliubovTransformation):
     The unitary squeezing operator is
 
     .. math::
-        S(z) = \exp ( \frac{1}{2}(z^* a^2 -z a^{\dagger 2} ),
+        S(z) = \exp \left (
+            \frac{1}{2}(z^* a_i^2 - z a_i^{\dagger 2})
+        \right ),
 
     where :math:`z \in \mathbb{C}^{d \times d}` is a symmetric matrix.
 
@@ -402,9 +414,9 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
     The unitary operator corresponding to the Fourier gate is
 
     .. math::
-        \hat{U} = \exp (
-            i \frac{s}{2 \hbar} \hat{x}^2
-        ).
+        QP_{i} (s) = \exp \left (
+            i \frac{s}{2 \hbar} x_i^2
+        \right ).
 
     The symplectic representation of the quadratic phase gate is
 
@@ -430,8 +442,10 @@ class Squeezing2(_BogoliubovTransformation):
 
     The unitary operator corresponding to the two-mode squeezing gate is
 
-      .. math::
-        \hat{U} = \exp ( \frac{1}{2}(z^* \hat{a}^2 - z \hat{a}^{\dagger 2} ).
+    .. math::
+        S_{ij} (z) = \exp \left (
+            \frac{1}{2}(z^* a_i a_j - z a_i^\dagger a_j^\dagger )
+        \right ).
 
     The symplectic representation of the two-mode squeezing gate is
 
@@ -473,7 +487,9 @@ class ControlledX(_BogoliubovTransformation):
     The unitary operator corresponding to the controlled X gate is
 
     .. math::
-        \hat{U} = \exp ( -i \frac{s}{\hbar} \hat{x}_i \hat{p}_j ).
+        CX_{ij} (s) = \exp \left (
+            -i \frac{s}{\hbar} x_i p_j
+        \right ).
 
     The symplectic representation of the controlled X gate is
 
@@ -511,7 +527,9 @@ class ControlledZ(_BogoliubovTransformation):
     The unitary operator corresponding to the controlled Z gate is
 
     .. math::
-        \hat{U} = \exp ( -i \frac{s}{\hbar} \hat{x}_i \hat{x}_j ).
+        CZ_{ij} (s) = \exp \left (
+            -i \frac{s}{\hbar} x_i x_j
+        \right ).
 
     The symplectic representation of the controlled Z gate is
 
@@ -548,7 +566,10 @@ class Displacement(_ScalableBogoliubovTransformation):
     Evolves the ladder operators by
 
     .. math::
-        \hat{\xi} \mapsto \hat{\xi} + \begin{bmatrix} \alpha \\ \alpha^* \end{bmatrix},
+        \xi \mapsto \xi + \begin{bmatrix}
+            \alpha \\
+            \alpha^*
+        \end{bmatrix},
 
     where :math:`\alpha \in \mathbb{C}^{d \times d}`.
 
@@ -556,7 +577,9 @@ class Displacement(_ScalableBogoliubovTransformation):
     When `r` and `phi` are the given parameters, `alpha` is calculated via:
 
     .. math:
-        \alpha = r \exp(i \phi).
+        \alpha = r \exp \left (
+            i \phi
+        \right ).
 
     Args:
         alpha (complex): The displacement.
@@ -611,7 +634,9 @@ class Kerr(Instruction):
         :class:`~piquasso._backends.gaussian.state.GaussianState`.
 
     .. math::
-        K(\xi) = \exp(i \xi \hat{n} \hat{n})
+        K_i (\xi) = \exp \left (
+            i \xi n_i n_i
+        \right )
 
     .. math::
         K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n))
@@ -632,11 +657,13 @@ class CrossKerr(Instruction):
         :class:`~piquasso._backends.gaussian.state.GaussianState`.
 
     .. math::
-        CK(\xi) = \exp(i \xi \hat{n}_i \hat{n}_j)
+        CK_{ij} (\xi) = \exp \left (
+            i \xi n_i n_j
+        \right )
 
     .. math::
-        CK(\xi) a_i CK(\xi) &= a_i \exp(- i \xi n_j) \\
-        CK(\xi) a_j CK(\xi) &= a_j \exp(- i \xi n_i)
+        CK_{ij} (\xi) a_i CK_{ij} (\xi) &= a_i \exp(- i \xi n_j) \\
+        CK_{ij} (\xi) a_j CK_{ij} (\xi) &= a_j \exp(- i \xi n_i)
 
     Args:
         xi (float): The magnitude of the Cross-Kerr nonlinear term.
@@ -707,7 +734,7 @@ class Graph(Instruction):
         For a squeezed state :math:`rho` the mean photon number is calculated by
 
         .. math::
-            \langle \hat{n} \rangle_\rho = \sum_{i = 0}^d \mathrm{sinh}(r_i)^2
+            \langle n \rangle_\rho = \sum_{i = 0}^d \mathrm{sinh}(r_i)^2
 
         where :math:`r_i = \mathrm{arctan}(s_i)`, where :math:`s_i` are the singular
         values of the adjacency matrix.
