@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.core.mixins import _PropertyMixin, _RegisterMixin, _CodeMixin
+from piquasso.core import _mixins
 
 
-class Instruction(_PropertyMixin, _RegisterMixin, _CodeMixin):
+class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     """
     Args:
         *params: Variable length argument list.

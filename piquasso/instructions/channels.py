@@ -15,13 +15,13 @@
 
 import numpy as np
 
-from piquasso.core.mixins import _ScalingMixin
+from piquasso.core import _mixins
 
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.instruction import Instruction
 
 
-class Loss(Instruction, _ScalingMixin):
+class Loss(Instruction, _mixins.ScalingMixin):
     """Applies a loss channel to the state.
 
     Note:

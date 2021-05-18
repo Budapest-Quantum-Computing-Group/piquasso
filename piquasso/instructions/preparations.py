@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from piquasso.core.mixins import _WeightMixin
+from piquasso.core import _mixins
 from piquasso.api.instruction import Instruction
 
 
@@ -86,7 +86,7 @@ class Covariance(Instruction):
         super().__init__(cov=cov)
 
 
-class StateVector(Instruction, _WeightMixin):
+class StateVector(Instruction, _mixins.WeightMixin):
     r"""State preparation with Fock basis vectors.
 
     Example usage:
@@ -109,7 +109,7 @@ class StateVector(Instruction, _WeightMixin):
         super().__init__(occupation_numbers=occupation_numbers, coefficient=coefficient)
 
 
-class DensityMatrix(Instruction, _WeightMixin):
+class DensityMatrix(Instruction, _mixins.WeightMixin):
     r"""State preparation with density matrix elements.
 
     Example usage:

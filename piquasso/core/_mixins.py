@@ -17,7 +17,7 @@ import abc
 import copy
 
 
-class _PropertyMixin(abc.ABC):
+class PropertyMixin(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
@@ -31,7 +31,7 @@ class _PropertyMixin(abc.ABC):
         pass
 
 
-class _WeightMixin:
+class WeightMixin:
     def __mul__(self, coefficient):
         self.params["coefficient"] *= coefficient
         return self
@@ -42,7 +42,7 @@ class _WeightMixin:
         return self.__mul__(1 / coefficient)
 
 
-class _RegisterMixin(abc.ABC):
+class RegisterMixin(abc.ABC):
     @abc.abstractmethod
     def _apply_to_program_on_register(self, *, program, register):
         """Applies the current object to the specifed program on its specified register.
@@ -62,13 +62,13 @@ class _RegisterMixin(abc.ABC):
         return copy.deepcopy(self)
 
 
-class _CodeMixin(abc.ABC):
+class CodeMixin(abc.ABC):
     @abc.abstractmethod
     def _as_code(self):
         pass
 
 
-class _ScalingMixin(abc.ABC):
+class ScalingMixin(abc.ABC):
     @abc.abstractmethod
     def _autoscale(self):
         pass
