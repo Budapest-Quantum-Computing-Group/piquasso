@@ -51,7 +51,7 @@ from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
 from piquasso._math.takagi import takagi
-from piquasso._math.linalg import is_square, is_symmetric, is_symplectic
+from piquasso._math.linalg import is_square, is_symmetric, is_symplectic, is_invertible
 
 from piquasso.core import _mixins
 
@@ -704,6 +704,9 @@ class Sampling(Instruction):
 class Graph(Instruction):
     r"""Applies a graph given its adjacency matrix, see
     https://arxiv.org/pdf/1612.01199.pdf
+
+    Raises:
+        InvalidParameter: If the adjacency matrix is not invertible or not symmetric.
     """
 
     def __init__(self, adjacency_matrix, mean_photon_number=1.0):
@@ -711,6 +714,9 @@ class Graph(Instruction):
             adjacency_matrix=adjacency_matrix,
             mean_photon_number=mean_photon_number
         )
+
+        if not is_invertible(adjacency_matrix):
+            raise InvalidParameter("The adjacency matrix is not invertible.")
 
         if not is_symmetric(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix should be symmetric.")
