@@ -61,6 +61,13 @@ def is_symplectic(matrix):
     return np.allclose(matrix @ K @ matrix.conj().T, K)
 
 
+def is_invertible(matrix):
+    return (
+        is_square(matrix)
+        and np.linalg.matrix_rank(matrix) == matrix.shape[0]
+    )
+
+
 def symplectic_form(d):
     one_mode_symplectic_form = np.array([[0, 1], [-1, 0]])
 
