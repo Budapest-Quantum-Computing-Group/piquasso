@@ -128,8 +128,7 @@ class GaussianState(State):
         if not is_symmetric(cov):
             raise InvalidState("The covariance matrix is not symmetric.")
 
-        if not is_positive_semidefinite(cov + 1j * symplectic_form(d)):
-            # NOTE: There is something funny going on here.
+        if not is_positive_semidefinite(cov / constants.HBAR + 1j * symplectic_form(d)):
             raise InvalidState(
                 "The covariance matrix is invalid, since it doesn't fulfill the "
                 "Robertson-Schrödinger uncertainty relation."
@@ -588,7 +587,9 @@ class GaussianState(State):
         rho_outer = rho[np.ix_(outer_indices, outer_indices)]
         rho_correlation = rho[np.ix_(outer_indices, indices)]
 
-        rho_m = scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+        rho_m = constants.HBAR * scipy.linalg.block_diag(
+            *[detection_covariance] * len(modes)
+        )
 
         # HACK: We need tol=1e-7 to avoid Numpy warnings at homodyne detection with
         # squeezed detection covariance. Numpy warns

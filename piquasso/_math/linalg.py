@@ -42,7 +42,14 @@ def is_selfadjoint(matrix):
 
 
 def is_positive_semidefinite(matrix):
-    return np.all(np.linalg.eigvals(matrix) >= 0)
+    eigenvalues = np.linalg.eigvals(matrix)
+
+    return all(
+        [
+            eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0)
+            for eigenvalue in eigenvalues
+        ]
+    )
 
 
 def is_square(matrix):
