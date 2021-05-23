@@ -153,8 +153,11 @@ def gaussian_state_assets(AssetHandler):
                     "cov": obj.cov,
                 }
             }
+            np.set_printoptions(precision=16)
 
             filename = self._resolve_file_for_save(self._asset)
+
+            np.set_printoptions(precision=8)
 
             self._write_repr(filename, state_map)
 

@@ -18,7 +18,7 @@ import numpy as np
 
 import piquasso as pq
 
-from scipy.linalg import polar, sinhm, coshm
+from scipy.linalg import polar, sinhm, coshm, expm
 
 
 @pytest.fixture
@@ -369,17 +369,18 @@ def test_interferometer_for_2_modes(program, gaussian_state_assets):
 
 
 def test_interferometer_for_all_modes(program, gaussian_state_assets):
-    random_unitary = np.array(
+    self_adjoint = np.array(
         [
-            [-0.000299 - 0.248251j, -0.477889 - 0.502114j, -0.1605961 - 0.657331j],
-            [-0.642609 - 0.628177j, -0.057561 - 0.133947j,  0.2663486 + 0.316625j],
-            [ 0.355304 + 0.067664j, -0.703395 + 0.059033j,  0.5225116 + 0.312911j],
+            [1, 2j, 3 + 4j],
+            [-2j, 2, 5],
+            [3 - 4j, 5, 6],
         ],
-        dtype=complex,
+        dtype=complex
     )
+    unitary = expm(1j * self_adjoint)
 
     with program:
-        pq.Q(0, 1, 2) | pq.Interferometer(random_unitary)
+        pq.Q(0, 1, 2) | pq.Interferometer(unitary)
 
     program.execute()
     program.state.validate()

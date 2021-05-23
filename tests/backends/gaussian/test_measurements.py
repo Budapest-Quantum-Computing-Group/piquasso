@@ -202,8 +202,8 @@ def test_measure_heterodyne_with_multiple_shots(program):
 def test_measure_dyne(program):
     detection_covariance = np.array(
         [
-            [1, 2],
-            [2, 1],
+            [2, 0],
+            [0, 0.5],
         ]
     )
 
@@ -223,8 +223,8 @@ def test_measure_dyne_with_multiple_shots(program):
 
     detection_covariance = np.array(
         [
-            [1, 2],
-            [2, 1],
+            [2, 0],
+            [0, 0.5],
         ]
     )
 

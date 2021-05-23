@@ -114,42 +114,35 @@ def test_reduced_rotated_mean_and_cov(state, assets):
 
 
 class TestGaussianStateOperations:
-    @pytest.fixture
-    def mean(self):
-        return np.array([  2.,  -4.,   6.,   8.,   4., -10.])
-
-    @pytest.fixture
-    def cov(self):
-        return np.array(
-            [
-                [ 25.,  -3.,  -1.,   5.,  -8.,   8.],
-                [ -3.,  12.,   0., -14.,   3.,  -9.],
-                [ -1.,   0.,   2.,   0.,   0.,   3.],
-                [  5., -14.,   0.,  38., -14.,  13.],
-                [ -8.,   3.,   0., -14.,  18.,   9.],
-                [  8.,  -9.,   3.,  13.,   9.,  35.],
-            ]
-        )
-
     @pytest.fixture(autouse=True)
-    def setup(self, mean, cov):
-        self.state = pq.GaussianState(d=(len(mean) // 2))
-        self.state.mean = mean
-        self.state.cov = cov
+    def setup(self):
+        with pq.Program() as program:
+            pq.Q() | pq.GaussianState(d=3)
+
+            pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
+
+            pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
+
+        program.execute()
+        program.state.validate()
+
+        self.state = program.state
 
     def test_rotated(self):
         phi = np.pi / 2
         rotated_state = self.state.rotated(phi)
 
-        expected_rotated_mean = np.array([ -4.,  -2.,   8.,  -6., -10.,  -4.])
+        expected_rotated_mean = np.array([0., 6.5, 0., -5.5, 6., 0.])
         expected_rotated_cov = np.array(
             [
-                [ 12.,   3., -14.,  -0.,  -9.,  -3.],
-                [  3.,  25.,  -5.,  -1.,  -8.,  -8.],
-                [-14.,  -5.,  38.,   0.,  13.,  14.],
-                [ -0.,  -1.,   0.,   2.,  -3.,   0.],
-                [ -9.,  -8.,  13.,  -3.,  35.,  -9.],
-                [ -3.,  -8.,  14.,   0.,  -9.,  18.],
+                [ 4.25,    0.,  3.75,    0., 0., 0.],
+                [   0.,  4.25,    0., -3.75, 0., 0.],
+                [ 3.75,    0.,  4.25,   -0., 0., 0.],
+                [   0., -3.75,   -0.,  4.25, 0., 0.],
+                [   0.,    0.,    0.,    0., 2., 0.],
+                [   0.,    0.,    0.,    0., 0., 2.],
             ]
         )
 
@@ -167,13 +160,13 @@ class TestGaussianStateOperations:
 
         reduced_state = self.state.reduced(modes)
 
-        expected_reduced_mean = np.array([ 2.,  -4.,   4., -10.])
+        expected_reduced_mean = np.array([-6.5, 0., 0., 6.])
         expected_reduced_cov = np.array(
             [
-                [25., -3., -8.,  8.],
-                [-3., 12.,  3., -9.],
-                [-8.,  3., 18.,  9.],
-                [ 8., -9.,  9., 35.],
+                [4.25,   0., 0., 0.],
+                [  0., 4.25, 0., 0.],
+                [  0.,   0., 2., 0.],
+                [  0.,   0., 0., 2.],
             ]
         )
 

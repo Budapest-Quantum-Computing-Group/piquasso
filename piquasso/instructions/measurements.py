@@ -25,6 +25,8 @@
 import numpy as np
 
 from piquasso.api.instruction import Instruction
+from piquasso.api.errors import InvalidParameter
+from piquasso._math.linalg import is_positive_semidefinite, symplectic_form
 
 
 class ParticleNumberMeasurement(Instruction):
@@ -101,6 +103,12 @@ class GeneraldyneMeasurement(Instruction):
     """
 
     def __init__(self, detection_covariance, shots=1):
+        if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
+            raise InvalidParameter(
+                "The parameter 'detection_covariance' is invalid, since it doesn't "
+                "fulfill the Robertson-Schrödinger uncertainty relation."
+            )
+
         super().__init__(detection_covariance=detection_covariance, shots=shots)
 
 
