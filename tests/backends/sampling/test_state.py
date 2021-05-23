@@ -125,16 +125,27 @@ class TestSamplingState:
 
         assert np.allclose(program.state.interferometer, expected_interferometer)
 
-    def test_distribution(self):
-        input_state = pq.SamplingState(1, 1, 0)
+    def test_probability_distribution(self):
+        U = np.array(
+            [
+                [1, 0, 0],
+                [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
+                [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            ],
+        )
 
-        U = np.asarray([[1, 0, 0],
-                        [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-                        [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]])
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(1, 1, 0)
 
-        input_state.interferometer = U
+            pq.Q(all) | pq.Interferometer(U)
 
-        probabilities = input_state.get_fock_probabilities()
-        expected_result = [0.0, 0.30545762086020883, 0.6945423895038292, 0.0, 0.0, 0.0]
+        program.execute()
 
-        assert np.allclose(probabilities, expected_result)
+        assert np.allclose(
+            program.state.get_fock_probabilities(),
+            [
+                0.0,
+                0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.6945423895038292, 0.30545762086020883, 0.0
+            ],
+        )

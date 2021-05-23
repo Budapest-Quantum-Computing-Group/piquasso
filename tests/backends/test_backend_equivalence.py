@@ -433,3 +433,88 @@ def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
         fock_representation_probabilities,
         normalization * gaussian_representation_probabilities,
     )
+
+
+def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
+    with pq.Program() as fock_program:
+        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.StateVector(1, 1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
+
+    fock_program.execute()
+
+    with pq.Program() as sampling_program:
+        pq.Q() | pq.SamplingState(1, 1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
+
+    sampling_program.execute()
+
+    assert np.allclose(
+        fock_program.state.get_fock_probabilities(),
+        sampling_program.state.get_fock_probabilities()
+    )
+
+
+def test_sampling_backend_equivalence_complex_scenario():
+    with pq.Program() as fock_program:
+        pq.Q() | pq.PureFockState(d=4, cutoff=4) | pq.StateVector(1, 1, 0, 1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
+
+        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
+
+        pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
+
+    fock_program.execute()
+    fock_program.state.validate()
+
+    with pq.Program() as sampling_program:
+        pq.Q() | pq.SamplingState(1, 1, 0, 1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
+
+        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
+
+        pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
+
+    sampling_program.execute()
+    sampling_program.state.validate()
+
+    assert np.allclose(
+        fock_program.state.get_fock_probabilities(),
+        sampling_program.state.get_fock_probabilities()
+    )
+
+
+@pytest.mark.monkey
+def test_sampling_backend_equivalence_with_random_interferometer(
+    generate_unitary_matrix
+):
+    d = 4
+    cutoff = 4
+    initial_occupation_numbers = (1, 1, 0, 1)
+
+    interferometer_matrix = generate_unitary_matrix(d)
+
+    with pq.Program() as fock_program:
+        pq.Q() | pq.PureFockState(d=d, cutoff=cutoff)
+        pq.Q() | pq.StateVector(*initial_occupation_numbers)
+
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+
+    fock_program.execute()
+    fock_program.state.validate()
+
+    with pq.Program() as sampling_program:
+        pq.Q() | pq.SamplingState(*initial_occupation_numbers)
+
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+
+    sampling_program.execute()
+    sampling_program.state.validate()
+
+    assert np.allclose(
+        fock_program.state.get_fock_probabilities(),
+        sampling_program.state.get_fock_probabilities()
+    )

@@ -16,6 +16,10 @@
 import numpy as np
 
 from piquasso.api.state import State
+from piquasso.api.errors import InvalidState
+from piquasso._math.fock import symmetric_subspace_cardinality
+from piquasso._math.linalg import is_unitary
+
 from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (
     BSDistributionCalculatorWithFixedLosses,
     BosonSamplingExperimentConfiguration
@@ -34,6 +38,16 @@ class SamplingState(State):
         self.results = None
 
         self.is_lossy = False
+
+    def validate(self):
+        """Validates the currect state.
+
+        Raises:
+            InvalidState: If the interferometer matrix is non-unitary.
+        """
+
+        if not is_unitary(self.interferometer):
+            raise InvalidState("The interferometer matrix is not unitary.")
 
     def _apply_passive_linear(self, U, modes):
         r"""
@@ -61,12 +75,14 @@ class SamplingState(State):
         self._apply_matrix_on_modes(transmission_matrix, modes)
 
     def _apply_matrix_on_modes(self, matrix, modes):
-        self.interferometer[np.ix_(modes, modes)] = (
-            matrix @ self.interferometer[np.ix_(modes, modes)]
-        )
+        embedded = np.identity(len(self.interferometer), dtype=complex)
+
+        embedded[np.ix_(modes, modes)] = matrix
+
+        self.interferometer = embedded @ self.interferometer
 
     @property
-    def d(self):
+    def d(self) -> int:
         r"""The number of modes, on which the state is defined.
 
         Returns:
@@ -74,19 +90,51 @@ class SamplingState(State):
         """
         return len(self.initial_state)
 
-    def get_fock_probabilities(self):
+    @property
+    def particle_number(self) -> int:
+        r"""The number of particles in the system.
+
+        Returns:
+            int: The number of particles.
+        """
+
+        return sum(self.initial_state)
+
+    def get_fock_probabilities(self, cutoff: int = None) -> list:
+        cutoff = cutoff or self.particle_number + 1
+
+        probabilities = []
+
+        for particle_number in range(cutoff):
+
+            if particle_number == self.particle_number:
+                subspace_probabilities = self._get_fock_probabilities_on_subspace()
+            else:
+                cardinality = symmetric_subspace_cardinality(
+                    d=self.d, n=particle_number
+                )
+                subspace_probabilities = [0.0] * cardinality
+
+            probabilities.extend(subspace_probabilities)
+
+        return probabilities
+
+    def _get_fock_probabilities_on_subspace(self) -> list:
+        """
+        The order if the returned Fock states is lexicographic, according to
+        `BoSS.boson_sampling_utilities.boson_sampling_utilities
+        .generate_possible_outputs`
+        """
         permanent_calculator = RyserGuanPermanentCalculator(self.interferometer)
         config = BosonSamplingExperimentConfiguration(
             interferometer_matrix=self.interferometer,
             initial_state=np.asarray(self.initial_state),
-            number_of_modes=len(self.initial_state),
-            initial_number_of_particles=sum(self.initial_state),
+            number_of_modes=self.d,
+            initial_number_of_particles=self.particle_number,
             number_of_particles_lost=0,
-            number_of_particles_left=sum(self.initial_state)
+            number_of_particles_left=self.particle_number,
         )
         distribution_calculator = BSDistributionCalculatorWithFixedLosses(
-            config, permanent_calculator)
-        # The order of the probabilities is according to
-        # BoSS.boson_sampling_utilities.boson_sampling_utilities
-        # .generate_possible_outputs
+            config, permanent_calculator
+        )
         return distribution_calculator.calculate_distribution()
