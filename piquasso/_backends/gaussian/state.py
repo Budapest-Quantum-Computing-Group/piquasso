@@ -687,11 +687,13 @@ class GaussianState(State):
         @lru_cache(maxsize=None)
         def get_probability(*, subspace_modes, occupation_numbers):
             reduced_state = self.reduced(subspace_modes)
-            return calculation(
+            probability = calculation(
                 reduced_state,
                 subspace_modes,
                 occupation_numbers,
             )
+
+            return max(probability, 0.0)
 
         samples = []
 
