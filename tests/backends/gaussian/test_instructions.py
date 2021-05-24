@@ -639,3 +639,24 @@ def test_program_stacking_with_measurement():
         pq.Q(3) | pq.HeterodyneMeasurement()
 
     program.execute()
+
+
+def test_complex_one_mode_scenario():
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=1)
+
+        pq.Q(0) | pq.Squeezing(r=np.log(2))
+        pq.Q(0) | pq.Displacement(alpha=1)
+        pq.Q(0) | pq.Phaseshifter(np.pi / 4)
+
+    program.execute()
+
+    assert np.allclose(
+        program.state.get_fock_probabilities(cutoff=4),
+        [
+            0.1615172143957243,
+            0.41348406885305417,
+            0.31024226541130745,
+            0.03980473302825398
+        ],
+    )
