@@ -43,7 +43,7 @@ class Circuit(abc.ABC):
         if any(mode in self._measured_modes for mode in modes):
             raise InvalidModes(
                 f"The modes {modes} contains a mode which is already measured.\n"
-                f"Already mesured modes: {self._measured_modes}"
+                f"Already mesured modes: {list(self._measured_modes)}"
             )
 
     def execute_instructions(self, instructions):
