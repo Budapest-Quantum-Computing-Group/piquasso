@@ -24,7 +24,7 @@ import strawberryfields as sf
 
 
 d = 5
-shots = 500
+shots = 2000
 
 
 with pq.Program() as pq_program:

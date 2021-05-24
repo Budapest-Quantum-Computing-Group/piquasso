@@ -22,7 +22,7 @@ from scripts.cramer import cramer_multidim_test
 
 
 d = 5
-shots = 1000
+shots = 2000
 
 
 with pq.Program() as pq_program:

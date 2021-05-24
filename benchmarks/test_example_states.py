@@ -15,8 +15,6 @@
 
 import numpy as np
 
-from thewalrus.quantum import conversions
-
 
 def test_example_programs_result_in_the_same_state(
     example_pq_gaussian_state,
@@ -34,9 +32,4 @@ def test_example_programs_result_in_the_same_state(
     assert np.allclose(
         example_pq_gaussian_state.xp_cov / 2,
         example_sf_gaussian_state.cov(),
-    )
-
-    assert np.allclose(
-        example_pq_gaussian_state.husimi_cov,
-        conversions.Qmat(example_sf_gaussian_state.cov(), hbar=2)
     )

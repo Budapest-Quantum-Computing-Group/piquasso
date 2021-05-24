@@ -329,15 +329,79 @@ class GaussianState(State):
         return self.mean, self.corr
 
     @property
-    def complex_displacements(self):
+    def complex_displacement(self):
+        r"""The complex displacement of the state.
+
+        The complex displacement is defined by
+
+        .. math::
+            \mu_{c} := \begin{bmatrix}
+                \langle a_1 \rangle_{\rho}, \dots, \langle a_d \rangle_{\rho},
+                \langle a^\dagger_1 \rangle_{\rho},
+                \dots, \langle a^\dagger_d \rangle_{\rho}
+            \end{bmatrix}.
+
+        Equivalently, one can write
+
+        .. math::
+            \mu_{c} := W \mu_{xp},
+
+        where :math:`\mu_{xp}` is the xp-ordered mean vector :attr:`xp_mean`
+        and
+
+        .. math::
+            W = \frac{1}{\sqrt{2}} \begin{bmatrix}
+                I_{d} & i I_{d} \\
+                I_{d} & -i I_{d}
+            \end{bmatrix}.
+
+        Returns:
+            numpy.ndarray: The complex displacement.
+        """
+
         return np.concatenate([self._m, self._m.conj()])
 
     @property
-    def husimi_cov(self):
-        return np.block(
+    def complex_covariance(self):
+        r"""The complex covariance of the state.
+
+        The complex covariance is defined by
+
+        .. math::
+            \sigma_{c, ij} = \langle
+                \xi_i \xi^\dagger_j + \xi_j \xi^\dagger_i
+            \rangle_{\rho}
+            - 2 \langle \xi_i \rangle_{\rho} \langle \xi^\dagger_j \rangle_{\rho},
+
+        where
+
+        .. math::
+            \xi = \begin{bmatrix}
+                a_1, \dots a_d, a^\dagger_1, \dots, a^\dagger_d
+            \end{bmatrix}.
+
+        Equivalently, one can write
+
+        .. math::
+            \sigma_{c} = \frac{1}{\hbar} W \sigma_{xp} W^{\dagger},
+
+        where :math:`\sigma_{xp}` is the xp-ordered covariance matrix :attr:`xp_cov`
+        and
+
+        .. math::
+            W = \frac{1}{\sqrt{2}} \begin{bmatrix}
+                I_{d} & i I_{d} \\
+                I_{d} & -i I_{d}
+            \end{bmatrix}.
+
+        Returns:
+            numpy.ndarray: The complex covariance.
+        """
+
+        return 2 * np.block(
             [
-                [self._C, self._G.conj()],
-                [self._G, self._C.conj()]
+                [self._C.conj(), self._G],
+                [self._G.conj(), self._C]
             ]
         ) + np.identity(2 * self.d)
 
@@ -769,10 +833,10 @@ def calculate_particle_number_detection_probability(
     subspace_modes: tuple,
     occupation_numbers: tuple,
 ):
-    Q = state.husimi_cov
+    d = len(subspace_modes)
+    Q = (state.complex_covariance + np.identity(2 * d)) / 2
     Qinv = np.linalg.inv(Q)
 
-    d = len(subspace_modes)
     identity = np.identity(d)
     zeros = np.zeros_like(identity)
 
@@ -783,10 +847,10 @@ def calculate_particle_number_detection_probability(
         ],
     )
 
-    A = X @ (np.identity(2 * d, dtype=complex) - Qinv).conj()
+    A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
-    alpha = state.complex_displacements
-    gamma = alpha.conj() - A @ alpha
+    alpha = state.complex_displacement
+    gamma = alpha.conj() @ Qinv
 
     A_reduced = block_reduce(A, reduce_on=occupation_numbers)
 
@@ -798,7 +862,7 @@ def calculate_particle_number_detection_probability(
     )
 
     return (
-        loop_hafnian(A_reduced) * np.exp(-0.5 * alpha @ Qinv @ alpha.conj())
+        loop_hafnian(A_reduced) * np.exp(-0.5 * gamma @ alpha)
         / (np.prod(factorial(occupation_numbers)) * np.sqrt(np.linalg.det(Q)))
     ).real
 
@@ -808,11 +872,11 @@ def calculate_threshold_detection_probability(
     subspace_modes,
     occupation_numbers,
 ):
-    Q = state.husimi_cov
-
     d = len(subspace_modes)
 
-    OS = (np.identity(2 * d, dtype=complex) - np.linalg.inv(Q)).conj()
+    Q = (state.complex_covariance + np.identity(2 * d)) / 2
+
+    OS = (np.identity(2 * d, dtype=complex) - np.linalg.inv(Q))
 
     OS_reduced = block_reduce(OS, reduce_on=occupation_numbers)
 

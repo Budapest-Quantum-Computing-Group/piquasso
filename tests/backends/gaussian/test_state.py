@@ -230,7 +230,7 @@ def test_mean_is_scaled_with_squared_HBAR(state, assets):
     assert np.allclose(mean_default_hbar * np.sqrt(scaling), mean_different_hbar)
 
 
-def test_cov_is_scaled_with_HBAR(state, assets):
+def test_cov_is_scaled_with_HBAR(state):
     scaling = 14
 
     cov_default_hbar = state.cov
@@ -242,40 +242,59 @@ def test_cov_is_scaled_with_HBAR(state, assets):
     assert np.allclose(cov_default_hbar * scaling, cov_different_hbar)
 
 
-def test_husimi_cov(state, assets):
+def test_complex_covariance(state, assets):
 
-    expected_husimi_cov = assets.load("expected_husimi_cov")
+    expected_complex_covariance = assets.load("expected_complex_covariance")
 
-    assert np.allclose(state.husimi_cov, expected_husimi_cov)
+    assert np.allclose(state.complex_covariance, expected_complex_covariance)
 
 
-def test_husimi_cov_does_not_scale_with_HBAR(state, assets):
-    husimi_cov_default_hbar = state.husimi_cov
+def test_complex_covariance_does_not_scale_with_HBAR(state):
+    complex_covariance_default_hbar = state.complex_covariance
 
     constants.HBAR = 42
 
-    husimi_cov_different_hbar = state.husimi_cov
-
-    assert np.allclose(husimi_cov_default_hbar, husimi_cov_different_hbar)
-
-
-def test_complex_displacements(state, assets):
-    expected_complex_displacements = assets.load("expected_complex_displacements")
+    complex_covariance_different_hbar = state.complex_covariance
 
     assert np.allclose(
-        state.complex_displacements,
-        expected_complex_displacements,
+        complex_covariance_default_hbar,
+        complex_covariance_different_hbar,
     )
 
 
-def test_complex_displacements_do_not_scale_with_HBAR(state, assets):
-    complex_displacements_default_hbar = state.complex_displacements
+def test_complex_covariance_transformed_directly_from_xp_cov(state):
+    xp_cov = state.xp_cov
+    d = len(xp_cov) // 2
+
+    W = (1 / np.sqrt(2)) * np.block(
+        [
+            [np.identity(d), 1j * np.identity(d)],
+            [np.identity(d), - 1j * np.identity(d)],
+        ]
+    )
+
+    complex_covariance = W @ xp_cov @ W.conj().T / constants.HBAR
+
+    assert np.allclose(complex_covariance, state.complex_covariance)
+
+
+def test_complex_displacement(state, assets):
+    expected_complex_displacement = assets.load("expected_complex_displacement")
+
+    assert np.allclose(
+        state.complex_displacement,
+        expected_complex_displacement,
+    )
+
+
+def test_complex_displacement_do_not_scale_with_HBAR(state):
+    complex_displacement_default_hbar = state.complex_displacement
 
     constants.HBAR = 42
 
-    complex_displacements_different_hbar = state.complex_displacements
+    complex_displacement_different_hbar = state.complex_displacement
 
     assert np.allclose(
-        complex_displacements_default_hbar,
-        complex_displacements_different_hbar,
+        complex_displacement_default_hbar,
+        complex_displacement_different_hbar,
     )
