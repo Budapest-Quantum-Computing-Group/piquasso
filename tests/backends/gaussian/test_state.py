@@ -18,6 +18,7 @@ import numpy as np
 
 import piquasso as pq
 from piquasso.api import constants
+from piquasso.api.errors import InvalidParameter
 
 
 @pytest.fixture
@@ -297,4 +298,53 @@ def test_complex_displacement_do_not_scale_with_HBAR(state):
     assert np.allclose(
         complex_displacement_default_hbar,
         complex_displacement_different_hbar,
+    )
+
+
+def test_quadratic_expectation_with_nonsymmetric_quadratic_coefficients(state):
+    nonsymmetric_quadratic_coefficients = np.array(
+        [
+            [0, 1, 1, 1, 1, 1],
+            [0, 0, 1, 1, 1, 1],
+            [0, 0, 0, 1, 1, 1],
+            [0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0],
+        ]
+    )
+
+    any_vector = np.empty(2 * state.d)
+
+    with pytest.raises(InvalidParameter):
+        state.quadratic_polynomial_expectation(
+            A=nonsymmetric_quadratic_coefficients,
+            b=any_vector,
+        )
+
+
+def test_quadratic_expectation(state):
+    rotation_angle = np.pi / 3
+    constant_term = 100
+    quadratic_coefficients = np.array(
+        [
+            [0, 1, 2, 0, 2, 0],
+            [1, 0, 0, 1, 0, 1],
+            [2, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [2, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+        ]
+    )
+    linear_coefficients = np.ones(2 * state.d)
+
+    expectation_value = state.quadratic_polynomial_expectation(
+        A=quadratic_coefficients,
+        b=linear_coefficients,
+        c=constant_term,
+        phi=rotation_angle,
+    )
+
+    assert np.isclose(
+        expectation_value,
+        97.78556059428445,
     )
