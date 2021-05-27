@@ -41,6 +41,7 @@ class SamplingCircuit(Circuit):
             "Fourier": self._passive_linear,
             "Sampling": self._sampling,
             "Interferometer": self._passive_linear,
+            "OccupationNumbers": self._occupation_numbers,
             "Loss": self._loss,
         }
 
@@ -80,6 +81,11 @@ class SamplingCircuit(Circuit):
 
         self.results.append(
             Result(instruction=instruction, samples=samples)
+        )
+
+    def _occupation_numbers(self, instruction):
+        self.state._apply_state_vector(
+            instruction.params["occupation_numbers"],
         )
 
     def _loss(self, instruction):

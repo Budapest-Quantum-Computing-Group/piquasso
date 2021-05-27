@@ -22,8 +22,10 @@ import piquasso as pq
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
-        initial_state = pq.SamplingState(1, 1, 1, 0, 0)
-        self.program = pq.Program(initial_state)
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(d=5) | pq.OccupationNumbers((1, 1, 1, 0, 0))
+
+        self.program = program
 
     def test_program(self):
         U = np.array([

@@ -22,7 +22,7 @@ import piquasso as pq
 class TestSamplingState:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.state = pq.SamplingState(1, 1, 1, 0, 0)
+        self.state = pq.SamplingState.from_occupation_numbers(1, 1, 1, 0, 0)
 
     def test_initial_state(self):
         expected_initial_state = [1, 1, 1, 0, 0]
@@ -135,7 +135,7 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | pq.SamplingState(1, 1, 0)
+            pq.Q() | pq.SamplingState(d=3) | pq.OccupationNumbers((1, 1, 0))
 
             pq.Q(all) | pq.Interferometer(U)
 

@@ -32,12 +32,20 @@ from .circuit import SamplingCircuit
 class SamplingState(State):
     circuit_class = SamplingCircuit
 
-    def __init__(self, *initial_state):
-        self.initial_state = initial_state
+    def __init__(self, d):
+        self.initial_state = np.zeros(d)
         self.interferometer = np.diag(np.ones(self.d, dtype=complex))
         self.results = None
 
         self.is_lossy = False
+
+    @classmethod
+    def from_occupation_numbers(cls, *occupation_numbers):
+        obj = cls(d=len(occupation_numbers))
+
+        obj.initial_state = np.array(occupation_numbers)
+
+        return obj
 
     def validate(self):
         """Validates the currect state.
@@ -66,6 +74,9 @@ class SamplingState(State):
                 Distinct positive integer values which are used to represent qumodes.
         """
         self._apply_matrix_on_modes(U, modes)
+
+    def _apply_state_vector(self, state_vector):
+        self.initial_state = np.array(state_vector)
 
     def _apply_loss(self, transmissivity, modes):
         self.is_lossy = True
@@ -128,7 +139,7 @@ class SamplingState(State):
         permanent_calculator = RyserGuanPermanentCalculator(self.interferometer)
         config = BosonSamplingExperimentConfiguration(
             interferometer_matrix=self.interferometer,
-            initial_state=np.asarray(self.initial_state),
+            initial_state=self.initial_state,
             number_of_modes=self.d,
             initial_number_of_particles=self.particle_number,
             number_of_particles_lost=0,

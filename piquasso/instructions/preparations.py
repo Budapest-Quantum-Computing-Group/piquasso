@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 
 from piquasso.core import _mixins
 from piquasso.api.instruction import Instruction
@@ -177,3 +178,24 @@ class Annihilate(Instruction):
 
     def __init__(self):
         pass
+
+
+class OccupationNumbers(Instruction):
+    r"""State preparation with occupation numbers.
+
+    Example usage:
+
+    .. code-block:: python
+
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(d=4) | pq.OccupationNumbers(1, 2, 3, 4)
+            ...
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.sampling.state.SamplingState`.
+    """
+
+    def __init__(self, occupation_numbers):
+        super().__init__(
+            occupation_numbers=np.array(occupation_numbers, dtype=int)
+        )

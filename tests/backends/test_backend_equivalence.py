@@ -444,7 +444,7 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     fock_program.execute()
 
     with pq.Program() as sampling_program:
-        pq.Q() | pq.SamplingState(1, 1)
+        pq.Q() | pq.SamplingState(d=2) | pq.OccupationNumbers((1, 1))
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
@@ -470,7 +470,7 @@ def test_sampling_backend_equivalence_complex_scenario():
     fock_program.state.validate()
 
     with pq.Program() as sampling_program:
-        pq.Q() | pq.SamplingState(1, 1, 0, 1)
+        pq.Q() | pq.SamplingState(d=4) | pq.OccupationNumbers((1, 1, 0, 1))
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
@@ -507,7 +507,7 @@ def test_sampling_backend_equivalence_with_random_interferometer(
     fock_program.state.validate()
 
     with pq.Program() as sampling_program:
-        pq.Q() | pq.SamplingState(*initial_occupation_numbers)
+        pq.Q() | pq.SamplingState(d=d) | pq.OccupationNumbers(initial_occupation_numbers)
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 

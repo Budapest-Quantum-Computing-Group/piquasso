@@ -46,6 +46,7 @@ from .instructions.preparations import (
     DensityMatrix,
     Create,
     Annihilate,
+    OccupationNumbers,
 )
 
 from .instructions.gates import (
@@ -93,6 +94,7 @@ _default_preparations = {
     "DensityMatrix": DensityMatrix,
     "Create": Create,
     "Annihilate": Annihilate,
+    "OccupationNumbers": OccupationNumbers,
 }
 
 

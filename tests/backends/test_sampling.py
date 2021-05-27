@@ -23,19 +23,23 @@ from piquasso.api.errors import InvalidParameter
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.program = pq.Program(
-            state=pq.SamplingState(1, 1, 1, 0, 0),
+        permutation_matrix = np.array(
+            [
+                [0, 0, 1, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0],
+            ],
+            dtype=complex
         )
 
-        permutation_matrix = np.array([
-            [0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
-        ], dtype=complex)
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(5) | pq.OccupationNumbers((1, 1, 1, 0, 0))
 
-        self.program.state.interferometer = permutation_matrix
+            pq.Q() | pq.Interferometer(permutation_matrix)
+
+        self.program = program
 
     def test_sampling_raises_InvalidParameter_for_negative_shot_value(self):
         invalid_shots = -1
