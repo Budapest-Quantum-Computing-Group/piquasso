@@ -23,7 +23,8 @@ import piquasso as pq
 @pytest.fixture(autouse=True)
 def setup_plugin():
     class DummyInstruction(pq.Instruction):
-        pass
+        def __init__(self, **params):
+            super().__init__(params=params)
 
     class FakeCircuit(pq.Circuit):
         dummy_instruction = Mock(name="dummy_instruction")

@@ -32,7 +32,12 @@ def test_instruction_initialization_from_properties():
 
     class DummyInstruction(Instruction):
         def __init__(self, first_param, second_param):
-            super().__init__(first_param=first_param, second_param=second_param)
+            super().__init__(
+                params=dict(
+                    first_param=first_param,
+                    second_param=second_param,
+                ),
+            )
 
     instruction = DummyInstruction.from_properties(properties)
 

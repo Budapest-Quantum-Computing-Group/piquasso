@@ -52,7 +52,7 @@ class ParticleNumberMeasurement(Instruction):
     """
 
     def __init__(self, cutoff=5, shots=1):
-        super().__init__(cutoff=cutoff, shots=shots)
+        super().__init__(params=dict(cutoff=cutoff, shots=shots))
 
 
 class ThresholdMeasurement(Instruction):
@@ -70,7 +70,7 @@ class ThresholdMeasurement(Instruction):
     """
 
     def __init__(self, shots=1):
-        super().__init__(shots=shots)
+        super().__init__(params=dict(shots=shots))
 
 
 class GeneraldyneMeasurement(Instruction):
@@ -109,7 +109,12 @@ class GeneraldyneMeasurement(Instruction):
                 "fulfill the Robertson-Schrödinger uncertainty relation."
             )
 
-        super().__init__(detection_covariance=detection_covariance, shots=shots)
+        super().__init__(
+            params=dict(
+                detection_covariance=detection_covariance,
+                shots=shots,
+            )
+        )
 
 
 class HomodyneMeasurement(Instruction):
@@ -144,18 +149,23 @@ class HomodyneMeasurement(Instruction):
 
     def __init__(self, phi=0.0, z=1e-4, shots=1):
         super().__init__(
-            phi=phi,
-            detection_covariance=np.array(
-                [
-                    [z ** 2, 0],
-                    [0, (1 / z) ** 2],
-                ]
+            params=dict(
+                phi=phi,
+                z=z,
+                shots=shots,
             ),
-            shots=shots,
+            extra_params=dict(
+                detection_covariance=np.array(
+                    [
+                        [z ** 2, 0],
+                        [0, (1 / z) ** 2],
+                    ]
+                ),
+            ),
         )
 
 
-class HeterodyneMeasurement(GeneraldyneMeasurement):
+class HeterodyneMeasurement(Instruction):
     r"""Heterodyne measurement.
 
     The probability density is given by
@@ -176,6 +186,10 @@ class HeterodyneMeasurement(GeneraldyneMeasurement):
 
     def __init__(self, shots=1):
         super().__init__(
-            detection_covariance=np.identity(2),
-            shots=shots,
+            params=dict(
+                shots=shots,
+            ),
+            extra_params=dict(
+                detection_covariance=np.identity(2),
+            ),
         )

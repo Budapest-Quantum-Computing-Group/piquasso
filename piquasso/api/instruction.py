@@ -22,11 +22,18 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
         *params: Variable length argument list.
     """
 
-    def __init__(self, **params):
-        self._set_params(**params)
+    def __init__(self, *, params: dict, extra_params: dict = None):
+        self._params = params
 
-    def _set_params(self, **params):
-        self.params = params
+        self._extra_params = extra_params or dict()
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def _all_params(self):
+        return {**self._params, **self._extra_params}
 
     def _as_code(self):
         if hasattr(self, "modes"):

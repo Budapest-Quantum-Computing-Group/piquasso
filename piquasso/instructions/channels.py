@@ -33,19 +33,23 @@ class Loss(Instruction, _mixins.ScalingMixin):
     """
 
     def __init__(self, transmissivity):
-        super().__init__(transmissivity=transmissivity)
-
-        self._transmissivity = np.atleast_1d(transmissivity)
+        super().__init__(
+            params=dict(transmissivity=transmissivity),
+            extra_params=dict(
+                transmissivity=np.atleast_1d(transmissivity),
+            ),
+        )
 
     def _autoscale(self):
+        transmissivity = self._extra_params["transmissivity"]
         if (
-            self._transmissivity is None
-            or len(self.modes) == len(self._transmissivity)
+            transmissivity is None
+            or len(self.modes) == len(transmissivity)
         ):
             pass
-        elif len(self._transmissivity) == 1:
-            self._transmissivity = np.array(
-                [self._transmissivity[0]] * len(self.modes),
+        elif len(transmissivity) == 1:
+            self._extra_params["transmissivity"] = np.array(
+                [transmissivity[0]] * len(self.modes),
                 dtype=complex,
             )
         else:

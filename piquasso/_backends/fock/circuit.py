@@ -45,14 +45,14 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            operator=instruction._passive_block,
+            operator=instruction._all_params["passive_block"],
             modes=instruction.modes
         )
 
     def _particle_number_measurement(self, instruction):
         samples = self.state._particle_number_measurement(
             modes=instruction.modes,
-            shots=instruction.params["shots"],
+            shots=instruction._all_params["shots"],
         )
 
         self.update_measured_modes(instruction.modes)
@@ -69,20 +69,20 @@ class BaseFockCircuit(Circuit, abc.ABC):
 
     def _kerr(self, instruction):
         self.state._apply_kerr(
-            **instruction.params,
+            **instruction._all_params,
             mode=instruction.modes[0],
         )
 
     def _cross_kerr(self, instruction):
         self.state._apply_cross_kerr(
-            **instruction.params,
+            **instruction._all_params,
             modes=instruction.modes,
         )
 
     def _linear(self, instruction):
         self.state._apply_linear(
-            passive_block=instruction._passive_block,
-            active_block=instruction._active_block,
-            displacement=instruction._displacement_vector,
+            passive_block=instruction._all_params["passive_block"],
+            active_block=instruction._all_params["active_block"],
+            displacement=instruction._all_params["displacement_vector"],
             modes=instruction.modes,
         )

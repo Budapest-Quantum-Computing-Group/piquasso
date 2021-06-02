@@ -60,7 +60,7 @@ class Mean(Instruction):
     """
 
     def __init__(self, mean):
-        super().__init__(mean=mean)
+        super().__init__(params=dict(mean=mean))
 
 
 class Covariance(Instruction):
@@ -83,7 +83,7 @@ class Covariance(Instruction):
     """
 
     def __init__(self, cov):
-        super().__init__(cov=cov)
+        super().__init__(params=dict(cov=cov))
 
 
 class StateVector(Instruction, _mixins.WeightMixin):
@@ -106,7 +106,12 @@ class StateVector(Instruction, _mixins.WeightMixin):
     """
 
     def __init__(self, *occupation_numbers, coefficient=1.0):
-        super().__init__(occupation_numbers=occupation_numbers, coefficient=coefficient)
+        super().__init__(
+            params=dict(
+                occupation_numbers=occupation_numbers,
+                coefficient=coefficient,
+            ),
+        )
 
 
 class DensityMatrix(Instruction, _mixins.WeightMixin):
@@ -133,7 +138,13 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
     """
 
     def __init__(self, ket=None, bra=None, coefficient=1.0):
-        super().__init__(ket=ket, bra=bra, coefficient=coefficient)
+        super().__init__(
+            params=dict(
+                ket=ket,
+                bra=bra,
+                coefficient=coefficient,
+            ),
+        )
 
 
 class Create(Instruction):
