@@ -50,25 +50,25 @@ class GaussianCircuit(Circuit):
 
     def _passive_linear(self, instruction):
         self.state._apply_passive_linear(
-            instruction._passive_block,
+            instruction._all_params["passive_block"],
             instruction.modes
         )
 
     def _linear(self, instruction):
         self.state._apply_linear(
-            passive_block=instruction._passive_block,
-            active_block=instruction._active_block,
+            passive_block=instruction._all_params["passive_block"],
+            active_block=instruction._all_params["active_block"],
             modes=instruction.modes
         )
 
     def _displacement(self, instruction):
         self.state._apply_displacement(
-            displacement_vector=instruction._displacement_vector,
+            displacement_vector=instruction._all_params["displacement_vector"],
             modes=instruction.modes,
         )
 
     def _homodyne_measurement(self, instruction):
-        phi = instruction.params["phi"]
+        phi = instruction._all_params["phi"]
         modes = instruction.modes
 
         phaseshift = np.identity(len(modes)) * np.exp(- 1j * phi)
@@ -79,8 +79,8 @@ class GaussianCircuit(Circuit):
         )
 
         samples = self.state._apply_generaldyne_measurement(
-            detection_covariance=instruction.params["detection_covariance"],
-            shots=instruction.params["shots"],
+            detection_covariance=instruction._all_params["detection_covariance"],
+            shots=instruction._all_params["shots"],
             modes=modes,
         )
 
@@ -89,8 +89,8 @@ class GaussianCircuit(Circuit):
 
     def _generaldyne_measurement(self, instruction):
         samples = self.state._apply_generaldyne_measurement(
-            detection_covariance=instruction.params["detection_covariance"],
-            shots=instruction.params["shots"],
+            detection_covariance=instruction._all_params["detection_covariance"],
+            shots=instruction._all_params["shots"],
             modes=instruction.modes,
         )
 
@@ -101,15 +101,15 @@ class GaussianCircuit(Circuit):
         self.state.reset()
 
     def _mean(self, instruction):
-        self.state.mean = instruction.params["mean"]
+        self.state.mean = instruction._all_params["mean"]
 
     def _covariance(self, instruction):
-        self.state.cov = instruction.params["cov"]
+        self.state.cov = instruction._all_params["cov"]
 
     def _particle_number_measurement(self, instruction):
         samples = self.state._apply_particle_number_measurement(
-            cutoff=instruction.params["cutoff"],
-            shots=instruction.params["shots"],
+            cutoff=instruction._all_params["cutoff"],
+            shots=instruction._all_params["shots"],
             modes=instruction.modes,
         )
 
@@ -118,7 +118,7 @@ class GaussianCircuit(Circuit):
 
     def _threshold_measurement(self, instruction):
         samples = self.state._apply_threshold_measurement(
-            shots=instruction.params["shots"],
+            shots=instruction._all_params["shots"],
             modes=instruction.modes,
         )
 
@@ -129,8 +129,8 @@ class GaussianCircuit(Circuit):
         """
         TODO: Find a better solution for multiple operations.
         """
-        instruction._squeezing.modes = instruction.modes
-        instruction._interferometer.modes = instruction.modes
+        instruction._all_params["squeezing"].modes = instruction.modes
+        instruction._all_params["interferometer"].modes = instruction.modes
 
-        self._linear(instruction._squeezing)
-        self._passive_linear(instruction._interferometer)
+        self._linear(instruction._all_params["squeezing"])
+        self._passive_linear(instruction._all_params["interferometer"])

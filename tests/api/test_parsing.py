@@ -25,7 +25,12 @@ class TestProgramJSONParsing:
 
         class FakeInstruction(pq.Instruction):
             def __init__(self, first_param, second_param):
-                super().__init__(first_param=first_param, second_param=second_param)
+                super().__init__(
+                    params=dict(
+                        first_param=first_param,
+                        second_param=second_param,
+                    ),
+                )
 
         return FakeInstruction
 

@@ -56,7 +56,7 @@ class SamplingCircuit(Circuit):
         """
 
         self.state._apply_passive_linear(
-            instruction._passive_block,
+            instruction._all_params["passive_block"],
             instruction.modes,
         )
 
@@ -75,7 +75,7 @@ class SamplingCircuit(Circuit):
 
         samples = sampling_simulator.get_classical_simulation_results(
             initial_state,
-            samples_number=instruction.params["shots"]
+            samples_number=instruction._all_params["shots"]
         )
 
         self.results.append(
@@ -84,6 +84,6 @@ class SamplingCircuit(Circuit):
 
     def _loss(self, instruction):
         self.state._apply_loss(
-            transmissivity=instruction._transmissivity,
+            transmissivity=instruction._all_params["transmissivity"],
             modes=instruction.modes,
         )

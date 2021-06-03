@@ -25,6 +25,6 @@ class PureFockCircuit(BaseFockCircuit):
 
     def _state_vector(self, instruction):
         self.state._add_occupation_number_basis(
-            **instruction.params,
+            **instruction._all_params,
             modes=instruction.modes,
         )

@@ -45,6 +45,7 @@ Most of the gates defined here are linear gates, which can be characterized by
 import numpy as np
 
 from scipy.optimize import root_scalar
+from scipy.linalg import block_diag
 
 from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
@@ -60,13 +61,21 @@ class _BogoliubovTransformation(Instruction):
     def __init__(
         self,
         *,
+        params=None,
         passive_block=None,
         active_block=None,
         displacement_vector=None,
     ):
-        self._passive_block = passive_block
-        self._active_block = active_block
-        self._displacement_vector = displacement_vector
+        params = params or {}
+
+        super().__init__(
+            params=params,
+            extra_params=dict(
+                passive_block=passive_block,
+                active_block=active_block,
+                displacement_vector=displacement_vector
+            )
+        )
 
 
 class _ScalableBogoliubovTransformation(
@@ -79,44 +88,46 @@ class _ScalableBogoliubovTransformation(
     )
 
     def _autoscale(self):
+
+        passive_block = self._extra_params["passive_block"]
         if (
-            self._passive_block is None
-            or len(self.modes) == len(self._passive_block)
+            passive_block is None
+            or len(self.modes) == len(passive_block)
         ):
             pass
-        elif len(self._passive_block) == 1:
-            from scipy.linalg import block_diag
-            self._passive_block = block_diag(
-                *[self._passive_block] * len(self.modes)
+        elif len(passive_block) == 1:
+            self._extra_params["passive_block"] = block_diag(
+                *[passive_block] * len(self.modes)
             )
         else:
             raise InvalidParameter(
                 self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
             )
 
+        active_block = self._extra_params["active_block"]
         if (
-            self._active_block is None
-            or len(self.modes) == len(self._active_block)
+            active_block is None
+            or len(self.modes) == len(active_block)
         ):
             pass
-        elif len(self._active_block) == 1:
-            from scipy.linalg import block_diag
-            self._active_block = block_diag(
-                *[self._active_block] * len(self.modes)
+        elif len(active_block) == 1:
+            self._extra_params["active_block"] = block_diag(
+                *[active_block] * len(self.modes)
             )
         else:
             raise InvalidParameter(
                 self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
             )
 
+        displacement_vector = self._extra_params["displacement_vector"]
         if (
-            self._displacement_vector is None
-            or len(self.modes) == len(self._displacement_vector)
+            displacement_vector is None
+            or len(self.modes) == len(displacement_vector)
         ):
             pass
-        elif len(self._displacement_vector) == 1:
-            self._displacement_vector = np.array(
-                [self._displacement_vector[0]] * len(self.modes),
+        elif len(displacement_vector) == 1:
+            self._extra_params["displacement_vector"] = np.array(
+                [displacement_vector[0]] * len(self.modes),
                 dtype=complex,
             )
         else:
@@ -164,9 +175,10 @@ class Interferometer(_BogoliubovTransformation):
                 "The interferometer matrix should be a square matrix."
             )
 
-        self._set_params(matrix=matrix)
-
-        super().__init__(passive_block=matrix)
+        super().__init__(
+            params=dict(matrix=matrix),
+            passive_block=matrix
+        )
 
 
 class Beamsplitter(_BogoliubovTransformation):
@@ -202,12 +214,14 @@ class Beamsplitter(_BogoliubovTransformation):
     """
 
     def __init__(self, theta=0., phi=np.pi / 4):
-        self._set_params(theta=theta, phi=phi)
-
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
 
         super().__init__(
+            params=dict(
+                theta=theta,
+                phi=phi,
+            ),
             passive_block=np.array(
                 [
                     [t, -np.conj(r)],
@@ -241,9 +255,8 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
     """
 
     def __init__(self, phi: float):
-        self._set_params(phi=phi)
-
         super().__init__(
+            params=dict(phi=phi),
             passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
         )
 
@@ -276,11 +289,10 @@ class MachZehnder(_BogoliubovTransformation):
     """
 
     def __init__(self, int_: float, ext: float):
-        self._set_params(int_=int_, ext=ext)
-
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
+            params=dict(int_=int_, ext=ext),
             passive_block=1/2 * np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
@@ -355,9 +367,8 @@ class GaussianTransform(_BogoliubovTransformation):
                 "a symplectic matrix."
             )
 
-        self._set_params(passive=passive, active=active)
-
         super().__init__(
+            params=dict(passive=passive, active=active),
             passive_block=passive,
             active_block=active,
         )
@@ -396,9 +407,8 @@ class Squeezing(_ScalableBogoliubovTransformation):
     """
 
     def __init__(self, r, phi=0):
-        self._set_params(r=r, phi=phi)
-
         super().__init__(
+            params=dict(r=r, phi=phi),
             passive_block=np.diag(
                 np.atleast_1d(np.cosh(r))
             ),
@@ -429,9 +439,8 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
     """
 
     def __init__(self, s):
-        self._set_params(s=s)
-
         super().__init__(
+            params=dict(s=s),
             passive_block=np.diag(1 + np.atleast_1d(s)/2 * 1j),
             active_block=np.diag(np.atleast_1d(s)/2 * 1j),
         )
@@ -463,9 +472,8 @@ class Squeezing2(_BogoliubovTransformation):
     """
 
     def __init__(self, r, phi):
-        self._set_params(r=r, phi=phi)
-
         super().__init__(
+            params=dict(r=r, phi=phi),
             passive_block=np.array(
                 [
                     [np.cosh(r), 0],
@@ -503,9 +511,8 @@ class ControlledX(_BogoliubovTransformation):
     """
 
     def __init__(self, s):
-        self._set_params(s=s)
-
         super().__init__(
+            params=dict(s=s),
             passive_block=np.array(
                 [
                     [    1, - s / 2],
@@ -542,9 +549,8 @@ class ControlledZ(_BogoliubovTransformation):
         \end{bmatrix}.
     """
     def __init__(self, s):
-        self._set_params(s=s)
-
         super().__init__(
+            params=dict(s=s),
             passive_block=np.array(
                 [
                     [           1, 1j * (s / 2)],
@@ -590,10 +596,10 @@ class Displacement(_ScalableBogoliubovTransformation):
     def __init__(self, *, alpha=None, r=None, phi=None):
 
         if alpha is not None and r is None and phi is None:
-            self._set_params(alpha=alpha)
+            params = dict(alpha=alpha)
             alpha = np.atleast_1d(alpha)
         elif alpha is None and r is not None and phi is not None:
-            self._set_params(r=r, phi=phi)
+            params = dict(r=r, phi=phi)
             alpha = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
         else:
             raise InvalidParameter(
@@ -601,16 +607,15 @@ class Displacement(_ScalableBogoliubovTransformation):
                 f"alpha={alpha}, r={r}, phi={phi}."
             )
 
-        super().__init__(displacement_vector=alpha)
+        super().__init__(params=params, displacement_vector=alpha)
 
 
 class PositionDisplacement(_ScalableBogoliubovTransformation):
     r"""Position displacement gate."""
 
     def __init__(self, x: float):
-        self._set_params(x=x)
-
         super().__init__(
+            params=dict(x=x),
             displacement_vector=np.atleast_1d(x) / np.sqrt(2 * HBAR),
         )
 
@@ -619,9 +624,8 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
     r"""Momentum displacement gate."""
 
     def __init__(self, p: float):
-        self._set_params(p=p)
-
         super().__init__(
+            params=dict(p=p),
             displacement_vector=1j * np.atleast_1d(p) / np.sqrt(2 * HBAR),
         )
 
@@ -646,7 +650,7 @@ class Kerr(Instruction):
     """
 
     def __init__(self, xi: float):
-        super().__init__(xi=xi)
+        super().__init__(params=dict(xi=xi))
 
 
 class CrossKerr(Instruction):
@@ -670,7 +674,7 @@ class CrossKerr(Instruction):
     """
 
     def __init__(self, xi: float):
-        super().__init__(xi=xi)
+        super().__init__(params=dict(xi=xi))
 
 
 class Sampling(Instruction):
@@ -698,7 +702,7 @@ class Sampling(Instruction):
                 f"The number of shots should be a positive integer: shots={shots}."
             )
 
-        super().__init__(shots=shots)
+        super().__init__(params=dict(shots=shots))
 
 
 class Graph(Instruction):
@@ -710,11 +714,6 @@ class Graph(Instruction):
     """
 
     def __init__(self, adjacency_matrix, mean_photon_number=1.0):
-        super().__init__(
-            adjacency_matrix=adjacency_matrix,
-            mean_photon_number=mean_photon_number
-        )
-
         if not is_invertible(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix is not invertible.")
 
@@ -728,12 +727,23 @@ class Graph(Instruction):
         squeezing_parameters = np.arctanh(scaling * singular_values)
 
         # TODO: find a better solution for these.
-        self._squeezing = GaussianTransform(
+        squeezing = GaussianTransform(
             passive=np.diag(np.cosh(squeezing_parameters)),
             active=np.diag(np.sinh(squeezing_parameters)),
         )
 
-        self._interferometer = Interferometer(unitary)
+        interferometer = Interferometer(unitary)
+
+        super().__init__(
+            params=dict(
+                adjacency_matrix=adjacency_matrix,
+                mean_photon_number=mean_photon_number,
+            ),
+            extra_params=dict(
+                squeezing=squeezing,
+                interferometer=interferometer,
+            )
+        )
 
     def _get_scaling(self, singular_values, mean_photon_number):
         r"""
