@@ -298,3 +298,38 @@ def test_complex_displacement_do_not_scale_with_HBAR(state):
         complex_displacement_default_hbar,
         complex_displacement_different_hbar,
     )
+
+
+def test_mean_photon_number_vaccum():
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=3)
+
+    program.execute()
+    state = program.state
+
+    assert np.isclose(0., state.mean_photon_number((0, 1, 2)))
+    assert np.isclose(0., state.mean_photon_number((0, 1)))
+    assert np.isclose(0., state.mean_photon_number((0,)))
+
+
+def test_mean_photon_number():
+    alpha = 0.5 + 1j
+    r = 1.
+    phi = 3.
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=3)
+        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(1) | pq.Squeezing(r=r, phi=phi)
+        pq.Q(2) | pq.Squeezing(r=r, phi=phi)
+        pq.Q(2) | pq.Displacement(alpha=alpha)
+
+    program.execute()
+    state = program.state
+
+    mean_photon_number_first_mode = np.abs(alpha)**2
+    mean_photon_number_second_mode = np.sinh(r)**2
+    total_mean_photon_number = 2 * (np.abs(alpha)**2 + np.sinh(r)**2)
+
+    assert np.isclose(mean_photon_number_first_mode, state.mean_photon_number((0,)))
+    assert np.isclose(mean_photon_number_second_mode, state.mean_photon_number((1,)))
+    assert np.isclose(total_mean_photon_number, state.mean_photon_number((0, 1, 2)))
