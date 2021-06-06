@@ -509,6 +509,42 @@ class GaussianState(State):
 
         return transformed_state.mean, transformed_state.cov
 
+    def mean_photon_number(self, mode):
+        r""" This method returns the mean photon number of the given modes.
+        The mean photon number :math:`\bar{n} = \langle \hat{n}
+        \rangle` can be calculated in terms of the ladder operators by the following
+        expression
+
+        .. math::
+            \sum_{i=1}^{d} \langle a_{i}^\dagger a_{i} \rangle =
+            \operatorname{Tr}(\rho \hat{n}),
+
+        where :math:`a`, :math:`a ^\dagger` are the annihilation and the creation
+        operators respectively, :math:`\rho` is the density operator of the
+        currently represented state and :math:`d` is the number of modes. For a general
+        displaced squeezed gaussian state, the mean photon number is
+
+        .. math::
+            \langle \hat{n} \rangle = \operatorname{Tr}(\langle a^\dagger a \rangle) +
+            \mu_{c}^ \dagger \cdot \mu_{c},
+
+        where :math:`\mu_{c}` is the :attr:`complex_displacement`.
+
+        .. note::
+            This method can also be used to return the summation of the mean photon
+            number for multiple modes if the mode parameter contains more than one
+            integer e.g :math:`(0,1,...)`.
+
+        Args:
+            mode (tuple[int]): The correspoding mode at which the mean photon number is
+                calculated.
+        Returns:
+            float: The expectation value of the photon number.
+        """
+
+        state = self.reduced(mode)
+        return (np.trace(state._C) + state._m.conjugate() @ state._m).real
+
     def quadratic_polynomial_expectation(self, A, b, c=0.0, phi=0.0):
         r"""The expectation value of the specified quadratic polynomial.
 
