@@ -18,6 +18,7 @@ import numpy as np
 
 import piquasso as pq
 from piquasso.api import constants
+from piquasso.api.errors import InvalidParameter
 
 
 @pytest.fixture
@@ -333,3 +334,52 @@ def test_mean_photon_number():
     assert np.isclose(mean_photon_number_first_mode, state.mean_photon_number((0,)))
     assert np.isclose(mean_photon_number_second_mode, state.mean_photon_number((1,)))
     assert np.isclose(total_mean_photon_number, state.mean_photon_number((0, 1, 2)))
+
+
+def test_quadratic_expectation_with_nonsymmetric_quadratic_coefficients(state):
+    nonsymmetric_quadratic_coefficients = np.array(
+        [
+            [0, 1, 1, 1, 1, 1],
+            [0, 0, 1, 1, 1, 1],
+            [0, 0, 0, 1, 1, 1],
+            [0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0],
+        ]
+    )
+
+    any_vector = np.empty(2 * state.d)
+
+    with pytest.raises(InvalidParameter):
+        state.quadratic_polynomial_expectation(
+            A=nonsymmetric_quadratic_coefficients,
+            b=any_vector,
+        )
+
+
+def test_quadratic_expectation(state):
+    rotation_angle = np.pi / 3
+    constant_term = 100
+    quadratic_coefficients = np.array(
+        [
+            [0, 1, 2, 0, 2, 0],
+            [1, 0, 0, 1, 0, 1],
+            [2, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [2, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+        ]
+    )
+    linear_coefficients = np.ones(2 * state.d)
+
+    expectation_value = state.quadratic_polynomial_expectation(
+        A=quadratic_coefficients,
+        b=linear_coefficients,
+        c=constant_term,
+        phi=rotation_angle,
+    )
+
+    assert np.isclose(
+        expectation_value,
+        97.78556059428445,
+    )

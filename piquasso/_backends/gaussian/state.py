@@ -23,7 +23,7 @@ from scipy.special import factorial
 
 from piquasso.api.state import State
 from piquasso.api import constants
-from piquasso.api.errors import InvalidState
+from piquasso.api.errors import InvalidState, InvalidParameter
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
@@ -545,6 +545,57 @@ class GaussianState(State):
 
         state = self.reduced(mode)
         return (np.trace(state._C) + state._m.conjugate() @ state._m).real
+
+    def quadratic_polynomial_expectation(self, A, b, c=0.0, phi=0.0):
+        r"""The expectation value of the specified quadratic polynomial.
+
+        A quadratic polynomial can be written as
+
+        .. math::
+            f(R) = R^T A R + R \cdot b + c,
+
+        where :math:`R = (x_1, p_1, \dots, x_d, p_d)^T` is the vector of the quadrature
+        operators where :math:`d` is the number of modes,
+        :math:`A \in \mathbb{R}^{2d \times 2d}` is a symmetric matrix,
+        :math:`b \in \mathbb{R}^{2d}`, and :math:`c\in\mathbb{R}`.
+
+        This method returns the expectation value :math:`E[f(R)]` using the following
+        equation:
+
+        .. math::
+            \operatorname{E}[f(R)]
+                = \operatorname{Tr}[ A\sigma ] + \mu^T A \mu + \mu^T b + c,
+
+        where :math:`\sigma` is the covariance matrix, :math:`\mu = E[R]` is the mean
+        of the quadrature operators and
+
+        .. math::
+            \operatorname{E}[\cdot] = \operatorname{Tr}[\cdot \rho],
+
+        where :math:`\rho` is the density matrix of the state.
+
+        Args:
+            A (numpy.ndarray):
+                A :math:`2d \times 2d` real symmetric matrix corresponding to the
+                quadratic coefficients, where :math:`d` is the number of modes.
+            b (numpy.ndarray):
+                A one-dimensional :math:`2d`-length real-valued vector that corresponds
+                to the first order terms of the quadratic polynomial.
+            c (float): The constant term in the quadratic polynomial. Defaults to `0`.
+            phi (float): Rotation angle, by which the state is rotated. Defaults to `0`.
+        Returns:
+            float: The expectation value of the quadratic polynomial.
+        """
+
+        if not is_symmetric(A):
+            raise InvalidParameter("The specified matrix is not symmetric.")
+
+        state = self.rotated(phi)
+        mean = state.mean
+        cov = state.cov
+        first_moment = np.trace(A @ cov) / 2 + mean @ A @ mean + mean @ b + c
+        # TODO: calculate the variance.
+        return first_moment
 
     def wigner_function(self, quadrature_matrix, modes=None):
         r"""
