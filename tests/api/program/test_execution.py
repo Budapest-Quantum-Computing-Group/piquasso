@@ -23,7 +23,9 @@ def test_instruction_execution(program):
 
     program.execute()
 
-    program._circuit.dummy_instruction.assert_called_once_with(instruction)
+    program._circuit.dummy_instruction.assert_called_once_with(
+        instruction, program.state
+    )
 
 
 def test_register_instruction_from_left_hand_side(program):
@@ -33,4 +35,6 @@ def test_register_instruction_from_left_hand_side(program):
 
     program.execute()
 
-    program._circuit.dummy_instruction.assert_called_once_with(instruction)
+    program._circuit.dummy_instruction.assert_called_once_with(
+        instruction, program.state
+    )

@@ -21,20 +21,12 @@ from piquasso.api.errors import InvalidModes
 
 
 class Circuit(abc.ABC):
-    def __init__(self, state, program):
-        """
-        Args:
-            state (State): The initial quantum state.
-        """
-        self.state = state
+    instruction_map: dict
+
+    def __init__(self, program):
         self.program = program
-        self._instruction_map = self.get_instruction_map()
         self.results = []
         self._measured_modes = set()
-
-    @abc.abstractmethod
-    def get_instruction_map(self):
-        pass
 
     def update_measured_modes(self, modes):
         self._measured_modes.update(set(modes))
@@ -46,7 +38,7 @@ class Circuit(abc.ABC):
                 f"Already mesured modes: {list(self._measured_modes)}"
             )
 
-    def execute_instructions(self, instructions):
+    def execute_instructions(self, instructions, state):
         """Executes the collected instructions in order.
 
         Raises:
@@ -60,26 +52,26 @@ class Circuit(abc.ABC):
         """
         for instruction in instructions:
             if instruction.modes is tuple():
-                instruction.modes = tuple(range(self.state.d))
+                instruction.modes = tuple(range(state.d))
 
             self.validate_modes(instruction.modes)
 
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()
 
-            method = self._instruction_map.get(instruction.__class__.__name__)
+            method_name = self.instruction_map.get(instruction.__class__.__name__)
 
-            if not method:
+            if not method_name:
                 raise NotImplementedError(
                     "\n"
                     "No such instruction implemented for this state.\n"
                     "Details:\n"
                     f"instruction={instruction}\n"
-                    f"state={self.state}\n"
+                    f"state={state}\n"
                     f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys())) + "."
+                    + str(", ".join(self.instruction_map.keys())) + "."
                 )
 
-            method(instruction)
+            getattr(self, method_name)(instruction, state)
 
         return self.results

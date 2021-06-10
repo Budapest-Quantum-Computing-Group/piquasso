@@ -38,10 +38,12 @@ class TestProgramJSONParsing:
     def FakeCircuit(self, FakeInstruction):
 
         class FakeCircuit(pq.Circuit):
-            def get_instruction_map(self):
-                return {
-                    "FakeInstruction": FakeInstruction,
-                }
+            instruction_map = {
+                "FakeInstruction": "_fake_instruction",
+            }
+
+            def _fake_instruction(self, instruction, state):
+                pass
 
         return FakeCircuit
 
@@ -110,8 +112,6 @@ class TestProgramJSONParsing:
 
     def test_instantiation_using_mappings(
         self,
-        FakeState,
-        FakeInstruction,
         state_mapping,
         instructions_mapping,
         number_of_modes,
@@ -141,8 +141,6 @@ class TestProgramJSONParsing:
 
     def test_from_json(
         self,
-        FakeState,
-        FakeInstruction,
         state_mapping,
         instructions_mapping,
         number_of_modes,

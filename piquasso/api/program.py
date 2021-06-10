@@ -67,7 +67,7 @@ class Program(_mixins.RegisterMixin):
         self._state = new_state
 
         self._circuit = (
-            new_state.circuit_class(new_state, program=self)
+            new_state.circuit_class(program=self)
             if new_state
             else None
         )
@@ -108,7 +108,7 @@ class Program(_mixins.RegisterMixin):
             list[Result]: A list of the execution results.
         """
 
-        return self._circuit.execute_instructions(self.instructions)
+        return self._circuit.execute_instructions(self.instructions, self.state)
 
     @property
     def results(self) -> list:
