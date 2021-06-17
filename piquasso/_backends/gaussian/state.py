@@ -19,7 +19,6 @@ import numpy as np
 
 from itertools import repeat
 from functools import lru_cache
-from scipy.special import factorial
 
 from piquasso.api.state import State
 from piquasso.api import constants
@@ -29,17 +28,18 @@ from piquasso._math.linalg import (
     is_symmetric,
     symplectic_form,
     is_positive_semidefinite,
-    block_reduce,
 )
 from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import partitions
 
-from piquasso._math.hafnian import loop_hafnian
-from piquasso._math.torontonian import torontonian
-
 from .circuit import GaussianCircuit
 
 from .transformations import quad_transformation
+
+from .probabilities import (
+    calculate_particle_number_detection_probability,
+    calculate_threshold_detection_probability,
+)
 
 
 class GaussianState(State):
@@ -913,60 +913,3 @@ class GaussianState(State):
         ret[abs(ret) < 1e-10] = 0.0
 
         return ret
-
-
-def calculate_particle_number_detection_probability(
-    state,
-    subspace_modes: tuple,
-    occupation_numbers: tuple,
-):
-    d = len(subspace_modes)
-    Q = (state.complex_covariance + np.identity(2 * d)) / 2
-    Qinv = np.linalg.inv(Q)
-
-    identity = np.identity(d)
-    zeros = np.zeros_like(identity)
-
-    X = np.block(
-        [
-            [zeros, identity],
-            [identity, zeros],
-        ],
-    )
-
-    A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
-
-    alpha = state.complex_displacement
-    gamma = alpha.conj() @ Qinv
-
-    A_reduced = block_reduce(A, reduce_on=occupation_numbers)
-
-    np.fill_diagonal(
-        A_reduced,
-        block_reduce(
-            gamma, reduce_on=occupation_numbers
-        )
-    )
-
-    return (
-        loop_hafnian(A_reduced) * np.exp(-0.5 * gamma @ alpha)
-        / (np.prod(factorial(occupation_numbers)) * np.sqrt(np.linalg.det(Q)))
-    ).real
-
-
-def calculate_threshold_detection_probability(
-    state,
-    subspace_modes,
-    occupation_numbers,
-):
-    d = len(subspace_modes)
-
-    Q = (state.complex_covariance + np.identity(2 * d)) / 2
-
-    OS = (np.identity(2 * d, dtype=complex) - np.linalg.inv(Q))
-
-    OS_reduced = block_reduce(OS, reduce_on=occupation_numbers)
-
-    return (
-        torontonian(OS_reduced.astype(complex))
-    ).real / np.sqrt(np.linalg.det(Q).real)
