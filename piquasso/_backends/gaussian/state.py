@@ -596,10 +596,10 @@ class GaussianState(State):
         # TODO: calculate the variance.
         return first_moment
 
-    def wigner_function(self, quadrature_matrix, modes=None):
+    def wigner_function(self, positions: list, momentums: list, modes=None):
         r"""
-        Calculates the Wigner function values at the specified `quadrature_matrix`,
-        according to the equation
+        Calculates the Wigner function values at the specified position and momentum
+        vectors, according to the equation
 
         .. math::
             W(r) = \frac{1}{\pi^d \sqrt{\mathrm{det} \sigma}}
@@ -610,26 +610,30 @@ class GaussianState(State):
                 \big ).
 
         Args:
-            quadrature_matrix (list[numpy.ndarray]):
-                List of canonical coordinate vectors.
+            positions (list[list[float]]): List of position vectors.
+            momentums (list[list[float]]): List of momentum vectors.
             modes (tuple[int], optional):
                 Modes where Wigner function should be calculcated.
 
         Returns:
-            list[float]: The Wigner function values in the shape of `quadrature_matrix`.
+            numpy.ndarray:
+                The Wigner function values in the shape of a grid specified by the
+                input.
         """
 
         if modes:
             reduced_state = self.reduced(modes)
             return gaussian_wigner_function(
-                quadrature_matrix,
+                positions,
+                momentums,
                 d=reduced_state.d,
                 mean=reduced_state.mean,
                 cov=reduced_state.cov
             )
 
         return gaussian_wigner_function(
-            quadrature_matrix,
+            positions,
+            momentums,
             d=self.d,
             mean=self.mean,
             cov=self.cov,

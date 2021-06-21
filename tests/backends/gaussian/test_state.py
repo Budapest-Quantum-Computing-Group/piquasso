@@ -87,14 +87,10 @@ def test_representation_roundtrip_at_different_HBAR(state):
 
 
 def test_wigner_function(state, assets):
-    quadrature_array = np.array(
-        [
-            [1, 2, 3, 4, 5, 6],
-            [5, 6, 7, 8, 9, 0],
-        ]
+    actual_result = state.wigner_function(
+        positions=[[1.0, 3.0, 5.0], [5.0, 7.0, 9.0]],
+        momentums=[[2.0, 4.0, 6.0], [6.0, 8.0, 0.0]],
     )
-
-    actual_result = state.wigner_function(quadrature_array)
 
     expected_result = assets.load("expected_wigner_function_result")
 
