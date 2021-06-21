@@ -49,20 +49,18 @@ class FockState(BaseFockState):
         )
 
     @classmethod
-    def from_pure(cls, pure_fock_state):
-        """Instantiation from a pure state vector.
+    def from_fock_state(cls, state):
+        """Instantiation using another :class:`BaseFockState` instance.
 
         Args:
-            pure_fock_state (numpy.ndarray):
-                The pure state vector, from which the density matrix is constructed.
+            state (BaseFockState):
+                The instance from which a :class:`FockState` instance is created.
         """
-        state_vector = pure_fock_state._state_vector
-        density_matrix = np.outer(state_vector, state_vector)
 
         return cls(
-            density_matrix=density_matrix,
-            d=pure_fock_state.d,
-            cutoff=pure_fock_state.cutoff,
+            density_matrix=state.density_matrix,
+            d=state.d,
+            cutoff=state.cutoff,
         )
 
     def _get_empty(self):
@@ -209,6 +207,10 @@ class FockState(BaseFockState):
     def __eq__(self, other):
         return np.allclose(self._density_matrix, other._density_matrix)
 
+    @property
+    def density_matrix(self):
+        return self._density_matrix
+
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self._space.cutoff
 
@@ -219,6 +221,26 @@ class FockState(BaseFockState):
     @property
     def fock_probabilities(self):
         return self.get_fock_probabilities()
+
+    def reduced(self, modes):
+        modes_to_eliminate = self._get_auxiliary_modes(modes)
+
+        reduced_state = FockState(d=len(modes), cutoff=self.cutoff)
+
+        for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
+            modes=modes_to_eliminate
+        ):
+            reduced_basis = basis.on_modes(modes=modes)
+            reduced_dual_basis = dual_basis.on_modes(modes=modes)
+
+            reduced_index = reduced_state._space.index(reduced_basis)
+            reduced_dual_index = reduced_state._space.index(reduced_dual_basis)
+
+            reduced_state._density_matrix[reduced_index, reduced_dual_index] += (
+                self._density_matrix[index]
+            )
+
+        return reduced_state
 
     def normalize(self):
         """Normalizes the density matrix to have a trace of 1.

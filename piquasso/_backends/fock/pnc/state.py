@@ -18,6 +18,7 @@ import numpy as np
 from piquasso.api.errors import InvalidState
 
 from ..state import BaseFockState
+from ..general.state import FockState
 
 from .circuit import PNCFockCircuit
 
@@ -237,6 +238,16 @@ class PNCFockState(BaseFockState):
             np.allclose(subrep, other._representation[n])
             for n, subrep in enumerate(self._representation)
         ])
+
+    @property
+    def density_matrix(self):
+        return block_diag(*self._representation)
+
+    def _as_mixed(self):
+        return FockState.from_fock_state(self)
+
+    def reduced(self, modes):
+        return self._as_mixed().reduced(modes)
 
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self._space.cutoff
