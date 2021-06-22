@@ -17,6 +17,7 @@ import numpy as np
 
 from scipy.special import factorial
 
+from piquasso import constants
 from piquasso._math.linalg import block_reduce
 from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.torontonian import torontonian
@@ -66,14 +67,36 @@ def calculate_threshold_detection_probability(
     subspace_modes,
     occupation_numbers,
 ):
+    r"""
+    Calculates the threshold detection probability with the equation
+
+    .. math::
+        p(S) = \frac{
+            \operatorname{tor}( I - ( \Sigma^{-1} )_{(S)} )
+        }{
+            \sqrt{\operatorname{det}(\Sigma)}
+        },
+
+    where :math:`\Sigma \in \mathbb{R}^{2d \times 2d}` is a symmetric matrix defined by
+
+    .. math::
+        \Sigma = \frac{1}{2} \left (
+                \frac{1}{\hbar} \sigma_{xp}
+                + I
+            \right ).
+    """
+
     d = len(subspace_modes)
 
-    Q = (state.complex_covariance + np.identity(2 * d)) / 2
+    sigma = (state.xp_cov / constants.HBAR + np.identity(2 * d)) / 2
 
-    OS = (np.identity(2 * d, dtype=complex) - np.linalg.inv(Q))
+    sigma_inv_reduced = (
+        block_reduce(
+            np.linalg.inv(sigma),
+            reduce_on=occupation_numbers,
+        )
+    )
 
-    OS_reduced = block_reduce(OS, reduce_on=occupation_numbers)
-
-    return (
-        torontonian(OS_reduced.astype(complex))
-    ).real / np.sqrt(np.linalg.det(Q).real)
+    return torontonian(
+        np.identity(len(sigma_inv_reduced)) - sigma_inv_reduced
+    ) / np.sqrt(np.linalg.det(sigma))
