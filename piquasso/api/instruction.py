@@ -22,8 +22,8 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
         *params: Variable length argument list.
     """
 
-    def __init__(self, *, params: dict, extra_params: dict = None):
-        self._params = params
+    def __init__(self, *, params: dict = None, extra_params: dict = None):
+        self._params = params or dict()
 
         self._extra_params = extra_params or dict()
 
@@ -86,8 +86,8 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
         else:
             modes = ""
 
-        if hasattr(self, "params"):
-            params = "{}".format(
+        if getattr(self, "params") != {}:
+            params = "{}, ".format(
                 ", ".join(
                     [f"{key}={value}" for key, value in self.params.items()]
                 )
@@ -97,7 +97,7 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
 
         classname = self.__class__.__name__
 
-        return f"<pq.{classname}({params}, {modes})>"
+        return f"<pq.{classname}({params}{modes})>"
 
     def __eq__(self, other):
         return (

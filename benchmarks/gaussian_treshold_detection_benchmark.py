@@ -48,9 +48,9 @@ def piquasso_benchmark(
             pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
             pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-            pq.Q(0, 1, 2) | pq.ThresholdMeasurement(shots=20)
+            pq.Q(0, 1, 2) | pq.ThresholdMeasurement()
 
-        program.execute()
+        program.execute(shots=20)
 
 
 def strawberryfields_benchmark(

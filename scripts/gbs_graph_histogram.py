@@ -44,7 +44,7 @@ with pq.Program() as pq_program:
     pq.Q() | pq.Graph(adjacency_matrix)
 
     # NOTE: In SF the cutoff is 5, and couldn't be changed
-    pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5, shots=shots)
+    pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
 
 
 sf_program = sf.Program(d)
@@ -59,7 +59,7 @@ with sf_program.context as q:
 
 
 if __name__ == "__main__":
-    pq_results = np.array(pq_program.execute()[0].samples)
+    pq_results = np.array(pq_program.execute(shots=shots)[0].samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     N_points = 100000

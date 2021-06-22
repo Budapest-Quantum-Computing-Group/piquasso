@@ -200,9 +200,9 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q() | pq.ParticleNumberMeasurement(shots=shots)
+        pq.Q() | pq.ParticleNumberMeasurement()
 
-    results = program.execute()
+    results = program.execute(shots=shots)
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
     assert len(results[0].samples) == shots

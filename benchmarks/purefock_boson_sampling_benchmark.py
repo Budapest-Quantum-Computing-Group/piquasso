@@ -41,9 +41,9 @@ def piquasso_benchmark(
             pq.Q() | example_pq_purefock_state
 
             # NOTE: In SF the cutoff is 5, and couldn't be changed
-            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=cutoff, shots=shots)
+            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=cutoff)
 
-        new_program.execute()
+        new_program.execute(shots=shots)
 
 
 def strawberryfields_benchmark(

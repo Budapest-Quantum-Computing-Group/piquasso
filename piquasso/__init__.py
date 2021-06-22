@@ -185,4 +185,4 @@ __all__ = [
     *_default_channels.keys(),
 ]
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

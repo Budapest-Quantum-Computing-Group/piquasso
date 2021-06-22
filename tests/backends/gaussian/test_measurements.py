@@ -134,9 +134,9 @@ def test_measure_homodyne_with_multiple_shots(program):
     shots = 4
 
     with program:
-        pq.Q(0, 1) | pq.HomodyneMeasurement(shots=shots)
+        pq.Q(0, 1) | pq.HomodyneMeasurement()
 
-    results = program.execute()
+    results = program.execute(shots=shots)
 
     assert len(results[0].samples) == shots
 
@@ -192,9 +192,9 @@ def test_measure_heterodyne_with_multiple_shots(program):
     shots = 4
 
     with program:
-        pq.Q(0, 1) | pq.HeterodyneMeasurement(shots=shots)
+        pq.Q(0, 1) | pq.HeterodyneMeasurement()
 
-    results = program.execute()
+    results = program.execute(shots=shots)
 
     assert len(results[0].samples) == shots
 
@@ -229,9 +229,9 @@ def test_measure_dyne_with_multiple_shots(program):
     )
 
     with program:
-        pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance, shots=shots)
+        pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    results = program.execute()
+    results = program.execute(shots=shots)
 
     assert len(results[0].samples) == shots
 
@@ -286,9 +286,9 @@ def test_measure_threshold_on_one_modes(nondisplaced_program):
 
 def test_measure_threshold_with_multiple_shots(nondisplaced_program):
     with nondisplaced_program:
-        pq.Q(0) | pq.ThresholdMeasurement(shots=20)
+        pq.Q(0) | pq.ThresholdMeasurement()
 
-    results = nondisplaced_program.execute()
+    results = nondisplaced_program.execute(shots=20)
 
     assert results
 
@@ -312,8 +312,7 @@ def test_measure_threshold_on_all_modes(nondisplaced_program):
 
 
 def test_multiple_particle_number_measurements_in_one_program():
-    first_measurement_shots = 3
-    second_measurement_shots = 4
+    shots = 3
 
     with pq.Program() as program:
         pq.Q() | pq.GaussianState(d=3)
@@ -321,12 +320,13 @@ def test_multiple_particle_number_measurements_in_one_program():
         pq.Q(0) | pq.Squeezing(r=1, phi=0)
         pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=np.pi / 4)
         pq.Q(1, 2) | pq.Beamsplitter(theta=1, phi=np.pi / 4)
-        pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=5, shots=3)
-        pq.Q(2) | pq.ParticleNumberMeasurement(cutoff=5, shots=4)
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=5)
+        # NOTE: We should forbid this program!
+        pq.Q(2) | pq.ParticleNumberMeasurement(cutoff=5)
 
-    results = program.execute()
+    results = program.execute(shots=3)
 
     assert len(results) == 2
 
-    assert len(results[0].samples) == first_measurement_shots
-    assert len(results[1].samples) == second_measurement_shots
+    assert len(results[0].samples) == shots
+    assert len(results[1].samples) == shots

@@ -41,16 +41,18 @@ class TestSampling:
         invalid_shots = -1
 
         with self.program:
-            with pytest.raises(InvalidParameter):
-                pq.Q() | pq.Sampling(invalid_shots)
+            pq.Q() | pq.Sampling()
+
+        with pytest.raises(InvalidParameter):
+            self.program.execute(invalid_shots)
 
     def test_sampling_samples_number(self):
         shots = 100
 
         with self.program:
-            pq.Q() | pq.Sampling(shots)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots)
 
         assert len(self.program.results[-1].samples) == shots,\
             f'Expected {shots} samples, ' \
@@ -60,9 +62,9 @@ class TestSampling:
         shots = 1
 
         with self.program:
-            pq.Q() | pq.Sampling(shots)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots)
 
         sample = self.program.results[-1].samples[0]
         assert np.allclose(sample, [1, 0, 0, 1, 1]),\
@@ -72,9 +74,9 @@ class TestSampling:
         shots = 2
 
         with self.program:
-            pq.Q() | pq.Sampling(shots)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots)
 
         samples = self.program.results[-1].samples
         first_sample = samples[0]
@@ -89,23 +91,23 @@ class TestSampling:
 
         with self.program:
             pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
-            pq.Q() | pq.Sampling(shots=1)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots=1)
 
     def test_fourier(self):
         with self.program:
             pq.Q(0) | pq.Fourier()
-            pq.Q() | pq.Sampling(shots=1)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots=1)
 
     def test_loss(self):
         with self.program:
             pq.Q(all) | pq.Loss(transmissivity=0.9)
 
-            pq.Q() | pq.Sampling(shots=1)
+            pq.Q() | pq.Sampling()
 
-        self.program.execute()
+        self.program.execute(shots=1)
 
         assert self.program.state.is_lossy

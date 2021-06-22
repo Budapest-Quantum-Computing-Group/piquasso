@@ -51,7 +51,7 @@ class BaseFockCircuit(Circuit, abc.ABC):
     def _particle_number_measurement(self, instruction, state):
         samples = state._particle_number_measurement(
             modes=instruction.modes,
-            shots=instruction._all_params["shots"],
+            shots=self.shots,
         )
 
         self.update_measured_modes(instruction.modes)
