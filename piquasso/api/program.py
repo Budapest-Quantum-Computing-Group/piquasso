@@ -16,7 +16,7 @@
 import json
 import blackbird
 
-from piquasso.api.errors import InvalidProgram
+from piquasso.api.errors import InvalidProgram, InvalidParameter
 from piquasso.core import _context, _blackbird, _registry
 from piquasso.core import _mixins
 from .mode import Q
@@ -101,14 +101,26 @@ class Program(_mixins.RegisterMixin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         _context.current_program = None
 
-    def execute(self) -> list:
+    def execute(self, shots=1) -> list:
         """Executes the collected instructions on the circuit.
+
+        Args:
+            shots (int): The number of samples to generate.
 
         Returns:
             list[Result]: A list of the execution results.
         """
 
-        return self._circuit.execute_instructions(self.instructions, self.state)
+        if not isinstance(shots, int) or shots < 1:
+            raise InvalidParameter(
+                f"The number of shots should be a positive integer: shots={shots}."
+            )
+
+        return self._circuit.execute_instructions(
+            self.instructions,
+            self.state,
+            shots=shots,
+        )
 
     @property
     def results(self) -> list:

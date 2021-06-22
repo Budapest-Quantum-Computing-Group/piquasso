@@ -690,19 +690,10 @@ class Sampling(Instruction):
     Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
     as it allows effective simulation of broader range of input states than original
     algorithm.
-
-    Args:
-        shots (int):
-            A positive integer value representing number of samples for the experiment.
     """
 
-    def __init__(self, shots=1):
-        if shots < 1 or not isinstance(shots, int):
-            raise InvalidParameter(
-                f"The number of shots should be a positive integer: shots={shots}."
-            )
-
-        super().__init__(params=dict(shots=shots))
+    def __init__(self):
+        super().__init__()
 
 
 class Graph(Instruction):

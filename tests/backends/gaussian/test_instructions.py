@@ -510,9 +510,9 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
         pq.Q() | pq.GaussianState(d=3)
         pq.Q() | pq.Graph(adjacency_matrix)
 
-        pq.Q() | pq.ParticleNumberMeasurement(shots=shots)
+        pq.Q() | pq.ParticleNumberMeasurement()
 
-    results = program.execute()
+    results = program.execute(shots=shots)
     program.state.validate()
 
     subgraphs = results[0].to_subgraph_nodes()

@@ -40,7 +40,7 @@ with pq.Program() as pq_program:
     pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
     # NOTE: In SF the cutoff is 5, and couldn't be changed.
-    pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5, shots=shots)
+    pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
 
 
 sf_program = sf.Program(d)
@@ -73,7 +73,7 @@ with sf_program.context as q:
 
 if __name__ == "__main__":
 
-    pq_results = np.array(pq_program.execute()[0])
+    pq_results = np.array(pq_program.execute(shots=shots)[0])
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     result = cramer_multidim_test(pq_results, sf_results)

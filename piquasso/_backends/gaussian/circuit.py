@@ -79,7 +79,7 @@ class GaussianCircuit(Circuit):
 
         samples = state._apply_generaldyne_measurement(
             detection_covariance=instruction._all_params["detection_covariance"],
-            shots=instruction.params["shots"],
+            shots=self.shots,
             modes=modes,
         )
 
@@ -89,7 +89,7 @@ class GaussianCircuit(Circuit):
     def _generaldyne_measurement(self, instruction, state):
         samples = state._apply_generaldyne_measurement(
             detection_covariance=instruction._all_params["detection_covariance"],
-            shots=instruction._all_params["shots"],
+            shots=self.shots,
             modes=instruction.modes,
         )
 
@@ -108,7 +108,7 @@ class GaussianCircuit(Circuit):
     def _particle_number_measurement(self, instruction, state):
         samples = state._apply_particle_number_measurement(
             cutoff=instruction._all_params["cutoff"],
-            shots=instruction._all_params["shots"],
+            shots=self.shots,
             modes=instruction.modes,
         )
 
@@ -117,7 +117,7 @@ class GaussianCircuit(Circuit):
 
     def _threshold_measurement(self, instruction, state):
         samples = state._apply_threshold_measurement(
-            shots=instruction._all_params["shots"],
+            shots=self.shots,
             modes=instruction.modes,
         )
 

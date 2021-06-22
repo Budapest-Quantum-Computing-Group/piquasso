@@ -48,11 +48,10 @@ class ParticleNumberMeasurement(Instruction):
 
     Args:
         cutoff (int): The Fock space cutoff.
-        shots (int): The number of samples to generate.
     """
 
-    def __init__(self, cutoff=5, shots=1):
-        super().__init__(params=dict(cutoff=cutoff, shots=shots))
+    def __init__(self, cutoff=5):
+        super().__init__(params=dict(cutoff=cutoff))
 
 
 class ThresholdMeasurement(Instruction):
@@ -64,13 +63,10 @@ class ThresholdMeasurement(Instruction):
     The generated samples contain :math:`0` or :math:`1`, where :math:`0` corresponds to
     no photon being detected, and :math:`1` corresponds to detection of at least one
     photon.
-
-    Args:
-        shots (int): The number of samples to generate.
     """
 
-    def __init__(self, shots=1):
-        super().__init__(params=dict(shots=shots))
+    def __init__(self):
+        super().__init__()
 
 
 class GeneraldyneMeasurement(Instruction):
@@ -99,10 +95,9 @@ class GeneraldyneMeasurement(Instruction):
     Args:
         detection_covariance (numpy.ndarray):
             A 2-by-2 symplectic matrix corresponding to a purely quadratic Hamiltonian.
-        shots (int): The number of samples to generate.
     """
 
-    def __init__(self, detection_covariance, shots=1):
+    def __init__(self, detection_covariance):
         if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
             raise InvalidParameter(
                 "The parameter 'detection_covariance' is invalid, since it doesn't "
@@ -112,7 +107,6 @@ class GeneraldyneMeasurement(Instruction):
         super().__init__(
             params=dict(
                 detection_covariance=detection_covariance,
-                shots=shots,
             )
         )
 
@@ -144,15 +138,13 @@ class HomodyneMeasurement(Instruction):
             the pure homodyne measurement in the so-called strong oscillator limit.
             Conversely, setting `z = 1` would correspond to
             :class:`HeterodyneMeasurement`.
-        shots (int): The number of samples to generate.
     """
 
-    def __init__(self, phi=0.0, z=1e-4, shots=1):
+    def __init__(self, phi=0.0, z=1e-4):
         super().__init__(
             params=dict(
                 phi=phi,
                 z=z,
-                shots=shots,
             ),
             extra_params=dict(
                 detection_covariance=np.array(
@@ -179,16 +171,10 @@ class HeterodyneMeasurement(Instruction):
     with a vacuum state :math:`| 0 \rangle`, then subtracting the detected intensities
     of the two outputs.
     The mixing is performed with a 50:50 beamsplitter.
-
-    Args:
-        shots (int): The number of samples to generate.
     """
 
-    def __init__(self, shots=1):
+    def __init__(self):
         super().__init__(
-            params=dict(
-                shots=shots,
-            ),
             extra_params=dict(
                 detection_covariance=np.identity(2),
             ),

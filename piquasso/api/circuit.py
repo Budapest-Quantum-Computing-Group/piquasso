@@ -27,6 +27,7 @@ class Circuit(abc.ABC):
         self.program = program
         self.results = []
         self._measured_modes = set()
+        self.shots = None
 
     def update_measured_modes(self, modes):
         self._measured_modes.update(set(modes))
@@ -38,7 +39,7 @@ class Circuit(abc.ABC):
                 f"Already mesured modes: {list(self._measured_modes)}"
             )
 
-    def execute_instructions(self, instructions, state):
+    def execute_instructions(self, instructions, state, shots):
         """Executes the collected instructions in order.
 
         Raises:
@@ -50,6 +51,8 @@ class Circuit(abc.ABC):
                 The methods along with keyword arguments of the current circuit to be
                 executed in order.
         """
+        self.shots = shots
+
         for instruction in instructions:
             if instruction.modes is tuple():
                 instruction.modes = tuple(range(state.d))

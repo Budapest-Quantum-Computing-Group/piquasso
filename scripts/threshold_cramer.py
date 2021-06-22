@@ -43,7 +43,7 @@ with pq.Program() as pq_program:
     pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
     pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-    pq.Q(0, 1, 2) | pq.ThresholdMeasurement(shots=shots)
+    pq.Q(0, 1, 2) | pq.ThresholdMeasurement()
 
 
 sf_program = sf.Program(d)
@@ -70,7 +70,7 @@ with sf_program.context as q:
 
 if __name__ == "__main__":
 
-    pq_results = np.array(pq_program.execute()[0].samples)
+    pq_results = np.array(pq_program.execute(shots=shots)[0].samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     result = cramer_multidim_test(pq_results, sf_results)

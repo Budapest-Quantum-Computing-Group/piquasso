@@ -74,7 +74,7 @@ class SamplingCircuit(Circuit):
 
         samples = sampling_simulator.get_classical_simulation_results(
             initial_state,
-            samples_number=instruction._all_params["shots"]
+            samples_number=self.shots
         )
 
         self.results.append(
