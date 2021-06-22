@@ -18,7 +18,7 @@ import numpy as np
 import piquasso as pq
 
 
-def test_from_pure_preserves_fock_probabilities():
+def test_from_fock_state_preserves_fock_probabilities():
     with pq.Program() as pure_state_preparation:
         pq.Q() | pq.PureFockState(d=2, cutoff=4)
 
@@ -34,7 +34,7 @@ def test_from_pure_preserves_fock_probabilities():
         pq.Q(0, 1) | beamsplitter
 
     with pq.Program() as mixed_state_program:
-        pq.Q() | pq.FockState.from_pure(pure_state_preparation.state)
+        pq.Q() | pq.FockState.from_fock_state(pure_state_preparation.state)
 
         pq.Q(0, 1) | beamsplitter
 

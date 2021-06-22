@@ -141,6 +141,18 @@ class BaseFockState(State, abc.ABC):
     def nonzero_elements(self):
         pass
 
+    @property
+    @abc.abstractmethod
+    def density_matrix(self):
+        """The density matrix of the state in terms of Fock basis vectors."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def reduced(self, modes):
+        """Reduces the state to a subsystem corresponding to the specified modes."""
+        pass
+
     @abc.abstractmethod
     def get_fock_probabilities(self, cutoff):
         pass

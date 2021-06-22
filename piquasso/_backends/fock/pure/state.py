@@ -19,6 +19,7 @@ from piquasso.api.errors import InvalidState
 from piquasso._math.fock import cutoff_cardinality
 
 from ..state import BaseFockState
+from ..general.state import FockState
 
 from .circuit import PureFockCircuit
 
@@ -175,6 +176,17 @@ class PureFockState(BaseFockState):
 
     def __eq__(self, other):
         return np.allclose(self._state_vector, other._state_vector)
+
+    @property
+    def density_matrix(self):
+        state_vector = self._state_vector
+        return np.outer(state_vector, state_vector)
+
+    def _as_mixed(self):
+        return FockState.from_fock_state(self)
+
+    def reduced(self, modes):
+        return self._as_mixed().reduced(modes)
 
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self._space.cutoff
