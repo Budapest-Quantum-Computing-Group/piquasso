@@ -21,6 +21,7 @@ from operator import add
 from scipy.special import factorial, comb
 from scipy.linalg import block_diag
 
+from piquasso.api import constants
 from piquasso._math.combinatorics import partitions
 
 from scipy.linalg import polar, logm, funm
@@ -247,7 +248,7 @@ class FockSpace(tuple):
 
             return elements
 
-        @functools.lru_cache(maxsize=None)
+        @functools.lru_cache(constants.cache_size)
         def calculate_left(upper_bound):
             return get_f_vector(
                 upper_bound=upper_bound,
@@ -255,7 +256,7 @@ class FockSpace(tuple):
                 vector=left_vector,
             )
 
-        @functools.lru_cache(maxsize=None)
+        @functools.lru_cache(constants.cache_size)
         def calculate_right(upper_bound):
             return get_f_vector(
                 upper_bound=upper_bound,

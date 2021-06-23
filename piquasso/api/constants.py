@@ -23,6 +23,8 @@ class _Constants:
 
     _HBAR_DEFAULT = 2
 
+    cache_size = 32
+
     def __init__(self):
         self.reset_hbar()
         self.seed()
