@@ -840,7 +840,7 @@ class GaussianState(State):
         shots,
         calculation,
     ):
-        @lru_cache(maxsize=None)
+        @lru_cache(constants.cache_size)
         def get_probability(*, subspace_modes, occupation_numbers):
             reduced_state = self.reduced(subspace_modes)
             probability = calculation(
