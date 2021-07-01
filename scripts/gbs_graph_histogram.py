@@ -24,7 +24,8 @@ import strawberryfields as sf
 
 
 d = 5
-shots = 1
+shots = 1000
+mean_photon_number = 1.2
 
 
 adjacency_matrix = np.array(
@@ -41,7 +42,7 @@ adjacency_matrix = np.array(
 with pq.Program() as pq_program:
     pq.Q() | pq.GaussianState(d=d)
 
-    pq.Q() | pq.Graph(adjacency_matrix)
+    pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
 
     # NOTE: In SF the cutoff is 5, and couldn't be changed
     pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
@@ -53,6 +54,7 @@ sf_engine = sf.Engine(backend="gaussian")
 with sf_program.context as q:
     sf.ops.GraphEmbed(
         adjacency_matrix,
+        mean_photon_number,
     ) | tuple([q[i] for i in range(d)])
 
     sf.ops.MeasureFock() | (q[0], q[1], q[2])
