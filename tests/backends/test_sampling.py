@@ -54,9 +54,10 @@ class TestSampling:
 
         self.program.execute(shots)
 
-        assert len(self.program.results[-1].samples) == shots,\
-            f'Expected {shots} samples, ' \
-            f'got: {len(self.program.state.results)}'
+        assert len(self.program.result.samples) == shots, (
+            f"Expected {shots} samples, "
+            f"got: {len(self.program.result)}"
+        )
 
     def test_sampling_mode_permutation(self):
         shots = 1
@@ -66,7 +67,7 @@ class TestSampling:
 
         self.program.execute(shots)
 
-        sample = self.program.results[-1].samples[0]
+        sample = self.program.result.samples[0]
         assert np.allclose(sample, [1, 0, 0, 1, 1]),\
             f'Expected [1, 0, 0, 1, 1], got: {sample}'
 
@@ -78,7 +79,7 @@ class TestSampling:
 
         self.program.execute(shots)
 
-        samples = self.program.results[-1].samples
+        samples = self.program.result.samples
         first_sample = samples[0]
         second_sample = samples[1]
 

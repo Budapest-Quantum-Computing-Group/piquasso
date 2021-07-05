@@ -65,7 +65,6 @@ from .instructions.gates import (
     ControlledX,
     ControlledZ,
     Interferometer,
-    Sampling,
     Graph,
 )
 
@@ -75,6 +74,7 @@ from .instructions.measurements import (
     HomodyneMeasurement,
     HeterodyneMeasurement,
     GeneraldyneMeasurement,
+    Sampling,
 )
 
 from .instructions.channels import (

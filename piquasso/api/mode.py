@@ -35,7 +35,7 @@ class Q:
 
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        results = program.execute()
+        result = program.execute()
 
     In the above example, the :class:`~piquasso.instructions.gates.Beamsplitter` gate
     is applied to modes `0, 1`.

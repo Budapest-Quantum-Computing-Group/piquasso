@@ -83,8 +83,7 @@ class GaussianCircuit(Circuit):
             modes=modes,
         )
 
-        self.update_measured_modes(instruction.modes)
-        self.results.append(Result(instruction=instruction, samples=samples))
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _generaldyne_measurement(self, instruction, state):
         samples = state._apply_generaldyne_measurement(
@@ -93,8 +92,7 @@ class GaussianCircuit(Circuit):
             modes=instruction.modes,
         )
 
-        self.update_measured_modes(instruction.modes)
-        self.results.append(Result(instruction=instruction, samples=samples))
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _vacuum(self, instruction, state):
         state.reset()
@@ -112,8 +110,7 @@ class GaussianCircuit(Circuit):
             modes=instruction.modes,
         )
 
-        self.update_measured_modes(instruction.modes)
-        self.results.append(Result(instruction=instruction, samples=samples))
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _threshold_measurement(self, instruction, state):
         samples = state._apply_threshold_measurement(
@@ -121,8 +118,7 @@ class GaussianCircuit(Circuit):
             modes=instruction.modes,
         )
 
-        self.update_measured_modes(instruction.modes)
-        self.results.append(Result(instruction=instruction, samples=samples))
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _graph(self, instruction, state):
         """

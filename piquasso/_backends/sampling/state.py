@@ -35,7 +35,6 @@ class SamplingState(State):
     def __init__(self, *initial_state):
         self.initial_state = initial_state
         self.interferometer = np.diag(np.ones(self.d, dtype=complex))
-        self.results = None
 
         self.is_lossy = False
 
