@@ -30,15 +30,15 @@ from piquasso._math.linalg import (
     is_positive_semidefinite,
 )
 from piquasso._math._random import choose_from_cumulated_probabilities
-from piquasso._math.combinatorics import partitions
+from piquasso._math.combinatorics import get_occupation_numbers
 
 from .circuit import GaussianCircuit
 
 from .transformations import quad_transformation
 
 from .probabilities import (
-    calculate_particle_number_detection_probability,
-    calculate_threshold_detection_probability,
+    DensityMatrixCalculation,
+    ThresholdCalculation,
 )
 
 
@@ -596,6 +596,16 @@ class GaussianState(State):
         # TODO: calculate the variance.
         return first_moment
 
+    def get_density_matrix(self, cutoff: int):
+        calculation = DensityMatrixCalculation(
+            complex_displacement=self.complex_displacement,
+            complex_covariance=self.complex_covariance,
+        )
+
+        return calculation.get_density_matrix(
+            get_occupation_numbers(d=self.d, cutoff=cutoff)
+        )
+
     def wigner_function(self, positions: list, momentums: list, modes=None):
         r"""
         Calculates the Wigner function values at the specified position and momentum
@@ -797,7 +807,21 @@ class GaussianState(State):
         modes,
         shots,
     ):
-        return self._apply_general_particle_number_measurement(
+        def calculate_particle_number_detection_probability(
+            state,
+            occupation_numbers: tuple,
+        ):
+            calculation = DensityMatrixCalculation(
+                state.complex_displacement,
+                state.complex_covariance,
+            )
+
+            return calculation.get_density_matrix_element(
+                bra=occupation_numbers,
+                ket=occupation_numbers,
+            )
+
+        return self._perform_sampling(
             cutoff=cutoff,
             modes=modes,
             shots=shots,
@@ -825,14 +849,22 @@ class GaussianState(State):
                 f"mean={self.mean}"
             )
 
-        return self._apply_general_particle_number_measurement(
+        def calculate_threshold_detection_probability(
+            state,
+            occupation_numbers: tuple,
+        ):
+            calculation = ThresholdCalculation(state.xp_cov)
+
+            return calculation.calculate_click_probability(occupation_numbers)
+
+        return self._perform_sampling(
             cutoff=2,
             modes=modes,
             shots=shots,
             calculation=calculate_threshold_detection_probability,
         )
 
-    def _apply_general_particle_number_measurement(
+    def _perform_sampling(
         self,
         *,
         cutoff,
@@ -898,18 +930,11 @@ class GaussianState(State):
         return samples
 
     def get_fock_probabilities(self, cutoff):
-        ret = []
+        calculation = DensityMatrixCalculation(
+            complex_displacement=self.complex_displacement,
+            complex_covariance=self.complex_covariance,
+        )
 
-        for particle_number in range(cutoff):
-            for occupation_numbers in partitions(self.d, particle_number):
-                probability = calculate_particle_number_detection_probability(
-                    self.copy(),
-                    occupation_numbers=tuple(occupation_numbers),
-                )
-                ret.append(probability)
-
-        ret = np.array(ret)
-
-        ret[abs(ret) < 1e-10] = 0.0
-
-        return ret
+        return calculation.get_particle_number_detection_probabilities(
+            get_occupation_numbers(d=self.d, cutoff=cutoff)
+        )

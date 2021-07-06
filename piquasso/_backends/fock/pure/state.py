@@ -177,9 +177,13 @@ class PureFockState(BaseFockState):
     def __eq__(self, other):
         return np.allclose(self._state_vector, other._state_vector)
 
-    @property
-    def density_matrix(self):
-        state_vector = self._state_vector
+    def get_density_matrix(self, cutoff):
+        cutoff = cutoff or self.cutoff
+
+        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
+
+        state_vector = self._state_vector[:cardinality]
+
         return np.outer(state_vector, state_vector)
 
     def _as_mixed(self):

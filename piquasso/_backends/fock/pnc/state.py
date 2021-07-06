@@ -239,9 +239,10 @@ class PNCFockState(BaseFockState):
             for n, subrep in enumerate(self._representation)
         ])
 
-    @property
-    def density_matrix(self):
-        return block_diag(*self._representation)
+    def get_density_matrix(self, cutoff=None):
+        cutoff = cutoff or self.cutoff
+
+        return block_diag(*self._representation[:cutoff])
 
     def _as_mixed(self):
         return FockState.from_fock_state(self)
@@ -250,7 +251,7 @@ class PNCFockState(BaseFockState):
         return self._as_mixed().reduced(modes)
 
     def get_fock_probabilities(self, cutoff=None):
-        cutoff = cutoff or self._space.cutoff
+        cutoff = cutoff or self.cutoff
 
         ret = []
 

@@ -17,7 +17,7 @@ import pytest
 import numpy as np
 import piquasso as pq
 
-from scipy.linalg import polar, sinhm, coshm
+from scipy.linalg import polar, sinhm, coshm, expm
 
 from functools import partial
 
@@ -76,6 +76,32 @@ def test_get_fock_probabilities_with_squeezed_state(StateClass):
             0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
         ],
     )
+
+
+def test_get_density_matrix_with_squeezed_state():
+    d = 2
+
+    with pq.Program() as gaussian_program:
+        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+    gaussian_program.execute()
+
+    gaussian_density_matrix = gaussian_program.state.get_density_matrix(cutoff=CUTOFF)
+
+    normalization = 1 / sum(np.diag(gaussian_density_matrix))
+
+    with pq.Program() as fock_program:
+        pq.Q() | pq.FockState(d=d, cutoff=CUTOFF) | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+    fock_program.execute()
+
+    fock_density_matrix = fock_program.state.get_density_matrix(cutoff=CUTOFF)
+
+    assert np.allclose(normalization * gaussian_density_matrix, fock_density_matrix)
 
 
 @pytest.mark.parametrize(
@@ -349,7 +375,6 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     )
 )
 def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
-    from scipy.linalg import polar, sinhm, coshm, expm
     squeezing_matrix = np.array(
         [
             [0.1, 0.2 + 0.3j],
@@ -394,6 +419,49 @@ def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
 
 @pytest.mark.monkey
 def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
+    generate_unitary_matrix, generate_complex_symmetric_matrix
+):
+    d = 3
+
+    squeezing_matrix = generate_complex_symmetric_matrix(3)
+    U, r = polar(squeezing_matrix)
+
+    global_phase = generate_unitary_matrix(d)
+    passive = global_phase @ coshm(r)
+    active = global_phase @ sinhm(r) @ U.conj()
+
+    with pq.Program() as fock_program:
+        pq.Q() | pq.FockState(d=d, cutoff=CUTOFF) | pq.Vacuum()
+
+        pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
+
+    fock_program.execute()
+
+    fock_representation_probabilities = (
+        fock_program.state.get_fock_probabilities(cutoff=CUTOFF)
+    )
+
+    with pq.Program() as gaussian_program:
+        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+
+        pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
+
+    gaussian_program.execute()
+
+    gaussian_representation_probabilities = (
+        gaussian_program.state.get_fock_probabilities(cutoff=CUTOFF)
+    )
+
+    normalization = 1 / sum(gaussian_representation_probabilities)
+
+    assert np.allclose(
+        fock_representation_probabilities,
+        normalization * gaussian_representation_probabilities,
+    )
+
+
+@pytest.mark.monkey
+def test_monkey_get_density_matrix_with_general_gaussian_transform(
     generate_unitary_matrix, generate_complex_symmetric_matrix
 ):
     d = 3
