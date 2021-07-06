@@ -845,8 +845,7 @@ class GaussianState(State):
             reduced_state = self.reduced(subspace_modes)
             probability = calculation(
                 reduced_state,
-                subspace_modes,
-                occupation_numbers,
+                occupation_numbers=occupation_numbers,
             )
 
             return max(probability, 0.0)
@@ -899,15 +898,12 @@ class GaussianState(State):
         return samples
 
     def get_fock_probabilities(self, cutoff):
-        modes = tuple(range(self.d))
-
         ret = []
 
         for particle_number in range(cutoff):
             for occupation_numbers in partitions(self.d, particle_number):
                 probability = calculate_particle_number_detection_probability(
                     self.copy(),
-                    subspace_modes=modes,
                     occupation_numbers=tuple(occupation_numbers),
                 )
                 ret.append(probability)
