@@ -25,10 +25,9 @@ from piquasso._math.torontonian import torontonian
 
 def calculate_particle_number_detection_probability(
     state,
-    subspace_modes: tuple,
     occupation_numbers: tuple,
 ):
-    d = len(subspace_modes)
+    d = state.d
     Q = (state.complex_covariance + np.identity(2 * d)) / 2
     Qinv = np.linalg.inv(Q)
 
@@ -64,8 +63,7 @@ def calculate_particle_number_detection_probability(
 
 def calculate_threshold_detection_probability(
     state,
-    subspace_modes,
-    occupation_numbers,
+    occupation_numbers: tuple,
 ):
     r"""
     Calculates the threshold detection probability with the equation
@@ -85,8 +83,7 @@ def calculate_threshold_detection_probability(
                 + I
             \right ).
     """
-
-    d = len(subspace_modes)
+    d = state.d
 
     sigma = (state.xp_cov / constants.HBAR + np.identity(2 * d)) / 2
 
