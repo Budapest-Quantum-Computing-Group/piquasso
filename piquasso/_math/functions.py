@@ -19,13 +19,13 @@ import numpy as np
 def gaussian_wigner_function(positions, momentums, *, d, mean, cov):
     result = []
 
-    for position in positions:
+    for momentum in momentums:
         result.append(
             [
                 gaussian_wigner_function_for_scalar(
                     [*position, *momentum], d=d, mean=mean, cov=cov
                 )
-                for momentum in momentums
+                for position in positions
             ]
         )
 
