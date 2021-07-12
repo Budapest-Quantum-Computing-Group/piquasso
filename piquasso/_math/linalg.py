@@ -83,15 +83,17 @@ def symplectic_form(d):
     return symplectic_form
 
 
-def block_reduce(array, reduce_on):
-    reduction_indices = reduce_on * 2
-
+def reduce_(array, reduce_on):
     proper_index = []
 
-    for index, multiplier in enumerate(reduction_indices):
+    for index, multiplier in enumerate(reduce_on):
         proper_index.extend([index] * multiplier)
 
     if array.ndim == 1:
         return array[proper_index]
 
     return array[np.ix_(proper_index, proper_index)]
+
+
+def block_reduce(array, reduce_on):
+    return reduce_(array, reduce_on=(reduce_on * 2))

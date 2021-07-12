@@ -207,14 +207,17 @@ class FockState(BaseFockState):
     def __eq__(self, other):
         return np.allclose(self._density_matrix, other._density_matrix)
 
-    @property
-    def density_matrix(self):
-        return self._density_matrix
+    def get_density_matrix(self, cutoff=None):
+        cutoff = cutoff or self.cutoff
+
+        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
+
+        return self._density_matrix[:cardinality, :cardinality]
 
     def get_fock_probabilities(self, cutoff=None):
-        cutoff = cutoff or self._space.cutoff
+        cutoff = cutoff or self.cutoff
 
-        cardinality = cutoff_cardinality(d=self._space.d, cutoff=cutoff)
+        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
 
         return np.diag(self._density_matrix).real[:cardinality]
 

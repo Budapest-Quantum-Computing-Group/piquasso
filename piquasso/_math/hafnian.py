@@ -67,6 +67,14 @@ def fG(polynom_coefficients, degree):
 
 
 def _hafnian(A, polynom_function):
+    """
+    NOTE: If the input matrix `A` has an odd dimension, e.g. 7x7, then the matrix
+    should be padded to an even dimension, to e.g. 8x8.
+    """
+    if len(A) % 2 == 1:
+        A = np.pad(A, pad_width=((1, 0), (1, 0)))
+        A[0, 0] = 1.0
+
     degree = A.shape[0] // 2
 
     if degree == 0:

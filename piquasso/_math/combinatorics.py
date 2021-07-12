@@ -32,3 +32,13 @@ def partitions(boxes, particles, class_=tuple):
     return sorted(
         class_(sum(c)) for c in combinations_with_replacement(masks, particles)
     )
+
+
+def get_occupation_numbers(d, cutoff):
+    occupation_numbers = []
+
+    for particle_number in range(cutoff):
+        for occupation_number in partitions(d, particle_number):
+            occupation_numbers.append(tuple(occupation_number))
+
+    return occupation_numbers

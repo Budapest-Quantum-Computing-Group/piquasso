@@ -141,11 +141,15 @@ class BaseFockState(State, abc.ABC):
     def nonzero_elements(self):
         pass
 
-    @property
     @abc.abstractmethod
-    def density_matrix(self):
+    def get_density_matrix(self, cutoff):
         """The density matrix of the state in terms of Fock basis vectors."""
         pass
+
+    @property
+    def density_matrix(self):
+        """The density matrix of the state in terms of Fock basis vectors."""
+        return self.get_density_matrix(cutoff=self.cutoff)
 
     @property
     @abc.abstractmethod
