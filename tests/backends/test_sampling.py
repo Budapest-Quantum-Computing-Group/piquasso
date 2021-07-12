@@ -102,7 +102,7 @@ class TestSampling:
 
         self.program.execute(shots=1)
 
-    def test_loss(self):
+    def test_uniform_loss(self):
         with self.program:
             pq.Q(all) | pq.Loss(transmissivity=0.9)
 
@@ -111,3 +111,12 @@ class TestSampling:
         self.program.execute(shots=1)
 
         assert self.program.state.is_lossy
+
+    def test_general_loss(self):
+        with self.program:
+            pq.Q(0) | pq.Loss(transmissivity=0.4)
+            pq.Q(1) | pq.Loss(transmissivity=0.5)
+
+            pq.Q() | pq.Sampling()
+
+        self.program.execute(shots=1)

@@ -26,6 +26,10 @@ from BoSS.simulation_strategies. \
     lossy_networks_generalized_cliffords_simulation_strategy import \
     LossyNetworksGeneralizedCliffordsSimulationStrategy
 
+from BoSS.simulation_strategies. \
+    generalized_cliffords_uniform_losses_simulation_strategy import \
+    GeneralizedCliffordsUniformLossesSimulationStrategy
+
 from piquasso.api.circuit import Circuit
 from piquasso.api.result import Result
 
@@ -59,15 +63,27 @@ class SamplingCircuit(Circuit):
             instruction.modes,
         )
 
+    @staticmethod
+    def _get_sampling_simulation_strategy(state, permanent_calculator):
+        if not state.is_lossy:
+            return GeneralizedCliffordsSimulationStrategy(permanent_calculator)
+
+        _, singular_values, _ = np.linalg.svd(state.interferometer)
+
+        if np.all(np.isclose(singular_values, singular_values[0])):
+            return GeneralizedCliffordsUniformLossesSimulationStrategy(
+                permanent_calculator
+            )
+
+        return LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
+
     def _sampling(self, instruction, state):
         initial_state = np.array(state.initial_state)
         permanent_calculator = RyserGuanPermanentCalculator(
             matrix=state.interferometer, input_state=initial_state)
 
-        simulation_strategy = (
-            LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
-            if state.is_lossy else
-            GeneralizedCliffordsSimulationStrategy(permanent_calculator)
+        simulation_strategy = self._get_sampling_simulation_strategy(
+            state, permanent_calculator
         )
 
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
