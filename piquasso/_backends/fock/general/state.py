@@ -214,6 +214,10 @@ class FockState(BaseFockState):
 
         return self._density_matrix[:cardinality, :cardinality]
 
+    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        index = self._space.index(occupation_number)
+        return np.diag(self._density_matrix)[index].real
+
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self.cutoff
 

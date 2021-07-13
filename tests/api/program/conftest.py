@@ -37,6 +37,9 @@ def setup_plugin():
         circuit_class = FakeCircuit
         d = 42
 
+        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+            raise NotImplementedError
+
     class FakePlugin(pq.Plugin):
         classes = {
             "FakeState": FakeState,

@@ -16,6 +16,7 @@
 import numpy as np
 
 from piquasso.api.errors import InvalidState
+from piquasso._math.combinatorics import partitions
 
 from ..state import BaseFockState
 from ..general.state import FockState
@@ -249,6 +250,17 @@ class PNCFockState(BaseFockState):
 
     def reduced(self, modes):
         return self._as_mixed().reduced(modes)
+
+    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        number_of_particles = sum(occupation_number)
+
+        subrep_probabilities = np.diag(self._representation[number_of_particles])
+
+        basis = partitions(self.d, number_of_particles)
+
+        index = basis.index(occupation_number)
+
+        return subrep_probabilities[index].real
 
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self.cutoff

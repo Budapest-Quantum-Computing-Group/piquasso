@@ -149,3 +149,49 @@ class TestSamplingState:
                 0.0, 0.0, 0.0, 0.6945423895038292, 0.30545762086020883, 0.0
             ],
         )
+
+    def test_get_particle_detection_probability(self):
+        U = np.array(
+            [
+                [1, 0, 0],
+                [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
+                [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            ],
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(1, 1, 0)
+
+            pq.Q(all) | pq.Interferometer(U)
+
+        program.execute()
+
+        probability = program.state.get_particle_detection_probability(
+            occupation_number=(1, 1, 0)
+        )
+
+        assert np.allclose(probability, 0.30545762086020883)
+
+    def test_get_particle_detection_probability_on_different_subspace(self):
+        U = np.array(
+            [
+                [1, 0, 0],
+                [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
+                [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            ],
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.SamplingState(1, 1, 0)
+
+            pq.Q(all) | pq.Interferometer(U)
+
+        program.execute()
+
+        different_particle_subspace_occupation_number = (3, 1, 0)
+
+        probability = program.state.get_particle_detection_probability(
+            occupation_number=different_particle_subspace_occupation_number
+        )
+
+        assert np.allclose(probability, 0.0)

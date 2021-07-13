@@ -58,6 +58,12 @@ class TestProgramJSONParsing:
                 self.bar = bar
                 self.d = d
 
+            def get_particle_detection_probability(
+                self,
+                occupation_number: tuple
+            ) -> float:
+                raise NotImplementedError
+
         return FakeState
 
     @pytest.fixture(autouse=True)

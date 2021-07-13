@@ -379,3 +379,20 @@ def test_mean_photon_number():
     assert np.isclose(mean_photon_number_first_mode, state.mean_photon_number((0,)))
     assert np.isclose(mean_photon_number_second_mode, state.mean_photon_number((1,)))
     assert np.isclose(total_mean_photon_number, state.mean_photon_number((0, 1, 2)))
+
+
+def test_GaussianState_get_particle_detection_probability():
+    with pq.Program() as program:
+        pq.Q() | pq.GaussianState(d=2) | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+
+    program.execute()
+
+    probability = program.state.get_particle_detection_probability(
+        occupation_number=(0, 2)
+    )
+
+    assert np.isclose(probability, 0.0012355308401079989)

@@ -64,3 +64,19 @@ class State(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin, abc
         auxiliary_rows = np.array([modes] * len(auxiliary_modes)).transpose()
 
         return auxiliary_rows, auxiliary_modes
+
+    @abc.abstractmethod
+    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        """
+        Returns the particle number detection probability using the occupation number
+        specified as a parameter.
+
+        Args:
+            occupation_number (tuple):
+                List of natural numbers representing the number of particles in each
+                mode.
+
+        Returns:
+            float: The probability of detection.
+        """
+        pass
