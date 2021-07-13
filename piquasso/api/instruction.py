@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+
 from piquasso.core import _mixins
 
 
@@ -44,13 +46,24 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
         if hasattr(self, "params"):
             params_string = "{}".format(
                 ", ".join(
-                    [f"{key}={value}" for key, value in self.params.items()]
+                    [
+                        f"{key}={self._param_repr(value)}"
+                        for key, value
+                        in self.params.items()
+                    ]
                 )
             )
         else:
             params_string = ""
 
         return f"pq.Q({mode_string}) | pq.{self.__class__.__name__}({params_string})"
+
+    @staticmethod
+    def _param_repr(value):
+        if isinstance(value, np.ndarray):
+            return "np." + repr(value)
+
+        return value
 
     def on_modes(self, *modes):
         self.modes = modes

@@ -220,7 +220,7 @@ class Program(_mixins.RegisterMixin):
         with_statement = f"with pq.{self.__class__.__name__}() as program:"
 
         script = (
-            f"import piquasso as pq\n\n\n{with_statement}\n"
+            f"import numpy as np\nimport piquasso as pq\n\n\n{with_statement}\n"
         )
 
         four_space = " " * 4
