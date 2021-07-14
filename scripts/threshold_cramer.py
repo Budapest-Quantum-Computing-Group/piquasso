@@ -70,7 +70,7 @@ with sf_program.context as q:
 
 if __name__ == "__main__":
 
-    pq_results = np.array(pq_program.execute(shots=shots)[0].samples)
+    pq_results = np.array(pq_program.execute(shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     result = cramer_multidim_test(pq_results, sf_results)

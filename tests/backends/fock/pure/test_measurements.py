@@ -29,12 +29,11 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    results = program.execute()
+    result = program.execute()
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results) == 1
 
-    sample = results[0].samples[0]
+    sample = result.samples[0]
     assert sample == (1, ) or sample == (2, )
 
     if sample == (1, ):
@@ -67,12 +66,11 @@ def test_measure_particle_number_on_two_modes():
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    results = program.execute()
+    result = program.execute()
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results) == 1
 
-    sample = results[0].samples[0]
+    sample = result.samples[0]
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
@@ -117,12 +115,11 @@ def test_measure_particle_number_on_all_modes():
     with program:
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    results = program.execute()
+    result = program.execute()
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results) == 1
 
-    sample = results[0].samples[0]
+    sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
 
     if sample == (0, 0, 0):
@@ -169,7 +166,7 @@ def test_measure_particle_number_with_multiple_shots():
     with program:
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    results = program.execute(shots=shots)
+    result = program.execute(shots=shots)
 
     assert np.isclose(sum(program.state.fock_probabilities), 1)
-    assert len(results[0].samples) == shots
+    assert len(result.samples) == shots

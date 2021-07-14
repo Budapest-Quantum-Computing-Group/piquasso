@@ -677,25 +677,6 @@ class CrossKerr(Instruction):
         super().__init__(params=dict(xi=xi))
 
 
-class Sampling(Instruction):
-    r"""Boson Sampling.
-
-    Simulates a boson sampling using generalized Clifford&Clifford algorithm
-    from [Brod, Oszmaniec 2020].
-
-    This method assumes that initial_state is given in the second quantization
-    description (mode occupation). BoSS requires input states as numpy arrays,
-    therefore the state is prepared as such structure.
-
-    Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
-    as it allows effective simulation of broader range of input states than original
-    algorithm.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-
 class Graph(Instruction):
     r"""Applies a graph given its adjacency matrix, see
     https://arxiv.org/pdf/1612.01199.pdf

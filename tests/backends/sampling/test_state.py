@@ -28,9 +28,6 @@ class TestSamplingState:
         expected_initial_state = [1, 1, 1, 0, 0]
         assert np.allclose(self.state.initial_state, expected_initial_state)
 
-    def test_results_init(self):
-        assert self.state.results is None
-
     def test_interferometer_init(self):
         expected_interferometer = np.diag(np.ones(self.state.d, dtype=complex))
         assert np.allclose(self.state.interferometer, expected_interferometer)

@@ -33,12 +33,10 @@ CUTOFF = 4
 def test_InvalidModes_are_raised_if_modes_are_already_measured(StateClass):
     d = 3
 
-    with pq.Program() as program:
-        pq.Q() | StateClass(d=d) | pq.Vacuum()
+    with pytest.raises(pq.api.errors.InvalidProgram):
+        with pq.Program():
+            pq.Q() | StateClass(d=d) | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
 
-        pq.Q(0) | pq.Fourier()
-
-    with pytest.raises(pq.api.errors.InvalidModes):
-        program.execute()
+            pq.Q(2) | pq.ParticleNumberMeasurement()

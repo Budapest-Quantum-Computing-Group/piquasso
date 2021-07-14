@@ -512,10 +512,10 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    results = program.execute(shots=shots)
+    result = program.execute(shots=shots)
     program.state.validate()
 
-    subgraphs = results[0].to_subgraph_nodes()
+    subgraphs = result.to_subgraph_nodes()
 
     assert len(subgraphs) == shots
     assert subgraphs == [[1, 2], [1, 2]]

@@ -93,9 +93,7 @@ class SamplingCircuit(Circuit):
             samples_number=self.shots
         )
 
-        self.results.append(
-            Result(instruction=instruction, samples=samples)
-        )
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _loss(self, instruction, state):
         state._apply_loss(

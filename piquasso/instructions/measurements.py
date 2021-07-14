@@ -24,12 +24,12 @@
 
 import numpy as np
 
-from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidParameter
+from piquasso.api.measurement import Measurement
 from piquasso._math.linalg import is_positive_semidefinite, symplectic_form
 
 
-class ParticleNumberMeasurement(Instruction):
+class ParticleNumberMeasurement(Measurement):
     r"""Particle number measurement.
 
     A non-Gaussian projective measurement with the probability density given by
@@ -54,7 +54,7 @@ class ParticleNumberMeasurement(Instruction):
         super().__init__(params=dict(cutoff=cutoff))
 
 
-class ThresholdMeasurement(Instruction):
+class ThresholdMeasurement(Measurement):
     """Threshold measurement.
 
     Similar to :class:`ParticleNumberMeasurement`, but only measuring whether or not
@@ -69,7 +69,7 @@ class ThresholdMeasurement(Instruction):
         super().__init__()
 
 
-class GeneraldyneMeasurement(Instruction):
+class GeneraldyneMeasurement(Measurement):
     r"""General-dyne measurement.
 
     The probability density is given by
@@ -111,7 +111,7 @@ class GeneraldyneMeasurement(Instruction):
         )
 
 
-class HomodyneMeasurement(Instruction):
+class HomodyneMeasurement(Measurement):
     r"""Homodyne measurement.
 
     Corresponds to measurement of the quadrature operator
@@ -157,7 +157,7 @@ class HomodyneMeasurement(Instruction):
         )
 
 
-class HeterodyneMeasurement(Instruction):
+class HeterodyneMeasurement(Measurement):
     r"""Heterodyne measurement.
 
     The probability density is given by
@@ -179,3 +179,22 @@ class HeterodyneMeasurement(Instruction):
                 detection_covariance=np.identity(2),
             ),
         )
+
+
+class Sampling(Measurement):
+    r"""Boson Sampling.
+
+    Simulates a boson sampling using generalized Clifford&Clifford algorithm
+    from [Brod, Oszmaniec 2020].
+
+    This method assumes that initial_state is given in the second quantization
+    description (mode occupation). BoSS requires input states as numpy arrays,
+    therefore the state is prepared as such structure.
+
+    Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
+    as it allows effective simulation of broader range of input states than original
+    algorithm.
+    """
+
+    def __init__(self):
+        super().__init__()

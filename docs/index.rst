@@ -79,6 +79,7 @@ C++.
    api/mode
    api/state
    api/instruction
+   api/measurement
    api/result
    api/circuit
    api/errors

@@ -40,7 +40,7 @@ class Program(_mixins.RegisterMixin):
 
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        results = program.execute()
+        result = program.execute()
 
     Args:
         state (State): The initial quantum state.
@@ -123,8 +123,8 @@ class Program(_mixins.RegisterMixin):
         )
 
     @property
-    def results(self) -> list:
-        return self._circuit.results
+    def result(self) -> list:
+        return self._circuit.result
 
     @classmethod
     def from_properties(cls, properties: dict):

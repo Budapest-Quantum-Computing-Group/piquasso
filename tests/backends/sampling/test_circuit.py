@@ -39,10 +39,9 @@ class TestSampling:
             pq.Q(4) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling()
 
-        results = self.program.execute(shots=10)
+        result = self.program.execute(shots=10)
 
-        assert len(results) == 1
-        assert len(results[0].samples) == 10
+        assert len(result.samples) == 10
 
     def test_interferometer(self):
         U = np.array([
@@ -120,6 +119,6 @@ class TestSampling:
             pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
             pq.Q() | pq.Sampling()
 
-        results = self.program.execute(shots=1)
-        sample = results[0].samples[0]
+        result = self.program.execute(shots=1)
+        sample = result.samples[0]
         assert sum(sample) < sum(self.program.state.initial_state)
