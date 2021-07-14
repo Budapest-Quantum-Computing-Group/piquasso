@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso._math.combinatorics import partitions
 import numpy as np
 
 from piquasso.api.state import State
@@ -98,6 +99,20 @@ class SamplingState(State):
         """
 
         return sum(self.initial_state)
+
+    def get_particle_detection_probability(self, occupation_number):
+        number_of_particles = sum(occupation_number)
+
+        if number_of_particles != self.particle_number:
+            return 0.0
+
+        basis = partitions(self.d, number_of_particles)
+
+        index = basis.index(occupation_number)
+
+        subspace_probabilities = self._get_fock_probabilities_on_subspace()
+
+        return subspace_probabilities[index]
 
     def get_fock_probabilities(self, cutoff: int = None) -> list:
         cutoff = cutoff or self.particle_number + 1

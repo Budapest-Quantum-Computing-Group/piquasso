@@ -192,6 +192,13 @@ class PureFockState(BaseFockState):
     def reduced(self, modes):
         return self._as_mixed().reduced(modes)
 
+    def get_particle_detection_probability(self, occupation_number):
+        index = self._space.index(occupation_number)
+
+        return np.real(
+            self._state_vector[index].conjugate() * self._state_vector[index]
+        )
+
     def get_fock_probabilities(self, cutoff=None):
         cutoff = cutoff or self._space.cutoff
 

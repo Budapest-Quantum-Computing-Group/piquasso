@@ -929,6 +929,17 @@ class GaussianState(State):
 
         return samples
 
+    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        calculation = DensityMatrixCalculation(
+            self.complex_displacement,
+            self.complex_covariance,
+        )
+
+        return calculation.get_density_matrix_element(
+            bra=occupation_number,
+            ket=occupation_number,
+        )
+
     def get_fock_probabilities(self, cutoff):
         calculation = DensityMatrixCalculation(
             complex_displacement=self.complex_displacement,
