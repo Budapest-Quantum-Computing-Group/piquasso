@@ -54,6 +54,29 @@ def is_proportional(first, second):
         partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
+def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
+    with pq.Program() as program:
+        pq.Q() | StateClass(d=3) | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=0.6)
+
+    program.execute()
+
+    probabilities = program.state.get_fock_probabilities(cutoff=CUTOFF)
+
+    assert isinstance(probabilities, np.ndarray)
+    assert probabilities.dtype == np.float64
+
+
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+        partial(pq.PNCFockState, cutoff=CUTOFF),
+    )
+)
 def test_get_fock_probabilities_with_squeezed_state(StateClass):
     with pq.Program() as program:
         pq.Q() | StateClass(d=3) | pq.Vacuum()
