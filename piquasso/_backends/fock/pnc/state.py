@@ -268,9 +268,10 @@ class PNCFockState(BaseFockState):
         ret = []
 
         for subrep in self._representation[:cutoff]:
-            ret.extend(np.diag(subrep))
+            probability = np.real(np.diag(subrep))
+            ret.extend(probability)
 
-        return ret
+        return np.array(ret, dtype=float)
 
     @property
     def fock_probabilities(self):

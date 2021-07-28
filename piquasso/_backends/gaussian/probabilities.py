@@ -88,13 +88,15 @@ class DensityMatrixCalculation:
         ret = []
 
         for occupation_number in occupation_numbers:
-            probability = self.get_density_matrix_element(
-                bra=occupation_number,
-                ket=occupation_number,
+            probability = np.real(
+                self.get_density_matrix_element(
+                    bra=occupation_number,
+                    ket=occupation_number,
+                )
             )
             ret.append(probability)
 
-        ret = np.array(ret)
+        ret = np.array(ret, dtype=float)
 
         ret[abs(ret) < 1e-10] = 0.0
 
