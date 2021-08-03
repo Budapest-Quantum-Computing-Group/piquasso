@@ -1,3 +1,5 @@
+# This file uses source code from the files, clique.py, points.py, similarity.py, subgraph.py from
+# https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/apps/
 #
 # Copyright 2021 Budapest Quantum Computing Group
 #
@@ -12,6 +14,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import networkx as nx
+from typing import Counter
+
+from piquasso._math.max_clique import *
+from piquasso._math.dense_subgraph import *
+from piquasso._math.similarity import *
 
 
 class Result:
@@ -62,3 +71,311 @@ class Result:
             subgraphs.append(sorted(modes))
 
         return subgraphs
+
+    def search(self, clique: list, graph: nx.Graph, iterations) -> list:
+        """Local search algorithm for identifying large cliques.
+
+        This function implements a version of the local search algorithm given in
+        :cite:`pullan2006dynamic` and :cite:`pullan2006phased`. It proceeds by iteratively applying
+        phases of greedy growth and plateau search to the input clique subgraph.
+
+        **Growth phase**
+
+        Growth is achieved using the :func:`~.grow` function, which repeatedly evaluates the
+        set :math:`C_0` of nodes in the remainder of the graph that are connected to all nodes in the
+        clique, and selects one candidate node from :math:`C_0` to make a larger clique.
+
+        **Search phase**
+
+        Plateau search is performed with the :func:`~.swap` function, which evaluates the set
+        :math:`C_1` of nodes in the remainder of the graph that are connected to all but one of the
+        nodes in the clique. The function then proceeds to select one candidate from :math:`C_1` and
+        swap it with its corresponding node in the clique.
+
+        Whenever the sets :math:`C_0` and :math:`C_1` used during growth and swapping have more than
+        one element, there must be a choice of which node to add or swap. This choice is specified
+        with the ``node_select`` argument, which can be any of the following:
+
+        - ``"uniform"`` (default): choose a node from the candidates uniformly at random;
+        - ``"degree"``: choose the node from the candidates with the greatest degree, settling ties
+          by uniform random choice;
+        - A list or array: specifying the node weights of the graph, resulting in choosing the node
+          from the candidates with the greatest weight, settling ties by uniform random choice.
+
+        **Stopping**
+
+        The iterative applications of growth and search are applied until either the specified number
+        of iterations has been carried out or when a dead end has been reached. The function reaches
+        a dead end when it is unable to perform any new swaps or growth.
+
+        **Example usage:**
+
+        >>> graph = nx.lollipop_graph(4, 1)
+        >>> graph.add_edge(2, 4)
+        >>> clique = [3, 4]
+        >>> search(clique, graph, iterations=10)
+        [0, 1, 2, 3]
+
+        Args:
+            clique (list[int]): a subgraph specified by a list of nodes; the subgraph must be a clique
+            graph (nx.Graph): the input graph
+            iterations (int): number of steps in the algorithm
+            node_select (str, list or array): method of selecting nodes during swap and growth. Can
+                be ``"uniform"`` (default), ``"degree"``, or a NumPy array or list.
+
+        Returns:
+           list[int]: the largest clique found by the algorithm
+        """
+        if iterations < 1:
+            raise ValueError("Number of iterations must be a positive int")
+
+        grown = grow(clique, graph)
+        swapped = swap(grown, graph)
+
+        iterations -= 1
+
+        if set(grown) == set(swapped) or iterations == 0:
+            return swapped
+
+        return self.search(swapped, graph, iterations)
+
+    def shrink(
+            self, subgraph: list, graph: nx.Graph, node_select: Union[str, np.ndarray, list] = "uniform"
+    ) -> list:
+        """Shrinks an input subgraph until it forms a clique.
+
+        Proceeds by removing nodes in the input subgraph one at a time until the result is a clique
+        that satisfies :func:`is_clique`. Upon each iteration, this function selects the node with
+        lowest degree relative to the subgraph and removes it.
+
+        In some instances, there may be multiple nodes of minimum degree as candidates to remove from
+        the subgraph. The method of selecting which of these nodes to remove is specified by the
+        ``node_select`` argument, which can be either:
+
+        - ``"uniform"`` (default): choose a node from the candidates uniformly at random;
+        - A list or array: specifying the node weights of the graph, resulting in choosing the node
+          from the candidates with the lowest weight, settling ties by uniform random choice.
+
+        **Example usage:**
+
+        >>> graph = nx.barbell_graph(4, 0)
+        >>> subgraph = [0, 1, 2, 3, 4, 5]
+        >>> shrink(subgraph, graph)
+        [0, 1, 2, 3]
+
+        Args:
+            subgraph (list[int]): a subgraph specified by a list of nodes
+            graph (nx.Graph): the input graph
+            node_select (str, list or array): method of settling ties when more than one node of
+                equal degree can be removed. Can be ``"uniform"`` (default), or a NumPy array or list.
+
+        Returns:
+            list[int]: a clique of size smaller than or equal to the input subgraph
+        """
+
+        if not set(subgraph).issubset(graph.nodes):
+            raise ValueError("Input is not a valid subgraph")
+
+        if isinstance(node_select, (list, np.ndarray)):
+            if len(node_select) != graph.number_of_nodes():
+                raise ValueError("Number of node weights must match number of nodes")
+            w = {n: node_select[i] for i, n in enumerate(graph.nodes)}
+            node_select = "weight"
+
+        subgraph = graph.subgraph(subgraph).copy()  # A copy is required to be able to modify the
+        # structure of the subgraph (https://networkx.github.io/documentation/stable/reference/classes/generated/networkx.Graph.subgraph.html)
+
+        while not is_clique(subgraph):
+            degrees = np.array(subgraph.degree)
+            degrees_min = np.argwhere(degrees[:, 1] == degrees[:, 1].min()).flatten()
+
+            if node_select == "uniform":
+                to_remove_index = np.random.choice(degrees_min)
+            elif node_select == "weight":
+                weights = np.array([w[degrees[n][0]] for n in degrees_min])
+                to_remove_index = np.random.choice(np.where(weights == weights.min())[0])
+            else:
+                raise ValueError("Node selection method not recognized")
+
+            to_remove = degrees[to_remove_index][0]
+            subgraph.remove_node(to_remove)
+
+        return sorted(subgraph.nodes())
+
+    def dense_search(
+            self,
+            subgraphs: list,
+            graph: nx.Graph,
+            min_size: int,
+            max_size: int,
+            max_count: int = 10
+    ) -> dict:
+        """Search for dense subgraphs within an input size range.
+
+        For each subgraph from ``subgraphs``, this function resizes using :func:`resize` to the input
+        range specified by ``min_size`` and ``max_size``, resulting in a range of differently sized
+        subgraphs. This function loops over all elements of ``subgraphs`` and keeps track of the
+        ``max_count`` number of densest subgraphs identified for each size.
+
+        In both growth and shrink phases of :func:`resize`, there may be multiple candidate nodes with
+        equal degree to add to or remove from the subgraph. The method of selecting the node is
+        specified by the ``node_select`` argument, which can be either:
+
+        - ``"uniform"`` (default): choose a node from the candidates uniformly at random;
+        - A list or array: specifying the node weights of the graph, resulting in choosing the node
+          from the candidates with the highest weight (when growing) and lowest weight (when shrinking),
+          settling remaining ties by uniform random choice.
+
+        **Example usage:**
+
+        >>> s = data.Planted()
+        >>> g = nx.Graph(s.adj)
+        >>> s = sample.postselect(s, 16, 30)
+        >>> s = sample.to_subgraphs(s, g)
+        >>> search(s, g, 8, 9, max_count=3)
+        {9: [(0.9722222222222222, [21, 22, 23, 24, 25, 26, 27, 28, 29]),
+          (0.9722222222222222, [20, 21, 22, 24, 25, 26, 27, 28, 29]),
+          (0.9444444444444444, [20, 21, 22, 23, 24, 25, 26, 27, 29])],
+         8: [(1.0, [21, 22, 24, 25, 26, 27, 28, 29]),
+          (1.0, [21, 22, 23, 24, 25, 26, 27, 28]),
+          (1.0, [20, 21, 22, 24, 25, 26, 27, 29])]}
+
+        Args:
+            subgraphs (list[list[int]]): a list of subgraphs specified by their nodes
+            graph (nx.Graph): the input graph
+            min_size (int): minimum size to search for dense subgraphs
+            max_size (int): maximum size to search for dense subgraphs
+            max_count (int): maximum number of densest subgraphs to keep track of for each size
+            node_select (str, list or array): method of settling ties when more than one node of
+                equal degree can be added/removed. Can be ``"uniform"`` (default), or a NumPy array or
+                list containing node weights.
+
+        Returns:
+            dict[int, list[tuple[float, list[int]]]]: a dictionary of different sizes, each containing a
+            list of densest subgraphs reported as a tuple of subgraph density and subgraph nodes,
+            sorted in non-increasing order of density
+        """
+        dense = {}
+
+        for s in subgraphs:
+            r = resize(s, graph, min_size, max_size)
+
+            for size, subgraph in r.items():
+                r[size] = (nx.density(graph.subgraph(subgraph)), subgraph)
+
+            update_dict(dense, r, max_count)
+
+        return dense
+
+    def feature_vector_events_sampling(self, event_photon_numbers: list, max_count_per_mode: int = 2
+                                       ) -> list:
+        r"""Calculates feature vector of given events with respect to input samples.
+
+        The feature vector is composed of event probabilities reconstructed by measuring the
+        occurrence of given events in the input ``samples``.
+
+        Args:
+            samples (list[list[int]]): a list of samples
+            event_photon_numbers (list[int]): a list of events described by their total photon number
+            max_count_per_mode (int): maximum number of photons per mode for all events
+
+        Returns:
+            list[float]: a feature vector made up of estimated event probabilities in the
+            same order as ``event_photon_numbers``
+        """
+        if len(event_photon_numbers) <= 0:
+            raise ValueError("List of photon numbers must have at least one element")
+        if min(event_photon_numbers) < 0:
+            raise ValueError("Cannot request events with photon number below zero")
+        if max_count_per_mode < 0:
+            raise ValueError("Maximum number of photons per mode must be non-negative")
+
+        n_samples = len(self.samples)
+
+        e = (sample_to_event(s, max_count_per_mode) for s in self.samples)
+        count = Counter(e)
+
+        return [count[p] / n_samples for p in event_photon_numbers]
+
+    def feature_vector_orbits_sampling(self, list_of_orbits: list) -> list:
+        r"""Calculates feature vector of given orbits with respect to input samples.
+
+        The feature vector is composed of orbit probabilities reconstructed by measuring the
+        occurrence of given orbits in the input ``samples``.
+
+        Args:
+            samples (list[list[int]]): a list of samples
+            list_of_orbits (list[list[int]]): a list of orbits
+
+        Returns:
+            list[float]: a feature vector made up of estimated orbit probabilities in the
+            same order as ``list_of_orbits``
+        """
+        if len(list_of_orbits) <= 0:
+            raise ValueError("List of orbits must have at least one orbit")
+        if any(min(elem) < 0 for elem in list_of_orbits):
+            raise ValueError("Cannot request orbits with photon number below zero")
+
+        n_samples = len(self.samples)
+
+        sample_orbits = [sample_to_orbit(each) for each in self.samples]
+        count_orbits = Counter(map(tuple, sample_orbits))
+
+        return [count_orbits[tuple(orb)] / n_samples for orb in list_of_orbits]
+
+    def feature_vector_events(
+            self,
+            graph: nx.Graph,
+            event_photon_numbers: list,
+            max_count_per_mode: int = 2,
+            n_mean: float = 5,
+            samples: int = None,
+            loss: float = 0.0,
+    ) -> list:
+        r"""Calculates feature vector of event probabilities for the input graph.
+
+        These probabilities can be either exact or estimated using Monte Carlo estimation.
+        The argument ``samples`` is set to ``None`` to get exact feature vectors by default.
+        To use Monte Carlo estimation, ``samples`` can be set to the number of samples desired
+        to be used in the estimation.
+
+        .. warning::
+            Computing exact probabilities for a large number of events, especially for events with high
+            total photon numbers, can be quite time-consuming. For example, calculating the exact
+            probabilities of observing 8 total photons in a 25 mode graph can take on the order of a
+            few minutes. Monte Carlo estimation, although less precise, can be much quicker.
+
+        Args:
+            graph (nx.Graph): input graph
+            event_photon_numbers (list[int]): a list of events described by their total photon number
+            max_count_per_mode (int): maximum number of photons per mode for all events
+            n_mean (float): total mean photon number of the GBS device
+            samples (int): optional number of samples used in the Monte Carlo estimation.
+                Defaults to exact calculation if ``samples`` is unspecified.
+            loss (float): fraction of photons lost in GBS
+
+        Returns:
+            list[float]: a feature vector of event probabilities in the
+            same order as ``event_photon_numbers``
+        """
+        if len(event_photon_numbers) <= 0:
+            raise ValueError("List of photon numbers must have at least one element")
+        if min(event_photon_numbers) < 0:
+            raise ValueError("Cannot request events with photon number below zero")
+        if max_count_per_mode < 0:
+            raise ValueError("Maximum number of photons per mode must be non-negative")
+        if n_mean < 0:
+            raise ValueError("Mean photon number must be non-negative")
+        if not 0 <= loss <= 1:
+            raise ValueError("Loss parameter must take a value between zero and one")
+
+        if samples:
+            return [
+                prob_event_mc(graph, photon_number, max_count_per_mode, n_mean, samples, loss)
+                for photon_number in event_photon_numbers
+            ]
+
+        return [
+            prob_event_exact(graph, photon_number, max_count_per_mode, n_mean, loss)
+            for photon_number in event_photon_numbers
+        ]

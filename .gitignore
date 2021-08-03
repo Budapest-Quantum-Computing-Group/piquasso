@@ -16,3 +16,6 @@ coverage.xml
 # Sphinx
 docs/_build
 .ipynb_checkpoints/
+
+#MacOS
+.DS_Store
