@@ -20,48 +20,48 @@ import piquasso as pq
 
 def test_5050_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q(1) | pq.StateVector(1)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.5, 0.5, 0, 0, 0],
     )
 
 
 def test_beamsplitter():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q(1) | 1 * pq.StateVector(1)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.6545085, 0.3454915, 0, 0, 0],
     )
 
 
 def test_beamsplitter_multiple_particles():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q(1) | pq.StateVector(1) / 2
         pq.Q(1) | pq.StateVector(2) / 2
         pq.Q(0) | pq.StateVector(2) / np.sqrt(2)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0.16362712, 0.08637288,
@@ -72,18 +72,18 @@ def test_beamsplitter_multiple_particles():
 
 def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q() | pq.StateVector(0, 0) / 2
         pq.Q() | pq.StateVector(0, 1) / np.sqrt(2)
         pq.Q() | pq.StateVector(0, 2) / 2
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0.25,
             0.32725425, 0.17274575,
@@ -94,16 +94,16 @@ def test_beamsplitter_leaves_vacuum_unchanged():
 
 def test_multiple_beamsplitters():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * 1
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    state.apply(program)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0.75, 0.25, 0,
@@ -114,7 +114,6 @@ def test_multiple_beamsplitters():
 
 def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q() | pq.StateVector(0, 0, 1) / 2
         pq.Q() | pq.StateVector(0, 0, 2) / 2
         pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
@@ -122,11 +121,12 @@ def test_multiple_beamsplitters_with_multiple_particles():
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0.1875, 0.0625, 0,
@@ -137,61 +137,60 @@ def test_multiple_beamsplitters_with_multiple_particles():
 
 def test_phaseshift():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q() | pq.StateVector(0, 1) / 2
         pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
         pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.25, 0, 0.5, 0.25, 0],
     )
 
 
 def test_fourier():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q() | pq.StateVector(0, 1) / 2
         pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
         pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0) | pq.Fourier()
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.25, 0, 0.5, 0.25, 0],
     )
 
 
 def test_mach_zehnder():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
         pq.Q() | pq.StateVector(0, 1) / 2
         pq.Q() | pq.StateVector(0, 2) / np.sqrt(2)
         pq.Q() | pq.StateVector(1, 1) / 2
 
         pq.Q(0, 1) | pq.MachZehnder(int_=np.pi/3, ext=np.pi/4)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.0625, 0.1875, 0.04845345, 0.09690689, 0.60463966],
     )
 
 
 def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q() | pq.StateVector(0, 0, 1) / 2
         pq.Q() | pq.StateVector(0, 0, 2) / 2
         pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
@@ -202,11 +201,12 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=4 * np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=3 * np.pi / 2)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0.1875, 0.0625, 0,
@@ -226,18 +226,18 @@ def test_interferometer():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q() | pq.StateVector(0, 0, 1) / 2
         pq.Q() | pq.StateVector(0, 0, 2) / 2
         pq.Q() | pq.StateVector(0, 1, 1) / np.sqrt(2)
 
         pq.Q(0, 1, 2) | pq.Interferometer(matrix=T)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0.1875, 0.0625, 0,
@@ -250,15 +250,15 @@ def test_kerr():
     xi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=4)
         pq.Q() | pq.StateVector(0, 2, 1)
 
         pq.Q(1) | pq.Kerr(xi=xi)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=4)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 1
 
@@ -268,15 +268,15 @@ def test_kerr():
 
 def test_cross_kerr():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=4)
         pq.Q() | pq.StateVector(0, 2, 1)
 
         pq.Q(1, 2) | pq.CrossKerr(xi=np.pi / 2)
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=4)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 1
 

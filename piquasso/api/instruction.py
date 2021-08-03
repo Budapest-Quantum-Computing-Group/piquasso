@@ -15,10 +15,10 @@
 
 import numpy as np
 
-from piquasso.core import _mixins
+from piquasso.core import _mixins, _registry
 
 
-class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
+class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     """
     Args:
         *params: Variable length argument list.
@@ -73,23 +73,23 @@ class Instruction(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixi
         program.instructions.append(self.on_modes(*register.modes))
 
     @classmethod
-    def from_properties(cls, properties: dict):
-        """Creates an :class:`Instruction` instance from a mapping specified.
+    def from_dict(cls, dict_: dict):
+        """Creates an :class:`Instruction` instance from a dict specified.
 
         Args:
-            properties (dict):
-                The desired :class:`Instruction` instance in
-                the format of a mapping.
+            dict_ (dict):
+                The desired :class:`Instruction` instance in the format of a dict.
 
         Returns:
             Instruction:
-                An :class:`Instruction` initialized using the
-                specified mapping.
+                An :class:`Instruction` initialized using the specified dict.
         """
 
-        instruction = cls(**properties["params"])
+        class_ = _registry.get_class(dict_["type"])
 
-        instruction.modes = properties["modes"]
+        instruction = class_(**dict_["attributes"]["constructor_kwargs"])
+
+        instruction.modes = dict_["attributes"]["modes"]
 
         return instruction
 

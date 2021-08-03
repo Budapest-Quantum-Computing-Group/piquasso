@@ -48,8 +48,3 @@ def setup_plugin():
         }
 
     pq.use(FakePlugin)
-
-
-@pytest.fixture
-def program():
-    return pq.Program(state=pq.FakeState())

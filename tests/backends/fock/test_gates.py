@@ -26,20 +26,22 @@ import piquasso as pq
 )
 def test_squeezing_probabilities(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=0.5, phi=np.pi / 3)
 
-    program.execute()
-    program.state.validate()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
+
+    state.validate()
 
     assert np.isclose(
-        sum(program.state.fock_probabilities),
+        sum(state.fock_probabilities),
         1.0
     ), "The state should be renormalized for probability conservation."
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0.90352508, 0, 0, 0, 0, 0.09647492]
     )
 
@@ -50,20 +52,22 @@ def test_squeezing_probabilities(StateClass):
 )
 def test_displacement_probabilities(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Displacement(r=0.5, phi=np.pi / 3)
 
-    program.execute()
-    program.state.validate()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
+
+    state.validate()
 
     assert np.isclose(
-        sum(program.state.fock_probabilities),
+        sum(state.fock_probabilities),
         1.0
     ), "The state should be renormalized for probability conservation."
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0.7804878, 0, 0.19512195, 0, 0, 0.02439024]
     )
 
@@ -73,14 +77,15 @@ def test_PureFockState_squeezing():
     phi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 2
 
@@ -107,14 +112,15 @@ def test_PureFockState_displacement():
     alpha = 0.5 * np.exp(1j * np.pi / 3)
 
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 3
 
@@ -148,15 +154,17 @@ def test_PNCFockState_squeezing():
     phi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
+    state = pq.PNCFockState(d=2, cutoff=3)
+
     with pytest.warns(UserWarning):
-        program.execute()
+        state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     vacuum_probability = 1 / np.cosh(r)
 
@@ -185,15 +193,17 @@ def test_PNCFockState_displacement():
     alpha = 0.5 * np.exp(1j * np.pi / 3)
 
     with pq.Program() as program:
-        pq.Q() | pq.PNCFockState(d=2, cutoff=2) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
+    state = pq.PNCFockState(d=2, cutoff=2)
+
     with pytest.warns(UserWarning):
-        program.execute()
+        state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     vacuum_probability = np.exp(- np.abs(alpha) ** 2)
 
@@ -215,14 +225,15 @@ def test_FockState_squeezing():
     phi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    program.execute()
+    state = pq.FockState(d=2, cutoff=3)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     vacuum_probability = 1 / np.cosh(r)
 
@@ -267,14 +278,15 @@ def test_FockState_displacement():
     alpha = 0.5 * np.exp(1j * np.pi / 3)
 
     with pq.Program() as program:
-        pq.Q() | pq.FockState(d=2, cutoff=2) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    program.execute()
+    state = pq.FockState(d=2, cutoff=2)
+    state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(program.state.nonzero_elements)
+    nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 4
 

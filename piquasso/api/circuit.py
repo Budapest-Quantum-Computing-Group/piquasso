@@ -21,8 +21,7 @@ import abc
 class Circuit(abc.ABC):
     instruction_map: dict
 
-    def __init__(self, program):
-        self.program = program
+    def __init__(self):
         self.result = None
         self.shots = None
 

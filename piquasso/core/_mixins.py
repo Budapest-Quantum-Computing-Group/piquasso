@@ -17,16 +17,16 @@ import abc
 import copy
 
 
-class PropertyMixin(abc.ABC):
+class DictMixin(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_properties(cls, properties: dict):
-        """Creates an instance from a mapping specified.
+    def from_dict(cls, dict_: dict):
+        """Creates an instance from a dict specified.
 
         Args:
-            properties (dict):
-                The desired instance in the format of a mapping.
+            dict_ (dict):
+                The desired instance in the format of a dict.
         """
         pass
 

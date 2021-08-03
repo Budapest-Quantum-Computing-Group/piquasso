@@ -43,11 +43,9 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | self.state
-
             pq.Q(0, 1, 2) | pq.Interferometer(U)
 
-        program.execute()
+        self.state.apply(program)
 
         expected_interferometer = np.array(
             [
@@ -60,7 +58,7 @@ class TestSamplingState:
             dtype=complex,
         )
 
-        assert np.allclose(program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_multiple_interferometer_on_gaped_modes(self):
         U = np.array(
@@ -73,11 +71,9 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | self.state
-
             pq.Q(0, 1, 4) | pq.Interferometer(U)
 
-        program.execute()
+        self.state.apply(program)
 
         expected_interferometer = np.array(
             [
@@ -90,7 +86,7 @@ class TestSamplingState:
             dtype=complex,
         )
 
-        assert np.allclose(program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_multiple_interferometer_on_reversed_gaped_modes(self):
         U = np.array(
@@ -103,11 +99,9 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | self.state
-
             pq.Q(4, 3, 1) | pq.Interferometer(U)
 
-        program.execute()
+        self.state.apply(program)
 
         expected_interferometer = np.array(
             [
@@ -120,7 +114,7 @@ class TestSamplingState:
             dtype=complex,
         )
 
-        assert np.allclose(program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_probability_distribution(self):
         U = np.array(
@@ -132,14 +126,13 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | pq.SamplingState(1, 1, 0)
-
             pq.Q(all) | pq.Interferometer(U)
 
-        program.execute()
+        state = pq.SamplingState(1, 1, 0)
+        state.apply(program)
 
         assert np.allclose(
-            program.state.get_fock_probabilities(),
+            state.get_fock_probabilities(),
             [
                 0.0,
                 0.0, 0.0, 0.0,
@@ -157,13 +150,12 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | pq.SamplingState(1, 1, 0)
-
             pq.Q(all) | pq.Interferometer(U)
 
-        program.execute()
+        state = pq.SamplingState(1, 1, 0)
+        state.apply(program)
 
-        probability = program.state.get_particle_detection_probability(
+        probability = state.get_particle_detection_probability(
             occupation_number=(1, 1, 0)
         )
 
@@ -179,15 +171,14 @@ class TestSamplingState:
         )
 
         with pq.Program() as program:
-            pq.Q() | pq.SamplingState(1, 1, 0)
-
             pq.Q(all) | pq.Interferometer(U)
 
-        program.execute()
+        state = pq.SamplingState(1, 1, 0)
+        state.apply(program)
 
         different_particle_subspace_occupation_number = (3, 1, 0)
 
-        probability = program.state.get_particle_detection_probability(
+        probability = state.get_particle_detection_probability(
             occupation_number=different_particle_subspace_occupation_number
         )
 

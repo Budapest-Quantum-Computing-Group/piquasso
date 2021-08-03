@@ -22,8 +22,7 @@ import piquasso as pq
 class TestSampling:
     @pytest.fixture(autouse=True)
     def setup(self):
-        initial_state = pq.SamplingState(1, 1, 1, 0, 0)
-        self.program = pq.Program(initial_state)
+        self.state = pq.SamplingState(1, 1, 1, 0, 0)
 
     def test_program(self):
         U = np.array([
@@ -32,14 +31,14 @@ class TestSampling:
             [0, 0, -1]
         ], dtype=complex)
 
-        with self.program:
+        with pq.Program() as program:
             pq.Q(0, 1) | pq.Beamsplitter(.5)
             pq.Q(1, 2, 3) | pq.Interferometer(U)
             pq.Q(3) | pq.Phaseshifter(.5)
             pq.Q(4) | pq.Phaseshifter(.5)
             pq.Q() | pq.Sampling()
 
-        result = self.program.execute(shots=10)
+        result = self.state.apply(program, shots=10)
 
         assert len(result.samples) == 10
 
@@ -49,9 +48,11 @@ class TestSampling:
             [4, 5, 6],
             [7, 8, 9]
         ], dtype=complex)
-        with self.program:
+
+        with pq.Program() as program:
             pq.Q(4, 3, 1) | pq.Interferometer(U)
-        self.program.execute()
+
+        self.state.apply(program)
 
         expected_interferometer = np.array([
             [1, 0, 0, 0, 0],
@@ -61,13 +62,15 @@ class TestSampling:
             [0, 3, 0, 2, 1],
         ], dtype=complex)
 
-        assert np.allclose(self.program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_phaseshifter(self):
         phi = np.pi / 2
-        with self.program:
+
+        with pq.Program() as program:
             pq.Q(2) | pq.Phaseshifter(phi)
-        self.program.execute()
+
+        self.state.apply(program)
 
         x = np.exp(1j * phi)
         expected_interferometer = np.array([
@@ -78,16 +81,16 @@ class TestSampling:
             [0, 0, 0, 0, 1],
         ], dtype=complex)
 
-        assert np.allclose(self.program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_beamsplitter(self):
         theta = np.pi / 4
         phi = np.pi / 3
 
-        with self.program:
+        with pq.Program() as program:
             pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
 
-        self.program.execute()
+        self.state.apply(program)
 
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
@@ -103,7 +106,7 @@ class TestSampling:
             dtype=complex
         )
 
-        assert np.allclose(self.program.state.interferometer, expected_interferometer)
+        assert np.allclose(self.state.interferometer, expected_interferometer)
 
     def test_lossy_program(self):
         r'''
@@ -113,12 +116,12 @@ class TestSampling:
         losses = 0.5
         U = np.eye(5) * losses
         U[0][0] = 0  # Ensure that at least one particle is lost.
-        self.program.state.is_lossy = True
+        self.state.is_lossy = True
 
-        with self.program:
+        with pq.Program() as program:
             pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
             pq.Q() | pq.Sampling()
 
-        result = self.program.execute(shots=1)
+        result = self.state.apply(program, shots=1)
         sample = result.samples[0]
-        assert sum(sample) < sum(self.program.state.initial_state)
+        assert sum(sample) < sum(self.state.initial_state)

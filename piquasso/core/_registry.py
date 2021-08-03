@@ -26,30 +26,5 @@ def use_plugin(plugin, override=False):
             items[name] = class_
 
 
-def create_instance_from_mapping(mapping):
-    """Creates an instance using the `registry` classes from a mapping.
-
-    The supported mapping format is:
-
-    .. code-block:: python
-
-        {
-            "type": <CLASS_NAME>,
-            "properties": {
-                ...
-            }
-        }
-
-    The value under `"type"` will be searched in the `registry` for the corresponding
-    class, and the `"properties"` will be used to initialize the class with.
-
-    Args:
-        mapping (~collections.abc.Mapping): The instance represented in a mapping.
-
-    Returns:
-        The created instance corresponding to the `mapping` specified.
-    """
-
-    class_ = items[mapping["type"]]
-
-    return class_.from_properties(mapping["properties"])
+def get_class(name):
+    return items[name]

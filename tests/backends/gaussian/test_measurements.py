@@ -26,10 +26,8 @@ def d():
 
 
 @pytest.fixture
-def program(d):
+def state(d):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=d)
-
         pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
         pq.Q(1) | pq.Displacement(r=1, phi=np.pi/4)
         pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi/6)
@@ -37,162 +35,166 @@ def program(d):
         pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
-    return program
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+
+    return state
 
 
 @pytest.fixture
-def nondisplaced_program(d):
+def nondisplaced_state(d):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=d)
-
         pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
-    return program
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+
+    return state
 
 
-def test_measure_homodyne(program):
-    with program:
+def test_measure_homodyne(state):
+    with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, )
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_homodyne_zeroes_state_on_measured_modes(program):
-    with program:
+def test_measure_homodyne_zeroes_state_on_measured_modes(state):
+    with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    assert program.state.mean[0] == 0
-    assert program.state.cov[0][0] == pq.constants.HBAR
+    assert state.mean[0] == 0
+    assert state.cov[0][0] == pq.constants.HBAR
 
 
-def test_measure_homodyne_with_rotation(program):
+def test_measure_homodyne_with_rotation(state):
     angle = np.pi / 3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement(angle)
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, )
 
 
-def test_measure_homodyne_with_angle_does_not_alter_the_state(program):
+def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     angle = np.pi / 3
 
-    program_with_rotation = program.copy()
+    state_with_rotation = state.copy()
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    with program_with_rotation:
+    with pq.Program() as program_with_rotation:
         pq.Q(0) | pq.HomodyneMeasurement(angle)
 
-    program_with_rotation.execute()
-    program_with_rotation.state.validate()
+    state_with_rotation.apply(program_with_rotation)
+    state_with_rotation.validate()
 
-    assert program.state == program_with_rotation.state
+    assert state == state_with_rotation
 
 
-def test_measure_homodyne_on_multiple_modes(program):
-    with program:
+def test_measure_homodyne_on_multiple_modes(state):
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.HomodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, 1)
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_homodyne_on_all_modes(program, d):
-    with program:
+def test_measure_homodyne_on_all_modes(state, d):
+    with pq.Program() as program:
         pq.Q() | pq.HomodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == tuple(range(d))
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_homodyne_with_multiple_shots(program):
+def test_measure_homodyne_with_multiple_shots(state):
     shots = 4
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.HomodyneMeasurement()
 
-    result = program.execute(shots=shots)
+    result = state.apply(program, shots=shots)
 
     assert len(result.samples) == shots
 
 
-def test_measure_heterodyne(program):
-    with program:
+def test_measure_heterodyne(state):
+    with pq.Program() as program:
         pq.Q(0) | pq.HeterodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, )
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_heterodyne_zeroes_state_on_measured_modes(program):
-    with program:
+def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
+    with pq.Program() as program:
         pq.Q(0) | pq.HeterodyneMeasurement()
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    assert program.state.mean[0] == 0
-    assert program.state.cov[0][0] == pq.constants.HBAR
+    assert state.mean[0] == 0
+    assert state.cov[0][0] == pq.constants.HBAR
 
 
-def test_measure_heterodyne_on_multiple_modes(program):
-    with program:
+def test_measure_heterodyne_on_multiple_modes(state):
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.HeterodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, 1)
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_heterodyne_on_all_modes(program, d):
-    with program:
+def test_measure_heterodyne_on_all_modes(state, d):
+    with pq.Program() as program:
         pq.Q() | pq.HeterodyneMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == tuple(range(d))
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_heterodyne_with_multiple_shots(program):
+def test_measure_heterodyne_with_multiple_shots(state):
     shots = 4
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.HeterodyneMeasurement()
 
-    result = program.execute(shots=shots)
+    result = state.apply(program, shots=shots)
 
     assert len(result.samples) == shots
 
 
-def test_measure_dyne(program):
+def test_measure_dyne(state):
     detection_covariance = np.array(
         [
             [2, 0],
@@ -200,17 +202,17 @@ def test_measure_dyne(program):
         ]
     )
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result.instruction.modes == (0, )
 
-    program.state.validate()
+    state.validate()
 
 
-def test_measure_dyne_with_multiple_shots(program):
+def test_measure_dyne_with_multiple_shots(state):
     shots = 4
 
     detection_covariance = np.array(
@@ -220,84 +222,84 @@ def test_measure_dyne_with_multiple_shots(program):
         ]
     )
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    result = program.execute(shots=shots)
+    result = state.apply(program, shots=shots)
 
     assert len(result.samples) == shots
 
 
-def test_measure_particle_number_on_one_modes(program):
-    with program:
+def test_measure_particle_number_on_one_modes(state):
+    with pq.Program() as program:
         pq.Q(0) | pq.ParticleNumberMeasurement(cutoff=4)
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result
 
 
-def test_measure_particle_number_on_two_modes(program):
-    with program:
+def test_measure_particle_number_on_two_modes(state):
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=4)
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result
 
 
-def test_measure_particle_number_on_all_modes(program):
-    with program:
+def test_measure_particle_number_on_all_modes(state):
+    with pq.Program() as program:
         pq.Q() | pq.ParticleNumberMeasurement(cutoff=4)
 
-    result = program.execute()
+    result = state.apply(program)
 
     assert result
 
 
 def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
-    program,
+    state,
 ):
-    program_with_nonzero_displacements = program
+    state_with_nonzero_displacements = state
 
-    with program_with_nonzero_displacements:
+    with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
     with pytest.raises(NotImplementedError):
-        program_with_nonzero_displacements.execute()
+        state_with_nonzero_displacements.apply(program)
 
 
-def test_measure_threshold_on_one_modes(nondisplaced_program):
-    with nondisplaced_program:
+def test_measure_threshold_on_one_modes(nondisplaced_state):
+    with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_program.execute()
+    result = nondisplaced_state.apply(program)
 
     assert result
 
 
-def test_measure_threshold_with_multiple_shots(nondisplaced_program):
-    with nondisplaced_program:
+def test_measure_threshold_with_multiple_shots(nondisplaced_state):
+    with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_program.execute(shots=20)
+    result = nondisplaced_state.apply(program, shots=20)
 
     assert result
 
 
-def test_measure_threshold_on_two_modes(nondisplaced_program):
-    with nondisplaced_program:
+def test_measure_threshold_on_two_modes(nondisplaced_state):
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_program.execute()
+    result = nondisplaced_state.apply(program)
 
     assert result
 
 
-def test_measure_threshold_on_all_modes(nondisplaced_program):
-    with nondisplaced_program:
+def test_measure_threshold_on_all_modes(nondisplaced_state):
+    with pq.Program() as program:
         pq.Q() | pq.ThresholdMeasurement()
 
-    result = nondisplaced_program.execute()
+    result = nondisplaced_state.apply(program)
 
     assert result

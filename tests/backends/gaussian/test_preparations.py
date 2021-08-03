@@ -31,12 +31,12 @@ def test_state_initialization_with_misshaped_mean():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=1)
-
         pq.Q() | pq.Mean(misshaped_mean)
 
+    state = pq.GaussianState(d=1)
+
     with pytest.raises(InvalidState):
-        program.execute()
+        state.apply(program)
 
 
 def test_state_initialization_with_misshaped_cov():
@@ -48,12 +48,12 @@ def test_state_initialization_with_misshaped_cov():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=1)
-
         pq.Q() | pq.Covariance(misshaped_cov)
 
+    state = pq.GaussianState(d=1)
+
     with pytest.raises(InvalidState):
-        program.execute()
+        state.apply(program)
 
 
 def test_state_initialization_with_nonsymmetric_cov():
@@ -65,12 +65,12 @@ def test_state_initialization_with_nonsymmetric_cov():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=1)
-
         pq.Q() | pq.Covariance(nonsymmetric_cov)
 
+    state = pq.GaussianState(d=1)
+
     with pytest.raises(InvalidState):
-        program.execute()
+        state.apply(program)
 
 
 def test_state_initialization_with_nonpositive_cov():
@@ -82,27 +82,25 @@ def test_state_initialization_with_nonpositive_cov():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=1)
-
         pq.Q() | pq.Covariance(nonpositive_cov)
 
+    state = pq.GaussianState(d=1)
+
     with pytest.raises(InvalidState):
-        program.execute()
+        state.apply(program)
 
 
-def test_vacuum_resets_the_state(program):
-    with program:
+def test_vacuum_resets_the_state(state):
+    with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-    program.execute()
-
-    state = program.state
+    state.apply(program)
 
     assert np.allclose(
-        program.state.mean,
+        state.mean,
         np.zeros(2 * state.d),
     )
     assert np.allclose(
-        program.state.cov,
+        state.cov,
         np.identity(2 * state.d) * HBAR,
     )

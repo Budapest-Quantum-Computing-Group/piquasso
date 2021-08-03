@@ -13,16 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import blackbird
 
-from piquasso.api.errors import InvalidProgram, InvalidParameter
-from piquasso.core import _context, _blackbird, _registry
+from piquasso.core import _context, _blackbird
 from piquasso.core import _mixins
+from .instruction import Instruction
 from .mode import Q
 
 
-class Program(_mixins.RegisterMixin):
+class Program(_mixins.DictMixin, _mixins.RegisterMixin):
     r"""The class representing the quantum program.
 
     A `Program` object can be used with the `with` statement. In this context, the state
@@ -36,41 +35,24 @@ class Program(_mixins.RegisterMixin):
         import piquasso as pq
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
+            pq.Q() | pq.Vacuum()
 
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        result = program.execute()
+        state = pq.GaussianState(d=5)
+
+        result = state.apply(program)
 
     Args:
-        state (State): The initial quantum state.
         instructions (list[~piquasso.api.instruction.Instruction], optional):
             The set of instructions, e.g. quantum gates and measurements.
     """
 
     def __init__(
         self,
-        state=None,
         instructions: list = None,
     ):
-        self.state = state
         self.instructions = instructions or []
-
-    @property
-    def state(self):
-        """The quantum state corresponding to the program."""
-
-        return self._state
-
-    @state.setter
-    def state(self, new_state):
-        self._state = new_state
-
-        self._circuit = (
-            new_state.circuit_class(program=self)
-            if new_state
-            else None
-        )
 
     @staticmethod
     def _map_modes(register, instruction):
@@ -82,18 +64,6 @@ class Program(_mixins.RegisterMixin):
         return (register.modes[m] for m in instruction.modes)
 
     def _apply_to_program_on_register(self, program, register):
-        if self.state is not None:
-            if program.state is not None:
-                raise InvalidProgram(
-                    "The program already has a state registered of type "
-                    f"'{type(program.state).__name__}'."
-                )
-
-            if register.modes == tuple():
-                register.modes = tuple(range(self.state.d))
-
-            self.state._apply_to_program_on_register(program, register)
-
         for instruction in self.instructions:
             instruction_copy = instruction.copy()
 
@@ -110,50 +80,19 @@ class Program(_mixins.RegisterMixin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         _context.current_program = None
 
-    def execute(self, shots=1) -> list:
-        """Executes the collected instructions on the circuit.
-
-        Args:
-            shots (int): The number of samples to generate.
-
-        Returns:
-            list[Result]: A list of the execution results.
-        """
-
-        if not isinstance(shots, int) or shots < 1:
-            raise InvalidParameter(
-                f"The number of shots should be a positive integer: shots={shots}."
-            )
-
-        return self._circuit.execute_instructions(
-            self.instructions,
-            self.state,
-            shots=shots,
-        )
-
-    @property
-    def result(self) -> list:
-        return self._circuit.result
-
     @classmethod
-    def from_properties(cls, properties: dict):
-        """Creates a `Program` instance from a mapping.
+    def from_dict(cls, dict_: dict):
+        """Creates a `Program` instance from a dict.
 
         The currently supported format is
 
         .. code-block:: python
 
             {
-                "state": {
-                    "type": <STATE_CLASS_NAME>,
-                    "properties": {
-                        ...
-                    }
-                },
                 "instructions": [
                     {
                         "type": <INSTRUCTION_CLASS_NAME>,
-                        "properties": {
+                        "attributes": {
                             ...
                         }
                     }
@@ -164,38 +103,18 @@ class Program(_mixins.RegisterMixin):
             Numeric arrays and complex numbers are not yet supported.
 
         Args:
-            properties (dict):
-                The desired `Program` instance in the format of a mapping.
+            dict_ (dict):
 
         Returns:
-            Program: A `Program` initialized using the specified mapping.
+            Program: A `Program` initialized using the specified dict.
         """
 
         return cls(
-            state=_registry.create_instance_from_mapping(properties["state"]),
-            instructions=list(
-                map(
-                    _registry.create_instance_from_mapping,
-                    properties["instructions"],
-                )
-            )
+            instructions=[
+                Instruction.from_dict(instruction_dict)
+                for instruction_dict in dict_["instructions"]
+            ]
         )
-
-    @classmethod
-    def from_json(cls, json_):
-        """Creates a `Program` instance from JSON.
-
-        Almost the same as :meth:`from_properties`, but with JSON parsing.
-
-        Args:
-            json_ (str): The JSON formatted program.
-
-        Returns:
-            Program: A program initialized with the JSON data.
-        """
-        properties = json.loads(json_)
-
-        return cls.from_properties(properties)
 
     def load_blackbird(self, filename: str):
         """
@@ -229,15 +148,14 @@ class Program(_mixins.RegisterMixin):
         with_statement = f"with pq.{self.__class__.__name__}() as program:"
 
         script = (
-            f"import numpy as np\nimport piquasso as pq\n\n\n{with_statement}\n"
+            "import numpy as np\n"
+            "import piquasso as pq\n"
+            "\n"
+            "\n"
+            f"{with_statement}\n"
         )
 
         four_space = " " * 4
-
-        if self.state is not None:
-            script += four_space + self.state._as_code() + "\n"
-
-        script += "\n"
 
         for instruction in self.instructions:
             script += four_space + instruction._as_code() + "\n"

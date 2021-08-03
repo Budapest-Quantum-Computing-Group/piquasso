@@ -23,8 +23,6 @@ import piquasso as pq
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_one_mode(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
@@ -40,9 +38,10 @@ def test_measure_particle_number_on_one_mode(StateClass):
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    state = StateClass(d=3, cutoff=3)
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (1, ) or sample == (2, )
@@ -68,14 +67,12 @@ def test_measure_particle_number_on_one_mode(StateClass):
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_two_modes(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
 
@@ -91,9 +88,10 @@ def test_measure_particle_number_on_two_modes(StateClass):
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    state = StateClass(d=3, cutoff=3)
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
@@ -124,14 +122,12 @@ def test_measure_particle_number_on_two_modes(StateClass):
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_measure_particle_number_on_all_modes(StateClass):
     with pq.Program() as preparation:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
@@ -145,9 +141,10 @@ def test_measure_particle_number_on_all_modes(StateClass):
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    state = StateClass(d=3, cutoff=3)
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (0, 0, 1) or sample == (1, 0, 0)
@@ -176,7 +173,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
@@ -184,8 +181,6 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
     shots = 4
 
     with pq.Program() as preparation:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
@@ -199,7 +194,8 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = program.execute(shots=shots)
+    state = StateClass(d=3, cutoff=3)
+    result = state.apply(program, shots)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert len(result.samples) == shots
