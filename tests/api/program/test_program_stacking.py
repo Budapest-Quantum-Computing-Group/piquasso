@@ -157,3 +157,59 @@ def test_state_collision_raises_InvalidProgram(program):
     assert error.value.args[0] == (
         "The program already has a state registered of type 'FakeState'."
     )
+
+
+def test_all_modes_program_stacking_in_sub_program():
+    sub_program = pq.Program()
+    with sub_program:
+        pq.Q(all) | pq.DummyInstruction(param=10)
+
+    with pq.Program() as program:
+        pq.Q(1, 0, 2) | sub_program
+        pq.Q(1, 2) | pq.DummyInstruction(param=100)
+
+    assert program.instructions[0].modes == (1, 0, 2)
+    assert program.instructions[0].params == {"param": 10}
+
+    assert program.instructions[1].modes == (1, 2)
+    assert program.instructions[1].params == {"param": 100}
+
+
+def test_all_modes_program_stacking_in_main_program():
+    sub_program = pq.Program()
+    with sub_program:
+        pq.Q(0, 1) | pq.DummyInstruction(param=10)
+        pq.Q(2, 3) | pq.DummyInstruction(param=100)
+
+    with pq.Program() as program:
+        pq.Q(all) | sub_program
+        pq.Q(0, 1) | pq.DummyInstruction(param=1000)
+
+    assert program.instructions[0].modes == (0, 1)
+    assert program.instructions[0].params == {"param": 10}
+
+    assert program.instructions[1].modes == (2, 3)
+    assert program.instructions[1].params == {"param": 100}
+
+    assert program.instructions[2].modes == (0, 1)
+    assert program.instructions[2].params == {"param": 1000}
+
+
+def test_all_modes_program_stacking_in_both_sub_and_main_program():
+    sub_program = pq.Program()
+    with sub_program:
+        pq.Q(all) | pq.DummyInstruction(param=10)
+        pq.Q(1, 0) | pq.DummyInstruction(param=100)
+
+    with pq.Program() as program:
+        pq.Q(all) | sub_program
+        pq.Q(0, 4) | pq.DummyInstruction(param=1000)
+
+    assert len(program.instructions[0].modes) == 0
+    assert program.instructions[0].params == {"param": 10}
+
+    assert program.instructions[1].modes == (1, 0)
+    assert program.instructions[1].params == {"param": 100}
+
+    assert program.instructions[2].modes == (0, 4)
+    assert program.instructions[2].params == {"param": 1000}
