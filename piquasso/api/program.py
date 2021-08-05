@@ -72,6 +72,15 @@ class Program(_mixins.RegisterMixin):
             else None
         )
 
+    @staticmethod
+    def _map_modes(register, instruction):
+        if len(register.modes) == 0:
+            return instruction.modes
+        if len(instruction.modes) == 0:
+            return register.modes
+
+        return (register.modes[m] for m in instruction.modes)
+
     def _apply_to_program_on_register(self, program, register):
         if self.state is not None:
             if program.state is not None:
@@ -90,7 +99,7 @@ class Program(_mixins.RegisterMixin):
 
             instruction_copy._apply_to_program_on_register(
                 program,
-                register=Q(*(register.modes[m] for m in instruction.modes))
+                register=Q(*self._map_modes(register, instruction))
             )
 
     def __enter__(self):
