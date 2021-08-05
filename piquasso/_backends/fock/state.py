@@ -86,7 +86,8 @@ class BaseFockState(State, abc.ABC):
             f"pq.Q() | pq.{self.__class__.__name__}(d={self.d}, cutoff={self.cutoff})"
         )
 
-    @abc.abstractclassmethod
+    @classmethod
+    @abc.abstractmethod
     def _get_empty(cls):
         pass
 
