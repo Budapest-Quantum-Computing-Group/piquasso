@@ -51,8 +51,9 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
-from piquasso._math.takagi import takagi
-from piquasso._math.linalg import is_square, is_symmetric, is_symplectic, is_invertible
+from piquasso._math.decompositions import takagi
+from piquasso._math.linalg import is_square, is_symmetric, is_invertible
+from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 
 from piquasso.core import _mixins
 
@@ -360,7 +361,8 @@ class GaussianTransform(_BogoliubovTransformation):
 
     def __init__(self, passive, active):
         if not is_symplectic(
-            np.block([[passive, active], [active.conj(), passive.conj()]])
+            np.block([[passive, active], [active.conj(), passive.conj()]]),
+            form_func=complex_symplectic_form
         ):
             raise InvalidParameter(
                 "The input parameters for instruction 'GaussianTransform' do not form "

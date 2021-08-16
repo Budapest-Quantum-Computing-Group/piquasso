@@ -63,6 +63,15 @@ def generate_unitary_matrix():
 
 
 @pytest.fixture
+def generate_random_positive_definite_matrix():
+    def func(N):
+        A = np.random.rand(N, N)
+        return A @ A.transpose()
+
+    return func
+
+
+@pytest.fixture
 def AssetHandler(request):
     class _AssetHandler:
 

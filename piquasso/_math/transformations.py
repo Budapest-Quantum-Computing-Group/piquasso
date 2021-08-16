@@ -42,7 +42,7 @@ def quad_transformation(d):
         numpy.ndarray: The basis changing matrix.
     """
 
-    T = np.zeros((2 * d, 2 * d))
+    T = np.zeros((2 * d, 2 * d), dtype=int)
     for i in range(d):
         T[2 * i, i] = 1
         T[2 * i + 1, i + d] = 1
