@@ -26,10 +26,16 @@ from ..general.state import FockState
 
 
 class PureFockState(BaseFockState):
-    """A simulated pure Fock state.
+    r"""A simulated pure Fock state.
 
     If no mixed states are needed for a Fock simulation, then this state is the most
-    appropriate currently.
+    appropriate currently, since it does not store an entire density matrix, only a
+    state vector with size
+
+    .. math::
+        {d + c - 1 \choose c - 1},
+
+    where :math:`c \in \mathbb{N}` is the Fock space cutoff.
 
     Args:
         state_vector (numpy.ndarray, optional): The initial state vector.

@@ -33,19 +33,17 @@ from piquasso._math.hermite import modified_hermite_multidim
 @functools.lru_cache()
 def cutoff_cardinality(*, cutoff: int, d: int) -> int:
     r"""
+    Calculates the dimension of the cutoff Fock space with the relation
+
     ..math::
-        \sum_{n=0}^i {d + n - 1 \choose n} = \frac{(i + 1) {d + i \choose i + 1}}{d}
+        \sum_{i=0}^{c - 1} {d + i - 1 \choose i} = {d + c - 1 \choose c - 1}.
     """
-    return int(
-        cutoff
-        * comb(d + cutoff - 1, cutoff)
-        / d
-    )
+    return comb(d + cutoff - 1, cutoff - 1, exact=True)
 
 
 @functools.lru_cache()
 def symmetric_subspace_cardinality(*, d: int, n: int) -> int:
-    return int(comb(d + n - 1, n))
+    return comb(d + n - 1, n, exact=True)
 
 
 class FockBasis(tuple):

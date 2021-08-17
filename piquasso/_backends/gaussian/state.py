@@ -52,9 +52,7 @@ from .probabilities import (
 class GaussianState(State):
     r"""Class to represent a Gaussian state.
 
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
@@ -101,10 +99,8 @@ class GaussianState(State):
     def d(self) -> int:
         return len(self)
 
-    def reset(self) -> None:
-        """
-        Resets this object to a vacuum state.
-        """
+    def reset(self):
+        r"""Resets the state to a vacuum."""
 
         vector_shape = (self.d, )
         matrix_shape = vector_shape * 2
@@ -139,8 +135,8 @@ class GaussianState(State):
         )
 
     def validate(self) -> None:
-        """
-        Validates the Gaussian state.
+        r"""
+        Validates the state.
 
         Raises:
             InvalidState:
@@ -188,7 +184,7 @@ class GaussianState(State):
         r"""The state's mean in the xxpp-ordered basis.
 
         The expectation value of the quadrature operators in xxpp basis, i.e.
-        :math:`\operatorname{Tr} \rho Y`, where
+        :math:`\operatorname{Tr} \left ( \rho Y \right )`, where
         :math:`Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
 
         Returns:
@@ -295,8 +291,8 @@ class GaussianState(State):
 
         Returns:
             numpy.ndarray: A :math:`2d`-vector.
-                The expectation value of the quadrature operators in
-                xp-ordering, i.e. :math:`\operatorname{Tr} \rho R`, where
+                The expectation value of the quadrature operators in `xxpp`-ordering,
+                i.e. :math:`\operatorname{Tr} \rho R`, where
                 :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
         """
         T = from_xxpp_to_xpxp_transformation_matrix(self.d)
@@ -312,9 +308,9 @@ class GaussianState(State):
 
     @property
     def xpxp_covariance_matrix(self) -> np.ndarray:
-        r"""The quadrature-ordered coveriance matrix of the state.
+        r"""The `xpxp`-ordered coveriance matrix of the state.
 
-        The quadrature-ordered covariance matrix :math:`\sigma` is defined by
+        The `xpxp`-ordered covariance matrix :math:`\sigma` is defined by
 
         .. math::
             \sigma_{ij} := \langle R_i R_j + R_j R_i \rangle_\rho
@@ -329,7 +325,7 @@ class GaussianState(State):
 
         Returns:
             numpy.ndarray:
-                The :math:`2d \times 2d` quadrature-ordered covariance matrix in
+                The :math:`2d \times 2d` `xpxp`-ordered covariance matrix in
                 xpxp-ordered basis.
         """
 
@@ -363,9 +359,9 @@ class GaussianState(State):
 
     @property
     def xpxp_correlation_matrix(self) -> np.ndarray:
-        r"""The quadrature-ordered correlation matrix of the state.
+        r"""The `xpxp`-ordered correlation matrix of the state.
 
-        Let :math:`M` be the correlation matrix in the quadrature basis (xpxp basis).
+        Let :math:`M` be the correlation matrix in the `xpxp` basis.
         Then
 
         .. math::
@@ -380,7 +376,7 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            numpy.ndarray: The :math:`2d \times 2d` quad-ordered correlation matrix.
+            numpy.ndarray: The :math:`2d \times 2d` `xpxp`-ordered correlation matrix.
         """
 
         T = from_xxpp_to_xpxp_transformation_matrix(self.d)
@@ -390,7 +386,7 @@ class GaussianState(State):
     def xpxp_representation(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        r"""The state's mean and correlation matrix ordered by the quadrature basis.
+        r"""The state's mean and correlation matrix ordered by the `xpxp` basis.
 
         Returns:
             tuple: :meth:`mean`, :meth:`corr`.
@@ -549,7 +545,7 @@ class GaussianState(State):
         is reduced to `modes` and rotated by `phi` in a new instance, and let that
         state be denoted by :math:`\rho_{\vec{i}, \phi}`.
 
-        Then the quadrature ordered mean and covariance can be calculated by
+        Then the `xpxp`-ordered mean and covariance can be calculated by
 
         .. math::
             \mu_{\vec{i}, \phi}
@@ -574,7 +570,7 @@ class GaussianState(State):
 
         Returns:
             (numpy.ndarray, numpy.ndarray):
-                Quadrature ordered mean and covariance of the reduced and rotated
+                `xpxp`-ordered mean and covariance of the reduced and rotated
                 version of the current :class:`GaussianState`.
         """
         transformed_state = self.reduced(modes).rotated(phi)

@@ -28,9 +28,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
     A `Program` object can be used with the `with` statement.
     In this context all the instructions could be specified.
 
-    A simple example usage:
-
-    .. code-block:: python
+    Example usage::
 
         import numpy as np
         import piquasso as pq
@@ -47,6 +45,8 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
         instructions (list[~piquasso.api.instruction.Instruction], optional):
             The set of instructions, e.g. quantum gates and measurements.
     """
+
+    instructions: list
 
     def __init__(
         self,
@@ -82,11 +82,9 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
     @classmethod
     def from_dict(cls, dict_: dict) -> "Program":
-        """Creates a `Program` instance from a dict.
+        """Creates a `Program` instance from a `dict`.
 
-        The currently supported format is
-
-        .. code-block:: python
+        The currently supported format is::
 
             {
                 "instructions": [
@@ -103,10 +101,10 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
             Numeric arrays and complex numbers are not yet supported.
 
         Args:
-            dict_ (dict):
+            dict_ (dict): The :class:`Program` in a key-value pair format.
 
         Returns:
-            Program: A `Program` initialized using the specified dict.
+            Program: A :class:`Program` initialized using the specified `dict`.
         """
 
         return cls(
@@ -118,7 +116,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
     def load_blackbird(self, filename: str) -> None:
         """
-        Loads the gates to apply into `self.instructions` from a BlackBird file
+        Loads the gates to apply into :attr:`instructions` from a BlackBird file
         (.xbb).
 
         Args:
@@ -131,12 +129,11 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
     def loads_blackbird(self, string: str) -> None:
         """
-        Loads the gates to apply into `self.instructions` from a string
+        Loads the gates to apply into :attr:`instructions` from a string
         representing a :class:`~blackbird.program.BlackbirdProgram`.
 
         Args:
-            string (str):
-                String containing a valid Blackbird program.
+            string (str): String containing a valid Blackbird program.
         """
         blackbird_program = blackbird.loads(string)
 

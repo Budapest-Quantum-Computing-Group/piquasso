@@ -30,9 +30,7 @@ class Q:
     The implementation of qumodes, which is used to track on which qumodes are
     the operators placed in the circuit.
 
-    A simple example usage:
-
-    .. code-block:: python
+    Example usage::
 
         import numpy as np
         import piquasso as pq
@@ -51,18 +49,14 @@ class Q:
 
     One could use the `all` keyword to indicate that the registered
     :class:`~piquasso.api.instruction.Instruction` mashould be applied to all modes,
-    i.e.
-
-    .. code-block:: python
+    i.e.::
 
         with pq.Program() as program:
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
             pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    or alternatively no parameters, i.e.
-
-    .. code-block:: python
+    or alternatively no parameters, i.e.::
 
         with pq.Program() as program:
             pq.Q(0, 1) | pq.Squeezing(r=0.5)

@@ -30,11 +30,10 @@ class DictMixin(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def from_dict(cls, dict_: dict) -> "DictMixin":
-        """Creates an instance from a dict specified.
+        """Creates an instance from a `dict` specified.
 
         Args:
-            dict_ (dict):
-                The desired instance in the format of a dict.
+            dict_ (dict): The desired instance in the format of a `dict`.
         """
         pass
 

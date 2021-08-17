@@ -24,19 +24,15 @@ from piquasso.api.instruction import Instruction
 class Vacuum(Instruction):
     r"""Prepare the system in a vacuum state.
 
-    This is only practical to be used at the beginning of a program, right after
-    specifying the state.
-
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
             ...
 
     Note:
-        This operation can only be used for all modes.
+        This operation can only be used for all modes and is only practical to be used
+        at the beginning of a program declaration.
     """
 
     def __init__(self) -> None:
@@ -46,9 +42,7 @@ class Vacuum(Instruction):
 class Mean(Instruction):
     r"""Set the first canonical moment of the state.
 
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | pq.Mean(
@@ -67,9 +61,7 @@ class Mean(Instruction):
 class Covariance(Instruction):
     r"""Sets the covariance matrix of the state.
 
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | pq.Covariance(
@@ -88,9 +80,7 @@ class Covariance(Instruction):
 class StateVector(Instruction, _mixins.WeightMixin):
     r"""State preparation with Fock basis vectors.
 
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | (
@@ -118,9 +108,7 @@ class StateVector(Instruction, _mixins.WeightMixin):
 class DensityMatrix(Instruction, _mixins.WeightMixin):
     r"""State preparation with density matrix elements.
 
-    Example usage:
-
-    .. code-block:: python
+    Example usage::
 
         with pq.Program() as program:
             pq.Q() | (
@@ -156,7 +144,10 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
 class Create(Instruction):
     r"""Create a particle on a mode.
 
-    .. code-block:: python
+    This instruction essentially applies a creation operator on the specified mode, then
+    normalizes the state.
+
+    Example usage::
 
         with pq.Program() as program:
             pq.Q(1) | pq.Create()
@@ -176,7 +167,10 @@ class Create(Instruction):
 class Annihilate(Instruction):
     r"""Annihilate a particle on a mode.
 
-    .. code-block:: python
+    This instruction essentially applies an annihilation operator on the specified mode,
+    then normalizes the state.
+
+    Example usage::
 
         with pq.Program() as program:
             ...

@@ -85,11 +85,11 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         Args:
             dict_ (dict):
-                The desired :class:`Instruction` instance in the format of a dict.
+                The desired :class:`Instruction` instance in the format of a `dict`.
 
         Returns:
             Instruction:
-                An :class:`Instruction` initialized using the specified dict.
+                An :class:`Instruction` initialized using the specified `dict`.
         """
 
         class_ = _registry.get_class(dict_["type"])
