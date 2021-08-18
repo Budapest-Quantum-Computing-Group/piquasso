@@ -13,91 +13,99 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import pytest
 
 import piquasso as pq
 
 
-class TestProgramJSONParsing:
-    @pytest.fixture
-    def FakeInstruction(self):
+@pytest.fixture
+def FakeInstruction():
 
-        class FakeInstruction(pq.Instruction):
-            def __init__(self, first_param, second_param):
-                super().__init__(
-                    params=dict(
-                        first_param=first_param,
-                        second_param=second_param,
-                    ),
-                )
+    class FakeInstruction(pq.Instruction):
+        def __init__(self, first_param, second_param):
+            super().__init__(
+                params=dict(
+                    first_param=first_param,
+                    second_param=second_param,
+                ),
+            )
 
-        return FakeInstruction
+    return FakeInstruction
 
-    @pytest.fixture
-    def FakeCircuit(self, FakeInstruction):
 
-        class FakeCircuit(pq.Circuit):
-            instruction_map = {
-                "FakeInstruction": "_fake_instruction",
-            }
+@pytest.fixture
+def FakeCircuit(FakeInstruction):
 
-            def _fake_instruction(self, instruction, state):
-                pass
+    class FakeCircuit(pq.Circuit):
+        instruction_map = {
+            "FakeInstruction": "_fake_instruction",
+        }
 
-        return FakeCircuit
+        def _fake_instruction(self, instruction, state):
+            pass
 
-    @pytest.fixture
-    def FakeState(self, FakeCircuit):
+    return FakeCircuit
 
-        class FakeState(pq.State):
-            circuit_class = FakeCircuit
 
-            def __init__(self, foo, bar, d):
-                self.foo = foo
-                self.bar = bar
-                self.d = d
+@pytest.fixture
+def FakeState(FakeCircuit):
 
-            def get_particle_detection_probability(
-                self,
-                occupation_number: tuple
-            ) -> float:
-                raise NotImplementedError
+    class FakeState(pq.State):
+        circuit_class = FakeCircuit
 
-        return FakeState
+        def __init__(self, foo, bar, d):
+            self.foo = foo
+            self.bar = bar
+            self.d = d
 
-    @pytest.fixture(autouse=True)
-    def setup(self, FakeState, FakeInstruction):
-        class FakePlugin(pq.Plugin):
-            classes = {
-                "FakeState": FakeState,
-                "FakeInstruction": FakeInstruction,
-            }
+        def get_particle_detection_probability(
+            self,
+            occupation_number: tuple
+        ) -> float:
+            raise NotImplementedError
 
-        pq.use(FakePlugin)
+    return FakeState
 
-    @pytest.fixture
-    def number_of_modes(self):
-        return 420
 
-    @pytest.fixture
-    def state_mapping(self, number_of_modes):
-        return {
-            "type": "FakeState",
-            "properties": {
+@pytest.fixture(autouse=True)
+def setup(FakeState, FakeInstruction):
+    class FakePlugin(pq.Plugin):
+        classes = {
+            "FakeState": FakeState,
+            "FakeInstruction": FakeInstruction,
+        }
+
+    pq.use(FakePlugin)
+
+
+@pytest.fixture
+def number_of_modes():
+    return 420
+
+
+@pytest.fixture
+def state_dict(number_of_modes):
+    return {
+        "type": "FakeState",
+        "attributes": {
+            "constructor_kwargs": {
                 "foo": "fee",
                 "bar": "beer",
                 "d": number_of_modes,
             }
         }
+    }
 
-    @pytest.fixture
-    def instructions_mapping(self):
-        return [
+
+@pytest.fixture
+def instructions_dict():
+    return {
+        "instructions":
+        [
             {
                 "type": "FakeInstruction",
-                "properties": {
-                    "params": {
+                "attributes": {
+                    "constructor_kwargs": {
                         "first_param": "first_param_value",
                         "second_param": "second_param_value",
                     },
@@ -106,8 +114,8 @@ class TestProgramJSONParsing:
             },
             {
                 "type": "FakeInstruction",
-                "properties": {
-                    "params": {
+                "attributes": {
+                    "constructor_kwargs": {
                         "first_param": "2nd_instructions_1st_param_value",
                         "second_param": "2nd_instructions_2nd_param_value",
                     },
@@ -115,62 +123,33 @@ class TestProgramJSONParsing:
                 }
             },
         ]
+    }
 
-    def test_instantiation_using_mappings(
-        self,
-        state_mapping,
-        instructions_mapping,
-        number_of_modes,
-    ):
-        program = pq.Program.from_properties(
-            {
-                "state": state_mapping,
-                "instructions": instructions_mapping,
-            }
-        )
 
-        assert program.state.foo == "fee"
-        assert program.state.bar == "beer"
-        assert program.state.d == number_of_modes
+def test_state_instantiation_using_dicts(
+    state_dict,
+    number_of_modes,
+):
+    state = pq.State.from_dict(state_dict)
 
-        assert program.instructions[0].params == {
-            "first_param": "first_param_value",
-            "second_param": "second_param_value",
-        }
-        assert program.instructions[0].modes == ["some", "modes"]
+    assert state.foo == "fee"
+    assert state.bar == "beer"
+    assert state.d == number_of_modes
 
-        assert program.instructions[1].params == {
-            "first_param": "2nd_instructions_1st_param_value",
-            "second_param": "2nd_instructions_2nd_param_value",
-        }
-        assert program.instructions[1].modes == ["some", "other", "modes"]
 
-    def test_from_json(
-        self,
-        state_mapping,
-        instructions_mapping,
-        number_of_modes,
-    ):
-        json_ = json.dumps(
-            {
-                "state": state_mapping,
-                "instructions": instructions_mapping,
-            }
-        )
+def test_program_instantiation_using_dicts(
+    instructions_dict,
+):
+    program = pq.Program.from_dict(instructions_dict)
 
-        program = pq.Program.from_json(json_)
+    assert program.instructions[0].params == {
+        "first_param": "first_param_value",
+        "second_param": "second_param_value",
+    }
+    assert program.instructions[0].modes == ["some", "modes"]
 
-        assert program.state.foo == "fee"
-        assert program.state.bar == "beer"
-        assert program.state.d == number_of_modes
-
-        assert program.instructions[0].params == {
-            "first_param": "first_param_value",
-            "second_param": "second_param_value",
-        }
-        assert program.instructions[0].modes == ["some", "modes"]
-        assert program.instructions[1].params == {
-            "first_param": "2nd_instructions_1st_param_value",
-            "second_param": "2nd_instructions_2nd_param_value",
-        }
-        assert program.instructions[1].modes == ["some", "other", "modes"]
+    assert program.instructions[1].params == {
+        "first_param": "2nd_instructions_1st_param_value",
+        "second_param": "2nd_instructions_2nd_param_value",
+    }
+    assert program.instructions[1].modes == ["some", "other", "modes"]

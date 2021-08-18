@@ -21,11 +21,6 @@ from piquasso.api import constants
 from piquasso.api.errors import InvalidParameter
 
 
-@pytest.fixture
-def state(program):
-    return program.state
-
-
 def test_xp_representation(state, assets):
     assert np.allclose(
         assets.load("expected_xp_mean"),
@@ -114,18 +109,15 @@ class TestGaussianStateOperations:
     @pytest.fixture(autouse=True)
     def setup(self):
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=3)
-
             pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
 
             pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
 
-        program.execute()
-        program.state.validate()
-
-        self.state = program.state
+        self.state = pq.GaussianState(d=3)
+        self.state.apply(program)
+        self.state.validate()
 
     def test_rotated(self):
         phi = np.pi / 2
@@ -190,29 +182,23 @@ class TestGaussianStateVacuum:
         assert np.allclose(state.cov, expected_covariance)
 
 
-def test_mean_and_covariance(program, assets):
-    program.execute()
-    program.state.validate()
-
+def test_mean_and_covariance(state, assets):
     expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
 
     expected_cov = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(program.state.mean, expected_mean)
-    assert np.allclose(program.state.cov, expected_cov)
+    assert np.allclose(state.mean, expected_mean)
+    assert np.allclose(state.cov, expected_cov)
 
 
-def test_mean_and_covariance_with_different_HBAR(program, assets):
-    program.execute()
-    program.state.validate()
-
+def test_mean_and_covariance_with_different_HBAR(state, assets):
     constants.HBAR = 42
 
     expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
     expected_cov = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(program.state.mean, expected_mean)
-    assert np.allclose(program.state.cov, expected_cov)
+    assert np.allclose(state.mean, expected_mean)
+    assert np.allclose(state.cov, expected_cov)
 
 
 def test_mean_is_scaled_with_squared_HBAR(state, assets):
@@ -348,10 +334,10 @@ def test_quadratic_expectation(state):
 
 def test_mean_photon_number_vaccum():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
+        pass
 
-    program.execute()
-    state = program.state
+    state = pq.GaussianState(d=3)
+    state.apply(program)
 
     assert np.isclose(0., state.mean_photon_number((0, 1, 2)))
     assert np.isclose(0., state.mean_photon_number((0, 1)))
@@ -363,14 +349,13 @@ def test_mean_photon_number():
     r = 1.
     phi = 3.
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
         pq.Q(0) | pq.Displacement(alpha=alpha)
         pq.Q(1) | pq.Squeezing(r=r, phi=phi)
         pq.Q(2) | pq.Squeezing(r=r, phi=phi)
         pq.Q(2) | pq.Displacement(alpha=alpha)
 
-    program.execute()
-    state = program.state
+    state = pq.GaussianState(d=3)
+    state.apply(program)
 
     mean_photon_number_first_mode = np.abs(alpha)**2
     mean_photon_number_second_mode = np.sinh(r)**2
@@ -383,15 +368,16 @@ def test_mean_photon_number():
 
 def test_GaussianState_get_particle_detection_probability():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=2) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
-    program.execute()
+    state = pq.GaussianState(d=2)
+    state.apply(program)
 
-    probability = program.state.get_particle_detection_probability(
+    probability = state.get_particle_detection_probability(
         occupation_number=(0, 2)
     )
 

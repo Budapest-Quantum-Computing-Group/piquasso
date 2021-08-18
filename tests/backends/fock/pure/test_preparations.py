@@ -21,40 +21,42 @@ import piquasso as pq
 
 def test_create_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.6545085, 0.3454915, 0, 0, 0],
     )
 
 
 def test_create_and_annihilate_number_state():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [1, 0, 0, 0, 0, 0],
     )
 
 
 def test_create_annihilate_and_create():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
@@ -63,43 +65,45 @@ def test_create_annihilate_and_create():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.6545085, 0.3454915, 0, 0, 0],
     )
 
 
 def test_overflow_with_zero_norm_raises_InvalidState():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
 
         pq.Q(1, 2) | pq.Create()
 
+    state = pq.PureFockState(d=3, cutoff=3)
+
     with pytest.raises(pq.api.errors.InvalidState) as error:
-        program.execute()
+        state.apply(program)
 
     assert error.value.args[0] == "The norm of the state is 0."
 
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=4)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
 
         pq.Q(1, 2) | pq.Create()
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=4)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0, 0, 0,
@@ -111,19 +115,19 @@ def test_creation_on_multiple_modes():
 
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
         pq.Q(2) | pq.StateVector(1) * np.sqrt(2/6)
         pq.Q(1) | pq.StateVector(1) * np.sqrt(3/6)
         pq.Q(2) | pq.StateVector(2) * np.sqrt(1/6)
 
         pq.Q(2) | pq.Create()
 
-    program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0, 0, 0,

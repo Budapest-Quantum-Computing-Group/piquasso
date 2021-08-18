@@ -27,15 +27,16 @@ import piquasso as pq
 )
 def test_FockState_get_particle_detection_probability(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=4) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
-    program.execute()
+    state = StateClass(d=2, cutoff=4)
+    state.apply(program)
 
-    probability = program.state.get_particle_detection_probability(
+    probability = state.get_particle_detection_probability(
         occupation_number=(0, 2)
     )
 

@@ -22,17 +22,18 @@ import piquasso as pq
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_number_state(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.6545085, 0.3454915, 0, 0, 0],
     )
 
@@ -40,16 +41,17 @@ def test_create_number_state(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_and_annihilate_number_state(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
-    program.execute()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [1, 0, 0, 0, 0, 0],
     )
 
@@ -57,7 +59,7 @@ def test_create_and_annihilate_number_state(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_create_annihilate_and_create(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
@@ -66,11 +68,12 @@ def test_create_annihilate_and_create(StateClass):
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    program.execute()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [0, 0.6545085, 0.3454915, 0, 0, 0],
     )
 
@@ -78,15 +81,15 @@ def test_create_annihilate_and_create(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_overflow_with_zero_norm_raises_InvalidState(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
 
         pq.Q(1, 2) | pq.Create()
 
+    state = StateClass(d=3, cutoff=3)
+
     with pytest.raises(pq.api.errors.InvalidState) as error:
-        program.execute()
+        state.apply(program)
 
     assert error.value.args[0] == "The norm of the state is 0."
 
@@ -94,19 +97,18 @@ def test_overflow_with_zero_norm_raises_InvalidState(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_creation_on_multiple_modes(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=4)
-
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 2/5
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 0), bra=(0, 1, 0)) * 3/5
 
         pq.Q(1, 2) | pq.Create()
 
-    program.execute()
+    state = StateClass(d=3, cutoff=4)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0, 0, 0,
@@ -119,20 +121,19 @@ def test_creation_on_multiple_modes(StateClass):
 @pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
 def test_state_is_renormalized_after_overflow(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=3, cutoff=3)
-
         pq.Q() | (2/6) * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1))
         pq.Q() | (3/6) * pq.DensityMatrix(ket=(0, 1, 0), bra=(0, 1, 0))
         pq.Q() | (1/6) * pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
 
         pq.Q(2) | pq.Create()
 
-    program.execute()
+    state = StateClass(d=3, cutoff=3)
+    state.apply(program)
 
-    assert np.isclose(program.state.norm, 1)
+    assert np.isclose(state.norm, 1)
 
     assert np.allclose(
-        program.state.fock_probabilities,
+        state.fock_probabilities,
         [
             0,
             0, 0, 0,

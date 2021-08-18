@@ -91,13 +91,14 @@ INVALID_VECTOR_INSTRUCTIONS = (
 )
 def test_scalar_parameters_are_scaled_when_applied(StateClass, scalar_instruction):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=NUMBER_OF_MODES) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | scalar_instruction
 
-    program.execute()
+    state = StateClass(d=NUMBER_OF_MODES)
+    state.apply(program)
 
-    program.state.validate()
+    state.validate()
 
 
 @pytest.mark.parametrize(
@@ -108,13 +109,14 @@ def test_length_one_vector_instructions_are_applied_normally(
     StateClass, length_one_vector_instruction
 ):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=NUMBER_OF_MODES) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | length_one_vector_instruction
 
-    program.execute()
+    state = StateClass(d=NUMBER_OF_MODES)
+    state.apply(program)
 
-    program.state.validate()
+    state.validate()
 
 
 @pytest.mark.parametrize(
@@ -123,13 +125,14 @@ def test_length_one_vector_instructions_are_applied_normally(
 )
 def test_vector_instructions_are_applied_normally(StateClass, vector_instruction):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=NUMBER_OF_MODES) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | vector_instruction
 
-    program.execute()
+    state = StateClass(d=NUMBER_OF_MODES)
+    state.apply(program)
 
-    program.state.validate()
+    state.validate()
 
 
 @pytest.mark.parametrize(
@@ -140,11 +143,13 @@ def test_applying_invalid_vector_instructions_raises_error(
     StateClass, invalid_vector_instruction
 ):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=NUMBER_OF_MODES) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | invalid_vector_instruction
 
+    state = StateClass(d=NUMBER_OF_MODES)
+
     with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
-        program.execute()
+        state.apply(program)
 
     assert "is not applicable to modes" in str(excinfo.value)

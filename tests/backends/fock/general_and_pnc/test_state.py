@@ -23,8 +23,6 @@ import piquasso as pq
 @pytest.mark.parametrize("StateClass", (pq.FockState, pq.PNCFockState))
 def test_FockState_reduced(StateClass):
     with pq.Program() as program:
-        pq.Q() | StateClass(d=2, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
 
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
@@ -33,20 +31,20 @@ def test_FockState_reduced(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
 
-    program.execute()
+    state = StateClass(d=2, cutoff=3)
+    state.apply(program)
 
     with pq.Program() as reduced_program:
-        pq.Q() | pq.FockState(d=1, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(1, ), bra=(1, )) / 4
 
         pq.Q() | pq.DensityMatrix(ket=(2, ), bra=(2, )) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, ), bra=(0, )) / 2
 
-    reduced_program.execute()
+    reduced_program_state = pq.FockState(d=1, cutoff=3)
+    reduced_program_state.apply(reduced_program)
 
-    expected_reduced_state = reduced_program.state
+    expected_reduced_state = reduced_program_state
 
-    reduced_state = program.state.reduced(modes=(1, ))
+    reduced_state = state.reduced(modes=(1, ))
 
     assert expected_reduced_state == reduced_state

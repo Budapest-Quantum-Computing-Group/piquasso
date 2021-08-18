@@ -20,8 +20,6 @@ import piquasso as pq
 
 def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
-
         pq.Q() | pq.StateVector(0, 1, 1) * np.sqrt(2/6)
 
         pq.Q(2) | pq.StateVector(1) * np.sqrt(1/6)
@@ -29,9 +27,10 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (1, ) or sample == (2, )
@@ -53,22 +52,21 @@ def test_measure_particle_number_on_one_mode():
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=3, cutoff=3)
-
         pq.Q(1, 2) | pq.StateVector(1, 1) * np.sqrt(2/6)
         pq.Q(1, 2) | pq.StateVector(0, 1) * np.sqrt(1/6)
         pq.Q(1, 2) | pq.StateVector(0, 2) * np.sqrt(3/6)
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    state = pq.PureFockState(d=3, cutoff=3)
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
@@ -97,7 +95,7 @@ def test_measure_particle_number_on_two_modes():
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_measure_particle_number_on_all_modes():
@@ -110,14 +108,12 @@ def test_measure_particle_number_on_all_modes():
         cutoff=2,
     )
 
-    program = pq.Program(state=state)
-
-    with program:
+    with pq.Program() as program:
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = program.execute()
+    result = state.apply(program)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
@@ -146,7 +142,7 @@ def test_measure_particle_number_on_all_modes():
             ]
         )
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_measure_particle_number_with_multiple_shots():
@@ -161,12 +157,10 @@ def test_measure_particle_number_with_multiple_shots():
         cutoff=2,
     )
 
-    program = pq.Program(state=state)
-
-    with program:
+    with pq.Program() as program:
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = program.execute(shots=shots)
+    result = state.apply(program, shots)
 
-    assert np.isclose(sum(program.state.fock_probabilities), 1)
+    assert np.isclose(sum(state.fock_probabilities), 1)
     assert len(result.samples) == shots

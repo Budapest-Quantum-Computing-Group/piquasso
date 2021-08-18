@@ -25,9 +25,7 @@ import piquasso as pq
 @pytest.mark.monkey
 @pytest.mark.parametrize("d", [2, 3, 4, 5])
 def test_random_gaussianstate(d):
-    with pq.Program() as prepare_random_state:
-        pq.Q() | pq.GaussianState(d=d)
-
+    with pq.Program() as prepare_random_program:
         for i in range(d):
             r = np.random.normal()
             phi = random.uniform(0, 2 * np.pi)
@@ -39,6 +37,8 @@ def test_random_gaussianstate(d):
         pq.Q(all) | pq.Interferometer(random_unitary)
 
     with pq.Program() as program:
-        pq.Q(all) | prepare_random_state
+        pq.Q(all) | prepare_random_program
 
-    program.state.validate()
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+    state.validate()

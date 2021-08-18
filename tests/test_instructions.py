@@ -21,13 +21,16 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidParameter
 
 
-def test_instruction_initialization_from_properties():
-    properties = {
-        "params": {
-            "first_param": "first_param_value",
-            "second_param": "second_param_value"
-        },
-        "modes": ["some", "modes"],
+def test_instruction_initialization_from_dict():
+    instruction_dict = {
+        "type": "DummyInstruction",
+        "attributes": {
+            "constructor_kwargs": {
+                "first_param": "first_param_value",
+                "second_param": "second_param_value"
+            },
+            "modes": ["some", "modes"],
+        }
     }
 
     class DummyInstruction(Instruction):
@@ -39,8 +42,16 @@ def test_instruction_initialization_from_properties():
                 ),
             )
 
-    instruction = DummyInstruction.from_properties(properties)
+    class DummyPlugin:
+        classes = {
+            "DummyInstruction": DummyInstruction,
+        }
 
+    pq.use(DummyPlugin)
+
+    instruction = Instruction.from_dict(instruction_dict)
+
+    assert isinstance(instruction, DummyInstruction)
     assert instruction.params == {
         "first_param": "first_param_value",
         "second_param": "second_param_value"

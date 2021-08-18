@@ -20,18 +20,15 @@ import piquasso as pq
 
 def test_PureFockState_reduced():
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(d=2, cutoff=3)
-
         pq.Q() | pq.StateVector(0, 1) / 2
 
         pq.Q() | pq.StateVector(0, 2) / 2
         pq.Q() | pq.StateVector(2, 0) / np.sqrt(2)
 
-    program.execute()
+    state = pq.PureFockState(d=2, cutoff=3)
+    state.apply(program)
 
     with pq.Program() as reduced_program:
-        pq.Q() | pq.FockState(d=1, cutoff=3)
-
         pq.Q() | pq.DensityMatrix(ket=(0, ), bra=(0, )) / 2
 
         pq.Q() | pq.DensityMatrix(ket=(1, ), bra=(1, )) / 4
@@ -40,10 +37,11 @@ def test_PureFockState_reduced():
         pq.Q() | pq.DensityMatrix(ket=(1, ), bra=(2, )) / 4
         pq.Q() | pq.DensityMatrix(ket=(2, ), bra=(1, )) / 4
 
-    reduced_program.execute()
+    reduced_program_state = pq.FockState(d=1, cutoff=3)
+    reduced_program_state.apply(reduced_program)
 
-    expected_reduced_state = reduced_program.state
+    expected_reduced_state = reduced_program_state
 
-    reduced_state = program.state.reduced(modes=(1, ))
+    reduced_state = state.reduced(modes=(1, ))
 
     assert expected_reduced_state == reduced_state

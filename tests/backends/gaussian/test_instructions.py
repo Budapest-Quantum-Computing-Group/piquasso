@@ -25,8 +25,6 @@ from scipy.linalg import polar, sinhm, coshm, expm
 def generate_random_gaussian_state():
     def func(*, d):
         with pq.Program() as random_state_generator:
-            pq.Q() | pq.GaussianState(d=d)
-
             for i in range(d):
                 alpha = 2 * (np.random.rand() + 1j * np.random.rand()) - 1
                 displacement_gate = pq.Displacement(alpha=alpha)
@@ -37,296 +35,295 @@ def generate_random_gaussian_state():
 
                 pq.Q(i) | displacement_gate | squeezing_gate
 
-        random_state_generator.execute()
+        state = pq.GaussianState(d=d)
+        state.apply(random_state_generator)
+        state.validate()
 
-        random_state = random_state_generator.state
-
-        random_state.validate()
-
-        return random_state
+        return state
 
     return func
 
 
-def test_squeezing(program, gaussian_state_assets):
+def test_squeezing(state, gaussian_state_assets):
     r = -0.6
     phi = 0.7
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.Squeezing(r, phi)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_phaseshift(program, gaussian_state_assets):
-    with program:
+def test_phaseshift(state, gaussian_state_assets):
+    with pq.Program() as program:
         pq.Q(0) | pq.Phaseshifter(phi=np.pi/3)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_phaseshift_on_multiple_modes(program):
-    with program.copy() as separate_instructions:
+def test_phaseshift_on_multiple_modes(state):
+    with pq.Program() as separate_instructions:
         pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
         pq.Q(1) | pq.Phaseshifter(phi=np.pi / 3)
 
-    with program as single_instruction:
+    with pq.Program() as single_instruction:
         pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi/3)
 
-    separate_instructions.execute()
-    separate_instructions.state.validate()
+    separate_state = state.copy()
+    separate_state.apply(separate_instructions)
+    separate_state.validate()
 
-    single_instruction.execute()
-    single_instruction.state.validate()
+    state.apply(single_instruction)
+    state.validate()
 
-    assert np.allclose(separate_instructions.state.mean, single_instruction.state.mean)
+    assert np.allclose(separate_state.mean, state.mean)
 
 
-def test_phaseshift_modes_are_shifted_from_original(program):
-    original = program.copy()
+def test_phaseshift_modes_are_shifted_from_original(state):
+    original = state.copy()
 
     angle = np.pi/3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.Phaseshifter(phi=angle)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    assert program.state.reduced((0,)) == original.state.rotated(-angle).reduced((0,))
-    assert program.state.reduced((1, 2)) == original.state.reduced((1, 2))
+    assert state.reduced((0,)) == original.rotated(-angle).reduced((0,))
+    assert state.reduced((1, 2)) == original.reduced((1, 2))
 
 
-def test_beamsplitter(program, gaussian_state_assets):
+def test_beamsplitter(state, gaussian_state_assets):
     theta = np.pi/4
     phi = 2 * np.pi/3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_with_alpha(program, gaussian_state_assets):
+def test_displacement_with_alpha(state, gaussian_state_assets):
     alpha = 3 - 4j
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.Displacement(alpha=alpha)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_with_r_and_phi(program, gaussian_state_assets):
+def test_displacement_with_r_and_phi(state, gaussian_state_assets):
     r = 5
     phi = np.pi / 4
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.Displacement(r=r, phi=phi)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_on_multiple_modes(program, gaussian_state_assets):
+def test_displacement_on_multiple_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Displacement(alpha=alpha)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_on_all_modes(program, gaussian_state_assets):
+def test_displacement_on_all_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
-    with program:
+    with pq.Program() as program:
         pq.Q() | pq.Displacement(alpha=alpha)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_position_displacement(program, gaussian_state_assets):
+def test_position_displacement(state, gaussian_state_assets):
     x = 4
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.PositionDisplacement(x)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_momentum_displacement(program, gaussian_state_assets):
+def test_momentum_displacement(state, gaussian_state_assets):
     p = 5
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.MomentumDisplacement(p)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement(program, gaussian_state_assets):
+def test_displacement(state, gaussian_state_assets):
     alpha = 2 + 3j
     r = 4
     phi = np.pi/3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
         pq.Q(1) | pq.Displacement(alpha=alpha)
         pq.Q(2) | pq.Displacement(r=r, phi=phi) | pq.Displacement(alpha=alpha)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_and_squeezing(program, gaussian_state_assets):
+def test_displacement_and_squeezing(state, gaussian_state_assets):
     r = 4
     phi = np.pi/3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
         pq.Q(1) | pq.Squeezing(r=-0.6, phi=0.7)
         pq.Q(2) | pq.Squeezing(r=0.8)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_two_mode_squeezing(program, gaussian_state_assets):
+def test_two_mode_squeezing(state, gaussian_state_assets):
     r = 4
     phi = np.pi/3
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1, 2) | pq.Squeezing2(r=r, phi=phi)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_controlled_X_gate(program, gaussian_state_assets):
+def test_controlled_X_gate(state, gaussian_state_assets):
     s = 2
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1, 2) | pq.ControlledX(s=s)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_controlled_Z_gate(program, gaussian_state_assets):
+def test_controlled_Z_gate(state, gaussian_state_assets):
     s = 2
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1, 2) | pq.ControlledZ(s=s)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_fourier(program, gaussian_state_assets):
-    with program:
+def test_fourier(state, gaussian_state_assets):
+    with pq.Program() as program:
         pq.Q(0) | pq.Fourier()
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_mach_zehnder(program, gaussian_state_assets):
+def test_mach_zehnder(state, gaussian_state_assets):
     int_ = np.pi/3
     ext = np.pi/4
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1, 2) | pq.MachZehnder(int_=int_, ext=ext)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_quadratic_phase(program, gaussian_state_assets):
-    with program:
+def test_quadratic_phase(state, gaussian_state_assets):
+    with pq.Program() as program:
         pq.Q(0) | pq.QuadraticPhase(0)
         pq.Q(1) | pq.QuadraticPhase(2)
         pq.Q(2) | pq.QuadraticPhase(1)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_displacement_leaves_the_covariance_invariant(program):
+def test_displacement_leaves_the_covariance_invariant(state):
     r = 1
     phi = 1
 
-    initial_cov = program.state.cov
+    initial_cov = state.cov
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    final_cov = program.state.cov
+    final_cov = state.cov
 
     assert np.allclose(initial_cov, final_cov)
 
 
-def test_interferometer_for_1_modes(program, gaussian_state_assets):
+def test_interferometer_for_1_modes(state, gaussian_state_assets):
     alpha = np.exp(1j * np.pi/3)
 
     T = np.array(
@@ -336,17 +333,17 @@ def test_interferometer_for_1_modes(program, gaussian_state_assets):
         dtype=complex,
     )
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.Interferometer(T)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_interferometer_for_2_modes(program, gaussian_state_assets):
+def test_interferometer_for_2_modes(state, gaussian_state_assets):
     theta = np.pi/4
     phi = np.pi/3
 
@@ -358,17 +355,17 @@ def test_interferometer_for_2_modes(program, gaussian_state_assets):
         dtype=complex,
     )
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Interferometer(random_unitary)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_interferometer_for_all_modes(program, gaussian_state_assets):
+def test_interferometer_for_all_modes(state, gaussian_state_assets):
     self_adjoint = np.array(
         [
             [1, 2j, 3 + 4j],
@@ -379,17 +376,17 @@ def test_interferometer_for_all_modes(program, gaussian_state_assets):
     )
     unitary = expm(1j * self_adjoint)
 
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1, 2) | pq.Interferometer(unitary)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
-def test_GaussianTransform_for_1_modes(program, gaussian_state_assets):
+def test_GaussianTransform_for_1_modes(state, gaussian_state_assets):
     r = 0.4
 
     alpha = np.exp(1j * np.pi/3)
@@ -408,14 +405,14 @@ def test_GaussianTransform_for_1_modes(program, gaussian_state_assets):
         dtype=complex,
     )
 
-    with program:
+    with pq.Program() as program:
         pq.Q(1) | pq.GaussianTransform(passive=passive, active=active)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_GaussianTransform_with_general_squeezing_matrix():
@@ -446,15 +443,16 @@ def test_GaussianTransform_with_general_squeezing_matrix():
     active = global_phase @ sinhm(r) @ U.conj()
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
-    program.execute()
+    state = pq.GaussianState(d=d)
+    state.apply(program)
 
-    program.state.validate()
+    state.validate()
 
-    probabilities = program.state.get_fock_probabilities(cutoff=cutoff)
+    probabilities = state.get_fock_probabilities(cutoff=cutoff)
 
     assert all(
         probability >= 0
@@ -471,13 +469,13 @@ def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
     zero_matrix = np.zeros(shape=(d,) * 2)
 
     with pq.Program():
-        pq.Q() | pq.GaussianState(d=d) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         with pytest.raises(pq.api.errors.InvalidParameter):
             pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
 
 
-def test_graph_embedding(program, gaussian_state_assets):
+def test_graph_embedding(state, gaussian_state_assets):
     adjacency_matrix = np.array(
         [
             [0, 1, 1],
@@ -487,14 +485,13 @@ def test_graph_embedding(program, gaussian_state_assets):
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
         pq.Q() | pq.Graph(adjacency_matrix)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
 
-def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets):
+def test_generate_subgraphs_from_adjacency_matrix():
     adjacency_matrix = np.array(
         [
             [0, 1, 1],
@@ -507,13 +504,13 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
     pq.constants.seed(40)
 
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
         pq.Q() | pq.Graph(adjacency_matrix)
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = program.execute(shots=shots)
-    program.state.validate()
+    state = pq.GaussianState(d=3)
+    result = state.apply(program, shots=shots)
+    state.validate()
 
     subgraphs = result.to_subgraph_nodes()
 
@@ -523,53 +520,48 @@ def test_generate_subgraphs_from_adjacency_matrix(program, gaussian_state_assets
 
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
-        pq.Q() | pq.GaussianState(d=3)
-
         pq.Q(all) | pq.Displacement(alpha=[np.exp(1j * np.pi/4), 1, 1j])
 
         pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi/2, np.pi/3, np.pi/4])
 
-    initialization.execute()
-    initialization.state.validate()
+    state = pq.GaussianState(d=3)
+    state.apply(initialization)
+    state.validate()
 
-    initial_cov = initialization.state.cov
+    initial_cov = state.cov
 
     with pq.Program() as program:
-        pq.Q(0, 1, 2) | initialization.state
-
         pq.Q(0) | pq.Displacement(r=1, phi=1)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    final_cov = program.state.cov
+    final_cov = state.cov
 
     assert np.allclose(initial_cov, final_cov)
 
 
 def test_displaced_vacuum_stays_valid():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=3)
         pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
 
-    program.execute()
-    program.state.validate()
+    state = pq.GaussianState(d=3)
+    state.apply(program)
+    state.validate()
 
 
 def test_multiple_displacements_leave_the_covariance_invariant():
-    vacuum = pq.GaussianState(d=3)
+    state = pq.GaussianState(d=3)
 
-    initial_cov = vacuum.cov
+    initial_cov = state.cov
 
     with pq.Program() as program:
-        pq.Q() | vacuum
-
         pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi/3, np.pi/4, np.pi/6])
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
-    assert np.allclose(program.state.cov, initial_cov)
+    assert np.allclose(state.cov, initial_cov)
 
 
 @pytest.mark.monkey
@@ -578,17 +570,15 @@ def test_random_interferometer(generate_random_gaussian_state, generate_unitary_
 
     T = generate_unitary_matrix(3)
 
-    with pq.Program(state=state) as program:
+    with pq.Program() as program:
         pq.Q(0, 1, 3) | pq.Interferometer(T)
 
-    program.execute()
-    program.state.validate()
+    state.apply(program)
+    state.validate()
 
 
 def test_complex_circuit(gaussian_state_assets):
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=5)
-
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
@@ -611,17 +601,16 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-    program.execute()
-    program.state.validate()
+    state = pq.GaussianState(d=5)
+    state.apply(program)
+    state.validate()
 
     expected_state = gaussian_state_assets.load()
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_program_stacking_with_measurement():
     with pq.Program() as preparation:
-        pq.Q() | pq.GaussianState(d=5)
-
         pq.Q(0, 1) | pq.Squeezing2(r=1, phi=np.pi / 4)
         pq.Q(2, 3) | pq.Squeezing2(r=2, phi=np.pi / 3)
 
@@ -638,21 +627,21 @@ def test_program_stacking_with_measurement():
 
         pq.Q(3) | pq.HeterodyneMeasurement()
 
-    program.execute()
+    state = pq.GaussianState(d=5)
+    state.apply(program)
 
 
 def test_complex_one_mode_scenario():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=1)
-
         pq.Q(0) | pq.Squeezing(r=np.log(2))
         pq.Q(0) | pq.Displacement(alpha=1)
         pq.Q(0) | pq.Phaseshifter(np.pi / 4)
 
-    program.execute()
+    state = pq.GaussianState(d=1)
+    state.apply(program)
 
     assert np.allclose(
-        program.state.get_fock_probabilities(cutoff=4),
+        state.get_fock_probabilities(cutoff=4),
         [
             0.1615172143957243,
             0.41348406885305417,

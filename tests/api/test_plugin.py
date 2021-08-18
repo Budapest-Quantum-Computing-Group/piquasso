@@ -59,14 +59,13 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState(d=3))
-
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
-    program.execute()
+    state = pq.GaussianState(d=3)
+    state.apply(program)
 
-    assert program.state.__class__ is MyGaussianState
+    assert state.__class__ is MyGaussianState
     assert pq.Beamsplitter is MyBeamsplitter
 
 
@@ -79,16 +78,15 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState(d=3))
-
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
-    program.execute()
+    state = pq.GaussianState(d=3)
+    state.apply(program)
 
     import piquasso  # noqa: F401
 
-    assert program.state.__class__ is MyGaussianState
+    assert state.__class__ is MyGaussianState
     assert pq.Beamsplitter is MyBeamsplitter
 
 
@@ -105,12 +103,11 @@ def test_untouched_classes_remain_to_be_accessible(
 
     pq.use(Plugin)
 
-    program = pq.Program(state=pq.GaussianState(d=3))
-
-    with program:
+    with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/3)
 
-    program.execute()
+    state = pq.GaussianState(d=3)
+    state.apply(program)
 
     assert pq.Beamsplitter is MyBeamsplitter
     assert pq.Phaseshifter is pq.instructions.gates.Phaseshifter

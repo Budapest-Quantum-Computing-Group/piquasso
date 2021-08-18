@@ -14,12 +14,15 @@
 # limitations under the License.
 
 import abc
+import copy
+
 import numpy as np
+from piquasso.api.errors import InvalidParameter
 
-from piquasso.core import _mixins
+from piquasso.core import _mixins, _registry
 
 
-class State(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin, abc.ABC):
+class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     """The base class from which all `*State` classes are derived.
 
     Attributes:
@@ -33,15 +36,37 @@ class State(_mixins.PropertyMixin, _mixins.RegisterMixin, _mixins.CodeMixin, abc
     circuit_class = None
     d: int = None
 
-    def _apply_to_program_on_register(self, program, register):
-        program.state = self.copy()
-
     @classmethod
-    def from_properties(cls, properties: dict):
-        return cls(**properties)
+    def from_dict(cls, dict_: dict):
+        class_ = _registry.get_class(dict_["type"])
+        return class_(**dict_["attributes"]["constructor_kwargs"])
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def _as_code(self):
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
+
+    def apply(self, program, shots=1):
+        """Applyes the given program to the state and executes it.
+
+        Args:
+            program (Program):
+                The program whose instructions are used in the simpulation.
+            shots (int):
+                The number of samples to generate.
+        """
+        if not isinstance(shots, int) or shots < 1:
+            raise InvalidParameter(
+                f"The number of shots should be a positive integer: shots={shots}."
+            )
+
+        circuit = self.circuit_class()
+        return circuit.execute_instructions(
+            program.instructions,
+            self,
+            shots=shots,
+        )
 
     @staticmethod
     def _get_operator_index(modes):

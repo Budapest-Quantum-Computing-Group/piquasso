@@ -101,8 +101,6 @@ def test_loads_blackbird_preserves_exising_operations():
     squeezing = pq.Squeezing(r=np.log(2), phi=np.pi / 2)
 
     with program:
-        pq.Q() | pq.GaussianState(d=3)
-
         pq.Q(0) | squeezing
 
     program.loads_blackbird(blackbird_code)
@@ -127,20 +125,20 @@ def test_loads_blackbird_with_execution(gaussian_state_assets):
 
     program = pq.Program()
 
+    state = pq.GaussianState(d=3)
+
     squeezing = pq.Squeezing(r=np.log(2), phi=np.pi / 2)
 
     with program:
-        pq.Q() | pq.GaussianState(d=3)
-
         pq.Q(1) | squeezing
 
     program.loads_blackbird(blackbird_code)
 
-    program.execute()
+    state.apply(program)
 
     expected_state = gaussian_state_assets.load()
 
-    assert program.state == expected_state
+    assert state == expected_state
 
 
 def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
@@ -158,17 +156,17 @@ def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
 
     program = pq.Program()
 
+    state = pq.GaussianState(d=3)
+
     squeezing = pq.Squeezing(r=np.log(2), phi=np.pi / 2)
 
     with program:
-        pq.Q() | pq.GaussianState(d=3)
-
         pq.Q(1) | squeezing
 
     program.load_blackbird(blackbird_file.strpath)
 
-    program.execute()
+    state.apply(program)
 
     expected_state = gaussian_state_assets.load()
 
-    assert program.state == expected_state
+    assert state == expected_state
