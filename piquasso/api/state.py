@@ -15,9 +15,14 @@
 
 import abc
 import copy
+from typing import Tuple, Optional, Type
 
 import numpy as np
+
+from piquasso.api.circuit import Circuit
+from piquasso.api.program import Program
 from piquasso.api.errors import InvalidParameter
+from piquasso.api.result import Result
 
 from piquasso.core import _mixins, _registry
 
@@ -25,7 +30,7 @@ from piquasso.core import _mixins, _registry
 class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     """The base class from which all `*State` classes are derived.
 
-    Attributes:
+    Properties:
         circuit_class (~piquasso.api.circuit.Circuit):
             Class attribute for specifying corresponding circuit. The circuit is
             responsible to execute the specified instructions on the :class:`State`
@@ -33,21 +38,28 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
         d (int): Instance attribute specifying the number of modes.
     """
 
-    circuit_class = None
-    d: int = None
+    @property
+    @abc.abstractmethod
+    def circuit_class(self) -> Type[Circuit]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def d(self) -> int:
+        pass
 
     @classmethod
-    def from_dict(cls, dict_: dict):
+    def from_dict(cls, dict_: dict) -> "State":
         class_ = _registry.get_class(dict_["type"])
         return class_(**dict_["attributes"]["constructor_kwargs"])
 
-    def copy(self):
+    def copy(self) -> "State":
         return copy.deepcopy(self)
 
-    def _as_code(self):
+    def _as_code(self) -> str:
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
-    def apply(self, program, shots=1):
+    def apply(self, program: Program, shots: int = 1) -> Optional[Result]:
         """Applyes the given program to the state and executes it.
 
         Args:
@@ -69,7 +81,9 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
         )
 
     @staticmethod
-    def _get_operator_index(modes):
+    def _get_operator_index(
+        modes: Tuple[int, ...]
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Note:
             For indexing of numpy arrays, see
@@ -81,17 +95,22 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
 
         return transformed_rows, transformed_columns
 
-    def _get_auxiliary_modes(self, modes):
-        return np.delete(np.arange(self.d), modes)
+    def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
+        return tuple(np.delete(np.arange(self.d), modes))
 
     @staticmethod
-    def _get_auxiliary_operator_index(modes, auxiliary_modes):
-        auxiliary_rows = np.array([modes] * len(auxiliary_modes)).transpose()
+    def _get_auxiliary_operator_index(
+        modes: Tuple[int, ...],
+        auxiliary_modes: Tuple[int, ...]
+    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+        auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
 
         return auxiliary_rows, auxiliary_modes
 
     @abc.abstractmethod
-    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+    def get_particle_detection_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         """
         Returns the particle number detection probability using the occupation number
         specified as a parameter.

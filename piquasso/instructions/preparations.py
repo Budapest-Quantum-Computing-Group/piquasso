@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
+import numpy as np
 
 from piquasso.core import _mixins
 from piquasso.api.instruction import Instruction
@@ -36,7 +39,7 @@ class Vacuum(Instruction):
         This operation can only be used for all modes.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 
@@ -59,7 +62,7 @@ class Mean(Instruction):
     :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
 
-    def __init__(self, mean):
+    def __init__(self, mean: np.ndarray) -> None:
         super().__init__(params=dict(mean=mean))
 
 
@@ -82,7 +85,7 @@ class Covariance(Instruction):
     :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
 
-    def __init__(self, cov):
+    def __init__(self, cov: np.ndarray) -> None:
         super().__init__(params=dict(cov=cov))
 
 
@@ -105,7 +108,9 @@ class StateVector(Instruction, _mixins.WeightMixin):
     :class:`~piquasso._backends.fock.pure.state.PureFockState`.
     """
 
-    def __init__(self, *occupation_numbers, coefficient=1.0):
+    def __init__(
+        self, *occupation_numbers: complex, coefficient: complex = 1.0
+    ) -> None:
         super().__init__(
             params=dict(
                 occupation_numbers=occupation_numbers,
@@ -137,7 +142,12 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
     :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
     """
 
-    def __init__(self, ket=None, bra=None, coefficient=1.0):
+    def __init__(
+        self,
+        ket: Tuple[complex, ...] = None,
+        bra: Tuple[complex, ...] = None,
+        coefficient: complex = 1.0,
+    ) -> None:
         super().__init__(
             params=dict(
                 ket=ket,
@@ -165,7 +175,7 @@ class Create(Instruction):
     :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 
@@ -186,5 +196,5 @@ class Annihilate(Instruction):
     :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass

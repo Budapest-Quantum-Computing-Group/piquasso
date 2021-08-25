@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import blackbird
+from typing import List, Tuple, Any
 
+import blackbird
 from piquasso.core import _context, _blackbird
 from piquasso.core import _mixins
 from .instruction import Instruction
@@ -51,19 +52,19 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
     def __init__(
         self,
         instructions: list = None,
-    ):
-        self.instructions = instructions or []
+    ) -> None:
+        self.instructions: List[Instruction] = instructions or []
 
     @staticmethod
-    def _map_modes(register, instruction):
+    def _map_modes(register: Q, instruction: Instruction) -> Tuple[int, ...]:
         if len(register.modes) == 0:
             return instruction.modes
         if len(instruction.modes) == 0:
             return register.modes
 
-        return (register.modes[m] for m in instruction.modes)
+        return tuple(int(register.modes[m]) for m in instruction.modes)
 
-    def _apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         for instruction in self.instructions:
             instruction_copy = instruction.copy()
 
@@ -72,16 +73,16 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
                 register=Q(*self._map_modes(register, instruction))
             )
 
-    def __enter__(self):
+    def __enter__(self) -> "Program":
         _context.current_program = self
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         _context.current_program = None
 
     @classmethod
-    def from_dict(cls, dict_: dict):
+    def from_dict(cls, dict_: dict) -> "Program":
         """Creates a `Program` instance from a dict.
 
         The currently supported format is
@@ -116,7 +117,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
             ]
         )
 
-    def load_blackbird(self, filename: str):
+    def load_blackbird(self, filename: str) -> None:
         """
         Loads the gates to apply into `self.instructions` from a BlackBird file
         (.xbb).
@@ -129,7 +130,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
-    def loads_blackbird(self, string: str):
+    def loads_blackbird(self, string: str) -> None:
         """
         Loads the gates to apply into `self.instructions` from a string
         representing a :class:`~blackbird.program.BlackbirdProgram`.
@@ -142,7 +143,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
-    def as_code(self):
+    def as_code(self) -> str:
         """Export the :class:`Program` instance as Python code."""
 
         with_statement = f"with pq.{self.__class__.__name__}() as program:"

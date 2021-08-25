@@ -13,33 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso._math.combinatorics import partitions
+from typing import Tuple, List
 import numpy as np
 
-from piquasso.api.state import State
-from piquasso.api.errors import InvalidState
+from piquasso._math.combinatorics import partitions
 from piquasso._math.fock import symmetric_subspace_cardinality
 from piquasso._math.linalg import is_unitary
+from piquasso.api.errors import InvalidState
+from piquasso.api.state import State
+from .circuit import SamplingCircuit
 
+from BoSS.boson_sampling_utilities.permanent_calculators. \
+    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
 from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (
     BSDistributionCalculatorWithFixedLosses,
-    BosonSamplingExperimentConfiguration
+    BosonSamplingExperimentConfiguration,
 )
-from BoSS.boson_sampling_utilities.permanent_calculators.\
-    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
-from .circuit import SamplingCircuit
 
 
 class SamplingState(State):
     circuit_class = SamplingCircuit
 
-    def __init__(self, *initial_state):
+    def __init__(self, *initial_state: int) -> None:
         self.initial_state = initial_state
-        self.interferometer = np.diag(np.ones(self.d, dtype=complex))
+        self.interferometer: np.ndarray = \
+            np.diag(np.ones(self.d, dtype=complex))
 
         self.is_lossy = False
 
-    def validate(self):
+    def validate(self) -> None:
         """Validates the currect state.
 
         Raises:
@@ -49,7 +51,9 @@ class SamplingState(State):
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
 
-    def _apply_passive_linear(self, U, modes):
+    def _apply_passive_linear(
+        self, U: np.ndarray, modes: Tuple[int, ...]
+    ) -> None:
         r"""
         Multiplies the interferometer of the state with the `U` matrix (representing
         the additional interferometer) in the qumodes specified in `modes`.
@@ -67,14 +71,18 @@ class SamplingState(State):
         """
         self._apply_matrix_on_modes(U, modes)
 
-    def _apply_loss(self, transmissivity, modes):
+    def _apply_loss(
+        self, transmissivity: np.ndarray, modes: Tuple[int, ...]
+    ) -> None:
         self.is_lossy = True
 
         transmission_matrix = np.diag(transmissivity)
 
         self._apply_matrix_on_modes(transmission_matrix, modes)
 
-    def _apply_matrix_on_modes(self, matrix, modes):
+    def _apply_matrix_on_modes(
+        self, matrix: np.ndarray, modes: Tuple[int, ...]
+    ) -> None:
         embedded = np.identity(len(self.interferometer), dtype=complex)
 
         embedded[np.ix_(modes, modes)] = matrix
@@ -100,7 +108,9 @@ class SamplingState(State):
 
         return sum(self.initial_state)
 
-    def get_particle_detection_probability(self, occupation_number):
+    def get_particle_detection_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         number_of_particles = sum(occupation_number)
 
         if number_of_particles != self.particle_number:
@@ -114,7 +124,7 @@ class SamplingState(State):
 
         return subspace_probabilities[index]
 
-    def get_fock_probabilities(self, cutoff: int = None) -> list:
+    def get_fock_probabilities(self, cutoff: int = None) -> List[float]:
         cutoff = cutoff or self.particle_number + 1
 
         probabilities = []
@@ -133,7 +143,7 @@ class SamplingState(State):
 
         return probabilities
 
-    def _get_fock_probabilities_on_subspace(self) -> list:
+    def _get_fock_probabilities_on_subspace(self) -> List[float]:
         """
         The order if the returned Fock states is lexicographic, according to
         `BoSS.boson_sampling_utilities.boson_sampling_utilities

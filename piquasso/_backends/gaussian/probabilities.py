@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Tuple
+
 import numpy as np
 
 from scipy.special import factorial
@@ -24,7 +26,11 @@ from piquasso._math.torontonian import torontonian
 
 
 class DensityMatrixCalculation:
-    def __init__(self, complex_displacement, complex_covariance) -> None:
+    def __init__(
+        self,
+        complex_displacement: np.ndarray,
+        complex_covariance: np.ndarray,
+    ) -> None:
         d = len(complex_displacement) // 2
         Q = (complex_covariance + np.identity(2 * d)) / 2
 
@@ -39,16 +45,18 @@ class DensityMatrixCalculation:
             ],
         )
 
-        self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+        self._A: np.ndarray = \
+            X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
-        self._gamma = complex_displacement.conj() @ Qinv
+        self._gamma: np.ndarray = \
+            complex_displacement.conj() @ Qinv
 
-        self._normalization = (
+        self._normalization: np.ndarray = (
             np.exp(-0.5 * self._gamma @ complex_displacement)
             / np.sqrt(np.linalg.det(Q))
         )
 
-    def _get_A_reduced(self, reduce_on: tuple):
+    def _get_A_reduced(self, reduce_on: Tuple[int, ...]) -> np.ndarray:
         A_reduced = reduce_(self._A, reduce_on=reduce_on)
 
         np.fill_diagonal(
@@ -60,7 +68,9 @@ class DensityMatrixCalculation:
 
         return A_reduced
 
-    def get_density_matrix_element(self, bra: tuple, ket: tuple) -> float:
+    def get_density_matrix_element(
+        self, bra: Tuple[int, ...], ket: Tuple[int, ...]
+    ) -> float:
         reduce_on = ket + bra
 
         A_reduced = self._get_A_reduced(reduce_on=reduce_on)
@@ -70,7 +80,9 @@ class DensityMatrixCalculation:
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
-    def get_density_matrix(self, occupation_numbers):
+    def get_density_matrix(
+        self, occupation_numbers: List[Tuple[int, ...]]
+    ) -> np.ndarray:
         n = len(occupation_numbers)
 
         density_matrix = np.empty(shape=(n, n), dtype=complex)
@@ -83,9 +95,9 @@ class DensityMatrixCalculation:
 
     def get_particle_number_detection_probabilities(
         self,
-        occupation_numbers: list
-    ) -> list:
-        ret = []
+        occupation_numbers: List[Tuple[int, ...]]
+    ) -> np.ndarray:
+        ret_list = []
 
         for occupation_number in occupation_numbers:
             probability = np.real(
@@ -94,9 +106,9 @@ class DensityMatrixCalculation:
                     ket=occupation_number,
                 )
             )
-            ret.append(probability)
+            ret_list.append(probability)
 
-        ret = np.array(ret, dtype=float)
+        ret = np.array(ret_list, dtype=float)
 
         ret[abs(ret) < 1e-10] = 0.0
 
@@ -124,14 +136,17 @@ class ThresholdCalculation:
             \right ).
     """
 
-    def __init__(self, xp_covariance) -> None:
+    def __init__(self, xp_covariance: np.ndarray) -> None:
         d = len(xp_covariance) // 2
 
-        self._sigma = (xp_covariance / constants.HBAR + np.identity(2 * d)) / 2
+        self._sigma: np.ndarray = \
+            (xp_covariance / constants.HBAR + np.identity(2 * d)) / 2
 
         self._normalization = 1 / np.sqrt(np.linalg.det(self._sigma))
 
-    def _get_sigma_inv_reduced(self, reduce_on: tuple):
+    def _get_sigma_inv_reduced(
+        self, reduce_on: Tuple[int, ...]
+    ) -> np.ndarray:
         return (
             block_reduce(
                 np.linalg.inv(self._sigma),
@@ -139,9 +154,11 @@ class ThresholdCalculation:
             )
         )
 
-    def calculate_click_probability(self, occupation_number):
+    def calculate_click_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         sigma_inv_reduced = self._get_sigma_inv_reduced(reduce_on=occupation_number)
 
-        return self._normalization * torontonian(
-            np.identity(len(sigma_inv_reduced)) - sigma_inv_reduced
-        )
+        return self._normalization * (torontonian(
+            np.identity(len(sigma_inv_reduced), dtype=float) - sigma_inv_reduced
+        )).real

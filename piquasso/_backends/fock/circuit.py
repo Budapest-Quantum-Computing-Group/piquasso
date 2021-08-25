@@ -14,9 +14,14 @@
 # limitations under the License.
 
 import abc
+import typing
 
 from piquasso.api.result import Result
 from piquasso.api.circuit import Circuit
+from piquasso.api.instruction import Instruction
+
+if typing.TYPE_CHECKING:
+    from .state import BaseFockState
 
 
 class BaseFockCircuit(Circuit, abc.ABC):
@@ -42,42 +47,44 @@ class BaseFockCircuit(Circuit, abc.ABC):
         "Annihilate": "_annihilate",
     }
 
-    def _passive_linear(self, instruction, state):
+    def _passive_linear(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_passive_linear(
             operator=instruction._all_params["passive_block"],
             modes=instruction.modes
         )
 
-    def _particle_number_measurement(self, instruction, state):
+    def _particle_number_measurement(
+        self, instruction: Instruction, state: "BaseFockState"
+    ) -> None:
         samples = state._particle_number_measurement(
             modes=instruction.modes,
             shots=self.shots,
         )
 
-        self.result = Result(instruction=instruction, samples=samples)
+        self.result = Result(instruction=instruction, samples=samples)  # type: ignore
 
-    def _vacuum(self, instruction, state):
+    def _vacuum(self, _instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_vacuum()
 
-    def _create(self, instruction, state):
+    def _create(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_creation_operator(instruction.modes)
 
-    def _annihilate(self, instruction, state):
+    def _annihilate(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_annihilation_operator(instruction.modes)
 
-    def _kerr(self, instruction, state):
+    def _kerr(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_kerr(
             **instruction._all_params,
             mode=instruction.modes[0],
         )
 
-    def _cross_kerr(self, instruction, state):
+    def _cross_kerr(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_cross_kerr(
             **instruction._all_params,
-            modes=instruction.modes,
+            modes=instruction.modes,  # type: ignore
         )
 
-    def _linear(self, instruction, state):
+    def _linear(self, instruction: Instruction, state: "BaseFockState") -> None:
         state._apply_linear(
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],

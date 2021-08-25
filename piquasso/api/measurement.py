@@ -13,12 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 from piquasso.api.errors import InvalidProgram
 from piquasso.api.instruction import Instruction
+from piquasso.api.mode import Q
+
+if typing.TYPE_CHECKING:
+    from piquasso.api.program import Program
 
 
 class Measurement(Instruction):
-    def _apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         if any(
             isinstance(instruction, type(self))
             for instruction in program.instructions

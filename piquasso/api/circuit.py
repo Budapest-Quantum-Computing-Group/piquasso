@@ -16,16 +16,26 @@
 """Implementation of circuits."""
 
 import abc
+import typing
+from typing import List, Optional
+
+from .instruction import Instruction
+from .result import Result
+
+if typing.TYPE_CHECKING:
+    from piquasso.api.state import State
 
 
 class Circuit(abc.ABC):
     instruction_map: dict
 
-    def __init__(self):
-        self.result = None
-        self.shots = None
+    def __init__(self) -> None:
+        self.result: Result = None  # type: ignore
+        self.shots: int = None  # type: ignore
 
-    def execute_instructions(self, instructions, state, shots):
+    def execute_instructions(
+        self, instructions: List[Instruction], state: "State", shots: int
+    ) -> Optional[Result]:
         """Executes the collected instructions in order.
 
         Raises:
@@ -44,7 +54,7 @@ class Circuit(abc.ABC):
                 instruction.modes = tuple(range(state.d))
 
             if hasattr(instruction, "_autoscale"):
-                instruction._autoscale()
+                instruction._autoscale()  # type: ignore
 
             method_name = self.instruction_map.get(instruction.__class__.__name__)
 
