@@ -19,7 +19,7 @@ Now, to enter a virtual environment and install all development dependencies, us
 virtualenv .venv
 source .venv/bin/activate
 pip install -e .
-pip install -rrequirements.txt
+pip install -r requirements.txt
 ```
 
 ## Testing

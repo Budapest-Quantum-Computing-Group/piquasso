@@ -12,34 +12,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import scipy
 import random
-import numpy as np
-
-from itertools import repeat
 from functools import lru_cache
+from itertools import repeat
+from typing import Tuple, List, Callable
 
-from piquasso.api.state import State
-from piquasso.api import constants
-from piquasso.api.errors import InvalidState, InvalidParameter
+import numpy as np
+import numpy.typing as npt
+import scipy
+
+from piquasso._math._random import choose_from_cumulated_probabilities
+from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
     symplectic_form,
     is_positive_semidefinite,
 )
-from piquasso._math._random import choose_from_cumulated_probabilities
-from piquasso._math.combinatorics import get_occupation_numbers
-
+from piquasso.api import constants
+from piquasso.api.errors import InvalidState, InvalidParameter
+from piquasso.api.state import State
 from .circuit import GaussianCircuit
-
-from .transformations import quad_transformation
-
 from .probabilities import (
     DensityMatrixCalculation,
     ThresholdCalculation,
 )
+from .transformations import quad_transformation
 
 
 class GaussianState(State):
@@ -53,14 +51,21 @@ class GaussianState(State):
             pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
 
     """
+    _m: npt.NDArray[np.complex128]
+    _G: npt.NDArray[np.complex128]
+    _C: npt.NDArray[np.complex128]
 
     circuit_class = GaussianCircuit
 
-    def __init__(self, d):
-        self.d = d
+    def __init__(self, d: int) -> None:
+        self._d = d
         self.reset()
 
-    def reset(self):
+    @property
+    def d(self) -> int:
+        return self._d
+
+    def reset(self) -> None:
         """
         Resets this object to a vacuum state.
         """
@@ -73,7 +78,12 @@ class GaussianState(State):
         self._C = np.zeros(matrix_shape, dtype=complex)
 
     @classmethod
-    def _from_representation(cls, *, m, G, C):
+    def _from_representation(
+        cls, *,
+        m: npt.NDArray[np.complex128],
+        G: npt.NDArray[np.complex128],
+        C: npt.NDArray[np.complex128],
+    ) -> "GaussianState":
         obj = cls(d=len(m))
 
         obj._m = m
@@ -82,14 +92,17 @@ class GaussianState(State):
 
         return obj
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GaussianState):
+            return False
+
         return (
             np.allclose(self._C, other._C)
             and np.allclose(self._G, other._G)
             and np.allclose(self._m, other._m)
         )
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Validates the Gaussian state.
 
@@ -106,7 +119,7 @@ class GaussianState(State):
         self._validate_cov(self.cov, self.d)
 
     @staticmethod
-    def _validate_mean(mean, d):
+    def _validate_mean(mean: npt.NDArray[np.float64], d: int) -> None:
         expected_shape = (2 * d, )
 
         if not mean.shape == expected_shape:
@@ -116,7 +129,7 @@ class GaussianState(State):
             )
 
     @staticmethod
-    def _validate_cov(cov, d):
+    def _validate_cov(cov: npt.NDArray[np.float64], d: int) -> None:
         expected_shape = (2 * d, ) * 2
 
         if not cov.shape == expected_shape:
@@ -135,7 +148,7 @@ class GaussianState(State):
             )
 
     @property
-    def xp_mean(self):
+    def xp_mean(self) -> npt.NDArray[np.float64]:
         r"""The state's mean in the xp-ordered basis.
 
         The expectation value of the quadrature operators in xp basis, i.e.
@@ -153,7 +166,7 @@ class GaussianState(State):
         return dimensionless_xp_mean * np.sqrt(constants.HBAR)
 
     @property
-    def xp_cov(self):
+    def xp_cov(self) -> npt.NDArray[np.float64]:
         r"""The xp-ordered coveriance matrix of the state.
 
         The xp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
@@ -181,13 +194,13 @@ class GaussianState(State):
             [
                 [(G + C).real, (G + C).imag],
                 [(G - C).imag, (-G + C).real],
-            ]
+            ],
         ) + np.identity(2 * self.d)
 
         return dimensionless_xp_cov * constants.HBAR
 
     @property
-    def xp_corr(self):
+    def xp_corr(self) -> npt.NDArray[np.float64]:
         r"""The state's correlation matrix in the xp basis.
 
         Let :math:`M_{(xp)}` be the correlation matrix in the xp basis.
@@ -211,7 +224,9 @@ class GaussianState(State):
         return self.xp_cov + 2 * np.outer(xp_mean, xp_mean)
 
     @property
-    def xp_representation(self):
+    def xp_representation(self) -> Tuple[
+        npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ]:
         r"""
         The state's mean and correlation matrix ordered in the xp basis.
 
@@ -222,7 +237,7 @@ class GaussianState(State):
         return self.xp_mean, self.xp_corr
 
     @property
-    def mean(self):
+    def mean(self) -> npt.NDArray[np.float64]:
         r"""Returns the xp-ordered mean of the state.
 
         Returns:
@@ -235,7 +250,7 @@ class GaussianState(State):
         return T @ self.xp_mean
 
     @mean.setter
-    def mean(self, new_mean):
+    def mean(self, new_mean: npt.NDArray[np.float64]) -> None:
         self._validate_mean(new_mean, self.d)
 
         m = (new_mean[::2] + 1j * new_mean[1::2]) / np.sqrt(2 * constants.HBAR)
@@ -243,7 +258,7 @@ class GaussianState(State):
         self._m = m
 
     @property
-    def cov(self):
+    def cov(self) -> npt.NDArray[np.float64]:
         r"""The quadrature-ordered coveriance matrix of the state.
 
         The quadrature-ordered covariance matrix :math:`\sigma` is defined by
@@ -269,7 +284,7 @@ class GaussianState(State):
         return T @ self.xp_cov @ T.transpose()
 
     @cov.setter
-    def cov(self, new_cov):
+    def cov(self, new_cov: npt.NDArray[np.float64]) -> None:
         d = self.d
 
         self._validate_cov(new_cov, d)
@@ -294,7 +309,7 @@ class GaussianState(State):
         self._C = C
 
     @property
-    def corr(self):
+    def corr(self) -> npt.NDArray[np.float64]:
         r"""The quadrature-ordered correlation matrix of the state.
 
         Let :math:`M` be the correlation matrix in the quadrature basis.
@@ -319,7 +334,9 @@ class GaussianState(State):
         return T @ self.xp_corr @ T.transpose()
 
     @property
-    def quad_representation(self):
+    def quad_representation(self) -> Tuple[
+        npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ]:
         r"""The state's mean and correlation matrix ordered by the quadrature basis.
 
         Returns:
@@ -329,7 +346,7 @@ class GaussianState(State):
         return self.mean, self.corr
 
     @property
-    def complex_displacement(self):
+    def complex_displacement(self) -> npt.NDArray[np.complex128]:
         r"""The complex displacement of the state.
 
         The complex displacement is defined by
@@ -362,7 +379,7 @@ class GaussianState(State):
         return np.concatenate([self._m, self._m.conj()])
 
     @property
-    def complex_covariance(self):
+    def complex_covariance(self) -> npt.NDArray[np.complex128]:
         r"""The complex covariance of the state.
 
         The complex covariance is defined by
@@ -405,7 +422,7 @@ class GaussianState(State):
             ]
         ) + np.identity(2 * self.d)
 
-    def rotated(self, phi):
+    def rotated(self, phi: float) -> "GaussianState":
         r"""Returns the copy of the current state, rotated by angle `phi`.
 
         Let :math:`\phi \in [ 0, 2 \pi )`. Let us define the following:
@@ -451,7 +468,7 @@ class GaussianState(State):
             m=(self._m * phase),
         )
 
-    def reduced(self, modes):
+    def reduced(self, modes: Tuple[int, ...]) -> "GaussianState":
         """Returns the copy of the current state, reduced to the given `modes`.
 
         This method essentially preserves the modes specified from the representation
@@ -469,7 +486,9 @@ class GaussianState(State):
             m=self._m[np.ix_(modes)],
         )
 
-    def reduced_rotated_mean_and_cov(self, modes, phi):
+    def reduced_rotated_mean_and_cov(
+        self, modes: Tuple[int, ...], phi: float
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         r"""The mean and covariance on a rotated and reduced state.
 
         Let the index set :math:`\vec{i}` correspond to `modes`, and the angle
@@ -509,7 +528,7 @@ class GaussianState(State):
 
         return transformed_state.mean, transformed_state.cov
 
-    def mean_photon_number(self, mode):
+    def mean_photon_number(self, modes: Tuple[int, ...]) -> float:
         r""" This method returns the mean photon number of the given modes.
         The mean photon number :math:`\bar{n} = \langle \hat{n}
         \rangle` can be calculated in terms of the ladder operators by the following
@@ -536,16 +555,22 @@ class GaussianState(State):
             integer e.g :math:`(0,1,...)`.
 
         Args:
-            mode (tuple[int]): The correspoding mode at which the mean photon number is
-                calculated.
+            modes (tuple[int]): The correspoding modes at which the mean photon number
+                is calculated.
         Returns:
             float: The expectation value of the photon number.
         """
 
-        state = self.reduced(mode)
+        state = self.reduced(modes)
         return (np.trace(state._C) + state._m.conjugate() @ state._m).real
 
-    def quadratic_polynomial_expectation(self, A, b, c=0.0, phi=0.0):
+    def quadratic_polynomial_expectation(
+        self,
+        A: npt.NDArray[np.float64],
+        b: npt.NDArray[np.float64],
+        c: float = 0.0,
+        phi: float = 0.0
+    ) -> float:
         r"""The expectation value of the specified quadratic polynomial.
 
         A quadratic polynomial can be written as
@@ -596,7 +621,7 @@ class GaussianState(State):
         # TODO: calculate the variance.
         return first_moment
 
-    def get_density_matrix(self, cutoff: int):
+    def get_density_matrix(self, cutoff: int) -> npt.NDArray[np.complex128]:
         calculation = DensityMatrixCalculation(
             complex_displacement=self.complex_displacement,
             complex_covariance=self.complex_covariance,
@@ -606,7 +631,12 @@ class GaussianState(State):
             get_occupation_numbers(d=self.d, cutoff=cutoff)
         )
 
-    def wigner_function(self, positions: list, momentums: list, modes=None):
+    def wigner_function(
+        self,
+        positions: List[List[float]],
+        momentums: List[List[float]],
+        modes: Tuple[int, ...] = None
+    ) -> npt.NDArray[np.float64]:
         r"""
         Calculates the Wigner function values at the specified position and momentum
         vectors, according to the equation
@@ -649,12 +679,16 @@ class GaussianState(State):
             cov=self.cov,
         )
 
-    def _apply_passive_linear(self, T, modes):
+    def _apply_passive_linear(
+        self, T: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         self._m[modes, ] = T @ self._m[modes, ]
 
         self._apply_passive_linear_to_C_and_G(T, modes=modes)
 
-    def _apply_passive_linear_to_C_and_G(self, T, modes):
+    def _apply_passive_linear_to_C_and_G(
+        self, T: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         index = self._get_operator_index(modes)
 
         self._C[index] = T.conjugate() @ self._C[index] @ T.transpose()
@@ -662,10 +696,15 @@ class GaussianState(State):
 
         auxiliary_modes = self._get_auxiliary_modes(modes)
 
-        if auxiliary_modes.size != 0:
+        if len(auxiliary_modes) != 0:
             self._apply_passive_linear_to_auxiliary_modes(T, modes, auxiliary_modes)
 
-    def _apply_passive_linear_to_auxiliary_modes(self, T, modes, auxiliary_modes):
+    def _apply_passive_linear_to_auxiliary_modes(
+        self,
+        T: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...],
+        auxiliary_modes: Tuple[int, ...],
+    ) -> None:
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         self._C[auxiliary_index] = T.conjugate() @ self._C[auxiliary_index]
@@ -674,7 +713,12 @@ class GaussianState(State):
         self._C[:, modes] = np.conj(self._C[modes, :]).transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
 
-    def _apply_linear(self, passive_block, active_block, modes):
+    def _apply_linear(
+        self,
+        passive_block: npt.NDArray[np.complex128],
+        active_block: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...],
+    ) -> None:
         self._m[modes, ] = (
             passive_block @ self._m[modes, ]
             + active_block @ np.conj(self._m[modes, ])
@@ -682,7 +726,12 @@ class GaussianState(State):
 
         self._apply_linear_to_C_and_G(passive_block, active_block, modes)
 
-    def _apply_linear_to_C_and_G(self, P, A, modes):
+    def _apply_linear_to_C_and_G(
+        self,
+        P: npt.NDArray[np.complex128],
+        A: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...]
+    ) -> None:
         index = self._get_operator_index(modes)
 
         original_C = self._C[index]
@@ -706,10 +755,16 @@ class GaussianState(State):
 
         auxiliary_modes = self._get_auxiliary_modes(modes)
 
-        if auxiliary_modes.size != 0:
+        if len(auxiliary_modes) != 0:
             self._apply_linear_to_auxiliary_modes(P, A, modes, auxiliary_modes)
 
-    def _apply_linear_to_auxiliary_modes(self, P, A, modes, auxiliary_modes):
+    def _apply_linear_to_auxiliary_modes(
+        self,
+        P: npt.NDArray[np.complex128],
+        A: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...],
+        auxiliary_modes: Tuple[int, ...],
+    ) -> None:
         auxiliary_index = self._get_auxiliary_operator_index(modes, auxiliary_modes)
 
         auxiliary_C = self._C[auxiliary_index]
@@ -728,10 +783,17 @@ class GaussianState(State):
         self._C[:, modes] = self._C[modes, :].conjugate().transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
 
-    def _apply_displacement(self, displacement_vector, modes):
+    def _apply_displacement(
+        self, displacement_vector: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         self._m[modes, ] += displacement_vector
 
-    def _apply_generaldyne_measurement(self, *, detection_covariance, modes, shots):
+    def _apply_generaldyne_measurement(
+        self, *,
+        detection_covariance: npt.NDArray[np.float64],
+        modes: Tuple[int, ...],
+        shots: int
+    ) -> npt.NDArray[np.float64]:
         d = self.d
 
         indices = []
@@ -792,7 +854,8 @@ class GaussianState(State):
         evolved_mean = np.zeros(shape=(2 * d, ))
         evolved_mean[outer_indices] = evolved_r_A
 
-        evolved_cov = np.identity(2 * d) * constants.HBAR
+        evolved_cov: npt.NDArray[np.float64] = \
+            np.identity(2 * d) * constants.HBAR
         evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
 
         self.mean = evolved_mean
@@ -803,14 +866,14 @@ class GaussianState(State):
     def _apply_particle_number_measurement(
         self,
         *,
-        cutoff,
-        modes,
-        shots,
-    ):
+        cutoff: int,
+        modes: Tuple[int, ...],
+        shots: int,
+    ) -> List[List[int]]:
         def calculate_particle_number_detection_probability(
-            state,
-            occupation_numbers: tuple,
-        ):
+            state: "GaussianState",
+            occupation_numbers: Tuple[int, ...],
+        ) -> float:
             calculation = DensityMatrixCalculation(
                 state.complex_displacement,
                 state.complex_covariance,
@@ -831,9 +894,9 @@ class GaussianState(State):
     def _apply_threshold_measurement(
         self,
         *,
-        shots,
-        modes,
-    ):
+        shots: int,
+        modes: Tuple[int, ...],
+    ) -> List[List[int]]:
         """
         NOTE: The same logic is used here, as for the particle number measurement.
         However, at threshold measurement there is no sense of cutoff, therefore it is
@@ -850,9 +913,9 @@ class GaussianState(State):
             )
 
         def calculate_threshold_detection_probability(
-            state,
-            occupation_numbers: tuple,
-        ):
+            state: "GaussianState",
+            occupation_numbers: Tuple[int, ...],
+        ) -> float:
             calculation = ThresholdCalculation(state.xp_cov)
 
             return calculation.calculate_click_probability(occupation_numbers)
@@ -867,17 +930,19 @@ class GaussianState(State):
     def _perform_sampling(
         self,
         *,
-        cutoff,
-        modes,
-        shots,
-        calculation,
-    ):
+        cutoff: int,
+        modes: Tuple[int, ...],
+        shots: int,
+        calculation: Callable[["GaussianState", Tuple[int, ...]], float],
+    ) -> List[List[int]]:
         @lru_cache(constants.cache_size)
-        def get_probability(*, subspace_modes, occupation_numbers):
+        def get_probability(
+            *, subspace_modes: Tuple[int, ...], occupation_numbers: Tuple[int, ...]
+        ) -> float:
             reduced_state = self.reduced(subspace_modes)
             probability = calculation(
                 reduced_state,
-                occupation_numbers=occupation_numbers,
+                occupation_numbers,
             )
 
             return max(probability, 0.0)
@@ -885,7 +950,7 @@ class GaussianState(State):
         samples = []
 
         for _ in repeat(None, shots):
-            sample = []
+            sample: List[int] = []
 
             previous_probability = 1.0
 
@@ -929,7 +994,9 @@ class GaussianState(State):
 
         return samples
 
-    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+    def get_particle_detection_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         calculation = DensityMatrixCalculation(
             self.complex_displacement,
             self.complex_covariance,
@@ -940,7 +1007,7 @@ class GaussianState(State):
             ket=occupation_number,
         )
 
-    def get_fock_probabilities(self, cutoff):
+    def get_fock_probabilities(self, cutoff: int) -> npt.NDArray[np.float64]:
         calculation = DensityMatrixCalculation(
             complex_displacement=self.complex_displacement,
             complex_covariance=self.complex_covariance,

@@ -16,16 +16,24 @@
 """Implementation of circuits."""
 
 import abc
+from typing import List, Optional
+
+from .instruction import Instruction
+from .result import Result
 
 
 class Circuit(abc.ABC):
     instruction_map: dict
+    result: Optional[Result]
+    shots: Optional[int]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.result = None
         self.shots = None
 
-    def execute_instructions(self, instructions, state, shots):
+    def execute_instructions(
+        self, instructions: List[Instruction], state, shots: int
+    ) -> Optional[Result]:
         """Executes the collected instructions in order.
 
         Raises:
@@ -37,14 +45,14 @@ class Circuit(abc.ABC):
                 The methods along with keyword arguments of the current circuit to be
                 executed in order.
         """
-        self.shots = shots
+        self.shots: int = shots
 
         for instruction in instructions:
             if instruction.modes is tuple():
                 instruction.modes = tuple(range(state.d))
 
             if hasattr(instruction, "_autoscale"):
-                instruction._autoscale()
+                instruction._autoscale()  # type: ignore
 
             method_name = self.instruction_map.get(instruction.__class__.__name__)
 

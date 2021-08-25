@@ -12,11 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Collection
 
 import numpy as np
+import numpy.typing as npt
 
 
-def modified_hermite_multidim(B, n, alpha):
+def modified_hermite_multidim(
+    B: npt.NDArray[np.complex128], n: Collection[int], alpha: npt.NDArray[np.complex128]
+) -> complex:
     try:
         index = tuple(n).index(next(filter(lambda x: x != 0, tuple(n))))
     except StopIteration:

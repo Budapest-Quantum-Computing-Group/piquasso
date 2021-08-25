@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import numpy as np
+import numpy.typing as npt
 
 from piquasso.core import _mixins
 
@@ -32,7 +33,7 @@ class Loss(Instruction, _mixins.ScalingMixin):
         transmissivity (numpy.ndarray): The transmissivity array.
     """
 
-    def __init__(self, transmissivity):
+    def __init__(self, transmissivity: npt.NDArray) -> None:
         super().__init__(
             params=dict(transmissivity=transmissivity),
             extra_params=dict(
@@ -40,7 +41,7 @@ class Loss(Instruction, _mixins.ScalingMixin):
             ),
         )
 
-    def _autoscale(self):
+    def _autoscale(self) -> None:
         transmissivity = self._extra_params["transmissivity"]
         if (
             transmissivity is None

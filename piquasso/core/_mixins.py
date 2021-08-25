@@ -15,13 +15,16 @@
 
 import abc
 import copy
+from typing import TypeVar, Generic
+
+_T = TypeVar("_T", float, complex)
 
 
 class DictMixin(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_dict(cls, dict_: dict):
+    def from_dict(cls, dict_: dict) -> "DictMixin":
         """Creates an instance from a dict specified.
 
         Args:
@@ -31,20 +34,25 @@ class DictMixin(abc.ABC):
         pass
 
 
-class WeightMixin:
-    def __mul__(self, coefficient):
+class WeightMixin(abc.ABC, Generic[_T]):
+    @property
+    @abc.abstractmethod
+    def params(self) -> dict:
+        pass
+
+    def __mul__(self, coefficient: _T) -> "WeightMixin":
         self.params["coefficient"] *= coefficient
         return self
 
     __rmul__ = __mul__
 
-    def __truediv__(self, coefficient):
+    def __truediv__(self, coefficient: _T) -> "WeightMixin":
         return self.__mul__(1 / coefficient)
 
 
 class RegisterMixin(abc.ABC):
     @abc.abstractmethod
-    def _apply_to_program_on_register(self, *, program, register):
+    def _apply_to_program_on_register(self, program, register) -> None:
         """Applies the current object to the specifed program on its specified register.
 
         Args:
@@ -53,7 +61,7 @@ class RegisterMixin(abc.ABC):
         """
         pass
 
-    def copy(self):
+    def copy(self) -> "RegisterMixin":
         """Copies the current object with :func:`copy.deepcopy`.
 
         Returns:
@@ -64,11 +72,11 @@ class RegisterMixin(abc.ABC):
 
 class CodeMixin(abc.ABC):
     @abc.abstractmethod
-    def _as_code(self):
+    def _as_code(self) -> str:
         pass
 
 
 class ScalingMixin(abc.ABC):
     @abc.abstractmethod
-    def _autoscale(self):
+    def _autoscale(self) -> None:
         pass

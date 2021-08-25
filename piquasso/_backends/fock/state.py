@@ -13,23 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+import numpy.typing as npt
+
 import abc
 import random
+from typing import Tuple, Generator, Any, Mapping, List
 
+from piquasso.instructions.preparations import StateVector
+from piquasso._math.fock import FockBasis, FockOperatorBasis
 from piquasso.api.state import State
 
 from piquasso._math import fock
 
 
 class BaseFockState(State, abc.ABC):
-    def __init__(self, *, d, cutoff):
+    def __init__(self, *, d: int, cutoff: int) -> None:
         self._space = fock.FockSpace(
             d=d,
             cutoff=cutoff,
         )
 
     @classmethod
-    def from_number_preparations(cls, *, d, cutoff, number_preparations):
+    def from_number_preparations(
+        cls, *, d: int, cutoff: int, number_preparations: List[StateVector]
+    ) -> "BaseFockState":
         """
         NOTE: Here is a small coupling between :class:`Instruction` and :class:`State`.
         This is the only case (so far) where the user could specify instructions
@@ -46,25 +54,27 @@ class BaseFockState(State, abc.ABC):
         return self
 
     @property
-    def d(self):
+    def d(self) -> int:
         return self._space.d
 
     @property
-    def cutoff(self):
+    def cutoff(self) -> int:
         return self._space.cutoff
 
     @property
-    def norm(self):
+    def norm(self) -> int:
         return sum(self.fock_probabilities)
 
-    def _particle_number_measurement(self, modes, shots):
+    def _particle_number_measurement(
+        self, modes: Tuple[int, ...], shots: int
+    ) -> List[FockBasis]:
         probability_map = self._get_probability_map(
             modes=modes,
         )
 
         samples = random.choices(
             population=list(probability_map.keys()),
-            weights=probability_map.values(),
+            weights=list(probability_map.values()),
             k=shots,
         )
 
@@ -81,101 +91,114 @@ class BaseFockState(State, abc.ABC):
 
         return samples
 
-    def _as_code(self):
+    def _as_code(self) -> str:
         return (
             f"pq.Q() | pq.{self.__class__.__name__}(d={self.d}, cutoff={self.cutoff})"
         )
 
-    @classmethod
     @abc.abstractmethod
-    def _get_empty(cls):
+    def _get_empty(self) -> npt.NDArray[np.complex128]:
         pass
 
     @abc.abstractmethod
-    def _apply_vacuum(self):
+    def _apply_vacuum(self) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_passive_linear(self, operator, modes):
+    def _apply_passive_linear(
+        self, operator: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def _get_probability_map(*, modes, shots):
+    def _get_probability_map(
+        self, *, modes: Tuple[int, ...]
+    ) -> Mapping[FockBasis, float]:
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def _get_normalization(
+        probability_map: Mapping[FockBasis, float], sample: FockBasis
+    ) -> float:
         pass
 
     @abc.abstractmethod
-    def _get_normalization(sample):
+    def _project_to_subspace(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], normalization: float
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def _project_to_subspace(*, subspace_basis, modes, normalization):
+    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_creation_operator(self, modes):
+    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_annihilation_operator(self, modes):
+    def _add_occupation_number_basis(self, *, ket, bra, coefficient) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_kerr(self, xi, mode):
+    def _apply_kerr(self, xi: complex, mode: int) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_cross_kerr(self, xi, modes):
+    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
         pass
 
     @abc.abstractmethod
     def _apply_linear(
         self,
-        passive_block,
-        active_block,
-        displacement,
-        modes,
-    ):
+        passive_block: npt.NDArray[np.complex128],
+        active_block: npt.NDArray[np.complex128],
+        displacement: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...]
+    ) -> None:
         pass
 
     @property
     @abc.abstractmethod
-    def nonzero_elements(self):
+    def nonzero_elements(
+        self
+    ) -> Generator[Tuple[complex, tuple], Any, None]:
         pass
 
     @abc.abstractmethod
-    def get_density_matrix(self, cutoff):
+    def get_density_matrix(self, cutoff: int) -> npt.NDArray[np.complex128]:
         """The density matrix of the state in terms of Fock basis vectors."""
         pass
 
     @property
-    def density_matrix(self):
+    def density_matrix(self) -> npt.NDArray[np.complex128]:
         """The density matrix of the state in terms of Fock basis vectors."""
         return self.get_density_matrix(cutoff=self.cutoff)
 
-    @property
     @abc.abstractmethod
-    def reduced(self, modes):
+    def reduced(self, modes: Tuple[int, ...]) -> "BaseFockState":
         """Reduces the state to a subsystem corresponding to the specified modes."""
         pass
 
     @abc.abstractmethod
-    def get_fock_probabilities(self, cutoff):
+    def get_fock_probabilities(self, cutoff: int) -> npt.NDArray[np.float64]:
         pass
 
     @property
     @abc.abstractmethod
-    def fock_probabilities(self):
+    def fock_probabilities(self) -> npt.NDArray[np.float64]:
         pass
 
     @abc.abstractmethod
-    def normalize(self):
+    def normalize(self) -> None:
         pass
 
     @abc.abstractmethod
-    def validate(self):
+    def validate(self) -> None:
         pass
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets this object to a vacuum state.
         """

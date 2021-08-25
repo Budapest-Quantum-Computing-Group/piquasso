@@ -14,17 +14,19 @@
 # limitations under the License.
 
 """Module to store class definitions."""
+from typing import Type
 
+from piquasso.api.plugin import Plugin
 
 items = {}
 
 
-def use_plugin(plugin, override=False):
+def use_plugin(plugin: Type[Plugin], override: bool = False) -> None:
     for name, class_ in plugin.classes.items():
         class_.__name__ = name
         if override or name not in items:
             items[name] = class_
 
 
-def get_class(name):
+def get_class(name: str):
     return items[name]

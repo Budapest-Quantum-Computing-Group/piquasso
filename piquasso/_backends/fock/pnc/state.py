@@ -12,9 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Tuple, Dict, List, Mapping, Generator, Any
 
 import numpy as np
+import numpy.typing as npt
 
+from piquasso._math.fock import FockBasis, FockOperatorBasis
 from piquasso.api.errors import InvalidState
 from piquasso._math.combinatorics import partitions
 
@@ -40,26 +43,34 @@ class PNCFockState(BaseFockState):
     """
     circuit_class = PNCFockCircuit
 
-    def __init__(self, representation=None, *, d, cutoff):
+    def __init__(
+        self,
+        representation: List[npt.NDArray[np.complex128]] = None,
+        *,
+        d: int,
+        cutoff: int
+    ) -> None:
         super().__init__(d=d, cutoff=cutoff)
 
         self._representation = (
-            np.array(representation)
+            representation
             if representation is not None
             else self._get_empty()
         )
 
-    def _get_empty(self):
+    def _get_empty(self) -> List[npt.NDArray[np.complex128]]:  # type: ignore
         return [
             np.zeros(shape=(self._space._symmetric_cardinality(n), ) * 2, dtype=complex)
             for n in range(self._space.cutoff)
         ]
 
-    def _apply_vacuum(self):
+    def _apply_vacuum(self) -> None:
         self._representation = self._get_empty()
         self._representation[0][0, 0] = 1.0
 
-    def _apply_passive_linear(self, operator, modes):
+    def _apply_passive_linear(
+        self, operator: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         index = self._get_operator_index(modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
@@ -75,14 +86,16 @@ class PNCFockState(BaseFockState):
                 @ tensorpower_operator.conjugate().transpose()
             )
 
-    def _get_probability_map(self, *, modes):
-        probability_map = {}
+    def _get_probability_map(
+        self, *, modes: Tuple[int, ...]
+    ) -> Dict[FockBasis, float]:
+        probability_map: Dict[FockBasis, float] = {}
 
         for n, subrep in enumerate(self._representation):
             for index, basis in self._space.subspace_operator_basis_diagonal_on_modes(
                 modes=modes, n=n
             ):
-                coefficient = self._representation[n][index]
+                coefficient = float(self._representation[n][index])
 
                 subspace_basis = basis.ket.on_modes(modes=modes)
 
@@ -94,10 +107,14 @@ class PNCFockState(BaseFockState):
         return probability_map
 
     @staticmethod
-    def _get_normalization(probability_map, sample):
-        return 1 / probability_map[sample].real
+    def _get_normalization(
+        probability_map: Mapping[FockBasis, float], sample: FockBasis
+    ) -> float:
+        return 1 / probability_map[sample]
 
-    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
+    def _project_to_subspace(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], normalization: float
+    ) -> None:
         projected_representation = self._get_projected(
             subspace_basis=subspace_basis,
             modes=modes,
@@ -106,7 +123,9 @@ class PNCFockState(BaseFockState):
         for n, subrep in enumerate(projected_representation):
             self._representation[n] = subrep * normalization
 
-    def _get_projected(self, *, subspace_basis, modes):
+    def _get_projected(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    ) -> List[npt.NDArray[np.complex128]]:
         new_representation = self._get_empty()
 
         for n, subrep in enumerate(self._representation):
@@ -121,7 +140,7 @@ class PNCFockState(BaseFockState):
 
         return new_representation
 
-    def _hacky_apply_operator(self, operator):
+    def _hacky_apply_operator(self, operator: npt.NDArray[np.complex128]) -> None:
         """
         HACK: Here we switch to the full representation for a brief moment. I'm sure
         there's a better way.
@@ -136,14 +155,14 @@ class PNCFockState(BaseFockState):
 
             self._representation[n] = density_matrix[begin:end, begin:end]
 
-    def _apply_creation_operator(self, modes):
+    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_creation_operator(modes)
 
         self._hacky_apply_operator(operator)
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes):
+    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_annihilation_operator(modes)
 
         self._hacky_apply_operator(operator)
@@ -151,9 +170,6 @@ class PNCFockState(BaseFockState):
         self.normalize()
 
     def _add_occupation_number_basis(self, *, ket, bra, coefficient):
-        index = self._space.index(ket)
-        dual_index = self._space.index(bra)
-
         ket_n = sum(ket)
         bra_n = sum(bra)
 
@@ -169,7 +185,7 @@ class PNCFockState(BaseFockState):
 
         self._representation[n][index, dual_index] = coefficient
 
-    def _apply_kerr(self, xi, mode):
+    def _apply_kerr(self, xi: complex, mode: int) -> None:
         for n, subrep in enumerate(self._representation):
             for index, (basis, dual_basis) in (
                 self._space.enumerate_subspace_operator_basis(n)
@@ -186,7 +202,7 @@ class PNCFockState(BaseFockState):
 
                 self._representation[n][index] *= coefficient
 
-    def _apply_cross_kerr(self, xi, modes):
+    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
         for n, subrep in enumerate(self._representation):
             for index, (basis, dual_basis) in (
                 self._space.enumerate_subspace_operator_basis(n)
@@ -202,13 +218,14 @@ class PNCFockState(BaseFockState):
 
     def _apply_linear(
         self,
-        passive_block,
-        active_block,
-        displacement,
-        modes
-    ):
+        passive_block: npt.NDArray[np.complex128],
+        active_block: npt.NDArray[np.complex128],
+        displacement: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...]
+    ) -> None:
         operator = self._space.get_linear_fock_operator(
-            modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
+            modes=modes,
+            auxiliary_modes=self._get_auxiliary_modes(modes),
             passive_block=passive_block,
             active_block=active_block,
             displacement=displacement,
@@ -219,14 +236,16 @@ class PNCFockState(BaseFockState):
         self.normalize()
 
     @property
-    def nonzero_elements(self):
+    def nonzero_elements(
+        self
+    ) -> Generator[Tuple[complex, FockOperatorBasis], Any, None]:
         for n, subrep in enumerate(self._representation):
             for index, basis in self._space.enumerate_subspace_operator_basis(n):
                 coefficient = self._representation[n][index]
                 if coefficient != 0:
                     yield coefficient, basis
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return " + ".join(
             [
                 str(coefficient) + str(basis)
@@ -234,24 +253,30 @@ class PNCFockState(BaseFockState):
             ]
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PNCFockState):
+            return False
         return all([
             np.allclose(subrep, other._representation[n])
             for n, subrep in enumerate(self._representation)
         ])
 
-    def get_density_matrix(self, cutoff=None):
+    def get_density_matrix(
+        self, cutoff: int = None
+    ) -> npt.NDArray[np.complex128]:
         cutoff = cutoff or self.cutoff
 
         return block_diag(*self._representation[:cutoff])
 
-    def _as_mixed(self):
+    def _as_mixed(self) -> FockState:
         return FockState.from_fock_state(self)
 
-    def reduced(self, modes):
+    def reduced(self, modes: Tuple[int, ...]) -> FockState:
         return self._as_mixed().reduced(modes)
 
-    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+    def get_particle_detection_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         number_of_particles = sum(occupation_number)
 
         subrep_probabilities = np.diag(self._representation[number_of_particles])
@@ -262,7 +287,7 @@ class PNCFockState(BaseFockState):
 
         return subrep_probabilities[index].real
 
-    def get_fock_probabilities(self, cutoff=None):
+    def get_fock_probabilities(self, cutoff: int = None) -> npt.NDArray[np.float64]:
         cutoff = cutoff or self.cutoff
 
         ret = []
@@ -274,10 +299,10 @@ class PNCFockState(BaseFockState):
         return np.array(ret, dtype=float)
 
     @property
-    def fock_probabilities(self):
+    def fock_probabilities(self) -> npt.NDArray[np.float64]:
         return self.get_fock_probabilities()
 
-    def normalize(self):
+    def normalize(self) -> None:
         if np.isclose(self.norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
@@ -286,7 +311,7 @@ class PNCFockState(BaseFockState):
         for n, subrep in enumerate(self._representation):
             self._representation[n] = subrep / norm
 
-    def validate(self):
+    def validate(self) -> None:
         sum_of_probabilities = sum(self.fock_probabilities)
 
         if not np.isclose(sum_of_probabilities, 1.0):

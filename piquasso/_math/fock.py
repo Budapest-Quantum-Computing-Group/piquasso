@@ -15,7 +15,10 @@
 
 import functools
 import itertools
+from typing import Tuple, Iterable, Generator, Any, List
+
 import numpy as np
+import numpy.typing as npt
 
 from operator import add
 from scipy.special import factorial, comb
@@ -29,7 +32,7 @@ from piquasso._math.hermite import modified_hermite_multidim
 
 
 @functools.lru_cache()
-def cutoff_cardinality(*, cutoff, d):
+def cutoff_cardinality(*, cutoff: int, d: int) -> int:
     r"""
     ..math::
         \sum_{n=0}^i {d + n - 1 \choose n} = \frac{(i + 1) {d + i \choose i + 1}}{d}
@@ -42,44 +45,46 @@ def cutoff_cardinality(*, cutoff, d):
 
 
 @functools.lru_cache()
-def symmetric_subspace_cardinality(*, d, n):
+def symmetric_subspace_cardinality(*, d: int, n: int) -> int:
     return int(comb(d + n - 1, n))
 
 
 class FockBasis(tuple):
-    def __str__(self):
+    def __str__(self) -> str:
         return self.display(template="|{}>")
 
-    def display(self, template="{}"):
+    def display(self, template: str = "{}") -> str:
         return template.format(
             "".join([str(number) for number in self])
         )
 
-    def display_as_bra(self):
+    def display_as_bra(self) -> str:
         return self.display("<{}|")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __add__(self, other):
+    def __add__(self, other: Iterable) -> "FockBasis":
         return FockBasis(map(add, self, other))
 
     __radd__ = __add__
 
     @property
-    def d(self):
+    def d(self) -> int:
         return len(self)
 
     @property
-    def n(self):
+    def n(self) -> int:
         return sum(self)
 
     @classmethod
-    def create_on_particle_subspace(cls, *, boxes, particles):
+    def create_on_particle_subspace(
+        cls, *, boxes: int, particles: int
+    ) -> List[Tuple[int, ...]]:
         return partitions(boxes=boxes, particles=particles, class_=cls)
 
     @classmethod
-    def create_all(cls, *, d, cutoff):
+    def create_all(cls, *, d: int, cutoff: int) -> List[Tuple[int, ...]]:
         ret = []
 
         for n in range(cutoff):
@@ -88,7 +93,7 @@ class FockBasis(tuple):
         return ret
 
     @property
-    def first_quantized(self):
+    def first_quantized(self) -> List[int]:
         ret = []
 
         for idx, repetition in enumerate(self):
@@ -96,10 +101,10 @@ class FockBasis(tuple):
 
         return ret
 
-    def on_modes(self, *, modes):
+    def on_modes(self, *, modes: Tuple[int, ...]) -> "FockBasis":
         return FockBasis(self[mode] for mode in modes)
 
-    def increment_on_modes(self, modes):
+    def increment_on_modes(self, modes: Tuple[int, ...]) -> "FockBasis":
         a = [0] * self.d
         for mode in modes:
             a[mode] = 1
@@ -107,28 +112,28 @@ class FockBasis(tuple):
         return self + a
 
     @property
-    def all_possible_first_quantized_vectors(self):
-        return list(set(itertools.permutations(self.first_quantized)))
+    def all_possible_first_quantized_vectors(self) -> List[Tuple[int, ...]]:
+        return list(set(itertools.permutations(self.first_quantized)))  # type: ignore
 
 
 class FockOperatorBasis(tuple):
-    def __new__(cls, *, ket, bra):
+    def __new__(cls, *, ket: Iterable, bra: Iterable) -> "FockOperatorBasis":
         return super().__new__(
-            cls, (FockBasis(ket), FockBasis(bra))
+            cls, (FockBasis(ket), FockBasis(bra))  # type: ignore
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.ket) + self.bra.display_as_bra()
 
     @property
-    def ket(self) -> tuple:
+    def ket(self) -> FockBasis:
         return self[0]
 
     @property
-    def bra(self) -> tuple:
+    def bra(self) -> FockBasis:
         return self[1]
 
-    def is_diagonal_on_modes(self, modes) -> bool:
+    def is_diagonal_on_modes(self, modes: Tuple[int, ...]) -> bool:
         return self.ket.on_modes(modes=modes) == self.bra.on_modes(modes=modes)
 
 
@@ -144,16 +149,16 @@ class FockSpace(tuple):
     transformation to acquire the symmetrized tensor in the symmetrized representation.
     """
 
-    def __new__(cls, d, cutoff):
+    def __new__(cls, d: int, cutoff: int) -> "FockSpace":
         return super().__new__(
-            cls, FockBasis.create_all(d=d, cutoff=cutoff)
+            cls, FockBasis.create_all(d=d, cutoff=cutoff)  # type: ignore
         )
 
-    def __init__(self, *, d, cutoff):
+    def __init__(self, *, d: int, cutoff: int) -> None:
         self.d = d
         self.cutoff = cutoff
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any) -> "FockSpace":
         """
         This method exists, because `copy.deepcopy` goes mad with classes defining both
         `__new__` and `__init__`.
@@ -165,7 +170,9 @@ class FockSpace(tuple):
 
         return self
 
-    def get_passive_fock_operator(self, operator):
+    def get_passive_fock_operator(
+        self, operator: npt.NDArray[np.complex128]
+    ) -> npt.NDArray[np.complex128]:
         return block_diag(
             *(
                 self.symmetric_tensorpower(operator, n)
@@ -176,12 +183,12 @@ class FockSpace(tuple):
     def get_linear_fock_operator(
         self,
         *,
-        modes,
-        auxiliary_modes,
-        active_block=None,
-        passive_block=None,
-        displacement=None,
-    ):
+        modes: Tuple[int, ...],
+        auxiliary_modes: Tuple[int, ...],
+        active_block: npt.NDArray[np.complex128] = None,
+        passive_block: npt.NDArray[np.complex128] = None,
+        displacement: npt.NDArray[np.complex128] = None,
+    ) -> npt.NDArray[np.complex128]:
         if active_block is None and passive_block is None:
             phase = np.identity(len(modes), dtype=complex)
             S = np.identity(len(modes), dtype=complex)
@@ -205,7 +212,7 @@ class FockSpace(tuple):
             )
 
         if displacement is None:
-            alpha = np.zeros(shape=(len(modes), ))
+            alpha = np.zeros(shape=(len(modes), ), dtype=complex)
         else:
             alpha = displacement
 
@@ -223,24 +230,28 @@ class FockSpace(tuple):
             alpha @ T.conjugate().transpose() + alpha.conjugate()
         ) @ phase
 
-        def get_f_vector(upper_bound, matrix, vector):
+        def get_f_vector(
+            upper_bound: npt.NDArray[np.complex128],
+            matrix: npt.NDArray[np.complex128],
+            vector: npt.NDArray[np.complex128]
+        ) -> npt.NDArray[np.complex128]:
             subspace_basis = self._get_subspace_basis_on_modes(modes=modes)
             elements = np.empty(shape=(len(subspace_basis), ), dtype=complex)
 
             for index, basis_vector in enumerate(subspace_basis):
-                basis_vector = np.array(basis_vector)
+                nd_basis_vector = np.array(basis_vector)
                 if any(
                     qelem > relem for qelem, relem in zip(basis_vector, upper_bound)
                 ):
                     elements[index] = 0.0
                     continue
 
-                difference = upper_bound - basis_vector
+                difference = upper_bound - nd_basis_vector
 
                 elements[index] = (
                     np.sqrt(
                         np.prod(factorial(upper_bound))
-                        / np.prod(factorial(basis_vector))
+                        / np.prod(factorial(nd_basis_vector))
                     )
                     *
                     modified_hermite_multidim(B=matrix, n=difference, alpha=vector)
@@ -249,7 +260,9 @@ class FockSpace(tuple):
             return elements
 
         @functools.lru_cache(constants.cache_size)
-        def calculate_left(upper_bound):
+        def calculate_left(
+            upper_bound: npt.NDArray[np.complex128]
+        ) -> npt.NDArray[np.complex128]:
             return get_f_vector(
                 upper_bound=upper_bound,
                 matrix=left_matrix,
@@ -257,7 +270,9 @@ class FockSpace(tuple):
             )
 
         @functools.lru_cache(constants.cache_size)
-        def calculate_right(upper_bound):
+        def calculate_right(
+            upper_bound: npt.NDArray[np.complex128]
+        ) -> npt.NDArray[np.complex128]:
             return get_f_vector(
                 upper_bound=upper_bound,
                 matrix=right_matrix,
@@ -279,48 +294,60 @@ class FockSpace(tuple):
         return normalization * transformation
 
     @property
-    def cardinality(self):
+    def cardinality(self) -> int:
         return cutoff_cardinality(cutoff=self.cutoff, d=self.d)
 
     @property
-    def basis(self):
+    def basis(self) -> Generator[Tuple[int, FockBasis], Any, None]:
         yield from enumerate(self)
 
     @property
-    def operator_basis(self):
+    def operator_basis(self) -> Generator[
+        Tuple[Tuple[int, int], FockOperatorBasis], Any, None
+    ]:
         for index, basis in self.basis:
             for dual_index, dual_basis in self.basis:
                 yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
 
-    def operator_basis_diagonal_on_modes(self, *, modes):
+    def operator_basis_diagonal_on_modes(
+        self, *, modes: Tuple[int, ...]
+    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
         yield from [
             (index, basis)
             for index, basis in self.operator_basis
             if basis.is_diagonal_on_modes(modes=modes)
         ]
 
-    def subspace_operator_basis_diagonal_on_modes(self, *, modes, n):
+    def subspace_operator_basis_diagonal_on_modes(
+        self, *, modes: Tuple[int, ...], n: int
+    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
         yield from [
             (index, basis)
             for index, basis in self.enumerate_subspace_operator_basis(n)
             if basis.is_diagonal_on_modes(modes=modes)
         ]
 
-    def get_occupied_basis(self, *, modes, occupation_numbers):
+    def get_occupied_basis(
+        self, *, modes: Tuple[int, ...], occupation_numbers: Tuple[int, ...]
+    ) -> FockBasis:
         temp = [0] * self.d
         for index, mode in enumerate(modes):
             temp[mode] = occupation_numbers[index]
 
         return FockBasis(temp)
 
-    def get_projection_operator_indices_for_pure(self, *, subspace_basis, modes):
+    def get_projection_operator_indices_for_pure(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    ) -> List[int]:
         return [
             index
             for index, basis in self.basis
             if subspace_basis == basis.on_modes(modes=modes)
         ]
 
-    def get_projection_operator_indices(self, *, subspace_basis, modes):
+    def get_projection_operator_indices(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         return tuple(
             zip(
                 *[
@@ -330,9 +357,11 @@ class FockSpace(tuple):
                     and subspace_basis == operator_basis.ket.on_modes(modes=modes)
                 ]
             )
-        )
+        )  # type: ignore
 
-    def get_projection_operator_indices_on_subspace(self, *, subspace_basis, modes, n):
+    def get_projection_operator_indices_on_subspace(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], n: int
+    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         return tuple(
             zip(
                 *[
@@ -344,34 +373,35 @@ class FockSpace(tuple):
                     and subspace_basis == operator_basis.ket.on_modes(modes=modes)
                 ]
             )
-        )
+        )  # type: ignore
 
-    def _symmetric_cardinality(self, n):
+    def _symmetric_cardinality(self, n: int) -> int:
         return symmetric_subspace_cardinality(d=self.d, n=n)
 
-    def get_subspace_indices(self, n):
+    def get_subspace_indices(self, n: int) -> Tuple[int, int]:
         begin = cutoff_cardinality(cutoff=n, d=self.d)
         end = cutoff_cardinality(cutoff=n + 1, d=self.d)
 
         return begin, end
 
-    def _get_subspace_basis_on_modes(self, modes=None):
-        modes = modes or tuple(range(self.d))
+    def _get_subspace_basis_on_modes(
+        self, modes: Tuple[int, ...] = None
+    ) -> List[FockBasis]:
+        modes_ = modes or tuple(range(self.d))
 
-        subspace_vectors = []
+        subspace_vectors = {
+            vector.on_modes(modes=modes_) for vector in self
+        }
 
-        for vector in list(self):
-            subspace_vectors.append(
-                vector.on_modes(modes=modes)
-            )
+        return sorted(list(subspace_vectors))
 
-        return sorted(list(set(subspace_vectors)))
-
-    def get_subspace_basis(self, n, d=None):
+    def get_subspace_basis(self, n: int, d: int = None) -> List[Tuple[int, ...]]:
         d = d or self.d
         return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
 
-    def enumerate_subspace_operator_basis(self, n, d=None):
+    def enumerate_subspace_operator_basis(
+        self, n: int, d: int = None
+    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
         d = d or self.d
         subspace_operator_basis = self.get_subspace_basis(n, d)
 
@@ -379,9 +409,11 @@ class FockSpace(tuple):
             for dual_index, dual_basis in enumerate(subspace_operator_basis):
                 yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
 
-    def symmetric_tensorpower(self, operator, n):
+    def symmetric_tensorpower(
+        self, operator: npt.NDArray[np.complex128], n: int
+    ) -> npt.NDArray[np.complex128]:
         if n == 0:
-            return np.array([[1]])
+            return np.array([[1]], dtype=complex)
 
         if n == 1:
             # NOTE: This stuff is really awkward.
@@ -422,8 +454,10 @@ class FockSpace(tuple):
 
         return ret
 
-    def get_creation_operator(self, modes):
-        operator = np.zeros(shape=(self.cardinality, ) * 2)
+    def get_creation_operator(
+        self, modes: Tuple[int, ...]
+    ) -> npt.NDArray[np.complex128]:
+        operator = np.zeros(shape=(self.cardinality, ) * 2, dtype=complex)
 
         for index, basis in enumerate(self):
             dual_basis = basis.increment_on_modes(modes)
@@ -436,5 +470,7 @@ class FockSpace(tuple):
 
         return operator
 
-    def get_annihilation_operator(self, modes):
+    def get_annihilation_operator(
+        self, modes: Tuple[int, ...]
+    ) -> npt.NDArray[np.complex128]:
         return self.get_creation_operator(modes).transpose()

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso.api.instruction import Instruction
 from ..circuit import BaseFockCircuit
 
 
@@ -23,5 +24,5 @@ class FockCircuit(BaseFockCircuit):
         **BaseFockCircuit.instruction_map
     }
 
-    def _density_matrix(self, instruction, state):
+    def _density_matrix(self, instruction: Instruction, state) -> None:
         state._add_occupation_number_basis(**instruction.params)

@@ -23,14 +23,16 @@ Important:
 """
 
 import sys
+from types import ModuleType
+from typing import Type, List, Any
 
 from piquasso.api import constants
 from piquasso.api.mode import Q
-from piquasso.api.state import State
-from piquasso.api.plugin import Plugin
+from piquasso.api.instruction import Instruction
 from piquasso.api.program import Program
 from piquasso.api.circuit import Circuit
-from piquasso.api.instruction import Instruction
+from piquasso.api.state import State
+from piquasso.api.plugin import Plugin
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
@@ -132,7 +134,7 @@ _default_channels = {
 }
 
 
-def use(plugin):
+def use(plugin: Type[Plugin]) -> None:
     _registry.use_plugin(plugin, override=True)
 
 
@@ -153,17 +155,17 @@ class _DefaultPlugin(Plugin):
 _registry.use_plugin(_DefaultPlugin)
 
 
-class Piquasso:
-    def __init__(self, module):
+class Piquasso(ModuleType):
+    def __init__(self, module: ModuleType) -> None:
         self._module = module
 
-    def __getattr__(self, attribute):
+    def __getattr__(self, attribute: Any) -> Any:
         try:
             return _registry.items[attribute]
         except KeyError:
             return getattr(self._module, attribute)
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         return dir(self._module)
 
 

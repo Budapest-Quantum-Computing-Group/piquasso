@@ -15,10 +15,11 @@
 
 import functools
 import numpy as np
+import numpy.typing as npt
 
 
 @functools.lru_cache()
-def quad_transformation(d):
+def quad_transformation(d: int) -> npt.NDArray[np.float64]:
     """
     Basis changing with the basis change operator
 
@@ -42,7 +43,7 @@ def quad_transformation(d):
         numpy.ndarray: The basis changing matrix.
     """
 
-    T = np.zeros((2 * d, 2 * d))
+    T = np.zeros((2 * d, 2 * d), dtype=float)
     for i in range(d):
         T[2 * i, i] = 1
         T[2 * i + 1, i + d] = 1

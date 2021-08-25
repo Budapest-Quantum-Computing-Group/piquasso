@@ -12,9 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import TypeVar, List, Tuple, Generic
+
+from piquasso.api.instruction import Instruction
+
+TNum = TypeVar("TNum", int, float)
 
 
-class Result:
+class Result(Generic[TNum]):
     """Class for collecting results.
 
     Args:
@@ -23,15 +28,16 @@ class Result:
         samples (list[tuple[int or float]]):
             The generated samples.
     """
+    samples: List[Tuple[TNum]]
 
-    def __init__(self, instruction, samples: list):
+    def __init__(self, instruction: Instruction, samples: List[Tuple[TNum]]) -> None:
         self.instruction = instruction
         self.samples = samples
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Result instruction={self.instruction} samples={self.samples}>"
 
-    def to_subgraph_nodes(self) -> list:
+    def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.
 
         Assuming that a graph's adjacency matrix is embedded into the circuit, the
@@ -57,7 +63,7 @@ class Result:
         for sample in self.samples:
             modes = []
             for index, count in enumerate(sample):
-                modes += [index] * count
+                modes += [index] * int(count)
 
             subgraphs.append(sorted(modes))
 

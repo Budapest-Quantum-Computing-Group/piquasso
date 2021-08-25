@@ -13,26 +13,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
+
 import numpy as np
+import numpy.typing as npt
 
 
-def gaussian_wigner_function(positions, momentums, *, d, mean, cov):
-    result = []
-
-    for momentum in momentums:
-        result.append(
+def gaussian_wigner_function(
+    positions: List[List[float]],
+    momentums: List[List[float]],
+    *,
+    d: int,
+    mean: npt.NDArray[np.float64],
+    cov: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    return np.array(
+        [
             [
                 gaussian_wigner_function_for_scalar(
                     [*position, *momentum], d=d, mean=mean, cov=cov
                 )
                 for position in positions
             ]
-        )
+            for momentum in momentums
+        ]
+    )
 
-    return np.array(result)
 
-
-def gaussian_wigner_function_for_scalar(X, *, d, mean, cov):
+def gaussian_wigner_function_for_scalar(
+    X: List[float],
+    *,
+    d: int,
+    mean: npt.NDArray[np.float64],
+    cov: npt.NDArray[np.float64]
+) -> float:
     return (
         (1 / (np.pi ** d))
         * np.sqrt((1 / np.linalg.det(cov)))

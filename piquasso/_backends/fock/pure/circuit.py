@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso.api.instruction import Instruction
 from ..circuit import BaseFockCircuit
 
 
@@ -22,7 +23,7 @@ class PureFockCircuit(BaseFockCircuit):
         **BaseFockCircuit.instruction_map
     }
 
-    def _state_vector(self, instruction, state):
+    def _state_vector(self, instruction: Instruction, state) -> None:
         state._add_occupation_number_basis(
             **instruction._all_params,
             modes=instruction.modes,

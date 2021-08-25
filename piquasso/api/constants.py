@@ -14,33 +14,35 @@
 # limitations under the License.
 
 import os
-import sys
 import random
+from typing import Any
+
+"""Module for storing constants."""
+
+_HBAR_DEFAULT = 2.0
+
+cache_size = 32
+
+_SEED = int.from_bytes(os.urandom(8), byteorder="big")
+
+HBAR = _HBAR_DEFAULT
 
 
-class _Constants:
-    """Module for storing constants."""
-
-    _HBAR_DEFAULT = 2
-
-    cache_size = 32
-
-    def __init__(self):
-        self.reset_hbar()
-        self.seed()
-
-    def reset_hbar(self):
-        self.HBAR = self._HBAR_DEFAULT
-
-    def seed(self, sequence=None):
-        self._SEED = sequence or int.from_bytes(os.urandom(8), byteorder="big")
-        random.seed(self._SEED)
-
-    def get_seed(self):
-        return self._SEED
-
-    def __repr__(self):
-        return f"<Constants HBAR={self.HBAR} SEED={self.get_seed()}>"
+def reset_hbar() -> None:
+    global HBAR
+    HBAR = _HBAR_DEFAULT
 
 
-sys.modules[__name__] = _Constants()
+def seed(sequence: Any = None) -> None:
+    global _SEED
+    _SEED = sequence or int.from_bytes(os.urandom(8), byteorder="big")
+    random.seed(_SEED)
+
+
+def get_seed() -> Any:
+    global _SEED
+    return _SEED
+
+
+# def __repr__(self) -> str:
+#     return f"<Constants HBAR={self.HBAR} SEED={self.get_seed()}>"

@@ -23,6 +23,7 @@
 """
 
 import numpy as np
+import numpy.typing as npt
 
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.measurement import Measurement
@@ -50,7 +51,7 @@ class ParticleNumberMeasurement(Measurement):
         cutoff (int): The Fock space cutoff.
     """
 
-    def __init__(self, cutoff=5):
+    def __init__(self, cutoff: int = 5) -> None:
         super().__init__(params=dict(cutoff=cutoff))
 
 
@@ -65,7 +66,7 @@ class ThresholdMeasurement(Measurement):
     photon.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
 
@@ -97,7 +98,7 @@ class GeneraldyneMeasurement(Measurement):
             A 2-by-2 symplectic matrix corresponding to a purely quadratic Hamiltonian.
     """
 
-    def __init__(self, detection_covariance):
+    def __init__(self, detection_covariance: npt.NDArray) -> None:
         if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
             raise InvalidParameter(
                 "The parameter 'detection_covariance' is invalid, since it doesn't "
@@ -140,7 +141,7 @@ class HomodyneMeasurement(Measurement):
             :class:`HeterodyneMeasurement`.
     """
 
-    def __init__(self, phi=0.0, z=1e-4):
+    def __init__(self, phi: float = 0.0, z: float = 1e-4) -> None:
         super().__init__(
             params=dict(
                 phi=phi,
@@ -173,7 +174,7 @@ class HeterodyneMeasurement(Measurement):
     The mixing is performed with a 50:50 beamsplitter.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             extra_params=dict(
                 detection_covariance=np.identity(2),
@@ -196,5 +197,5 @@ class Sampling(Measurement):
     algorithm.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()

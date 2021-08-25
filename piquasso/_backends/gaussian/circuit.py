@@ -16,6 +16,7 @@
 import numpy as np
 
 from piquasso.api.circuit import Circuit
+from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
 
@@ -47,26 +48,26 @@ class GaussianCircuit(Circuit):
         "ThresholdMeasurement": "_threshold_measurement",
     }
 
-    def _passive_linear(self, instruction, state):
+    def _passive_linear(self, instruction: Instruction, state) -> None:
         state._apply_passive_linear(
             instruction._all_params["passive_block"],
             instruction.modes
         )
 
-    def _linear(self, instruction, state):
+    def _linear(self, instruction: Instruction, state) -> None:
         state._apply_linear(
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],
             modes=instruction.modes
         )
 
-    def _displacement(self, instruction, state):
+    def _displacement(self, instruction: Instruction, state) -> None:
         state._apply_displacement(
             displacement_vector=instruction._all_params["displacement_vector"],
             modes=instruction.modes,
         )
 
-    def _homodyne_measurement(self, instruction, state):
+    def _homodyne_measurement(self, instruction: Instruction, state) -> None:
         phi = instruction._all_params["phi"]
         modes = instruction.modes
 
@@ -85,7 +86,7 @@ class GaussianCircuit(Circuit):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _generaldyne_measurement(self, instruction, state):
+    def _generaldyne_measurement(self, instruction: Instruction, state) -> None:
         samples = state._apply_generaldyne_measurement(
             detection_covariance=instruction._all_params["detection_covariance"],
             shots=self.shots,
@@ -94,16 +95,16 @@ class GaussianCircuit(Circuit):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _vacuum(self, instruction, state):
+    def _vacuum(self, _instruction: Instruction, state) -> None:
         state.reset()
 
-    def _mean(self, instruction, state):
+    def _mean(self, instruction: Instruction, state) -> None:
         state.mean = instruction._all_params["mean"]
 
-    def _covariance(self, instruction, state):
+    def _covariance(self, instruction: Instruction, state) -> None:
         state.cov = instruction._all_params["cov"]
 
-    def _particle_number_measurement(self, instruction, state):
+    def _particle_number_measurement(self, instruction: Instruction, state) -> None:
         samples = state._apply_particle_number_measurement(
             cutoff=instruction._all_params["cutoff"],
             shots=self.shots,
@@ -112,7 +113,7 @@ class GaussianCircuit(Circuit):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _threshold_measurement(self, instruction, state):
+    def _threshold_measurement(self, instruction: Instruction, state) -> None:
         samples = state._apply_threshold_measurement(
             shots=self.shots,
             modes=instruction.modes,
@@ -120,7 +121,7 @@ class GaussianCircuit(Circuit):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _graph(self, instruction, state):
+    def _graph(self, instruction: Instruction, state) -> None:
         """
         TODO: Find a better solution for multiple operations.
         """

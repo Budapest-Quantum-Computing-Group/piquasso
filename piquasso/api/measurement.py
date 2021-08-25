@@ -15,10 +15,11 @@
 
 from piquasso.api.errors import InvalidProgram
 from piquasso.api.instruction import Instruction
+from piquasso.api.mode import Q
 
 
 class Measurement(Instruction):
-    def _apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program, register: Q) -> None:
         if any(
             isinstance(instruction, type(self))
             for instruction in program.instructions

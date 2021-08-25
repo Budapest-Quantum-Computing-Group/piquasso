@@ -12,12 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Tuple, TypeVar
 
 import scipy
 import numpy as np
+import numpy.typing as npt
 
 
-def takagi(matrix, rounding=12):
+def takagi(
+    matrix: npt.NDArray[np.complex128], rounding: int = 12
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.complex128]]:
     """Takagi factorization of complex symmetric matrices.
 
     Note:

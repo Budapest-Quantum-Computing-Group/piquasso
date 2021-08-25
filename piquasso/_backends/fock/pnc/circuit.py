@@ -15,6 +15,7 @@
 
 import warnings
 
+from piquasso.api.instruction import Instruction
 from ..circuit import BaseFockCircuit
 
 
@@ -24,10 +25,10 @@ class PNCFockCircuit(BaseFockCircuit):
         **BaseFockCircuit.instruction_map
     }
 
-    def _density_matrix(self, instruction, state):
+    def _density_matrix(self, instruction: Instruction, state) -> None:
         state._add_occupation_number_basis(**instruction.params)
 
-    def _linear(self, instruction, state):
+    def _linear(self, instruction: Instruction, state) -> None:
         warnings.warn(
             f"Gaussian evolution of the state with instruction {instruction} may not "
             f"result in the desired state, since state {state.__class__} only "
@@ -39,7 +40,7 @@ class PNCFockCircuit(BaseFockCircuit):
 
         super()._linear(instruction, state)
 
-    def _displacement(self, instruction, state):
+    def _displacement(self, instruction: Instruction, state) -> None:
         warnings.warn(
             f"Displacing the state with instruction {instruction} may not result in "
             f"the desired state, since state {state.__class__} only stores a "
@@ -49,4 +50,4 @@ class PNCFockCircuit(BaseFockCircuit):
             UserWarning
         )
 
-        super()._displacement(instruction, state)
+        super()._linear(instruction, state)

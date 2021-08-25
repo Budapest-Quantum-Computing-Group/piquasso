@@ -12,11 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Tuple, Dict, Mapping, Generator, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from piquasso.api.errors import InvalidState
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_cardinality, FockBasis
 
 from ..state import BaseFockState
 from ..general.state import FockState
@@ -38,23 +40,27 @@ class PureFockState(BaseFockState):
 
     circuit_class = PureFockCircuit
 
-    def __init__(self, state_vector=None, *, d, cutoff):
+    def __init__(
+        self, state_vector: npt.NDArray[np.complex128] = None, *, d: int, cutoff: int
+    ) -> None:
         super().__init__(d=d, cutoff=cutoff)
 
-        self._state_vector = (
-            np.array(state_vector)
+        self._state_vector: npt.NDArray[np.complex128] = (
+            np.array(state_vector, dtype=complex)
             if state_vector is not None
             else self._get_empty()
         )
 
-    def _get_empty(self):
+    def _get_empty(self) -> npt.NDArray[np.complex128]:
         return np.zeros(shape=(self._space.cardinality, ), dtype=complex)
 
-    def _apply_vacuum(self):
+    def _apply_vacuum(self) -> None:
         self._state_vector = self._get_empty()
         self._state_vector[0] = 1.0
 
-    def _apply_passive_linear(self, operator, modes):
+    def _apply_passive_linear(
+        self, operator: npt.NDArray[np.complex128], modes: Tuple[int, ...]
+    ) -> None:
         index = self._get_operator_index(modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
@@ -65,11 +71,13 @@ class PureFockState(BaseFockState):
 
         self._state_vector = fock_operator @ self._state_vector
 
-    def _get_probability_map(self, *, modes):
-        probability_map = {}
+    def _get_probability_map(
+        self, *, modes: Tuple[int, ...]
+    ) -> Dict[FockBasis, float]:
+        probability_map: Dict[FockBasis, float] = {}
 
         for index, basis in self._space.basis:
-            coefficient = self._state_vector[index]
+            coefficient = float(self._state_vector[index])
 
             subspace_basis = basis.on_modes(modes=modes)
 
@@ -81,10 +89,14 @@ class PureFockState(BaseFockState):
         return probability_map
 
     @staticmethod
-    def _get_normalization(probability_map, sample):
+    def _get_normalization(
+        probability_map: Mapping[FockBasis, float], sample: FockBasis
+    ) -> float:
         return np.sqrt(1 / probability_map[sample])
 
-    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
+    def _project_to_subspace(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], normalization: float
+    ) -> None:
         projected_state_vector = self._get_projected_state_vector(
             subspace_basis=subspace_basis,
             modes=modes,
@@ -92,7 +104,9 @@ class PureFockState(BaseFockState):
 
         self._state_vector = projected_state_vector * normalization
 
-    def _get_projected_state_vector(self, *, subspace_basis, modes):
+    def _get_projected_state_vector(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    ) -> npt.NDArray[np.complex128]:
         new_state_vector = self._get_empty()
 
         index = self._space.get_projection_operator_indices_for_pure(
@@ -104,7 +118,12 @@ class PureFockState(BaseFockState):
 
         return new_state_vector
 
-    def _add_occupation_number_basis(self, coefficient, occupation_numbers, modes=None):
+    def _add_occupation_number_basis(
+        self,
+        coefficient: complex,
+        occupation_numbers: Tuple[int, ...],
+        modes: Tuple[int, ...] = None
+    ) -> None:
         if modes:
             occupation_numbers = self._space.get_occupied_basis(
                 modes=modes, occupation_numbers=occupation_numbers
@@ -114,21 +133,21 @@ class PureFockState(BaseFockState):
 
         self._state_vector[index] = coefficient
 
-    def _apply_creation_operator(self, modes):
+    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_creation_operator(modes)
 
         self._state_vector = operator @ self._state_vector
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes):
+    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_annihilation_operator(modes)
 
         self._state_vector = operator @ self._state_vector
 
         self.normalize()
 
-    def _apply_kerr(self, xi, mode):
+    def _apply_kerr(self, xi: complex, mode: int) -> None:
         for index, basis in self._space.basis:
             number = basis[mode]
             coefficient = np.exp(
@@ -136,7 +155,7 @@ class PureFockState(BaseFockState):
             )
             self._state_vector[index] *= coefficient
 
-    def _apply_cross_kerr(self, xi, modes):
+    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
         for index, basis in self._space.basis:
             coefficient = np.exp(
                 1j * xi * basis[modes[0]] * basis[modes[1]]
@@ -145,13 +164,14 @@ class PureFockState(BaseFockState):
 
     def _apply_linear(
         self,
-        passive_block,
-        active_block,
-        displacement,
-        modes
-    ):
+        passive_block: npt.NDArray[np.complex128],
+        active_block: npt.NDArray[np.complex128],
+        displacement: npt.NDArray[np.complex128],
+        modes: Tuple[int, ...]
+    ) -> None:
         operator = self._space.get_linear_fock_operator(
-            modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
+            modes=modes,
+            auxiliary_modes=tuple(self._get_auxiliary_modes(modes)),
             passive_block=passive_block,
             active_block=active_block,
             displacement=displacement,
@@ -162,22 +182,26 @@ class PureFockState(BaseFockState):
         self.normalize()
 
     @property
-    def nonzero_elements(self):
+    def nonzero_elements(
+        self
+    ) -> Generator[Tuple[complex, FockBasis], Any, None]:
         for index, basis in self._space.basis:
-            coefficient = self._state_vector[index]
+            coefficient: complex = self._state_vector[index]
             if coefficient != 0:
                 yield coefficient, basis
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return " + ".join([
             str(coefficient) + str(basis)
             for coefficient, basis in self.nonzero_elements
         ])
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PureFockState):
+            return False
         return np.allclose(self._state_vector, other._state_vector)
 
-    def get_density_matrix(self, cutoff):
+    def get_density_matrix(self, cutoff: int) -> npt.NDArray[np.complex128]:
         cutoff = cutoff or self.cutoff
 
         cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
@@ -186,20 +210,22 @@ class PureFockState(BaseFockState):
 
         return np.outer(state_vector, state_vector)
 
-    def _as_mixed(self):
+    def _as_mixed(self) -> FockState:
         return FockState.from_fock_state(self)
 
-    def reduced(self, modes):
+    def reduced(self, modes: Tuple[int, ...]) -> FockState:
         return self._as_mixed().reduced(modes)
 
-    def get_particle_detection_probability(self, occupation_number):
+    def get_particle_detection_probability(
+        self, occupation_number: Tuple[int, ...]
+    ) -> float:
         index = self._space.index(occupation_number)
 
         return np.real(
             self._state_vector[index].conjugate() * self._state_vector[index]
         )
 
-    def get_fock_probabilities(self, cutoff=None):
+    def get_fock_probabilities(self, cutoff: int = None) -> npt.NDArray[np.float64]:
         cutoff = cutoff or self._space.cutoff
 
         cardinality = cutoff_cardinality(d=self._space.d, cutoff=cutoff)
@@ -207,16 +233,16 @@ class PureFockState(BaseFockState):
         return (self._state_vector * self._state_vector.conjugate()).real[:cardinality]
 
     @property
-    def fock_probabilities(self):
+    def fock_probabilities(self) -> npt.NDArray[np.float64]:
         return self.get_fock_probabilities()
 
-    def normalize(self):
+    def normalize(self) -> None:
         if np.isclose(self.norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
         self._state_vector = self._state_vector / np.sqrt(self.norm)
 
-    def validate(self):
+    def validate(self) -> None:
         sum_of_probabilities = sum(self.fock_probabilities)
 
         if not np.isclose(sum_of_probabilities, 1.0):
