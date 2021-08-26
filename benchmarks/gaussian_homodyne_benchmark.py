@@ -31,11 +31,9 @@ def piquasso_benchmark(
     @benchmark
     def func():
         with pq.Program() as new_program:
-            pq.Q() | example_pq_gaussian_state
-
             pq.Q(0) | pq.HomodyneMeasurement(phi=np.pi / 4)
 
-            new_program.execute()
+            example_pq_gaussian_state.apply(new_program)
 
 
 def strawberryfields_benchmark(

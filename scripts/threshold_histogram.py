@@ -27,9 +27,9 @@ d = 5
 shots = 2000
 
 
-with pq.Program() as pq_program:
-    pq.Q() | pq.GaussianState(d=d)
+pq_state = pq.GaussianState(d=d)
 
+with pq.Program() as pq_program:
     pq.Q(0) | pq.Squeezing(r=1.0, phi=np.pi/1)
     pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi/2)
     pq.Q(2) | pq.Squeezing(r=0.3, phi=np.pi/3)
@@ -71,7 +71,7 @@ with sf_program.context as q:
 
 
 if __name__ == "__main__":
-    pq_results = np.array(pq_program.execute(shots=shots).samples)
+    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     N_points = 100000
