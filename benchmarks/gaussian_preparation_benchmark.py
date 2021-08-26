@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import pytest
+import piquasso as pq
 
 
 pytestmark = pytest.mark.benchmark(
@@ -21,8 +22,12 @@ pytestmark = pytest.mark.benchmark(
 )
 
 
-def simple_piquasso_benchmark(benchmark, example_gaussian_pq_program):
-    benchmark(example_gaussian_pq_program.execute)
+def simple_piquasso_benchmark(d, benchmark, example_gaussian_pq_program):
+    state = pq.GaussianState(d=d)
+
+    @benchmark
+    def _():
+        state.apply(example_gaussian_pq_program)
 
 
 def simple_strawberryfields_benchmark(

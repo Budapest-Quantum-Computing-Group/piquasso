@@ -39,9 +39,9 @@ adjacency_matrix = np.array(
 )
 
 
-with pq.Program() as pq_program:
-    pq.Q() | pq.GaussianState(d=d)
+pq_state = pq.GaussianState(d=d)
 
+with pq.Program() as pq_program:
     pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
 
     # NOTE: In SF the cutoff is 5, and couldn't be changed
@@ -61,7 +61,7 @@ with sf_program.context as q:
 
 
 if __name__ == "__main__":
-    pq_results = np.array(pq_program.execute(shots=shots).samples)
+    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     N_points = 100000

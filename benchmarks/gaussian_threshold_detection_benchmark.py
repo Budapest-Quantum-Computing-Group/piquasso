@@ -31,8 +31,6 @@ def piquasso_benchmark(
     @benchmark
     def func():
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=d)
-
             pq.Q(0) | pq.Squeezing(r=1.0, phi=np.pi/1)
             pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi/2)
             pq.Q(2) | pq.Squeezing(r=0.3, phi=np.pi/3)
@@ -50,7 +48,9 @@ def piquasso_benchmark(
 
             pq.Q(0, 1, 2) | pq.ThresholdMeasurement()
 
-        program.execute(shots=20)
+        state = pq.GaussianState(d=d)
+
+        state.apply(program, shots=20)
 
 
 def strawberryfields_benchmark(

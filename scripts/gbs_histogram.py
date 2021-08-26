@@ -27,9 +27,9 @@ d = 5
 shots = 500
 
 
-with pq.Program() as pq_program:
-    pq.Q() | pq.GaussianState(d=d)
+pq_state = pq.GaussianState(d=d)
 
+with pq.Program() as pq_program:
     pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
     pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
@@ -74,7 +74,7 @@ with sf_program.context as q:
 
 
 if __name__ == "__main__":
-    pq_results = np.array(pq_program.execute(shots=shots).samples)
+    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     N_points = 100000

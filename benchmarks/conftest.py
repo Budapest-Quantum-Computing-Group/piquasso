@@ -30,10 +30,8 @@ def cutoff():
 
 
 @pytest.fixture
-def example_gaussian_pq_program(d):
+def example_gaussian_pq_program():
     with pq.Program() as program:
-        pq.Q() | pq.GaussianState(d=d)
-
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
@@ -45,17 +43,13 @@ def example_gaussian_pq_program(d):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-    yield program
-
-    # TODO: The state has to be reset, because the setup runs only once at the beginning
-    # of the calculations, therefore the same `GaussianState` instance will be used.
-    program.state.reset()
+    return program
 
 
 @pytest.fixture
 def example_purefock_pq_program(d, cutoff):
     with pq.Program() as program:
-        pq.Q() | pq.PureFockState(cutoff=cutoff, d=d) | pq.Vacuum()
+        pq.Q() | pq.Vacuum()
 
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
 
@@ -68,25 +62,25 @@ def example_purefock_pq_program(d, cutoff):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-    yield program
-
-    # TODO: The state has to be reset, because the setup runs only once at the beginning
-    # of the calculations, therefore the same `GaussianState` instance will be used.
-    program.state.reset()
+    return program
 
 
 @pytest.fixture
-def example_pq_gaussian_state(example_gaussian_pq_program):
-    example_gaussian_pq_program.execute()
+def example_pq_gaussian_state(d, example_gaussian_pq_program):
+    state = pq.GaussianState(d=d)
 
-    return example_gaussian_pq_program.state
+    state.apply(example_gaussian_pq_program)
+
+    return state
 
 
 @pytest.fixture
-def example_pq_purefock_state(example_purefock_pq_program):
-    example_purefock_pq_program.execute()
+def example_pq_purefock_state(cutoff, d, example_purefock_pq_program):
+    state = pq.PureFockState(cutoff=cutoff, d=d)
 
-    return example_purefock_pq_program.state
+    state.apply(example_purefock_pq_program)
+
+    return state
 
 
 @pytest.fixture
