@@ -16,8 +16,11 @@
 import pytest
 import numpy as np
 
-from piquasso._math.takagi import takagi
-from piquasso._math.linalg import is_unitary
+import piquasso as pq
+
+from piquasso._math.linalg import is_unitary, is_diagonal
+from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
+from piquasso._math.decompositions import takagi, williamson
 
 
 def test_takagi_on_real_symmetric_2_by_2_matrix():
@@ -116,3 +119,57 @@ def test_takagi_on_complex_symmetric_N_by_N_matrix(
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+
+
+def test_williamson_with_identity():
+    covariance_matrix = np.identity(4)
+    symplectic, diagonal = williamson(covariance_matrix)
+
+    assert is_diagonal(diagonal)
+    assert is_symplectic(symplectic, form_func=xp_symplectic_form)
+    assert np.all(np.isreal(symplectic))
+    assert np.allclose(covariance_matrix, symplectic @ diagonal @ symplectic.T)
+
+
+def test_williamson_with_diagonal_matrix():
+    covariance_matrix = np.diag([1, 2, 3, 4])
+    symplectic, diagonal = williamson(covariance_matrix)
+
+    assert is_diagonal(diagonal)
+    assert is_symplectic(symplectic, form_func=xp_symplectic_form)
+    assert np.all(np.isreal(symplectic))
+    assert np.allclose(covariance_matrix, symplectic @ diagonal @ symplectic.T)
+
+
+def test_williamson_with_squeezed_covariance_matrix():
+    d = 3
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+        pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
+
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+
+    covariance_matrix = state.cov
+
+    symplectic, diagonal = williamson(covariance_matrix)
+
+    assert is_diagonal(diagonal)
+    assert is_symplectic(symplectic, form_func=xp_symplectic_form)
+    assert np.all(np.isreal(symplectic))
+    assert np.allclose(covariance_matrix, symplectic @ diagonal @ symplectic.T)
+
+
+@pytest.mark.monkey
+def test_williamson_with_random_positive_definite_matrix(
+    generate_random_positive_definite_matrix
+):
+    dim = 4
+    matrix = generate_random_positive_definite_matrix(dim)
+
+    symplectic, diagonal = williamson(matrix)
+
+    assert is_diagonal(diagonal)
+    assert is_symplectic(symplectic, form_func=xp_symplectic_form)
+    assert np.all(np.isreal(symplectic))
+    assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)

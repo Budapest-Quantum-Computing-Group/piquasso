@@ -26,7 +26,8 @@ import numpy as np
 
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.measurement import Measurement
-from piquasso._math.linalg import is_positive_semidefinite, symplectic_form
+from piquasso._math.linalg import is_positive_semidefinite
+from piquasso._math.symplectic import symplectic_form
 
 
 class ParticleNumberMeasurement(Measurement):

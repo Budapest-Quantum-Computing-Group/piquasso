@@ -26,15 +26,14 @@ from piquasso.api.errors import InvalidState, InvalidParameter
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
-    symplectic_form,
     is_positive_semidefinite,
 )
+from piquasso._math.symplectic import symplectic_form
 from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import get_occupation_numbers
+from piquasso._math.transformations import quad_transformation
 
 from .circuit import GaussianCircuit
-
-from .transformations import quad_transformation
 
 from .probabilities import (
     DensityMatrixCalculation,
