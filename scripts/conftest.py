@@ -23,6 +23,10 @@ from rpy2.robjects.packages import importr, PackageNotInstalledError
 
 @pytest.fixture
 def cramer_hypothesis_test():
+    """
+    NOTE: It prints the p-value, the critical value, and the value of the statistic if
+    the flag `-s` is used with `pytest`.
+    """
 
     rpy2.robjects.numpy2ri.activate()
 
@@ -49,6 +53,8 @@ def cramer_hypothesis_test():
         cramer_test = robjects.r['cramer.test']
 
         rvector = cramer_test(xR, yR)
+
+        print(rvector)
 
         return not bool(rvector.rx2("result")[0])
 

@@ -14,9 +14,13 @@
 # limitations under the License.
 
 from typing import Tuple, List, Callable, Any
+
+import itertools
 import scipy
 import random
 import numpy as np
+
+from scipy.special import factorial
 
 from itertools import repeat
 from functools import lru_cache
@@ -30,11 +34,14 @@ from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
+    reduce_,
 )
+from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.symplectic import symplectic_form
 from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
 from .probabilities import (
     DensityMatrixCalculation,
@@ -87,9 +94,12 @@ class GaussianState(State):
         self._d = d
         self.reset()
 
+    def __len__(self) -> int:
+        return self._d
+
     @property
     def d(self) -> int:
-        return self._d
+        return len(self)
 
     def reset(self) -> None:
         """
@@ -191,6 +201,11 @@ class GaussianState(State):
 
         return dimensionless_xxpp_mean_vector * np.sqrt(constants.HBAR)
 
+    @xxpp_mean_vector.setter
+    def xxpp_mean_vector(self, value):
+        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
+        self.xpxp_mean_vector = T @ value
+
     @property
     def xxpp_covariance_matrix(self) -> np.ndarray:
         r"""The xxpp-ordered coveriance matrix of the state.
@@ -224,6 +239,11 @@ class GaussianState(State):
         ) + np.identity(2 * self.d)
 
         return dimensionless_xxpp_covariance_matrix * constants.HBAR
+
+    @xxpp_covariance_matrix.setter
+    def xxpp_covariance_matrix(self, value):
+        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
+        self.xpxp_covariance_matrix = T @ value @ T.transpose()
 
     @property
     def xxpp_correlation_matrix(self) -> np.ndarray:
@@ -829,30 +849,57 @@ class GaussianState(State):
         self, instruction: Instruction
     ) -> None:
         modes = instruction.modes
-        detection_covariance: np.ndarray = \
-            instruction._all_params["detection_covariance"]
-        d = self.d
+        detection_covariance = instruction._all_params["detection_covariance"]
 
-        indices = []
+        samples = self._get_generaldyne_samples(
+            modes,
+            self.shots,
+            detection_covariance,
+        )
 
-        for mode in modes:
-            indices.extend([2 * mode, 2 * mode + 1])
+        # NOTE: We choose the last sample for multiple shots.
+        sample = samples[-1]
 
-        outer_indices = np.delete(np.arange(2 * d), indices)
+        d = len(self)
 
-        r = self.xpxp_mean_vector
+        auxiliary_modes = self._get_auxiliary_modes(modes)
+        outer_indices = self._map_modes_to_xpxp_indices(auxiliary_modes)
 
-        r_measured = r[indices]
-        r_outer = r[outer_indices]
+        evolved_state = self._get_generaldyne_evolved_state(
+            sample,
+            modes,
+            detection_covariance,
+        )
 
-        rho = self.xpxp_covariance_matrix
+        evolved_mean = np.zeros(2 * d)
+        evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
-        rho_measured = rho[np.ix_(indices, indices)]
-        rho_outer = rho[np.ix_(outer_indices, outer_indices)]
-        rho_correlation = rho[np.ix_(outer_indices, indices)]
+        evolved_cov = np.identity(2 * d) * constants.HBAR
+        evolved_cov[np.ix_(outer_indices, outer_indices)] = (
+            evolved_state.xpxp_covariance_matrix
+        )
 
-        rho_m = constants.HBAR * scipy.linalg.block_diag(
-            *[detection_covariance] * len(modes)
+        self.xpxp_mean_vector = evolved_mean
+        self.xpxp_covariance_matrix = evolved_cov
+
+        self.result = Result(
+            instruction=instruction,
+            samples=list(map(tuple, list(samples)))
+        )
+
+    def _get_generaldyne_samples(self, modes, shots, detection_covariance):
+        indices = self._map_modes_to_xpxp_indices(modes)
+
+        full_detection_covariance = (
+            constants.HBAR
+            * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+        )
+
+        mean = self.xpxp_mean_vector[indices]
+
+        cov = (
+            self.xpxp_covariance_matrix[np.ix_(indices, indices)]
+            + full_detection_covariance
         )
 
         # HACK: We need tol=1e-7 to avoid Numpy warnings at homodyne detection with
@@ -863,70 +910,227 @@ class GaussianState(State):
         # large values leading to inequality, resulting in warning.
         #
         # We might be better of setting `check_valid='ignore'` and verifying
-        # postive-definiteness for ourselves.
-        samples = np.random.multivariate_normal(
-            mean=r_measured,
-            cov=(rho_measured + rho_m),
-            size=self.shots,
+        # positive-definiteness for ourselves.
+        return constants.RNG.multivariate_normal(
+            mean=mean,
+            cov=cov,
+            size=shots,
             tol=1e-7,
         )
 
-        # NOTE: We choose the last sample for multiple shots.
-        sample = samples[-1]
+    def _get_generaldyne_evolved_state(self, sample, modes, detection_covariance):
+        full_detection_covariance = (
+            constants.HBAR
+            * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+        )
 
-        evolved_rho_outer = (
-            rho_outer
-            - rho_correlation
-            @ np.linalg.inv(rho_measured + rho_m)
-            @ rho_correlation.transpose()
+        mean = self.xpxp_mean_vector
+        cov = self.xpxp_covariance_matrix
+
+        indices = self._map_modes_to_xpxp_indices(modes)
+        outer_indices = np.delete(np.arange(2 * self.d), indices)
+
+        mean_measured = mean[indices]
+        mean_outer = mean[outer_indices]
+
+        cov_measured = cov[np.ix_(indices, indices)]
+        cov_outer = cov[np.ix_(outer_indices, outer_indices)]
+        cov_correlation = cov[np.ix_(outer_indices, indices)]
+
+        evolved_cov_outer = (
+            cov_outer
+            - cov_correlation
+            @ np.linalg.inv(cov_measured + full_detection_covariance)
+            @ cov_correlation.transpose()
         )
 
         evolved_r_A = (
-            r_outer
-            + rho_correlation
-            @ np.linalg.inv(rho_measured + rho_m)
-            @ (sample - r_measured)
+            mean_outer
+            + cov_correlation
+            @ np.linalg.inv(cov_measured + full_detection_covariance)
+            @ (sample - mean_measured)
         )
 
-        evolved_mean = np.zeros(shape=(2 * d, ))
-        evolved_mean[outer_indices] = evolved_r_A
+        state = GaussianState(d=len(evolved_r_A) // 2)
 
-        evolved_cov: np.ndarray = \
-            np.identity(2 * d) * constants.HBAR
-        evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
+        state.xpxp_covariance_matrix = evolved_cov_outer
+        state.xpxp_mean_vector = evolved_r_A
 
-        self.xpxp_mean_vector = evolved_mean
-        self.xpxp_covariance_matrix = evolved_cov
+        return state
 
-        self.result = Result(
-            instruction=instruction,
-            samples=list(map(tuple, list(samples)))
-        )
+    def _map_modes_to_xpxp_indices(self, modes):
+        indices = []
+
+        for mode in modes:
+            indices.extend([2 * mode, 2 * mode + 1])
+
+        return indices
 
     def _particle_number_measurement(
-        self, instruction: Instruction
+        self, instruction: Instruction,
     ) -> None:
-        def calculate_particle_number_detection_probability(
-            state: "GaussianState",
-            occupation_numbers: Tuple[int, ...],
-        ) -> float:
-            calculation = DensityMatrixCalculation(
-                state.complex_displacement,
-                state.complex_covariance,
-            )
+        modes: Tuple[int, ...] = instruction.modes
+        cutoff: int = instruction._all_params["cutoff"]
 
-            return calculation.get_density_matrix_element(
-                bra=occupation_numbers,
-                ket=occupation_numbers,
-            )
+        reduced_state = self.reduced(modes)
 
-        samples = self._perform_sampling(
-            cutoff=instruction._all_params["cutoff"],
-            modes=instruction.modes,
-            calculation=calculate_particle_number_detection_probability,
+        reduced_modes = tuple(range(len(modes)))
+
+        pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
+            reduced_state.xxpp_covariance_matrix,
+            hbar=constants.HBAR,
         )
+        pure_state = GaussianState(len(reduced_state))
+        pure_state.xxpp_covariance_matrix = pure_covariance
+
+        heterodyne_detection_covariance = np.identity(2)
+
+        samples = []
+
+        for _ in itertools.repeat(None, self.shots):
+            pure_state.xxpp_mean_vector = constants.RNG.multivariate_normal(
+                reduced_state.xxpp_mean_vector, mixed_contribution
+            )
+
+            heterodyne_sample = pure_state._get_generaldyne_samples(
+                modes=reduced_modes,
+                shots=1,
+                detection_covariance=heterodyne_detection_covariance,
+            )[0]
+
+            sample: Tuple[int, ...] = tuple()
+
+            previous_probability = 1.0
+
+            heterodyne_measured_modes = reduced_modes
+
+            for _ in itertools.repeat(None, len(reduced_modes)):
+                heterodyne_sample = heterodyne_sample[2:]
+                heterodyne_measured_modes = heterodyne_measured_modes[1:]
+
+                evolved_state = pure_state._get_generaldyne_evolved_state(
+                    heterodyne_sample,
+                    heterodyne_measured_modes,
+                    heterodyne_detection_covariance,
+                )
+
+                choice, previous_probability = (
+                    evolved_state._get_particle_number_choice_and_probability(
+                        sample,
+                        previous_probability,
+                        cutoff,
+                    )
+                )
+
+                sample = sample + (choice, )
+
+            samples.append(sample)
 
         self.result = Result(instruction=instruction, samples=samples)
+
+    def _get_particle_number_choice_and_probability(
+        self,
+        previous_sample: Tuple[int],
+        previous_probability: float,
+        cutoff: int,
+        loop_hafnian_func: Callable = loop_hafnian,
+    ) -> Tuple[int, float]:
+        r"""
+        The original equations are
+
+        .. math::
+            A = X - X Q^{-1} = \begin{bmatrix}
+                B & 0 \\
+                0 & B^* \\
+            \end{bmatrix}
+
+        with
+
+        .. math::
+            X = \begin{bmatrix}
+                0 & \mathbb{I} \\
+                \mathbb{I} & 0 \\
+            \end{bmatrix}
+
+        But then one could write
+
+        .. math::
+            B = - Q^{-1}[d:, :d]
+
+        Everything can be rewritten using :math:`B` in the following manner:
+
+        ..math::
+            \gamma = \alpha^* - \alpha B \\
+            p_{vac} = \exp
+                \left (
+                    - \Re(\gamma \alpha)
+                \right )
+                \sqrt{
+                    \operatorname{det}(\mathbb{I} - B^* B)
+                } \\
+            p_{S} = p_{vac} \frac{
+                | \operatorname{lhaf}(\operatorname{filldiag}(B_S, \gamma_S))
+            }{
+                S!
+            }
+        """
+
+        d = len(self)
+
+        Q = (self.complex_covariance + np.identity(2 * d)) / 2
+
+        Qinv = np.linalg.inv(Q)
+
+        B = - Qinv[d:, :d]
+        alpha = self.complex_displacement[:d]
+
+        gamma = alpha.conj() - alpha @ B
+
+        normalization = (
+            np.exp(- (gamma @ alpha).real)
+            * np.sqrt(np.linalg.det(np.identity(d) - B.conj() @ B))
+        ).real
+
+        cumulated_probabilities = [0.0]
+
+        guess = random.uniform(0.0, 1.0)
+
+        choice: int
+
+        for n in range(cutoff):
+            occupation_numbers = previous_sample + (n, )
+
+            B_reduced = reduce_(B, reduce_on=occupation_numbers)
+            gamma_reduced = reduce_(gamma[:d], reduce_on=occupation_numbers)
+
+            np.fill_diagonal(B_reduced, gamma_reduced)
+
+            probability = normalization * (
+                abs(loop_hafnian_func(B_reduced)) ** 2
+                / np.prod(factorial(occupation_numbers))
+            )
+
+            conditional_probability = probability / previous_probability
+
+            cumulated_probabilities.append(
+                conditional_probability + cumulated_probabilities[-1]
+            )
+
+            if guess < cumulated_probabilities[-1]:
+                choice = n
+                break
+
+        else:
+            choice = choose_from_cumulated_probabilities(
+                cumulated_probabilities
+            )
+
+        previous_probability = (
+            cumulated_probabilities[choice + 1]
+            - cumulated_probabilities[choice]
+        ) * previous_probability
+
+        return choice, previous_probability
 
     def _threshold_measurement(
         self, instruction: Instruction

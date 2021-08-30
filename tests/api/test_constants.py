@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import piquasso as pq
+from piquasso.api import constants
 
 
 def test_HBAR_setting():
-    pq.constants.HBAR = 42
+    constants.HBAR = 42
 
-    assert pq.constants.HBAR == 42
+    assert constants.HBAR == 42
 
 
 def test_SEED_is_set_initially():
-    assert pq.constants.get_seed()
+    assert constants.get_seed()
 
 
 def test_SEED_setting():
-    pq.constants.seed(123)
+    constants.seed(123)
 
-    assert pq.constants.get_seed() == 123
+    assert constants.get_seed() == 123
