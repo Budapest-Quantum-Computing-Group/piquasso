@@ -182,3 +182,14 @@ def williamson(matrix: np.ndarray) -> tuple:
     diagonal_matrix = np.diag(1 / np.diag(inverse_diagonal_matrix))
 
     return symplectic, diagonal_matrix
+
+
+def decompose_to_pure_and_mixed(matrix: np.ndarray, hbar: float) -> tuple:
+    symplectic, diagonal = williamson(matrix)
+    pure_covariance = hbar * symplectic @ symplectic.transpose()
+    mixed_contribution = (
+        symplectic
+        @ (diagonal - hbar * np.identity(len(diagonal)))
+        @ symplectic.transpose()
+    )
+    return pure_covariance, mixed_contribution

@@ -25,7 +25,7 @@ import strawberryfields as sf
 
 def gbs_histogram_script():
     d = 5
-    shots = 500
+    shots = 2000
 
     pq_state = pq.GaussianState(d=d)
 

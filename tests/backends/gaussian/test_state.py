@@ -81,6 +81,36 @@ def test_representation_roundtrip_at_different_HBAR(state):
     assert np.allclose(final_covariance_matrix, initial_covariance_matrix)
 
 
+def test_xp_representation_roundtrip(state):
+    initial_mean = state.xxpp_mean_vector
+    initial_cov = state.xxpp_covariance_matrix
+
+    state.xxpp_mean_vector = initial_mean
+    state.xxpp_covariance_matrix = initial_cov
+
+    final_mean = state.xxpp_mean_vector
+    final_cov = state.xxpp_covariance_matrix
+
+    assert np.allclose(final_mean, initial_mean)
+    assert np.allclose(final_cov, initial_cov)
+
+
+def test_xp_representation_roundtrip_at_different_HBAR(state):
+    constants.HBAR = 42
+
+    initial_mean = state.xxpp_mean_vector
+    initial_cov = state.xxpp_covariance_matrix
+
+    state.xxpp_mean_vector = initial_mean
+    state.xxpp_covariance_matrix = initial_cov
+
+    final_mean = state.xxpp_mean_vector
+    final_cov = state.xxpp_covariance_matrix
+
+    assert np.allclose(final_mean, initial_mean)
+    assert np.allclose(final_cov, initial_cov)
+
+
 def test_wigner_function(state, assets):
     actual_result = state.wigner_function(
         positions=[[1.0, 3.0, 5.0], [5.0, 7.0, 9.0]],

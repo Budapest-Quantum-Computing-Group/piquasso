@@ -501,7 +501,7 @@ def test_generate_subgraphs_from_adjacency_matrix():
     )
     shots = 2
 
-    pq.constants.seed(40)
+    pq.constants.seed(42)
 
     with pq.Program() as program:
         pq.Q() | pq.Graph(adjacency_matrix)
