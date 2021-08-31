@@ -27,5 +27,5 @@ pip install -rrequirements.txt
 Testing can be done with `tox` as well. Install `tox` and run tests with the following commands:
 ```
 pip install tox
-tox -e py38
+tox -e py39
 ```
