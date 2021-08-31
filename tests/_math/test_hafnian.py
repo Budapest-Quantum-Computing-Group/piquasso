@@ -17,6 +17,7 @@ import pytest
 
 import numpy as np
 
+from scipy.linalg import block_diag
 from piquasso._math.hafnian import hafnian, loop_hafnian
 
 
@@ -66,6 +67,32 @@ def test_loop_hafnian_on_2_by_2_complex_matrix():
     )
 
     assert np.isclose(loop_hafnian(matrix), 6.0 + 500.0j)
+
+
+def test_loop_hafnian_on_3_by_3_real_matrix():
+    matrix = np.array(
+        [
+            [1, 2, 3],
+            [2, 6, 7],
+            [3, 7, 3],
+        ],
+        dtype=float,
+    )
+
+    assert np.isclose(loop_hafnian(matrix), 49.0)
+
+
+def test_loop_hafnian_on_3_by_3_complex_matrix():
+    matrix = np.array(
+        [
+            [1j, 2, 3j],
+            [2, 6, 7],
+            [3j, 7, 3],
+        ],
+        dtype=complex,
+    )
+
+    assert np.isclose(loop_hafnian(matrix), 6 + 43j)
 
 
 def test_hafnian_on_4_by_4_real_matrix():
@@ -193,3 +220,28 @@ def test_random_10_by_10_hafnian(generate_symmetric_matrix):
     matrix = generate_symmetric_matrix(10)
 
     assert hafnian(matrix)
+
+
+@pytest.mark.monkey
+def test_hafnian_of_complex_symmetric_matrix_with_odd_dimension_is_zero(
+    generate_complex_symmetric_matrix,
+):
+    matrix = generate_complex_symmetric_matrix(3)
+
+    assert np.isclose(hafnian(matrix), 0.0)
+
+
+@pytest.mark.monkey
+def test_loop_hafnian_of_complex_symmetric_block_diagonal_matrix(
+    generate_complex_symmetric_matrix,
+):
+    submatrix = generate_complex_symmetric_matrix(5)
+    submatrix_loop_hafnian = loop_hafnian(submatrix)
+
+    matrix = block_diag(submatrix, submatrix.conj())
+    matrix_loop_hafnian = loop_hafnian(matrix)
+
+    assert np.isclose(
+        submatrix_loop_hafnian.conj() * submatrix_loop_hafnian,
+        matrix_loop_hafnian,
+    )
