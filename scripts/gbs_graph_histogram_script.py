@@ -23,48 +23,43 @@ import piquasso as pq
 import strawberryfields as sf
 
 
-d = 5
-shots = 1000
-mean_photon_number = 1.2
+def gbs_graph_histogram_script():
+    d = 5
+    shots = 1000
+    mean_photon_number = 1.2
 
+    adjacency_matrix = np.array(
+        [
+            [0, 1, 1, 0, 1],
+            [1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 1],
+            [0, 0, 1, 0, 1],
+            [1, 1, 1, 1, 0],
+        ]
+    )
 
-adjacency_matrix = np.array(
-    [
-        [0, 1, 1, 0, 1],
-        [1, 0, 1, 0, 1],
-        [1, 1, 0, 1, 1],
-        [0, 0, 1, 0, 1],
-        [1, 1, 1, 1, 0],
-    ]
-)
+    pq_state = pq.GaussianState(d=d)
 
+    with pq.Program() as pq_program:
+        pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
 
-pq_state = pq.GaussianState(d=d)
+        # NOTE: In SF the cutoff is 5, and couldn't be changed
+        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
 
-with pq.Program() as pq_program:
-    pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
+    sf_program = sf.Program(d)
+    sf_engine = sf.Engine(backend="gaussian")
 
-    # NOTE: In SF the cutoff is 5, and couldn't be changed
-    pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
+    with sf_program.context as q:
+        sf.ops.GraphEmbed(
+            adjacency_matrix,
+            mean_photon_number,
+        ) | tuple([q[i] for i in range(d)])
 
+        sf.ops.MeasureFock() | (q[0], q[1], q[2])
 
-sf_program = sf.Program(d)
-sf_engine = sf.Engine(backend="gaussian")
-
-with sf_program.context as q:
-    sf.ops.GraphEmbed(
-        adjacency_matrix,
-        mean_photon_number,
-    ) | tuple([q[i] for i in range(d)])
-
-    sf.ops.MeasureFock() | (q[0], q[1], q[2])
-
-
-if __name__ == "__main__":
     pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
-    N_points = 100000
     n_bins = 20
 
     fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
