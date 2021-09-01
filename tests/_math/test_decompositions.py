@@ -150,7 +150,7 @@ def test_williamson_with_squeezed_covariance_matrix():
     state = pq.GaussianState(d=d)
     state.apply(program)
 
-    covariance_matrix = state.cov
+    covariance_matrix = state.xpxp_covariance_matrix
 
     symplectic, diagonal = williamson(covariance_matrix)
 

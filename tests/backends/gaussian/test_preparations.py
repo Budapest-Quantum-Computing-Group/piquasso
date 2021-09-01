@@ -39,7 +39,7 @@ def test_state_initialization_with_misshaped_mean():
         state.apply(program)
 
 
-def test_state_initialization_with_misshaped_cov():
+def test_state_initialization_with_misshaped_covariance():
     misshaped_cov = np.array(
         [
             [1, 2, 10000],
@@ -56,7 +56,7 @@ def test_state_initialization_with_misshaped_cov():
         state.apply(program)
 
 
-def test_state_initialization_with_nonsymmetric_cov():
+def test_state_initialization_with_nonsymmetric_covariance():
     nonsymmetric_cov = np.array(
         [
             [1, 2],
@@ -73,7 +73,7 @@ def test_state_initialization_with_nonsymmetric_cov():
         state.apply(program)
 
 
-def test_state_initialization_with_nonpositive_cov():
+def test_state_initialization_with_nonpositive_covariance():
     nonpositive_cov = np.array(
         [
             [1,  0],
@@ -97,10 +97,10 @@ def test_vacuum_resets_the_state(state):
     state.apply(program)
 
     assert np.allclose(
-        state.mean,
+        state.xpxp_mean_vector,
         np.zeros(2 * state.d),
     )
     assert np.allclose(
-        state.cov,
+        state.xpxp_covariance_matrix,
         np.identity(2 * state.d) * HBAR,
     )

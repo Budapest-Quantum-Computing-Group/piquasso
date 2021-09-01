@@ -84,7 +84,7 @@ def test_phaseshift_on_multiple_modes(state):
     state.apply(single_instruction)
     state.validate()
 
-    assert np.allclose(separate_state.mean, state.mean)
+    assert np.allclose(separate_state.xpxp_mean_vector, state.xpxp_mean_vector)
 
 
 def test_phaseshift_modes_are_shifted_from_original(state):
@@ -310,7 +310,7 @@ def test_displacement_leaves_the_covariance_invariant(state):
     r = 1
     phi = 1
 
-    initial_cov = state.cov
+    initial_covariance_matrix = state.xpxp_covariance_matrix
 
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
@@ -318,9 +318,9 @@ def test_displacement_leaves_the_covariance_invariant(state):
     state.apply(program)
     state.validate()
 
-    final_cov = state.cov
+    final_covariance_matrix = state.xpxp_covariance_matrix
 
-    assert np.allclose(initial_cov, final_cov)
+    assert np.allclose(initial_covariance_matrix, final_covariance_matrix)
 
 
 def test_interferometer_for_1_modes(state, gaussian_state_assets):
@@ -528,7 +528,7 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     state.apply(initialization)
     state.validate()
 
-    initial_cov = state.cov
+    initial_covariance_matrix = state.xpxp_covariance_matrix
 
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=1, phi=1)
@@ -536,9 +536,9 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     state.apply(program)
     state.validate()
 
-    final_cov = state.cov
+    final_covariance_matrix = state.xpxp_covariance_matrix
 
-    assert np.allclose(initial_cov, final_cov)
+    assert np.allclose(initial_covariance_matrix, final_covariance_matrix)
 
 
 def test_displaced_vacuum_stays_valid():
@@ -553,7 +553,7 @@ def test_displaced_vacuum_stays_valid():
 def test_multiple_displacements_leave_the_covariance_invariant():
     state = pq.GaussianState(d=3)
 
-    initial_cov = state.cov
+    initial_covariance_matrix = state.xpxp_covariance_matrix
 
     with pq.Program() as program:
         pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi/3, np.pi/4, np.pi/6])
@@ -561,7 +561,7 @@ def test_multiple_displacements_leave_the_covariance_invariant():
     state.apply(program)
     state.validate()
 
-    assert np.allclose(state.cov, initial_cov)
+    assert np.allclose(state.xpxp_covariance_matrix, initial_covariance_matrix)
 
 
 @pytest.mark.monkey

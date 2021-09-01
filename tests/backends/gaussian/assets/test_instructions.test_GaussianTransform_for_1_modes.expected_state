@@ -1,5 +1,5 @@
-{'class': 'GaussianState', 'properties': {'mean': array([ 2.5       , -1.5       , -1.29158076,  0.50018086,  0.70710678,
-        0.70710678]), 'cov': array([[ 4.25      , -3.75      ,  0.        ,  0.        ,  0.        ,
+{'class': 'GaussianState', 'properties': {'xpxp_mean_vector': array([ 2.5       , -1.5       , -1.29158076,  0.50018086,  0.70710678,
+        0.70710678]), 'xpxp_covariance_matrix': array([[ 4.25      , -3.75      ,  0.        ,  0.        ,  0.        ,
          0.        ],
        [-3.75      ,  4.25      ,  0.        ,  0.        ,  0.        ,
          0.        ],
