@@ -14,19 +14,18 @@
 # limitations under the License.
 
 import math
-
-import numpy as np
-
-from scipy.linalg import block_diag
-
 from functools import lru_cache, partial
 from itertools import combinations_with_replacement
+from typing import List, Callable
+
+import numpy as np
+from scipy.linalg import block_diag
 
 from .combinatorics import powerset
 
 
 @lru_cache()
-def get_partitions(boxes, particles):
+def get_partitions(boxes: int, particles: int) -> List[np.ndarray]:
     particles = particles - boxes
 
     if particles == 0:
@@ -34,28 +33,26 @@ def get_partitions(boxes, particles):
 
     masks = np.rot90(np.identity(boxes, dtype=int))
 
-    ret = []
-
-    for c in combinations_with_replacement(masks, particles):
-        ret.append(sum(c) + np.ones(boxes, dtype=int))
-
-    return ret
+    return [
+        sum(c) + np.ones(boxes, dtype=int)
+        for c in combinations_with_replacement(masks, particles)
+    ]
 
 
 @lru_cache()
-def get_X(d):
+def get_X(d: int) -> np.ndarray:
     sigma_x = np.array([[0, 1], [1, 0]], dtype=complex)
     return block_diag(*([sigma_x] * d))
 
 
-def fG(polynom_coefficients, degree):
-    outer_sum = 0
+def fG(polynom_coefficients: List[float], degree: int) -> float:
+    outer_sum = 0.0
     for j in range(1, degree + 1):
 
-        inner_sum = 0
+        inner_sum = 0.0
         for partition in get_partitions(j, degree):
 
-            product = 1
+            product = 1.0
             for index in partition:
                 product *= polynom_coefficients[index - 1]
 
@@ -66,7 +63,10 @@ def fG(polynom_coefficients, degree):
     return outer_sum
 
 
-def _hafnian(A, polynom_function):
+def _hafnian(
+    A: np.ndarray,
+    polynom_function: Callable[[np.ndarray, List[int], int], List[float]]
+) -> float:
     """
     NOTE: If the input matrix `A` has an odd dimension, e.g. 7x7, then the matrix
     should be padded to an even dimension, to e.g. 8x8.
@@ -80,7 +80,7 @@ def _hafnian(A, polynom_function):
     if degree == 0:
         return 1.0
 
-    ret = 0
+    ret = 0.0
 
     for subset in powerset(range(degree)):
         if not subset:
@@ -102,7 +102,9 @@ def _hafnian(A, polynom_function):
     return ret
 
 
-def _get_polynom_coefficients(A, indices, degree):
+def _get_polynom_coefficients(
+    A: np.ndarray, indices: List[int], degree: int
+) -> List[float]:
     X = get_X(len(indices) // 2)
 
     eigenvalues = np.linalg.eigvals(
@@ -121,7 +123,9 @@ def _get_polynom_coefficients(A, indices, degree):
     return ret
 
 
-def _get_loop_polynom_coefficients(A, indices, degree):
+def _get_loop_polynom_coefficients(
+    A: np.ndarray, indices: List[int], degree: int
+) -> List[float]:
     AZ = A[np.ix_(indices, indices)]
 
     X = get_X(len(indices) // 2)

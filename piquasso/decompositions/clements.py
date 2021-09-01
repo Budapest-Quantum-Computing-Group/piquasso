@@ -22,6 +22,7 @@ William R. Clements, Peter C. Humphreys, Benjamin J. Metcalf,
 W. Steven Kolthammer, Ian A. Walmsley, "An Optimal Design for Universal Multiport
 Interferometers", `arXiv:1603.08788. <https://arxiv.org/abs/1603.08788>`
 """
+from typing import List
 
 import numpy as np
 
@@ -39,7 +40,7 @@ class T(np.ndarray):
         d (int): The total number of modes.
     """
 
-    def __new__(cls, operation, d):
+    def __new__(cls, operation: dict, d: int) -> "T":
 
         theta, phi = operation["params"]
         i, j = operation["modes"]
@@ -58,10 +59,10 @@ class T(np.ndarray):
         self[j, i] = matrix[1, 0]
         self[j, j] = matrix[1, 1]
 
-        return self.view(np.ndarray)
+        return self.view(cls)
 
     @classmethod
-    def transposed(cls, operation, d):
+    def transposed(cls, operation: dict, d: int) -> "T":
         """Transposed beamsplitter matrix.
 
         Args:
@@ -76,12 +77,12 @@ class T(np.ndarray):
 
         theta, phi = operation["params"]
 
-        return np.transpose(
+        return cls.transpose(
             cls({"params": (theta, -phi), "modes": operation["modes"]}, d=d)
-        )
+        ).view(T)
 
     @classmethod
-    def i(cls, *args, **kwargs):
+    def i(cls, operation: dict, d: int) -> "T":
         """Shorthand for :meth:`transposed`.
 
         The inverse of the matrix equals the transpose in this case.
@@ -89,7 +90,7 @@ class T(np.ndarray):
         Returns:
             T: The transposed beamsplitter matrix.
         """
-        return cls.transposed(*args, **kwargs)
+        return cls.transposed(operation, d)
 
 
 class Clements:
@@ -101,17 +102,17 @@ class Clements:
             Defaults to `True`.
     """
 
-    def __init__(self, U, decompose=True):
-        self.U = U
-        self.d = U.shape[0]
-        self.inverse_operations = []
-        self.direct_operations = []
-        self.diagonals = None
+    def __init__(self, U: np.ndarray, decompose: bool = True):
+        self.U: np.ndarray = U
+        self.d: int = U.shape[0]
+        self.inverse_operations: List[dict] = []
+        self.direct_operations: List[dict] = []
+        self.diagonals: np.ndarray
 
         if decompose:
             self.decompose()
 
-    def decompose(self):
+    def decompose(self) -> None:
         """
         Decomposes the specified unitary matrix by application of beamsplitters
         prescribed by the decomposition.
@@ -125,7 +126,7 @@ class Clements:
 
         self.diagonals = np.diag(self.U)
 
-    def apply_direct_beamsplitters(self, column):
+    def apply_direct_beamsplitters(self, column: int) -> None:
         """
         Calculates the direct beamsplitters for a given column `column`, and
         applies it to `U`.
@@ -142,7 +143,7 @@ class Clements:
 
             self.U = beamsplitter @ self.U
 
-    def apply_inverse_beamsplitters(self, column):
+    def apply_inverse_beamsplitters(self, column: int) -> None:
         """
         Calculates the inverse beamsplitters for a given column `column`, and
         applies it to `U`.
@@ -158,7 +159,7 @@ class Clements:
             beamsplitter = T.i(operation, d=self.d)
             self.U = self.U @ beamsplitter
 
-    def eliminate_lower_offdiagonal(self, i, j):
+    def eliminate_lower_offdiagonal(self, i: int, j: int) -> dict:
         """
         Calculates the parameters required to eliminate the lower triangular
         element `i`, `j` of `U` using `T`.
@@ -172,7 +173,7 @@ class Clements:
             "params": (theta, phi),
         }
 
-    def eliminate_upper_offdiagonal(self, i, j):
+    def eliminate_upper_offdiagonal(self, i: int, j: int) -> dict:
         """
         Calculates the parameters required to eliminate the upper triangular
         `i`, `j` of `U` using `T.transposed`.
@@ -187,7 +188,7 @@ class Clements:
         }
 
     @staticmethod
-    def from_decomposition(decomposition):
+    def from_decomposition(decomposition: "Clements") -> np.ndarray:
         """
         Creates the unitary operator from the Clements operations.
         """

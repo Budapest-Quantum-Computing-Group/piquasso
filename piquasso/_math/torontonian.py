@@ -13,18 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import TypeVar
+
 import numpy as np
 
 from .combinatorics import powerset
 
+TNum = TypeVar("TNum", np.float64, np.complex128)
 
-def torontonian(A):
+
+def torontonian(A: np.ndarray) -> complex:
     d = A.shape[0] // 2
 
     if d == 0:
-        return 1.0
+        return 1.0 + 0j
 
-    ret = 0.0
+    ret = 0.0 + 0j
 
     for subset in powerset(range(0, d)):
         index = np.ix_(subset, subset)

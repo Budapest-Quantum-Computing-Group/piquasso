@@ -13,60 +13,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable, Tuple
+
 import numpy as np
 
 
-def is_unitary(matrix):
-    """
-    Args:
-        tol (float, optional): The tolerance for testing the unitarity.
-            Defaults to `1e-10`.
-
-    Returns:
-        bool: `True` if the current object is unitary within the specified
-            tolerance `tol`, else `False`.
-    """
+def is_unitary(matrix: np.ndarray) -> bool:
     return np.allclose(
         matrix @ matrix.conjugate().transpose(), np.identity(matrix.shape[0])
     )
 
 
-def is_symmetric(matrix):
+def is_symmetric(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, matrix.transpose())
 
 
-def is_selfadjoint(matrix):
+def is_selfadjoint(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, matrix.conjugate().transpose())
 
 
-def is_positive_semidefinite(matrix):
+def is_positive_semidefinite(matrix: np.ndarray) -> bool:
     eigenvalues = np.linalg.eigvals(matrix)
 
     return all(
-        [
-            eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0)
-            for eigenvalue in eigenvalues
-        ]
+        eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0)
+        for eigenvalue in eigenvalues
     )
 
 
-def is_square(matrix):
+def is_square(matrix: np.ndarray) -> bool:
     shape = matrix.shape
     return len(shape) == 2 and shape[0] == shape[1]
 
 
-def is_invertible(matrix):
+def is_invertible(matrix: np.ndarray) -> bool:
     return (
         is_square(matrix)
         and np.linalg.matrix_rank(matrix) == matrix.shape[0]
     )
 
 
-def is_diagonal(matrix):
+def is_diagonal(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, np.diag(np.diag(matrix)))
 
 
-def reduce_(array, reduce_on):
+def reduce_(array: np.ndarray, reduce_on: Iterable[int]) -> np.ndarray:
     proper_index = []
 
     for index, multiplier in enumerate(reduce_on):
@@ -78,5 +69,7 @@ def reduce_(array, reduce_on):
     return array[np.ix_(proper_index, proper_index)]
 
 
-def block_reduce(array, reduce_on):
+def block_reduce(
+    array: np.ndarray, reduce_on: Tuple[int, ...]
+) -> np.ndarray:
     return reduce_(array, reduce_on=(reduce_on * 2))

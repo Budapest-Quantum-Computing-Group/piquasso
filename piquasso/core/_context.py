@@ -15,4 +15,8 @@
 
 """Global context variables."""
 
-current_program = None
+from typing import Optional
+
+from piquasso import api
+
+current_program: Optional["api.program.Program"] = None

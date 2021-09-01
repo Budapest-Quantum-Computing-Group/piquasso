@@ -56,7 +56,11 @@ def FakeState(FakeCircuit):
         def __init__(self, foo, bar, d):
             self.foo = foo
             self.bar = bar
-            self.d = d
+            self._d = d
+
+        @property
+        def d(self) -> int:
+            return self._d
 
         def get_particle_detection_probability(
             self,

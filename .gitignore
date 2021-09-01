@@ -4,6 +4,7 @@ build
 
 __pycache__
 .pytest_cache
+.mypy_cache
 piquasso.egg-info/
 venv/
 coverage.xml

@@ -62,10 +62,10 @@ class _BogoliubovTransformation(Instruction):
     def __init__(
         self,
         *,
-        params=None,
-        passive_block=None,
-        active_block=None,
-        displacement_vector=None,
+        params: dict = None,
+        passive_block: np.ndarray = None,
+        active_block: np.ndarray = None,
+        displacement_vector: np.ndarray = None,
     ):
         params = params or {}
 
@@ -88,7 +88,7 @@ class _ScalableBogoliubovTransformation(
         "specified parameters."
     )
 
-    def _autoscale(self):
+    def _autoscale(self) -> None:
 
         passive_block = self._extra_params["passive_block"]
         if (
@@ -170,7 +170,7 @@ class Interferometer(_BogoliubovTransformation):
             passive transformation on the one-particle subspace.
     """
 
-    def __init__(self, matrix):
+    def __init__(self, matrix: np.ndarray) -> None:
         if not is_square(matrix):
             raise InvalidParameter(
                 "The interferometer matrix should be a square matrix."
@@ -214,7 +214,7 @@ class Beamsplitter(_BogoliubovTransformation):
             (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
     """
 
-    def __init__(self, theta=0., phi=np.pi / 4):
+    def __init__(self, theta: float = 0., phi: float = np.pi / 4) -> None:
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
 
@@ -255,7 +255,7 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
         phi (float): The angle of the rotation.
     """
 
-    def __init__(self, phi: float):
+    def __init__(self, phi: float) -> None:
         super().__init__(
             params=dict(phi=phi),
             passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
@@ -289,12 +289,12 @@ class MachZehnder(_BogoliubovTransformation):
         ext (float): The external angle.
     """
 
-    def __init__(self, int_: float, ext: float):
+    def __init__(self, int_: float, ext: float) -> None:
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
             params=dict(int_=int_, ext=ext),
-            passive_block=1/2 * np.array(
+            passive_block=1 / 2 * np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
                     [1j * ext_phase * (int_phase + 1), 1 - int_phase]
@@ -326,7 +326,7 @@ class Fourier(_ScalableBogoliubovTransformation):
         :math:`\phi = \pi/2`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(passive_block=np.array([[1j]]))
 
 
@@ -359,7 +359,7 @@ class GaussianTransform(_BogoliubovTransformation):
         InvalidParameters: Raised if the parameters do not form a symplectic matrix.
     """
 
-    def __init__(self, passive, active):
+    def __init__(self, passive: np.ndarray, active: np.ndarray) -> None:
         if not is_symplectic(
             np.block([[passive, active], [active.conj(), passive.conj()]]),
             form_func=complex_symplectic_form
@@ -408,7 +408,7 @@ class Squeezing(_ScalableBogoliubovTransformation):
         phi (float): The squeezing angle.
     """
 
-    def __init__(self, r, phi=0):
+    def __init__(self, r: float, phi: float = 0.0) -> None:
         super().__init__(
             params=dict(r=r, phi=phi),
             passive_block=np.diag(
@@ -440,11 +440,11 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
 
     """
 
-    def __init__(self, s):
+    def __init__(self, s: float) -> None:
         super().__init__(
             params=dict(s=s),
-            passive_block=np.diag(1 + np.atleast_1d(s)/2 * 1j),
-            active_block=np.diag(np.atleast_1d(s)/2 * 1j),
+            passive_block=np.diag(1 + np.atleast_1d(s) / 2 * 1j),
+            active_block=np.diag(np.atleast_1d(s) / 2 * 1j),
         )
 
 
@@ -473,7 +473,7 @@ class Squeezing2(_BogoliubovTransformation):
         phi (float): The squeezing angle.
     """
 
-    def __init__(self, r, phi):
+    def __init__(self, r: float, phi: float = 0.0) -> None:
         super().__init__(
             params=dict(r=r, phi=phi),
             passive_block=np.array(
@@ -512,18 +512,18 @@ class ControlledX(_BogoliubovTransformation):
         \end{bmatrix}.
     """
 
-    def __init__(self, s):
+    def __init__(self, s: float):
         super().__init__(
             params=dict(s=s),
             passive_block=np.array(
                 [
-                    [    1, - s / 2],
-                    [s / 2,       1],
+                    [1, - s / 2],
+                    [s / 2, 1],
                 ]
             ),
             active_block=np.array(
                 [
-                    [    0, s / 2],
+                    [0,     s / 2],
                     [s / 2,     0],
                 ]
             ),
@@ -550,19 +550,20 @@ class ControlledZ(_BogoliubovTransformation):
             -i \frac{s}{2} & 0            & -i \frac{s}{2} & 1
         \end{bmatrix}.
     """
-    def __init__(self, s):
+
+    def __init__(self, s: float):
         super().__init__(
             params=dict(s=s),
             passive_block=np.array(
                 [
-                    [           1, 1j * (s / 2)],
-                    [1j * (s / 2),            1],
+                    [1, 1j * (s / 2)],
+                    [1j * (s / 2), 1],
                 ]
             ),
             active_block=np.array(
                 [
-                    [           0, 1j * (s / 2)],
-                    [1j * (s / 2),            0],
+                    [0, 1j * (s / 2)],
+                    [1j * (s / 2), 0],
                 ]
             ),
         )
@@ -595,27 +596,30 @@ class Displacement(_ScalableBogoliubovTransformation):
         phi (float): The displacement angle.
     """
 
-    def __init__(self, *, alpha=None, r=None, phi=None):
+    def __init__(
+        self, *, alpha: complex = None, r: float = None, phi: float = None
+    ) -> None:
+        alpha_ = None
 
         if alpha is not None and r is None and phi is None:
             params = dict(alpha=alpha)
-            alpha = np.atleast_1d(alpha)
+            alpha_ = np.atleast_1d(alpha)
         elif alpha is None and r is not None and phi is not None:
             params = dict(r=r, phi=phi)
-            alpha = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
+            alpha_ = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
         else:
             raise InvalidParameter(
                 "Either specify 'alpha' only, or the combination of 'r' and 'phi': "
                 f"alpha={alpha}, r={r}, phi={phi}."
             )
 
-        super().__init__(params=params, displacement_vector=alpha)
+        super().__init__(params=params, displacement_vector=alpha_)
 
 
 class PositionDisplacement(_ScalableBogoliubovTransformation):
     r"""Position displacement gate."""
 
-    def __init__(self, x: float):
+    def __init__(self, x: float) -> None:
         super().__init__(
             params=dict(x=x),
             displacement_vector=np.atleast_1d(x) / np.sqrt(2 * HBAR),
@@ -625,7 +629,7 @@ class PositionDisplacement(_ScalableBogoliubovTransformation):
 class MomentumDisplacement(_ScalableBogoliubovTransformation):
     r"""Momentum displacement gate."""
 
-    def __init__(self, p: float):
+    def __init__(self, p: float) -> None:
         super().__init__(
             params=dict(p=p),
             displacement_vector=1j * np.atleast_1d(p) / np.sqrt(2 * HBAR),
@@ -651,7 +655,7 @@ class Kerr(Instruction):
         xi (float): The magnitude of the Kerr nonlinear term.
     """
 
-    def __init__(self, xi: float):
+    def __init__(self, xi: float) -> None:
         super().__init__(params=dict(xi=xi))
 
 
@@ -675,7 +679,7 @@ class CrossKerr(Instruction):
         xi (float): The magnitude of the Cross-Kerr nonlinear term.
     """
 
-    def __init__(self, xi: float):
+    def __init__(self, xi: float) -> None:
         super().__init__(params=dict(xi=xi))
 
 
@@ -687,7 +691,11 @@ class Graph(Instruction):
         InvalidParameter: If the adjacency matrix is not invertible or not symmetric.
     """
 
-    def __init__(self, adjacency_matrix, mean_photon_number=1.0):
+    def __init__(
+        self, adjacency_matrix: np.ndarray, mean_photon_number: float = 1.0
+    ) -> None:
+        self.adjacency_matrix = adjacency_matrix
+
         if not is_invertible(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix is not invertible.")
 
@@ -719,7 +727,9 @@ class Graph(Instruction):
             )
         )
 
-    def _get_scaling(self, singular_values, mean_photon_number):
+    def _get_scaling(
+        self, singular_values: np.ndarray, mean_photon_number: float
+    ) -> float:
         r"""
         For a squeezed state :math:`rho` the mean photon number is calculated by
 
@@ -730,14 +740,14 @@ class Graph(Instruction):
         values of the adjacency matrix.
         """
 
-        def mean_photon_number_equation(scaling):
+        def mean_photon_number_equation(scaling: float) -> float:
             return sum(
                 (scaling * singular_value) ** 2 / (1 - (scaling * singular_value) ** 2)
                 for singular_value
                 in singular_values
             ) / len(singular_values) - mean_photon_number
 
-        def mean_photon_number_gradient(scaling):
+        def mean_photon_number_gradient(scaling: float) -> float:
             return (
                 (2.0 / scaling)
                 * np.sum(

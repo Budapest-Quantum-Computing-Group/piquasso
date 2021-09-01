@@ -12,14 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import inspect
 from collections import OrderedDict
+from typing import List, Mapping, Optional, Type
+
+import blackbird as bb
 
 from . import _registry
+from .. import Instruction
+from ..api.errors import PiquassoException
 
 
-def load_instructions(blackbird_program):
+def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instruction]:
     """
     Loads the gates to apply into :attr:`Program.instructions` from a
     :class:`~blackbird.program.BlackbirdProgram`.
@@ -53,8 +57,17 @@ def load_instructions(blackbird_program):
     ]
 
 
-def _blackbird_operation_to_instruction(instruction_map, blackbird_operation):
-    pq_instruction_class = instruction_map.get(blackbird_operation["op"])
+def _blackbird_operation_to_instruction(
+    instruction_map: Mapping[str, Optional[Type[Instruction]]],
+    blackbird_operation: dict
+) -> Instruction:
+    op = blackbird_operation["op"]
+    pq_instruction_class = instruction_map.get(op)
+
+    if pq_instruction_class is None:
+        raise PiquassoException(
+            f"Operation {op} is not implemented in piquasso."
+        )
 
     params = _get_instruction_params(
         pq_instruction_class=pq_instruction_class, bb_operation=blackbird_operation
@@ -67,7 +80,9 @@ def _blackbird_operation_to_instruction(instruction_map, blackbird_operation):
     return instruction
 
 
-def _get_instruction_params(pq_instruction_class, bb_operation):
+def _get_instruction_params(
+    pq_instruction_class: Type[Instruction], bb_operation: dict
+) -> dict:
     bb_params = bb_operation.get("args", None)
 
     if bb_params is None:

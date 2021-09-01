@@ -13,32 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from itertools import chain, combinations, combinations_with_replacement
+from typing import Tuple, Iterable, Iterator, TypeVar, List, Type
+
 import numpy as np
 
-from itertools import chain, combinations, combinations_with_replacement
+_T = TypeVar("_T")
 
 
-def powerset(iterable):
+def powerset(iterable: Iterable[_T]) -> Iterator[Tuple[_T, ...]]:
     s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+    return chain.from_iterable(combinations(iterable, r) for r in range(len(s) + 1))
 
 
-def partitions(boxes, particles, class_=tuple):
+def partitions(
+    boxes: int, particles: int, class_: Type[tuple] = tuple
+) -> List[Tuple[int, ...]]:
     if particles == 0:
         return [class_([0] * boxes)]
 
     masks = np.rot90(np.identity(boxes, dtype=int))
 
     return sorted(
-        class_(sum(c)) for c in combinations_with_replacement(masks, particles)
+        class_(sum(c))  # type: ignore
+        for c in combinations_with_replacement(masks, particles)
     )
 
 
-def get_occupation_numbers(d, cutoff):
-    occupation_numbers = []
-
-    for particle_number in range(cutoff):
-        for occupation_number in partitions(d, particle_number):
-            occupation_numbers.append(tuple(occupation_number))
-
-    return occupation_numbers
+def get_occupation_numbers(d: int, cutoff: int) -> List[Tuple[int, ...]]:
+    return [
+        occupation_number
+        for particle_number in range(cutoff)
+        for occupation_number in partitions(d, particle_number)
+    ]

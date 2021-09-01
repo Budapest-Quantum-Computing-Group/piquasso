@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple, Any, Generator, Dict, Mapping
+
 import numpy as np
 
 from piquasso.api.errors import InvalidState
 from piquasso._math.linalg import is_selfadjoint
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis, FockBasis
 
 from ..state import BaseFockState
 
@@ -39,17 +41,19 @@ class FockState(BaseFockState):
 
     circuit_class = FockCircuit
 
-    def __init__(self, density_matrix=None, *, d, cutoff):
+    def __init__(
+        self, density_matrix: np.ndarray = None, *, d: int, cutoff: int
+    ) -> None:
         super().__init__(d=d, cutoff=cutoff)
 
-        self._density_matrix = (
-            np.array(density_matrix)
+        self._density_matrix: np.ndarray = (
+            np.array(density_matrix, dtype=complex)
             if density_matrix is not None
             else self._get_empty()
         )
 
     @classmethod
-    def from_fock_state(cls, state):
+    def from_fock_state(cls, state: BaseFockState) -> "FockState":
         """Instantiation using another :class:`BaseFockState` instance.
 
         Args:
@@ -63,14 +67,16 @@ class FockState(BaseFockState):
             cutoff=state.cutoff,
         )
 
-    def _get_empty(self):
+    def _get_empty(self) -> np.ndarray:
         return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
 
-    def _apply_vacuum(self):
+    def _apply_vacuum(self) -> None:
         self._density_matrix = self._get_empty()
         self._density_matrix[0, 0] = 1.0
 
-    def _apply_passive_linear(self, operator, modes):
+    def _apply_passive_linear(
+        self, operator: np.ndarray, modes: Tuple[int, ...]
+    ) -> None:
         index = self._get_operator_index(modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
@@ -83,11 +89,13 @@ class FockState(BaseFockState):
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
 
-    def _get_probability_map(self, *, modes):
-        probability_map = {}
+    def _get_probability_map(
+        self, *, modes: Tuple[int, ...]
+    ) -> Dict[FockBasis, float]:
+        probability_map: Dict[FockBasis, float] = {}
 
         for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
-            coefficient = self._density_matrix[index]
+            coefficient = float(self._density_matrix[index])
 
             subspace_basis = basis.ket.on_modes(modes=modes)
 
@@ -99,10 +107,14 @@ class FockState(BaseFockState):
         return probability_map
 
     @staticmethod
-    def _get_normalization(probability_map, sample):
-        return 1 / probability_map[sample].real
+    def _get_normalization(
+        probability_map: Mapping[FockBasis, float], sample: FockBasis
+    ) -> float:
+        return 1 / probability_map[sample]
 
-    def _project_to_subspace(self, *, subspace_basis, modes, normalization):
+    def _project_to_subspace(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], normalization: float
+    ) -> None:
         projected_density_matrix = self._get_projected_density_matrix(
             subspace_basis=subspace_basis,
             modes=modes,
@@ -110,7 +122,9 @@ class FockState(BaseFockState):
 
         self._density_matrix = projected_density_matrix * normalization
 
-    def _get_projected_density_matrix(self, *, subspace_basis, modes):
+    def _get_projected_density_matrix(
+        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    ) -> np.ndarray:
         new_density_matrix = self._get_empty()
 
         index = self._space.get_projection_operator_indices(
@@ -122,27 +136,29 @@ class FockState(BaseFockState):
 
         return new_density_matrix
 
-    def _apply_creation_operator(self, modes):
+    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_creation_operator(modes)
 
         self._density_matrix = operator @ self._density_matrix @ operator.transpose()
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes):
+    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
         operator = self._space.get_annihilation_operator(modes)
 
         self._density_matrix = operator @ self._density_matrix @ operator.transpose()
 
         self.normalize()
 
-    def _add_occupation_number_basis(self, *, ket, bra, coefficient):
+    def _add_occupation_number_basis(
+        self, *, ket: Tuple[int, ...], bra: Tuple[int, ...], coefficient: complex
+    ) -> None:
         index = self._space.index(ket)
         dual_index = self._space.index(bra)
 
         self._density_matrix[index, dual_index] = coefficient
 
-    def _apply_kerr(self, xi, mode):
+    def _apply_kerr(self, xi: complex, mode: int) -> None:
         for index, (basis, dual_basis) in self._space.operator_basis:
             number = basis[mode]
             dual_number = dual_basis[mode]
@@ -156,7 +172,7 @@ class FockState(BaseFockState):
 
             self._density_matrix[index] *= coefficient
 
-    def _apply_cross_kerr(self, xi, modes):
+    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
         for index, (basis, dual_basis) in self._space.operator_basis:
             coefficient = np.exp(
                 1j * xi * (
@@ -169,13 +185,14 @@ class FockState(BaseFockState):
 
     def _apply_linear(
         self,
-        passive_block,
-        active_block,
-        displacement,
-        modes
-    ):
+        passive_block: np.ndarray,
+        active_block: np.ndarray,
+        displacement: np.ndarray,
+        modes: Tuple[int, ...]
+    ) -> None:
         operator = self._space.get_linear_fock_operator(
-            modes=modes, auxiliary_modes=self._get_auxiliary_modes(modes),
+            modes=modes,
+            auxiliary_modes=self._get_auxiliary_modes(modes),
             passive_block=passive_block,
             active_block=active_block,
             displacement=displacement,
@@ -190,13 +207,15 @@ class FockState(BaseFockState):
         self.normalize()
 
     @property
-    def nonzero_elements(self):
+    def nonzero_elements(
+        self
+    ) -> Generator[Tuple[complex, FockOperatorBasis], Any, None]:
         for index, basis in self._space.operator_basis:
             coefficient = self._density_matrix[index]
             if coefficient != 0:
                 yield coefficient, basis
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return " + ".join(
             [
                 str(coefficient) + str(basis)
@@ -204,10 +223,12 @@ class FockState(BaseFockState):
             ]
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FockState):
+            return False
         return np.allclose(self._density_matrix, other._density_matrix)
 
-    def get_density_matrix(self, cutoff=None):
+    def get_density_matrix(self, cutoff: int = None) -> np.ndarray:
         cutoff = cutoff or self.cutoff
 
         cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
@@ -218,7 +239,7 @@ class FockState(BaseFockState):
         index = self._space.index(occupation_number)
         return np.diag(self._density_matrix)[index].real
 
-    def get_fock_probabilities(self, cutoff=None):
+    def get_fock_probabilities(self, cutoff: int = None) -> np.ndarray:
         cutoff = cutoff or self.cutoff
 
         cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
@@ -226,10 +247,10 @@ class FockState(BaseFockState):
         return np.diag(self._density_matrix).real[:cardinality]
 
     @property
-    def fock_probabilities(self):
+    def fock_probabilities(self) -> np.ndarray:
         return self.get_fock_probabilities()
 
-    def reduced(self, modes):
+    def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         modes_to_eliminate = self._get_auxiliary_modes(modes)
 
         reduced_state = FockState(d=len(modes), cutoff=self.cutoff)
@@ -249,7 +270,7 @@ class FockState(BaseFockState):
 
         return reduced_state
 
-    def normalize(self):
+    def normalize(self) -> None:
         """Normalizes the density matrix to have a trace of 1.
 
         Raises:
@@ -260,7 +281,7 @@ class FockState(BaseFockState):
 
         self._density_matrix = self._density_matrix / self.norm
 
-    def validate(self):
+    def validate(self) -> None:
         """Validates the represented state.
 
         Raises:

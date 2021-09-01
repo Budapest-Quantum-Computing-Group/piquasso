@@ -13,7 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
+from piquasso.api.instruction import Instruction
 from ..circuit import BaseFockCircuit
+
+if typing.TYPE_CHECKING:
+    from .state import PureFockState
 
 
 class PureFockCircuit(BaseFockCircuit):
@@ -22,7 +28,7 @@ class PureFockCircuit(BaseFockCircuit):
         **BaseFockCircuit.instruction_map
     }
 
-    def _state_vector(self, instruction, state):
+    def _state_vector(self, instruction: Instruction, state: "PureFockState") -> None:
         state._add_occupation_number_basis(
             **instruction._all_params,
             modes=instruction.modes,

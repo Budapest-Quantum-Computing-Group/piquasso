@@ -14,24 +14,34 @@
 # limitations under the License.
 
 import numpy as np
+import typing
+
 from BoSS.boson_sampling_simulator import BosonSamplingSimulator
 # The fastest implemented permanent calculator is currently Ryser-Guan
+from BoSS.boson_sampling_utilities.permanent_calculators\
+    .bs_permanent_calculator_interface import \
+    BSPermanentCalculatorInterface
 from BoSS.boson_sampling_utilities.permanent_calculators. \
     ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
 # Fastest boson sampling algorithm generalized for bunched states
 from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import \
     GeneralizedCliffordsSimulationStrategy
+from BoSS.simulation_strategies. \
+    generalized_cliffords_uniform_losses_simulation_strategy import \
+    GeneralizedCliffordsUniformLossesSimulationStrategy
 # Fastest BS algorithm generalized for bunched states, but with lossy network
 from BoSS.simulation_strategies. \
     lossy_networks_generalized_cliffords_simulation_strategy import \
     LossyNetworksGeneralizedCliffordsSimulationStrategy
-
-from BoSS.simulation_strategies. \
-    generalized_cliffords_uniform_losses_simulation_strategy import \
-    GeneralizedCliffordsUniformLossesSimulationStrategy
+from BoSS.simulation_strategies.simulation_strategy_interface import \
+    SimulationStrategyInterface
 
 from piquasso.api.circuit import Circuit
 from piquasso.api.result import Result
+from piquasso.api.instruction import Instruction
+
+if typing.TYPE_CHECKING:
+    from . import SamplingState
 
 
 class SamplingCircuit(Circuit):
@@ -47,7 +57,7 @@ class SamplingCircuit(Circuit):
         "Loss": "_loss",
     }
 
-    def _passive_linear(self, instruction, state):
+    def _passive_linear(self, instruction: Instruction, state: "SamplingState") -> None:
         r"""Applies an interferometer to the circuit.
 
         This can be interpreted as placing another interferometer in the network, just
@@ -64,7 +74,10 @@ class SamplingCircuit(Circuit):
         )
 
     @staticmethod
-    def _get_sampling_simulation_strategy(state, permanent_calculator):
+    def _get_sampling_simulation_strategy(
+        state: "SamplingState",
+        permanent_calculator: BSPermanentCalculatorInterface
+    ) -> SimulationStrategyInterface:
         if not state.is_lossy:
             return GeneralizedCliffordsSimulationStrategy(permanent_calculator)
 
@@ -77,7 +90,7 @@ class SamplingCircuit(Circuit):
 
         return LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
 
-    def _sampling(self, instruction, state):
+    def _sampling(self, instruction: Instruction, state: "SamplingState") -> None:
         initial_state = np.array(state.initial_state)
         permanent_calculator = RyserGuanPermanentCalculator(
             matrix=state.interferometer, input_state=initial_state)
@@ -95,7 +108,7 @@ class SamplingCircuit(Circuit):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _loss(self, instruction, state):
+    def _loss(self, instruction: Instruction, state: "SamplingState") -> None:
         state._apply_loss(
             transmissivity=instruction._all_params["transmissivity"],
             modes=instruction.modes,

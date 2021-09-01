@@ -12,10 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
+from typing import Collection, Tuple, Union, Any
 
 from piquasso.core import _context
 
-from .errors import InvalidModes
+from .errors import InvalidModes, PiquassoException
+
+if typing.TYPE_CHECKING:
+    from piquasso.api.instruction import Instruction
+    from piquasso.api.program import Program
 
 
 class Q:
@@ -67,7 +73,7 @@ class Q:
             - negative integers were specified.
     """
 
-    def __init__(self, *modes):
+    def __init__(self, *modes: Union[int, Any]) -> None:
         is_all = (modes == (all, ))
 
         if not is_all and any(mode < 0 for mode in modes):
@@ -80,9 +86,9 @@ class Q:
                 f"Error registering modes: '{modes}' should be distinct."
             )
 
-        self.modes = modes if not is_all else tuple()
+        self.modes: Tuple[int, ...] = modes if not is_all else tuple()
 
-    def __or__(self, rhs):
+    def __or__(self, rhs: Union["Instruction", "Program"]) -> "Q":
         """Registers an `Instruction` or `Program` to the current program.
 
         If `rhs` is an `Instruction`, then it is appended to the current program's
@@ -99,6 +105,9 @@ class Q:
             (Q): The current qumode.
         """
 
+        if _context.current_program is None:
+            raise PiquassoException("")
+
         rhs._apply_to_program_on_register(_context.current_program, register=self)
 
         return self
@@ -106,5 +115,5 @@ class Q:
     __ror__ = __or__
 
     @staticmethod
-    def _is_distinct(iterable) -> bool:
+    def _is_distinct(iterable: Collection) -> bool:
         return len(iterable) == len(set(iterable))

@@ -13,9 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+from typing import Tuple, Any
+
 import numpy as np
 
+from .mode import Q
 from piquasso.core import _mixins, _registry
+
+if typing.TYPE_CHECKING:
+    from piquasso.api.program import Program
 
 
 class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
@@ -24,20 +31,20 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         *params: Variable length argument list.
     """
 
-    def __init__(self, *, params: dict = None, extra_params: dict = None):
-        self._params = params or dict()
+    def __init__(self, *, params: dict = None, extra_params: dict = None) -> None:
+        self._params: dict = params or dict()
 
-        self._extra_params = extra_params or dict()
+        self._extra_params: dict = extra_params or dict()
 
     @property
-    def params(self):
+    def params(self) -> dict:
         return self._params
 
     @property
-    def _all_params(self):
+    def _all_params(self) -> dict:
         return {**self._params, **self._extra_params}
 
-    def _as_code(self):
+    def _as_code(self) -> str:
         if hasattr(self, "modes"):
             mode_string = ", ".join([str(mode) for mode in self.modes])
         else:
@@ -59,21 +66,21 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         return f"pq.Q({mode_string}) | pq.{self.__class__.__name__}({params_string})"
 
     @staticmethod
-    def _param_repr(value):
+    def _param_repr(value: Any) -> str:
         if isinstance(value, np.ndarray):
             return "np." + repr(value)
 
         return value
 
-    def on_modes(self, *modes):
-        self.modes = modes
+    def on_modes(self, *modes: int) -> "Instruction":
+        self.modes: Tuple[int, ...] = modes
         return self
 
-    def _apply_to_program_on_register(self, program, register):
+    def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         program.instructions.append(self.on_modes(*register.modes))
 
     @classmethod
-    def from_dict(cls, dict_: dict):
+    def from_dict(cls, dict_: dict) -> "Instruction":
         """Creates an :class:`Instruction` instance from a dict specified.
 
         Args:
@@ -93,7 +100,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         return instruction
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if hasattr(self, "modes"):
             modes = "modes={}".format(self.modes)
         else:
@@ -112,7 +119,9 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         return f"<pq.{classname}({params}{modes})>"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Instruction):
+            return False
         return (
             self.modes == other.modes
             and
