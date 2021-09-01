@@ -71,8 +71,8 @@ def test_measure_homodyne_zeroes_state_on_measured_modes(state):
     state.apply(program)
     state.validate()
 
-    assert state.mean[0] == 0
-    assert state.cov[0][0] == pq.constants.HBAR
+    assert state.xpxp_mean_vector[0] == 0
+    assert state.xpxp_covariance_matrix[0][0] == pq.constants.HBAR
 
 
 def test_measure_homodyne_with_rotation(state):
@@ -157,8 +157,8 @@ def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
     state.apply(program)
     state.validate()
 
-    assert state.mean[0] == 0
-    assert state.cov[0][0] == pq.constants.HBAR
+    assert state.xpxp_mean_vector[0] == 0
+    assert state.xpxp_covariance_matrix[0][0] == pq.constants.HBAR
 
 
 def test_measure_heterodyne_on_multiple_modes(state):

@@ -17,7 +17,7 @@ import scipy
 import numpy as np
 
 from piquasso._math.symplectic import xp_symplectic_form
-from piquasso._math.transformations import quad_transformation
+from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 from scipy.linalg import sqrtm, schur, block_diag
 
 
@@ -164,7 +164,7 @@ def williamson(matrix: np.ndarray) -> tuple:
 
     basis_change = (
         _rotation_to_positive_above_diagonals(block_diagonal_part)
-        @ quad_transformation(d)
+        @ from_xxpp_to_xpxp_transformation_matrix(d)
     )
     ordered_block_diagonal = basis_change.T @ block_diagonal_part @ basis_change
 

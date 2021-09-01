@@ -107,10 +107,10 @@ class GaussianCircuit(Circuit):
         state.reset()
 
     def _mean(self, instruction: Instruction, state: "GaussianState") -> None:
-        state.mean = instruction._all_params["mean"]
+        state.xpxp_mean_vector = instruction._all_params["mean"]
 
     def _covariance(self, instruction: Instruction, state: "GaussianState") -> None:
-        state.cov = instruction._all_params["cov"]
+        state.xpxp_covariance_matrix = instruction._all_params["cov"]
 
     def _particle_number_measurement(
         self, instruction: Instruction, state: "GaussianState"

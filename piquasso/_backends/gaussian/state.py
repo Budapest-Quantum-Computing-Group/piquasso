@@ -32,7 +32,7 @@ from piquasso._math.linalg import (
 from piquasso._math.symplectic import symplectic_form
 from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import get_occupation_numbers
-from piquasso._math.transformations import quad_transformation
+from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
 from .circuit import GaussianCircuit
 
@@ -114,8 +114,8 @@ class GaussianState(State):
                   uncertainty relations.
         """
 
-        self._validate_mean(self.mean, self.d)
-        self._validate_cov(self.cov, self.d)
+        self._validate_mean(self.xpxp_mean_vector, self.d)
+        self._validate_cov(self.xpxp_covariance_matrix, self.d)
 
     @staticmethod
     def _validate_mean(mean: np.ndarray, d: int) -> None:
@@ -147,10 +147,10 @@ class GaussianState(State):
             )
 
     @property
-    def xp_mean(self) -> np.ndarray:
-        r"""The state's mean in the xp-ordered basis.
+    def xxpp_mean_vector(self) -> np.ndarray:
+        r"""The state's mean in the xxpp-ordered basis.
 
-        The expectation value of the quadrature operators in xp basis, i.e.
+        The expectation value of the quadrature operators in xxpp basis, i.e.
         :math:`\operatorname{Tr} \rho Y`, where
         :math:`Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
 
@@ -158,17 +158,17 @@ class GaussianState(State):
             numpy.ndarray: A :math:`d`-vector.
         """
 
-        dimensionless_xp_mean = np.concatenate(
+        dimensionless_xxpp_mean_vector = np.concatenate(
             [self._m.real, self._m.imag]
         ) * np.sqrt(2)
 
-        return dimensionless_xp_mean * np.sqrt(constants.HBAR)
+        return dimensionless_xxpp_mean_vector * np.sqrt(constants.HBAR)
 
     @property
-    def xp_cov(self) -> np.ndarray:
-        r"""The xp-ordered coveriance matrix of the state.
+    def xxpp_covariance_matrix(self) -> np.ndarray:
+        r"""The xxpp-ordered coveriance matrix of the state.
 
-        The xp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
+        The xxpp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
 
         .. math::
             \sigma_{xp, ij} := \langle Y_i Y_j + Y_j Y_i \rangle_\rho
@@ -189,26 +189,26 @@ class GaussianState(State):
         C = self._C
         G = self._G
 
-        dimensionless_xp_cov = 2 * np.block(
+        dimensionless_xxpp_covariance_matrix = 2 * np.block(
             [
                 [(G + C).real, (G + C).imag],
                 [(G - C).imag, (-G + C).real],
             ],
         ) + np.identity(2 * self.d)
 
-        return dimensionless_xp_cov * constants.HBAR
+        return dimensionless_xxpp_covariance_matrix * constants.HBAR
 
     @property
-    def xp_corr(self) -> np.ndarray:
-        r"""The state's correlation matrix in the xp basis.
+    def xxpp_correlation_matrix(self) -> np.ndarray:
+        r"""The state's correlation matrix in the xxpp basis.
 
-        Let :math:`M_{(xp)}` be the correlation matrix in the xp basis.
+        Let :math:`M_{(xxpp)}` be the correlation matrix in the xxpp basis.
         Then
 
         .. math::
-            M_{ij (xp)} = \langle Y_i Y_j + Y_j Y_i \rangle_\rho,
+            M_{ij (xxpp)} = \langle Y_i Y_j + Y_j Y_i \rangle_\rho,
 
-        where :math:`M_{ij (xp)}` denotes the matrix element in the
+        where :math:`M_{ij (xxpp)}` denotes the matrix element in the
         :math:`i`-th row and :math:`j`-th column,
 
         .. math::
@@ -217,27 +217,34 @@ class GaussianState(State):
         and :math:`\rho` is the density operator of the currently represented state.
 
         Returns:
-            numpy.ndarray: The :math:`2d \times 2d` correlation matrix in the xp basis.
+            numpy.ndarray: The :math:`2d \times 2d` correlation matrix in the
+            xxpp-basis.
         """
-        xp_mean = self.xp_mean
-        return self.xp_cov + 2 * np.outer(xp_mean, xp_mean)
+        xxpp_mean_vector = self.xxpp_mean_vector
+        return (
+            self.xxpp_covariance_matrix
+            + 2 * np.outer(
+                xxpp_mean_vector,
+                xxpp_mean_vector
+            )
+        )
 
     @property
-    def xp_representation(self) -> Tuple[
+    def xxpp_representation(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
         r"""
-        The state's mean and correlation matrix ordered in the xp basis.
+        The state's mean and correlation matrix ordered in the xxpp basis.
 
         Returns:
-            tuple: :meth:`xp_mean`, :meth:`xp_corr`.
+            tuple: :meth:`xxpp_mean_vector`, :meth:`xxpp_correlation_matrix`.
         """
 
-        return self.xp_mean, self.xp_corr
+        return self.xxpp_mean_vector, self.xxpp_correlation_matrix
 
     @property
-    def mean(self) -> np.ndarray:
-        r"""Returns the xp-ordered mean of the state.
+    def xpxp_mean_vector(self) -> np.ndarray:
+        r"""Returns the xpxp-ordered mean of the state.
 
         Returns:
             numpy.ndarray: A :math:`2d`-vector.
@@ -245,19 +252,19 @@ class GaussianState(State):
                 xp-ordering, i.e. :math:`\operatorname{Tr} \rho R`, where
                 :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
         """
-        T = quad_transformation(self.d)
-        return T @ self.xp_mean
+        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
+        return T @ self.xxpp_mean_vector
 
-    @mean.setter
-    def mean(self, new_mean: np.ndarray) -> None:
-        self._validate_mean(new_mean, self.d)
+    @xpxp_mean_vector.setter
+    def xpxp_mean_vector(self, value: np.ndarray) -> None:
+        self._validate_mean(value, self.d)
 
-        m = (new_mean[::2] + 1j * new_mean[1::2]) / np.sqrt(2 * constants.HBAR)
+        m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * constants.HBAR)
 
         self._m = m
 
     @property
-    def cov(self) -> np.ndarray:
+    def xpxp_covariance_matrix(self) -> np.ndarray:
         r"""The quadrature-ordered coveriance matrix of the state.
 
         The quadrature-ordered covariance matrix :math:`\sigma` is defined by
@@ -276,19 +283,19 @@ class GaussianState(State):
         Returns:
             numpy.ndarray:
                 The :math:`2d \times 2d` quadrature-ordered covariance matrix in
-                xp-ordered basis.
+                xpxp-ordered basis.
         """
 
-        T = quad_transformation(self.d)
-        return T @ self.xp_cov @ T.transpose()
+        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
+        return T @ self.xxpp_covariance_matrix @ T.transpose()
 
-    @cov.setter
-    def cov(self, new_cov: np.ndarray) -> None:
+    @xpxp_covariance_matrix.setter
+    def xpxp_covariance_matrix(self, new_cov: np.ndarray) -> None:
         d = self.d
 
         self._validate_cov(new_cov, d)
 
-        T = quad_transformation(d)
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
 
         dimensionless_cov = new_cov / constants.HBAR
         dimensionless_xp_cov = T.transpose() @ dimensionless_cov @ T
@@ -308,10 +315,10 @@ class GaussianState(State):
         self._C = C
 
     @property
-    def corr(self) -> np.ndarray:
+    def xpxp_correlation_matrix(self) -> np.ndarray:
         r"""The quadrature-ordered correlation matrix of the state.
 
-        Let :math:`M` be the correlation matrix in the quadrature basis.
+        Let :math:`M` be the correlation matrix in the quadrature basis (xpxp basis).
         Then
 
         .. math::
@@ -329,11 +336,11 @@ class GaussianState(State):
             numpy.ndarray: The :math:`2d \times 2d` quad-ordered correlation matrix.
         """
 
-        T = quad_transformation(self.d)
-        return T @ self.xp_corr @ T.transpose()
+        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
+        return T @ self.xxpp_correlation_matrix @ T.transpose()
 
     @property
-    def quad_representation(self) -> Tuple[
+    def xpxp_representation(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
         r"""The state's mean and correlation matrix ordered by the quadrature basis.
@@ -342,7 +349,7 @@ class GaussianState(State):
             tuple: :meth:`mean`, :meth:`corr`.
         """
 
-        return self.mean, self.corr
+        return self.xpxp_mean_vector, self.xpxp_correlation_matrix
 
     @property
     def complex_displacement(self) -> np.ndarray:
@@ -360,9 +367,9 @@ class GaussianState(State):
         Equivalently, one can write
 
         .. math::
-            \mu_{c} := W \mu_{xp},
+            \mu_{c} := W \mu_{xxpp},
 
-        where :math:`\mu_{xp}` is the xp-ordered mean vector :attr:`xp_mean`
+        where :math:`\mu_{xxpp}` is the xxpp-ordered mean vector :attr:`xxpp_mean`
         and
 
         .. math::
@@ -399,10 +406,10 @@ class GaussianState(State):
         Equivalently, one can write
 
         .. math::
-            \sigma_{c} = \frac{1}{\hbar} W \sigma_{xp} W^{\dagger},
+            \sigma_{c} = \frac{1}{\hbar} W \sigma_{xxpp} W^{\dagger},
 
-        where :math:`\sigma_{xp}` is the xp-ordered covariance matrix :attr:`xp_cov`
-        and
+        where :math:`\sigma_{xxpp}` is the xxpp-ordered covariance
+        matrix :attr:`xxpp_cov` and
 
         .. math::
             W = \frac{1}{\sqrt{2}} \begin{bmatrix}
@@ -485,7 +492,7 @@ class GaussianState(State):
             m=self._m[np.ix_(modes)],
         )
 
-    def reduced_rotated_mean_and_cov(
+    def xpxp_reduced_rotated_mean_and_covariance(
         self, modes: Tuple[int, ...], phi: float
     ) -> Tuple[np.ndarray, np.ndarray]:
         r"""The mean and covariance on a rotated and reduced state.
@@ -525,7 +532,10 @@ class GaussianState(State):
         """
         transformed_state = self.reduced(modes).rotated(phi)
 
-        return transformed_state.mean, transformed_state.cov
+        return (
+            transformed_state.xpxp_mean_vector,
+            transformed_state.xpxp_covariance_matrix
+        )
 
     def mean_photon_number(self, modes: Tuple[int, ...]) -> float:
         r""" This method returns the mean photon number of the given modes.
@@ -614,8 +624,8 @@ class GaussianState(State):
             raise InvalidParameter("The specified matrix is not symmetric.")
 
         state = self.rotated(phi)
-        mean = state.mean
-        cov = state.cov
+        mean = state.xpxp_mean_vector
+        cov = state.xpxp_covariance_matrix
         first_moment = np.trace(A @ cov) / 2 + mean @ A @ mean + mean @ b + c
         # TODO: calculate the variance.
         return first_moment
@@ -666,16 +676,16 @@ class GaussianState(State):
                 positions,
                 momentums,
                 d=reduced_state.d,
-                mean=reduced_state.mean,
-                cov=reduced_state.cov
+                mean=reduced_state.xpxp_mean_vector,
+                cov=reduced_state.xpxp_covariance_matrix
             )
 
         return gaussian_wigner_function(
             positions,
             momentums,
             d=self.d,
-            mean=self.mean,
-            cov=self.cov,
+            mean=self.xpxp_mean_vector,
+            cov=self.xpxp_covariance_matrix,
         )
 
     def _apply_passive_linear(
@@ -802,12 +812,12 @@ class GaussianState(State):
 
         outer_indices = np.delete(np.arange(2 * d), indices)
 
-        r = self.mean
+        r = self.xpxp_mean_vector
 
         r_measured = r[indices]
         r_outer = r[outer_indices]
 
-        rho = self.cov
+        rho = self.xpxp_covariance_matrix
 
         rho_measured = rho[np.ix_(indices, indices)]
         rho_outer = rho[np.ix_(outer_indices, outer_indices)]
@@ -857,8 +867,8 @@ class GaussianState(State):
             np.identity(2 * d) * constants.HBAR
         evolved_cov[np.ix_(outer_indices, outer_indices)] = evolved_rho_outer
 
-        self.mean = evolved_mean
-        self.cov = evolved_cov
+        self.xpxp_mean_vector = evolved_mean
+        self.xpxp_covariance_matrix = evolved_cov
 
         return list(map(tuple, list(samples)))
 
@@ -905,17 +915,17 @@ class GaussianState(State):
         probability of clicks (i.e. 1 as sample), and argue that the probability of a
         click is equal to one minus the probability of no click.
         """
-        if not np.allclose(self.mean, np.zeros_like(self.mean)):
+        if not np.allclose(self.xpxp_mean_vector, np.zeros_like(self.xpxp_mean_vector)):
             raise NotImplementedError(
                 "Threshold measurement for displaced states are not supported: "
-                f"mean={self.mean}"
+                f"xpxp_mean_vector={self.xpxp_mean_vector}"
             )
 
         def calculate_threshold_detection_probability(
             state: "GaussianState",
             occupation_numbers: Tuple[int, ...],
         ) -> float:
-            calculation = ThresholdCalculation(state.xp_cov)
+            calculation = ThresholdCalculation(state.xxpp_covariance_matrix)
 
             return calculation.calculate_click_probability(occupation_numbers)
 

@@ -21,64 +21,64 @@ from piquasso.api import constants
 from piquasso.api.errors import InvalidParameter
 
 
-def test_xp_representation(state, assets):
+def test_xxpp_representation(state, assets):
     assert np.allclose(
-        assets.load("expected_xp_mean"),
-        state.xp_mean,
+        assets.load("expected_xxpp_mean"),
+        state.xxpp_mean_vector,
     )
     assert np.allclose(
-        assets.load("expected_xp_corr"),
-        state.xp_corr,
+        assets.load("expected_xxpp_correlation"),
+        state.xxpp_correlation_matrix,
     )
     assert np.allclose(
-        assets.load("expected_xp_cov"),
-        state.xp_cov,
+        assets.load("expected_xxpp_covariance"),
+        state.xxpp_covariance_matrix,
     )
 
 
-def test_quad_representation(state, assets):
+def test_xpxp_representation(state, assets):
     assert np.allclose(
-        assets.load("expected_mean"),
-        state.mean,
+        assets.load("expected_xpxp_mean"),
+        state.xpxp_mean_vector,
     )
     assert np.allclose(
-        assets.load("expected_corr"),
-        state.corr,
+        assets.load("expected_xpxp_correlation"),
+        state.xpxp_correlation_matrix,
     )
     assert np.allclose(
-        assets.load("expected_cov"),
-        state.cov,
+        assets.load("expected_xpxp_covariance"),
+        state.xpxp_covariance_matrix,
     )
 
 
 def test_representation_roundtrip(state):
-    initial_mean = state.mean
-    initial_cov = state.cov
+    initial_mean_vector = state.xpxp_mean_vector
+    initial_covariance_matrix = state.xpxp_covariance_matrix
 
-    state.mean = initial_mean
-    state.cov = initial_cov
+    state.xpxp_mean_vector = initial_mean_vector
+    state.xpxp_covariance_matrix = initial_covariance_matrix
 
-    final_mean = state.mean
-    final_cov = state.cov
+    final_mean_vector = state.xpxp_mean_vector
+    final_covariance_matrix = state.xpxp_covariance_matrix
 
-    assert np.allclose(final_mean, initial_mean)
-    assert np.allclose(final_cov, initial_cov)
+    assert np.allclose(final_mean_vector, initial_mean_vector)
+    assert np.allclose(final_covariance_matrix, initial_covariance_matrix)
 
 
 def test_representation_roundtrip_at_different_HBAR(state):
     constants.HBAR = 42
 
-    initial_mean = state.mean
-    initial_cov = state.cov
+    initial_mean_vector = state.xpxp_mean_vector
+    initial_covariance_matrix = state.xpxp_covariance_matrix
 
-    state.mean = initial_mean
-    state.cov = initial_cov
+    state.xpxp_mean_vector = initial_mean_vector
+    state.xpxp_covariance_matrix = initial_covariance_matrix
 
-    final_mean = state.mean
-    final_cov = state.cov
+    final_mean_vector = state.xpxp_mean_vector
+    final_covariance_matrix = state.xpxp_covariance_matrix
 
-    assert np.allclose(final_mean, initial_mean)
-    assert np.allclose(final_cov, initial_cov)
+    assert np.allclose(final_mean_vector, initial_mean_vector)
+    assert np.allclose(final_covariance_matrix, initial_covariance_matrix)
 
 
 def test_wigner_function(state, assets):
@@ -92,17 +92,19 @@ def test_wigner_function(state, assets):
     assert np.allclose(expected_result, actual_result)
 
 
-def test_reduced_rotated_mean_and_cov(state, assets):
+def test_reduced_rotated_mean_and_covariance(state, assets):
     modes = (0, 2)
     phi = np.pi/2
 
-    mean, cov = state.reduced_rotated_mean_and_cov(modes, phi)
+    mean_vector, covariance_matrix = (
+        state.xpxp_reduced_rotated_mean_and_covariance(modes, phi)
+    )
 
     expected_mean = assets.load("expected_mean")
-    expected_cov = assets.load("expected_cov")
+    expected_cov = assets.load("expected_covariance")
 
-    assert np.allclose(mean, expected_mean)
-    assert np.allclose(cov, expected_cov)
+    assert np.allclose(mean_vector, expected_mean)
+    assert np.allclose(covariance_matrix, expected_cov)
 
 
 class TestGaussianStateOperations:
@@ -123,8 +125,8 @@ class TestGaussianStateOperations:
         phi = np.pi / 2
         rotated_state = self.state.rotated(phi)
 
-        expected_rotated_mean = np.array([0., 6.5, 0., -5.5, 6., 0.])
-        expected_rotated_cov = np.array(
+        expected_rotated_mean_vector = np.array([0., 6.5, 0., -5.5, 6., 0.])
+        expected_rotated_covariance_matrix = np.array(
             [
                 [ 4.25,    0.,  3.75,    0., 0., 0.],
                 [   0.,  4.25,    0., -3.75, 0., 0.],
@@ -136,12 +138,12 @@ class TestGaussianStateOperations:
         )
 
         assert np.allclose(
-            expected_rotated_mean,
-            rotated_state.mean,
+            expected_rotated_mean_vector,
+            rotated_state.xpxp_mean_vector,
         )
         assert np.allclose(
-            expected_rotated_cov,
-            rotated_state.cov,
+            expected_rotated_covariance_matrix,
+            rotated_state.xpxp_covariance_matrix,
         )
 
     def test_reduced(self):
@@ -149,8 +151,8 @@ class TestGaussianStateOperations:
 
         reduced_state = self.state.reduced(modes)
 
-        expected_reduced_mean = np.array([-6.5, 0., 0., 6.])
-        expected_reduced_cov = np.array(
+        expected_reduced_mean_vector = np.array([-6.5, 0., 0., 6.])
+        expected_reduced_covariance_matrix = np.array(
             [
                 [4.25,   0., 0., 0.],
                 [  0., 4.25, 0., 0.],
@@ -160,12 +162,12 @@ class TestGaussianStateOperations:
         )
 
         assert np.allclose(
-            expected_reduced_mean,
-            reduced_state.mean,
+            expected_reduced_mean_vector,
+            reduced_state.xpxp_mean_vector,
         )
         assert np.allclose(
-            expected_reduced_cov,
-            reduced_state.cov,
+            expected_reduced_covariance_matrix,
+            reduced_state.xpxp_covariance_matrix,
         )
 
 
@@ -175,52 +177,58 @@ class TestGaussianStateVacuum:
 
         state = pq.GaussianState(d=d)
 
-        expected_mean = np.zeros(2 * d)
-        expected_covariance = np.identity(2 * d) * constants.HBAR
+        expected_xpxp_mean = np.zeros(2 * d)
+        expected_xpxp_covariance_matrix = np.identity(2 * d) * constants.HBAR
 
-        assert np.allclose(state.mean, expected_mean)
-        assert np.allclose(state.cov, expected_covariance)
+        assert np.allclose(
+            state.xpxp_mean_vector,
+            expected_xpxp_mean
+        )
+        assert np.allclose(
+            state.xpxp_covariance_matrix,
+            expected_xpxp_covariance_matrix
+        )
 
 
 def test_mean_and_covariance(state, assets):
-    expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
 
-    expected_cov = assets.load("expected_cov") * constants.HBAR
+    expected_covariance_matrix = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(state.mean, expected_mean)
-    assert np.allclose(state.cov, expected_cov)
+    assert np.allclose(state.xpxp_mean_vector, expected_mean_vector)
+    assert np.allclose(state.xpxp_covariance_matrix, expected_covariance_matrix)
 
 
 def test_mean_and_covariance_with_different_HBAR(state, assets):
     constants.HBAR = 42
 
-    expected_mean = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
-    expected_cov = assets.load("expected_cov") * constants.HBAR
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
+    expected_covariance_matrix = assets.load("expected_cov") * constants.HBAR
 
-    assert np.allclose(state.mean, expected_mean)
-    assert np.allclose(state.cov, expected_cov)
+    assert np.allclose(state.xpxp_mean_vector, expected_mean_vector)
+    assert np.allclose(state.xpxp_covariance_matrix, expected_covariance_matrix)
 
 
 def test_mean_is_scaled_with_squared_HBAR(state, assets):
     scaling = 14
 
-    mean_default_hbar = state.mean
+    mean_default_hbar = state.xpxp_mean_vector
 
     constants.HBAR *= scaling
 
-    mean_different_hbar = state.mean
+    mean_different_hbar = state.xpxp_mean_vector
 
     assert np.allclose(mean_default_hbar * np.sqrt(scaling), mean_different_hbar)
 
 
-def test_cov_is_scaled_with_HBAR(state):
+def test_covariance_is_scaled_with_HBAR(state):
     scaling = 14
 
-    cov_default_hbar = state.cov
+    cov_default_hbar = state.xpxp_covariance_matrix
 
     constants.HBAR *= scaling
 
-    cov_different_hbar = state.cov
+    cov_different_hbar = state.xpxp_covariance_matrix
 
     assert np.allclose(cov_default_hbar * scaling, cov_different_hbar)
 
@@ -245,9 +253,9 @@ def test_complex_covariance_does_not_scale_with_HBAR(state):
     )
 
 
-def test_complex_covariance_transformed_directly_from_xp_cov(state):
-    xp_cov = state.xp_cov
-    d = len(xp_cov) // 2
+def test_complex_covariance_transformed_directly_from_xxpp_cov(state):
+    xxpp_cov = state.xxpp_covariance_matrix
+    d = len(xxpp_cov) // 2
 
     W = (1 / np.sqrt(2)) * np.block(
         [
@@ -256,9 +264,12 @@ def test_complex_covariance_transformed_directly_from_xp_cov(state):
         ]
     )
 
-    complex_covariance = W @ xp_cov @ W.conj().T / constants.HBAR
+    complex_covariance = W @ xxpp_cov @ W.conj().T / constants.HBAR
 
-    assert np.allclose(complex_covariance, state.complex_covariance)
+    assert np.allclose(
+        complex_covariance,
+        state.complex_covariance
+    )
 
 
 def test_complex_displacement(state, assets):

@@ -18,9 +18,11 @@ import numpy as np
 
 
 @functools.lru_cache()
-def quad_transformation(d: int) -> np.ndarray:
+def from_xxpp_to_xpxp_transformation_matrix(d: int) -> np.ndarray:
     """
-    Basis changing with the basis change operator
+    Basis changing with the basis change operator.
+
+    This transformation will change the basis from xxpp-basis to xpxp-basis.
 
     .. math::
 

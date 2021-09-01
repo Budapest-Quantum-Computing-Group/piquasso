@@ -7,6 +7,7 @@ __pycache__
 .mypy_cache
 piquasso.egg-info/
 venv/
+.venv/
 coverage.xml
 .coverage
 

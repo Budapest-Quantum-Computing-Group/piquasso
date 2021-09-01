@@ -158,8 +158,8 @@ def gaussian_state_assets(AssetHandler):
             state_map = {
                 "class": "GaussianState",
                 "properties": {
-                    "mean": obj.mean,
-                    "cov": obj.cov,
+                    "xpxp_mean_vector": obj.xpxp_mean_vector,
+                    "xpxp_covariance_matrix": obj.xpxp_covariance_matrix,
                 }
             }
             np.set_printoptions(precision=16)
@@ -185,12 +185,12 @@ def gaussian_state_assets(AssetHandler):
 
             properties = eval(data)["properties"]
 
-            d = len(properties["mean"]) // 2
+            d = len(properties["xpxp_mean_vector"]) // 2
 
             state = pq.GaussianState(d=d)
 
-            state.mean = properties["mean"]
-            state.cov = properties["cov"]
+            state.xpxp_mean_vector = properties["xpxp_mean_vector"]
+            state.xpxp_covariance_matrix = properties["xpxp_covariance_matrix"]
 
             return state
 
