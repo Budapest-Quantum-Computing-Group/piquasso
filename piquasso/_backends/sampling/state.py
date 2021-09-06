@@ -62,7 +62,7 @@ class SamplingState(State):
         interferometer.
 
         The `modes` can contain any number in any order as long as number of qumodes is
-        equal to the size of the `U` matrix
+        equal to the size of the `U` matrix.
 
         Args:
             U (numpy.ndarray): A square matrix to multiply to the interferometer.
@@ -91,21 +91,12 @@ class SamplingState(State):
 
     @property
     def d(self) -> int:
-        r"""The number of modes, on which the state is defined.
-
-        Returns:
-            int: The number of modes.
-        """
+        r"""The number of modes, on which the state is defined."""
         return len(self.initial_state)
 
     @property
     def particle_number(self) -> int:
-        r"""The number of particles in the system.
-
-        Returns:
-            int: The number of particles.
-        """
-
+        r"""The number of particles in the system."""
         return sum(self.initial_state)
 
     def get_particle_detection_probability(

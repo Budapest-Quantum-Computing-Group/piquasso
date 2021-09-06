@@ -117,7 +117,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
 
         Args:
             occupation_number (tuple):
-                List of natural numbers representing the number of particles in each
+                Tuple of natural numbers representing the number of particles in each
                 mode.
 
         Returns:

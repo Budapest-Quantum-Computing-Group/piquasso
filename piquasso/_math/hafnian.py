@@ -95,7 +95,7 @@ def _hafnian(
 
         result = fG(polynom_coefficients, degree)
 
-        factor = 1 if ( (degree - len(subset)) % 2 == 0) else -1
+        factor = 1 if ((degree - len(subset)) % 2 == 0) else -1
 
         ret += factor * result
 

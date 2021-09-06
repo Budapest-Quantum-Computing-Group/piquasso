@@ -230,7 +230,7 @@ class FockSpace(tuple):
         ) @ phase
 
         def get_f_vector(
-            upper_bound: np.ndarray,
+            upper_bound: Tuple[int, ...],
             matrix: np.ndarray,
             vector: np.ndarray
         ) -> np.ndarray:
@@ -245,7 +245,7 @@ class FockSpace(tuple):
                     elements[index] = 0.0
                     continue
 
-                difference = upper_bound - nd_basis_vector
+                difference: np.ndarray = upper_bound - nd_basis_vector
 
                 elements[index] = (
                     np.sqrt(
@@ -260,7 +260,7 @@ class FockSpace(tuple):
 
         @functools.lru_cache(constants.cache_size)
         def calculate_left(
-            upper_bound: np.ndarray
+            upper_bound: Tuple[int, ...]
         ) -> np.ndarray:
             return get_f_vector(
                 upper_bound=upper_bound,
@@ -270,7 +270,7 @@ class FockSpace(tuple):
 
         @functools.lru_cache(constants.cache_size)
         def calculate_right(
-            upper_bound: np.ndarray
+            upper_bound: Tuple[int, ...]
         ) -> np.ndarray:
             return get_f_vector(
                 upper_bound=upper_bound,

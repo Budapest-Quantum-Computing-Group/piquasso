@@ -32,7 +32,7 @@ class Vacuum(Instruction):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=4) | pq.Vacuum()
+            pq.Q() | pq.Vacuum()
             ...
 
     Note:
@@ -51,8 +51,6 @@ class Mean(Instruction):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=4)
-
             pq.Q() | pq.Mean(
                 mean=np.array(...)
             )
@@ -74,8 +72,6 @@ class Covariance(Instruction):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=4)
-
             pq.Q() | pq.Covariance(
                 cov=np.array(...)
             )
@@ -97,7 +93,7 @@ class StateVector(Instruction, _mixins.WeightMixin):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.FockState(d=4) | (
+            pq.Q() | (
                 0.3 * pq.StateVector(2, 1, 0, 3)
                 + 0.2 * pq.StateVector(1, 1, 2, 3)
                 ...
@@ -127,7 +123,7 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.FockState(d=3) | (
+            pq.Q() | (
                 0.2 * pq.DensityMatrix(ket=(1, 0, 1), bra=(2, 1, 0))
                 + 0.3 * pq.DensityMatrix(ket=(2, 0, 1), bra=(0, 1, 1))
                 ...
@@ -163,8 +159,6 @@ class Create(Instruction):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.FockState(d=3, cutoff=4)
-
             pq.Q(1) | pq.Create()
             pq.Q(2) | pq.Create()
             ...
@@ -185,7 +179,6 @@ class Annihilate(Instruction):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.FockState(d=3, cutoff=4)
             ...
             pq.Q(0) | pq.Annihilate()
             ...

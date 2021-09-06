@@ -106,7 +106,10 @@ class SamplingCircuit(Circuit):
             samples_number=self.shots
         )
 
-        self.result = Result(instruction=instruction, samples=samples)
+        self.result = Result(
+            instruction=instruction,
+            samples=list(map(tuple, samples))
+        )
 
     def _loss(self, instruction: Instruction, state: "SamplingState") -> None:
         state._apply_loss(
