@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List, Callable
+from typing import Tuple, List, Callable, Any
 import scipy
 import random
 import numpy as np
@@ -21,9 +21,11 @@ import numpy as np
 from itertools import repeat
 from functools import lru_cache
 
+from piquasso.api.instruction import Instruction
+from piquasso.api.errors import InvalidState, InvalidParameter
+from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api import constants
-from piquasso.api.errors import InvalidState, InvalidParameter
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
@@ -33,8 +35,6 @@ from piquasso._math.symplectic import symplectic_form
 from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
-
-from .circuit import GaussianCircuit
 
 from .probabilities import (
     DensityMatrixCalculation,
@@ -56,9 +56,34 @@ class GaussianState(State):
         state.apply(program)
     """
 
-    circuit_class = GaussianCircuit
+    _instruction_map = {
+        "Interferometer": "_passive_linear",
+        "Beamsplitter": "_passive_linear",
+        "Phaseshifter": "_passive_linear",
+        "MachZehnder": "_passive_linear",
+        "Fourier": "_passive_linear",
+        "GaussianTransform": "_linear",
+        "Squeezing": "_linear",
+        "QuadraticPhase": "_linear",
+        "Squeezing2": "_linear",
+        "ControlledX": "_linear",
+        "ControlledZ": "_linear",
+        "Displacement": "_displacement",
+        "PositionDisplacement": "_displacement",
+        "MomentumDisplacement": "_displacement",
+        "Graph": "_graph",
+        "HomodyneMeasurement": "_homodyne_measurement",
+        "HeterodyneMeasurement": "_generaldyne_measurement",
+        "GeneraldyneMeasurement": "_generaldyne_measurement",
+        "Vacuum": "_vacuum",
+        "Mean": "_mean",
+        "Covariance": "_covariance",
+        "ParticleNumberMeasurement": "_particle_number_measurement",
+        "ThresholdMeasurement": "_threshold_measurement",
+    }
 
     def __init__(self, d: int) -> None:
+        super().__init__()
         self._d = d
         self.reset()
 
@@ -690,9 +715,10 @@ class GaussianState(State):
             cov=self.xpxp_covariance_matrix,
         )
 
-    def _apply_passive_linear(
-        self, T: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
+    def _passive_linear(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        T: np.ndarray = instruction._all_params["passive_block"]
+
         self._m[modes, ] = T @ self._m[modes, ]
 
         self._apply_passive_linear_to_C_and_G(T, modes=modes)
@@ -724,12 +750,11 @@ class GaussianState(State):
         self._C[:, modes] = np.conj(self._C[modes, :]).transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
 
-    def _apply_linear(
-        self,
-        passive_block: np.ndarray,
-        active_block: np.ndarray,
-        modes: Tuple[int, ...],
-    ) -> None:
+    def _linear(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        passive_block: np.ndarray = instruction._all_params["passive_block"]
+        active_block: np.ndarray = instruction._all_params["active_block"]
+
         self._m[modes, ] = (
             passive_block @ self._m[modes, ]
             + active_block @ np.conj(self._m[modes, ])
@@ -794,17 +819,18 @@ class GaussianState(State):
         self._C[:, modes] = self._C[modes, :].conjugate().transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
 
-    def _apply_displacement(
-        self, displacement_vector: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
+    def _displacement(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        displacement_vector: np.ndarray = instruction._all_params["displacement_vector"]
+
         self._m[modes, ] += displacement_vector
 
-    def _apply_generaldyne_measurement(
-        self, *,
-        detection_covariance: np.ndarray,
-        modes: Tuple[int, ...],
-        shots: int
-    ) -> List[Tuple[float, ...]]:
+    def _generaldyne_measurement(
+        self, instruction: Instruction
+    ) -> None:
+        modes = instruction.modes
+        detection_covariance: np.ndarray = \
+            instruction._all_params["detection_covariance"]
         d = self.d
 
         indices = []
@@ -841,7 +867,7 @@ class GaussianState(State):
         samples = np.random.multivariate_normal(
             mean=r_measured,
             cov=(rho_measured + rho_m),
-            size=shots,
+            size=self.shots,
             tol=1e-7,
         )
 
@@ -872,15 +898,14 @@ class GaussianState(State):
         self.xpxp_mean_vector = evolved_mean
         self.xpxp_covariance_matrix = evolved_cov
 
-        return list(map(tuple, list(samples)))
+        self.result = Result(
+            instruction=instruction,
+            samples=list(map(tuple, list(samples)))
+        )
 
-    def _apply_particle_number_measurement(
-        self,
-        *,
-        cutoff: int,
-        modes: Tuple[int, ...],
-        shots: int,
-    ) -> List[Tuple[int, ...]]:
+    def _particle_number_measurement(
+        self, instruction: Instruction
+    ) -> None:
         def calculate_particle_number_detection_probability(
             state: "GaussianState",
             occupation_numbers: Tuple[int, ...],
@@ -895,19 +920,17 @@ class GaussianState(State):
                 ket=occupation_numbers,
             )
 
-        return self._perform_sampling(
-            cutoff=cutoff,
-            modes=modes,
-            shots=shots,
+        samples = self._perform_sampling(
+            cutoff=instruction._all_params["cutoff"],
+            modes=instruction.modes,
             calculation=calculate_particle_number_detection_probability,
         )
 
-    def _apply_threshold_measurement(
-        self,
-        *,
-        shots: int,
-        modes: Tuple[int, ...],
-    ) -> List[Tuple[int, ...]]:
+        self.result = Result(instruction=instruction, samples=samples)
+
+    def _threshold_measurement(
+        self, instruction: Instruction
+    ) -> None:
         """
         NOTE: The same logic is used here, as for the particle number measurement.
         However, at threshold measurement there is no sense of cutoff, therefore it is
@@ -931,19 +954,19 @@ class GaussianState(State):
 
             return calculation.calculate_click_probability(occupation_numbers)
 
-        return self._perform_sampling(
+        samples = self._perform_sampling(
             cutoff=2,
-            modes=modes,
-            shots=shots,
+            modes=instruction.modes,
             calculation=calculate_threshold_detection_probability,
         )
+
+        self.result = Result(instruction=instruction, samples=samples)
 
     def _perform_sampling(
         self,
         *,
         cutoff: int,
         modes: Tuple[int, ...],
-        shots: int,
         calculation: Callable[["GaussianState", Tuple[int, ...]], float],
     ) -> List[Tuple[int, ...]]:
         @lru_cache(constants.cache_size)
@@ -960,7 +983,7 @@ class GaussianState(State):
 
         samples = []
 
-        for _ in repeat(None, shots):
+        for _ in repeat(None, self.shots):
             sample: List[int] = []
 
             previous_probability = 1.0
@@ -1004,6 +1027,37 @@ class GaussianState(State):
             samples.append(tuple(sample))
 
         return samples
+
+    def _homodyne_measurement(self, instruction: Instruction) -> None:
+        phi = instruction._all_params["phi"]
+
+        instruction_copy: Instruction = instruction.copy()  # type: ignore
+
+        phaseshift = np.identity(len(instruction.modes)) * np.exp(- 1j * phi)
+        instruction_copy._extra_params["passive_block"] = phaseshift
+
+        self._passive_linear(instruction_copy)
+
+        self._generaldyne_measurement(instruction)
+
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
+        self.reset()
+
+    def _mean(self, instruction: Instruction) -> None:
+        self.xpxp_mean_vector = instruction._all_params["mean"]
+
+    def _covariance(self, instruction: Instruction) -> None:
+        self.xpxp_covariance_matrix = instruction._all_params["cov"]
+
+    def _graph(self, instruction: Instruction) -> None:
+        """
+        TODO: Find a better solution for multiple operations.
+        """
+        instruction._all_params["squeezing"].modes = instruction.modes
+        instruction._all_params["interferometer"].modes = instruction.modes
+
+        self._linear(instruction._all_params["squeezing"])
+        self._passive_linear(instruction._all_params["interferometer"])
 
     def get_particle_detection_probability(
         self, occupation_number: Tuple[int, ...]

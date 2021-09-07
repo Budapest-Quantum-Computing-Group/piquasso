@@ -21,19 +21,9 @@ import piquasso as pq
 
 
 @pytest.fixture
-def MyGaussianCircuit():
-    class _MyGaussianCircuit(pq.GaussianState.circuit_class):
-        pass
-
-    _MyGaussianCircuit.__name__ = "MyGaussianCircuit"
-
-    return _MyGaussianCircuit
-
-
-@pytest.fixture
-def MyGaussianState(MyGaussianCircuit):
+def MyGaussianState():
     class _MyGaussianState(pq.GaussianState):
-        circuit_class = MyGaussianCircuit
+        pass
 
     _MyGaussianState.__name__ = "MyGaussianState"
 
@@ -50,7 +40,7 @@ def MyBeamsplitter():
     return _MyBeamsplitter
 
 
-def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
+def test_use_plugin(MyGaussianState, MyBeamsplitter):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
@@ -69,7 +59,7 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
     assert pq.Beamsplitter is MyBeamsplitter
 
 
-def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCircuit):
+def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter):
     class Plugin:
         classes = {
             "GaussianState": MyGaussianState,
@@ -93,7 +83,6 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter, MyGaussianCir
 def test_untouched_classes_remain_to_be_accessible(
     MyGaussianState,
     MyBeamsplitter,
-    MyGaussianCircuit,
 ):
     class Plugin:
         classes = {
