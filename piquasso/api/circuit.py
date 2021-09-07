@@ -46,6 +46,10 @@ class Circuit(abc.ABC):
             instructions (list):
                 The methods along with keyword arguments of the current circuit to be
                 executed in order.
+            state (State):
+                The state in which the instructions are simulated.
+            shots (int):
+                The number of samples to generate.
         """
         self.shots = shots
 

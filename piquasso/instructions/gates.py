@@ -285,7 +285,7 @@ class MachZehnder(_BogoliubovTransformation):
     where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
 
     Args:
-        int (float): The internal angle.
+        int_ (float): The internal angle.
         ext (float): The external angle.
     """
 
@@ -599,7 +599,7 @@ class Displacement(_ScalableBogoliubovTransformation):
     def __init__(
         self, *, alpha: complex = None, r: float = None, phi: float = None
     ) -> None:
-        alpha_ = None
+        alpha_: np.ndarray
 
         if alpha is not None and r is None and phi is None:
             params = dict(alpha=alpha)

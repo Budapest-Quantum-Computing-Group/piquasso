@@ -19,7 +19,7 @@ import numpy as np
 
 @functools.lru_cache()
 def from_xxpp_to_xpxp_transformation_matrix(d: int) -> np.ndarray:
-    """
+    r"""
     Basis changing with the basis change operator.
 
     This transformation will change the basis from xxpp-basis to xpxp-basis.

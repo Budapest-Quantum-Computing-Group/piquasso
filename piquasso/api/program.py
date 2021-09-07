@@ -25,8 +25,8 @@ from .mode import Q
 class Program(_mixins.DictMixin, _mixins.RegisterMixin):
     r"""The class representing the quantum program.
 
-    A `Program` object can be used with the `with` statement. In this context, the state
-    and all the instructions could be specified.
+    A `Program` object can be used with the `with` statement.
+    In this context all the instructions could be specified.
 
     A simple example usage:
 
@@ -41,7 +41,6 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
         state = pq.GaussianState(d=5)
-
         result = state.apply(program)
 
     Args:

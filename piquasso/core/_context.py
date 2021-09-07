@@ -15,8 +15,10 @@
 
 """Global context variables."""
 
+import typing
 from typing import Optional
 
-from piquasso import api
+if typing.TYPE_CHECKING:
+    from piquasso.api.program import Program
 
-current_program: Optional["api.program.Program"] = None
+current_program: Optional["Program"] = None

@@ -50,8 +50,10 @@ class GaussianState(State):
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
+            pq.Q() | pq.Vacuum()
 
+        state = pq.GaussianState(d=5)
+        state.apply(program)
     """
 
     circuit_class = GaussianCircuit
@@ -970,7 +972,7 @@ class GaussianState(State):
 
                 guess = random.uniform(0.0, 1.0)
 
-                choice = None
+                choice: int
 
                 for n in range(cutoff):
                     occupation_numbers = tuple(sample + [n])

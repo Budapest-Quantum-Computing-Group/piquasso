@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import typing
 from typing import Collection, Tuple, Union, Any
 
@@ -37,13 +38,12 @@ class Q:
         import piquasso as pq
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
-
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        result = program.execute()
+        state = pq.GaussianState(d=5)
+        result = state.apply(program)
 
-    In the above example, the :class:`~piquasso.instructions.gates.Beamsplitter` gate
+    In the above example, the :class:`~piquasso.instructions.gates.Squeezing` gate
     is applied to modes `0, 1`.
 
     Note, that it is not necessarily required to specify any modes, if the context
@@ -56,11 +56,18 @@ class Q:
     .. code-block:: python
 
         with pq.Program() as program:
-            pq.Q() | pq.GaussianState(d=5) | pq.Vacuum()
-
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
             pq.Q(all) | pq.ParticleNumberMeasurement()
+
+    or alternatively no parameters, i.e.
+
+    .. code-block:: python
+
+        with pq.Program() as program:
+            pq.Q(0, 1) | pq.Squeezing(r=0.5)
+
+            pq.Q() | pq.ParticleNumberMeasurement()
 
     Args:
         *modes (int):
@@ -95,7 +102,7 @@ class Q:
         `instructions`.
 
         If `rhs` is a `Program`, then the current program's `instructions` is extended
-        with `rhs.instructions`.
+        with the `instructions` of `rhs`.
 
         Args:
             rhs (Instruction or Program):
@@ -106,7 +113,15 @@ class Q:
         """
 
         if _context.current_program is None:
-            raise PiquassoException("")
+            raise PiquassoException(
+                "The current program is None; therefore, it is not possible to register"
+                " the parameters on the given modes.\n"
+                "Please use `Q(...) | ...` only inside `with pq.Program() as program:` "
+                "blocks, e.g.\n"
+                "\n"
+                "with pq.Program() as program:\n"
+                "    pq.Q(0, 1) | pq.Squeezing(r=0.5)"
+            )
 
         rhs._apply_to_program_on_register(_context.current_program, register=self)
 
