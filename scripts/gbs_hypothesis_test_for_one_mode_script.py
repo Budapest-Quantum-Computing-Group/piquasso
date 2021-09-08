@@ -13,19 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
-
 import numpy as np
-import matplotlib.pyplot as plt
 
 import piquasso as pq
-
 import strawberryfields as sf
 
 
-def gbs_histogram_script():
+def gbs_hypothesis_test_script(cramer_hypothesis_test):
     d = 5
-    shots = 2000
+    shots = 5000
+
+    selected_mode = 3
 
     pq_state = pq.GaussianState(d=d)
 
@@ -41,8 +39,8 @@ def gbs_histogram_script():
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-        # NOTE: In SF the cutoff is 5, and couldn't be changed
-        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
+        # NOTE: In SF the cutoff is 5, and couldn't be changed.
+        pq.Q(selected_mode) | pq.ParticleNumberMeasurement(cutoff=5)
 
     sf_program = sf.Program(d)
     sf_engine = sf.Engine(backend="gaussian")
@@ -69,18 +67,11 @@ def gbs_histogram_script():
         sf.ops.BSgate(2.2679037068773673, 1.9550229282085838) | (q[1], q[2])
         sf.ops.BSgate(3.340269832485504, 3.289367083610399) | (q[3], q[4])
 
-        sf.ops.MeasureFock() | (q[0], q[1], q[2])
+        sf.ops.MeasureFock() | (q[selected_mode])
 
     pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
-    n_bins = 20
+    accepted = cramer_hypothesis_test(pq_results, sf_results)
 
-    fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
-
-    axs[0].hist(pq_results, bins=n_bins)
-    axs[1].hist(sf_results, bins=n_bins)
-
-    fig.savefig("histogram.png")
-
-    subprocess.call(('xdg-open', "histogram.png"))
+    assert accepted, "The hypothesis is not accepted."

@@ -17,6 +17,8 @@ import os
 import random
 from typing import Any
 
+import numpy as np
+
 """Module for storing constants."""
 
 _HBAR_DEFAULT = 2.0
@@ -27,6 +29,8 @@ _SEED = int.from_bytes(os.urandom(8), byteorder="big")
 
 HBAR = _HBAR_DEFAULT
 
+RNG = np.random.default_rng(_SEED)
+
 
 def reset_hbar() -> None:
     global HBAR
@@ -35,14 +39,12 @@ def reset_hbar() -> None:
 
 def seed(sequence: Any = None) -> None:
     global _SEED
+    global RNG
     _SEED = sequence or int.from_bytes(os.urandom(8), byteorder="big")
+    RNG = np.random.default_rng(_SEED)
     random.seed(_SEED)
 
 
 def get_seed() -> Any:
     global _SEED
     return _SEED
-
-
-# def __repr__(self) -> str:
-#     return f"<Constants HBAR={self.HBAR} SEED={self.get_seed()}>"

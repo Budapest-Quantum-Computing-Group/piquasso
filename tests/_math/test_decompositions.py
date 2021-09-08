@@ -20,7 +20,11 @@ import piquasso as pq
 
 from piquasso._math.linalg import is_unitary, is_diagonal
 from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
-from piquasso._math.decompositions import takagi, williamson
+from piquasso._math.decompositions import (
+    takagi,
+    williamson,
+    decompose_to_pure_and_mixed
+)
 
 
 def test_takagi_on_real_symmetric_2_by_2_matrix():
@@ -173,3 +177,56 @@ def test_williamson_with_random_positive_definite_matrix(
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
     assert np.all(np.isreal(symplectic))
     assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
+
+
+def test_decompose_to_pure_and_mixed_with_identity():
+    hbar = 42
+    covariance_matrix = hbar * np.identity(4)
+    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
+        covariance_matrix,
+        hbar=hbar,
+    )
+
+    assert np.allclose(mixed_contribution, 0.0)
+    assert np.allclose(covariance_matrix, pure_covariance)
+
+
+def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribution():
+    d = 3
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+        pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
+
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+
+    covariance_matrix = state.xxpp_covariance_matrix
+
+    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
+        covariance_matrix,
+        hbar=pq.api.constants.HBAR,
+    )
+
+    assert np.allclose(mixed_contribution, 0.0)
+    assert np.allclose(covariance_matrix, pure_covariance)
+
+
+def test_decompose_to_pure_and_mixed_with_reduced_gaussian():
+    d = 3
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+        pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
+
+    state = pq.GaussianState(d=d)
+    state.apply(program)
+
+    reduced_state = state.reduced(modes=(0, 2))
+
+    covariance_matrix = reduced_state.xxpp_covariance_matrix
+
+    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
+        covariance_matrix,
+        hbar=pq.api.constants.HBAR,
+    )
+
+    assert np.allclose(pure_covariance + mixed_contribution, covariance_matrix)

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
 import scipy
 import numpy as np
 
@@ -182,3 +184,17 @@ def williamson(matrix: np.ndarray) -> tuple:
     diagonal_matrix = np.diag(1 / np.diag(inverse_diagonal_matrix))
 
     return symplectic, diagonal_matrix
+
+
+def decompose_to_pure_and_mixed(
+    matrix: np.ndarray,
+    hbar: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    symplectic, diagonal = williamson(matrix)
+    pure_covariance = hbar * symplectic @ symplectic.transpose()
+    mixed_contribution = (
+        symplectic
+        @ (diagonal - hbar * np.identity(len(diagonal)))
+        @ symplectic.transpose()
+    )
+    return pure_covariance, mixed_contribution
