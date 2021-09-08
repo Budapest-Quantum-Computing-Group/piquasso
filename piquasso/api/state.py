@@ -15,11 +15,10 @@
 
 import abc
 import copy
-from typing import Tuple, Optional, Type
+from typing import Tuple, Optional
 
 import numpy as np
 
-from piquasso.api.circuit import Circuit
 from piquasso.api.program import Program
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
@@ -31,21 +30,21 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     """The base class from which all `*State` classes are derived.
 
     Properties:
-        circuit_class (~piquasso.api.circuit.Circuit):
-            Class attribute for specifying corresponding circuit. The circuit is
-            responsible to execute the specified instructions on the :class:`State`
-            instance.
         d (int): Instance attribute specifying the number of modes.
     """
 
-    @property
-    @abc.abstractmethod
-    def circuit_class(self) -> Type[Circuit]:
-        pass
+    def __init__(self) -> None:
+        self.result: Optional[Result] = None
+        self.shots: int = None  # type: ignore
 
     @property
     @abc.abstractmethod
     def d(self) -> int:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def _instruction_map(self) -> dict:
         pass
 
     @classmethod
@@ -73,12 +72,31 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
                 f"The number of shots should be a positive integer: shots={shots}."
             )
 
-        circuit = self.circuit_class()
-        return circuit.execute_instructions(
-            program.instructions,
-            self,
-            shots=shots,
-        )
+        self.shots = shots
+
+        for instruction in program.instructions:
+            if instruction.modes is tuple():
+                instruction.modes = tuple(range(self.d))
+
+            if hasattr(instruction, "_autoscale"):
+                instruction._autoscale()  # type: ignore
+
+            method_name = self._instruction_map.get(instruction.__class__.__name__)
+
+            if not method_name:
+                raise NotImplementedError(
+                    "\n"
+                    "No such instruction implemented for this state.\n"
+                    "Details:\n"
+                    f"instruction={instruction}\n"
+                    f"state={self}\n"
+                    f"Available instructions:\n"
+                    + str(", ".join(self._instruction_map.keys())) + "."
+                )
+
+            getattr(self, method_name)(instruction)
+
+        return self.result
 
     @staticmethod
     def _get_operator_index(

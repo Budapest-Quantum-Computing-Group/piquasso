@@ -30,7 +30,6 @@ from piquasso.api import constants
 from piquasso.api.mode import Q
 from piquasso.api.instruction import Instruction
 from piquasso.api.program import Program
-from piquasso.api.circuit import Circuit
 from piquasso.api.state import State
 from piquasso.api.plugin import Plugin
 

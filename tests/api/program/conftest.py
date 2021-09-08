@@ -26,15 +26,13 @@ def setup_plugin():
         def __init__(self, **params):
             super().__init__(params=params)
 
-    class FakeCircuit(pq.Circuit):
-        dummy_instruction = Mock(name="dummy_instruction")
-
-        instruction_map = {
+    class FakeState(pq.State):
+        _instruction_map = {
             "DummyInstruction": "dummy_instruction",
         }
 
-    class FakeState(pq.State):
-        circuit_class = FakeCircuit
+        dummy_instruction = Mock(name="dummy_instruction")
+
         d = 42
 
         def get_particle_detection_probability(self, occupation_number: tuple) -> float:
@@ -43,7 +41,6 @@ def setup_plugin():
     class FakePlugin(pq.Plugin):
         classes = {
             "FakeState": FakeState,
-            "FakeCircuit": FakeCircuit,
             "DummyInstruction": DummyInstruction,
         }
 

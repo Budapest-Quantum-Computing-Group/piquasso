@@ -21,20 +21,47 @@ from piquasso._math.fock import symmetric_subspace_cardinality
 from piquasso._math.linalg import is_unitary
 from piquasso.api.errors import InvalidState
 from piquasso.api.state import State
-from .circuit import SamplingCircuit
+from piquasso.api.result import Result
+from piquasso.api.instruction import Instruction
 
-from BoSS.boson_sampling_utilities.permanent_calculators. \
-    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
 from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (
     BSDistributionCalculatorWithFixedLosses,
     BosonSamplingExperimentConfiguration,
 )
+from BoSS.boson_sampling_simulator import BosonSamplingSimulator
+# The fastest implemented permanent calculator is currently Ryser-Guan
+from BoSS.boson_sampling_utilities.permanent_calculators\
+    .bs_permanent_calculator_interface import \
+    BSPermanentCalculatorInterface
+from BoSS.boson_sampling_utilities.permanent_calculators. \
+    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
+# Fastest boson sampling algorithm generalized for bunched states
+from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import \
+    GeneralizedCliffordsSimulationStrategy
+from BoSS.simulation_strategies. \
+    generalized_cliffords_uniform_losses_simulation_strategy import \
+    GeneralizedCliffordsUniformLossesSimulationStrategy
+# Fastest BS algorithm generalized for bunched states, but with lossy network
+from BoSS.simulation_strategies. \
+    lossy_networks_generalized_cliffords_simulation_strategy import \
+    LossyNetworksGeneralizedCliffordsSimulationStrategy
+from BoSS.simulation_strategies.simulation_strategy_interface import \
+    SimulationStrategyInterface
 
 
 class SamplingState(State):
-    circuit_class = SamplingCircuit
+    _instruction_map = {
+        "Beamsplitter": "_passive_linear",
+        "Phaseshifter": "_passive_linear",
+        "MachZehnder": "_passive_linear",
+        "Fourier": "_passive_linear",
+        "Sampling": "_sampling",
+        "Interferometer": "_passive_linear",
+        "Loss": "_loss",
+    }
 
     def __init__(self, *initial_state: int) -> None:
+        super().__init__()
         self.initial_state = initial_state
         self.interferometer: np.ndarray = \
             np.diag(np.ones(self.d, dtype=complex))
@@ -51,34 +78,28 @@ class SamplingState(State):
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
 
-    def _apply_passive_linear(
-        self, U: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
-        r"""
-        Multiplies the interferometer of the state with the `U` matrix (representing
-        the additional interferometer) in the qumodes specified in `modes`.
+    def _passive_linear(self, instruction: Instruction) -> None:
+        r"""Applies an interferometer to the circuit.
 
-        The size of `U` should be smaller than or equal to the size of the
-        interferometer.
+        This can be interpreted as placing another interferometer in the network, just
+        before performing the sampling. This instruction is realized by multiplying
+        current effective interferometer matrix with new interferometer matrix.
 
-        The `modes` can contain any number in any order as long as number of qumodes is
-        equal to the size of the `U` matrix.
-
-        Args:
-            U (numpy.ndarray): A square matrix to multiply to the interferometer.
-            modes (tuple[int]):
-                Distinct positive integer values which are used to represent qumodes.
+        Do note, that new interferometer matrix works as interferometer matrix on
+        qumodes (provided as the arguments) and as an identity on every other mode.
         """
-        self._apply_matrix_on_modes(U, modes)
+        self._apply_matrix_on_modes(
+            matrix=instruction._all_params["passive_block"],
+            modes=instruction.modes
+        )
 
-    def _apply_loss(
-        self, transmissivity: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
+    def _loss(self, instruction: Instruction) -> None:
         self.is_lossy = True
 
-        transmission_matrix = np.diag(transmissivity)
-
-        self._apply_matrix_on_modes(transmission_matrix, modes)
+        self._apply_matrix_on_modes(
+            matrix=np.diag(instruction._all_params["transmissivity"]),
+            modes=instruction.modes
+        )
 
     def _apply_matrix_on_modes(
         self, matrix: np.ndarray, modes: Tuple[int, ...]
@@ -88,6 +109,42 @@ class SamplingState(State):
         embedded[np.ix_(modes, modes)] = matrix
 
         self.interferometer = embedded @ self.interferometer
+
+    def _get_sampling_simulation_strategy(
+        self, permanent_calculator: BSPermanentCalculatorInterface
+    ) -> SimulationStrategyInterface:
+        if not self.is_lossy:
+            return GeneralizedCliffordsSimulationStrategy(permanent_calculator)
+
+        _, singular_values, _ = np.linalg.svd(self.interferometer)
+
+        if np.all(np.isclose(singular_values, singular_values[0])):
+            return GeneralizedCliffordsUniformLossesSimulationStrategy(
+                permanent_calculator
+            )
+
+        return LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
+
+    def _sampling(self, instruction: Instruction) -> None:
+        initial_state = np.array(self.initial_state)
+        permanent_calculator = RyserGuanPermanentCalculator(
+            matrix=self.interferometer, input_state=initial_state)
+
+        simulation_strategy = self._get_sampling_simulation_strategy(
+            permanent_calculator
+        )
+
+        sampling_simulator = BosonSamplingSimulator(simulation_strategy)
+
+        samples = sampling_simulator.get_classical_simulation_results(
+            initial_state,
+            samples_number=self.shots
+        )
+
+        self.result = Result(
+            instruction=instruction,
+            samples=list(map(tuple, samples))
+        )
 
     @property
     def d(self) -> int:

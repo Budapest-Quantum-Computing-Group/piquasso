@@ -34,26 +34,15 @@ def FakeInstruction():
 
 
 @pytest.fixture
-def FakeCircuit(FakeInstruction):
+def FakeState():
 
-    class FakeCircuit(pq.Circuit):
-        instruction_map = {
+    class FakeState(pq.State):
+        _instruction_map = {
             "FakeInstruction": "_fake_instruction",
         }
 
-        def _fake_instruction(self, instruction, state):
-            pass
-
-    return FakeCircuit
-
-
-@pytest.fixture
-def FakeState(FakeCircuit):
-
-    class FakeState(pq.State):
-        circuit_class = FakeCircuit
-
         def __init__(self, foo, bar, d):
+            super().__init__()
             self.foo = foo
             self.bar = bar
             self._d = d
@@ -61,6 +50,9 @@ def FakeState(FakeCircuit):
         @property
         def d(self) -> int:
             return self._d
+
+        def _fake_instruction(self, instruction, state):
+            pass
 
         def get_particle_detection_probability(
             self,

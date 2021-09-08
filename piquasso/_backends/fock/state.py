@@ -21,13 +21,37 @@ from typing import Tuple, Generator, Any, Mapping, List
 
 from piquasso.instructions.preparations import StateVector
 from piquasso._math.fock import FockBasis
+from piquasso.api.instruction import Instruction
+from piquasso.api.result import Result
 from piquasso.api.state import State
 
 from piquasso._math import fock
 
 
 class BaseFockState(State, abc.ABC):
+    _instruction_map = {
+        "Interferometer": "_passive_linear",
+        "Beamsplitter": "_passive_linear",
+        "Phaseshifter": "_passive_linear",
+        "MachZehnder": "_passive_linear",
+        "Fourier": "_passive_linear",
+        "Kerr": "_kerr",
+        "CrossKerr": "_cross_kerr",
+        "Squeezing": "_linear",
+        "QuadraticPhase": "_linear",
+        "Displacement": "_linear",
+        "PositionDisplacement": "_linear",
+        "MomentumDisplacement": "_linear",
+        "Squeezing2": "_linear",
+        "GaussianTransform": "_linear",
+        "ParticleNumberMeasurement": "_particle_number_measurement",
+        "Vacuum": "_vacuum",
+        "Create": "_create",
+        "Annihilate": "_annihilate",
+    }
+
     def __init__(self, *, d: int, cutoff: int) -> None:
+        super().__init__()
         self._space = fock.FockSpace(
             d=d,
             cutoff=cutoff,
@@ -65,16 +89,16 @@ class BaseFockState(State, abc.ABC):
         return sum(self.fock_probabilities)
 
     def _particle_number_measurement(
-        self, modes: Tuple[int, ...], shots: int
-    ) -> List[FockBasis]:
+        self, instruction: Instruction
+    ) -> None:
         probability_map = self._get_probability_map(
-            modes=modes,
+            modes=instruction.modes,
         )
 
         samples = random.choices(
             population=list(probability_map.keys()),
             weights=list(probability_map.values()),
-            k=shots,
+            k=self.shots,
         )
 
         # NOTE: We choose the last sample for multiple shots.
@@ -84,11 +108,14 @@ class BaseFockState(State, abc.ABC):
 
         self._project_to_subspace(
             subspace_basis=sample,
-            modes=modes,
+            modes=instruction.modes,
             normalization=normalization,
         )
 
-        return samples
+        self.result = Result(
+            instruction=instruction,
+            samples=samples  # type: ignore
+        )
 
     def _as_code(self) -> str:
         return (
@@ -100,13 +127,11 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _apply_vacuum(self) -> None:
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_passive_linear(
-        self, operator: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
+    def _passive_linear(self, instruction: Instruction) -> None:
         pass
 
     @abc.abstractmethod
@@ -129,11 +154,11 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
+    def _create(self, instruction: Instruction) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
+    def _annihilate(self, instruction: Instruction) -> None:
         pass
 
     @abc.abstractmethod
@@ -143,21 +168,15 @@ class BaseFockState(State, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _apply_kerr(self, xi: complex, mode: int) -> None:
+    def _kerr(self, instruction: Instruction) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
+    def _cross_kerr(self, instruction: Instruction) -> None:
         pass
 
     @abc.abstractmethod
-    def _apply_linear(
-        self,
-        passive_block: np.ndarray,
-        active_block: np.ndarray,
-        displacement: np.ndarray,
-        modes: Tuple[int, ...]
-    ) -> None:
+    def _linear(self, instruction: Instruction) -> None:
         pass
 
     @property
@@ -204,4 +223,4 @@ class BaseFockState(State, abc.ABC):
         Resets this object to a vacuum state.
         """
 
-        self._apply_vacuum()
+        self._vacuum()

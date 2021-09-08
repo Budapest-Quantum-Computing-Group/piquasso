@@ -13,18 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from typing import Tuple, Dict, List, Mapping, Generator, Any
 
 import numpy as np
 
 from piquasso._math.fock import FockBasis, FockOperatorBasis
+from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.combinatorics import partitions
 
 from ..state import BaseFockState
 from ..general.state import FockState
-
-from .circuit import PNCFockCircuit
 
 from scipy.linalg import block_diag
 
@@ -41,7 +41,11 @@ class PNCFockState(BaseFockState):
         d (int): The number of modes.
         cutoff (int): The Fock space cutoff.
     """
-    circuit_class = PNCFockCircuit
+
+    _instruction_map = {
+        "DensityMatrix": "_density_matrix_instruction",
+        **BaseFockState._instruction_map
+    }
 
     def __init__(
         self,
@@ -64,14 +68,14 @@ class PNCFockState(BaseFockState):
             for n in range(self._space.cutoff)
         ]
 
-    def _apply_vacuum(self) -> None:
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         self._representation = self._get_empty()
         self._representation[0][0, 0] = 1.0
 
-    def _apply_passive_linear(
-        self, operator: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
-        index = self._get_operator_index(modes)
+    def _passive_linear(self, instruction: Instruction) -> None:
+        operator: np.ndarray = instruction._all_params["passive_block"]
+
+        index = self._get_operator_index(instruction.modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
 
@@ -155,15 +159,15 @@ class PNCFockState(BaseFockState):
 
             self._representation[n] = density_matrix[begin:end, begin:end]
 
-    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_creation_operator(modes)
+    def _create(self, instruction: Instruction) -> None:
+        operator = self._space.get_creation_operator(instruction.modes)
 
         self._hacky_apply_operator(operator)
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_annihilation_operator(modes)
+    def _annihilate(self, instruction: Instruction) -> None:
+        operator = self._space.get_annihilation_operator(instruction.modes)
 
         self._hacky_apply_operator(operator)
 
@@ -187,7 +191,10 @@ class PNCFockState(BaseFockState):
 
         self._representation[n][index, dual_index] = coefficient
 
-    def _apply_kerr(self, xi: complex, mode: int) -> None:
+    def _kerr(self, instruction: Instruction) -> None:
+        mode = instruction.modes[0]
+        xi = instruction._all_params["xi"]
+
         for n, subrep in enumerate(self._representation):
             for index, (basis, dual_basis) in (
                 self._space.enumerate_subspace_operator_basis(n)
@@ -204,7 +211,10 @@ class PNCFockState(BaseFockState):
 
                 self._representation[n][index] *= coefficient
 
-    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
+    def _cross_kerr(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        xi = instruction._all_params["xi"]
+
         for n, subrep in enumerate(self._representation):
             for index, (basis, dual_basis) in (
                 self._space.enumerate_subspace_operator_basis(n)
@@ -218,24 +228,30 @@ class PNCFockState(BaseFockState):
 
                 self._representation[n][index] *= coefficient
 
-    def _apply_linear(
-        self,
-        passive_block: np.ndarray,
-        active_block: np.ndarray,
-        displacement: np.ndarray,
-        modes: Tuple[int, ...]
-    ) -> None:
+    def _linear(self, instruction: Instruction) -> None:
+        warnings.warn(
+            f"Gaussian evolution of the state with instruction {instruction} may not "
+            f"result in the desired state, since state {self.__class__} only "
+            "stores a limited amount of information to handle particle number "
+            "conserving instructions.\n"
+            "Consider using 'FockState' or 'PureFockState' instead!",
+            UserWarning
+        )
+
         operator = self._space.get_linear_fock_operator(
-            modes=modes,
-            auxiliary_modes=self._get_auxiliary_modes(modes),
-            passive_block=passive_block,
-            active_block=active_block,
-            displacement=displacement,
+            modes=instruction.modes,
+            auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
+            passive_block=instruction._all_params["passive_block"],
+            active_block=instruction._all_params["active_block"],
+            displacement=instruction._all_params["displacement_vector"],
         )
 
         self._hacky_apply_operator(operator)
 
         self.normalize()
+
+    def _density_matrix_instruction(self, instruction: Instruction) -> None:
+        self._add_occupation_number_basis(**instruction.params)
 
     @property
     def nonzero_elements(

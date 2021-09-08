@@ -17,13 +17,12 @@ from typing import Tuple, Any, Generator, Dict, Mapping
 
 import numpy as np
 
+from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.linalg import is_selfadjoint
 from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis, FockBasis
 
 from ..state import BaseFockState
-
-from .circuit import FockCircuit
 
 
 class FockState(BaseFockState):
@@ -39,7 +38,10 @@ class FockState(BaseFockState):
         cutoff (int): The Fock space cutoff.
     """
 
-    circuit_class = FockCircuit
+    _instruction_map = {
+        "DensityMatrix": "_density_matrix_instruction",
+        **BaseFockState._instruction_map
+    }
 
     def __init__(
         self, density_matrix: np.ndarray = None, *, d: int, cutoff: int
@@ -70,14 +72,14 @@ class FockState(BaseFockState):
     def _get_empty(self) -> np.ndarray:
         return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
 
-    def _apply_vacuum(self) -> None:
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         self._density_matrix = self._get_empty()
         self._density_matrix[0, 0] = 1.0
 
-    def _apply_passive_linear(
-        self, operator: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
-        index = self._get_operator_index(modes)
+    def _passive_linear(self, instruction: Instruction) -> None:
+        operator: np.ndarray = instruction._all_params["passive_block"]
+
+        index = self._get_operator_index(instruction.modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
 
@@ -136,15 +138,15 @@ class FockState(BaseFockState):
 
         return new_density_matrix
 
-    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_creation_operator(modes)
+    def _create(self, instruction: Instruction) -> None:
+        operator = self._space.get_creation_operator(instruction.modes)
 
         self._density_matrix = operator @ self._density_matrix @ operator.transpose()
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_annihilation_operator(modes)
+    def _annihilate(self, instruction: Instruction) -> None:
+        operator = self._space.get_annihilation_operator(instruction.modes)
 
         self._density_matrix = operator @ self._density_matrix @ operator.transpose()
 
@@ -158,7 +160,10 @@ class FockState(BaseFockState):
 
         self._density_matrix[index, dual_index] = coefficient
 
-    def _apply_kerr(self, xi: complex, mode: int) -> None:
+    def _kerr(self, instruction: Instruction) -> None:
+        mode = instruction.modes[0]
+        xi = instruction._all_params["xi"]
+
         for index, (basis, dual_basis) in self._space.operator_basis:
             number = basis[mode]
             dual_number = dual_basis[mode]
@@ -172,7 +177,10 @@ class FockState(BaseFockState):
 
             self._density_matrix[index] *= coefficient
 
-    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
+    def _cross_kerr(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        xi = instruction._all_params["xi"]
+
         for index, (basis, dual_basis) in self._space.operator_basis:
             coefficient = np.exp(
                 1j * xi * (
@@ -183,19 +191,13 @@ class FockState(BaseFockState):
 
             self._density_matrix[index] *= coefficient
 
-    def _apply_linear(
-        self,
-        passive_block: np.ndarray,
-        active_block: np.ndarray,
-        displacement: np.ndarray,
-        modes: Tuple[int, ...]
-    ) -> None:
+    def _linear(self, instruction: Instruction) -> None:
         operator = self._space.get_linear_fock_operator(
-            modes=modes,
-            auxiliary_modes=self._get_auxiliary_modes(modes),
-            passive_block=passive_block,
-            active_block=active_block,
-            displacement=displacement,
+            modes=instruction.modes,
+            auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
+            passive_block=instruction._all_params["passive_block"],
+            active_block=instruction._all_params["active_block"],
+            displacement=instruction._all_params["displacement_vector"],
         )
 
         self._density_matrix = (
@@ -205,6 +207,9 @@ class FockState(BaseFockState):
         )
 
         self.normalize()
+
+    def _density_matrix_instruction(self, instruction: Instruction) -> None:
+        self._add_occupation_number_basis(**instruction.params)
 
     @property
     def nonzero_elements(

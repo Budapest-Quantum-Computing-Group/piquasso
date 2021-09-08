@@ -17,13 +17,12 @@ from typing import Tuple, Dict, Mapping, Generator, Any
 
 import numpy as np
 
+from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.fock import cutoff_cardinality, FockBasis
 
 from ..state import BaseFockState
 from ..general.state import FockState
-
-from .circuit import PureFockCircuit
 
 
 class PureFockState(BaseFockState):
@@ -38,7 +37,10 @@ class PureFockState(BaseFockState):
         cutoff (int): The Fock space cutoff.
     """
 
-    circuit_class = PureFockCircuit
+    _instruction_map = {
+        "StateVector": "_state_vector_instruction",
+        **BaseFockState._instruction_map
+    }
 
     def __init__(
         self, state_vector: np.ndarray = None, *, d: int, cutoff: int
@@ -54,14 +56,14 @@ class PureFockState(BaseFockState):
     def _get_empty(self) -> np.ndarray:
         return np.zeros(shape=(self._space.cardinality, ), dtype=complex)
 
-    def _apply_vacuum(self) -> None:
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         self._state_vector = self._get_empty()
         self._state_vector[0] = 1.0
 
-    def _apply_passive_linear(
-        self, operator: np.ndarray, modes: Tuple[int, ...]
-    ) -> None:
-        index = self._get_operator_index(modes)
+    def _passive_linear(self, instruction: Instruction) -> None:
+        operator: np.ndarray = instruction._all_params["passive_block"]
+
+        index = self._get_operator_index(instruction.modes)
 
         embedded_operator = np.identity(self._space.d, dtype=complex)
 
@@ -133,21 +135,24 @@ class PureFockState(BaseFockState):
 
         self._state_vector[index] = coefficient
 
-    def _apply_creation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_creation_operator(modes)
+    def _create(self, instruction: Instruction) -> None:
+        operator = self._space.get_creation_operator(instruction.modes)
 
         self._state_vector = operator @ self._state_vector
 
         self.normalize()
 
-    def _apply_annihilation_operator(self, modes: Tuple[int, ...]) -> None:
-        operator = self._space.get_annihilation_operator(modes)
+    def _annihilate(self, instruction: Instruction) -> None:
+        operator = self._space.get_annihilation_operator(instruction.modes)
 
         self._state_vector = operator @ self._state_vector
 
         self.normalize()
 
-    def _apply_kerr(self, xi: complex, mode: int) -> None:
+    def _kerr(self, instruction: Instruction) -> None:
+        mode = instruction.modes[0]
+        xi = instruction._all_params["xi"]
+
         for index, basis in self._space.basis:
             number = basis[mode]
             coefficient = np.exp(
@@ -155,31 +160,34 @@ class PureFockState(BaseFockState):
             )
             self._state_vector[index] *= coefficient
 
-    def _apply_cross_kerr(self, xi: complex, modes: Tuple[int, int]) -> None:
+    def _cross_kerr(self, instruction: Instruction) -> None:
+        modes = instruction.modes
+        xi = instruction._all_params["xi"]
+
         for index, basis in self._space.basis:
             coefficient = np.exp(
                 1j * xi * basis[modes[0]] * basis[modes[1]]
             )
             self._state_vector[index] *= coefficient
 
-    def _apply_linear(
-        self,
-        passive_block: np.ndarray,
-        active_block: np.ndarray,
-        displacement: np.ndarray,
-        modes: Tuple[int, ...]
-    ) -> None:
+    def _linear(self, instruction: Instruction) -> None:
         operator = self._space.get_linear_fock_operator(
-            modes=modes,
-            auxiliary_modes=tuple(self._get_auxiliary_modes(modes)),
-            passive_block=passive_block,
-            active_block=active_block,
-            displacement=displacement,
+            modes=instruction.modes,
+            auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
+            passive_block=instruction._all_params["passive_block"],
+            active_block=instruction._all_params["active_block"],
+            displacement=instruction._all_params["displacement_vector"],
         )
 
         self._state_vector = operator @ self._state_vector
 
         self.normalize()
+
+    def _state_vector_instruction(self, instruction: Instruction) -> None:
+        self._add_occupation_number_basis(
+            **instruction._all_params,
+            modes=instruction.modes,
+        )
 
     @property
     def nonzero_elements(
