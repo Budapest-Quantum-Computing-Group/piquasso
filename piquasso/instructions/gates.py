@@ -685,7 +685,7 @@ class CrossKerr(Instruction):
 
 class Graph(Instruction):
     r"""Applies a graph given its adjacency matrix, see
-    https://arxiv.org/pdf/1612.01199.pdf
+    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_.
 
     Raises:
         InvalidParameter: If the adjacency matrix is not invertible or not symmetric.

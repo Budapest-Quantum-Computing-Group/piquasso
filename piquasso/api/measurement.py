@@ -24,6 +24,8 @@ if typing.TYPE_CHECKING:
 
 
 class Measurement(Instruction):
+    r"""Base class for all measurement-related instructions."""
+
     def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         if any(
             isinstance(instruction, type(self))
