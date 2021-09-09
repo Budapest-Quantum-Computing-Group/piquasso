@@ -1,5 +1,7 @@
 # Development Guide
 
+Note: This package is still under development.
+
 ## How to contribute?
 
 Open an *Issue* or a *Pull request*.
