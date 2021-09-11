@@ -471,6 +471,10 @@ class GaussianState(State):
             ]
         ) + np.identity(2 * self.d)
 
+    @property
+    def Q_matrix(self):
+        return (self.complex_covariance + np.identity(2 * len(self))) / 2
+
     def rotated(self, phi: float) -> "GaussianState":
         r"""Returns the copy of the current state, rotated by angle `phi`.
 
@@ -511,7 +515,7 @@ class GaussianState(State):
         """
         phase = np.exp(- 1j * phi)
 
-        return GaussianState._from_representation(
+        return self.__class__._from_representation(
             C=self._C,
             G=(self._G * phase**2),
             m=(self._m * phase),
@@ -529,7 +533,7 @@ class GaussianState(State):
         Returns:
             GaussianState: The reduced `GaussianState` instance.
         """
-        return GaussianState._from_representation(
+        return self.__class__._from_representation(
             C=self._C[np.ix_(modes, modes)],
             G=self._G[np.ix_(modes, modes)],
             m=self._m[np.ix_(modes)],
@@ -947,7 +951,7 @@ class GaussianState(State):
             @ (sample - mean_measured)
         )
 
-        state = GaussianState(d=len(evolved_r_A) // 2)
+        state = self.__class__(d=len(evolved_r_A) // 2)
 
         state.xpxp_covariance_matrix = evolved_cov_outer
         state.xpxp_mean_vector = evolved_r_A
@@ -976,7 +980,7 @@ class GaussianState(State):
             reduced_state.xxpp_covariance_matrix,
             hbar=constants.HBAR,
         )
-        pure_state = GaussianState(len(reduced_state))
+        pure_state = self.__class__(len(reduced_state))
         pure_state.xxpp_covariance_matrix = pure_covariance
 
         heterodyne_detection_covariance = np.identity(2)
@@ -996,8 +1000,6 @@ class GaussianState(State):
 
             sample: Tuple[int, ...] = tuple()
 
-            previous_probability = 1.0
-
             heterodyne_measured_modes = reduced_modes
 
             for _ in itertools.repeat(None, len(reduced_modes)):
@@ -1010,13 +1012,7 @@ class GaussianState(State):
                     heterodyne_detection_covariance,
                 )
 
-                choice, previous_probability = (
-                    evolved_state._get_particle_number_choice_and_probability(
-                        sample,
-                        previous_probability,
-                        cutoff,
-                    )
-                )
+                choice = evolved_state._get_particle_number_choice(sample, cutoff)
 
                 sample = sample + (choice, )
 
@@ -1024,13 +1020,12 @@ class GaussianState(State):
 
         self.result = Result(instruction=instruction, samples=samples)
 
-    def _get_particle_number_choice_and_probability(
+    def _get_particle_number_choice(
         self,
         previous_sample: Tuple[int],
-        previous_probability: float,
         cutoff: int,
         loop_hafnian_func: Callable = loop_hafnian,
-    ) -> Tuple[int, float]:
+    ) -> int:
         r"""
         The original equations are
 
@@ -1073,60 +1068,29 @@ class GaussianState(State):
 
         d = len(self)
 
-        Q = (self.complex_covariance + np.identity(2 * d)) / 2
-
-        Qinv = np.linalg.inv(Q)
-
-        B = - Qinv[d:, :d]
+        B = - np.linalg.inv(self.Q_matrix)[d:, :d]
         alpha = self.complex_displacement[:d]
 
         gamma = alpha.conj() - alpha @ B
 
-        normalization = (
-            np.exp(- (gamma @ alpha).real)
-            * np.sqrt(np.linalg.det(np.identity(d) - B.conj() @ B))
-        ).real
+        weights = np.array([])
 
-        cumulated_probabilities = [0.0]
+        possible_choices = tuple(range(cutoff))
 
-        guess = random.uniform(0.0, 1.0)
-
-        choice: int
-
-        for n in range(cutoff):
+        for n in possible_choices:
             occupation_numbers = previous_sample + (n, )
 
             B_reduced = reduce_(B, reduce_on=occupation_numbers)
-            gamma_reduced = reduce_(gamma[:d], reduce_on=occupation_numbers)
+            gamma_reduced = reduce_(gamma, reduce_on=occupation_numbers)
 
             np.fill_diagonal(B_reduced, gamma_reduced)
 
-            probability = normalization * (
-                abs(loop_hafnian_func(B_reduced)) ** 2
-                / np.prod(factorial(occupation_numbers))
-            )
+            weight = abs(loop_hafnian_func(B_reduced)) ** 2 / factorial(n)
+            weights = np.append(weights, weight)
 
-            conditional_probability = probability / previous_probability
+        weights /= np.sum(weights)
 
-            cumulated_probabilities.append(
-                conditional_probability + cumulated_probabilities[-1]
-            )
-
-            if guess < cumulated_probabilities[-1]:
-                choice = n
-                break
-
-        else:
-            choice = choose_from_cumulated_probabilities(
-                cumulated_probabilities
-            )
-
-        previous_probability = (
-            cumulated_probabilities[choice + 1]
-            - cumulated_probabilities[choice]
-        ) * previous_probability
-
-        return choice, previous_probability
+        return np.random.choice(possible_choices, p=weights)
 
     def _threshold_measurement(
         self, instruction: Instruction
