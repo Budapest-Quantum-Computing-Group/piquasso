@@ -21,7 +21,7 @@ import strawberryfields as sf
 
 def gbs_hypothesis_test_script(cramer_hypothesis_test):
     d = 5
-    shots = 1000
+    shots = 5000
 
     pq_state = pq.GaussianState(d=d)
 
