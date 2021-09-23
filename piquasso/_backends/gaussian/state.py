@@ -969,6 +969,16 @@ class GaussianState(State):
     def _particle_number_measurement(
         self, instruction: Instruction,
     ) -> None:
+
+        samples = self._get_particle_number_measurement_samples(instruction)
+
+        self.result = Result(instruction=instruction, samples=samples)
+
+    def _get_particle_number_measurement_samples(
+        self,
+        instruction: Instruction
+    ) -> List[Tuple[int, ...]]:
+
         modes: Tuple[int, ...] = instruction.modes
         cutoff: int = instruction._all_params["cutoff"]
 
@@ -1018,7 +1028,7 @@ class GaussianState(State):
 
             samples.append(sample)
 
-        self.result = Result(instruction=instruction, samples=samples)
+        return samples
 
     def _get_particle_number_choice(
         self,
@@ -1104,6 +1114,14 @@ class GaussianState(State):
         probability of clicks (i.e. 1 as sample), and argue that the probability of a
         click is equal to one minus the probability of no click.
         """
+        if constants.use_torontonian:
+            samples = self._generate_threshold_samples_using_torontonian(instruction)
+        else:
+            samples = self._generate_threshold_samples_using_hafnian(instruction)
+
+        self.result = Result(instruction=instruction, samples=samples)
+
+    def _generate_threshold_samples_using_torontonian(self, instruction):
         if not np.allclose(self.xpxp_mean_vector, np.zeros_like(self.xpxp_mean_vector)):
             raise NotImplementedError(
                 "Threshold measurement for displaced states are not supported: "
@@ -1191,6 +1209,18 @@ class GaussianState(State):
             samples.append(tuple(sample))
 
         return samples
+
+    def _generate_threshold_samples_using_hafnian(self, instruction):
+        samples = self._get_particle_number_measurement_samples(instruction)
+
+        threshold_samples = []
+
+        for sample in samples:
+            threshold_samples.append(
+                [1 if photon_number else 0 for photon_number in sample]
+            )
+
+        return threshold_samples
 
     def _homodyne_measurement(self, instruction: Instruction) -> None:
         phi = instruction._all_params["phi"]

@@ -64,10 +64,13 @@ class ThresholdMeasurement(Measurement):
     The generated samples contain :math:`0` or :math:`1`, where :math:`0` corresponds to
     no photon being detected, and :math:`1` corresponds to detection of at least one
     photon.
+
+    Args:
+        cutoff (int): The Fock space cutoff.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, cutoff: int = 5) -> None:
+        super().__init__(params=dict(cutoff=cutoff))
 
 
 class GeneraldyneMeasurement(Measurement):

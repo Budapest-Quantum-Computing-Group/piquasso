@@ -257,9 +257,11 @@ def test_measure_particle_number_on_all_modes(state):
     assert result
 
 
-def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
+def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_torontonian(
     state,
 ):
+    pq.constants.use_torontonian = True
+
     state_with_nonzero_displacements = state
 
     with pq.Program() as program:
@@ -267,6 +269,8 @@ def test_measure_threshold_raises_NotImplementedError_for_nonzero_displacements(
 
     with pytest.raises(NotImplementedError):
         state_with_nonzero_displacements.apply(program)
+
+    pq.constants.use_torontonian = False
 
 
 def test_measure_threshold_on_one_modes(nondisplaced_state):
