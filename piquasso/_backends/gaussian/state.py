@@ -38,14 +38,13 @@ from piquasso._math.linalg import (
 )
 from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.symplectic import symplectic_form
-from piquasso._math._random import choose_from_cumulated_probabilities
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
 from .probabilities import (
     DensityMatrixCalculation,
-    ThresholdCalculation,
+    calculate_click_probability,
 )
 
 
@@ -1128,40 +1127,19 @@ class GaussianState(State):
                 f"xpxp_mean_vector={self.xpxp_mean_vector}"
             )
 
-        def calculate_threshold_detection_probability(
-            state: "GaussianState",
-            occupation_numbers: Tuple[int, ...],
-        ) -> float:
-            calculation = ThresholdCalculation(state.xxpp_covariance_matrix)
+        modes = instruction.modes
 
-            return calculation.calculate_click_probability(occupation_numbers)
-
-        samples = self._perform_sampling(
-            cutoff=2,
-            modes=instruction.modes,
-            calculation=calculate_threshold_detection_probability,
-        )
-
-        self.result = Result(instruction=instruction, samples=samples)
-
-    def _perform_sampling(
-        self,
-        *,
-        cutoff: int,
-        modes: Tuple[int, ...],
-        calculation: Callable[["GaussianState", Tuple[int, ...]], float],
-    ) -> List[Tuple[int, ...]]:
         @lru_cache(constants.cache_size)
         def get_probability(
-            *, subspace_modes: Tuple[int, ...], occupation_numbers: Tuple[int, ...]
+            subspace_modes: Tuple[int, ...],
+            occupation_numbers: Tuple[int, ...]
         ) -> float:
             reduced_state = self.reduced(subspace_modes)
-            probability = calculation(
-                reduced_state,
-                occupation_numbers,
-            )
 
-            return max(probability, 0.0)
+            return calculate_click_probability(
+                reduced_state.xxpp_covariance_matrix,
+                occupation_numbers
+            )
 
         samples = []
 
@@ -1170,39 +1148,26 @@ class GaussianState(State):
 
             previous_probability = 1.0
 
-            for k in range(1, len(modes) + 1):
-                subspace_modes = tuple(modes[:k])
+            for mode_index in range(1, len(modes) + 1):
+                subspace_modes = tuple(modes[:mode_index])
 
-                cumulated_probabilities = [0.0]
+                occupation_numbers = tuple(sample + [0])
 
-                guess = random.uniform(0.0, 1.0)
+                probability = get_probability(
+                    subspace_modes=subspace_modes,
+                    occupation_numbers=occupation_numbers
+                )
+                conditional_probability = probability / previous_probability
 
                 choice: int
+                guess = random.uniform(0.0, 1.0)
 
-                for n in range(cutoff):
-                    occupation_numbers = tuple(sample + [n])
-
-                    probability = get_probability(
-                        subspace_modes=subspace_modes,
-                        occupation_numbers=occupation_numbers
-                    )
-                    conditional_probability = probability / previous_probability
-                    cumulated_probabilities.append(
-                        conditional_probability + cumulated_probabilities[-1]
-                    )
-                    if guess < cumulated_probabilities[-1]:
-                        choice = n
-                        break
-
+                if guess < conditional_probability:
+                    choice = 0
+                    previous_probability *= conditional_probability
                 else:
-                    choice = choose_from_cumulated_probabilities(
-                        cumulated_probabilities
-                    )
-
-                previous_probability = (
-                    cumulated_probabilities[choice + 1]
-                    - cumulated_probabilities[choice]
-                ) * previous_probability
+                    choice = 1
+                    previous_probability *= 1 - conditional_probability
 
                 sample.append(choice)
 
