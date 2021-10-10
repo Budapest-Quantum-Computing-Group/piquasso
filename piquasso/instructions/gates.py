@@ -47,7 +47,7 @@ import numpy as np
 from scipy.optimize import root_scalar
 from scipy.linalg import block_diag
 
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Gate
 from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
@@ -58,7 +58,7 @@ from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 from piquasso.core import _mixins
 
 
-class _BogoliubovTransformation(Instruction):
+class _BogoliubovTransformation(Gate):
     def __init__(
         self,
         *,
@@ -636,7 +636,7 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
         )
 
 
-class Kerr(Instruction):
+class Kerr(Gate):
     r"""Kerr gate.
 
     Note:
@@ -659,7 +659,7 @@ class Kerr(Instruction):
         super().__init__(params=dict(xi=xi))
 
 
-class CrossKerr(Instruction):
+class CrossKerr(Gate):
     r"""Cross-Kerr gate.
 
     Note:
@@ -683,7 +683,7 @@ class CrossKerr(Instruction):
         super().__init__(params=dict(xi=xi))
 
 
-class Graph(Instruction):
+class Graph(Gate):
     r"""Applies a graph given its adjacency matrix, see
     `this article <https://arxiv.org/pdf/1612.01199.pdf>`_.
 
