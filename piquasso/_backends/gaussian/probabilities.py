@@ -115,7 +115,10 @@ class DensityMatrixCalculation:
         return ret
 
 
-class ThresholdCalculation:
+def calculate_click_probability(
+    xp_covariance: np.ndarray,
+    occupation_number: Tuple[int, ...]
+) -> float:
     r"""
     Calculates the threshold detection probability with the equation
 
@@ -136,29 +139,19 @@ class ThresholdCalculation:
             \right ).
     """
 
-    def __init__(self, xp_covariance: np.ndarray) -> None:
-        d = len(xp_covariance) // 2
+    d = len(xp_covariance) // 2
 
-        self._sigma: np.ndarray = \
-            (xp_covariance / constants.HBAR + np.identity(2 * d)) / 2
+    sigma: np.ndarray = (xp_covariance / constants.HBAR + np.identity(2 * d)) / 2
 
-        self._normalization = 1 / np.sqrt(np.linalg.det(self._sigma))
+    sigma_inv_reduced = block_reduce(
+        np.linalg.inv(sigma),
+        reduce_on=occupation_number,
+    )
 
-    def _get_sigma_inv_reduced(
-        self, reduce_on: Tuple[int, ...]
-    ) -> np.ndarray:
-        return (
-            block_reduce(
-                np.linalg.inv(self._sigma),
-                reduce_on=reduce_on,
-            )
-        )
-
-    def calculate_click_probability(
-        self, occupation_number: Tuple[int, ...]
-    ) -> float:
-        sigma_inv_reduced = self._get_sigma_inv_reduced(reduce_on=occupation_number)
-
-        return self._normalization * (torontonian(
+    probability = (
+        torontonian(
             np.identity(len(sigma_inv_reduced), dtype=float) - sigma_inv_reduced
-        )).real
+        )
+    ).real / np.sqrt(np.linalg.det(sigma))
+
+    return max(probability, 0.0)
