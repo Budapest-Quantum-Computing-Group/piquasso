@@ -18,10 +18,10 @@ from typing import Tuple
 import numpy as np
 
 from piquasso.core import _mixins
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Preparation
 
 
-class Vacuum(Instruction):
+class Vacuum(Preparation):
     r"""Prepare the system in a vacuum state.
 
     Example usage::
@@ -39,7 +39,7 @@ class Vacuum(Instruction):
         pass
 
 
-class Mean(Instruction):
+class Mean(Preparation):
     r"""Set the first canonical moment of the state.
 
     Example usage::
@@ -58,7 +58,7 @@ class Mean(Instruction):
         super().__init__(params=dict(mean=mean))
 
 
-class Covariance(Instruction):
+class Covariance(Preparation):
     r"""Sets the covariance matrix of the state.
 
     Example usage::
@@ -77,7 +77,7 @@ class Covariance(Instruction):
         super().__init__(params=dict(cov=cov))
 
 
-class StateVector(Instruction, _mixins.WeightMixin):
+class StateVector(Preparation, _mixins.WeightMixin):
     r"""State preparation with Fock basis vectors.
 
     Example usage::
@@ -105,7 +105,7 @@ class StateVector(Instruction, _mixins.WeightMixin):
         )
 
 
-class DensityMatrix(Instruction, _mixins.WeightMixin):
+class DensityMatrix(Preparation, _mixins.WeightMixin):
     r"""State preparation with density matrix elements.
 
     Example usage::
@@ -141,7 +141,7 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
         )
 
 
-class Create(Instruction):
+class Create(Preparation):
     r"""Create a particle on a mode.
 
     This instruction essentially applies a creation operator on the specified mode, then
@@ -164,7 +164,7 @@ class Create(Instruction):
         pass
 
 
-class Annihilate(Instruction):
+class Annihilate(Preparation):
     r"""Annihilate a particle on a mode.
 
     This instruction essentially applies an annihilation operator on the specified mode,

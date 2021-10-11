@@ -28,7 +28,7 @@ from typing import Type, List, Any
 
 from piquasso.api import constants
 from piquasso.api.mode import Q
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Instruction, Preparation, Gate, Measurement
 from piquasso.api.program import Program
 from piquasso.api.state import State
 from piquasso.api.plugin import Plugin
@@ -178,6 +178,9 @@ __all__ = [
     "Plugin",
     "Q",
     "Instruction",
+    "Preparation",
+    "Gate",
+    "Measurement",
     "State",
     "Circuit",
     *_default_preparations.keys(),

@@ -18,10 +18,10 @@ import numpy as np
 from piquasso.core import _mixins
 
 from piquasso.api.errors import InvalidParameter
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Gate
 
 
-class Loss(Instruction, _mixins.ScalingMixin):
+class Loss(Gate, _mixins.ScalingMixin):
     """Applies a loss channel to the state.
 
     Note:
