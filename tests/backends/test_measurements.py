@@ -17,15 +17,7 @@ import pytest
 import piquasso as pq
 
 
-@pytest.mark.parametrize(
-    "StateClass",
-    (
-        pq.GaussianState,
-        pq.PureFockState,
-        pq.FockState,
-    ),
-)
-def test_InvalidModes_are_raised_if_modes_are_already_measured(StateClass):
+def test_InvalidModes_are_raised_if_modes_are_already_measured():
     with pytest.raises(pq.api.errors.InvalidProgram):
         with pq.Program():
             pq.Q() | pq.Vacuum()

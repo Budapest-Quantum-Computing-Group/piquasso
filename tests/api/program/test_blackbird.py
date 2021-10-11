@@ -117,7 +117,7 @@ def test_loads_blackbird_with_execution(gaussian_state_assets):
 
     program = pq.Program()
 
-    state = pq.GaussianState(d=3)
+    simulator = pq.GaussianSimulator(d=3)
 
     squeezing = pq.Squeezing(r=np.log(2), phi=np.pi / 2)
 
@@ -126,7 +126,7 @@ def test_loads_blackbird_with_execution(gaussian_state_assets):
 
     program.loads_blackbird(blackbird_code)
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     expected_state = gaussian_state_assets.load()
 
@@ -147,7 +147,7 @@ def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
 
     program = pq.Program()
 
-    state = pq.GaussianState(d=3)
+    simulator = pq.GaussianSimulator(d=3)
 
     squeezing = pq.Squeezing(r=np.log(2), phi=np.pi / 2)
 
@@ -156,7 +156,7 @@ def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
 
     program.load_blackbird(blackbird_file.strpath)
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     expected_state = gaussian_state_assets.load()
 

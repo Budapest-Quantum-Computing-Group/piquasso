@@ -29,29 +29,9 @@ from piquasso._math import fock
 
 
 class BaseFockState(State, abc.ABC):
-    _instruction_map = {
-        "Interferometer": "_passive_linear",
-        "Beamsplitter": "_passive_linear",
-        "Phaseshifter": "_passive_linear",
-        "MachZehnder": "_passive_linear",
-        "Fourier": "_passive_linear",
-        "Kerr": "_kerr",
-        "CrossKerr": "_cross_kerr",
-        "Squeezing": "_linear",
-        "QuadraticPhase": "_linear",
-        "Displacement": "_linear",
-        "PositionDisplacement": "_linear",
-        "MomentumDisplacement": "_linear",
-        "Squeezing2": "_linear",
-        "GaussianTransform": "_linear",
-        "ParticleNumberMeasurement": "_particle_number_measurement",
-        "Vacuum": "_vacuum",
-        "Create": "_create",
-        "Annihilate": "_annihilate",
-    }
-
     def __init__(self, *, d: int, config: Config = None) -> None:
         super().__init__(config=config)
+
         self._space = fock.FockSpace(
             d=d,
             cutoff=self._config.cutoff,

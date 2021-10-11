@@ -13,5 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .state import SamplingState  # noqa: F401
-from .simulator import SamplingSimulator  # noqa: F401
+from ..simulator import BaseFockSimulator
+from .state import FockState
+
+
+class FockSimulator(BaseFockSimulator):
+    _instruction_map = {
+        "DensityMatrix": "_density_matrix_instruction",
+        **BaseFockSimulator._instruction_map,
+    }
+
+    state_class = FockState

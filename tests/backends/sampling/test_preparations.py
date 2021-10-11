@@ -24,9 +24,8 @@ def test_initial_state():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
-    state = pq.SamplingState(d=5)
-
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_initial_state = [1, 1, 1, 0, 0]
     assert np.allclose(state.initial_state, expected_initial_state)
@@ -36,9 +35,8 @@ def test_initial_state_multiplied_with_coefficient():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 2.0
 
-    state = pq.SamplingState(d=5)
-
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_initial_state = [2, 2, 2, 0, 0]
     assert np.allclose(state.initial_state, expected_initial_state)
@@ -48,10 +46,10 @@ def test_initial_state_raises_InvalidState_for_noninteger_input_state():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
 
-    state = pq.SamplingState(d=5)
+    simulator = pq.SamplingSimulator(d=5)
 
     with pytest.raises(pq.api.errors.InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified():
@@ -59,10 +57,10 @@ def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified(
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.StateVector([1, 2, 0, 3, 0])
 
-    state = pq.SamplingState(d=5)
+    simulator = pq.SamplingSimulator(d=5)
 
     with pytest.raises(pq.api.errors.InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_interferometer_init():
@@ -86,8 +84,8 @@ def test_multiple_interferometer_on_neighbouring_modes():
 
         pq.Q(0, 1, 2) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_interferometer = np.array(
         [
@@ -118,8 +116,8 @@ def test_multiple_interferometer_on_gaped_modes():
 
         pq.Q(0, 1, 4) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_interferometer = np.array(
         [
@@ -146,8 +144,8 @@ def test_multiple_interferometer_on_reversed_gaped_modes():
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_interferometer = np.array(
         [
@@ -176,8 +174,8 @@ def test_probability_distribution():
         pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=3)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=3)
+    state = simulator.execute(program).state
 
     assert np.allclose(
         state.fock_probabilities,
@@ -209,8 +207,8 @@ def test_get_particle_detection_probability():
         pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=3)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=3)
+    state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability(occupation_number=(1, 1, 0))
 
@@ -230,8 +228,8 @@ def test_get_particle_detection_probability_on_different_subspace():
         pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=3)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=3)
+    state = simulator.execute(program).state
 
     different_particle_subspace_occupation_number = (3, 1, 0)
 

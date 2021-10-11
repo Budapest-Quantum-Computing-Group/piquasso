@@ -39,7 +39,7 @@ def gbs_graph_histogram_script():
     )
 
     # NOTE: In SF the measurement cutoff is 5, and couldn't be changed.
-    pq_state = pq.GaussianState(d=d, config=pq.Config(measurement_cutoff=5))
+    pq_simulator = pq.GaussianSimulator(d=d, config=pq.Config(measurement_cutoff=5))
 
     with pq.Program() as pq_program:
         pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
@@ -57,7 +57,7 @@ def gbs_graph_histogram_script():
 
         sf.ops.MeasureFock() | (q[0], q[1], q[2])
 
-    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
+    pq_results = np.array(pq_simulator.execute(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     n_bins = 20

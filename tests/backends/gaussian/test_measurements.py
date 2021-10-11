@@ -35,8 +35,8 @@ def state(d):
         pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi / 4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     return state
 
@@ -47,8 +47,8 @@ def nondisplaced_state(d):
         pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi / 4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     return state
 
@@ -57,7 +57,8 @@ def test_measure_homodyne_zeroes_state_on_measured_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     assert state.xpxp_mean_vector[0] == 0
@@ -67,21 +68,22 @@ def test_measure_homodyne_zeroes_state_on_measured_modes(state):
 def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     angle = np.pi / 3
 
-    state_with_rotation = state.copy()
-
     with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
 
-    state.apply(program)
-    state.validate()
+    simulator = pq.GaussianSimulator(d=state.d)
+    measured_state = simulator.execute(program, initial_state=state).state
+    measured_state.validate()
 
     with pq.Program() as program_with_rotation:
         pq.Q(0) | pq.HomodyneMeasurement(angle)
 
-    state_with_rotation.apply(program_with_rotation)
+    state_with_rotation = simulator.execute(
+        program_with_rotation, initial_state=state
+    ).state
     state_with_rotation.validate()
 
-    assert state == state_with_rotation
+    assert measured_state == state_with_rotation
 
 
 def test_measure_homodyne_with_multiple_shots(state):
@@ -90,7 +92,8 @@ def test_measure_homodyne_with_multiple_shots(state):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.HomodyneMeasurement()
 
-    result = state.apply(program, shots=shots)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
 
@@ -99,7 +102,8 @@ def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.HeterodyneMeasurement()
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     assert state.xpxp_mean_vector[0] == 0
@@ -112,7 +116,8 @@ def test_measure_heterodyne_with_multiple_shots(state):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.HeterodyneMeasurement()
 
-    result = state.apply(program, shots=shots)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
 
@@ -128,8 +133,10 @@ def test_measure_dyne(state):
     with pq.Program() as program:
         pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    state.apply(program)
-    state.validate()
+    simulator = pq.GaussianSimulator(d=state.d)
+    evolved_state = simulator.execute(program, initial_state=state).state
+
+    evolved_state.validate()
 
 
 def test_measure_dyne_with_multiple_shots(state):
@@ -145,7 +152,8 @@ def test_measure_dyne_with_multiple_shots(state):
     with pq.Program() as program:
         pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    result = state.apply(program, shots=shots)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
 
@@ -154,7 +162,8 @@ def test_measure_particle_number_on_one_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.ParticleNumberMeasurement()
 
-    result = state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state)
 
     assert result
 
@@ -163,7 +172,8 @@ def test_measure_particle_number_on_two_modes(state):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.ParticleNumberMeasurement()
 
-    result = state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state)
 
     assert result
 
@@ -172,7 +182,8 @@ def test_measure_particle_number_on_all_modes(state):
     with pq.Program() as program:
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    result = state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    result = simulator.execute(program, initial_state=state)
 
     assert result
 
@@ -187,15 +198,18 @@ def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_toronton
     with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
+    simulator = pq.GaussianSimulator(d=state.d)
+
     with pytest.raises(NotImplementedError):
-        state_with_nonzero_displacements.apply(program)
+        simulator.execute(program, initial_state=state_with_nonzero_displacements)
 
 
 def test_measure_threshold_on_one_modes(nondisplaced_state):
     with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_state.apply(program)
+    simulator = pq.GaussianSimulator(d=nondisplaced_state.d)
+    result = simulator.execute(program, initial_state=nondisplaced_state)
 
     assert result
 
@@ -204,7 +218,8 @@ def test_measure_threshold_with_multiple_shots(nondisplaced_state):
     with pq.Program() as program:
         pq.Q(0) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_state.apply(program, shots=20)
+    simulator = pq.GaussianSimulator(d=nondisplaced_state.d)
+    result = simulator.execute(program, initial_state=nondisplaced_state, shots=20)
 
     assert result
 
@@ -213,7 +228,8 @@ def test_measure_threshold_on_two_modes(nondisplaced_state):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.ThresholdMeasurement()
 
-    result = nondisplaced_state.apply(program)
+    simulator = pq.GaussianSimulator(d=nondisplaced_state.d)
+    result = simulator.execute(program, initial_state=nondisplaced_state)
 
     assert result
 
@@ -222,6 +238,7 @@ def test_measure_threshold_on_all_modes(nondisplaced_state):
     with pq.Program() as program:
         pq.Q() | pq.ThresholdMeasurement()
 
-    result = nondisplaced_state.apply(program)
+    simulator = pq.GaussianSimulator(d=nondisplaced_state.d)
+    result = simulator.execute(program, initial_state=nondisplaced_state)
 
     assert result

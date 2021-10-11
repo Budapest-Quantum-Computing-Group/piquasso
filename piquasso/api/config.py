@@ -16,6 +16,7 @@
 from typing import Any
 
 import os
+import copy
 import random
 import numpy as np
 
@@ -49,3 +50,6 @@ class Config:
         self._seed_sequence = value
         self.rng = np.random.default_rng(self._seed_sequence)
         random.seed(self._seed_sequence)
+
+    def copy(self):
+        return copy.deepcopy(self)

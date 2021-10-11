@@ -35,8 +35,8 @@ def generate_random_gaussian_state():
 
                 pq.Q(i) | displacement_gate | squeezing_gate
 
-        state = pq.GaussianState(d=d)
-        state.apply(random_state_generator)
+        simulator = pq.GaussianSimulator(d=d)
+        state = simulator.execute(random_state_generator).state
         state.validate()
 
         return state
@@ -51,7 +51,8 @@ def test_squeezing(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.Squeezing(r, phi)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -62,7 +63,8 @@ def test_phaseshift(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -77,14 +79,22 @@ def test_phaseshift_on_multiple_modes(state):
     with pq.Program() as single_instruction:
         pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi / 3)
 
-    separate_state = state.copy()
-    separate_state.apply(separate_instructions)
-    separate_state.validate()
+    simulator = pq.GaussianSimulator(d=state.d)
 
-    state.apply(single_instruction)
-    state.validate()
+    separately_evolved_state = simulator.execute(
+        separate_instructions, initial_state=state
+    ).state
+    separately_evolved_state.validate()
 
-    assert np.allclose(separate_state.xpxp_mean_vector, state.xpxp_mean_vector)
+    jointly_evolved_state = simulator.execute(
+        single_instruction, initial_state=state
+    ).state
+    jointly_evolved_state.validate()
+
+    assert np.allclose(
+        separately_evolved_state.xpxp_mean_vector,
+        jointly_evolved_state.xpxp_mean_vector,
+    )
 
 
 def test_phaseshift_modes_are_shifted_from_original(state):
@@ -95,7 +105,8 @@ def test_phaseshift_modes_are_shifted_from_original(state):
     with pq.Program() as program:
         pq.Q(0) | pq.Phaseshifter(phi=angle)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     assert state.reduced((0,)) == original.rotated(-angle).reduced((0,))
@@ -109,7 +120,8 @@ def test_beamsplitter(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -122,7 +134,8 @@ def test_displacement_with_alpha(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.Displacement(alpha=alpha)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -136,7 +149,8 @@ def test_displacement_with_r_and_phi(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.Displacement(r=r, phi=phi)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -149,7 +163,8 @@ def test_displacement_on_multiple_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Displacement(alpha=alpha)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -162,7 +177,8 @@ def test_displacement_on_all_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q() | pq.Displacement(alpha=alpha)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -175,7 +191,8 @@ def test_position_displacement(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.PositionDisplacement(x)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -188,7 +205,8 @@ def test_momentum_displacement(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.MomentumDisplacement(p)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -205,7 +223,8 @@ def test_displacement(state, gaussian_state_assets):
         pq.Q(1) | pq.Displacement(alpha=alpha)
         pq.Q(2) | pq.Displacement(r=r, phi=phi) | pq.Displacement(alpha=alpha)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -221,7 +240,8 @@ def test_displacement_and_squeezing(state, gaussian_state_assets):
         pq.Q(1) | pq.Squeezing(r=-0.6, phi=0.7)
         pq.Q(2) | pq.Squeezing(r=0.8)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -235,7 +255,8 @@ def test_two_mode_squeezing(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1, 2) | pq.Squeezing2(r=r, phi=phi)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -248,7 +269,8 @@ def test_controlled_X_gate(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1, 2) | pq.ControlledX(s=s)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -261,7 +283,8 @@ def test_controlled_Z_gate(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1, 2) | pq.ControlledZ(s=s)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -272,7 +295,8 @@ def test_fourier(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0) | pq.Fourier()
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -286,7 +310,8 @@ def test_mach_zehnder(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1, 2) | pq.MachZehnder(int_=int_, ext=ext)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -299,7 +324,8 @@ def test_quadratic_phase(state, gaussian_state_assets):
         pq.Q(1) | pq.QuadraticPhase(2)
         pq.Q(2) | pq.QuadraticPhase(1)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -315,7 +341,8 @@ def test_displacement_leaves_the_covariance_invariant(state):
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     final_covariance_matrix = state.xpxp_covariance_matrix
@@ -334,7 +361,8 @@ def test_interferometer_for_1_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.Interferometer(T)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -356,7 +384,8 @@ def test_interferometer_for_2_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Interferometer(random_unitary)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -377,7 +406,8 @@ def test_interferometer_for_all_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(0, 1, 2) | pq.Interferometer(unitary)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -402,7 +432,8 @@ def test_GaussianTransform_for_1_modes(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q(1) | pq.GaussianTransform(passive=passive, active=active)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -440,8 +471,8 @@ def test_GaussianTransform_with_general_squeezing_matrix():
 
         pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     state.validate()
 
@@ -464,7 +495,7 @@ def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
             pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
 
 
-def test_graph_embedding(state, gaussian_state_assets):
+def test_graph_embedding(state):
     adjacency_matrix = np.array(
         [
             [0, 1, 1],
@@ -476,18 +507,21 @@ def test_graph_embedding(state, gaussian_state_assets):
     with pq.Program() as program:
         pq.Q() | pq.Graph(adjacency_matrix)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+    state = simulator.execute(program).state
     state.validate()
 
 
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
+    d = 3
+
     with pq.Program() as initialization:
         pq.Q(all) | pq.Displacement(alpha=[np.exp(1j * np.pi / 4), 1, 1j])
 
         pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi / 2, np.pi / 3, np.pi / 4])
 
-    state = pq.GaussianState(d=3)
-    state.apply(initialization)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(initialization).state
     state.validate()
 
     initial_covariance_matrix = state.xpxp_covariance_matrix
@@ -495,7 +529,8 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=1, phi=1)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
     final_covariance_matrix = state.xpxp_covariance_matrix
@@ -507,20 +542,24 @@ def test_displaced_vacuum_stays_valid():
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=2, phi=np.pi / 3)
 
-    state = pq.GaussianState(d=3)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
     state.validate()
 
 
 def test_multiple_displacements_leave_the_covariance_invariant():
-    state = pq.GaussianState(d=3)
+    d = 3
 
-    initial_covariance_matrix = state.xpxp_covariance_matrix
+    simulator = pq.GaussianSimulator(d=d)
+
+    vacuum = simulator.create_initial_state()
+
+    initial_covariance_matrix = vacuum.xpxp_covariance_matrix
 
     with pq.Program() as program:
         pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi / 3, np.pi / 4, np.pi / 6])
 
-    state.apply(program)
+    state = simulator.execute(program).state
     state.validate()
 
     assert np.allclose(state.xpxp_covariance_matrix, initial_covariance_matrix)
@@ -528,14 +567,17 @@ def test_multiple_displacements_leave_the_covariance_invariant():
 
 @pytest.mark.monkey
 def test_random_interferometer(generate_random_gaussian_state, generate_unitary_matrix):
-    state = generate_random_gaussian_state(d=5)
+    d = 5
+
+    state = generate_random_gaussian_state(d=d)
 
     T = generate_unitary_matrix(3)
 
     with pq.Program() as program:
         pq.Q(0, 1, 3) | pq.Interferometer(T)
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program, initial_state=state).state
     state.validate()
 
 
@@ -563,8 +605,8 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-    state = pq.GaussianState(d=5)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=5)
+    state = simulator.execute(program).state
     state.validate()
 
     expected_state = gaussian_state_assets.load()
@@ -589,8 +631,9 @@ def test_program_stacking_with_measurement():
 
         pq.Q(3) | pq.HeterodyneMeasurement()
 
-    state = pq.GaussianState(d=5)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=5)
+    state = simulator.execute(program).state
+    state.validate()
 
 
 def test_complex_one_mode_scenario():
@@ -599,9 +642,8 @@ def test_complex_one_mode_scenario():
         pq.Q(0) | pq.Displacement(alpha=1)
         pq.Q(0) | pq.Phaseshifter(np.pi / 4)
 
-    state = pq.GaussianState(d=1)
-    state._config.cutoff = 4
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=4))
+    state = simulator.execute(program).state
 
     assert np.allclose(
         state.fock_probabilities,

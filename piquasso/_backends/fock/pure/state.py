@@ -44,11 +44,6 @@ class PureFockState(BaseFockState):
         cutoff (int): The Fock space cutoff.
     """
 
-    _instruction_map = {
-        "StateVector": "_state_vector_instruction",
-        **BaseFockState._instruction_map,
-    }
-
     def __init__(self, *, d: int, config: Config = None) -> None:
         super().__init__(d=d, config=config)
 

@@ -14,3 +14,4 @@
 # limitations under the License.
 
 from .state import GaussianState  # noqa: F401
+from .simulator import GaussianSimulator  # noqa: F401

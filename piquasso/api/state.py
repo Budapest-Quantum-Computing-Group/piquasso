@@ -15,15 +15,12 @@
 
 import abc
 import copy
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional
 
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.program import Program
-from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
-from piquasso.api.instruction import Instruction
 
 
 class State(abc.ABC):
@@ -37,72 +34,15 @@ class State(abc.ABC):
         self.result: Optional[Result] = None
         self.shots: int = None  # type: ignore
 
-        self._config = config or Config()
+        self._config = config.copy() if config is not None else Config()
 
     @property
     @abc.abstractmethod
     def d(self) -> int:
         pass
 
-    @property
-    @abc.abstractmethod
-    def _instruction_map(self) -> dict:
-        pass
-
     def copy(self) -> "State":
         return copy.deepcopy(self)
-
-    def apply_instructions(
-        self,
-        instructions: List[Instruction],
-    ) -> None:
-        for instruction in instructions:
-            if not hasattr(instruction, "modes") or instruction.modes is tuple():
-                instruction.modes = tuple(range(self.d))
-
-            if hasattr(instruction, "_autoscale"):
-                instruction._autoscale()  # type: ignore
-
-            method_name = self._instruction_map.get(instruction.__class__.__name__)
-
-            if not method_name:
-                raise NotImplementedError(
-                    "\n"
-                    "No such instruction implemented for this state.\n"
-                    "Details:\n"
-                    f"instruction={instruction}\n"
-                    f"state={self}\n"
-                    f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys()))
-                    + "."
-                )
-
-            getattr(self, method_name)(instruction)
-
-    def apply(
-        self,
-        program: Program,
-        shots: int = 1,
-    ) -> Optional[Result]:
-        """Applyes the given program to the state and executes it.
-
-        Args:
-            program (Program):
-                The program whose instructions are used in the simpulation.
-            shots (int):
-                The number of samples to generate.
-        """
-
-        if not isinstance(shots, int) or shots < 1:
-            raise InvalidParameter(
-                f"The number of shots should be a positive integer: shots={shots}."
-            )
-
-        self.shots = shots
-
-        self.apply_instructions(program.instructions)
-
-        return self.result
 
     @staticmethod
     def _get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:

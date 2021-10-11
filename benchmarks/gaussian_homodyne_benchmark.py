@@ -25,13 +25,15 @@ pytestmark = pytest.mark.benchmark(
 )
 
 
-def piquasso_benchmark(benchmark, example_pq_gaussian_state):
+def piquasso_benchmark(benchmark, pq_gaussian_simulator, example_pq_gaussian_state):
     @benchmark
     def func():
         with pq.Program() as new_program:
             pq.Q(0) | pq.HomodyneMeasurement(phi=np.pi / 4)
 
-            example_pq_gaussian_state.apply(new_program)
+            pq_gaussian_simulator.execute(
+                new_program, initial_state=example_pq_gaussian_state
+            )
 
 
 def strawberryfields_benchmark(benchmark, example_sf_gaussian_state, d):

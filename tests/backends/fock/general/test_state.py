@@ -28,8 +28,8 @@ def test_FockState_reduced():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
-    state = pq.FockState(d=2)
-    state.apply(program)
+    simulator = pq.FockSimulator(d=2)
+    state = simulator.execute(program).state
 
     with pq.Program() as reduced_program:
         pq.Q() | pq.DensityMatrix(ket=(1,), bra=(1,)) / 4
@@ -37,8 +37,8 @@ def test_FockState_reduced():
         pq.Q() | pq.DensityMatrix(ket=(2,), bra=(2,)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0,), bra=(0,)) / 2
 
-    reduced_program_state = pq.FockState(d=1)
-    reduced_program_state.apply(reduced_program)
+    reduced_program_simulator = pq.FockSimulator(d=1)
+    reduced_program_state = reduced_program_simulator.execute(reduced_program).state
 
     expected_reduced_state = reduced_program_state
 

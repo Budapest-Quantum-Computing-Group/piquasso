@@ -38,8 +38,8 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        state = pq.GaussianState(d=5)
-        result = state.apply(program)
+        simulator = pq.GaussianSimulator(d=5)
+        result = simulator.execute(program)
 
     Args:
         instructions (list[~piquasso.api.instruction.Instruction], optional):

@@ -30,8 +30,8 @@ def test_program():
         pq.Q(4) | pq.Phaseshifter(0.5)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    result = state.apply(program, shots=10)
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots=10)
 
     assert len(result.samples) == 10
 
@@ -44,8 +44,8 @@ def test_interferometer():
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     expected_interferometer = np.array(
         [
@@ -69,8 +69,8 @@ def test_phaseshifter():
 
         pq.Q(2) | pq.Phaseshifter(phi)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     x = np.exp(1j * phi)
     expected_interferometer = np.array(
@@ -96,8 +96,8 @@ def test_beamsplitter():
 
         pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
 
-    state = pq.SamplingState(d=5)
-    state.apply(program)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
     t = np.cos(theta)
     r = np.exp(1j * phi) * np.sin(theta)
@@ -122,18 +122,16 @@ def test_lossy_program():
     We expect average number to be smaller than initial one.
     """
     losses = 0.5
-    U = np.eye(5) * losses
-    U[0][0] = 0  # Ensure that at least one particle is lost.
 
-    state = pq.SamplingState(d=5)
-    state.is_lossy = True
+    simulator = pq.SamplingSimulator(d=5)
 
     with pq.Program() as program:
         pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
+        pq.Q() | pq.Loss(losses)
+        pq.Q(0) | pq.Loss(transmissivity=0.0)
         pq.Q() | pq.Sampling()
 
-    result = state.apply(program, shots=1)
+    result = simulator.execute(program, shots=1)
     sample = result.samples[0]
-    assert sum(sample) < sum(state.initial_state)
+    assert sum(sample) < sum(result.state.initial_state)

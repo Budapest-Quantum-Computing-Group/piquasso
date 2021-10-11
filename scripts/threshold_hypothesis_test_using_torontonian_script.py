@@ -23,7 +23,7 @@ def threshold_hypothesis_test_script(cramer_hypothesis_test):
     d = 5
     shots = 2000
 
-    pq_state = pq.GaussianState(d=d)
+    pq_simulator = pq.GaussianSimulator(d=d, config=pq.Config(use_torontonian=True))
 
     with pq.Program() as pq_program:
         pq.Q(0) | pq.Squeezing(r=1.0, phi=np.pi / 1)
@@ -64,8 +64,7 @@ def threshold_hypothesis_test_script(cramer_hypothesis_test):
 
         sf.ops.MeasureThreshold() | (q[0], q[1], q[2])
 
-    pq_state._config = pq.Config(use_torontonian=True)
-    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
+    pq_results = np.array(pq_simulator.execute(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     accepted = cramer_hypothesis_test(pq_results, sf_results)

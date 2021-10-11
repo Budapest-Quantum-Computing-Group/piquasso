@@ -43,10 +43,10 @@ def test_sampling_raises_InvalidParameter_for_negative_shot_value(
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
+    simulator = pq.SamplingSimulator(d=5)
 
     with pytest.raises(InvalidParameter):
-        state.apply(program, invalid_shots)
+        simulator.execute(program, invalid_shots)
 
 
 def test_sampling_samples_number(interferometer_matrix):
@@ -57,8 +57,8 @@ def test_sampling_samples_number(interferometer_matrix):
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    result = state.apply(program, shots)
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots)
 
     assert len(result.samples) == shots, (
         f"Expected {shots} samples, " f"got: {len(program.result)}"
@@ -73,8 +73,8 @@ def test_sampling_mode_permutation(interferometer_matrix):
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    result = state.apply(program, shots)
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots)
 
     sample = result.samples[0]
     assert np.allclose(
@@ -92,8 +92,8 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    result = state.apply(program, shots)
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots)
 
     samples = result.samples
     first_sample = samples[0]
@@ -113,8 +113,8 @@ def test_mach_zehnder():
         pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    state.apply(program, shots=1)
+    simulator = pq.SamplingSimulator(d=5)
+    simulator.execute(program, shots=1)
 
 
 def test_fourier():
@@ -123,8 +123,8 @@ def test_fourier():
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    state.apply(program, shots=1)
+    simulator = pq.SamplingSimulator(d=5)
+    simulator.execute(program, shots=1)
 
 
 def test_uniform_loss():
@@ -135,8 +135,8 @@ def test_uniform_loss():
 
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    state.apply(program, shots=1)
+    simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy
 
@@ -150,5 +150,5 @@ def test_general_loss():
 
         pq.Q() | pq.Sampling()
 
-    state = pq.SamplingState(d=5)
-    state.apply(program, shots=1)
+    simulator = pq.SamplingSimulator(d=5)
+    simulator.execute(program, shots=1)

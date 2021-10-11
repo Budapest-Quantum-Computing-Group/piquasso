@@ -38,8 +38,8 @@ class Q:
         with pq.Program() as program:
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
-        state = pq.GaussianState(d=5)
-        result = state.apply(program)
+        simulator = pq.GaussianSimulator(d=5)
+        result = simulator.execute(program)
 
     In the above example, the :class:`~piquasso.instructions.gates.Squeezing` gate
     is applied to modes `0, 1`.
