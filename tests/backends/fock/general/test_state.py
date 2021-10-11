@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import numpy as np
 
 import piquasso as pq
 
 
-@pytest.mark.parametrize("StateClass", (pq.FockState, pq.PNCFockState))
-def test_FockState_reduced(StateClass):
+def test_FockState_reduced():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
 
@@ -31,7 +28,7 @@ def test_FockState_reduced(StateClass):
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     with pq.Program() as reduced_program:

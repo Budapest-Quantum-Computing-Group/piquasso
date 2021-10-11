@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import numpy as np
 
 import piquasso as pq
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_measure_particle_number_on_one_mode(StateClass):
+def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -38,7 +35,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     result = state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -47,7 +44,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
     assert sample == (1, ) or sample == (2, )
 
     if sample == (1, ):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 1/3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -60,7 +57,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
         )
 
     elif sample == (2, ):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
@@ -70,8 +67,7 @@ def test_measure_particle_number_on_one_mode(StateClass):
     assert state == expected_state
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_measure_particle_number_on_two_modes(StateClass):
+def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
@@ -88,7 +84,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     result = state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -97,7 +93,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -107,7 +103,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
         )
 
     elif sample == (1, 1):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
@@ -115,7 +111,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
         )
 
     elif sample == (0, 2):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
@@ -125,8 +121,7 @@ def test_measure_particle_number_on_two_modes(StateClass):
     assert state == expected_state
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_measure_particle_number_on_all_modes(StateClass):
+def test_measure_particle_number_on_all_modes():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)) / 4
 
@@ -141,7 +136,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     result = state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -150,7 +145,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
     assert sample == (0, 0, 0) or sample == (0, 0, 1) or sample == (1, 0, 0)
 
     if sample == (0, 0, 0):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
@@ -158,7 +153,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
         )
 
     elif sample == (0, 0, 1):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
@@ -166,7 +161,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
         )
 
     elif sample == (1, 0, 0):
-        expected_state = StateClass.from_number_preparations(
+        expected_state = pq.FockState.from_number_preparations(
             d=3, cutoff=3,
             number_preparations=[
                 pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
@@ -176,8 +171,7 @@ def test_measure_particle_number_on_all_modes(StateClass):
     assert state == expected_state
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_measure_particle_number_with_multiple_shots(StateClass):
+def test_measure_particle_number_with_multiple_shots():
     shots = 4
 
     with pq.Program() as preparation:
@@ -194,7 +188,7 @@ def test_measure_particle_number_with_multiple_shots(StateClass):
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     result = state.apply(program, shots)
 
     assert np.isclose(sum(state.fock_probabilities), 1)

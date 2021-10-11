@@ -27,7 +27,6 @@ CUTOFF = 4
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_InvalidModes_are_raised_if_modes_are_already_measured(StateClass):

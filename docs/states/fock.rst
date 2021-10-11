@@ -26,10 +26,3 @@ Pure Fock State
 
 .. automodule:: piquasso._backends.fock.pure.state
    :members:
-
-
-Particle number conserving Fock State
--------------------------------------
-
-.. automodule:: piquasso._backends.fock.pnc.state
-   :members:

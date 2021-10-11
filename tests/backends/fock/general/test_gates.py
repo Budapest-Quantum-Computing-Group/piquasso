@@ -13,21 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import numpy as np
 
 import piquasso as pq
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_5050_beamsplitter(StateClass):
+def test_5050_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.allclose(
@@ -36,14 +33,13 @@ def test_5050_beamsplitter(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_beamsplitter(StateClass):
+def test_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1))
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.allclose(
@@ -52,8 +48,7 @@ def test_beamsplitter(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_beamsplitter_multiple_particles(StateClass):
+def test_beamsplitter_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
 
@@ -68,7 +63,7 @@ def test_beamsplitter_multiple_particles(StateClass):
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -82,8 +77,7 @@ def test_beamsplitter_multiple_particles(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_beamsplitter_leaves_vacuum_unchanged(StateClass):
+def test_beamsplitter_leaves_vacuum_unchanged():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0), bra=(0, 0)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 2
@@ -94,7 +88,7 @@ def test_beamsplitter_leaves_vacuum_unchanged(StateClass):
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -108,15 +102,14 @@ def test_beamsplitter_leaves_vacuum_unchanged(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_multiple_beamsplitters(StateClass):
+def test_multiple_beamsplitters():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1))
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     state.apply(program)
 
     assert np.allclose(
@@ -129,8 +122,7 @@ def test_multiple_beamsplitters(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_multiple_beamsplitters_with_multiple_particles(StateClass):
+def test_multiple_beamsplitters_with_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -145,7 +137,7 @@ def test_multiple_beamsplitters_with_multiple_particles(StateClass):
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=1.5 * np.pi)
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -159,8 +151,7 @@ def test_multiple_beamsplitters_with_multiple_particles(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_phaseshift(StateClass):
+def test_phaseshift():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
@@ -174,7 +165,7 @@ def test_phaseshift(StateClass):
 
         pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -184,8 +175,7 @@ def test_phaseshift(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_fourier(StateClass):
+def test_fourier():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
@@ -199,7 +189,7 @@ def test_fourier(StateClass):
 
         pq.Q(0) | pq.Fourier()
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -209,8 +199,7 @@ def test_fourier(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_mach_zehnder(StateClass):
+def test_mach_zehnder():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
@@ -224,7 +213,7 @@ def test_mach_zehnder(StateClass):
 
         pq.Q(0, 1) | pq.MachZehnder(int_=np.pi/3, ext=np.pi/4)
 
-    state = StateClass(d=2, cutoff=3)
+    state = pq.FockState(d=2, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -234,8 +223,7 @@ def test_mach_zehnder(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
+def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
@@ -252,7 +240,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=4 * np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=3 * np.pi / 2)
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -266,8 +254,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_interferometer(StateClass):
+def test_interferometer():
 
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
@@ -290,7 +277,7 @@ def test_interferometer(StateClass):
 
         pq.Q(0, 1, 2) | pq.Interferometer(matrix=T)
 
-    state = StateClass(d=3, cutoff=3)
+    state = pq.FockState(d=3, cutoff=3)
     state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -304,8 +291,7 @@ def test_interferometer(StateClass):
     )
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_kerr(StateClass):
+def test_kerr():
     xi = np.pi / 3
 
     with pq.Program() as program:
@@ -315,7 +301,7 @@ def test_kerr(StateClass):
 
         pq.Q(2) | pq.Kerr(xi=xi)
 
-    state = StateClass(d=3, cutoff=4)
+    state = pq.FockState(d=3, cutoff=4)
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
@@ -335,8 +321,7 @@ def test_kerr(StateClass):
     assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
 
 
-@pytest.mark.parametrize("StateClass", [pq.FockState, pq.PNCFockState])
-def test_cross_kerr(StateClass):
+def test_cross_kerr():
     xi = np.pi / 3
 
     with pq.Program() as program:
@@ -346,7 +331,7 @@ def test_cross_kerr(StateClass):
 
         pq.Q(1, 2) | pq.CrossKerr(xi=xi)
 
-    state = StateClass(d=3, cutoff=4)
+    state = pq.FockState(d=3, cutoff=4)
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.

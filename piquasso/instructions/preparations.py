@@ -122,8 +122,7 @@ class DensityMatrix(Instruction, _mixins.WeightMixin):
         This only creates one matrix element.
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.fock.general.state.FockState`,
-    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    :class:`~piquasso._backends.fock.general.state.FockState`.
     """
 
     def __init__(
@@ -156,8 +155,7 @@ class Create(Instruction):
 
     Can only be applied to the following states:
     :class:`~piquasso._backends.fock.general.state.FockState`,
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`,
-    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
     """
 
     def __init__(self) -> None:
@@ -179,8 +177,7 @@ class Annihilate(Instruction):
 
     Can only be applied to the following states:
     :class:`~piquasso._backends.fock.general.state.FockState`,
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`,
-    :class:`~piquasso._backends.fock.pnc.state.PNCFockState`.
+    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
     """
 
     def __init__(self) -> None:
