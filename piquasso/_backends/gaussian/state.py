@@ -882,7 +882,6 @@ class GaussianState(State):
         self.xpxp_covariance_matrix = evolved_cov
 
         self.result = Result(
-            instruction=instruction,
             samples=list(map(tuple, list(samples)))
         )
 
@@ -971,7 +970,7 @@ class GaussianState(State):
 
         samples = self._get_particle_number_measurement_samples(instruction)
 
-        self.result = Result(instruction=instruction, samples=samples)
+        self.result = Result(samples=samples)
 
     def _get_particle_number_measurement_samples(
         self,
@@ -1118,7 +1117,7 @@ class GaussianState(State):
         else:
             samples = self._generate_threshold_samples_using_hafnian(instruction)
 
-        self.result = Result(instruction=instruction, samples=samples)
+        self.result = Result(samples=samples)
 
     def _generate_threshold_samples_using_torontonian(self, instruction):
         if not np.allclose(self.xpxp_mean_vector, np.zeros_like(self.xpxp_mean_vector)):

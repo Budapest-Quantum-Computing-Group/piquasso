@@ -113,7 +113,6 @@ class BaseFockState(State, abc.ABC):
         )
 
         self.result = Result(
-            instruction=instruction,
             samples=samples  # type: ignore
         )
 
