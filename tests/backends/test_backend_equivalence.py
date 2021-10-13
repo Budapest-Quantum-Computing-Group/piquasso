@@ -331,7 +331,7 @@ def test_get_fock_probabilities_with_position_displacement(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.PositionDisplacement(x=0.4)
+        pq.Q(0) | pq.PositionDisplacement(x=0.2)
 
     state = StateClass(d=3)
     state.apply(program)
@@ -362,7 +362,7 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.MomentumDisplacement(p=0.4)
+        pq.Q(0) | pq.MomentumDisplacement(p=0.2)
 
     state = StateClass(d=3)
     state.apply(program)
@@ -379,6 +379,68 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
 
     assert is_proportional(probabilities, expected_probabilities)
+
+
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_position_displacement_is_HBAR_independent(
+    StateClass
+):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.PositionDisplacement(x=0.4)
+
+    state1 = StateClass(d=3)
+    state2 = StateClass(d=3)
+
+    state1.config.hbar = 2
+    state2.config.hbar = 42
+
+    state1.apply(program)
+    state2.apply(program)
+
+    probabilities1 = state1.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities2 = state1.get_fock_probabilities(cutoff=CUTOFF)
+
+    assert np.allclose(probabilities1, probabilities2)
+
+
+@pytest.mark.parametrize(
+    "StateClass",
+    (
+        pq.GaussianState,
+        partial(pq.PureFockState, cutoff=CUTOFF),
+        partial(pq.FockState, cutoff=CUTOFF),
+    )
+)
+def test_get_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
+    StateClass
+):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.MomentumDisplacement(p=0.4)
+
+    state1 = StateClass(d=3)
+    state2 = StateClass(d=3)
+
+    state1.config.hbar = 2
+    state2.config.hbar = 42
+
+    state1.apply(program)
+    state2.apply(program)
+
+    probabilities1 = state1.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities2 = state1.get_fock_probabilities(cutoff=CUTOFF)
+
+    assert np.allclose(probabilities1, probabilities2)
 
 
 @pytest.mark.parametrize(

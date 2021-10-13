@@ -170,7 +170,7 @@ def test_displacement_on_all_modes(state, gaussian_state_assets):
 
 
 def test_position_displacement(state, gaussian_state_assets):
-    x = 4
+    x = 2
 
     with pq.Program() as program:
         pq.Q(1) | pq.PositionDisplacement(x)
@@ -183,7 +183,7 @@ def test_position_displacement(state, gaussian_state_assets):
 
 
 def test_momentum_displacement(state, gaussian_state_assets):
-    p = 5
+    p = 2.5
 
     with pq.Program() as program:
         pq.Q(1) | pq.MomentumDisplacement(p)

@@ -48,7 +48,6 @@ from scipy.optimize import root_scalar
 from scipy.linalg import block_diag
 
 from piquasso.api.instruction import Gate
-from piquasso.api.constants import HBAR
 from piquasso.api.errors import InvalidParameter
 
 from piquasso._math.decompositions import takagi
@@ -617,22 +616,36 @@ class Displacement(_ScalableBogoliubovTransformation):
 
 
 class PositionDisplacement(_ScalableBogoliubovTransformation):
-    r"""Position displacement gate."""
+    r"""Position displacement gate.
+
+    Args:
+        x (float): The position displacement.
+
+    Note:
+        The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
+    """
 
     def __init__(self, x: float) -> None:
         super().__init__(
             params=dict(x=x),
-            displacement_vector=np.atleast_1d(x) / np.sqrt(2 * HBAR),
+            displacement_vector=np.atleast_1d(x),
         )
 
 
 class MomentumDisplacement(_ScalableBogoliubovTransformation):
-    r"""Momentum displacement gate."""
+    r"""Momentum displacement gate.
+
+    Args:
+        p (float): The momentum displacement.
+
+    Note:
+        The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
+    """
 
     def __init__(self, p: float) -> None:
         super().__init__(
             params=dict(p=p),
-            displacement_vector=1j * np.atleast_1d(p) / np.sqrt(2 * HBAR),
+            displacement_vector=1j * np.atleast_1d(p),
         )
 
 

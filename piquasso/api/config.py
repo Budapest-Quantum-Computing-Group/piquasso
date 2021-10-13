@@ -1,0 +1,47 @@
+#
+# Copyright 2021 Budapest Quantum Computing Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from typing import Any
+
+import os
+import random
+import numpy as np
+
+
+class Config:
+
+    def __init__(
+        self,
+        seed_sequence: Any = None,
+        cache_size: int = 32,
+        hbar: float = 2.0,
+        use_torontonian: bool = False,
+    ):
+        self.seed_sequence = (
+            seed_sequence or int.from_bytes(os.urandom(8), byteorder="big")
+        )
+        self.cache_size = cache_size
+        self.hbar = hbar
+        self.use_torontonian = use_torontonian
+
+    @property
+    def seed_sequence(self):
+        return self._seed_sequence
+
+    @seed_sequence.setter
+    def seed_sequence(self, value: Any) -> None:
+        self._seed_sequence = value
+        self.rng = np.random.default_rng(self._seed_sequence)
+        random.seed(self._seed_sequence)

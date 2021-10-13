@@ -26,8 +26,8 @@ import sys
 from types import ModuleType
 from typing import Type, List, Any
 
-from piquasso.api import constants
 from piquasso.api.mode import Q
+from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction, Preparation, Gate, Measurement
 from piquasso.api.program import Program
 from piquasso.api.state import State
@@ -81,9 +81,6 @@ from .instructions.measurements import (
 from .instructions.channels import (
     Loss,
 )
-
-
-constants.seed()
 
 
 _default_preparations = {
@@ -176,6 +173,7 @@ __all__ = [
     "Program",
     "Plugin",
     "Q",
+    "Config",
     "Instruction",
     "Preparation",
     "Gate",

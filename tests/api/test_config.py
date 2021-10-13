@@ -13,20 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api import constants
+import numpy as np
+
+import piquasso as pq
 
 
-def test_HBAR_setting():
-    constants.HBAR = 42
+def test_Config_seed_generates_same_output():
+    seed_sequence = 42
 
-    assert constants.HBAR == 42
+    mean = np.array([1, 2])
+    covariance = np.array(
+        [
+            [2, -1],
+            [-1, 2],
+        ]
+    )
 
+    config1 = pq.Config(seed_sequence=seed_sequence)
+    config2 = pq.Config(seed_sequence=seed_sequence)
 
-def test_SEED_is_set_initially():
-    assert constants.get_seed()
+    sample = config1.rng.multivariate_normal(mean=mean, cov=covariance)
+    reproduced_sample = config2.rng.multivariate_normal(mean=mean, cov=covariance)
 
-
-def test_SEED_setting():
-    constants.seed(123)
-
-    assert constants.get_seed() == 123
+    assert np.allclose(sample, reproduced_sample)

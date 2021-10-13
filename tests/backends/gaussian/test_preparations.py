@@ -19,7 +19,6 @@ import numpy as np
 import piquasso as pq
 
 from piquasso.api.errors import InvalidState
-from piquasso.api.constants import HBAR
 
 
 def test_state_initialization_with_misshaped_mean():
@@ -102,5 +101,5 @@ def test_vacuum_resets_the_state(state):
     )
     assert np.allclose(
         state.xpxp_covariance_matrix,
-        np.identity(2 * state.d) * HBAR,
+        np.identity(2 * state.d) * state.config.hbar,
     )
