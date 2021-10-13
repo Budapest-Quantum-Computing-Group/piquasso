@@ -53,17 +53,6 @@ def nondisplaced_state(d):
     return state
 
 
-def test_measure_homodyne(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HomodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, )
-
-    state.validate()
-
-
 def test_measure_homodyne_zeroes_state_on_measured_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.HomodyneMeasurement()
@@ -73,17 +62,6 @@ def test_measure_homodyne_zeroes_state_on_measured_modes(state):
 
     assert state.xpxp_mean_vector[0] == 0
     assert state.xpxp_covariance_matrix[0][0] == pq.constants.HBAR
-
-
-def test_measure_homodyne_with_rotation(state):
-    angle = np.pi / 3
-
-    with pq.Program() as program:
-        pq.Q(0) | pq.HomodyneMeasurement(angle)
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, )
 
 
 def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
@@ -106,28 +84,6 @@ def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     assert state == state_with_rotation
 
 
-def test_measure_homodyne_on_multiple_modes(state):
-    with pq.Program() as program:
-        pq.Q(0, 1) | pq.HomodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, 1)
-
-    state.validate()
-
-
-def test_measure_homodyne_on_all_modes(state, d):
-    with pq.Program() as program:
-        pq.Q() | pq.HomodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == tuple(range(d))
-
-    state.validate()
-
-
 def test_measure_homodyne_with_multiple_shots(state):
     shots = 4
 
@@ -139,17 +95,6 @@ def test_measure_homodyne_with_multiple_shots(state):
     assert len(result.samples) == shots
 
 
-def test_measure_heterodyne(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HeterodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, )
-
-    state.validate()
-
-
 def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.HeterodyneMeasurement()
@@ -159,28 +104,6 @@ def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
 
     assert state.xpxp_mean_vector[0] == 0
     assert state.xpxp_covariance_matrix[0][0] == pq.constants.HBAR
-
-
-def test_measure_heterodyne_on_multiple_modes(state):
-    with pq.Program() as program:
-        pq.Q(0, 1) | pq.HeterodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, 1)
-
-    state.validate()
-
-
-def test_measure_heterodyne_on_all_modes(state, d):
-    with pq.Program() as program:
-        pq.Q() | pq.HeterodyneMeasurement()
-
-    result = state.apply(program)
-
-    assert result.instruction.modes == tuple(range(d))
-
-    state.validate()
 
 
 def test_measure_heterodyne_with_multiple_shots(state):
@@ -205,10 +128,7 @@ def test_measure_dyne(state):
     with pq.Program() as program:
         pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
 
-    result = state.apply(program)
-
-    assert result.instruction.modes == (0, )
-
+    state.apply(program)
     state.validate()
 
 

@@ -142,7 +142,6 @@ class SamplingState(State):
         )
 
         self.result = Result(
-            instruction=instruction,
             samples=list(map(tuple, samples))
         )
 

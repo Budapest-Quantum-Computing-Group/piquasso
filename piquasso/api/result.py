@@ -15,7 +15,6 @@
 
 from typing import TypeVar, List, Tuple, Generic
 
-from piquasso.api.instruction import Instruction
 
 TNum = TypeVar("TNum", int, float)
 
@@ -24,20 +23,15 @@ class Result(Generic[TNum]):
     """Class for collecting results.
 
     Args:
-        instruction (~piquasso.api.instruction.Instruction):
-            The instruction corresponding to the measurement result.
         samples (list[tuple[int or float]]):
             The generated samples.
     """
 
-    def __init__(
-        self, instruction: Instruction, samples: List[Tuple[TNum, ...]]
-    ) -> None:
-        self.instruction = instruction
+    def __init__(self, samples: List[Tuple[TNum, ...]]) -> None:
         self.samples: List[Tuple[TNum, ...]] = samples
 
     def __repr__(self) -> str:
-        return f"<Result instruction={self.instruction} samples={self.samples}>"
+        return f"<Result samples={self.samples}>"
 
     def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.
