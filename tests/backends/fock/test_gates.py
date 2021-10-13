@@ -20,9 +20,8 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.filterwarnings("ignore:.*may not result in the desired state.*")
 @pytest.mark.parametrize(
-    "StateClass", (pq.PureFockState, pq.PNCFockState, pq.FockState)
+    "StateClass", (pq.PureFockState, pq.FockState)
 )
 def test_squeezing_probabilities(StateClass):
     with pq.Program() as program:
@@ -46,9 +45,8 @@ def test_squeezing_probabilities(StateClass):
     )
 
 
-@pytest.mark.filterwarnings("ignore:.*may not result in the desired state.*")
 @pytest.mark.parametrize(
-    "StateClass", (pq.PureFockState, pq.PNCFockState, pq.FockState)
+    "StateClass", (pq.PureFockState, pq.FockState)
 )
 def test_displacement_probabilities(StateClass):
     with pq.Program() as program:
@@ -147,77 +145,6 @@ def test_PureFockState_displacement():
         nonzero_elements[2][0],
         normalization * np.exp(- np.abs(alpha) ** 2 / 2) * (alpha ** 2) / np.sqrt(2)
     )
-
-
-def test_PNCFockState_squeezing():
-    r = 0.5
-    phi = np.pi / 3
-
-    with pq.Program() as program:
-        pq.Q() | pq.Vacuum()
-
-        pq.Q(0) | pq.Squeezing(r=r, phi=phi)
-
-    state = pq.PNCFockState(d=2, cutoff=3)
-
-    with pytest.warns(UserWarning):
-        state.apply(program)
-
-    # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(state.nonzero_elements)
-
-    vacuum_probability = 1 / np.cosh(r)
-
-    two_particle_probability = (1 / np.cosh(r)) * np.tanh(r) ** 2 / 2
-
-    normalization = 1 / (
-        vacuum_probability + two_particle_probability
-    )
-
-    assert len(nonzero_elements) == 2
-
-    assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-    assert np.isclose(
-        nonzero_elements[0][0],
-        normalization * vacuum_probability
-    )
-
-    assert nonzero_elements[1][1] == ((2, 0), (2, 0))
-    assert np.isclose(
-        nonzero_elements[1][0],
-        normalization * two_particle_probability
-    )
-
-
-def test_PNCFockState_displacement():
-    alpha = 0.5 * np.exp(1j * np.pi / 3)
-
-    with pq.Program() as program:
-        pq.Q() | pq.Vacuum()
-
-        pq.Q(0) | pq.Displacement(alpha=alpha)
-
-    state = pq.PNCFockState(d=2, cutoff=2)
-
-    with pytest.warns(UserWarning):
-        state.apply(program)
-
-    # TODO: Better way of presenting the resulting state.
-    nonzero_elements = list(state.nonzero_elements)
-
-    vacuum_probability = np.exp(- np.abs(alpha) ** 2)
-
-    one_particle_probability = np.exp(- np.abs(alpha) ** 2) * np.abs(alpha) ** 2
-
-    normalization = 1 / (vacuum_probability + one_particle_probability)
-
-    assert len(nonzero_elements) == 2
-
-    assert np.isclose(nonzero_elements[0][0], normalization * vacuum_probability)
-    assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-
-    assert np.isclose(nonzero_elements[1][0], normalization * one_particle_probability)
-    assert nonzero_elements[1][1] == ((1, 0), (1, 0))
 
 
 def test_FockState_squeezing():

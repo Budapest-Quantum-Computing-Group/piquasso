@@ -22,15 +22,6 @@ from scipy.linalg import polar, sinhm, coshm, expm
 from functools import partial
 
 
-# NOTE: If the warning message is too long, only the beginning of the string could
-# be matched for some reason.
-pytestmark = pytest.mark.filterwarnings(
-    "ignore:" + "["
-    "Gaussian evolution of the state with instruction.*"
-    + "|" + ".*may not result in the desired state.*"
-    + "]"
-)
-
 CUTOFF = 4
 
 
@@ -51,7 +42,6 @@ def is_proportional(first, second):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
@@ -75,7 +65,6 @@ def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_squeezed_state(StateClass):
@@ -137,7 +126,6 @@ def test_get_density_matrix_with_squeezed_state():
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_displaced_state(StateClass):
@@ -171,7 +159,6 @@ def test_get_fock_probabilities_with_displaced_state(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
@@ -206,7 +193,6 @@ def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClas
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
@@ -241,7 +227,6 @@ def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
@@ -275,7 +260,6 @@ def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass):
@@ -310,7 +294,6 @@ def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateCl
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_quadratic_phase(StateClass):
@@ -342,7 +325,6 @@ def test_get_fock_probabilities_with_quadratic_phase(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_position_displacement(StateClass):
@@ -374,7 +356,6 @@ def test_get_fock_probabilities_with_position_displacement(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_momentum_displacement(StateClass):
@@ -406,7 +387,6 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
         pq.GaussianState,
         partial(pq.PureFockState, cutoff=CUTOFF),
         partial(pq.FockState, cutoff=CUTOFF),
-        partial(pq.PNCFockState, cutoff=CUTOFF),
     )
 )
 def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):

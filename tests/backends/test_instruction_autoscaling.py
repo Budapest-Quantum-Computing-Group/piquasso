@@ -25,16 +25,11 @@ CUTOFF = 4
 
 NUMBER_OF_MODES = 3
 
-pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*may not result in the desired state.*"
-)
-
 
 STATES = (
     pq.GaussianState,
     partial(pq.PureFockState, cutoff=CUTOFF),
     partial(pq.FockState, cutoff=CUTOFF),
-    partial(pq.PNCFockState, cutoff=CUTOFF),
 )
 
 

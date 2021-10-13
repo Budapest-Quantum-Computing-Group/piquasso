@@ -20,10 +20,9 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.filterwarnings("ignore:.*may not result in the desired state.*")
 @pytest.mark.parametrize(
     "StateClass",
-    (pq.FockState, pq.PNCFockState, pq.PureFockState)
+    (pq.FockState, pq.PureFockState)
 )
 def test_FockState_get_particle_detection_probability(StateClass):
     with pq.Program() as program:
