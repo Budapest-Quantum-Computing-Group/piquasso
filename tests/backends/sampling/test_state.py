@@ -132,7 +132,7 @@ class TestSamplingState:
         state.apply(program)
 
         assert np.allclose(
-            state.get_fock_probabilities(),
+            state.fock_probabilities,
             [
                 0.0,
                 0.0, 0.0, 0.0,

@@ -16,17 +16,13 @@
 import pytest
 import piquasso as pq
 
-from functools import partial
-
-CUTOFF = 4
-
 
 @pytest.mark.parametrize(
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
 def test_InvalidModes_are_raised_if_modes_are_already_measured(StateClass):

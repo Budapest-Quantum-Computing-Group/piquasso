@@ -417,7 +417,6 @@ def test_GaussianTransform_for_1_modes(state, gaussian_state_assets):
 
 def test_GaussianTransform_with_general_squeezing_matrix():
     d = 3
-    cutoff = 4
 
     squeezing_matrix = np.array(
         [
@@ -452,7 +451,7 @@ def test_GaussianTransform_with_general_squeezing_matrix():
 
     state.validate()
 
-    probabilities = state.get_fock_probabilities(cutoff=cutoff)
+    probabilities = state.fock_probabilities
 
     assert all(
         probability >= 0
@@ -611,10 +610,11 @@ def test_complex_one_mode_scenario():
         pq.Q(0) | pq.Phaseshifter(np.pi / 4)
 
     state = pq.GaussianState(d=1)
+    state._config.cutoff = 4
     state.apply(program)
 
     assert np.allclose(
-        state.get_fock_probabilities(cutoff=4),
+        state.fock_probabilities,
         [
             0.1615172143957243,
             0.41348406885305417,

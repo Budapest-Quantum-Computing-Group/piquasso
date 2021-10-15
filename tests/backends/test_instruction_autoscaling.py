@@ -18,18 +18,14 @@ import itertools
 import numpy as np
 import piquasso as pq
 
-from functools import partial
-
-
-CUTOFF = 4
 
 NUMBER_OF_MODES = 3
 
 
 STATES = (
     pq.GaussianState,
-    partial(pq.PureFockState, cutoff=CUTOFF),
-    partial(pq.FockState, cutoff=CUTOFF),
+    pq.PureFockState,
+    pq.FockState,
 )
 
 

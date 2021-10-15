@@ -29,7 +29,7 @@ def test_squeezing_probabilities(StateClass):
 
         pq.Q(0) | pq.Squeezing(r=0.5, phi=np.pi / 3)
 
-    state = StateClass(d=2, cutoff=3)
+    state = StateClass(d=2, config=pq.Config(cutoff=3))
     state.apply(program)
 
     state.validate()
@@ -54,7 +54,8 @@ def test_displacement_probabilities(StateClass):
 
         pq.Q(0) | pq.Displacement(r=0.5, phi=np.pi / 3)
 
-    state = StateClass(d=2, cutoff=3)
+    state = StateClass(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     state.validate()
@@ -79,7 +80,8 @@ def test_PureFockState_squeezing():
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    state = pq.PureFockState(d=2, cutoff=3)
+    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
@@ -114,7 +116,8 @@ def test_PureFockState_displacement():
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    state = pq.PureFockState(d=2, cutoff=3)
+    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
@@ -156,7 +159,8 @@ def test_FockState_squeezing():
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    state = pq.FockState(d=2, cutoff=3)
+    state = pq.FockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.
@@ -209,7 +213,7 @@ def test_FockState_displacement():
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    state = pq.FockState(d=2, cutoff=2)
+    state = pq.FockState(d=2, config=pq.Config(cutoff=2))
     state.apply(program)
 
     # TODO: Better way of presenting the resulting state.

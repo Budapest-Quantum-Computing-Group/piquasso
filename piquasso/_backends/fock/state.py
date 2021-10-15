@@ -21,6 +21,7 @@ from typing import Tuple, Generator, Any, Mapping, List
 
 from piquasso.instructions.preparations import StateVector
 from piquasso._math.fock import FockBasis
+from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 from piquasso.api.state import State
@@ -50,16 +51,20 @@ class BaseFockState(State, abc.ABC):
         "Annihilate": "_annihilate",
     }
 
-    def __init__(self, *, d: int, cutoff: int) -> None:
-        super().__init__()
+    def __init__(self, *, d: int, config: Config = None) -> None:
+        super().__init__(config=config)
         self._space = fock.FockSpace(
             d=d,
-            cutoff=cutoff,
+            cutoff=self._config.cutoff,
         )
 
     @classmethod
     def from_number_preparations(
-        cls, *, d: int, cutoff: int, number_preparations: List[StateVector]
+        cls,
+        *,
+        d: int,
+        number_preparations: List[StateVector],
+        config: Config = None,
     ) -> "BaseFockState":
         """
         NOTE: Here is a small coupling between :class:`Instruction` and :class:`State`.
@@ -69,7 +74,7 @@ class BaseFockState(State, abc.ABC):
         Is this needed?
         """
 
-        self = cls(d=d, cutoff=cutoff)
+        self = cls(d=d, config=config)
 
         for number_preparation in number_preparations:
             self._add_occupation_number_basis(**number_preparation.params)
@@ -79,10 +84,6 @@ class BaseFockState(State, abc.ABC):
     @property
     def d(self) -> int:
         return self._space.d
-
-    @property
-    def cutoff(self) -> int:
-        return self._space.cutoff
 
     @property
     def norm(self) -> int:
@@ -118,7 +119,7 @@ class BaseFockState(State, abc.ABC):
 
     def _as_code(self) -> str:
         return (
-            f"pq.Q() | pq.{self.__class__.__name__}(d={self.d}, cutoff={self.cutoff})"
+            f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
         )
 
     @abc.abstractmethod
@@ -185,23 +186,15 @@ class BaseFockState(State, abc.ABC):
     ) -> Generator[Tuple[complex, tuple], Any, None]:
         pass
 
-    @abc.abstractmethod
-    def get_density_matrix(self, cutoff: int) -> np.ndarray:
-        """The density matrix of the state in terms of Fock basis vectors."""
-        pass
-
     @property
+    @abc.abstractmethod
     def density_matrix(self) -> np.ndarray:
         """The density matrix of the state in terms of Fock basis vectors."""
-        return self.get_density_matrix(cutoff=self.cutoff)
+        pass
 
     @abc.abstractmethod
     def reduced(self, modes: Tuple[int, ...]) -> "BaseFockState":
         """Reduces the state to a subsystem corresponding to the specified modes."""
-        pass
-
-    @abc.abstractmethod
-    def get_fock_probabilities(self, cutoff: int) -> np.ndarray:
         pass
 
     @property

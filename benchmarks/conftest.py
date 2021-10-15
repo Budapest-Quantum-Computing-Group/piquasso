@@ -30,6 +30,14 @@ def cutoff():
 
 
 @pytest.fixture
+def measurement_cutoff():
+    """
+    NOTE: In SF the measurement cutoff is 5, and couldn't be changed
+    """
+    return 5
+
+
+@pytest.fixture
 def example_gaussian_pq_program():
     with pq.Program() as program:
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
@@ -66,8 +74,13 @@ def example_purefock_pq_program(d, cutoff):
 
 
 @pytest.fixture
-def example_pq_gaussian_state(d, example_gaussian_pq_program):
-    state = pq.GaussianState(d=d)
+def pq_config(cutoff, measurement_cutoff):
+    return pq.Config(cutoff=cutoff, measurement_cutoff=measurement_cutoff)
+
+
+@pytest.fixture
+def example_pq_gaussian_state(d, pq_config, example_gaussian_pq_program):
+    state = pq.GaussianState(d=d, config=pq_config)
 
     state.apply(example_gaussian_pq_program)
 
@@ -75,8 +88,8 @@ def example_pq_gaussian_state(d, example_gaussian_pq_program):
 
 
 @pytest.fixture
-def example_pq_purefock_state(cutoff, d, example_purefock_pq_program):
-    state = pq.PureFockState(cutoff=cutoff, d=d)
+def example_pq_purefock_state(d, pq_config, example_purefock_pq_program):
+    state = pq.PureFockState(config=pq_config, d=d)
 
     state.apply(example_purefock_pq_program)
 

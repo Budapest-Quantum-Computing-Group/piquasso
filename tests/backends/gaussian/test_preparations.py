@@ -101,5 +101,5 @@ def test_vacuum_resets_the_state(state):
     )
     assert np.allclose(
         state.xpxp_covariance_matrix,
-        np.identity(2 * state.d) * state.config.hbar,
+        np.identity(2 * state.d) * state._config.hbar,
     )

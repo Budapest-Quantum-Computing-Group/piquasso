@@ -27,7 +27,8 @@ def gbs_histogram_script():
     d = 5
     shots = 2000
 
-    pq_state = pq.GaussianState(d=d)
+    # NOTE: In SF the measurement cutoff is 5, and couldn't be changed.
+    pq_state = pq.GaussianState(d=d, config=pq.Config(measurement_cutoff=5))
 
     with pq.Program() as pq_program:
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
@@ -41,8 +42,7 @@ def gbs_histogram_script():
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
 
-        # NOTE: In SF the cutoff is 5, and couldn't be changed
-        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
+        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
     sf_program = sf.Program(d)
     sf_engine = sf.Engine(backend="gaussian")

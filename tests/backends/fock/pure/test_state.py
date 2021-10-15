@@ -25,7 +25,7 @@ def test_PureFockState_reduced():
         pq.Q() | pq.StateVector(0, 2) / 2
         pq.Q() | pq.StateVector(2, 0) / np.sqrt(2)
 
-    state = pq.PureFockState(d=2, cutoff=3)
+    state = pq.PureFockState(d=2)
     state.apply(program)
 
     with pq.Program() as reduced_program:
@@ -37,7 +37,7 @@ def test_PureFockState_reduced():
         pq.Q() | pq.DensityMatrix(ket=(1, ), bra=(2, )) / 4
         pq.Q() | pq.DensityMatrix(ket=(2, ), bra=(1, )) / 4
 
-    reduced_program_state = pq.FockState(d=1, cutoff=3)
+    reduced_program_state = pq.FockState(d=1)
     reduced_program_state.apply(reduced_program)
 
     expected_reduced_state = reduced_program_state

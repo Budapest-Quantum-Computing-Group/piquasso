@@ -27,7 +27,8 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    state = pq.PureFockState(d=3, cutoff=3)
+    state = pq.PureFockState(d=3)
+
     result = state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -37,7 +38,7 @@ def test_measure_particle_number_on_one_mode():
 
     if sample == (1, ):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=3,
+            d=3,
             number_preparations=[
                 0.5773502691896258 * pq.StateVector(0, 0, 1),
                 0.816496580927726 * pq.StateVector(0, 1, 1),
@@ -46,7 +47,7 @@ def test_measure_particle_number_on_one_mode():
 
     elif sample == (2, ):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=3,
+            d=3,
             number_preparations=[
                 pq.StateVector(0, 0, 2)
             ]
@@ -63,7 +64,7 @@ def test_measure_particle_number_on_two_modes():
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    state = pq.PureFockState(d=3, cutoff=3)
+    state = pq.PureFockState(d=3)
     result = state.apply(program)
 
     assert np.isclose(sum(state.fock_probabilities), 1)
@@ -73,7 +74,7 @@ def test_measure_particle_number_on_two_modes():
 
     if sample == (0, 1):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=3,
+            d=3,
             number_preparations=[
                 pq.StateVector(0, 0, 1)
             ]
@@ -81,7 +82,7 @@ def test_measure_particle_number_on_two_modes():
 
     elif sample == (1, 1):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=3,
+            d=3,
             number_preparations=[
                 pq.StateVector(0, 1, 1)
             ]
@@ -89,7 +90,7 @@ def test_measure_particle_number_on_two_modes():
 
     elif sample == (0, 2):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=3,
+            d=3,
             number_preparations=[
                 pq.StateVector(0, 0, 2)
             ]
@@ -99,13 +100,15 @@ def test_measure_particle_number_on_two_modes():
 
 
 def test_measure_particle_number_on_all_modes():
+    config = pq.Config(cutoff=2)
+
     state = pq.PureFockState(
         state_vector=[
             0.5,
             0.5, 0, np.sqrt(1/2),
         ],
         d=3,
-        cutoff=2,
+        config=config,
     )
 
     with pq.Program() as program:
@@ -120,15 +123,17 @@ def test_measure_particle_number_on_all_modes():
 
     if sample == (0, 0, 0):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=2,
+            d=3,
+            config=config,
             number_preparations=[
                 pq.StateVector(0, 0, 0),
-            ]
+            ],
         )
 
     elif sample == (0, 0, 1):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=2,
+            d=3,
+            config=config,
             number_preparations=[
                 pq.StateVector(0, 0, 1),
             ]
@@ -136,10 +141,11 @@ def test_measure_particle_number_on_all_modes():
 
     elif sample == (1, 0, 0):
         expected_state = pq.PureFockState.from_number_preparations(
-            d=3, cutoff=2,
+            d=3,
+            config=config,
             number_preparations=[
                 pq.StateVector(1, 0, 0),
-            ]
+            ],
         )
 
     assert state == expected_state
@@ -148,13 +154,16 @@ def test_measure_particle_number_on_all_modes():
 def test_measure_particle_number_with_multiple_shots():
     shots = 4
 
+    # TODO: This is very unusual, that we need to know the cutoff for specifying the
+    # state. It should be imposed, that the only parameter for a state should be `d` and
+    #  `config` maybe.
     state = pq.PureFockState(
         state_vector=[
             0.5,
             0.5, 0, np.sqrt(1/2),
         ],
         d=3,
-        cutoff=2,
+        config=pq.Config(cutoff=2)
     )
 
     with pq.Program() as program:

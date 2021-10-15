@@ -17,6 +17,7 @@ from typing import Tuple, Any, Generator, Dict, Mapping
 
 import numpy as np
 
+from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.linalg import is_selfadjoint
@@ -44,9 +45,13 @@ class FockState(BaseFockState):
     }
 
     def __init__(
-        self, density_matrix: np.ndarray = None, *, d: int, cutoff: int
+        self,
+        density_matrix: np.ndarray = None,
+        *,
+        d: int,
+        config: Config = None
     ) -> None:
-        super().__init__(d=d, cutoff=cutoff)
+        super().__init__(d=d, config=config)
 
         self._density_matrix: np.ndarray = (
             np.array(density_matrix, dtype=complex)
@@ -66,7 +71,7 @@ class FockState(BaseFockState):
         return cls(
             density_matrix=state.density_matrix,
             d=state.d,
-            cutoff=state.cutoff,
+            config=state._config,
         )
 
     def _get_empty(self) -> np.ndarray:
@@ -194,7 +199,7 @@ class FockState(BaseFockState):
     def _linear(self, instruction: Instruction) -> None:
         operator = self._space.get_linear_fock_operator(
             modes=instruction.modes,
-            cache_size=self.config.cache_size,
+            cache_size=self._config.cache_size,
             auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],
@@ -234,10 +239,9 @@ class FockState(BaseFockState):
             return False
         return np.allclose(self._density_matrix, other._density_matrix)
 
-    def get_density_matrix(self, cutoff: int = None) -> np.ndarray:
-        cutoff = cutoff or self.cutoff
-
-        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
+    @property
+    def density_matrix(self) -> np.ndarray:
+        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
 
         return self._density_matrix[:cardinality, :cardinality]
 
@@ -245,21 +249,16 @@ class FockState(BaseFockState):
         index = self._space.index(occupation_number)
         return np.diag(self._density_matrix)[index].real
 
-    def get_fock_probabilities(self, cutoff: int = None) -> np.ndarray:
-        cutoff = cutoff or self.cutoff
-
-        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
-
-        return np.diag(self._density_matrix).real[:cardinality]
-
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return self.get_fock_probabilities()
+        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
+
+        return np.diag(self._density_matrix).real[:cardinality]
 
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         modes_to_eliminate = self._get_auxiliary_modes(modes)
 
-        reduced_state = FockState(d=len(modes), cutoff=self.cutoff)
+        reduced_state = FockState(d=len(modes))
 
         for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
             modes=modes_to_eliminate

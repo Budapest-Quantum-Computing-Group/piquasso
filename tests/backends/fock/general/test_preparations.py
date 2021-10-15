@@ -27,7 +27,8 @@ def test_create_number_state():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = pq.FockState(d=2, cutoff=3)
+    state = pq.FockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     assert np.isclose(state.norm, 1)
@@ -44,7 +45,8 @@ def test_create_and_annihilate_number_state():
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
-    state = pq.FockState(d=2, cutoff=3)
+    state = pq.FockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     assert np.isclose(state.norm, 1)
@@ -65,7 +67,8 @@ def test_create_annihilate_and_create():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = pq.FockState(d=2, cutoff=3)
+    state = pq.FockState(d=2, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     assert np.isclose(state.norm, 1)
@@ -82,7 +85,7 @@ def test_overflow_with_zero_norm_raises_InvalidState():
 
         pq.Q(1, 2) | pq.Create()
 
-    state = pq.FockState(d=3, cutoff=3)
+    state = pq.FockState(d=3, config=pq.Config(cutoff=3))
 
     with pytest.raises(pq.api.errors.InvalidState) as error:
         state.apply(program)
@@ -97,7 +100,8 @@ def test_creation_on_multiple_modes():
 
         pq.Q(1, 2) | pq.Create()
 
-    state = pq.FockState(d=3, cutoff=4)
+    state = pq.FockState(d=3, config=pq.Config(cutoff=4))
+
     state.apply(program)
 
     assert np.isclose(state.norm, 1)
@@ -121,7 +125,8 @@ def test_state_is_renormalized_after_overflow():
 
         pq.Q(2) | pq.Create()
 
-    state = pq.FockState(d=3, cutoff=3)
+    state = pq.FockState(d=3, config=pq.Config(cutoff=3))
+
     state.apply(program)
 
     assert np.isclose(state.norm, 1)

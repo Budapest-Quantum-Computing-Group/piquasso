@@ -171,8 +171,15 @@ class SamplingState(State):
 
         return subspace_probabilities[index]
 
-    def get_fock_probabilities(self, cutoff: int = None) -> List[float]:
-        cutoff = cutoff or self.particle_number + 1
+    @property
+    def fock_probabilities(self) -> List[float]:
+        """
+        TODO: All the `fock_probabilities` properties return a list according to the
+        `cutoff` specified in `config`. However, here it does not make sense to adhere
+        to that...
+        """
+
+        cutoff = self.particle_number + 1
 
         probabilities = []
 
