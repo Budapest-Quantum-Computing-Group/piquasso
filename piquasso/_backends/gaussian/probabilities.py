@@ -19,7 +19,6 @@ import numpy as np
 
 from scipy.special import factorial
 
-from piquasso import constants
 from piquasso._math.linalg import block_reduce, reduce_
 from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.torontonian import torontonian
@@ -117,7 +116,8 @@ class DensityMatrixCalculation:
 
 def calculate_click_probability(
     xp_covariance: np.ndarray,
-    occupation_number: Tuple[int, ...]
+    occupation_number: Tuple[int, ...],
+    hbar: float,
 ) -> float:
     r"""
     Calculates the threshold detection probability with the equation
@@ -141,7 +141,7 @@ def calculate_click_probability(
 
     d = len(xp_covariance) // 2
 
-    sigma: np.ndarray = (xp_covariance / constants.HBAR + np.identity(2 * d)) / 2
+    sigma: np.ndarray = (xp_covariance / hbar + np.identity(2 * d)) / 2
 
     sigma_inv_reduced = block_reduce(
         np.linalg.inv(sigma),

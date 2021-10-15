@@ -204,7 +204,7 @@ def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribut
 
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
         covariance_matrix,
-        hbar=pq.api.constants.HBAR,
+        hbar=state.config.hbar,
     )
 
     assert np.allclose(mixed_contribution, 0.0)
@@ -226,7 +226,7 @@ def test_decompose_to_pure_and_mixed_with_reduced_gaussian():
 
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
         covariance_matrix,
-        hbar=pq.api.constants.HBAR,
+        hbar=state.config.hbar,
     )
 
     assert np.allclose(pure_covariance + mixed_contribution, covariance_matrix)

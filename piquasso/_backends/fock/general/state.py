@@ -194,6 +194,7 @@ class FockState(BaseFockState):
     def _linear(self, instruction: Instruction) -> None:
         operator = self._space.get_linear_fock_operator(
             modes=instruction.modes,
+            cache_size=self.config.cache_size,
             auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],

@@ -17,7 +17,6 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-from piquasso.api import constants
 from piquasso.api.errors import InvalidParameter
 
 
@@ -66,7 +65,7 @@ def test_representation_roundtrip(state):
 
 
 def test_representation_roundtrip_at_different_HBAR(state):
-    constants.HBAR = 42
+    state.config.hbar = 42
 
     initial_mean_vector = state.xpxp_mean_vector
     initial_covariance_matrix = state.xpxp_covariance_matrix
@@ -96,7 +95,7 @@ def test_xp_representation_roundtrip(state):
 
 
 def test_xp_representation_roundtrip_at_different_HBAR(state):
-    constants.HBAR = 42
+    state.config.hbar = 42
 
     initial_mean = state.xxpp_mean_vector
     initial_cov = state.xxpp_covariance_matrix
@@ -208,7 +207,7 @@ class TestGaussianStateVacuum:
         state = pq.GaussianState(d=d)
 
         expected_xpxp_mean = np.zeros(2 * d)
-        expected_xpxp_covariance_matrix = np.identity(2 * d) * constants.HBAR
+        expected_xpxp_covariance_matrix = np.identity(2 * d) * state.config.hbar
 
         assert np.allclose(
             state.xpxp_mean_vector,
@@ -221,19 +220,19 @@ class TestGaussianStateVacuum:
 
 
 def test_mean_and_covariance(state, assets):
-    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * state.config.hbar)
 
-    expected_covariance_matrix = assets.load("expected_cov") * constants.HBAR
+    expected_covariance_matrix = assets.load("expected_cov") * state.config.hbar
 
     assert np.allclose(state.xpxp_mean_vector, expected_mean_vector)
     assert np.allclose(state.xpxp_covariance_matrix, expected_covariance_matrix)
 
 
 def test_mean_and_covariance_with_different_HBAR(state, assets):
-    constants.HBAR = 42
+    state.config.hbar = 42
 
-    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * constants.HBAR)
-    expected_covariance_matrix = assets.load("expected_cov") * constants.HBAR
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(2 * state.config.hbar)
+    expected_covariance_matrix = assets.load("expected_cov") * state.config.hbar
 
     assert np.allclose(state.xpxp_mean_vector, expected_mean_vector)
     assert np.allclose(state.xpxp_covariance_matrix, expected_covariance_matrix)
@@ -244,7 +243,7 @@ def test_mean_is_scaled_with_squared_HBAR(state, assets):
 
     mean_default_hbar = state.xpxp_mean_vector
 
-    constants.HBAR *= scaling
+    state.config.hbar *= scaling
 
     mean_different_hbar = state.xpxp_mean_vector
 
@@ -256,7 +255,7 @@ def test_covariance_is_scaled_with_HBAR(state):
 
     cov_default_hbar = state.xpxp_covariance_matrix
 
-    constants.HBAR *= scaling
+    state.config.hbar *= scaling
 
     cov_different_hbar = state.xpxp_covariance_matrix
 
@@ -273,7 +272,7 @@ def test_complex_covariance(state, assets):
 def test_complex_covariance_does_not_scale_with_HBAR(state):
     complex_covariance_default_hbar = state.complex_covariance
 
-    constants.HBAR = 42
+    state.config.hbar = 42
 
     complex_covariance_different_hbar = state.complex_covariance
 
@@ -294,7 +293,7 @@ def test_complex_covariance_transformed_directly_from_xxpp_cov(state):
         ]
     )
 
-    complex_covariance = W @ xxpp_cov @ W.conj().T / constants.HBAR
+    complex_covariance = W @ xxpp_cov @ W.conj().T / state.config.hbar
 
     assert np.allclose(
         complex_covariance,
@@ -314,7 +313,7 @@ def test_complex_displacement(state, assets):
 def test_complex_displacement_do_not_scale_with_HBAR(state):
     complex_displacement_default_hbar = state.complex_displacement
 
-    constants.HBAR = 42
+    state.config.hbar = 42
 
     complex_displacement_different_hbar = state.complex_displacement
 

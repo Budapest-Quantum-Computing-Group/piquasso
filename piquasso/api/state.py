@@ -19,6 +19,7 @@ from typing import Tuple, Optional
 
 import numpy as np
 
+from piquasso.api.config import Config
 from piquasso.api.program import Program
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
@@ -36,6 +37,8 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     def __init__(self) -> None:
         self.result: Optional[Result] = None
         self.shots: int = None  # type: ignore
+
+        self.config = Config()
 
     @property
     @abc.abstractmethod
@@ -58,7 +61,11 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     def _as_code(self) -> str:
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
-    def apply(self, program: Program, shots: int = 1) -> Optional[Result]:
+    def apply(
+        self,
+        program: Program,
+        shots: int = 1,
+    ) -> Optional[Result]:
         """Applyes the given program to the state and executes it.
 
         Args:
@@ -67,6 +74,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
             shots (int):
                 The number of samples to generate.
         """
+
         if not isinstance(shots, int) or shots < 1:
             raise InvalidParameter(
                 f"The number of shots should be a positive integer: shots={shots}."

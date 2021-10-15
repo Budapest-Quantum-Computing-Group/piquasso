@@ -29,7 +29,6 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState, InvalidParameter
 from piquasso.api.result import Result
 from piquasso.api.state import State
-from piquasso.api import constants
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
     is_symmetric,
@@ -159,8 +158,7 @@ class GaussianState(State):
                 f"expected={expected_shape}, actual={mean.shape}."
             )
 
-    @staticmethod
-    def _validate_cov(cov: np.ndarray, d: int) -> None:
+    def _validate_cov(self, cov: np.ndarray, d: int) -> None:
         expected_shape = (2 * d, ) * 2
 
         if not cov.shape == expected_shape:
@@ -172,7 +170,9 @@ class GaussianState(State):
         if not is_symmetric(cov):
             raise InvalidState("The covariance matrix is not symmetric.")
 
-        if not is_positive_semidefinite(cov / constants.HBAR + 1j * symplectic_form(d)):
+        if not is_positive_semidefinite(
+            cov / self.config.hbar + 1j * symplectic_form(d)
+        ):
             raise InvalidState(
                 "The covariance matrix is invalid, since it doesn't fulfill the "
                 "Robertson-Schrödinger uncertainty relation."
@@ -194,7 +194,7 @@ class GaussianState(State):
             [self._m.real, self._m.imag]
         ) * np.sqrt(2)
 
-        return dimensionless_xxpp_mean_vector * np.sqrt(constants.HBAR)
+        return dimensionless_xxpp_mean_vector * np.sqrt(self.config.hbar)
 
     @xxpp_mean_vector.setter
     def xxpp_mean_vector(self, value):
@@ -233,7 +233,7 @@ class GaussianState(State):
             ],
         ) + np.identity(2 * self.d)
 
-        return dimensionless_xxpp_covariance_matrix * constants.HBAR
+        return dimensionless_xxpp_covariance_matrix * self.config.hbar
 
     @xxpp_covariance_matrix.setter
     def xxpp_covariance_matrix(self, value):
@@ -301,7 +301,7 @@ class GaussianState(State):
     def xpxp_mean_vector(self, value: np.ndarray) -> None:
         self._validate_mean(value, self.d)
 
-        m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * constants.HBAR)
+        m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * self.config.hbar)
 
         self._m = m
 
@@ -339,7 +339,7 @@ class GaussianState(State):
 
         T = from_xxpp_to_xpxp_transformation_matrix(d)
 
-        dimensionless_cov = new_cov / constants.HBAR
+        dimensionless_cov = new_cov / self.config.hbar
         dimensionless_xp_cov = T.transpose() @ dimensionless_cov @ T
 
         blocks = (dimensionless_xp_cov - np.identity(2 * d)) / 4
@@ -873,7 +873,7 @@ class GaussianState(State):
         evolved_mean = np.zeros(2 * d)
         evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
-        evolved_cov = np.identity(2 * d) * constants.HBAR
+        evolved_cov = np.identity(2 * d) * self.config.hbar
         evolved_cov[np.ix_(outer_indices, outer_indices)] = (
             evolved_state.xpxp_covariance_matrix
         )
@@ -889,7 +889,7 @@ class GaussianState(State):
         indices = self._map_modes_to_xpxp_indices(modes)
 
         full_detection_covariance = (
-            constants.HBAR
+            self.config.hbar
             * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
         )
 
@@ -909,7 +909,7 @@ class GaussianState(State):
         #
         # We might be better of setting `check_valid='ignore'` and verifying
         # positive-definiteness for ourselves.
-        return constants.RNG.multivariate_normal(
+        return self.config.rng.multivariate_normal(
             mean=mean,
             cov=cov,
             size=shots,
@@ -918,7 +918,7 @@ class GaussianState(State):
 
     def _get_generaldyne_evolved_state(self, sample, modes, detection_covariance):
         full_detection_covariance = (
-            constants.HBAR
+            self.config.hbar
             * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
         )
 
@@ -986,7 +986,7 @@ class GaussianState(State):
 
         pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
             reduced_state.xxpp_covariance_matrix,
-            hbar=constants.HBAR,
+            hbar=self.config.hbar,
         )
         pure_state = self.__class__(len(reduced_state))
         pure_state.xxpp_covariance_matrix = pure_covariance
@@ -996,7 +996,7 @@ class GaussianState(State):
         samples = []
 
         for _ in itertools.repeat(None, self.shots):
-            pure_state.xxpp_mean_vector = constants.RNG.multivariate_normal(
+            pure_state.xxpp_mean_vector = self.config.rng.multivariate_normal(
                 reduced_state.xxpp_mean_vector, mixed_contribution
             )
 
@@ -1112,7 +1112,7 @@ class GaussianState(State):
         probability of clicks (i.e. 1 as sample), and argue that the probability of a
         click is equal to one minus the probability of no click.
         """
-        if constants.use_torontonian:
+        if self.config.use_torontonian:
             samples = self._generate_threshold_samples_using_torontonian(instruction)
         else:
             samples = self._generate_threshold_samples_using_hafnian(instruction)
@@ -1128,7 +1128,7 @@ class GaussianState(State):
 
         modes = instruction.modes
 
-        @lru_cache(constants.cache_size)
+        @lru_cache(self.config.cache_size)
         def get_probability(
             subspace_modes: Tuple[int, ...],
             occupation_numbers: Tuple[int, ...]
@@ -1137,7 +1137,8 @@ class GaussianState(State):
 
             return calculate_click_probability(
                 reduced_state.xxpp_covariance_matrix,
-                occupation_numbers
+                occupation_numbers,
+                self.config.hbar,
             )
 
         samples = []
