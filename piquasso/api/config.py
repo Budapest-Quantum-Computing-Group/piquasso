@@ -24,10 +24,13 @@ class Config:
 
     def __init__(
         self,
+        *,
         seed_sequence: Any = None,
         cache_size: int = 32,
         hbar: float = 2.0,
         use_torontonian: bool = False,
+        cutoff: int = 4,
+        measurement_cutoff: int = 5,
     ):
         self.seed_sequence = (
             seed_sequence or int.from_bytes(os.urandom(8), byteorder="big")
@@ -35,6 +38,8 @@ class Config:
         self.cache_size = cache_size
         self.hbar = hbar
         self.use_torontonian = use_torontonian
+        self.cutoff = cutoff
+        self.measurement_cutoff = measurement_cutoff
 
     @property
     def seed_sequence(self):

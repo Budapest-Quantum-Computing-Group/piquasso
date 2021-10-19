@@ -22,7 +22,7 @@ def test_from_fock_state_preserves_fock_probabilities():
     with pq.Program() as pure_state_preparation_program:
         pq.Q(1) | pq.StateVector(1)
 
-    pure_state_preparation_state = pq.PureFockState(d=2, cutoff=4)
+    pure_state_preparation_state = pq.PureFockState(d=2, config=pq.Config(cutoff=4))
     pure_state_preparation_state.apply(pure_state_preparation_program)
 
     beamsplitter = pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)

@@ -61,7 +61,7 @@ def test_measure_homodyne_zeroes_state_on_measured_modes(state):
     state.validate()
 
     assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state.config.hbar
+    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
 
 
 def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
@@ -103,7 +103,7 @@ def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
     state.validate()
 
     assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state.config.hbar
+    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
 
 
 def test_measure_heterodyne_with_multiple_shots(state):
@@ -152,7 +152,7 @@ def test_measure_dyne_with_multiple_shots(state):
 
 def test_measure_particle_number_on_one_modes(state):
     with pq.Program() as program:
-        pq.Q(0) | pq.ParticleNumberMeasurement(cutoff=4)
+        pq.Q(0) | pq.ParticleNumberMeasurement()
 
     result = state.apply(program)
 
@@ -161,7 +161,7 @@ def test_measure_particle_number_on_one_modes(state):
 
 def test_measure_particle_number_on_two_modes(state):
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.ParticleNumberMeasurement(cutoff=4)
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement()
 
     result = state.apply(program)
 
@@ -170,7 +170,7 @@ def test_measure_particle_number_on_two_modes(state):
 
 def test_measure_particle_number_on_all_modes(state):
     with pq.Program() as program:
-        pq.Q() | pq.ParticleNumberMeasurement(cutoff=4)
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     result = state.apply(program)
 
@@ -180,7 +180,7 @@ def test_measure_particle_number_on_all_modes(state):
 def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_torontonian(
     state,
 ):
-    state.config.use_torontonian = True
+    state._config.use_torontonian = True
 
     state_with_nonzero_displacements = state
 

@@ -47,12 +47,10 @@ class ParticleNumberMeasurement(Measurement):
         When used with :class:`~piquasso._backends.gaussian.state.GaussianState`, the
         state is not evolved, since that would be non-Gaussian.
 
-    Args:
-        cutoff (int): The Fock space cutoff.
     """
 
-    def __init__(self, cutoff: int = 5) -> None:
-        super().__init__(params=dict(cutoff=cutoff))
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class ThresholdMeasurement(Measurement):
@@ -65,12 +63,10 @@ class ThresholdMeasurement(Measurement):
     no photon being detected, and :math:`1` corresponds to detection of at least one
     photon.
 
-    Args:
-        cutoff (int): The Fock space cutoff.
     """
 
-    def __init__(self, cutoff: int = 5) -> None:
-        super().__init__(params=dict(cutoff=cutoff))
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class GeneraldyneMeasurement(Measurement):

@@ -38,13 +38,13 @@ def gbs_graph_histogram_script():
         ]
     )
 
-    pq_state = pq.GaussianState(d=d)
+    # NOTE: In SF the measurement cutoff is 5, and couldn't be changed.
+    pq_state = pq.GaussianState(d=d, config=pq.Config(measurement_cutoff=5))
 
     with pq.Program() as pq_program:
         pq.Q() | pq.Graph(adjacency_matrix, mean_photon_number=mean_photon_number)
 
-        # NOTE: In SF the cutoff is 5, and couldn't be changed
-        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
+        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
     sf_program = sf.Program(d)
     sf_engine = sf.Engine(backend="gaussian")

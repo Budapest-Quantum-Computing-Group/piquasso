@@ -25,6 +25,7 @@ from scipy.special import factorial
 from itertools import repeat
 from functools import lru_cache
 
+from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState, InvalidParameter
 from piquasso.api.result import Result
@@ -85,8 +86,8 @@ class GaussianState(State):
         "ThresholdMeasurement": "_threshold_measurement",
     }
 
-    def __init__(self, d: int) -> None:
-        super().__init__()
+    def __init__(self, d: int, config: Config = None) -> None:
+        super().__init__(config=config)
         self._d = d
         self.reset()
 
@@ -113,6 +114,7 @@ class GaussianState(State):
         m: np.ndarray,
         G: np.ndarray,
         C: np.ndarray,
+        config: Config,
     ) -> "GaussianState":
         obj = cls(d=len(m))
 
@@ -171,7 +173,7 @@ class GaussianState(State):
             raise InvalidState("The covariance matrix is not symmetric.")
 
         if not is_positive_semidefinite(
-            cov / self.config.hbar + 1j * symplectic_form(d)
+            cov / self._config.hbar + 1j * symplectic_form(d)
         ):
             raise InvalidState(
                 "The covariance matrix is invalid, since it doesn't fulfill the "
@@ -194,7 +196,7 @@ class GaussianState(State):
             [self._m.real, self._m.imag]
         ) * np.sqrt(2)
 
-        return dimensionless_xxpp_mean_vector * np.sqrt(self.config.hbar)
+        return dimensionless_xxpp_mean_vector * np.sqrt(self._config.hbar)
 
     @xxpp_mean_vector.setter
     def xxpp_mean_vector(self, value):
@@ -233,7 +235,7 @@ class GaussianState(State):
             ],
         ) + np.identity(2 * self.d)
 
-        return dimensionless_xxpp_covariance_matrix * self.config.hbar
+        return dimensionless_xxpp_covariance_matrix * self._config.hbar
 
     @xxpp_covariance_matrix.setter
     def xxpp_covariance_matrix(self, value):
@@ -301,7 +303,7 @@ class GaussianState(State):
     def xpxp_mean_vector(self, value: np.ndarray) -> None:
         self._validate_mean(value, self.d)
 
-        m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * self.config.hbar)
+        m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * self._config.hbar)
 
         self._m = m
 
@@ -339,7 +341,7 @@ class GaussianState(State):
 
         T = from_xxpp_to_xpxp_transformation_matrix(d)
 
-        dimensionless_cov = new_cov / self.config.hbar
+        dimensionless_cov = new_cov / self._config.hbar
         dimensionless_xp_cov = T.transpose() @ dimensionless_cov @ T
 
         blocks = (dimensionless_xp_cov - np.identity(2 * d)) / 4
@@ -518,6 +520,7 @@ class GaussianState(State):
             C=self._C,
             G=(self._G * phase**2),
             m=(self._m * phase),
+            config=self._config,
         )
 
     def reduced(self, modes: Tuple[int, ...]) -> "GaussianState":
@@ -536,6 +539,7 @@ class GaussianState(State):
             C=self._C[np.ix_(modes, modes)],
             G=self._G[np.ix_(modes, modes)],
             m=self._m[np.ix_(modes)],
+            config=self._config,
         )
 
     def xpxp_reduced_rotated_mean_and_covariance(
@@ -676,14 +680,15 @@ class GaussianState(State):
         # TODO: calculate the variance.
         return first_moment
 
-    def get_density_matrix(self, cutoff: int) -> np.ndarray:
+    @property
+    def density_matrix(self) -> np.ndarray:
         calculation = DensityMatrixCalculation(
             complex_displacement=self.complex_displacement,
             complex_covariance=self.complex_covariance,
         )
 
         return calculation.get_density_matrix(
-            get_occupation_numbers(d=self.d, cutoff=cutoff)
+            get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
         )
 
     def wigner_function(
@@ -873,7 +878,7 @@ class GaussianState(State):
         evolved_mean = np.zeros(2 * d)
         evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
-        evolved_cov = np.identity(2 * d) * self.config.hbar
+        evolved_cov = np.identity(2 * d) * self._config.hbar
         evolved_cov[np.ix_(outer_indices, outer_indices)] = (
             evolved_state.xpxp_covariance_matrix
         )
@@ -889,7 +894,7 @@ class GaussianState(State):
         indices = self._map_modes_to_xpxp_indices(modes)
 
         full_detection_covariance = (
-            self.config.hbar
+            self._config.hbar
             * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
         )
 
@@ -909,7 +914,7 @@ class GaussianState(State):
         #
         # We might be better of setting `check_valid='ignore'` and verifying
         # positive-definiteness for ourselves.
-        return self.config.rng.multivariate_normal(
+        return self._config.rng.multivariate_normal(
             mean=mean,
             cov=cov,
             size=shots,
@@ -918,7 +923,7 @@ class GaussianState(State):
 
     def _get_generaldyne_evolved_state(self, sample, modes, detection_covariance):
         full_detection_covariance = (
-            self.config.hbar
+            self._config.hbar
             * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
         )
 
@@ -978,7 +983,6 @@ class GaussianState(State):
     ) -> List[Tuple[int, ...]]:
 
         modes: Tuple[int, ...] = instruction.modes
-        cutoff: int = instruction._all_params["cutoff"]
 
         reduced_state = self.reduced(modes)
 
@@ -986,7 +990,7 @@ class GaussianState(State):
 
         pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
             reduced_state.xxpp_covariance_matrix,
-            hbar=self.config.hbar,
+            hbar=self._config.hbar,
         )
         pure_state = self.__class__(len(reduced_state))
         pure_state.xxpp_covariance_matrix = pure_covariance
@@ -996,7 +1000,7 @@ class GaussianState(State):
         samples = []
 
         for _ in itertools.repeat(None, self.shots):
-            pure_state.xxpp_mean_vector = self.config.rng.multivariate_normal(
+            pure_state.xxpp_mean_vector = self._config.rng.multivariate_normal(
                 reduced_state.xxpp_mean_vector, mixed_contribution
             )
 
@@ -1020,7 +1024,7 @@ class GaussianState(State):
                     heterodyne_detection_covariance,
                 )
 
-                choice = evolved_state._get_particle_number_choice(sample, cutoff)
+                choice = evolved_state._get_particle_number_choice(sample)
 
                 sample = sample + (choice, )
 
@@ -1031,7 +1035,6 @@ class GaussianState(State):
     def _get_particle_number_choice(
         self,
         previous_sample: Tuple[int],
-        cutoff: int,
         loop_hafnian_func: Callable = loop_hafnian,
     ) -> int:
         r"""
@@ -1083,7 +1086,7 @@ class GaussianState(State):
 
         weights = np.array([])
 
-        possible_choices = tuple(range(cutoff))
+        possible_choices = tuple(range(self._config.measurement_cutoff))
 
         for n in possible_choices:
             occupation_numbers = previous_sample + (n, )
@@ -1105,14 +1108,14 @@ class GaussianState(State):
     ) -> None:
         """
         NOTE: The same logic is used here, as for the particle number measurement.
-        However, at threshold measurement there is no sense of cutoff, therefore it is
-        set to 2 to make the logic sensible in this case as well.
+        However, at threshold measurement there is no sense of measurement cutoff,
+        therefore it is set to 2 to make the logic sensible in this case as well.
 
         Also note, that one could speed up this calculation by not calculating the
         probability of clicks (i.e. 1 as sample), and argue that the probability of a
         click is equal to one minus the probability of no click.
         """
-        if self.config.use_torontonian:
+        if self._config.use_torontonian:
             samples = self._generate_threshold_samples_using_torontonian(instruction)
         else:
             samples = self._generate_threshold_samples_using_hafnian(instruction)
@@ -1128,7 +1131,7 @@ class GaussianState(State):
 
         modes = instruction.modes
 
-        @lru_cache(self.config.cache_size)
+        @lru_cache(self._config.cache_size)
         def get_probability(
             subspace_modes: Tuple[int, ...],
             occupation_numbers: Tuple[int, ...]
@@ -1138,7 +1141,7 @@ class GaussianState(State):
             return calculate_click_probability(
                 reduced_state.xxpp_covariance_matrix,
                 occupation_numbers,
-                self.config.hbar,
+                self._config.hbar,
             )
 
         samples = []
@@ -1231,12 +1234,13 @@ class GaussianState(State):
             ket=occupation_number,
         )
 
-    def get_fock_probabilities(self, cutoff: int) -> np.ndarray:
+    @property
+    def fock_probabilities(self) -> np.ndarray:
         calculation = DensityMatrixCalculation(
             complex_displacement=self.complex_displacement,
             complex_covariance=self.complex_covariance,
         )
 
         return calculation.get_particle_number_detection_probabilities(
-            get_occupation_numbers(d=self.d, cutoff=cutoff)
+            get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
         )

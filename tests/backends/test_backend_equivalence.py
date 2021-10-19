@@ -19,11 +19,6 @@ import piquasso as pq
 
 from scipy.linalg import polar, sinhm, coshm, expm
 
-from functools import partial
-
-
-CUTOFF = 4
-
 
 def is_proportional(first, second):
     first = np.array(first)
@@ -40,11 +35,11 @@ def is_proportional(first, second):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
+def test_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -53,7 +48,7 @@ def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert isinstance(probabilities, np.ndarray)
     assert probabilities.dtype == np.float64
@@ -63,20 +58,21 @@ def test_get_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_squeezed_state(StateClass):
+def test_fock_probabilities_with_squeezed_state(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=0.1, phi=0.6)
 
     state = StateClass(d=3)
+    state._config.cutoff = 4
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -92,7 +88,7 @@ def test_get_fock_probabilities_with_squeezed_state(StateClass):
     )
 
 
-def test_get_density_matrix_with_squeezed_state():
+def test_density_matrix_with_squeezed_state():
     d = 2
 
     with pq.Program() as gaussian_program:
@@ -103,7 +99,7 @@ def test_get_density_matrix_with_squeezed_state():
     gaussian_state = pq.GaussianState(d=d)
     gaussian_state.apply(gaussian_program)
 
-    gaussian_density_matrix = gaussian_state.get_density_matrix(cutoff=CUTOFF)
+    gaussian_density_matrix = gaussian_state.density_matrix
 
     normalization = 1 / sum(np.diag(gaussian_density_matrix))
 
@@ -112,10 +108,10 @@ def test_get_density_matrix_with_squeezed_state():
 
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
 
-    fock_state = pq.FockState(d=d, cutoff=CUTOFF)
+    fock_state = pq.FockState(d=d)
     fock_state.apply(fock_program)
 
-    fock_density_matrix = fock_state.get_density_matrix(cutoff=CUTOFF)
+    fock_density_matrix = fock_state.density_matrix
 
     assert np.allclose(normalization * gaussian_density_matrix, fock_density_matrix)
 
@@ -124,11 +120,11 @@ def test_get_density_matrix_with_squeezed_state():
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_displaced_state(StateClass):
+def test_fock_probabilities_with_displaced_state(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -137,7 +133,7 @@ def test_get_fock_probabilities_with_displaced_state(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -157,11 +153,11 @@ def test_get_fock_probabilities_with_displaced_state(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
+def test_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -171,7 +167,7 @@ def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClas
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -191,11 +187,11 @@ def test_get_fock_probabilities_with_displaced_state_with_beamsplitter(StateClas
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
+def test_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -205,7 +201,7 @@ def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -225,11 +221,11 @@ def test_get_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
+def test_fock_probabilities_with_two_mode_squeezing(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -238,7 +234,7 @@ def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -258,11 +254,11 @@ def test_get_fock_probabilities_with_two_mode_squeezing(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass):
+def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -272,7 +268,7 @@ def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateCl
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
 
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
@@ -292,11 +288,11 @@ def test_get_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateCl
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_quadratic_phase(StateClass):
+def test_fock_probabilities_with_quadratic_phase(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -305,7 +301,7 @@ def test_get_fock_probabilities_with_quadratic_phase(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
     expected_probabilities = [
         0.98058068,
         0., 0., 0.,
@@ -323,11 +319,11 @@ def test_get_fock_probabilities_with_quadratic_phase(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_position_displacement(StateClass):
+def test_fock_probabilities_with_position_displacement(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -336,7 +332,7 @@ def test_get_fock_probabilities_with_position_displacement(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
     expected_probabilities = [
         0.96078944,
         0., 0., 0.03843158,
@@ -354,11 +350,11 @@ def test_get_fock_probabilities_with_position_displacement(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_momentum_displacement(StateClass):
+def test_fock_probabilities_with_momentum_displacement(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -367,7 +363,7 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
     expected_probabilities = [
         0.96078944,
         0., 0., 0.03843158,
@@ -385,11 +381,11 @@ def test_get_fock_probabilities_with_momentum_displacement(StateClass):
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_position_displacement_is_HBAR_independent(
+def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
     StateClass
 ):
     with pq.Program() as program:
@@ -400,14 +396,14 @@ def test_get_fock_probabilities_with_position_displacement_is_HBAR_independent(
     state1 = StateClass(d=3)
     state2 = StateClass(d=3)
 
-    state1.config.hbar = 2
-    state2.config.hbar = 42
+    state1._config.hbar = 2
+    state2._config.hbar = 42
 
     state1.apply(program)
     state2.apply(program)
 
-    probabilities1 = state1.get_fock_probabilities(cutoff=CUTOFF)
-    probabilities2 = state1.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities1 = state1.fock_probabilities
+    probabilities2 = state1.fock_probabilities
 
     assert np.allclose(probabilities1, probabilities2)
 
@@ -416,11 +412,11 @@ def test_get_fock_probabilities_with_position_displacement_is_HBAR_independent(
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
+def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     StateClass
 ):
     with pq.Program() as program:
@@ -431,14 +427,14 @@ def test_get_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     state1 = StateClass(d=3)
     state2 = StateClass(d=3)
 
-    state1.config.hbar = 2
-    state2.config.hbar = 42
+    state1._config.hbar = 2
+    state2._config.hbar = 42
 
     state1.apply(program)
     state2.apply(program)
 
-    probabilities1 = state1.get_fock_probabilities(cutoff=CUTOFF)
-    probabilities2 = state1.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities1 = state1.fock_probabilities
+    probabilities2 = state1.fock_probabilities
 
     assert np.allclose(probabilities1, probabilities2)
 
@@ -447,11 +443,11 @@ def test_get_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     "StateClass",
     (
         pq.GaussianState,
-        partial(pq.PureFockState, cutoff=CUTOFF),
-        partial(pq.FockState, cutoff=CUTOFF),
+        pq.PureFockState,
+        pq.FockState,
     )
 )
-def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
+def test_fock_probabilities_with_general_gaussian_transform(StateClass):
     squeezing_matrix = np.array(
         [
             [0.1, 0.2 + 0.3j],
@@ -481,7 +477,7 @@ def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
     state = StateClass(d=3)
     state.apply(program)
 
-    probabilities = state.get_fock_probabilities(cutoff=CUTOFF)
+    probabilities = state.fock_probabilities
     expected_probabilities = [
         0.864652,
         0., 0., 0.,
@@ -496,7 +492,7 @@ def test_get_fock_probabilities_with_general_gaussian_transform(StateClass):
 
 
 @pytest.mark.monkey
-def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
+def test_monkey_fock_probabilities_with_general_gaussian_transform(
     generate_unitary_matrix, generate_complex_symmetric_matrix
 ):
     d = 3
@@ -513,11 +509,11 @@ def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
 
         pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
-    fock_state = pq.FockState(d=d, cutoff=CUTOFF)
+    fock_state = pq.FockState(d=d)
     fock_state.apply(fock_program)
 
     fock_representation_probabilities = (
-        fock_state.get_fock_probabilities(cutoff=CUTOFF)
+        fock_state.fock_probabilities
     )
 
     with pq.Program() as gaussian_program:
@@ -529,7 +525,7 @@ def test_monkey_get_fock_probabilities_with_general_gaussian_transform(
     gaussian_state.apply(gaussian_program)
 
     gaussian_representation_probabilities = (
-        gaussian_state.get_fock_probabilities(cutoff=CUTOFF)
+        gaussian_state.fock_probabilities
     )
 
     normalization = 1 / sum(gaussian_representation_probabilities)
@@ -558,11 +554,11 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
 
         pq.Q(all) | pq.GaussianTransform(passive=passive, active=active)
 
-    fock_state = pq.FockState(d=d, cutoff=CUTOFF)
+    fock_state = pq.FockState(d=d)
     fock_state.apply(fock_program)
 
     fock_representation_probabilities = (
-        fock_state.get_fock_probabilities(cutoff=CUTOFF)
+        fock_state.fock_probabilities
     )
 
     with pq.Program() as gaussian_program:
@@ -574,7 +570,7 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
     gaussian_state.apply(gaussian_program)
 
     gaussian_representation_probabilities = (
-        gaussian_state.get_fock_probabilities(cutoff=CUTOFF)
+        gaussian_state.fock_probabilities
     )
 
     normalization = 1 / sum(gaussian_representation_probabilities)
@@ -586,29 +582,34 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
 
 
 def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
+    initial_occupation_numbers = (1, 1)
+
     with pq.Program() as fock_program:
-        pq.Q() | pq.StateVector(1, 1)
+        pq.Q() | pq.StateVector(*initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
-    fock_state = pq.PureFockState(d=2, cutoff=3)
+    fock_state = pq.PureFockState(d=2)
+    fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
     fock_state.apply(fock_program)
 
     with pq.Program() as sampling_program:
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
-    sampling_state = pq.SamplingState(1, 1)
+    sampling_state = pq.SamplingState(*initial_occupation_numbers)
     sampling_state.apply(sampling_program)
 
     assert np.allclose(
-        fock_state.get_fock_probabilities(),
-        sampling_state.get_fock_probabilities()
+        fock_state.fock_probabilities,
+        sampling_state.fock_probabilities,
     )
 
 
 def test_sampling_backend_equivalence_complex_scenario():
+    initial_occupation_numbers = (1, 1, 0, 1)
+
     with pq.Program() as fock_program:
-        pq.Q() | pq.StateVector(1, 1, 0, 1)
+        pq.Q() | pq.StateVector(*initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
@@ -616,7 +617,8 @@ def test_sampling_backend_equivalence_complex_scenario():
 
         pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
 
-    fock_state = pq.PureFockState(d=4, cutoff=4)
+    fock_state = pq.PureFockState(d=4)
+    fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
     fock_state.apply(fock_program)
     fock_state.validate()
 
@@ -627,13 +629,13 @@ def test_sampling_backend_equivalence_complex_scenario():
 
         pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
 
-    sampling_state = pq.SamplingState(1, 1, 0, 1)
+    sampling_state = pq.SamplingState(*initial_occupation_numbers)
     sampling_state.apply(sampling_program)
     sampling_state.validate()
 
     assert np.allclose(
-        fock_state.get_fock_probabilities(),
-        sampling_state.get_fock_probabilities()
+        fock_state.fock_probabilities,
+        sampling_state.fock_probabilities
     )
 
 
@@ -642,7 +644,6 @@ def test_sampling_backend_equivalence_with_random_interferometer(
     generate_unitary_matrix
 ):
     d = 4
-    cutoff = 4
     initial_occupation_numbers = (1, 1, 0, 1)
 
     interferometer_matrix = generate_unitary_matrix(d)
@@ -652,7 +653,8 @@ def test_sampling_backend_equivalence_with_random_interferometer(
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
-    fock_state = pq.PureFockState(d=d, cutoff=cutoff)
+    fock_state = pq.PureFockState(d=d)
+    fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
     fock_state.apply(fock_program)
     fock_state.validate()
 
@@ -664,6 +666,6 @@ def test_sampling_backend_equivalence_with_random_interferometer(
     sampling_state.validate()
 
     assert np.allclose(
-        fock_state.get_fock_probabilities(),
-        sampling_state.get_fock_probabilities()
+        fock_state.fock_probabilities,
+        sampling_state.fock_probabilities,
     )

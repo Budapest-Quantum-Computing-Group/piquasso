@@ -30,8 +30,7 @@ def piquasso_benchmark(
     @benchmark
     def func():
         with pq.Program() as new_program:
-            # NOTE: In SF the cutoff is 5, and couldn't be changed
-            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=5)
+            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
         example_pq_gaussian_state.apply(new_program, shots=4)
 

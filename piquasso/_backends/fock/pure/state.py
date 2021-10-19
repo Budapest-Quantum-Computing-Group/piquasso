@@ -17,6 +17,7 @@ from typing import Tuple, Dict, Mapping, Generator, Any
 
 import numpy as np
 
+from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.fock import cutoff_cardinality, FockBasis
@@ -49,9 +50,13 @@ class PureFockState(BaseFockState):
     }
 
     def __init__(
-        self, state_vector: np.ndarray = None, *, d: int, cutoff: int
+        self,
+        state_vector: np.ndarray = None,
+        *,
+        d: int,
+        config: Config = None
     ) -> None:
-        super().__init__(d=d, cutoff=cutoff)
+        super().__init__(d=d, config=config)
 
         self._state_vector: np.ndarray = (
             np.array(state_vector, dtype=complex)
@@ -179,7 +184,7 @@ class PureFockState(BaseFockState):
     def _linear(self, instruction: Instruction) -> None:
         operator = self._space.get_linear_fock_operator(
             modes=instruction.modes,
-            cache_size=self.config.cache_size,
+            cache_size=self._config.cache_size,
             auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
             passive_block=instruction._all_params["passive_block"],
             active_block=instruction._all_params["active_block"],
@@ -216,10 +221,9 @@ class PureFockState(BaseFockState):
             return False
         return np.allclose(self._state_vector, other._state_vector)
 
-    def get_density_matrix(self, cutoff: int) -> np.ndarray:
-        cutoff = cutoff or self.cutoff
-
-        cardinality = cutoff_cardinality(d=self.d, cutoff=cutoff)
+    @property
+    def density_matrix(self) -> np.ndarray:
+        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
 
         state_vector = self._state_vector[:cardinality]
 
@@ -240,16 +244,11 @@ class PureFockState(BaseFockState):
             self._state_vector[index].conjugate() * self._state_vector[index]
         )
 
-    def get_fock_probabilities(self, cutoff: int = None) -> np.ndarray:
-        cutoff = cutoff or self._space.cutoff
-
-        cardinality = cutoff_cardinality(d=self._space.d, cutoff=cutoff)
-
-        return (self._state_vector * self._state_vector.conjugate()).real[:cardinality]
-
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return self.get_fock_probabilities()
+        cardinality = cutoff_cardinality(d=self._space.d, cutoff=self._config.cutoff)
+
+        return (self._state_vector * self._state_vector.conjugate()).real[:cardinality]
 
     def normalize(self) -> None:
         if np.isclose(self.norm, 0):

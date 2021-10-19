@@ -64,7 +64,7 @@ def threshold_hypothesis_test_script(cramer_hypothesis_test):
 
         sf.ops.MeasureThreshold() | (q[0], q[1], q[2])
 
-    pq_state.config = pq.Config(use_torontonian=True)
+    pq_state._config = pq.Config(use_torontonian=True)
     pq_results = np.array(
         pq_state.apply(pq_program, shots=shots).samples
     )

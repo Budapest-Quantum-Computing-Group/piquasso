@@ -34,11 +34,11 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
         d (int): Instance attribute specifying the number of modes.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config = None) -> None:
         self.result: Optional[Result] = None
         self.shots: int = None  # type: ignore
 
-        self.config = Config()
+        self._config = config or Config()
 
     @property
     @abc.abstractmethod

@@ -33,13 +33,12 @@ def shots():
 
 
 def piquasso_benchmark(
-    benchmark, example_pq_purefock_state, cutoff, shots
+    benchmark, example_pq_purefock_state, shots
 ):
     @benchmark
     def func():
         with pq.Program() as new_program:
-            # NOTE: In SF the cutoff is 5, and couldn't be changed
-            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement(cutoff=cutoff)
+            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
         example_pq_purefock_state.apply(new_program, shots=shots)
 

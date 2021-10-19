@@ -27,7 +27,7 @@ def threshold_histogram_script():
     d = 5
     shots = 2000
 
-    pq_state = pq.GaussianState(d=d)
+    pq_state = pq.GaussianState(d=d, config=pq.Config(use_torontonian=True))
 
     with pq.Program() as pq_program:
         pq.Q(0) | pq.Squeezing(r=1.0, phi=np.pi/1)
@@ -68,7 +68,6 @@ def threshold_histogram_script():
 
         sf.ops.MeasureThreshold() | (q[0], q[1], q[2])
 
-    pq_state.config = pq.Config(use_torontonian=True)
     pq_results = np.array(
         pq_state.apply(pq_program, shots=shots).samples
     )

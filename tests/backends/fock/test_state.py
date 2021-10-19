@@ -32,7 +32,7 @@ def test_FockState_get_particle_detection_probability(StateClass):
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
-    state = StateClass(d=2, cutoff=4)
+    state = StateClass(d=2, config=pq.Config(cutoff=4))
     state.apply(program)
 
     probability = state.get_particle_detection_probability(
