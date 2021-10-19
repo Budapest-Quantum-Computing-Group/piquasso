@@ -17,9 +17,8 @@ import numpy as np
 
 import abc
 import random
-from typing import Tuple, Generator, Any, Mapping, List
+from typing import Tuple, Generator, Any, Mapping
 
-from piquasso.instructions.preparations import StateVector
 from piquasso._math.fock import FockBasis
 from piquasso.api.config import Config
 from piquasso.api.instruction import Instruction
@@ -57,29 +56,6 @@ class BaseFockState(State, abc.ABC):
             d=d,
             cutoff=self._config.cutoff,
         )
-
-    @classmethod
-    def from_number_preparations(
-        cls,
-        *,
-        d: int,
-        number_preparations: List[StateVector],
-        config: Config = None,
-    ) -> "BaseFockState":
-        """
-        NOTE: Here is a small coupling between :class:`Instruction` and :class:`State`.
-        This is the only case (so far) where the user could specify instructions
-        directly.
-
-        Is this needed?
-        """
-
-        self = cls(d=d, config=config)
-
-        for number_preparation in number_preparations:
-            self._add_occupation_number_basis(**number_preparation.params)
-
-        return self
 
     @property
     def d(self) -> int:

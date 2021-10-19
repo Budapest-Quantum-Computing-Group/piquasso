@@ -37,18 +37,18 @@ def test_measure_particle_number_on_one_mode():
     assert sample == (1, ) or sample == (2, )
 
     if sample == (1, ):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3)
+        expected_state.apply_instructions(
+            instructions=[
                 0.5773502691896258 * pq.StateVector(0, 0, 1),
                 0.816496580927726 * pq.StateVector(0, 1, 1),
             ]
         )
 
     elif sample == (2, ):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 0, 2)
             ]
         )
@@ -73,25 +73,25 @@ def test_measure_particle_number_on_two_modes():
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 0, 1)
             ]
         )
 
     elif sample == (1, 1):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 1, 1)
             ]
         )
 
     elif sample == (0, 2):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 0, 2)
             ]
         )
@@ -122,28 +122,25 @@ def test_measure_particle_number_on_all_modes():
     assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
 
     if sample == (0, 0, 0):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 0, 0),
             ],
         )
 
     elif sample == (0, 0, 1):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(0, 0, 1),
             ]
         )
 
     elif sample == (1, 0, 0):
-        expected_state = pq.PureFockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.PureFockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.StateVector(1, 0, 0),
             ],
         )
