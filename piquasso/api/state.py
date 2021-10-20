@@ -15,7 +15,7 @@
 
 import abc
 import copy
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 import numpy as np
 
@@ -23,6 +23,7 @@ from piquasso.api.config import Config
 from piquasso.api.program import Program
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
+from piquasso.api.instruction import Instruction
 
 from piquasso.core import _mixins, _registry
 
@@ -61,6 +62,32 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     def _as_code(self) -> str:
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
+    def apply_instructions(
+        self,
+        instructions: List[Instruction],
+    ) -> None:
+        for instruction in instructions:
+            if not hasattr(instruction, "modes") or instruction.modes is tuple():
+                instruction.modes = tuple(range(self.d))
+
+            if hasattr(instruction, "_autoscale"):
+                instruction._autoscale()  # type: ignore
+
+            method_name = self._instruction_map.get(instruction.__class__.__name__)
+
+            if not method_name:
+                raise NotImplementedError(
+                    "\n"
+                    "No such instruction implemented for this state.\n"
+                    "Details:\n"
+                    f"instruction={instruction}\n"
+                    f"state={self}\n"
+                    f"Available instructions:\n"
+                    + str(", ".join(self._instruction_map.keys())) + "."
+                )
+
+            getattr(self, method_name)(instruction)
+
     def apply(
         self,
         program: Program,
@@ -82,27 +109,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
 
         self.shots = shots
 
-        for instruction in program.instructions:
-            if instruction.modes is tuple():
-                instruction.modes = tuple(range(self.d))
-
-            if hasattr(instruction, "_autoscale"):
-                instruction._autoscale()  # type: ignore
-
-            method_name = self._instruction_map.get(instruction.__class__.__name__)
-
-            if not method_name:
-                raise NotImplementedError(
-                    "\n"
-                    "No such instruction implemented for this state.\n"
-                    "Details:\n"
-                    f"instruction={instruction}\n"
-                    f"state={self}\n"
-                    f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys())) + "."
-                )
-
-            getattr(self, method_name)(instruction)
+        self.apply_instructions(program.instructions)
 
         return self.result
 

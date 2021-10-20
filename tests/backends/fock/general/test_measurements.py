@@ -47,10 +47,12 @@ def test_measure_particle_number_on_one_mode():
     assert sample == (1, ) or sample == (2, )
 
     if sample == (1, ):
-        expected_state = pq.FockState.from_number_preparations(
+        expected_state = pq.FockState(
             d=3,
             config=config,
-            number_preparations=[
+        )
+        expected_state.apply_instructions(
+            instructions=[
                 1/3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
                 4j * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)),
                 -2j * pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)),
@@ -61,10 +63,12 @@ def test_measure_particle_number_on_one_mode():
         )
 
     elif sample == (2, ):
-        expected_state = pq.FockState.from_number_preparations(
+        expected_state = pq.FockState(
             d=3,
             config=config,
-            number_preparations=[
+        )
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
@@ -101,10 +105,9 @@ def test_measure_particle_number_on_two_modes():
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
                 pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
@@ -112,19 +115,17 @@ def test_measure_particle_number_on_two_modes():
         )
 
     elif sample == (1, 1):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
             ]
         )
 
     elif sample == (0, 2):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
             ]
         )
@@ -159,28 +160,25 @@ def test_measure_particle_number_on_all_modes():
     assert sample == (0, 0, 0) or sample == (0, 0, 1) or sample == (1, 0, 0)
 
     if sample == (0, 0, 0):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
             ]
         )
 
     elif sample == (0, 0, 1):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
             ]
         )
 
     elif sample == (1, 0, 0):
-        expected_state = pq.FockState.from_number_preparations(
-            d=3,
-            config=config,
-            number_preparations=[
+        expected_state = pq.FockState(d=3, config=config)
+        expected_state.apply_instructions(
+            instructions=[
                 pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
             ]
         )
