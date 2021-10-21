@@ -19,6 +19,9 @@ import numpy as np
 
 from piquasso.core import _mixins
 from piquasso.api.instruction import Preparation
+from piquasso.api.errors import InvalidState
+
+from piquasso._math.validations import all_natural
 
 
 class Vacuum(Preparation):
@@ -95,8 +98,13 @@ class StateVector(Preparation, _mixins.WeightMixin):
     """
 
     def __init__(
-        self, *occupation_numbers: complex, coefficient: complex = 1.0
+        self, *occupation_numbers: int, coefficient: complex = 1.0
     ) -> None:
+        if not all_natural(occupation_numbers):
+            raise InvalidState(
+                f"Invalid occupation numbers: occupation_numbers={occupation_numbers}"
+            )
+
         super().__init__(
             params=dict(
                 occupation_numbers=occupation_numbers,
