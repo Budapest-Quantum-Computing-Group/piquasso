@@ -73,8 +73,8 @@ class _BogoliubovTransformation(Gate):
             extra_params=dict(
                 passive_block=passive_block,
                 active_block=active_block,
-                displacement_vector=displacement_vector
-            )
+                displacement_vector=displacement_vector,
+            ),
         )
 
 
@@ -90,10 +90,7 @@ class _ScalableBogoliubovTransformation(
     def _autoscale(self) -> None:
 
         passive_block = self._extra_params["passive_block"]
-        if (
-            passive_block is None
-            or len(self.modes) == len(passive_block)
-        ):
+        if passive_block is None or len(self.modes) == len(passive_block):
             pass
         elif len(passive_block) == 1:
             self._extra_params["passive_block"] = block_diag(
@@ -105,10 +102,7 @@ class _ScalableBogoliubovTransformation(
             )
 
         active_block = self._extra_params["active_block"]
-        if (
-            active_block is None
-            or len(self.modes) == len(active_block)
-        ):
+        if active_block is None or len(self.modes) == len(active_block):
             pass
         elif len(active_block) == 1:
             self._extra_params["active_block"] = block_diag(
@@ -120,10 +114,7 @@ class _ScalableBogoliubovTransformation(
             )
 
         displacement_vector = self._extra_params["displacement_vector"]
-        if (
-            displacement_vector is None
-            or len(self.modes) == len(displacement_vector)
-        ):
+        if displacement_vector is None or len(self.modes) == len(displacement_vector):
             pass
         elif len(displacement_vector) == 1:
             self._extra_params["displacement_vector"] = np.array(
@@ -175,10 +166,7 @@ class Interferometer(_BogoliubovTransformation):
                 "The interferometer matrix should be a square matrix."
             )
 
-        super().__init__(
-            params=dict(matrix=matrix),
-            passive_block=matrix
-        )
+        super().__init__(params=dict(matrix=matrix), passive_block=matrix)
 
 
 class Beamsplitter(_BogoliubovTransformation):
@@ -213,7 +201,7 @@ class Beamsplitter(_BogoliubovTransformation):
             (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
     """
 
-    def __init__(self, theta: float = 0., phi: float = np.pi / 4) -> None:
+    def __init__(self, theta: float = 0.0, phi: float = np.pi / 4) -> None:
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
 
@@ -227,7 +215,7 @@ class Beamsplitter(_BogoliubovTransformation):
                     [t, -np.conj(r)],
                     [r, t],
                 ]
-            )
+            ),
         )
 
 
@@ -256,8 +244,7 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
 
     def __init__(self, phi: float) -> None:
         super().__init__(
-            params=dict(phi=phi),
-            passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
+            params=dict(phi=phi), passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
         )
 
 
@@ -293,12 +280,14 @@ class MachZehnder(_BogoliubovTransformation):
 
         super().__init__(
             params=dict(int_=int_, ext=ext),
-            passive_block=1 / 2 * np.array(
+            passive_block=1
+            / 2
+            * np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
-                    [1j * ext_phase * (int_phase + 1), 1 - int_phase]
+                    [1j * ext_phase * (int_phase + 1), 1 - int_phase],
                 ]
-            )
+            ),
         )
 
 
@@ -361,7 +350,7 @@ class GaussianTransform(_BogoliubovTransformation):
     def __init__(self, passive: np.ndarray, active: np.ndarray) -> None:
         if not is_symplectic(
             np.block([[passive, active], [active.conj(), passive.conj()]]),
-            form_func=complex_symplectic_form
+            form_func=complex_symplectic_form,
         ):
             raise InvalidParameter(
                 "The input parameters for instruction 'GaussianTransform' do not form "
@@ -410,11 +399,9 @@ class Squeezing(_ScalableBogoliubovTransformation):
     def __init__(self, r: float, phi: float = 0.0) -> None:
         super().__init__(
             params=dict(r=r, phi=phi),
-            passive_block=np.diag(
-                np.atleast_1d(np.cosh(r))
-            ),
+            passive_block=np.diag(np.atleast_1d(np.cosh(r))),
             active_block=np.diag(
-                - np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
+                -np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
             ),
         )
 
@@ -516,14 +503,14 @@ class ControlledX(_BogoliubovTransformation):
             params=dict(s=s),
             passive_block=np.array(
                 [
-                    [1, - s / 2],
+                    [1, -s / 2],
                     [s / 2, 1],
                 ]
             ),
             active_block=np.array(
                 [
-                    [0,     s / 2],
-                    [s / 2,     0],
+                    [0, s / 2],
+                    [s / 2, 0],
                 ]
             ),
         )
@@ -737,7 +724,7 @@ class Graph(Gate):
             extra_params=dict(
                 squeezing=squeezing,
                 interferometer=interferometer,
-            )
+            ),
         )
 
     def _get_scaling(
@@ -754,21 +741,20 @@ class Graph(Gate):
         """
 
         def mean_photon_number_equation(scaling: float) -> float:
-            return sum(
-                (scaling * singular_value) ** 2 / (1 - (scaling * singular_value) ** 2)
-                for singular_value
-                in singular_values
-            ) / len(singular_values) - mean_photon_number
+            return (
+                sum(
+                    (scaling * singular_value) ** 2
+                    / (1 - (scaling * singular_value) ** 2)
+                    for singular_value in singular_values
+                )
+                / len(singular_values)
+                - mean_photon_number
+            )
 
         def mean_photon_number_gradient(scaling: float) -> float:
-            return (
-                (2.0 / scaling)
-                * np.sum(
-                    (
-                        singular_values * scaling
-                        / (1 - (singular_values * scaling) ** 2)
-                    ) ** 2
-                )
+            return (2.0 / scaling) * np.sum(
+                (singular_values * scaling / (1 - (singular_values * scaling) ** 2))
+                ** 2
             )
 
         lower_bound = 0.0

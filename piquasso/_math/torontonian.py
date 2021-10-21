@@ -43,9 +43,7 @@ def torontonian(A: np.ndarray) -> complex:
         factor = 1.0 if ((d - len(subset)) % 2 == 0) else -1.0
 
         ret += factor / np.sqrt(
-            np.linalg.det(
-                np.identity(len(A_reduced)) - A_reduced
-            ).real + 0.j
+            np.linalg.det(np.identity(len(A_reduced)) - A_reduced).real + 0.0j
         )
 
     return ret

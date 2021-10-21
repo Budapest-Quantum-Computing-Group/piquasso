@@ -62,12 +62,10 @@ def test_gaussian_wigner_function_handles_vectors(d, mean, cov):
         [
             [0.10065842420897406, 0.020322585354620785, 0.00016724973685064803],
             [0.0674733595496344, 0.009131526225575573, 5.0374652683254064e-05],
-            [0.020322585354620785, 0.001843623348920587, 6.81746788883418e-06]
+            [0.020322585354620785, 0.001843623348920587, 6.81746788883418e-06],
         ]
     )
 
-    actual = gaussian_wigner_function(
-        positions, momentums, d=d, mean=mean, cov=cov
-    )
+    actual = gaussian_wigner_function(positions, momentums, d=d, mean=mean, cov=cov)
 
     assert np.allclose(expected, actual)

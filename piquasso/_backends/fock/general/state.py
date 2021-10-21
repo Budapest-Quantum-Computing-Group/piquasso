@@ -41,7 +41,7 @@ class FockState(BaseFockState):
 
     _instruction_map = {
         "DensityMatrix": "_density_matrix_instruction",
-        **BaseFockState._instruction_map
+        **BaseFockState._instruction_map,
     }
 
     def __init__(self, *, d: int, config: Config = None) -> None:
@@ -50,7 +50,7 @@ class FockState(BaseFockState):
         self._density_matrix = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
-        return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
+        return np.zeros(shape=(self._space.cardinality,) * 2, dtype=complex)
 
     def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         self._density_matrix = self._get_empty()
@@ -86,9 +86,7 @@ class FockState(BaseFockState):
             fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
         )
 
-    def _get_probability_map(
-        self, *, modes: Tuple[int, ...]
-    ) -> Dict[FockBasis, float]:
+    def _get_probability_map(self, *, modes: Tuple[int, ...]) -> Dict[FockBasis, float]:
         probability_map: Dict[FockBasis, float] = {}
 
         for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
@@ -164,10 +162,9 @@ class FockState(BaseFockState):
             dual_number = dual_basis[mode]
 
             coefficient = np.exp(
-                1j * xi * (
-                   number * (2 * number + 1)
-                   - dual_number * (2 * dual_number + 1)
-                )
+                1j
+                * xi
+                * (number * (2 * number + 1) - dual_number * (2 * dual_number + 1))
             )
 
             self._density_matrix[index] *= coefficient
@@ -178,7 +175,9 @@ class FockState(BaseFockState):
 
         for index, (basis, dual_basis) in self._space.operator_basis:
             coefficient = np.exp(
-                1j * xi * (
+                1j
+                * xi
+                * (
                     basis[modes[0]] * basis[modes[1]]
                     - dual_basis[modes[0]] * dual_basis[modes[1]]
                 )
@@ -197,9 +196,7 @@ class FockState(BaseFockState):
         )
 
         self._density_matrix = (
-            operator
-            @ self._density_matrix
-            @ operator.conjugate().transpose()
+            operator @ self._density_matrix @ operator.conjugate().transpose()
         )
 
         self.normalize()
@@ -209,7 +206,7 @@ class FockState(BaseFockState):
 
     @property
     def nonzero_elements(
-        self
+        self,
     ) -> Generator[Tuple[complex, FockOperatorBasis], Any, None]:
         for index, basis in self._space.operator_basis:
             coefficient = self._density_matrix[index]
@@ -259,9 +256,9 @@ class FockState(BaseFockState):
             reduced_index = reduced_state._space.index(reduced_basis)
             reduced_dual_index = reduced_state._space.index(reduced_dual_basis)
 
-            reduced_state._density_matrix[reduced_index, reduced_dual_index] += (
-                self._density_matrix[index]
-            )
+            reduced_state._density_matrix[
+                reduced_index, reduced_dual_index
+            ] += self._density_matrix[index]
 
         return reduced_state
 

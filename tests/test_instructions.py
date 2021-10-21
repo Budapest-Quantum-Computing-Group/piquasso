@@ -27,10 +27,10 @@ def test_instruction_initialization_from_dict():
         "attributes": {
             "constructor_kwargs": {
                 "first_param": "first_param_value",
-                "second_param": "second_param_value"
+                "second_param": "second_param_value",
             },
             "modes": ["some", "modes"],
-        }
+        },
     }
 
     class DummyInstruction(Instruction):
@@ -54,7 +54,7 @@ def test_instruction_initialization_from_dict():
     assert isinstance(instruction, DummyInstruction)
     assert instruction.params == {
         "first_param": "first_param_value",
-        "second_param": "second_param_value"
+        "second_param": "second_param_value",
     }
     assert instruction.modes == ["some", "modes"]
 

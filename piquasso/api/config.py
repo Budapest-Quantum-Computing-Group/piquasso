@@ -21,7 +21,6 @@ import numpy as np
 
 
 class Config:
-
     def __init__(
         self,
         *,
@@ -32,8 +31,8 @@ class Config:
         cutoff: int = 4,
         measurement_cutoff: int = 5,
     ):
-        self.seed_sequence = (
-            seed_sequence or int.from_bytes(os.urandom(8), byteorder="big")
+        self.seed_sequence = seed_sequence or int.from_bytes(
+            os.urandom(8), byteorder="big"
         )
         self.cache_size = cache_size
         self.hbar = hbar

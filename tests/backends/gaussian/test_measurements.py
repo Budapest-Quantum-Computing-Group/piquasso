@@ -28,11 +28,11 @@ def d():
 @pytest.fixture
 def state(d):
     with pq.Program() as program:
-        pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
-        pq.Q(1) | pq.Displacement(r=1, phi=np.pi/4)
-        pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi/6)
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi / 3)
+        pq.Q(1) | pq.Displacement(r=1, phi=np.pi / 4)
+        pq.Q(2) | pq.Displacement(r=1 / 2, phi=np.pi / 6)
 
-        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
+        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi / 4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
     state = pq.GaussianState(d=d)
@@ -44,7 +44,7 @@ def state(d):
 @pytest.fixture
 def nondisplaced_state(d):
     with pq.Program() as program:
-        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi/4)
+        pq.Q(1) | pq.Squeezing(r=1 / 2, phi=np.pi / 4)
         pq.Q(2) | pq.Squeezing(r=3 / 4)
 
     state = pq.GaussianState(d=d)

@@ -32,7 +32,7 @@ def dummy_unitary():
 
 @pytest.fixture(scope="session")
 def tolerance():
-    return 1E-9
+    return 1e-9
 
 
 def test_T_beamsplitter_is_unitary():
@@ -105,9 +105,7 @@ def test_eliminate_upper_offdiagonal_3_modes(dummy_unitary, tolerance):
 
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_clements_decomposition_on_n_modes(
-            n, dummy_unitary, tolerance
-        ):
+def test_clements_decomposition_on_n_modes(n, dummy_unitary, tolerance):
 
     U = dummy_unitary(d=n)
 
@@ -119,16 +117,13 @@ def test_clements_decomposition_on_n_modes(
     assert np.abs(diagonalized[1, 0]) < tolerance
 
     assert (
-        sum(sum(np.abs(diagonalized)))
-        - sum(np.abs(np.diag(diagonalized))) < tolerance
+        sum(sum(np.abs(diagonalized))) - sum(np.abs(np.diag(diagonalized))) < tolerance
     ), "Absolute sum of matrix elements should be equal to the "
     "diagonal elements, if the matrix is properly diagonalized."
 
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_clements_decomposition_and_composition_on_n_modes(
-            n, dummy_unitary, tolerance
-        ):
+def test_clements_decomposition_and_composition_on_n_modes(n, dummy_unitary, tolerance):
 
     U = dummy_unitary(d=n)
 
@@ -137,8 +132,7 @@ def test_clements_decomposition_and_composition_on_n_modes(
     diagonalized = decomposition.U
 
     assert (
-        sum(sum(np.abs(diagonalized)))
-        - sum(np.abs(np.diag(diagonalized))) < tolerance
+        sum(sum(np.abs(diagonalized))) - sum(np.abs(np.diag(diagonalized))) < tolerance
     ), "Absolute sum of matrix elements should be equal to the "
     "diagonal elements, if the matrix is properly diagonalized."
 

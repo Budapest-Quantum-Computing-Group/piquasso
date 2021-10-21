@@ -18,8 +18,7 @@ import piquasso as pq
 
 
 def test_loads_blackbird_parses_operations():
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate(0.7853981633974483, 0) | [1, 2]
@@ -39,8 +38,7 @@ def test_loads_blackbird_parses_operations():
 
 
 def test_loads_blackbird_parses_operations_with_default_arguments():
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate() | [1, 2]
@@ -60,8 +58,7 @@ def test_loads_blackbird_parses_operations_with_default_arguments():
 
 
 def test_loads_blackbird_parses_operations_with_classes_from_plugin():
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate(0.7853981633974483, 0) | [1, 2]
@@ -88,8 +85,7 @@ def test_loads_blackbird_parses_operations_with_classes_from_plugin():
 
 
 def test_loads_blackbird_preserves_exising_operations():
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate(0.7853981633974483, 0) | [1, 2]
@@ -115,8 +111,7 @@ def test_loads_blackbird_preserves_exising_operations():
 
 
 def test_loads_blackbird_with_execution(gaussian_state_assets):
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate(0.7853981633974483, 3.141592653589793) | [1, 2]
@@ -142,8 +137,7 @@ def test_loads_blackbird_with_execution(gaussian_state_assets):
 
 
 def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
-    blackbird_code = \
-        """name StateTeleportation
+    blackbird_code = """name StateTeleportation
         version 1.0
 
         BSgate(0.7853981633974483, 3.141592653589793) | [1, 2]

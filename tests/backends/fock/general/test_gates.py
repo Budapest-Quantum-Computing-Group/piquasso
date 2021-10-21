@@ -57,8 +57,8 @@ def test_beamsplitter_multiple_particles():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -72,11 +72,7 @@ def test_beamsplitter_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0.16362712, 0.08637288,
-            0.24672554, 0.17929466, 0.32397979
-        ],
+        [0, 0.16362712, 0.08637288, 0.24672554, 0.17929466, 0.32397979],
     )
 
 
@@ -98,11 +94,7 @@ def test_beamsplitter_leaves_vacuum_unchanged():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0.25,
-            0.32725425, 0.17274575,
-            0.10709534, 0.11306356, 0.02984109
-        ],
+        [0.25, 0.32725425, 0.17274575, 0.10709534, 0.11306356, 0.02984109],
     )
 
 
@@ -119,11 +111,7 @@ def test_multiple_beamsplitters():
 
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0.75, 0.25, 0,
-            0, 0, 0, 0, 0, 0
-        ],
+        [0, 0.75, 0.25, 0, 0, 0, 0, 0, 0, 0],
     )
 
 
@@ -133,8 +121,8 @@ def test_multiple_beamsplitters_with_multiple_particles():
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -149,11 +137,7 @@ def test_multiple_beamsplitters_with_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0.1875, 0.0625, 0,
-            0.234375, 0.15625, 0.109375, 0.1875, 0.0625, 0
-        ],
+        [0, 0.1875, 0.0625, 0, 0.234375, 0.15625, 0.109375, 0.1875, 0.0625, 0],
     )
 
 
@@ -163,8 +147,8 @@ def test_phaseshift():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
         pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -188,8 +172,8 @@ def test_fourier():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
         pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -213,13 +197,13 @@ def test_mach_zehnder():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 2
         pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(1, 1)) / 4
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 1), bra=(0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.MachZehnder(int_=np.pi/3, ext=np.pi/4)
+        pq.Q(0, 1) | pq.MachZehnder(int_=np.pi / 3, ext=np.pi / 4)
 
     state = pq.FockState(d=2, config=pq.Config(cutoff=3))
 
@@ -238,13 +222,13 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
 
-        pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi/3)
+        pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi / 3)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=4 * np.pi / 5)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=3 * np.pi / 2)
@@ -256,11 +240,7 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0.1875, 0.0625, 0,
-            0.43324878, 0.02366748, 0.04308374, 0.1875, 0.0625, 0
-        ],
+        [0, 0.1875, 0.0625, 0, 0.43324878, 0.02366748, 0.04308374, 0.1875, 0.0625, 0],
     )
 
 
@@ -271,14 +251,14 @@ def test_interferometer():
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1 / 8)
 
     T = np.array(
         [
             [0.5, 0.53033009 + 0.53033009j, 0.21650635 + 0.375j],
-            [-0.61237244 + 0.61237244j,  0.4330127, 0.24148146 + 0.06470476j],
-            [0, -0.48296291 + 0.12940952j, 0.8660254]
+            [-0.61237244 + 0.61237244j, 0.4330127, 0.24148146 + 0.06470476j],
+            [0, -0.48296291 + 0.12940952j, 0.8660254],
         ]
     )
 
@@ -296,8 +276,15 @@ def test_interferometer():
         state.fock_probabilities,
         [
             0,
-            0.1875, 0.0625, 0,
-            0.01443139, 0.10696977, 0.0192306, 0.32090931, 0.11538358, 0.17307537
+            0.1875,
+            0.0625,
+            0,
+            0.01443139,
+            0.10696977,
+            0.0192306,
+            0.32090931,
+            0.11538358,
+            0.17307537,
         ],
     )
 
@@ -326,7 +313,7 @@ def test_kerr():
     assert np.isclose(nonzero_elements[0][0], 1)
     assert nonzero_elements[0][1] == ((0, 0, 3), (0, 0, 3))
 
-    assert np.isclose(nonzero_elements[1][0], - 1j * np.exp(- 1j * xi))
+    assert np.isclose(nonzero_elements[1][0], -1j * np.exp(-1j * xi))
     assert nonzero_elements[1][1] == ((0, 0, 3), (0, 1, 2))
 
     assert np.isclose(nonzero_elements[2][0], 1j * np.exp(1j * xi))
@@ -360,5 +347,5 @@ def test_cross_kerr():
     assert np.isclose(nonzero_elements[1][0], 1j * np.exp(1j * xi))
     assert nonzero_elements[1][1] == ((0, 0, 3), (0, 1, 2))
 
-    assert np.isclose(nonzero_elements[2][0], - 1j * np.exp(- 1j * xi))
+    assert np.isclose(nonzero_elements[2][0], -1j * np.exp(-1j * xi))
     assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))

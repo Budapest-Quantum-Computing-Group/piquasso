@@ -32,9 +32,7 @@ def shots():
     return 1
 
 
-def piquasso_benchmark(
-    benchmark, example_pq_purefock_state, shots
-):
+def piquasso_benchmark(benchmark, example_pq_purefock_state, shots):
     @benchmark
     def func():
         with pq.Program() as new_program:
@@ -43,9 +41,7 @@ def piquasso_benchmark(
         example_pq_purefock_state.apply(new_program, shots=shots)
 
 
-def strawberryfields_benchmark(
-    benchmark, example_sf_fock_state, d, cutoff, shots
-):
+def strawberryfields_benchmark(benchmark, example_sf_fock_state, d, cutoff, shots):
     @benchmark
     def func():
         new_program = sf.Program(d)

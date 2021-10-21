@@ -82,4 +82,4 @@ def test_torontonian_on_6_by_6_complex_matrix():
         dtype=complex,
     )
 
-    assert np.isclose(torontonian(matrix), -0.9387510649770083-0.25289835806458744j)
+    assert np.isclose(torontonian(matrix), -0.9387510649770083 - 0.25289835806458744j)

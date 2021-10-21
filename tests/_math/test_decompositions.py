@@ -23,7 +23,7 @@ from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
 from piquasso._math.decompositions import (
     takagi,
     williamson,
-    decompose_to_pure_and_mixed
+    decompose_to_pure_and_mixed,
 )
 
 
@@ -92,7 +92,7 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix():
 
 @pytest.mark.monkey
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
-    generate_unitary_matrix
+    generate_unitary_matrix,
 ):
     singular_values = np.array([1, 1, 2, 2, 2, 3], dtype=complex)
 
@@ -108,7 +108,7 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
         matrix,
         calculated_unitary
         @ np.diag(calculated_singular_values)
-        @ calculated_unitary.transpose()
+        @ calculated_unitary.transpose(),
     )
 
 
@@ -166,7 +166,7 @@ def test_williamson_with_squeezed_covariance_matrix():
 
 @pytest.mark.monkey
 def test_williamson_with_random_positive_definite_matrix(
-    generate_random_positive_definite_matrix
+    generate_random_positive_definite_matrix,
 ):
     dim = 4
     matrix = generate_random_positive_definite_matrix(dim)

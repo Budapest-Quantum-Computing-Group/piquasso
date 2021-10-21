@@ -101,7 +101,7 @@ class GaussianState(State):
     def reset(self):
         r"""Resets the state to a vacuum."""
 
-        vector_shape = (self.d, )
+        vector_shape = (self.d,)
         matrix_shape = vector_shape * 2
 
         self._m = np.zeros(vector_shape, dtype=complex)
@@ -110,7 +110,8 @@ class GaussianState(State):
 
     @classmethod
     def _from_representation(
-        cls, *,
+        cls,
+        *,
         m: np.ndarray,
         G: np.ndarray,
         C: np.ndarray,
@@ -152,7 +153,7 @@ class GaussianState(State):
 
     @staticmethod
     def _validate_mean(mean: np.ndarray, d: int) -> None:
-        expected_shape = (2 * d, )
+        expected_shape = (2 * d,)
 
         if not mean.shape == expected_shape:
             raise InvalidState(
@@ -161,7 +162,7 @@ class GaussianState(State):
             )
 
     def _validate_cov(self, cov: np.ndarray, d: int) -> None:
-        expected_shape = (2 * d, ) * 2
+        expected_shape = (2 * d,) * 2
 
         if not cov.shape == expected_shape:
             raise InvalidState(
@@ -228,12 +229,16 @@ class GaussianState(State):
         C = self._C
         G = self._G
 
-        dimensionless_xxpp_covariance_matrix = 2 * np.block(
-            [
-                [(G + C).real, (G + C).imag],
-                [(G - C).imag, (-G + C).real],
-            ],
-        ) + np.identity(2 * self.d)
+        dimensionless_xxpp_covariance_matrix = (
+            2
+            * np.block(
+                [
+                    [(G + C).real, (G + C).imag],
+                    [(G - C).imag, (-G + C).real],
+                ],
+            )
+            + np.identity(2 * self.d)
+        )
 
         return dimensionless_xxpp_covariance_matrix * self._config.hbar
 
@@ -265,18 +270,12 @@ class GaussianState(State):
             xxpp-basis.
         """
         xxpp_mean_vector = self.xxpp_mean_vector
-        return (
-            self.xxpp_covariance_matrix
-            + 2 * np.outer(
-                xxpp_mean_vector,
-                xxpp_mean_vector
-            )
+        return self.xxpp_covariance_matrix + 2 * np.outer(
+            xxpp_mean_vector, xxpp_mean_vector
         )
 
     @property
-    def xxpp_representation(self) -> Tuple[
-        np.ndarray, np.ndarray
-    ]:
+    def xxpp_representation(self) -> Tuple[np.ndarray, np.ndarray]:
         r"""
         The state's mean and correlation matrix ordered in the xxpp basis.
 
@@ -384,9 +383,7 @@ class GaussianState(State):
         return T @ self.xxpp_correlation_matrix @ T.transpose()
 
     @property
-    def xpxp_representation(self) -> Tuple[
-        np.ndarray, np.ndarray
-    ]:
+    def xpxp_representation(self) -> Tuple[np.ndarray, np.ndarray]:
         r"""The state's mean and correlation matrix ordered by the `xpxp` basis.
 
         Returns:
@@ -466,10 +463,7 @@ class GaussianState(State):
         """
 
         return 2 * np.block(
-            [
-                [self._C.conj(), self._G],
-                [self._G.conj(), self._C]
-            ]
+            [[self._C.conj(), self._G], [self._G.conj(), self._C]]
         ) + np.identity(2 * self.d)
 
     @property
@@ -514,11 +508,11 @@ class GaussianState(State):
         Returns:
             GaussianState: The rotated `GaussianState` instance.
         """
-        phase = np.exp(- 1j * phi)
+        phase = np.exp(-1j * phi)
 
         return self.__class__._from_representation(
             C=self._C,
-            G=(self._G * phase**2),
+            G=(self._G * phase ** 2),
             m=(self._m * phase),
             config=self._config,
         )
@@ -584,11 +578,11 @@ class GaussianState(State):
 
         return (
             transformed_state.xpxp_mean_vector,
-            transformed_state.xpxp_covariance_matrix
+            transformed_state.xpxp_covariance_matrix,
         )
 
     def mean_photon_number(self, modes: Tuple[int, ...]) -> float:
-        r""" This method returns the mean photon number of the given modes.
+        r"""This method returns the mean photon number of the given modes.
         The mean photon number :math:`\bar{n} = \langle \hat{n}
         \rangle` can be calculated in terms of the ladder operators by the following
         expression
@@ -624,11 +618,7 @@ class GaussianState(State):
         return (np.trace(state._C) + state._m.conjugate() @ state._m).real
 
     def quadratic_polynomial_expectation(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: float = 0.0,
-        phi: float = 0.0
+        self, A: np.ndarray, b: np.ndarray, c: float = 0.0, phi: float = 0.0
     ) -> float:
         r"""The expectation value of the specified quadratic polynomial.
 
@@ -695,7 +685,7 @@ class GaussianState(State):
         self,
         positions: List[List[float]],
         momentums: List[List[float]],
-        modes: Tuple[int, ...] = None
+        modes: Tuple[int, ...] = None,
     ) -> np.ndarray:
         r"""
         Calculates the Wigner function values at the specified position and momentum
@@ -728,7 +718,7 @@ class GaussianState(State):
                 momentums,
                 d=reduced_state.d,
                 mean=reduced_state.xpxp_mean_vector,
-                cov=reduced_state.xpxp_covariance_matrix
+                cov=reduced_state.xpxp_covariance_matrix,
             )
 
         return gaussian_wigner_function(
@@ -743,7 +733,12 @@ class GaussianState(State):
         modes = instruction.modes
         T: np.ndarray = instruction._all_params["passive_block"]
 
-        self._m[modes, ] = T @ self._m[modes, ]
+        self._m[(modes,)] = (
+            T
+            @ self._m[
+                modes,
+            ]
+        )
 
         self._apply_passive_linear_to_C_and_G(T, modes=modes)
 
@@ -779,18 +774,16 @@ class GaussianState(State):
         passive_block: np.ndarray = instruction._all_params["passive_block"]
         active_block: np.ndarray = instruction._all_params["active_block"]
 
-        self._m[modes, ] = (
-            passive_block @ self._m[modes, ]
-            + active_block @ np.conj(self._m[modes, ])
+        self._m[(modes,)] = passive_block @ self._m[(modes,)] + active_block @ np.conj(
+            self._m[
+                modes,
+            ]
         )
 
         self._apply_linear_to_C_and_G(passive_block, active_block, modes)
 
     def _apply_linear_to_C_and_G(
-        self,
-        P: np.ndarray,
-        A: np.ndarray,
-        modes: Tuple[int, ...]
+        self, P: np.ndarray, A: np.ndarray, modes: Tuple[int, ...]
     ) -> None:
         index = self._get_operator_index(modes)
 
@@ -806,9 +799,9 @@ class GaussianState(State):
 
         self._C[index] = (
             P.conjugate() @ original_C @ P.transpose()
-            + A.conjugate() @ (
-                original_C.transpose() + np.identity(len(modes))
-            ) @ A.transpose()
+            + A.conjugate()
+            @ (original_C.transpose() + np.identity(len(modes)))
+            @ A.transpose()
             + P.conjugate() @ original_G.conjugate().transpose() @ A.transpose()
             + A.conjugate() @ original_G @ P.transpose()
         )
@@ -831,14 +824,10 @@ class GaussianState(State):
         auxiliary_G = self._G[auxiliary_index]
 
         self._C[auxiliary_index] = (
-            P.conjugate() @ auxiliary_C
-            + A.conjugate() @ auxiliary_G
+            P.conjugate() @ auxiliary_C + A.conjugate() @ auxiliary_G
         )
 
-        self._G[auxiliary_index] = (
-            P @ auxiliary_G
-            + A @ auxiliary_C
-        )
+        self._G[auxiliary_index] = P @ auxiliary_G + A @ auxiliary_C
 
         self._C[:, modes] = self._C[modes, :].conjugate().transpose()
         self._G[:, modes] = self._G[modes, :].transpose()
@@ -847,11 +836,11 @@ class GaussianState(State):
         modes = instruction.modes
         displacement_vector: np.ndarray = instruction._all_params["displacement_vector"]
 
-        self._m[modes, ] += displacement_vector
+        self._m[
+            modes,
+        ] += displacement_vector
 
-    def _generaldyne_measurement(
-        self, instruction: Instruction
-    ) -> None:
+    def _generaldyne_measurement(self, instruction: Instruction) -> None:
         modes = instruction.modes
         detection_covariance = instruction._all_params["detection_covariance"]
 
@@ -879,23 +868,20 @@ class GaussianState(State):
         evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
         evolved_cov = np.identity(2 * d) * self._config.hbar
-        evolved_cov[np.ix_(outer_indices, outer_indices)] = (
-            evolved_state.xpxp_covariance_matrix
-        )
+        evolved_cov[
+            np.ix_(outer_indices, outer_indices)
+        ] = evolved_state.xpxp_covariance_matrix
 
         self.xpxp_mean_vector = evolved_mean
         self.xpxp_covariance_matrix = evolved_cov
 
-        self.result = Result(
-            samples=list(map(tuple, list(samples)))
-        )
+        self.result = Result(samples=list(map(tuple, list(samples))))
 
     def _get_generaldyne_samples(self, modes, shots, detection_covariance):
         indices = self._map_modes_to_xpxp_indices(modes)
 
-        full_detection_covariance = (
-            self._config.hbar
-            * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+        full_detection_covariance = self._config.hbar * scipy.linalg.block_diag(
+            *[detection_covariance] * len(modes)
         )
 
         mean = self.xpxp_mean_vector[indices]
@@ -922,9 +908,8 @@ class GaussianState(State):
         )
 
     def _get_generaldyne_evolved_state(self, sample, modes, detection_covariance):
-        full_detection_covariance = (
-            self._config.hbar
-            * scipy.linalg.block_diag(*[detection_covariance] * len(modes))
+        full_detection_covariance = self._config.hbar * scipy.linalg.block_diag(
+            *[detection_covariance] * len(modes)
         )
 
         mean = self.xpxp_mean_vector
@@ -947,12 +932,9 @@ class GaussianState(State):
             @ cov_correlation.transpose()
         )
 
-        evolved_r_A = (
-            mean_outer
-            + cov_correlation
-            @ np.linalg.inv(cov_measured + full_detection_covariance)
-            @ (sample - mean_measured)
-        )
+        evolved_r_A = mean_outer + cov_correlation @ np.linalg.inv(
+            cov_measured + full_detection_covariance
+        ) @ (sample - mean_measured)
 
         state = self.__class__(d=len(evolved_r_A) // 2)
 
@@ -970,7 +952,8 @@ class GaussianState(State):
         return indices
 
     def _particle_number_measurement(
-        self, instruction: Instruction,
+        self,
+        instruction: Instruction,
     ) -> None:
 
         samples = self._get_particle_number_measurement_samples(instruction)
@@ -978,8 +961,7 @@ class GaussianState(State):
         self.result = Result(samples=samples)
 
     def _get_particle_number_measurement_samples(
-        self,
-        instruction: Instruction
+        self, instruction: Instruction
     ) -> List[Tuple[int, ...]]:
 
         modes: Tuple[int, ...] = instruction.modes
@@ -1026,7 +1008,7 @@ class GaussianState(State):
 
                 choice = evolved_state._get_particle_number_choice(sample)
 
-                sample = sample + (choice, )
+                sample = sample + (choice,)
 
             samples.append(sample)
 
@@ -1079,7 +1061,7 @@ class GaussianState(State):
 
         d = len(self)
 
-        B = - np.linalg.inv(self.Q_matrix)[d:, :d]
+        B = -np.linalg.inv(self.Q_matrix)[d:, :d]
         alpha = self.complex_displacement[:d]
 
         gamma = alpha.conj() - alpha @ B
@@ -1089,7 +1071,7 @@ class GaussianState(State):
         possible_choices = tuple(range(self._config.measurement_cutoff))
 
         for n in possible_choices:
-            occupation_numbers = previous_sample + (n, )
+            occupation_numbers = previous_sample + (n,)
 
             B_reduced = reduce_(B, reduce_on=occupation_numbers)
             gamma_reduced = reduce_(gamma, reduce_on=occupation_numbers)
@@ -1103,9 +1085,7 @@ class GaussianState(State):
 
         return np.random.choice(possible_choices, p=weights)
 
-    def _threshold_measurement(
-        self, instruction: Instruction
-    ) -> None:
+    def _threshold_measurement(self, instruction: Instruction) -> None:
         """
         NOTE: The same logic is used here, as for the particle number measurement.
         However, at threshold measurement there is no sense of measurement cutoff,
@@ -1133,8 +1113,7 @@ class GaussianState(State):
 
         @lru_cache(self._config.cache_size)
         def get_probability(
-            subspace_modes: Tuple[int, ...],
-            occupation_numbers: Tuple[int, ...]
+            subspace_modes: Tuple[int, ...], occupation_numbers: Tuple[int, ...]
         ) -> float:
             reduced_state = self.reduced(subspace_modes)
 
@@ -1157,8 +1136,7 @@ class GaussianState(State):
                 occupation_numbers = tuple(sample + [0])
 
                 probability = get_probability(
-                    subspace_modes=subspace_modes,
-                    occupation_numbers=occupation_numbers
+                    subspace_modes=subspace_modes, occupation_numbers=occupation_numbers
                 )
                 conditional_probability = probability / previous_probability
 
@@ -1195,7 +1173,7 @@ class GaussianState(State):
 
         instruction_copy: Instruction = instruction.copy()  # type: ignore
 
-        phaseshift = np.identity(len(instruction.modes)) * np.exp(- 1j * phi)
+        phaseshift = np.identity(len(instruction.modes)) * np.exp(-1j * phi)
         instruction_copy._extra_params["passive_block"] = phaseshift
 
         self._passive_linear(instruction_copy)

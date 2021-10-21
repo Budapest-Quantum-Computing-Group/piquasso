@@ -36,8 +36,7 @@ def is_positive_semidefinite(matrix: np.ndarray) -> bool:
     eigenvalues = np.linalg.eigvals(matrix)
 
     return all(
-        eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0)
-        for eigenvalue in eigenvalues
+        eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0) for eigenvalue in eigenvalues
     )
 
 
@@ -47,10 +46,7 @@ def is_square(matrix: np.ndarray) -> bool:
 
 
 def is_invertible(matrix: np.ndarray) -> bool:
-    return (
-        is_square(matrix)
-        and np.linalg.matrix_rank(matrix) == matrix.shape[0]
-    )
+    return is_square(matrix) and np.linalg.matrix_rank(matrix) == matrix.shape[0]
 
 
 def is_diagonal(matrix: np.ndarray) -> bool:
@@ -69,7 +65,5 @@ def reduce_(array: np.ndarray, reduce_on: Iterable[int]) -> np.ndarray:
     return array[np.ix_(proper_index, proper_index)]
 
 
-def block_reduce(
-    array: np.ndarray, reduce_on: Tuple[int, ...]
-) -> np.ndarray:
+def block_reduce(array: np.ndarray, reduce_on: Tuple[int, ...]) -> np.ndarray:
     return reduce_(array, reduce_on=(reduce_on * 2))

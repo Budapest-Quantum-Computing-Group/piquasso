@@ -60,7 +60,7 @@ def test_squeezing(state, gaussian_state_assets):
 
 def test_phaseshift(state, gaussian_state_assets):
     with pq.Program() as program:
-        pq.Q(0) | pq.Phaseshifter(phi=np.pi/3)
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
     state.apply(program)
     state.validate()
@@ -75,7 +75,7 @@ def test_phaseshift_on_multiple_modes(state):
         pq.Q(1) | pq.Phaseshifter(phi=np.pi / 3)
 
     with pq.Program() as single_instruction:
-        pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi/3)
+        pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi / 3)
 
     separate_state = state.copy()
     separate_state.apply(separate_instructions)
@@ -90,7 +90,7 @@ def test_phaseshift_on_multiple_modes(state):
 def test_phaseshift_modes_are_shifted_from_original(state):
     original = state.copy()
 
-    angle = np.pi/3
+    angle = np.pi / 3
 
     with pq.Program() as program:
         pq.Q(0) | pq.Phaseshifter(phi=angle)
@@ -103,8 +103,8 @@ def test_phaseshift_modes_are_shifted_from_original(state):
 
 
 def test_beamsplitter(state, gaussian_state_assets):
-    theta = np.pi/4
-    phi = 2 * np.pi/3
+    theta = np.pi / 4
+    phi = 2 * np.pi / 3
 
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
@@ -198,7 +198,7 @@ def test_momentum_displacement(state, gaussian_state_assets):
 def test_displacement(state, gaussian_state_assets):
     alpha = 2 + 3j
     r = 4
-    phi = np.pi/3
+    phi = np.pi / 3
 
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
@@ -214,7 +214,7 @@ def test_displacement(state, gaussian_state_assets):
 
 def test_displacement_and_squeezing(state, gaussian_state_assets):
     r = 4
-    phi = np.pi/3
+    phi = np.pi / 3
 
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
@@ -230,7 +230,7 @@ def test_displacement_and_squeezing(state, gaussian_state_assets):
 
 def test_two_mode_squeezing(state, gaussian_state_assets):
     r = 4
-    phi = np.pi/3
+    phi = np.pi / 3
 
     with pq.Program() as program:
         pq.Q(1, 2) | pq.Squeezing2(r=r, phi=phi)
@@ -280,8 +280,8 @@ def test_fourier(state, gaussian_state_assets):
 
 
 def test_mach_zehnder(state, gaussian_state_assets):
-    int_ = np.pi/3
-    ext = np.pi/4
+    int_ = np.pi / 3
+    ext = np.pi / 4
 
     with pq.Program() as program:
         pq.Q(1, 2) | pq.MachZehnder(int_=int_, ext=ext)
@@ -324,12 +324,10 @@ def test_displacement_leaves_the_covariance_invariant(state):
 
 
 def test_interferometer_for_1_modes(state, gaussian_state_assets):
-    alpha = np.exp(1j * np.pi/3)
+    alpha = np.exp(1j * np.pi / 3)
 
     T = np.array(
-        [
-            [alpha]
-        ],
+        [[alpha]],
         dtype=complex,
     )
 
@@ -344,13 +342,13 @@ def test_interferometer_for_1_modes(state, gaussian_state_assets):
 
 
 def test_interferometer_for_2_modes(state, gaussian_state_assets):
-    theta = np.pi/4
-    phi = np.pi/3
+    theta = np.pi / 4
+    phi = np.pi / 3
 
     random_unitary = np.array(
         [
-            [  np.cos(theta),   np.sin(theta) * np.exp(1j * phi)],
-            [- np.sin(theta) * np.exp(- 1j * phi), - np.cos(theta)],
+            [np.cos(theta), np.sin(theta) * np.exp(1j * phi)],
+            [-np.sin(theta) * np.exp(-1j * phi), -np.cos(theta)],
         ],
         dtype=complex,
     )
@@ -372,7 +370,7 @@ def test_interferometer_for_all_modes(state, gaussian_state_assets):
             [-2j, 2, 5],
             [3 - 4j, 5, 6],
         ],
-        dtype=complex
+        dtype=complex,
     )
     unitary = expm(1j * self_adjoint)
 
@@ -389,19 +387,15 @@ def test_interferometer_for_all_modes(state, gaussian_state_assets):
 def test_GaussianTransform_for_1_modes(state, gaussian_state_assets):
     r = 0.4
 
-    alpha = np.exp(1j * np.pi/3)
-    beta = np.exp(1j * np.pi/4)
+    alpha = np.exp(1j * np.pi / 3)
+    beta = np.exp(1j * np.pi / 4)
 
     passive = np.array(
-        [
-            [alpha * np.cosh(r)]
-        ],
+        [[alpha * np.cosh(r)]],
         dtype=complex,
     )
     active = np.array(
-        [
-            [beta * np.sinh(r)]
-        ],
+        [[beta * np.sinh(r)]],
         dtype=complex,
     )
 
@@ -424,7 +418,7 @@ def test_GaussianTransform_with_general_squeezing_matrix():
             [0.2j, 0.2, 0.4],
             [0.3, 0.4, 0.1j],
         ],
-        dtype=complex
+        dtype=complex,
     )
     U, r = polar(squeezing_matrix)
 
@@ -432,8 +426,8 @@ def test_GaussianTransform_with_general_squeezing_matrix():
 
     global_phase = np.array(
         [
-            [np.cos(theta), -np.sin(theta) * np.exp(1j * np.pi/4), 0],
-            [np.sin(theta) * np.exp(- 1j * np.pi/4), np.cos(theta), 0],
+            [np.cos(theta), -np.sin(theta) * np.exp(1j * np.pi / 4), 0],
+            [np.sin(theta) * np.exp(-1j * np.pi / 4), np.cos(theta), 0],
             [0, 0, 1],
         ]
     )
@@ -453,11 +447,7 @@ def test_GaussianTransform_with_general_squeezing_matrix():
 
     probabilities = state.fock_probabilities
 
-    assert all(
-        probability >= 0
-        for probability
-        in probabilities
-    )
+    assert all(probability >= 0 for probability in probabilities)
 
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
 
@@ -492,9 +482,9 @@ def test_graph_embedding(state, gaussian_state_assets):
 
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     with pq.Program() as initialization:
-        pq.Q(all) | pq.Displacement(alpha=[np.exp(1j * np.pi/4), 1, 1j])
+        pq.Q(all) | pq.Displacement(alpha=[np.exp(1j * np.pi / 4), 1, 1j])
 
-        pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi/2, np.pi/3, np.pi/4])
+        pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi / 2, np.pi / 3, np.pi / 4])
 
     state = pq.GaussianState(d=3)
     state.apply(initialization)
@@ -515,7 +505,7 @@ def test_displacement_leaves_the_covariance_invariant_for_complex_program():
 
 def test_displaced_vacuum_stays_valid():
     with pq.Program() as program:
-        pq.Q(0) | pq.Displacement(r=2, phi=np.pi/3)
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi / 3)
 
     state = pq.GaussianState(d=3)
     state.apply(program)
@@ -528,7 +518,7 @@ def test_multiple_displacements_leave_the_covariance_invariant():
     initial_covariance_matrix = state.xpxp_covariance_matrix
 
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi/3, np.pi/4, np.pi/6])
+        pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi / 3, np.pi / 4, np.pi / 6])
 
     state.apply(program)
     state.validate()
@@ -619,6 +609,6 @@ def test_complex_one_mode_scenario():
             0.1615172143957243,
             0.41348406885305417,
             0.31024226541130745,
-            0.03980473302825398
+            0.03980473302825398,
         ],
     )

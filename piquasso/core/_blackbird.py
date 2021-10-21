@@ -60,15 +60,13 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
 
 def _blackbird_operation_to_instruction(
     instruction_map: Mapping[str, Optional[Type[Instruction]]],
-    blackbird_operation: dict
+    blackbird_operation: dict,
 ) -> Instruction:
     op = blackbird_operation["op"]
     pq_instruction_class = instruction_map.get(op)
 
     if pq_instruction_class is None:
-        raise PiquassoException(
-            f"Operation {op} is not implemented in piquasso."
-        )
+        raise PiquassoException(f"Operation {op} is not implemented in piquasso.")
 
     params = _get_instruction_params(
         pq_instruction_class=pq_instruction_class, bb_operation=blackbird_operation

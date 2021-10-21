@@ -65,9 +65,7 @@ class BaseFockState(State, abc.ABC):
     def norm(self) -> int:
         return sum(self.fock_probabilities)
 
-    def _particle_number_measurement(
-        self, instruction: Instruction
-    ) -> None:
+    def _particle_number_measurement(self, instruction: Instruction) -> None:
         probability_map = self._get_probability_map(
             modes=instruction.modes,
         )
@@ -89,14 +87,10 @@ class BaseFockState(State, abc.ABC):
             normalization=normalization,
         )
 
-        self.result = Result(
-            samples=samples  # type: ignore
-        )
+        self.result = Result(samples=samples)  # type: ignore
 
     def _as_code(self) -> str:
-        return (
-            f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
-        )
+        return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
     @abc.abstractmethod
     def _get_empty(self) -> np.ndarray:
@@ -157,9 +151,7 @@ class BaseFockState(State, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def nonzero_elements(
-        self
-    ) -> Generator[Tuple[complex, tuple], Any, None]:
+    def nonzero_elements(self) -> Generator[Tuple[complex, tuple], Any, None]:
         pass
 
     @property

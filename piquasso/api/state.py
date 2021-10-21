@@ -83,7 +83,8 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
                     f"instruction={instruction}\n"
                     f"state={self}\n"
                     f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys())) + "."
+                    + str(", ".join(self._instruction_map.keys()))
+                    + "."
                 )
 
             getattr(self, method_name)(instruction)
@@ -114,9 +115,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
         return self.result
 
     @staticmethod
-    def _get_operator_index(
-        modes: Tuple[int, ...]
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
         """
         Note:
             For indexing of numpy arrays, see
@@ -133,8 +132,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
 
     @staticmethod
     def _get_auxiliary_operator_index(
-        modes: Tuple[int, ...],
-        auxiliary_modes: Tuple[int, ...]
+        modes: Tuple[int, ...], auxiliary_modes: Tuple[int, ...]
     ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
 

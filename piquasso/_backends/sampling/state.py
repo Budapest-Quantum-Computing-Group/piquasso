@@ -32,24 +32,30 @@ from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses 
     BosonSamplingExperimentConfiguration,
 )
 from BoSS.boson_sampling_simulator import BosonSamplingSimulator
+
 # The fastest implemented permanent calculator is currently Ryser-Guan
-from BoSS.boson_sampling_utilities.permanent_calculators\
-    .bs_permanent_calculator_interface import \
-    BSPermanentCalculatorInterface
-from BoSS.boson_sampling_utilities.permanent_calculators. \
-    ryser_guan_permanent_calculator import RyserGuanPermanentCalculator
+from BoSS.boson_sampling_utilities.permanent_calculators.bs_permanent_calculator_interface import (  # noqa: E501
+    BSPermanentCalculatorInterface,
+)
+from BoSS.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
+    RyserGuanPermanentCalculator,
+)
+
 # Fastest boson sampling algorithm generalized for bunched states
-from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import \
-    GeneralizedCliffordsSimulationStrategy
-from BoSS.simulation_strategies. \
-    generalized_cliffords_uniform_losses_simulation_strategy import \
-    GeneralizedCliffordsUniformLossesSimulationStrategy
+from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import (
+    GeneralizedCliffordsSimulationStrategy,
+)
+from BoSS.simulation_strategies.generalized_cliffords_uniform_losses_simulation_strategy import (  # noqa: E501
+    GeneralizedCliffordsUniformLossesSimulationStrategy,
+)
+
 # Fastest BS algorithm generalized for bunched states, but with lossy network
-from BoSS.simulation_strategies. \
-    lossy_networks_generalized_cliffords_simulation_strategy import \
-    LossyNetworksGeneralizedCliffordsSimulationStrategy
-from BoSS.simulation_strategies.simulation_strategy_interface import \
-    SimulationStrategyInterface
+from BoSS.simulation_strategies.lossy_networks_generalized_cliffords_simulation_strategy import (  # noqa: E501
+    LossyNetworksGeneralizedCliffordsSimulationStrategy,
+)
+from BoSS.simulation_strategies.simulation_strategy_interface import (
+    SimulationStrategyInterface,
+)
 
 
 class SamplingState(State):
@@ -67,7 +73,7 @@ class SamplingState(State):
     def __init__(self, d: int, config: Config = None) -> None:
         super().__init__(config=config)
 
-        self.initial_state: np.ndarray = np.zeros((d, ), dtype=int)
+        self.initial_state: np.ndarray = np.zeros((d,), dtype=int)
         self.interferometer: np.ndarray = np.diag(np.ones(d, dtype=complex))
 
         self.is_lossy = False
@@ -114,8 +120,7 @@ class SamplingState(State):
         qumodes (provided as the arguments) and as an identity on every other mode.
         """
         self._apply_matrix_on_modes(
-            matrix=instruction._all_params["passive_block"],
-            modes=instruction.modes
+            matrix=instruction._all_params["passive_block"], modes=instruction.modes
         )
 
     def _loss(self, instruction: Instruction) -> None:
@@ -123,7 +128,7 @@ class SamplingState(State):
 
         self._apply_matrix_on_modes(
             matrix=np.diag(instruction._all_params["transmissivity"]),
-            modes=instruction.modes
+            modes=instruction.modes,
         )
 
     def _apply_matrix_on_modes(
@@ -153,7 +158,8 @@ class SamplingState(State):
     def _sampling(self, instruction: Instruction) -> None:
         initial_state = np.array(self.initial_state)
         permanent_calculator = RyserGuanPermanentCalculator(
-            matrix=self.interferometer, input_state=initial_state)
+            matrix=self.interferometer, input_state=initial_state
+        )
 
         simulation_strategy = self._get_sampling_simulation_strategy(
             permanent_calculator
@@ -162,13 +168,10 @@ class SamplingState(State):
         sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
         samples = sampling_simulator.get_classical_simulation_results(
-            initial_state,
-            samples_number=self.shots
+            initial_state, samples_number=self.shots
         )
 
-        self.result = Result(
-            samples=list(map(tuple, samples))
-        )
+        self.result = Result(samples=list(map(tuple, samples)))
 
     @property
     def d(self) -> int:

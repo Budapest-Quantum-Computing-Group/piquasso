@@ -20,10 +20,7 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.parametrize(
-    "StateClass",
-    (pq.FockState, pq.PureFockState)
-)
+@pytest.mark.parametrize("StateClass", (pq.FockState, pq.PureFockState))
 def test_FockState_get_particle_detection_probability(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -35,8 +32,6 @@ def test_FockState_get_particle_detection_probability(StateClass):
     state = StateClass(d=2, config=pq.Config(cutoff=4))
     state.apply(program)
 
-    probability = state.get_particle_detection_probability(
-        occupation_number=(0, 2)
-    )
+    probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 
     assert np.isclose(probability, 0.0012355767142126952)

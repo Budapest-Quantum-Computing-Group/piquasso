@@ -164,21 +164,17 @@ def williamson(matrix: np.ndarray) -> tuple:
         output="real",
     )
 
-    basis_change = (
-        _rotation_to_positive_above_diagonals(block_diagonal_part)
-        @ from_xxpp_to_xpxp_transformation_matrix(d)
-    )
+    basis_change = _rotation_to_positive_above_diagonals(
+        block_diagonal_part
+    ) @ from_xxpp_to_xpxp_transformation_matrix(d)
     ordered_block_diagonal = basis_change.T @ block_diagonal_part @ basis_change
 
-    inverse_diagonal_matrix = block_diag(*(ordered_block_diagonal[:d, d:], ) * 2)
+    inverse_diagonal_matrix = block_diag(*(ordered_block_diagonal[:d, d:],) * 2)
 
     root_inverse_diagonal_matrix = np.diag(np.sqrt(np.diag(inverse_diagonal_matrix)))
 
     symplectic = (
-        root_matrix
-        @ orthogonal_part
-        @ basis_change
-        @ root_inverse_diagonal_matrix
+        root_matrix @ orthogonal_part @ basis_change @ root_inverse_diagonal_matrix
     )
 
     diagonal_matrix = np.diag(1 / np.diag(inverse_diagonal_matrix))

@@ -46,10 +46,10 @@ def example_gaussian_pq_program():
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
         pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, 1.2863559998816205)
         pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, 0.5236836466492961)
-        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715,  4.481575657714487)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715, 4.481575657714487)
         pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, 1.5073556513699888)
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
-        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
     return program
 
@@ -65,10 +65,10 @@ def example_purefock_pq_program(d, cutoff):
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
         pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, 1.2863559998816205)
         pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, 0.5236836466492961)
-        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715,  4.481575657714487)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715, 4.481575657714487)
         pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, 1.5073556513699888)
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
-        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504,  3.289367083610399)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
     return program
 

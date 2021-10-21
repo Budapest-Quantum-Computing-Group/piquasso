@@ -46,7 +46,7 @@ class PureFockState(BaseFockState):
 
     _instruction_map = {
         "StateVector": "_state_vector_instruction",
-        **BaseFockState._instruction_map
+        **BaseFockState._instruction_map,
     }
 
     def __init__(self, *, d: int, config: Config = None) -> None:
@@ -55,7 +55,7 @@ class PureFockState(BaseFockState):
         self._state_vector = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
-        return np.zeros(shape=(self._space.cardinality, ), dtype=complex)
+        return np.zeros(shape=(self._space.cardinality,), dtype=complex)
 
     def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
         self._state_vector = self._get_empty()
@@ -74,9 +74,7 @@ class PureFockState(BaseFockState):
 
         self._state_vector = fock_operator @ self._state_vector
 
-    def _get_probability_map(
-        self, *, modes: Tuple[int, ...]
-    ) -> Dict[FockBasis, float]:
+    def _get_probability_map(self, *, modes: Tuple[int, ...]) -> Dict[FockBasis, float]:
         probability_map: Dict[FockBasis, float] = {}
 
         for index, basis in self._space.basis:
@@ -125,7 +123,7 @@ class PureFockState(BaseFockState):
         self,
         coefficient: complex,
         occupation_numbers: Tuple[int, ...],
-        modes: Tuple[int, ...] = None
+        modes: Tuple[int, ...] = None,
     ) -> None:
         if modes:
             occupation_numbers = self._space.get_occupied_basis(
@@ -156,9 +154,7 @@ class PureFockState(BaseFockState):
 
         for index, basis in self._space.basis:
             number = basis[mode]
-            coefficient = np.exp(
-                1j * xi * number * (2 * number + 1)
-            )
+            coefficient = np.exp(1j * xi * number * (2 * number + 1))
             self._state_vector[index] *= coefficient
 
     def _cross_kerr(self, instruction: Instruction) -> None:
@@ -166,9 +162,7 @@ class PureFockState(BaseFockState):
         xi = instruction._all_params["xi"]
 
         for index, basis in self._space.basis:
-            coefficient = np.exp(
-                1j * xi * basis[modes[0]] * basis[modes[1]]
-            )
+            coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
             self._state_vector[index] *= coefficient
 
     def _linear(self, instruction: Instruction) -> None:
@@ -192,19 +186,19 @@ class PureFockState(BaseFockState):
         )
 
     @property
-    def nonzero_elements(
-        self
-    ) -> Generator[Tuple[complex, FockBasis], Any, None]:
+    def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
         for index, basis in self._space.basis:
             coefficient: complex = self._state_vector[index]
             if coefficient != 0:
                 yield coefficient, basis
 
     def __repr__(self) -> str:
-        return " + ".join([
-            str(coefficient) + str(basis)
-            for coefficient, basis in self.nonzero_elements
-        ])
+        return " + ".join(
+            [
+                str(coefficient) + str(basis)
+                for coefficient, basis in self.nonzero_elements
+            ]
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PureFockState):

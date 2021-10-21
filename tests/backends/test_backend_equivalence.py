@@ -37,7 +37,7 @@ def is_proportional(first, second):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
     with pq.Program() as program:
@@ -60,7 +60,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_squeezed_state(StateClass):
     with pq.Program() as program:
@@ -81,9 +81,25 @@ def test_fock_probabilities_with_squeezed_state(StateClass):
         probabilities,
         [
             0.99502075,
-            0., 0., 0.,
-            0., 0., 0., 0., 0., 0.00494212,
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.00494212,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
         ],
     )
 
@@ -122,7 +138,7 @@ def test_density_matrix_with_squeezed_state():
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_displaced_state(StateClass):
     with pq.Program() as program:
@@ -142,10 +158,26 @@ def test_fock_probabilities_with_displaced_state(StateClass):
         probabilities,
         [
             0.00673795,
-            0., 0., 0.03368973,
-            0., 0., 0., 0., 0., 0.08422434,
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.1403739,
-        ]
+            0.0,
+            0.0,
+            0.03368973,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.08422434,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1403739,
+        ],
     )
 
 
@@ -155,7 +187,7 @@ def test_fock_probabilities_with_displaced_state(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
     with pq.Program() as program:
@@ -176,10 +208,26 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
         probabilities,
         [
             0.00673795,
-            0., 0.0252673, 0.00842243,
-            0., 0., 0.04737619, 0., 0.03158413, 0.00526402,
-            0., 0., 0., 0.05922024, 0., 0., 0.05922024, 0., 0.01974008, 0.00219334
-        ]
+            0.0,
+            0.0252673,
+            0.00842243,
+            0.0,
+            0.0,
+            0.04737619,
+            0.0,
+            0.03158413,
+            0.00526402,
+            0.0,
+            0.0,
+            0.0,
+            0.05922024,
+            0.0,
+            0.0,
+            0.05922024,
+            0.0,
+            0.01974008,
+            0.00219334,
+        ],
     )
 
 
@@ -189,7 +237,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
     with pq.Program() as program:
@@ -210,10 +258,26 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
         probabilities,
         [
             0.99502075,
-            0., 0., 0.,
-            0., 0., 0.00277994, 0., 0.0018533, 0.00030888,
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        ]
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.00277994,
+            0.0,
+            0.0018533,
+            0.00030888,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
     )
 
 
@@ -223,7 +287,7 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_two_mode_squeezing(StateClass):
     with pq.Program() as program:
@@ -243,10 +307,26 @@ def test_fock_probabilities_with_two_mode_squeezing(StateClass):
         probabilities,
         [
             0.99006629,
-            0., 0., 0.,
-            0., 0., 0., 0., 0.00983503, 0.,
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        ]
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.00983503,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
     )
 
 
@@ -256,7 +336,7 @@ def test_fock_probabilities_with_two_mode_squeezing(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass):
     with pq.Program() as program:
@@ -277,10 +357,26 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass)
         probabilities,
         [
             0.99006629,
-            0., 0., 0.,
-            0., 0., 0.00368814, 0., 0.00245876, 0.00368814,
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        ]
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.00368814,
+            0.0,
+            0.00245876,
+            0.00368814,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
     )
 
 
@@ -290,7 +386,7 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(StateClass)
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_quadratic_phase(StateClass):
     with pq.Program() as program:
@@ -304,9 +400,25 @@ def test_fock_probabilities_with_quadratic_phase(StateClass):
     probabilities = state.fock_probabilities
     expected_probabilities = [
         0.98058068,
-        0., 0., 0.,
-        0., 0., 0., 0., 0., 0.01885732,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.01885732,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
     ]
 
     assert all(probability >= 0 for probability in probabilities)
@@ -321,7 +433,7 @@ def test_fock_probabilities_with_quadratic_phase(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_position_displacement(StateClass):
     with pq.Program() as program:
@@ -335,9 +447,25 @@ def test_fock_probabilities_with_position_displacement(StateClass):
     probabilities = state.fock_probabilities
     expected_probabilities = [
         0.96078944,
-        0., 0., 0.03843158,
-        0., 0., 0., 0., 0., 0.00076863,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.00001025,
+        0.0,
+        0.0,
+        0.03843158,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00076863,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00001025,
     ]
 
     assert all(probability >= 0 for probability in probabilities)
@@ -352,7 +480,7 @@ def test_fock_probabilities_with_position_displacement(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_momentum_displacement(StateClass):
     with pq.Program() as program:
@@ -366,9 +494,25 @@ def test_fock_probabilities_with_momentum_displacement(StateClass):
     probabilities = state.fock_probabilities
     expected_probabilities = [
         0.96078944,
-        0., 0., 0.03843158,
-        0., 0., 0., 0., 0., 0.00076863,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.00001025,
+        0.0,
+        0.0,
+        0.03843158,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00076863,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00001025,
     ]
 
     assert all(probability >= 0 for probability in probabilities)
@@ -383,11 +527,9 @@ def test_fock_probabilities_with_momentum_displacement(StateClass):
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
-def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
-    StateClass
-):
+def test_fock_probabilities_with_position_displacement_is_HBAR_independent(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -414,11 +556,9 @@ def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
-def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
-    StateClass
-):
+def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -445,7 +585,7 @@ def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_fock_probabilities_with_general_gaussian_transform(StateClass):
     squeezing_matrix = np.array(
@@ -453,7 +593,7 @@ def test_fock_probabilities_with_general_gaussian_transform(StateClass):
             [0.1, 0.2 + 0.3j],
             [0.2 + 0.3j, 0.1],
         ],
-        dtype=complex
+        dtype=complex,
     )
 
     rotation_matrix = np.array(
@@ -461,7 +601,7 @@ def test_fock_probabilities_with_general_gaussian_transform(StateClass):
             [1, 3 - 2j],
             [3 + 2j, 1],
         ],
-        dtype=complex
+        dtype=complex,
     )
 
     U, r = polar(squeezing_matrix)
@@ -480,9 +620,25 @@ def test_fock_probabilities_with_general_gaussian_transform(StateClass):
     probabilities = state.fock_probabilities
     expected_probabilities = [
         0.864652,
-        0., 0., 0.,
-        0., 0., 0.05073686, 0., 0.02118922, 0.0379305,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.05073686,
+        0.0,
+        0.02118922,
+        0.0379305,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
     ]
 
     assert all(probability >= 0 for probability in probabilities)
@@ -512,9 +668,7 @@ def test_monkey_fock_probabilities_with_general_gaussian_transform(
     fock_state = pq.FockState(d=d)
     fock_state.apply(fock_program)
 
-    fock_representation_probabilities = (
-        fock_state.fock_probabilities
-    )
+    fock_representation_probabilities = fock_state.fock_probabilities
 
     with pq.Program() as gaussian_program:
         pq.Q() | pq.Vacuum()
@@ -524,9 +678,7 @@ def test_monkey_fock_probabilities_with_general_gaussian_transform(
     gaussian_state = pq.GaussianState(d=d)
     gaussian_state.apply(gaussian_program)
 
-    gaussian_representation_probabilities = (
-        gaussian_state.fock_probabilities
-    )
+    gaussian_representation_probabilities = gaussian_state.fock_probabilities
 
     normalization = 1 / sum(gaussian_representation_probabilities)
 
@@ -557,9 +709,7 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
     fock_state = pq.FockState(d=d)
     fock_state.apply(fock_program)
 
-    fock_representation_probabilities = (
-        fock_state.fock_probabilities
-    )
+    fock_representation_probabilities = fock_state.fock_probabilities
 
     with pq.Program() as gaussian_program:
         pq.Q() | pq.Vacuum()
@@ -569,9 +719,7 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
     gaussian_state = pq.GaussianState(d=d)
     gaussian_state.apply(gaussian_program)
 
-    gaussian_representation_probabilities = (
-        gaussian_state.fock_probabilities
-    )
+    gaussian_representation_probabilities = gaussian_state.fock_probabilities
 
     normalization = 1 / sum(gaussian_representation_probabilities)
 
@@ -625,15 +773,12 @@ def test_sampling_backend_equivalence_complex_scenario():
     sampling_state.apply(program)
     sampling_state.validate()
 
-    assert np.allclose(
-        fock_state.fock_probabilities,
-        sampling_state.fock_probabilities
-    )
+    assert np.allclose(fock_state.fock_probabilities, sampling_state.fock_probabilities)
 
 
 @pytest.mark.monkey
 def test_sampling_backend_equivalence_with_random_interferometer(
-    generate_unitary_matrix
+    generate_unitary_matrix,
 ):
     initial_occupation_numbers = (1, 1, 0, 1)
     d = len(initial_occupation_numbers)

@@ -44,26 +44,18 @@ class DensityMatrixCalculation:
             ],
         )
 
-        self._A: np.ndarray = \
-            X @ (np.identity(2 * d, dtype=complex) - Qinv)
+        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
-        self._gamma: np.ndarray = \
-            complex_displacement.conj() @ Qinv
+        self._gamma: np.ndarray = complex_displacement.conj() @ Qinv
 
-        self._normalization: np.ndarray = (
-            np.exp(-0.5 * self._gamma @ complex_displacement)
-            / np.sqrt(np.linalg.det(Q))
-        )
+        self._normalization: np.ndarray = np.exp(
+            -0.5 * self._gamma @ complex_displacement
+        ) / np.sqrt(np.linalg.det(Q))
 
     def _get_A_reduced(self, reduce_on: Tuple[int, ...]) -> np.ndarray:
         A_reduced = reduce_(self._A, reduce_on=reduce_on)
 
-        np.fill_diagonal(
-            A_reduced,
-            reduce_(
-                self._gamma, reduce_on=reduce_on
-            )
-        )
+        np.fill_diagonal(A_reduced, reduce_(self._gamma, reduce_on=reduce_on))
 
         return A_reduced
 
@@ -75,7 +67,8 @@ class DensityMatrixCalculation:
         A_reduced = self._get_A_reduced(reduce_on=reduce_on)
 
         return (
-            self._normalization * loop_hafnian(A_reduced)
+            self._normalization
+            * loop_hafnian(A_reduced)
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
@@ -93,8 +86,7 @@ class DensityMatrixCalculation:
         return density_matrix
 
     def get_particle_number_detection_probabilities(
-        self,
-        occupation_numbers: List[Tuple[int, ...]]
+        self, occupation_numbers: List[Tuple[int, ...]]
     ) -> np.ndarray:
         ret_list = []
 

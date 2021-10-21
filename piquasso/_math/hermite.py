@@ -32,7 +32,7 @@ def modified_hermite_multidim(
     n_minus_one = np.copy(n)
     n_minus_one[index] -= 1
 
-    partial_sum = np.empty(shape=(len(n), ), dtype=complex)
+    partial_sum = np.empty(shape=(len(n),), dtype=complex)
 
     for idx, value in enumerate(n_minus_one):
         n_minus_two = np.copy(n_minus_one)
@@ -40,7 +40,8 @@ def modified_hermite_multidim(
 
         partial_sum[idx] = (
             value * modified_hermite_multidim(B, n_minus_two, alpha)
-            if value != 0 else 0.0
+            if value != 0
+            else 0.0
         )
 
     return (

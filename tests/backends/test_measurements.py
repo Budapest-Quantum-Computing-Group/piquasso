@@ -23,7 +23,7 @@ import piquasso as pq
         pq.GaussianState,
         pq.PureFockState,
         pq.FockState,
-    )
+    ),
 )
 def test_InvalidModes_are_raised_if_modes_are_already_measured(StateClass):
     with pytest.raises(pq.api.errors.InvalidProgram):

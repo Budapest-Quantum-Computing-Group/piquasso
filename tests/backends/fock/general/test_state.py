@@ -25,23 +25,23 @@ def test_FockState_reduced():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
     state = pq.FockState(d=2)
     state.apply(program)
 
     with pq.Program() as reduced_program:
-        pq.Q() | pq.DensityMatrix(ket=(1, ), bra=(1, )) / 4
+        pq.Q() | pq.DensityMatrix(ket=(1,), bra=(1,)) / 4
 
-        pq.Q() | pq.DensityMatrix(ket=(2, ), bra=(2, )) / 4
-        pq.Q() | pq.DensityMatrix(ket=(0, ), bra=(0, )) / 2
+        pq.Q() | pq.DensityMatrix(ket=(2,), bra=(2,)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(0,), bra=(0,)) / 2
 
     reduced_program_state = pq.FockState(d=1)
     reduced_program_state.apply(reduced_program)
 
     expected_reduced_state = reduced_program_state
 
-    reduced_state = state.reduced(modes=(1, ))
+    reduced_state = state.reduced(modes=(1,))
 
     assert expected_reduced_state == reduced_state

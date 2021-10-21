@@ -65,7 +65,6 @@ def generate_random_positive_definite_matrix():
 @pytest.fixture
 def AssetHandler(request):
     class _AssetHandler:
-
         def __init__(self):
             testfile = request.module.__file__
             self._asset_dir = Path(testfile).parent / "assets"
@@ -133,7 +132,6 @@ def assets(AssetHandler):
 
 @pytest.fixture
 def gaussian_state_assets(AssetHandler):
-
     class GaussianStateAssetHandler(AssetHandler):
         def __init__(self):
             super().__init__()
@@ -151,7 +149,7 @@ def gaussian_state_assets(AssetHandler):
                 "properties": {
                     "xpxp_mean_vector": obj.xpxp_mean_vector,
                     "xpxp_covariance_matrix": obj.xpxp_covariance_matrix,
-                }
+                },
             }
             np.set_printoptions(precision=16)
 

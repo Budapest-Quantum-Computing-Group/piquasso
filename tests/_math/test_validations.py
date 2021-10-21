@@ -37,8 +37,8 @@ def test_floats_NOT_close_to_integers_do_NOT_count_as_natural():
 
 
 def test_all_natural_positive_case():
-    assert all_natural([1, 1.0, 0.0, 2.])
+    assert all_natural([1, 1.0, 0.0, 2.0])
 
 
 def test_all_natural_negative_case():
-    assert not all_natural([1, 1.0, 0.0, -2.])
+    assert not all_natural([1, 1.0, 0.0, -2.0])

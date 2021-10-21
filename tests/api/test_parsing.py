@@ -20,7 +20,6 @@ import piquasso as pq
 
 @pytest.fixture
 def FakeInstruction():
-
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):
             super().__init__(
@@ -35,7 +34,6 @@ def FakeInstruction():
 
 @pytest.fixture
 def FakeState():
-
     class FakeState(pq.State):
         _instruction_map = {
             "FakeInstruction": "_fake_instruction",
@@ -54,10 +52,7 @@ def FakeState():
         def _fake_instruction(self, instruction, state):
             pass
 
-        def get_particle_detection_probability(
-            self,
-            occupation_number: tuple
-        ) -> float:
+        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
             raise NotImplementedError
 
     return FakeState
@@ -89,15 +84,14 @@ def state_dict(number_of_modes):
                 "bar": "beer",
                 "d": number_of_modes,
             }
-        }
+        },
     }
 
 
 @pytest.fixture
 def instructions_dict():
     return {
-        "instructions":
-        [
+        "instructions": [
             {
                 "type": "FakeInstruction",
                 "attributes": {
@@ -106,7 +100,7 @@ def instructions_dict():
                         "second_param": "second_param_value",
                     },
                     "modes": ["some", "modes"],
-                }
+                },
             },
             {
                 "type": "FakeInstruction",
@@ -116,7 +110,7 @@ def instructions_dict():
                         "second_param": "2nd_instructions_2nd_param_value",
                     },
                     "modes": ["some", "other", "modes"],
-                }
+                },
             },
         ]
     }

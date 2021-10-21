@@ -20,9 +20,7 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.parametrize(
-    "StateClass", (pq.PureFockState, pq.FockState)
-)
+@pytest.mark.parametrize("StateClass", (pq.PureFockState, pq.FockState))
 def test_squeezing_probabilities(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -35,19 +33,13 @@ def test_squeezing_probabilities(StateClass):
     state.validate()
 
     assert np.isclose(
-        sum(state.fock_probabilities),
-        1.0
+        sum(state.fock_probabilities), 1.0
     ), "The state should be renormalized for probability conservation."
 
-    assert np.allclose(
-        state.fock_probabilities,
-        [0.90352508, 0, 0, 0, 0, 0.09647492]
-    )
+    assert np.allclose(state.fock_probabilities, [0.90352508, 0, 0, 0, 0, 0.09647492])
 
 
-@pytest.mark.parametrize(
-    "StateClass", (pq.PureFockState, pq.FockState)
-)
+@pytest.mark.parametrize("StateClass", (pq.PureFockState, pq.FockState))
 def test_displacement_probabilities(StateClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -61,13 +53,11 @@ def test_displacement_probabilities(StateClass):
     state.validate()
 
     assert np.isclose(
-        sum(state.fock_probabilities),
-        1.0
+        sum(state.fock_probabilities), 1.0
     ), "The state should be renormalized for probability conservation."
 
     assert np.allclose(
-        state.fock_probabilities,
-        [0.7804878, 0, 0.19512195, 0, 0, 0.02439024]
+        state.fock_probabilities, [0.7804878, 0, 0.19512195, 0, 0, 0.02439024]
     )
 
 
@@ -89,22 +79,17 @@ def test_PureFockState_squeezing():
 
     assert len(nonzero_elements) == 2
 
-    normalization = 1 / np.sqrt(
-        (1 / np.cosh(r)) * (1 + np.tanh(r) ** 2 / 2)
-    )
+    normalization = 1 / np.sqrt((1 / np.cosh(r)) * (1 + np.tanh(r) ** 2 / 2))
 
     assert nonzero_elements[0][1] == (0, 0)
-    assert np.isclose(
-        nonzero_elements[0][0],
-        normalization * 1 / np.sqrt(np.cosh(r))
-    )
+    assert np.isclose(nonzero_elements[0][0], normalization * 1 / np.sqrt(np.cosh(r)))
 
     assert nonzero_elements[1][1] == (2, 0)
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization * (
-            - np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)
-        ) / np.sqrt(np.cosh(r))
+        normalization
+        * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2))
+        / np.sqrt(np.cosh(r)),
     )
 
 
@@ -126,27 +111,24 @@ def test_PureFockState_displacement():
     assert len(nonzero_elements) == 3
 
     normalization = 1 / np.sqrt(
-        np.exp(- np.abs(alpha) ** 2) * (
-            1 + np.abs(alpha) ** 2 + np.abs(alpha) ** 4 / np.sqrt(4)
-        )
+        np.exp(-np.abs(alpha) ** 2)
+        * (1 + np.abs(alpha) ** 2 + np.abs(alpha) ** 4 / np.sqrt(4))
     )
 
     assert nonzero_elements[0][1] == (0, 0)
     assert np.isclose(
-        nonzero_elements[0][0],
-        normalization * np.exp(- np.abs(alpha) ** 2 / 2)
+        nonzero_elements[0][0], normalization * np.exp(-np.abs(alpha) ** 2 / 2)
     )
 
     assert nonzero_elements[1][1] == (1, 0)
     assert np.isclose(
-        nonzero_elements[1][0],
-        normalization * np.exp(- np.abs(alpha) ** 2 / 2) * alpha
+        nonzero_elements[1][0], normalization * np.exp(-np.abs(alpha) ** 2 / 2) * alpha
     )
 
     assert nonzero_elements[2][1] == (2, 0)
     assert np.isclose(
         nonzero_elements[2][0],
-        normalization * np.exp(- np.abs(alpha) ** 2 / 2) * (alpha ** 2) / np.sqrt(2)
+        normalization * np.exp(-np.abs(alpha) ** 2 / 2) * (alpha ** 2) / np.sqrt(2),
     )
 
 
@@ -170,39 +152,27 @@ def test_FockState_squeezing():
 
     two_particle_probability = (1 / np.cosh(r)) * np.tanh(r) ** 2 / 2
 
-    normalization = 1 / (
-        vacuum_probability + two_particle_probability
-    )
+    normalization = 1 / (vacuum_probability + two_particle_probability)
 
     assert len(nonzero_elements) == 4
 
     assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-    assert np.isclose(
-        nonzero_elements[0][0],
-        normalization * vacuum_probability
-    )
+    assert np.isclose(nonzero_elements[0][0], normalization * vacuum_probability)
 
     assert nonzero_elements[1][1] == ((0, 0), (2, 0))
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization * (
-            - np.exp(- 1j * phi) * np.tanh(r) / np.sqrt(2)
-        ) / np.cosh(r)
+        normalization * (-np.exp(-1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
     )
 
     assert nonzero_elements[2][1] == ((2, 0), (0, 0))
     assert np.isclose(
         nonzero_elements[2][0],
-        normalization * (
-            - np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)
-        ) / np.cosh(r)
+        normalization * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
     )
 
     assert nonzero_elements[3][1] == ((2, 0), (2, 0))
-    assert np.isclose(
-        nonzero_elements[3][0],
-        normalization * two_particle_probability
-    )
+    assert np.isclose(nonzero_elements[3][0], normalization * two_particle_probability)
 
 
 def test_FockState_displacement():
@@ -221,28 +191,24 @@ def test_FockState_displacement():
 
     assert len(nonzero_elements) == 4
 
-    vacuum_probability = np.exp(- np.abs(alpha) ** 2)
+    vacuum_probability = np.exp(-np.abs(alpha) ** 2)
 
-    one_particle_probability = np.exp(- np.abs(alpha) ** 2) * np.abs(alpha) ** 2
+    one_particle_probability = np.exp(-np.abs(alpha) ** 2) * np.abs(alpha) ** 2
 
     normalization = 1 / (vacuum_probability + one_particle_probability)
 
     assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-    assert np.isclose(
-        nonzero_elements[0][0],
-        normalization * vacuum_probability
-    )
+    assert np.isclose(nonzero_elements[0][0], normalization * vacuum_probability)
 
     assert nonzero_elements[1][1] == ((0, 0), (1, 0))
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization * np.exp(- np.abs(alpha) ** 2) * alpha.conj()
+        normalization * np.exp(-np.abs(alpha) ** 2) * alpha.conj(),
     )
 
     assert nonzero_elements[2][1] == ((1, 0), (0, 0))
     assert np.isclose(
-        nonzero_elements[2][0],
-        normalization * np.exp(- np.abs(alpha) ** 2) * alpha
+        nonzero_elements[2][0], normalization * np.exp(-np.abs(alpha) ** 2) * alpha
     )
 
     assert nonzero_elements[3][1] == ((1, 0), (1, 0))

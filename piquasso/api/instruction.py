@@ -56,8 +56,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 ", ".join(
                     [
                         f"{key}={self._param_repr(value)}"
-                        for key, value
-                        in self.params.items()
+                        for key, value in self.params.items()
                     ]
                 )
             )
@@ -109,9 +108,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         if getattr(self, "params") != {}:
             params = "{}, ".format(
-                ", ".join(
-                    [f"{key}={value}" for key, value in self.params.items()]
-                )
+                ", ".join([f"{key}={value}" for key, value in self.params.items()])
             )
         else:
             params = ""
@@ -123,11 +120,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Instruction):
             return False
-        return (
-            self.modes == other.modes
-            and
-            self.params == other.params
-        )
+        return self.modes == other.modes and self.params == other.params
 
 
 class Preparation(Instruction):
@@ -143,8 +136,7 @@ class Measurement(Instruction):
 
     def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         if any(
-            isinstance(instruction, type(self))
-            for instruction in program.instructions
+            isinstance(instruction, type(self)) for instruction in program.instructions
         ):
             raise InvalidProgram("Measurement already registered.")
 
