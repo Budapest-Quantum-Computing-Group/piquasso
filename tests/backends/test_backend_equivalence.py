@@ -583,21 +583,19 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
 
 def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     initial_occupation_numbers = (1, 1)
+    d = len(initial_occupation_numbers)
 
-    with pq.Program() as fock_program:
+    with pq.Program() as program:
         pq.Q() | pq.StateVector(*initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
-    fock_state = pq.PureFockState(d=2)
+    fock_state = pq.PureFockState(d=d)
     fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
-    fock_state.apply(fock_program)
+    fock_state.apply(program)
 
-    with pq.Program() as sampling_program:
-        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
-
-    sampling_state = pq.SamplingState(*initial_occupation_numbers)
-    sampling_state.apply(sampling_program)
+    sampling_state = pq.SamplingState(d=d)
+    sampling_state.apply(program)
 
     assert np.allclose(
         fock_state.fock_probabilities,
@@ -607,8 +605,9 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
 
 def test_sampling_backend_equivalence_complex_scenario():
     initial_occupation_numbers = (1, 1, 0, 1)
+    d = len(initial_occupation_numbers)
 
-    with pq.Program() as fock_program:
+    with pq.Program() as program:
         pq.Q() | pq.StateVector(*initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
@@ -617,20 +616,13 @@ def test_sampling_backend_equivalence_complex_scenario():
 
         pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
 
-    fock_state = pq.PureFockState(d=4)
+    fock_state = pq.PureFockState(d=d)
     fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
-    fock_state.apply(fock_program)
+    fock_state.apply(program)
     fock_state.validate()
 
-    with pq.Program() as sampling_program:
-        pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
-
-        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
-
-        pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
-
-    sampling_state = pq.SamplingState(*initial_occupation_numbers)
-    sampling_state.apply(sampling_program)
+    sampling_state = pq.SamplingState(d=d)
+    sampling_state.apply(program)
     sampling_state.validate()
 
     assert np.allclose(
@@ -643,26 +635,23 @@ def test_sampling_backend_equivalence_complex_scenario():
 def test_sampling_backend_equivalence_with_random_interferometer(
     generate_unitary_matrix
 ):
-    d = 4
     initial_occupation_numbers = (1, 1, 0, 1)
+    d = len(initial_occupation_numbers)
 
     interferometer_matrix = generate_unitary_matrix(d)
 
-    with pq.Program() as fock_program:
+    with pq.Program() as program:
         pq.Q() | pq.StateVector(*initial_occupation_numbers)
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
     fock_state = pq.PureFockState(d=d)
     fock_state._config.cutoff = sum(initial_occupation_numbers) + 1
-    fock_state.apply(fock_program)
+    fock_state.apply(program)
     fock_state.validate()
 
-    with pq.Program() as sampling_program:
-        pq.Q(all) | pq.Interferometer(interferometer_matrix)
-
-    sampling_state = pq.SamplingState(*initial_occupation_numbers)
-    sampling_state.apply(sampling_program)
+    sampling_state = pq.SamplingState(d=d)
+    sampling_state.apply(program)
     sampling_state.validate()
 
     assert np.allclose(

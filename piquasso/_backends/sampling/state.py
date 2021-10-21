@@ -19,6 +19,9 @@ import numpy as np
 from piquasso._math.combinatorics import partitions
 from piquasso._math.fock import symmetric_subspace_cardinality
 from piquasso._math.linalg import is_unitary
+from piquasso._math.validations import all_natural
+
+from piquasso.api.config import Config
 from piquasso.api.errors import InvalidState
 from piquasso.api.state import State
 from piquasso.api.result import Result
@@ -51,6 +54,7 @@ from BoSS.simulation_strategies.simulation_strategy_interface import \
 
 class SamplingState(State):
     _instruction_map = {
+        "StateVector": "_state_vector",
         "Beamsplitter": "_passive_linear",
         "Phaseshifter": "_passive_linear",
         "MachZehnder": "_passive_linear",
@@ -60,11 +64,11 @@ class SamplingState(State):
         "Loss": "_loss",
     }
 
-    def __init__(self, *initial_state: int) -> None:
-        super().__init__()
-        self.initial_state = initial_state
-        self.interferometer: np.ndarray = \
-            np.diag(np.ones(self.d, dtype=complex))
+    def __init__(self, d: int, config: Config = None) -> None:
+        super().__init__(config=config)
+
+        self.initial_state: np.ndarray = np.zeros((d, ), dtype=int)
+        self.interferometer: np.ndarray = np.diag(np.ones(d, dtype=complex))
 
         self.is_lossy = False
 
@@ -77,6 +81,27 @@ class SamplingState(State):
 
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
+
+        if not all_natural(self.initial_state):
+            raise InvalidState(
+                f"Invalid initial state: initial_state={self.initial_state}"
+            )
+
+    def _state_vector(self, instruction: Instruction) -> None:
+        if not np.all(self.initial_state == 0):
+            raise InvalidState("State vector is already set.")
+
+        coefficient = instruction._all_params["coefficient"]
+        occupation_numbers = instruction._all_params["occupation_numbers"]
+
+        initial_state = coefficient * np.array(occupation_numbers)
+
+        if not all_natural(initial_state):
+            raise InvalidState(
+                f"Invalid initial state specified: instruction={instruction}"
+            )
+
+        self.initial_state = np.rint(initial_state).astype(int)
 
     def _passive_linear(self, instruction: Instruction) -> None:
         r"""Applies an interferometer to the circuit.
