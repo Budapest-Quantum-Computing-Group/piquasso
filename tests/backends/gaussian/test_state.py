@@ -136,87 +136,95 @@ def test_reduced_rotated_mean_and_covariance(state, assets):
     assert np.allclose(covariance_matrix, expected_cov)
 
 
-class TestGaussianStateOperations:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        with pq.Program() as program:
-            pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
+def test_rotated():
+    with pq.Program() as program:
+        pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
 
-            pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
+        pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
-            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
 
-        self.state = pq.GaussianState(d=3)
-        self.state.apply(program)
-        self.state.validate()
+    state = pq.GaussianState(d=3)
+    state.apply(program)
+    state.validate()
 
-    def test_rotated(self):
-        phi = np.pi / 2
-        rotated_state = self.state.rotated(phi)
+    phi = np.pi / 2
+    rotated_state = state.rotated(phi)
 
-        expected_rotated_mean_vector = np.array([0., 6.5, 0., -5.5, 6., 0.])
-        expected_rotated_covariance_matrix = np.array(
-            [
-                [ 4.25,    0.,  3.75,    0., 0., 0.],
-                [   0.,  4.25,    0., -3.75, 0., 0.],
-                [ 3.75,    0.,  4.25,   -0., 0., 0.],
-                [   0., -3.75,   -0.,  4.25, 0., 0.],
-                [   0.,    0.,    0.,    0., 2., 0.],
-                [   0.,    0.,    0.,    0., 0., 2.],
-            ]
-        )
+    expected_rotated_mean_vector = np.array([0., 6.5, 0., -5.5, 6., 0.])
+    expected_rotated_covariance_matrix = np.array(
+        [
+            [ 4.25,    0.,  3.75,    0., 0., 0.],
+            [   0.,  4.25,    0., -3.75, 0., 0.],
+            [ 3.75,    0.,  4.25,   -0., 0., 0.],
+            [   0., -3.75,   -0.,  4.25, 0., 0.],
+            [   0.,    0.,    0.,    0., 2., 0.],
+            [   0.,    0.,    0.,    0., 0., 2.],
+        ]
+    )
 
-        assert np.allclose(
-            expected_rotated_mean_vector,
-            rotated_state.xpxp_mean_vector,
-        )
-        assert np.allclose(
-            expected_rotated_covariance_matrix,
-            rotated_state.xpxp_covariance_matrix,
-        )
-
-    def test_reduced(self):
-        modes = (0, 2)
-
-        reduced_state = self.state.reduced(modes)
-
-        expected_reduced_mean_vector = np.array([-6.5, 0., 0., 6.])
-        expected_reduced_covariance_matrix = np.array(
-            [
-                [4.25,   0., 0., 0.],
-                [  0., 4.25, 0., 0.],
-                [  0.,   0., 2., 0.],
-                [  0.,   0., 0., 2.],
-            ]
-        )
-
-        assert np.allclose(
-            expected_reduced_mean_vector,
-            reduced_state.xpxp_mean_vector,
-        )
-        assert np.allclose(
-            expected_reduced_covariance_matrix,
-            reduced_state.xpxp_covariance_matrix,
-        )
+    assert np.allclose(
+        expected_rotated_mean_vector,
+        rotated_state.xpxp_mean_vector,
+    )
+    assert np.allclose(
+        expected_rotated_covariance_matrix,
+        rotated_state.xpxp_covariance_matrix,
+    )
 
 
-class TestGaussianStateVacuum:
-    def test_vacuum_covariance_is_proportional_to_identity(self):
-        d = 2
+def test_reduced():
+    with pq.Program() as program:
+        pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
 
-        state = pq.GaussianState(d=d)
+        pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
-        expected_xpxp_mean = np.zeros(2 * d)
-        expected_xpxp_covariance_matrix = np.identity(2 * d) * state._config.hbar
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
 
-        assert np.allclose(
-            state.xpxp_mean_vector,
-            expected_xpxp_mean
-        )
-        assert np.allclose(
-            state.xpxp_covariance_matrix,
-            expected_xpxp_covariance_matrix
-        )
+    state = pq.GaussianState(d=3)
+    state.apply(program)
+    state.validate()
+
+    modes = (0, 2)
+
+    reduced_state = state.reduced(modes)
+
+    expected_reduced_mean_vector = np.array([-6.5, 0., 0., 6.])
+    expected_reduced_covariance_matrix = np.array(
+        [
+            [4.25,   0., 0., 0.],
+            [  0., 4.25, 0., 0.],
+            [  0.,   0., 2., 0.],
+            [  0.,   0., 0., 2.],
+        ]
+    )
+
+    assert np.allclose(
+        expected_reduced_mean_vector,
+        reduced_state.xpxp_mean_vector,
+    )
+    assert np.allclose(
+        expected_reduced_covariance_matrix,
+        reduced_state.xpxp_covariance_matrix,
+    )
+
+
+def test_vacuum_covariance_is_proportional_to_identity():
+    d = 2
+
+    state = pq.GaussianState(d=d)
+
+    expected_xpxp_mean = np.zeros(2 * d)
+    expected_xpxp_covariance_matrix = np.identity(2 * d) * state._config.hbar
+
+    assert np.allclose(
+        state.xpxp_mean_vector,
+        expected_xpxp_mean
+    )
+    assert np.allclose(
+        state.xpxp_covariance_matrix,
+        expected_xpxp_covariance_matrix
+    )
 
 
 def test_mean_and_covariance(state, assets):
