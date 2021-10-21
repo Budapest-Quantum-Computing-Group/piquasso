@@ -77,8 +77,7 @@ INVALID_VECTOR_INSTRUCTIONS = (
 
 
 @pytest.mark.parametrize(
-    "StateClass, scalar_instruction",
-    itertools.product(STATES, SCALAR_INSTRUCTIONS)
+    "StateClass, scalar_instruction", itertools.product(STATES, SCALAR_INSTRUCTIONS)
 )
 def test_scalar_parameters_are_scaled_when_applied(StateClass, scalar_instruction):
     with pq.Program() as program:
@@ -94,7 +93,7 @@ def test_scalar_parameters_are_scaled_when_applied(StateClass, scalar_instructio
 
 @pytest.mark.parametrize(
     "StateClass, length_one_vector_instruction",
-    itertools.product(STATES, LENGTH_ONE_VECTOR_INSTRUCTIONS)
+    itertools.product(STATES, LENGTH_ONE_VECTOR_INSTRUCTIONS),
 )
 def test_length_one_vector_instructions_are_applied_normally(
     StateClass, length_one_vector_instruction
@@ -111,8 +110,7 @@ def test_length_one_vector_instructions_are_applied_normally(
 
 
 @pytest.mark.parametrize(
-    "StateClass, vector_instruction",
-    itertools.product(STATES, VECTOR_INSTRUCTIONS)
+    "StateClass, vector_instruction", itertools.product(STATES, VECTOR_INSTRUCTIONS)
 )
 def test_vector_instructions_are_applied_normally(StateClass, vector_instruction):
     with pq.Program() as program:
@@ -128,7 +126,7 @@ def test_vector_instructions_are_applied_normally(StateClass, vector_instruction
 
 @pytest.mark.parametrize(
     "StateClass, invalid_vector_instruction",
-    itertools.product(STATES, INVALID_VECTOR_INSTRUCTIONS)
+    itertools.product(STATES, INVALID_VECTOR_INSTRUCTIONS),
 )
 def test_applying_invalid_vector_instructions_raises_error(
     StateClass, invalid_vector_instruction

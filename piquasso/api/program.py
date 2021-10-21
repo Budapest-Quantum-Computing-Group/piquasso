@@ -68,8 +68,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
             instruction_copy = instruction.copy()
 
             instruction_copy._apply_to_program_on_register(
-                program,
-                register=Q(*self._map_modes(register, instruction))
+                program, register=Q(*self._map_modes(register, instruction))
             )
 
     def __enter__(self) -> "Program":

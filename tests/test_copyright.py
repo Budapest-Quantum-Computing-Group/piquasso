@@ -48,9 +48,7 @@ def test_copyrights():
     extensions = ["*.py"]
 
     for extension in extensions:
-        for filename in glob.iglob(
-            str(root / "**" / extension), recursive=True
-        ):
+        for filename in glob.iglob(str(root / "**" / extension), recursive=True):
             if (
                 _is_current_file(filename)
                 or _is_empty_file(filename)

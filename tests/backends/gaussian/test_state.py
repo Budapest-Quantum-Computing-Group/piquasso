@@ -123,10 +123,10 @@ def test_wigner_function(state, assets):
 
 def test_reduced_rotated_mean_and_covariance(state, assets):
     modes = (0, 2)
-    phi = np.pi/2
+    phi = np.pi / 2
 
-    mean_vector, covariance_matrix = (
-        state.xpxp_reduced_rotated_mean_and_covariance(modes, phi)
+    mean_vector, covariance_matrix = state.xpxp_reduced_rotated_mean_and_covariance(
+        modes, phi
     )
 
     expected_mean = assets.load("expected_mean")
@@ -142,7 +142,7 @@ def test_rotated():
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
 
     state = pq.GaussianState(d=3)
     state.apply(program)
@@ -151,15 +151,15 @@ def test_rotated():
     phi = np.pi / 2
     rotated_state = state.rotated(phi)
 
-    expected_rotated_mean_vector = np.array([0., 6.5, 0., -5.5, 6., 0.])
+    expected_rotated_mean_vector = np.array([0.0, 6.5, 0.0, -5.5, 6.0, 0.0])
     expected_rotated_covariance_matrix = np.array(
         [
-            [ 4.25,    0.,  3.75,    0., 0., 0.],
-            [   0.,  4.25,    0., -3.75, 0., 0.],
-            [ 3.75,    0.,  4.25,   -0., 0., 0.],
-            [   0., -3.75,   -0.,  4.25, 0., 0.],
-            [   0.,    0.,    0.,    0., 2., 0.],
-            [   0.,    0.,    0.,    0., 0., 2.],
+            [4.25, 0.0, 3.75, 0.0, 0.0, 0.0],
+            [0.0, 4.25, 0.0, -3.75, 0.0, 0.0],
+            [3.75, 0.0, 4.25, -0.0, 0.0, 0.0],
+            [0.0, -3.75, -0.0, 4.25, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 2.0],
         ]
     )
 
@@ -179,7 +179,7 @@ def test_reduced():
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/2, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
 
     state = pq.GaussianState(d=3)
     state.apply(program)
@@ -189,13 +189,13 @@ def test_reduced():
 
     reduced_state = state.reduced(modes)
 
-    expected_reduced_mean_vector = np.array([-6.5, 0., 0., 6.])
+    expected_reduced_mean_vector = np.array([-6.5, 0.0, 0.0, 6.0])
     expected_reduced_covariance_matrix = np.array(
         [
-            [4.25,   0., 0., 0.],
-            [  0., 4.25, 0., 0.],
-            [  0.,   0., 2., 0.],
-            [  0.,   0., 0., 2.],
+            [4.25, 0.0, 0.0, 0.0],
+            [0.0, 4.25, 0.0, 0.0],
+            [0.0, 0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0, 2.0],
         ]
     )
 
@@ -217,19 +217,13 @@ def test_vacuum_covariance_is_proportional_to_identity():
     expected_xpxp_mean = np.zeros(2 * d)
     expected_xpxp_covariance_matrix = np.identity(2 * d) * state._config.hbar
 
-    assert np.allclose(
-        state.xpxp_mean_vector,
-        expected_xpxp_mean
-    )
-    assert np.allclose(
-        state.xpxp_covariance_matrix,
-        expected_xpxp_covariance_matrix
-    )
+    assert np.allclose(state.xpxp_mean_vector, expected_xpxp_mean)
+    assert np.allclose(state.xpxp_covariance_matrix, expected_xpxp_covariance_matrix)
 
 
 def test_mean_and_covariance(state, assets):
-    expected_mean_vector = (
-        assets.load("expected_mean") * np.sqrt(2 * state._config.hbar)
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(
+        2 * state._config.hbar
     )
 
     expected_covariance_matrix = assets.load("expected_cov") * state._config.hbar
@@ -241,8 +235,8 @@ def test_mean_and_covariance(state, assets):
 def test_mean_and_covariance_with_different_HBAR(state, assets):
     state._config.hbar = 42
 
-    expected_mean_vector = (
-        assets.load("expected_mean") * np.sqrt(2 * state._config.hbar)
+    expected_mean_vector = assets.load("expected_mean") * np.sqrt(
+        2 * state._config.hbar
     )
     expected_covariance_matrix = assets.load("expected_cov") * state._config.hbar
 
@@ -301,16 +295,13 @@ def test_complex_covariance_transformed_directly_from_xxpp_cov(state):
     W = (1 / np.sqrt(2)) * np.block(
         [
             [np.identity(d), 1j * np.identity(d)],
-            [np.identity(d), - 1j * np.identity(d)],
+            [np.identity(d), -1j * np.identity(d)],
         ]
     )
 
     complex_covariance = W @ xxpp_cov @ W.conj().T / state._config.hbar
 
-    assert np.allclose(
-        complex_covariance,
-        state.complex_covariance
-    )
+    assert np.allclose(complex_covariance, state.complex_covariance)
 
 
 def test_complex_displacement(state, assets):
@@ -391,15 +382,15 @@ def test_mean_photon_number_vaccum():
     state = pq.GaussianState(d=3)
     state.apply(program)
 
-    assert np.isclose(0., state.mean_photon_number((0, 1, 2)))
-    assert np.isclose(0., state.mean_photon_number((0, 1)))
-    assert np.isclose(0., state.mean_photon_number((0,)))
+    assert np.isclose(0.0, state.mean_photon_number((0, 1, 2)))
+    assert np.isclose(0.0, state.mean_photon_number((0, 1)))
+    assert np.isclose(0.0, state.mean_photon_number((0,)))
 
 
 def test_mean_photon_number():
     alpha = 0.5 + 1j
-    r = 1.
-    phi = 3.
+    r = 1.0
+    phi = 3.0
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(alpha=alpha)
         pq.Q(1) | pq.Squeezing(r=r, phi=phi)
@@ -409,9 +400,9 @@ def test_mean_photon_number():
     state = pq.GaussianState(d=3)
     state.apply(program)
 
-    mean_photon_number_first_mode = np.abs(alpha)**2
-    mean_photon_number_second_mode = np.sinh(r)**2
-    total_mean_photon_number = 2 * (np.abs(alpha)**2 + np.sinh(r)**2)
+    mean_photon_number_first_mode = np.abs(alpha) ** 2
+    mean_photon_number_second_mode = np.sinh(r) ** 2
+    total_mean_photon_number = 2 * (np.abs(alpha) ** 2 + np.sinh(r) ** 2)
 
     assert np.isclose(mean_photon_number_first_mode, state.mean_photon_number((0,)))
     assert np.isclose(mean_photon_number_second_mode, state.mean_photon_number((1,)))
@@ -429,8 +420,6 @@ def test_GaussianState_get_particle_detection_probability():
     state = pq.GaussianState(d=2)
     state.apply(program)
 
-    probability = state.get_particle_detection_probability(
-        occupation_number=(0, 2)
-    )
+    probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 
     assert np.isclose(probability, 0.0012355308401079989)

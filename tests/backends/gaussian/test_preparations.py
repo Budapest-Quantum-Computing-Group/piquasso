@@ -75,7 +75,7 @@ def test_state_initialization_with_nonsymmetric_covariance():
 def test_state_initialization_with_nonpositive_covariance():
     nonpositive_cov = np.array(
         [
-            [1,  0],
+            [1, 0],
             [0, -1],
         ]
     )

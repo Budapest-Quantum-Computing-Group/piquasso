@@ -25,9 +25,7 @@ pytestmark = pytest.mark.benchmark(
 )
 
 
-def piquasso_benchmark(
-    benchmark, example_pq_gaussian_state
-):
+def piquasso_benchmark(benchmark, example_pq_gaussian_state):
     @benchmark
     def func():
         with pq.Program() as new_program:
@@ -36,9 +34,7 @@ def piquasso_benchmark(
             example_pq_gaussian_state.apply(new_program)
 
 
-def strawberryfields_benchmark(
-    benchmark, example_sf_gaussian_state, d
-):
+def strawberryfields_benchmark(benchmark, example_sf_gaussian_state, d):
     @benchmark
     def func():
         new_program = sf.Program(d)

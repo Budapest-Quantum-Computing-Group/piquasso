@@ -26,7 +26,6 @@ _T = TypeVar("_T", float, complex)
 
 
 class DictMixin(abc.ABC):
-
     @classmethod
     @abc.abstractmethod
     def from_dict(cls, dict_: dict) -> "DictMixin":
@@ -56,9 +55,7 @@ class WeightMixin(abc.ABC, Generic[_T]):
 
 class RegisterMixin(abc.ABC):
     @abc.abstractmethod
-    def _apply_to_program_on_register(
-        self, program: "Program", register: "Q"
-    ) -> None:
+    def _apply_to_program_on_register(self, program: "Program", register: "Q") -> None:
         """Applies the current object to the specifed program on its specified register.
 
         Args:

@@ -34,13 +34,12 @@ setup(
         'boss-tomev==1.0.4; python_version >= "3.7"',
         'numpy>=1.19.5; python_version >= "3.7"',
         'scipy>=1.5.4; python_version >= "3.7"',
-        'quantum-blackbird==0.2.4',
+        "quantum-blackbird==0.2.4",
     ],
     classifiers=[
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: "
-        "Apache License 2.0.",
+        "License :: OSI Approved :: " "Apache License 2.0.",
         "Natural Language :: English",
     ],
-    license='Apache License 2.0.',
+    license="Apache License 2.0.",
 )

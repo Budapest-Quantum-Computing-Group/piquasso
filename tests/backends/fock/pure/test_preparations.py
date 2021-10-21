@@ -80,8 +80,8 @@ def test_create_annihilate_and_create():
 
 def test_overflow_with_zero_norm_raises_InvalidState():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
-        pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
+        pq.Q(2) | pq.StateVector(1) * np.sqrt(2 / 5)
+        pq.Q(1) | pq.StateVector(1) * np.sqrt(3 / 5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -95,8 +95,8 @@ def test_overflow_with_zero_norm_raises_InvalidState():
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector(1) * np.sqrt(2/5)
-        pq.Q(1) | pq.StateVector(1) * np.sqrt(3/5)
+        pq.Q(2) | pq.StateVector(1) * np.sqrt(2 / 5)
+        pq.Q(1) | pq.StateVector(1) * np.sqrt(3 / 5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -108,20 +108,15 @@ def test_creation_on_multiple_modes():
 
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 2/5, 3/5, 0, 0, 0, 0, 0, 0, 0
-        ],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 / 5, 3 / 5, 0, 0, 0, 0, 0, 0, 0],
     )
 
 
 def test_state_is_renormalized_after_overflow():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector(1) * np.sqrt(2/6)
-        pq.Q(1) | pq.StateVector(1) * np.sqrt(3/6)
-        pq.Q(2) | pq.StateVector(2) * np.sqrt(1/6)
+        pq.Q(2) | pq.StateVector(1) * np.sqrt(2 / 6)
+        pq.Q(1) | pq.StateVector(1) * np.sqrt(3 / 6)
+        pq.Q(2) | pq.StateVector(2) * np.sqrt(1 / 6)
 
         pq.Q(2) | pq.Create()
 
@@ -133,9 +128,5 @@ def test_state_is_renormalized_after_overflow():
 
     assert np.allclose(
         state.fock_probabilities,
-        [
-            0,
-            0, 0, 0,
-            0.4, 0.6, 0, 0, 0, 0
-        ],
+        [0, 0, 0, 0, 0.4, 0.6, 0, 0, 0, 0],
     )

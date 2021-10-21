@@ -97,9 +97,7 @@ class StateVector(Preparation, _mixins.WeightMixin):
     :class:`~piquasso._backends.fock.pure.state.PureFockState`.
     """
 
-    def __init__(
-        self, *occupation_numbers: int, coefficient: complex = 1.0
-    ) -> None:
+    def __init__(self, *occupation_numbers: int, coefficient: complex = 1.0) -> None:
         if not all_natural(occupation_numbers):
             raise InvalidState(
                 f"Invalid occupation numbers: occupation_numbers={occupation_numbers}"

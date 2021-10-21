@@ -31,13 +31,13 @@ def cramer_hypothesis_test():
     rpy2.robjects.numpy2ri.activate()
 
     try:
-        importr('cramer')
+        importr("cramer")
 
     except PackageNotInstalledError:
-        utils = importr('utils')
-        utils.install_packages('cramer')
+        utils = importr("utils")
+        utils.install_packages("cramer")
 
-        importr('cramer')
+        importr("cramer")
 
     def _to_r_matrix(A):
         height, width = A.shape
@@ -50,7 +50,7 @@ def cramer_hypothesis_test():
         xR = _to_r_matrix(x)
         yR = _to_r_matrix(y)
 
-        cramer_test = robjects.r['cramer.test']
+        cramer_test = robjects.r["cramer.test"]
 
         rvector = cramer_test(xR, yR)
 

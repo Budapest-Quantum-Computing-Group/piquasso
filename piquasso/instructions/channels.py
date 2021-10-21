@@ -42,10 +42,7 @@ class Loss(Gate, _mixins.ScalingMixin):
 
     def _autoscale(self) -> None:
         transmissivity = self._extra_params["transmissivity"]
-        if (
-            transmissivity is None
-            or len(self.modes) == len(transmissivity)
-        ):
+        if transmissivity is None or len(self.modes) == len(transmissivity):
             pass
         elif len(transmissivity) == 1:
             self._extra_params["transmissivity"] = np.array(

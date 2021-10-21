@@ -75,7 +75,7 @@ class Q:
     """
 
     def __init__(self, *modes: Union[int, Any]) -> None:
-        is_all = (modes == (all, ))
+        is_all = modes == (all,)
 
         if not is_all and any(mode < 0 for mode in modes):
             raise InvalidModes(

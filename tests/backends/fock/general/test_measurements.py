@@ -21,13 +21,13 @@ import piquasso as pq
 def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (-3j)
 
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-1j)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (-2j)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
@@ -44,16 +44,16 @@ def test_measure_particle_number_on_one_mode():
     assert np.isclose(sum(state.fock_probabilities), 1)
 
     sample = result.samples[0]
-    assert sample == (1, ) or sample == (2, )
+    assert sample == (1,) or sample == (2,)
 
-    if sample == (1, ):
+    if sample == (1,):
         expected_state = pq.FockState(
             d=3,
             config=config,
         )
         expected_state.apply_instructions(
             instructions=[
-                1/3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
+                1 / 3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
                 4j * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)),
                 -2j * pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)),
                 -4j * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)),
@@ -62,15 +62,13 @@ def test_measure_particle_number_on_one_mode():
             ]
         )
 
-    elif sample == (2, ):
+    elif sample == (2,):
         expected_state = pq.FockState(
             d=3,
             config=config,
         )
         expected_state.apply_instructions(
-            instructions=[
-                pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
-            ]
+            instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
         )
 
     assert state == expected_state
@@ -79,13 +77,13 @@ def test_measure_particle_number_on_one_mode():
 def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 2)) * 3j
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (- 3j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(1, 0, 1)) * (-3j)
 
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 1j
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (- 1j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-1j)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)) * 2j
-        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (- 2j)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)) * (-2j)
 
         pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) * 2 / 6
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) * 1 / 6
@@ -125,9 +123,7 @@ def test_measure_particle_number_on_two_modes():
     elif sample == (0, 2):
         expected_state = pq.FockState(d=3, config=config)
         expected_state.apply_instructions(
-            instructions=[
-                pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))
-            ]
+            instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
         )
 
     assert state == expected_state
@@ -140,8 +136,8 @@ def test_measure_particle_number_on_all_modes():
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -195,8 +191,8 @@ def test_measure_particle_number_with_multiple_shots():
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)) / 2
 
-        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1/8)
-        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1/8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(1, 0, 0), bra=(0, 0, 1)) * np.sqrt(1 / 8)
 
     with pq.Program() as program:
         pq.Q() | preparation

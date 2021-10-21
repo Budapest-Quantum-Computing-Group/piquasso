@@ -34,7 +34,7 @@ def interferometer_matrix():
 
 
 def test_sampling_raises_InvalidParameter_for_negative_shot_value(
-    interferometer_matrix
+    interferometer_matrix,
 ):
     invalid_shots = -1
 
@@ -61,8 +61,7 @@ def test_sampling_samples_number(interferometer_matrix):
     result = state.apply(program, shots)
 
     assert len(result.samples) == shots, (
-        f"Expected {shots} samples, "
-        f"got: {len(program.result)}"
+        f"Expected {shots} samples, " f"got: {len(program.result)}"
     )
 
 
@@ -78,12 +77,13 @@ def test_sampling_mode_permutation(interferometer_matrix):
     result = state.apply(program, shots)
 
     sample = result.samples[0]
-    assert np.allclose(sample, [1, 0, 0, 1, 1]),\
-        f'Expected [1, 0, 0, 1, 1], got: {sample}'
+    assert np.allclose(
+        sample, [1, 0, 0, 1, 1]
+    ), f"Expected [1, 0, 0, 1, 1], got: {sample}"
 
 
 def test_sampling_multiple_samples_for_permutation_interferometer(
-    interferometer_matrix
+    interferometer_matrix,
 ):
     shots = 2
 
@@ -99,13 +99,14 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
     first_sample = samples[0]
     second_sample = samples[1]
 
-    assert np.allclose(first_sample, second_sample),\
-        f'Expected same samples, got: {first_sample} & {second_sample}'
+    assert np.allclose(
+        first_sample, second_sample
+    ), f"Expected same samples, got: {first_sample} & {second_sample}"
 
 
 def test_mach_zehnder():
-    int_ = np.pi/3
-    ext = np.pi/4
+    int_ = np.pi / 3
+    ext = np.pi / 4
 
     with pq.Program() as program:
         pq.Q() | pq.StateVector(1, 1, 1, 0, 0)

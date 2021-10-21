@@ -19,19 +19,15 @@ import piquasso as pq
 
 
 def test_program():
-    U = np.array([
-        [.5, 0, 0],
-        [0, .5j, 0],
-        [0, 0, -1]
-    ], dtype=complex)
+    U = np.array([[0.5, 0, 0], [0, 0.5j, 0], [0, 0, -1]], dtype=complex)
 
     with pq.Program() as program:
         pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
 
-        pq.Q(0, 1) | pq.Beamsplitter(.5)
+        pq.Q(0, 1) | pq.Beamsplitter(0.5)
         pq.Q(1, 2, 3) | pq.Interferometer(U)
-        pq.Q(3) | pq.Phaseshifter(.5)
-        pq.Q(4) | pq.Phaseshifter(.5)
+        pq.Q(3) | pq.Phaseshifter(0.5)
+        pq.Q(4) | pq.Phaseshifter(0.5)
         pq.Q() | pq.Sampling()
 
     state = pq.SamplingState(d=5)
@@ -41,11 +37,7 @@ def test_program():
 
 
 def test_interferometer():
-    U = np.array([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9]
-    ], dtype=complex)
+    U = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=complex)
 
     with pq.Program() as program:
         pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
@@ -55,13 +47,16 @@ def test_interferometer():
     state = pq.SamplingState(d=5)
     state.apply(program)
 
-    expected_interferometer = np.array([
-        [1, 0, 0, 0, 0],
-        [0, 9, 0, 8, 7],
-        [0, 0, 1, 0, 0],
-        [0, 6, 0, 5, 4],
-        [0, 3, 0, 2, 1],
-    ], dtype=complex)
+    expected_interferometer = np.array(
+        [
+            [1, 0, 0, 0, 0],
+            [0, 9, 0, 8, 7],
+            [0, 0, 1, 0, 0],
+            [0, 6, 0, 5, 4],
+            [0, 3, 0, 2, 1],
+        ],
+        dtype=complex,
+    )
 
     assert np.allclose(state.interferometer, expected_interferometer)
 
@@ -78,13 +73,16 @@ def test_phaseshifter():
     state.apply(program)
 
     x = np.exp(1j * phi)
-    expected_interferometer = np.array([
-        [1, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0],
-        [0, 0, x, 0, 0],
-        [0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 1],
-    ], dtype=complex)
+    expected_interferometer = np.array(
+        [
+            [1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, x, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1],
+        ],
+        dtype=complex,
+    )
 
     assert np.allclose(state.interferometer, expected_interferometer)
 
@@ -106,23 +104,23 @@ def test_beamsplitter():
     rc = np.conj(r)
     expected_interferometer = np.array(
         [
-            [1, 0, 0,   0, 0],
+            [1, 0, 0, 0, 0],
             [0, t, 0, -rc, 0],
-            [0, 0, 1,   0, 0],
-            [0, r, 0,   t, 0],
-            [0, 0, 0,   0, 1],
+            [0, 0, 1, 0, 0],
+            [0, r, 0, t, 0],
+            [0, 0, 0, 0, 1],
         ],
-        dtype=complex
+        dtype=complex,
     )
 
     assert np.allclose(state.interferometer, expected_interferometer)
 
 
 def test_lossy_program():
-    r'''
-        This test checks the average number of particles in the lossy BS.
-        We expect average number to be smaller than initial one.
-    '''
+    r"""
+    This test checks the average number of particles in the lossy BS.
+    We expect average number to be smaller than initial one.
+    """
     losses = 0.5
     U = np.eye(5) * losses
     U[0][0] = 0  # Ensure that at least one particle is lost.

@@ -137,11 +137,7 @@ def test_multiple_interferometer_on_gaped_modes():
 
 def test_multiple_interferometer_on_reversed_gaped_modes():
     U = np.array(
-        [
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ],
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
         dtype=complex,
     )
 
@@ -172,7 +168,7 @@ def test_probability_distribution():
         [
             [1, 0, 0],
             [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j],
         ],
     )
 
@@ -187,8 +183,15 @@ def test_probability_distribution():
         state.fock_probabilities,
         [
             0.0,
-            0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.6945423895038292, 0.30545762086020883, 0.0
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.6945423895038292,
+            0.30545762086020883,
+            0.0,
         ],
     )
 
@@ -198,7 +201,7 @@ def test_get_particle_detection_probability():
         [
             [1, 0, 0],
             [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j],
         ],
     )
 
@@ -209,9 +212,7 @@ def test_get_particle_detection_probability():
     state = pq.SamplingState(d=3)
     state.apply(program)
 
-    probability = state.get_particle_detection_probability(
-        occupation_number=(1, 1, 0)
-    )
+    probability = state.get_particle_detection_probability(occupation_number=(1, 1, 0))
 
     assert np.allclose(probability, 0.30545762086020883)
 
@@ -221,7 +222,7 @@ def test_get_particle_detection_probability_on_different_subspace():
         [
             [1, 0, 0],
             [0, -0.54687158 + 0.07993182j, 0.32028583 - 0.76938896j],
-            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j]
+            [0, 0.78696803 + 0.27426941j, 0.42419041 - 0.35428818j],
         ],
     )
 

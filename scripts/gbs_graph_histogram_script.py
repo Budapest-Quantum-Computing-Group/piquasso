@@ -69,4 +69,4 @@ def gbs_graph_histogram_script():
 
     fig.savefig("histogram.png")
 
-    subprocess.call(('xdg-open', "histogram.png"))
+    subprocess.call(("xdg-open", "histogram.png"))

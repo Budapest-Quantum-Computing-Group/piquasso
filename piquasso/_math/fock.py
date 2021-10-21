@@ -50,9 +50,7 @@ class FockBasis(tuple):
         return self.display(template="|{}>")
 
     def display(self, template: str = "{}") -> str:
-        return template.format(
-            "".join([str(number) for number in self])
-        )
+        return template.format("".join([str(number) for number in self]))
 
     def display_as_bra(self) -> str:
         return self.display("<{}|")
@@ -114,9 +112,7 @@ class FockBasis(tuple):
 
 class FockOperatorBasis(tuple):
     def __new__(cls, *, ket: Iterable, bra: Iterable) -> "FockOperatorBasis":
-        return super().__new__(
-            cls, (FockBasis(ket), FockBasis(bra))  # type: ignore
-        )
+        return super().__new__(cls, (FockBasis(ket), FockBasis(bra)))  # type: ignore
 
     def __str__(self) -> str:
         return str(self.ket) + self.bra.display_as_bra()
@@ -166,14 +162,9 @@ class FockSpace(tuple):
 
         return self
 
-    def get_passive_fock_operator(
-        self, operator: np.ndarray
-    ) -> np.ndarray:
+    def get_passive_fock_operator(self, operator: np.ndarray) -> np.ndarray:
         return block_diag(
-            *(
-                self.symmetric_tensorpower(operator, n)
-                for n in range(self.cutoff)
-            )
+            *(self.symmetric_tensorpower(operator, n) for n in range(self.cutoff))
         )
 
     def get_linear_fock_operator(
@@ -189,51 +180,40 @@ class FockSpace(tuple):
         if active_block is None and passive_block is None:
             phase = np.identity(len(modes), dtype=complex)
             S = np.identity(len(modes), dtype=complex)
-            T = np.zeros(shape=(len(modes), ) * 2)
+            T = np.zeros(shape=(len(modes),) * 2)
 
         else:
             phase, _ = polar(passive_block)
             active_phase, active_squeezing = polar(active_block)
 
-            S = funm(
-                active_squeezing,
-                lambda x: 1 / np.sqrt(1 + x ** 2)
-            )
+            S = funm(active_squeezing, lambda x: 1 / np.sqrt(1 + x ** 2))
             T = (
                 active_phase
-                @ funm(
-                    active_squeezing,
-                    lambda x: x / np.sqrt(1 + x ** 2)
-                )
+                @ funm(active_squeezing, lambda x: x / np.sqrt(1 + x ** 2))
                 @ phase.transpose()
             )
 
         if displacement is None:
-            alpha = np.zeros(shape=(len(modes), ), dtype=complex)
+            alpha = np.zeros(shape=(len(modes),), dtype=complex)
         else:
             alpha = displacement
 
         normalization = np.exp(
-            np.trace(logm(S)) - (
-                alpha.conjugate() + alpha @ T.conjugate().transpose()
-            ) @ alpha / 2
+            np.trace(logm(S))
+            - (alpha.conjugate() + alpha @ T.conjugate().transpose()) @ alpha / 2
         )
 
-        left_matrix = - T
+        left_matrix = -T
         left_vector = alpha @ S.transpose()
 
         right_matrix = phase.transpose() @ T.conjugate().transpose() @ phase
-        right_vector = - (
-            alpha @ T.conjugate().transpose() + alpha.conjugate()
-        ) @ phase
+        right_vector = -(alpha @ T.conjugate().transpose() + alpha.conjugate()) @ phase
 
         def get_f_vector(
-            upper_bound: Tuple[int, ...],
-            matrix: np.ndarray,
-            vector: np.ndarray
+            upper_bound: Tuple[int, ...], matrix: np.ndarray, vector: np.ndarray
         ) -> np.ndarray:
             subspace_basis = self._get_subspace_basis_on_modes(modes=modes)
-            elements = np.empty(shape=(len(subspace_basis), ), dtype=complex)
+            elements = np.empty(shape=(len(subspace_basis),), dtype=complex)
 
             for index, basis_vector in enumerate(subspace_basis):
                 nd_basis_vector = np.array(basis_vector)
@@ -250,16 +230,13 @@ class FockSpace(tuple):
                         np.prod(factorial(upper_bound))
                         / np.prod(factorial(nd_basis_vector))
                     )
-                    *
-                    modified_hermite_multidim(B=matrix, n=difference, alpha=vector)
+                    * modified_hermite_multidim(B=matrix, n=difference, alpha=vector)
                 ) / np.prod(factorial(difference))
 
             return elements
 
         @functools.lru_cache(cache_size)
-        def calculate_left(
-            upper_bound: Tuple[int, ...]
-        ) -> np.ndarray:
+        def calculate_left(upper_bound: Tuple[int, ...]) -> np.ndarray:
             return get_f_vector(
                 upper_bound=upper_bound,
                 matrix=left_matrix,
@@ -267,9 +244,7 @@ class FockSpace(tuple):
             )
 
         @functools.lru_cache(cache_size)
-        def calculate_right(
-            upper_bound: Tuple[int, ...]
-        ) -> np.ndarray:
+        def calculate_right(upper_bound: Tuple[int, ...]) -> np.ndarray:
             return get_f_vector(
                 upper_bound=upper_bound,
                 matrix=right_matrix,
@@ -277,7 +252,7 @@ class FockSpace(tuple):
             )
 
         fock_operator = self.get_passive_fock_operator(operator=S @ phase)
-        transformation = np.zeros((self.cardinality, ) * 2, dtype=complex)
+        transformation = np.zeros((self.cardinality,) * 2, dtype=complex)
 
         for index, operator_basis in self.operator_basis_diagonal_on_modes(
             modes=auxiliary_modes
@@ -299,9 +274,9 @@ class FockSpace(tuple):
         yield from enumerate(self)
 
     @property
-    def operator_basis(self) -> Generator[
-        Tuple[Tuple[int, int], FockOperatorBasis], Any, None
-    ]:
+    def operator_basis(
+        self,
+    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
         for index, basis in self.basis:
             for dual_index, dual_basis in self.basis:
                 yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
@@ -386,9 +361,7 @@ class FockSpace(tuple):
     ) -> List[FockBasis]:
         modes_ = modes or tuple(range(self.d))
 
-        subspace_vectors = {
-            vector.on_modes(modes=modes_) for vector in self
-        }
+        subspace_vectors = {vector.on_modes(modes=modes_) for vector in self}
 
         return sorted(list(subspace_vectors))
 
@@ -406,9 +379,7 @@ class FockSpace(tuple):
             for dual_index, dual_basis in enumerate(subspace_operator_basis):
                 yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
 
-    def symmetric_tensorpower(
-        self, operator: np.ndarray, n: int
-    ) -> np.ndarray:
+    def symmetric_tensorpower(self, operator: np.ndarray, n: int) -> np.ndarray:
         if n == 0:
             return np.array([[1]], dtype=complex)
 
@@ -422,7 +393,7 @@ class FockSpace(tuple):
         d = len(operator)
 
         ret = np.empty(
-            shape=(symmetric_subspace_cardinality(d=d, n=n), ) * 2,
+            shape=(symmetric_subspace_cardinality(d=d, n=n),) * 2,
             dtype=complex,
         )
 
@@ -440,21 +411,16 @@ class FockSpace(tuple):
 
                     sum_ += prod
 
-            normalization = (
-                np.sqrt(
-                    np.prod(factorial(basis.ket))
-                    * np.prod(factorial(basis.bra))
-                ) / factorial(n)
-            )
+            normalization = np.sqrt(
+                np.prod(factorial(basis.ket)) * np.prod(factorial(basis.bra))
+            ) / factorial(n)
 
             ret[index] = normalization * sum_
 
         return ret
 
-    def get_creation_operator(
-        self, modes: Tuple[int, ...]
-    ) -> np.ndarray:
-        operator = np.zeros(shape=(self.cardinality, ) * 2, dtype=complex)
+    def get_creation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
+        operator = np.zeros(shape=(self.cardinality,) * 2, dtype=complex)
 
         for index, basis in enumerate(self):
             dual_basis = basis.increment_on_modes(modes)
@@ -467,7 +433,5 @@ class FockSpace(tuple):
 
         return operator
 
-    def get_annihilation_operator(
-        self, modes: Tuple[int, ...]
-    ) -> np.ndarray:
+    def get_annihilation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
         return self.get_creation_operator(modes).transpose()

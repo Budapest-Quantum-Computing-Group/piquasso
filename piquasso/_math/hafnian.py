@@ -64,8 +64,7 @@ def fG(polynom_coefficients: List[float], degree: int) -> float:
 
 
 def _hafnian(
-    A: np.ndarray,
-    polynom_function: Callable[[np.ndarray, List[int], int], List[float]]
+    A: np.ndarray, polynom_function: Callable[[np.ndarray, List[int], int], List[float]]
 ) -> float:
     """
     NOTE: If the input matrix `A` has an odd dimension, e.g. 7x7, then the matrix
@@ -107,9 +106,7 @@ def _get_polynom_coefficients(
 ) -> List[float]:
     X = get_X(len(indices) // 2)
 
-    eigenvalues = np.linalg.eigvals(
-        X @ A[np.ix_(indices, indices)]
-    )
+    eigenvalues = np.linalg.eigvals(X @ A[np.ix_(indices, indices)])
 
     ret = []
 
@@ -144,13 +141,7 @@ def _get_loop_polynom_coefficients(
             powertrace += np.power(eigval, power)
 
         coefficient = (
-            powertrace / power
-            + (
-                v
-                @ np.linalg.matrix_power(XAZ, power - 1)
-                @ X
-                @ v.T
-            )
+            powertrace / power + (v @ np.linalg.matrix_power(XAZ, power - 1) @ X @ v.T)
         ) / 2.0
 
         ret.append(coefficient)
