@@ -49,20 +49,10 @@ class PureFockState(BaseFockState):
         **BaseFockState._instruction_map
     }
 
-    def __init__(
-        self,
-        state_vector: np.ndarray = None,
-        *,
-        d: int,
-        config: Config = None
-    ) -> None:
+    def __init__(self, *, d: int, config: Config = None) -> None:
         super().__init__(d=d, config=config)
 
-        self._state_vector: np.ndarray = (
-            np.array(state_vector, dtype=complex)
-            if state_vector is not None
-            else self._get_empty()
-        )
+        self._state_vector = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
         return np.zeros(shape=(self._space.cardinality, ), dtype=complex)

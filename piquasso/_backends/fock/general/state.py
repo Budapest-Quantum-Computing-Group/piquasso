@@ -44,20 +44,17 @@ class FockState(BaseFockState):
         **BaseFockState._instruction_map
     }
 
-    def __init__(
-        self,
-        density_matrix: np.ndarray = None,
-        *,
-        d: int,
-        config: Config = None
-    ) -> None:
+    def __init__(self, *, d: int, config: Config = None) -> None:
         super().__init__(d=d, config=config)
 
-        self._density_matrix: np.ndarray = (
-            np.array(density_matrix, dtype=complex)
-            if density_matrix is not None
-            else self._get_empty()
-        )
+        self._density_matrix = self._get_empty()
+
+    def _get_empty(self) -> np.ndarray:
+        return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
+
+    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
+        self._density_matrix = self._get_empty()
+        self._density_matrix[0, 0] = 1.0
 
     @classmethod
     def from_fock_state(cls, state: BaseFockState) -> "FockState":
@@ -68,18 +65,11 @@ class FockState(BaseFockState):
                 The instance from which a :class:`FockState` instance is created.
         """
 
-        return cls(
-            density_matrix=state.density_matrix,
-            d=state.d,
-            config=state._config,
-        )
+        new_instance = cls(d=state.d, config=state._config)
 
-    def _get_empty(self) -> np.ndarray:
-        return np.zeros(shape=(self._space.cardinality, ) * 2, dtype=complex)
+        new_instance._density_matrix = state.density_matrix
 
-    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
-        self._density_matrix = self._get_empty()
-        self._density_matrix[0, 0] = 1.0
+        return new_instance
 
     def _passive_linear(self, instruction: Instruction) -> None:
         operator: np.ndarray = instruction._all_params["passive_block"]

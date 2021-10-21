@@ -102,16 +102,13 @@ def test_measure_particle_number_on_two_modes():
 def test_measure_particle_number_on_all_modes():
     config = pq.Config(cutoff=2)
 
-    state = pq.PureFockState(
-        state_vector=[
-            0.5,
-            0.5, 0, np.sqrt(1/2),
-        ],
-        d=3,
-        config=config,
-    )
+    state = pq.PureFockState(d=3, config=config)
 
     with pq.Program() as program:
+        pq.Q() | 0.5 * pq.StateVector(0, 0, 0)
+        pq.Q() | 0.5 * pq.StateVector(0, 0, 1)
+        pq.Q() | np.sqrt(1/2) * pq.StateVector(1, 0, 0)
+
         pq.Q() | pq.ParticleNumberMeasurement()
 
     result = state.apply(program)
@@ -154,16 +151,13 @@ def test_measure_particle_number_with_multiple_shots():
     # TODO: This is very unusual, that we need to know the cutoff for specifying the
     # state. It should be imposed, that the only parameter for a state should be `d` and
     #  `config` maybe.
-    state = pq.PureFockState(
-        state_vector=[
-            0.5,
-            0.5, 0, np.sqrt(1/2),
-        ],
-        d=3,
-        config=pq.Config(cutoff=2)
-    )
+    state = pq.PureFockState(d=3, config=pq.Config(cutoff=2))
 
     with pq.Program() as program:
+        pq.Q() | 0.5 * pq.StateVector(0, 0, 0)
+        pq.Q() | 0.5 * pq.StateVector(0, 0, 1)
+        pq.Q() | np.sqrt(1/2) * pq.StateVector(1, 0, 0)
+
         pq.Q() | pq.ParticleNumberMeasurement()
 
     result = state.apply(program, shots)
