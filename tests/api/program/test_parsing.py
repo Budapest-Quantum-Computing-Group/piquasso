@@ -13,13 +13,66 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
+import numpy as np
 
 import piquasso as pq
 
 
-@pytest.fixture
-def FakeInstruction():
+def test_program_from_dict():
+    instructions_dict = {
+        "instructions": [
+            {
+                "type": "StateVector",
+                "attributes": {
+                    "constructor_kwargs": {
+                        "occupation_numbers": [1, 1],
+                        "coefficient": 1.0,
+                    },
+                    "modes": [0, 1],
+                },
+            },
+            {
+                "type": "Beamsplitter",
+                "attributes": {
+                    "constructor_kwargs": {
+                        "theta": np.pi / 3,
+                        "phi": np.pi / 4,
+                    },
+                    "modes": [0, 1],
+                },
+            },
+            {
+                "type": "ParticleNumberMeasurement",
+                "attributes": {
+                    "constructor_kwargs": {},
+                    "modes": [0],
+                },
+            },
+        ]
+    }
+
+    program = pq.Program.from_dict(instructions_dict)
+
+    assert isinstance(program.instructions[0], pq.StateVector)
+    assert program.instructions[0].params == {
+        "occupation_numbers": [1, 1],
+        "coefficient": 1.0,
+    }
+    assert program.instructions[0].modes == [0, 1]
+
+    assert isinstance(program.instructions[1], pq.Beamsplitter)
+    assert program.instructions[1].params == {
+        "theta": np.pi / 3,
+        "phi": np.pi / 4,
+    }
+    assert program.instructions[1].modes == [0, 1]
+
+    assert isinstance(program.instructions[2], pq.ParticleNumberMeasurement)
+    assert program.instructions[2].params == {}
+    assert program.instructions[2].modes == [0]
+
+
+def test_program_from_dict_from_external_instruction():
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):
             super().__init__(
@@ -29,68 +82,7 @@ def FakeInstruction():
                 ),
             )
 
-    return FakeInstruction
-
-
-@pytest.fixture
-def FakeState():
-    class FakeState(pq.State):
-        _instruction_map = {
-            "FakeInstruction": "_fake_instruction",
-        }
-
-        def __init__(self, foo, bar, d):
-            super().__init__()
-            self.foo = foo
-            self.bar = bar
-            self._d = d
-
-        @property
-        def d(self) -> int:
-            return self._d
-
-        def _fake_instruction(self, instruction, state):
-            pass
-
-        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
-            raise NotImplementedError
-
-    return FakeState
-
-
-@pytest.fixture(autouse=True)
-def setup(FakeState, FakeInstruction):
-    class FakePlugin(pq.Plugin):
-        classes = {
-            "FakeState": FakeState,
-            "FakeInstruction": FakeInstruction,
-        }
-
-    pq.use(FakePlugin)
-
-
-@pytest.fixture
-def number_of_modes():
-    return 420
-
-
-@pytest.fixture
-def state_dict(number_of_modes):
-    return {
-        "type": "FakeState",
-        "attributes": {
-            "constructor_kwargs": {
-                "foo": "fee",
-                "bar": "beer",
-                "d": number_of_modes,
-            }
-        },
-    }
-
-
-@pytest.fixture
-def instructions_dict():
-    return {
+    instructions_dict = {
         "instructions": [
             {
                 "type": "FakeInstruction",
@@ -115,29 +107,16 @@ def instructions_dict():
         ]
     }
 
-
-def test_state_instantiation_using_dicts(
-    state_dict,
-    number_of_modes,
-):
-    state = pq.State.from_dict(state_dict)
-
-    assert state.foo == "fee"
-    assert state.bar == "beer"
-    assert state.d == number_of_modes
-
-
-def test_program_instantiation_using_dicts(
-    instructions_dict,
-):
     program = pq.Program.from_dict(instructions_dict)
 
+    assert isinstance(program.instructions[0], FakeInstruction)
     assert program.instructions[0].params == {
         "first_param": "first_param_value",
         "second_param": "second_param_value",
     }
     assert program.instructions[0].modes == ["some", "modes"]
 
+    assert isinstance(program.instructions[1], FakeInstruction)
     assert program.instructions[1].params == {
         "first_param": "2nd_instructions_1st_param_value",
         "second_param": "2nd_instructions_2nd_param_value",

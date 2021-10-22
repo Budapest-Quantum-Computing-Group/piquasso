@@ -16,28 +16,22 @@
 """The Piquasso module.
 
 One can access all the instructions and states from here as attributes.
-
-Important:
-    It is preferred to access every Piquasso object from this module directly if
-    possible, especially when you're using a plugin.
 """
-
-import sys
-from types import ModuleType
-from typing import Type, List, Any
 
 from piquasso.api.mode import Q
 from piquasso.api.config import Config
-from piquasso.api.instruction import Instruction, Preparation, Gate, Measurement
+from piquasso.api.instruction import (
+    Instruction,
+    Preparation,
+    Gate,
+    Measurement,
+)
 from piquasso.api.program import Program
 from piquasso.api.state import State
-from piquasso.api.plugin import Plugin
 
 from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
 from piquasso._backends.fock import FockState, PureFockState
-
-from piquasso.core import _registry
 
 from .instructions.preparations import (
     Vacuum,
@@ -83,95 +77,9 @@ from .instructions.channels import (
 )
 
 
-_default_preparations = {
-    "Vacuum": Vacuum,
-    "Mean": Mean,
-    "Covariance": Covariance,
-    "StateVector": StateVector,
-    "DensityMatrix": DensityMatrix,
-    "Create": Create,
-    "Annihilate": Annihilate,
-}
-
-
-_default_gates = {
-    "GaussianTransform": GaussianTransform,
-    "Phaseshifter": Phaseshifter,
-    "Beamsplitter": Beamsplitter,
-    "MachZehnder": MachZehnder,
-    "Fourier": Fourier,
-    "Displacement": Displacement,
-    "PositionDisplacement": PositionDisplacement,
-    "MomentumDisplacement": MomentumDisplacement,
-    "Squeezing": Squeezing,
-    "QuadraticPhase": QuadraticPhase,
-    "Squeezing2": Squeezing2,
-    "Kerr": Kerr,
-    "CrossKerr": CrossKerr,
-    "ControlledX": ControlledX,
-    "ControlledZ": ControlledZ,
-    "Interferometer": Interferometer,
-    "Sampling": Sampling,
-    "Graph": Graph,
-}
-
-
-_default_measurements = {
-    "ParticleNumberMeasurement": ParticleNumberMeasurement,
-    "ThresholdMeasurement": ThresholdMeasurement,
-    "HomodyneMeasurement": HomodyneMeasurement,
-    "HeterodyneMeasurement": HeterodyneMeasurement,
-    "GeneraldyneMeasurement": GeneraldyneMeasurement,
-}
-
-
-_default_channels = {
-    "Loss": Loss,
-}
-
-
-def use(plugin: Type[Plugin]) -> None:
-    _registry.use_plugin(plugin, override=True)
-
-
-class _DefaultPlugin(Plugin):
-    classes = {
-        "SamplingState": SamplingState,
-        "GaussianState": GaussianState,
-        "FockState": FockState,
-        "PureFockState": PureFockState,
-        **_default_preparations,
-        **_default_gates,
-        **_default_measurements,
-        **_default_channels,
-    }
-
-
-_registry.use_plugin(_DefaultPlugin)
-
-
-class Piquasso(ModuleType):
-    def __init__(self, module: ModuleType) -> None:
-        self._module = module
-
-    def __getattr__(self, attribute: Any) -> Any:
-        try:
-            return _registry.items[attribute]
-        except KeyError:
-            return getattr(self._module, attribute)
-
-    def __dir__(self) -> List[str]:
-        return dir(self._module)
-
-
-Piquasso.__doc__ = sys.modules[__name__].__doc__
-sys.modules[__name__] = Piquasso(sys.modules[__name__])
-
-
 __all__ = [
-    # General
+    # API
     "Program",
-    "Plugin",
     "Q",
     "Config",
     "Instruction",
@@ -179,11 +87,46 @@ __all__ = [
     "Gate",
     "Measurement",
     "State",
-    "Circuit",
-    *_default_preparations.keys(),
-    *_default_gates.keys(),
-    *_default_measurements.keys(),
-    *_default_channels.keys(),
+    # States
+    "GaussianState",
+    "SamplingState",
+    "FockState",
+    "PureFockState",
+    # Preparations
+    "Vacuum",
+    "Mean",
+    "Covariance",
+    "StateVector",
+    "DensityMatrix",
+    "Create",
+    "Annihilate",
+    # Gates
+    "GaussianTransform",
+    "Phaseshifter",
+    "Beamsplitter",
+    "MachZehnder",
+    "Fourier",
+    "Displacement",
+    "PositionDisplacement",
+    "MomentumDisplacement",
+    "Squeezing",
+    "QuadraticPhase",
+    "Squeezing2",
+    "Kerr",
+    "CrossKerr",
+    "ControlledX",
+    "ControlledZ",
+    "Interferometer",
+    "Sampling",
+    "Graph",
+    # Measurements
+    "ParticleNumberMeasurement",
+    "ThresholdMeasurement",
+    "HomodyneMeasurement",
+    "HeterodyneMeasurement",
+    "GeneraldyneMeasurement",
+    # Channels
+    "Loss",
 ]
 
 __version__ = "0.2.1"
