@@ -19,7 +19,7 @@ from typing import List, Mapping, Optional, Type
 
 import blackbird as bb
 
-from . import _registry
+from . import registry
 from .. import Instruction
 from ..api.errors import PiquassoException
 
@@ -35,21 +35,21 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
     """
 
     instruction_map = {
-        "Dgate": _registry.items["Displacement"],
-        "Xgate": _registry.items["PositionDisplacement"],
-        "Zgate": _registry.items["MomentumDisplacement"],
-        "Sgate": _registry.items["Squeezing"],
-        "Pgate": _registry.items["QuadraticPhase"],
+        "Dgate": registry.get_class("Displacement"),
+        "Xgate": registry.get_class("PositionDisplacement"),
+        "Zgate": registry.get_class("MomentumDisplacement"),
+        "Sgate": registry.get_class("Squeezing"),
+        "Pgate": registry.get_class("QuadraticPhase"),
         "Vgate": None,
-        "Kgate": _registry.items["Kerr"],
-        "Rgate": _registry.items["Phaseshifter"],
-        "BSgate": _registry.items["Beamsplitter"],
-        "MZgate": _registry.items["MachZehnder"],
-        "S2gate": _registry.items["Squeezing2"],
-        "CXgate": _registry.items["ControlledX"],
-        "CZgate": _registry.items["ControlledZ"],
-        "CKgate": _registry.items["CrossKerr"],
-        "Fouriergate": _registry.items["Fourier"],
+        "Kgate": registry.get_class("Kerr"),
+        "Rgate": registry.get_class("Phaseshifter"),
+        "BSgate": registry.get_class("Beamsplitter"),
+        "MZgate": registry.get_class("MachZehnder"),
+        "S2gate": registry.get_class("Squeezing2"),
+        "CXgate": registry.get_class("ControlledX"),
+        "CZgate": registry.get_class("ControlledZ"),
+        "CKgate": registry.get_class("CrossKerr"),
+        "Fouriergate": registry.get_class("Fourier"),
     }
 
     return [

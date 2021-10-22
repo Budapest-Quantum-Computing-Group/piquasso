@@ -73,7 +73,7 @@ def test_loads_blackbird_parses_operations_with_classes_from_plugin():
             "Beamsplitter": MyBeamsplitter,
         }
 
-    pq.use(Plugin)
+    pq.registry.use_plugin(Plugin, override=True)
 
     program = pq.Program()
 

@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 
 import piquasso as pq
+from piquasso.api.errors import PiquassoException
 
 
 @pytest.fixture
@@ -47,16 +48,18 @@ def test_use_plugin(MyGaussianState, MyBeamsplitter):
             "Beamsplitter": MyBeamsplitter,
         }
 
-    pq.use(Plugin)
+    pq.registry.use_plugin(Plugin, override=True)
 
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
-    state = pq.GaussianState(d=3)
+    GaussianState = pq.registry.get_class("GaussianState")
+
+    state = GaussianState(d=3)
     state.apply(program)
 
     assert state.__class__ is MyGaussianState
-    assert pq.Beamsplitter is MyBeamsplitter
+    assert pq.registry.get_class("Beamsplitter") is MyBeamsplitter
 
 
 def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter):
@@ -66,18 +69,20 @@ def test_use_plugin_with_reimport(MyGaussianState, MyBeamsplitter):
             "Beamsplitter": MyBeamsplitter,
         }
 
-    pq.use(Plugin)
+    pq.registry.use_plugin(Plugin, override=True)
 
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
-    state = pq.GaussianState(d=3)
+    GaussianState = pq.registry.get_class("GaussianState")
+
+    state = GaussianState(d=3)
     state.apply(program)
 
     import piquasso  # noqa: F401
 
     assert state.__class__ is MyGaussianState
-    assert pq.Beamsplitter is MyBeamsplitter
+    assert pq.registry.get_class("Beamsplitter") is MyBeamsplitter
 
 
 def test_untouched_classes_remain_to_be_accessible(
@@ -90,13 +95,27 @@ def test_untouched_classes_remain_to_be_accessible(
             "Beamsplitter": MyBeamsplitter,
         }
 
-    pq.use(Plugin)
+    pq.registry.use_plugin(Plugin, override=True)
 
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
-    state = pq.GaussianState(d=3)
+    GaussianState = pq.registry.get_class("GaussianState")
+
+    state = GaussianState(d=3)
     state.apply(program)
 
-    assert pq.Beamsplitter is MyBeamsplitter
-    assert pq.Phaseshifter is pq.instructions.gates.Phaseshifter
+    assert pq.Beamsplitter is not MyBeamsplitter
+    assert pq.registry.get_class("Beamsplitter") is MyBeamsplitter
+    assert pq.registry.get_class("Phaseshifter") is pq.instructions.gates.Phaseshifter
+
+
+def test_overriding_items_in_registry_raises_PiquassoException():
+    class Plugin:
+        classes = {
+            "GaussianState": MyGaussianState,
+            "Beamsplitter": MyBeamsplitter,
+        }
+
+    with pytest.raises(PiquassoException):
+        pq.registry.use_plugin(Plugin)

@@ -16,15 +16,7 @@
 """The Piquasso module.
 
 One can access all the instructions and states from here as attributes.
-
-Important:
-    It is preferred to access every Piquasso object from this module directly if
-    possible, especially when you're using a plugin.
 """
-
-import sys
-from types import ModuleType
-from typing import Type, List, Any
 
 from piquasso.api.mode import Q
 from piquasso.api.config import Config
@@ -37,7 +29,7 @@ from piquasso._backends.sampling import SamplingState
 from piquasso._backends.gaussian import GaussianState
 from piquasso._backends.fock import FockState, PureFockState
 
-from piquasso.core import _registry
+from piquasso.core import registry
 
 from .instructions.preparations import (
     Vacuum,
@@ -130,10 +122,6 @@ _default_channels = {
 }
 
 
-def use(plugin: Type[Plugin]) -> None:
-    _registry.use_plugin(plugin, override=True)
-
-
 class _DefaultPlugin(Plugin):
     classes = {
         "SamplingState": SamplingState,
@@ -147,25 +135,7 @@ class _DefaultPlugin(Plugin):
     }
 
 
-_registry.use_plugin(_DefaultPlugin)
-
-
-class Piquasso(ModuleType):
-    def __init__(self, module: ModuleType) -> None:
-        self._module = module
-
-    def __getattr__(self, attribute: Any) -> Any:
-        try:
-            return _registry.items[attribute]
-        except KeyError:
-            return getattr(self._module, attribute)
-
-    def __dir__(self) -> List[str]:
-        return dir(self._module)
-
-
-Piquasso.__doc__ = sys.modules[__name__].__doc__
-sys.modules[__name__] = Piquasso(sys.modules[__name__])
+registry.use_plugin(_DefaultPlugin)
 
 
 __all__ = [

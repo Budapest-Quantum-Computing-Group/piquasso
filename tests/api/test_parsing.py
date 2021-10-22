@@ -18,7 +18,7 @@ import pytest
 import piquasso as pq
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def FakeInstruction():
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):
@@ -32,7 +32,7 @@ def FakeInstruction():
     return FakeInstruction
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def FakeState():
     class FakeState(pq.State):
         _instruction_map = {
@@ -58,7 +58,7 @@ def FakeState():
     return FakeState
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def setup(FakeState, FakeInstruction):
     class FakePlugin(pq.Plugin):
         classes = {
@@ -66,7 +66,7 @@ def setup(FakeState, FakeInstruction):
             "FakeInstruction": FakeInstruction,
         }
 
-    pq.use(FakePlugin)
+    pq.registry.use_plugin(FakePlugin)
 
 
 @pytest.fixture

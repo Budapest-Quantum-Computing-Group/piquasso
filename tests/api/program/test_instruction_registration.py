@@ -16,9 +16,9 @@
 import piquasso as pq
 
 
-def test_single_mode_single_instruction_registry():
+def test_single_mode_single_instructionregistry(DummyInstruction):
     with pq.Program() as program:
-        pq.Q(0) | pq.DummyInstruction(dummyparam=420)
+        pq.Q(0) | DummyInstruction(dummyparam=420)
 
     assert len(program.instructions) == 1
 
@@ -26,9 +26,9 @@ def test_single_mode_single_instruction_registry():
     assert program.instructions[0].params == {"dummyparam": 420}
 
 
-def test_single_mode_multiple_instruction_registry():
+def test_single_mode_multiple_instructionregistry(DummyInstruction):
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.DummyInstruction(dummyparam=420) | pq.DummyInstruction(
+        pq.Q(0, 1) | DummyInstruction(dummyparam=420) | DummyInstruction(
             dummyparam1=42, dummyparam2=320
         )
 
@@ -44,11 +44,11 @@ def test_single_mode_multiple_instruction_registry():
     }
 
 
-def test_multiple_mode_single_instruction_registry():
+def test_multiple_mode_single_instructionregistry(DummyInstruction):
     with pq.Program() as program:
-        pq.Q(2, 1, 0) | pq.DummyInstruction(dummyparam1=421)
-        pq.Q(1) | pq.DummyInstruction(dummyparam2=1)
-        pq.Q(0, 2) | pq.DummyInstruction(dummyparam3=999)
+        pq.Q(2, 1, 0) | DummyInstruction(dummyparam1=421)
+        pq.Q(1) | DummyInstruction(dummyparam2=1)
+        pq.Q(0, 2) | DummyInstruction(dummyparam3=999)
 
     assert len(program.instructions) == 3
 
@@ -62,11 +62,11 @@ def test_multiple_mode_single_instruction_registry():
     assert program.instructions[2].params == {"dummyparam3": 999}
 
 
-def test_multiple_mode_multiple_instruction_registry():
+def test_multiple_mode_multiple_instructionregistry(DummyInstruction):
     with pq.Program() as program:
-        pq.Q(4) | pq.DummyInstruction(param=2) | pq.DummyInstruction(param=0)
-        pq.Q(0, 2) | pq.DummyInstruction(param=999)
-        pq.Q(1, 0) | pq.DummyInstruction(param=1) | pq.DummyInstruction(param=9)
+        pq.Q(4) | DummyInstruction(param=2) | DummyInstruction(param=0)
+        pq.Q(0, 2) | DummyInstruction(param=999)
+        pq.Q(1, 0) | DummyInstruction(param=1) | DummyInstruction(param=9)
 
     assert len(program.instructions) == 5
 
@@ -86,21 +86,27 @@ def test_multiple_mode_multiple_instruction_registry():
     assert program.instructions[4].params == {"param": 9}
 
 
-def test_instruction_registration_with_no_modes_is_resolved_to_all_modes():
+def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
+    DummyInstruction,
+    FakeState,
+):
     with pq.Program() as program:
-        pq.Q() | pq.DummyInstruction(param="some-parameter")
+        pq.Q() | DummyInstruction(param="some-parameter")
 
-    state = pq.FakeState()
+    state = FakeState()
     state.apply(program)
 
     assert program.instructions[0].modes == tuple(range(state.d))
 
 
-def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes():
+def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes(
+    DummyInstruction,
+    FakeState,
+):
     with pq.Program() as program:
-        pq.Q(all) | pq.DummyInstruction(param="some-parameter")
+        pq.Q(all) | DummyInstruction(param="some-parameter")
 
-    state = pq.FakeState()
+    state = FakeState()
     state.apply(program)
 
     assert program.instructions[0].modes == tuple(range(state.d))

@@ -47,7 +47,7 @@ def test_instruction_initialization_from_dict():
             "DummyInstruction": DummyInstruction,
         }
 
-    pq.use(DummyPlugin)
+    pq.registry.use_plugin(DummyPlugin)
 
     instruction = Instruction.from_dict(instruction_dict)
 

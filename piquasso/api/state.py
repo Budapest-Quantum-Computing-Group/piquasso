@@ -25,7 +25,7 @@ from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from piquasso.core import _mixins, _registry
+from piquasso.core import _mixins, registry
 
 
 class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
@@ -53,7 +53,7 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
 
     @classmethod
     def from_dict(cls, dict_: dict) -> "State":
-        class_ = _registry.get_class(dict_["type"])
+        class_ = registry.get_class(dict_["type"])
         return class_(**dict_["attributes"]["constructor_kwargs"])
 
     def copy(self) -> "State":

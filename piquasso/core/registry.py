@@ -17,16 +17,22 @@
 from typing import Type, Any
 
 from piquasso.api.plugin import Plugin
+from piquasso.api.errors import PiquassoException
 
-items = {}
+_items = {}
 
 
 def use_plugin(plugin: Type[Plugin], override: bool = False) -> None:
     for name, class_ in plugin.classes.items():
+        if not override and name in _items:
+            raise PiquassoException(
+                "Name conflict in the registry. Use 'override=True' in 'use_plugin' in "
+                "order to override existing items."
+            )
+
         class_.__name__ = name
-        if override or name not in items:
-            items[name] = class_
+        _items[name] = class_
 
 
 def get_class(name: str) -> Any:
-    return items[name]
+    return _items[name]

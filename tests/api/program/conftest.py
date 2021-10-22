@@ -20,12 +20,17 @@ import pytest
 import piquasso as pq
 
 
-@pytest.fixture(autouse=True)
-def setup_plugin():
+@pytest.fixture
+def DummyInstruction():
     class DummyInstruction(pq.Instruction):
         def __init__(self, **params):
             super().__init__(params=params)
 
+    return DummyInstruction
+
+
+@pytest.fixture
+def FakeState():
     class FakeState(pq.State):
         _instruction_map = {
             "DummyInstruction": "dummy_instruction",
@@ -38,10 +43,4 @@ def setup_plugin():
         def get_particle_detection_probability(self, occupation_number: tuple) -> float:
             raise NotImplementedError
 
-    class FakePlugin(pq.Plugin):
-        classes = {
-            "FakeState": FakeState,
-            "DummyInstruction": DummyInstruction,
-        }
-
-    pq.use(FakePlugin)
+    return FakeState

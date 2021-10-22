@@ -19,7 +19,7 @@ from typing import Tuple, Any
 import numpy as np
 
 from .mode import Q
-from piquasso.core import _mixins, _registry
+from piquasso.core import _mixins, registry
 from piquasso.api.errors import InvalidProgram
 
 if typing.TYPE_CHECKING:
@@ -92,7 +92,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 An :class:`Instruction` initialized using the specified `dict`.
         """
 
-        class_ = _registry.get_class(dict_["type"])
+        class_ = registry.get_class(dict_["type"])
 
         instruction = class_(**dict_["attributes"]["constructor_kwargs"])
 
