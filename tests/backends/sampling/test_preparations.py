@@ -22,7 +22,7 @@ import piquasso as pq
 
 def test_initial_state():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
     state = pq.SamplingState(d=5)
 
@@ -34,7 +34,7 @@ def test_initial_state():
 
 def test_initial_state_multiplied_with_coefficient():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0) * 2.0
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 2.0
 
     state = pq.SamplingState(d=5)
 
@@ -46,7 +46,7 @@ def test_initial_state_multiplied_with_coefficient():
 
 def test_initial_state_raises_InvalidState_for_noninteger_input_state():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0) * 0.5
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
 
     state = pq.SamplingState(d=5)
 
@@ -56,8 +56,8 @@ def test_initial_state_raises_InvalidState_for_noninteger_input_state():
 
 def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
-        pq.Q() | pq.StateVector(1, 2, 0, 3, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.StateVector([1, 2, 0, 3, 0])
 
     state = pq.SamplingState(d=5)
 
@@ -82,7 +82,7 @@ def test_multiple_interferometer_on_neighbouring_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(0, 1, 2) | pq.Interferometer(U)
 
@@ -114,7 +114,7 @@ def test_multiple_interferometer_on_gaped_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(0, 1, 4) | pq.Interferometer(U)
 
@@ -142,7 +142,7 @@ def test_multiple_interferometer_on_reversed_gaped_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
@@ -173,7 +173,7 @@ def test_probability_distribution():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     state = pq.SamplingState(d=3)
@@ -206,7 +206,7 @@ def test_get_particle_detection_probability():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     state = pq.SamplingState(d=3)
@@ -227,7 +227,7 @@ def test_get_particle_detection_probability_on_different_subspace():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     state = pq.SamplingState(d=3)

@@ -22,7 +22,7 @@ def test_program():
     U = np.array([[0.5, 0, 0], [0, 0.5j, 0], [0, 0, -1]], dtype=complex)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter(0.5)
         pq.Q(1, 2, 3) | pq.Interferometer(U)
@@ -40,7 +40,7 @@ def test_interferometer():
     U = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=complex)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
@@ -65,7 +65,7 @@ def test_phaseshifter():
     phi = np.pi / 2
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(2) | pq.Phaseshifter(phi)
 
@@ -92,7 +92,7 @@ def test_beamsplitter():
     phi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
 
@@ -129,7 +129,7 @@ def test_lossy_program():
     state.is_lossy = True
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
         pq.Q() | pq.Sampling()

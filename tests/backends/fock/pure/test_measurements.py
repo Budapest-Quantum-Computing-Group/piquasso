@@ -20,10 +20,10 @@ import piquasso as pq
 
 def test_measure_particle_number_on_one_mode():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(0, 1, 1) * np.sqrt(2 / 6)
+        pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(2 / 6)
 
-        pq.Q(2) | pq.StateVector(1) * np.sqrt(1 / 6)
-        pq.Q(2) | pq.StateVector(2) * np.sqrt(3 / 6)
+        pq.Q(2) | pq.StateVector([1]) * np.sqrt(1 / 6)
+        pq.Q(2) | pq.StateVector([2]) * np.sqrt(3 / 6)
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
@@ -40,23 +40,23 @@ def test_measure_particle_number_on_one_mode():
         expected_state = pq.PureFockState(d=3)
         expected_state.apply_instructions(
             instructions=[
-                0.5773502691896258 * pq.StateVector(0, 0, 1),
-                0.816496580927726 * pq.StateVector(0, 1, 1),
+                0.5773502691896258 * pq.StateVector([0, 0, 1]),
+                0.816496580927726 * pq.StateVector([0, 1, 1]),
             ]
         )
 
     elif sample == (2,):
         expected_state = pq.PureFockState(d=3)
-        expected_state.apply_instructions(instructions=[pq.StateVector(0, 0, 2)])
+        expected_state.apply_instructions(instructions=[pq.StateVector([0, 0, 2])])
 
     assert state == expected_state
 
 
 def test_measure_particle_number_on_two_modes():
     with pq.Program() as program:
-        pq.Q(1, 2) | pq.StateVector(1, 1) * np.sqrt(2 / 6)
-        pq.Q(1, 2) | pq.StateVector(0, 1) * np.sqrt(1 / 6)
-        pq.Q(1, 2) | pq.StateVector(0, 2) * np.sqrt(3 / 6)
+        pq.Q(1, 2) | pq.StateVector([1, 1]) * np.sqrt(2 / 6)
+        pq.Q(1, 2) | pq.StateVector([0, 1]) * np.sqrt(1 / 6)
+        pq.Q(1, 2) | pq.StateVector([0, 2]) * np.sqrt(3 / 6)
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
@@ -70,15 +70,15 @@ def test_measure_particle_number_on_two_modes():
 
     if sample == (0, 1):
         expected_state = pq.PureFockState(d=3)
-        expected_state.apply_instructions(instructions=[pq.StateVector(0, 0, 1)])
+        expected_state.apply_instructions(instructions=[pq.StateVector([0, 0, 1])])
 
     elif sample == (1, 1):
         expected_state = pq.PureFockState(d=3)
-        expected_state.apply_instructions(instructions=[pq.StateVector(0, 1, 1)])
+        expected_state.apply_instructions(instructions=[pq.StateVector([0, 1, 1])])
 
     elif sample == (0, 2):
         expected_state = pq.PureFockState(d=3)
-        expected_state.apply_instructions(instructions=[pq.StateVector(0, 0, 2)])
+        expected_state.apply_instructions(instructions=[pq.StateVector([0, 0, 2])])
 
     assert state == expected_state
 
@@ -89,9 +89,9 @@ def test_measure_particle_number_on_all_modes():
     state = pq.PureFockState(d=3, config=config)
 
     with pq.Program() as program:
-        pq.Q() | 0.5 * pq.StateVector(0, 0, 0)
-        pq.Q() | 0.5 * pq.StateVector(0, 0, 1)
-        pq.Q() | np.sqrt(1 / 2) * pq.StateVector(1, 0, 0)
+        pq.Q() | 0.5 * pq.StateVector([0, 0, 0])
+        pq.Q() | 0.5 * pq.StateVector([0, 0, 1])
+        pq.Q() | np.sqrt(1 / 2) * pq.StateVector([1, 0, 0])
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -106,7 +106,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState(d=3, config=config)
         expected_state.apply_instructions(
             instructions=[
-                pq.StateVector(0, 0, 0),
+                pq.StateVector([0, 0, 0]),
             ],
         )
 
@@ -114,7 +114,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState(d=3, config=config)
         expected_state.apply_instructions(
             instructions=[
-                pq.StateVector(0, 0, 1),
+                pq.StateVector([0, 0, 1]),
             ]
         )
 
@@ -122,7 +122,7 @@ def test_measure_particle_number_on_all_modes():
         expected_state = pq.PureFockState(d=3, config=config)
         expected_state.apply_instructions(
             instructions=[
-                pq.StateVector(1, 0, 0),
+                pq.StateVector([1, 0, 0]),
             ],
         )
 
@@ -138,9 +138,9 @@ def test_measure_particle_number_with_multiple_shots():
     state = pq.PureFockState(d=3, config=pq.Config(cutoff=2))
 
     with pq.Program() as program:
-        pq.Q() | 0.5 * pq.StateVector(0, 0, 0)
-        pq.Q() | 0.5 * pq.StateVector(0, 0, 1)
-        pq.Q() | np.sqrt(1 / 2) * pq.StateVector(1, 0, 0)
+        pq.Q() | 0.5 * pq.StateVector([0, 0, 0])
+        pq.Q() | 0.5 * pq.StateVector([0, 0, 1])
+        pq.Q() | np.sqrt(1 / 2) * pq.StateVector([1, 0, 0])
 
         pq.Q() | pq.ParticleNumberMeasurement()
 

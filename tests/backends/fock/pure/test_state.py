@@ -20,10 +20,10 @@ import piquasso as pq
 
 def test_PureFockState_reduced():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(0, 1) / 2
+        pq.Q() | pq.StateVector([0, 1]) / 2
 
-        pq.Q() | pq.StateVector(0, 2) / 2
-        pq.Q() | pq.StateVector(2, 0) / np.sqrt(2)
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
 
     state = pq.PureFockState(d=2)
     state.apply(program)

@@ -734,7 +734,7 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(*initial_occupation_numbers)
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
@@ -756,7 +756,7 @@ def test_sampling_backend_equivalence_complex_scenario():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(*initial_occupation_numbers)
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(np.pi / 3)
 
@@ -786,7 +786,7 @@ def test_sampling_backend_equivalence_with_random_interferometer(
     interferometer_matrix = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(*initial_occupation_numbers)
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 

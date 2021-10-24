@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Iterable, Tuple
 
 import numpy as np
 
@@ -87,8 +87,8 @@ class StateVector(Preparation, _mixins.WeightMixin):
 
         with pq.Program() as program:
             pq.Q() | (
-                0.3 * pq.StateVector(2, 1, 0, 3)
-                + 0.2 * pq.StateVector(1, 1, 2, 3)
+                0.3 * pq.StateVector([2, 1, 0, 3])
+                + 0.2 * pq.StateVector([1, 1, 2, 3])
                 ...
             )
             ...
@@ -97,7 +97,9 @@ class StateVector(Preparation, _mixins.WeightMixin):
     :class:`~piquasso._backends.fock.pure.state.PureFockState`.
     """
 
-    def __init__(self, *occupation_numbers: int, coefficient: complex = 1.0) -> None:
+    def __init__(
+        self, occupation_numbers: Iterable[int], coefficient: complex = 1.0
+    ) -> None:
         if not all_natural(occupation_numbers):
             raise InvalidState(
                 f"Invalid occupation numbers: occupation_numbers={occupation_numbers}"
