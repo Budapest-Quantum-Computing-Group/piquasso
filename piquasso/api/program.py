@@ -90,7 +90,8 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
                     {
                         "type": <INSTRUCTION_CLASS_NAME>,
                         "attributes": {
-                            ...
+                            "constructor_kwargs": <CONSTRUCTOR_KWARGS_IN_DICT_FORMAT>,
+                            "modes": <LIST_OF_MODES>
                         }
                     }
                 ]

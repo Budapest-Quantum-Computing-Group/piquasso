@@ -57,7 +57,7 @@ def test_loads_blackbird_parses_operations_with_default_arguments():
     assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
 
 
-def test_loads_blackbird_parses_operations_with_classes_from_plugin():
+def test_loads_blackbird_parses_operations_with_classes_registered_separately():
     blackbird_code = """name StateTeleportation
         version 1.0
 
@@ -65,15 +65,8 @@ def test_loads_blackbird_parses_operations_with_classes_from_plugin():
         Rgate(0.7853981633974483) | 1
         """
 
-    class MyBeamsplitter(pq.Beamsplitter):
+    class Beamsplitter(pq.Instruction):
         pass
-
-    class Plugin:
-        classes = {
-            "Beamsplitter": MyBeamsplitter,
-        }
-
-    pq.use(Plugin)
 
     program = pq.Program()
 
@@ -81,7 +74,11 @@ def test_loads_blackbird_parses_operations_with_classes_from_plugin():
 
     assert len(program.instructions) == 2
 
-    assert program.instructions[0].__class__ is MyBeamsplitter
+    assert program.instructions[0].__class__ is Beamsplitter
+
+    # Teardown
+    pq.Instruction.set_subclass(pq.Beamsplitter)
+    assert pq.Instruction.get_subclass("Beamsplitter") is pq.Beamsplitter
 
 
 def test_loads_blackbird_preserves_exising_operations():

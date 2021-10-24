@@ -25,10 +25,8 @@ from piquasso.api.errors import InvalidParameter
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from piquasso.core import _mixins, _registry
 
-
-class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
+class State(abc.ABC):
     """The base class from which all `*State` classes are derived.
 
     Properties:
@@ -51,16 +49,8 @@ class State(_mixins.DictMixin, _mixins.CodeMixin, abc.ABC):
     def _instruction_map(self) -> dict:
         pass
 
-    @classmethod
-    def from_dict(cls, dict_: dict) -> "State":
-        class_ = _registry.get_class(dict_["type"])
-        return class_(**dict_["attributes"]["constructor_kwargs"])
-
     def copy(self) -> "State":
         return copy.deepcopy(self)
-
-    def _as_code(self) -> str:
-        return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
 
     def apply_instructions(
         self,

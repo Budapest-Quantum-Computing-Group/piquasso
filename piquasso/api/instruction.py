@@ -14,13 +14,13 @@
 # limitations under the License.
 
 import typing
-from typing import Tuple, Any
+from typing import Tuple, Any, Type, Dict
 
 import numpy as np
 
 from .mode import Q
-from piquasso.core import _mixins, _registry
-from piquasso.api.errors import InvalidProgram
+from piquasso.core import _mixins
+from piquasso.api.errors import InvalidProgram, PiquassoException
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -31,6 +31,8 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     Args:
         *params: Variable length argument list.
     """
+
+    _subclasses: Dict[str, Type["Instruction"]] = {}
 
     def __init__(self, *, params: dict = None, extra_params: dict = None) -> None:
         self._params: dict = params or dict()
@@ -92,13 +94,27 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 An :class:`Instruction` initialized using the specified `dict`.
         """
 
-        class_ = _registry.get_class(dict_["type"])
+        class_ = cls.get_subclass(dict_["type"])
 
         instruction = class_(**dict_["attributes"]["constructor_kwargs"])
 
         instruction.modes = dict_["attributes"]["modes"]
 
         return instruction
+
+    @classmethod
+    def set_subclass(cls, instruction: Type["Instruction"]) -> None:
+        if not issubclass(instruction, Instruction):
+            raise PiquassoException(
+                f"The instruction '{instruction}' needs to be a subclass of "
+                "'pq.Instruction'."
+            )
+
+        cls._subclasses[instruction.__name__] = instruction
+
+    @classmethod
+    def get_subclass(cls, name: str) -> Type["Instruction"]:
+        return cls._subclasses[name]
 
     def __repr__(self) -> str:
         if hasattr(self, "modes"):
@@ -121,6 +137,11 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         if not isinstance(other, Instruction):
             return False
         return self.modes == other.modes and self.params == other.params
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+
+        cls.set_subclass(cls)
 
 
 class Preparation(Instruction):

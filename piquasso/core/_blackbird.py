@@ -19,7 +19,6 @@ from typing import List, Mapping, Optional, Type
 
 import blackbird as bb
 
-from . import _registry
 from .. import Instruction
 from ..api.errors import PiquassoException
 
@@ -35,21 +34,21 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
     """
 
     instruction_map = {
-        "Dgate": _registry.items["Displacement"],
-        "Xgate": _registry.items["PositionDisplacement"],
-        "Zgate": _registry.items["MomentumDisplacement"],
-        "Sgate": _registry.items["Squeezing"],
-        "Pgate": _registry.items["QuadraticPhase"],
+        "Dgate": Instruction.get_subclass("Displacement"),
+        "Xgate": Instruction.get_subclass("PositionDisplacement"),
+        "Zgate": Instruction.get_subclass("MomentumDisplacement"),
+        "Sgate": Instruction.get_subclass("Squeezing"),
+        "Pgate": Instruction.get_subclass("QuadraticPhase"),
         "Vgate": None,
-        "Kgate": _registry.items["Kerr"],
-        "Rgate": _registry.items["Phaseshifter"],
-        "BSgate": _registry.items["Beamsplitter"],
-        "MZgate": _registry.items["MachZehnder"],
-        "S2gate": _registry.items["Squeezing2"],
-        "CXgate": _registry.items["ControlledX"],
-        "CZgate": _registry.items["ControlledZ"],
-        "CKgate": _registry.items["CrossKerr"],
-        "Fouriergate": _registry.items["Fourier"],
+        "Kgate": Instruction.get_subclass("Kerr"),
+        "Rgate": Instruction.get_subclass("Phaseshifter"),
+        "BSgate": Instruction.get_subclass("Beamsplitter"),
+        "MZgate": Instruction.get_subclass("MachZehnder"),
+        "S2gate": Instruction.get_subclass("Squeezing2"),
+        "CXgate": Instruction.get_subclass("ControlledX"),
+        "CZgate": Instruction.get_subclass("ControlledZ"),
+        "CKgate": Instruction.get_subclass("CrossKerr"),
+        "Fouriergate": Instruction.get_subclass("Fourier"),
     }
 
     return [

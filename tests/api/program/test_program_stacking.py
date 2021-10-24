@@ -16,10 +16,10 @@
 import piquasso as pq
 
 
-def test_single_instruction_program_stacking():
+def test_single_instruction_program_stacking(DummyInstruction):
     sub_program = pq.Program()
     with sub_program:
-        pq.Q(0, 1) | pq.DummyInstruction(param=420)
+        pq.Q(0, 1) | DummyInstruction(param=420)
 
     with pq.Program() as program:
         pq.Q(0, 1) | sub_program
@@ -28,11 +28,11 @@ def test_single_instruction_program_stacking():
     assert program.instructions[0].params == {"param": 420}
 
 
-def test_multiple_instruction_program_stacking():
+def test_multiple_instruction_program_stacking(DummyInstruction):
     sub_program = pq.Program()
     with sub_program:
-        pq.Q(0) | pq.DummyInstruction(param=2) | pq.DummyInstruction(param=4)
-        pq.Q(2, 3) | pq.DummyInstruction(param=10)
+        pq.Q(0) | DummyInstruction(param=2) | DummyInstruction(param=4)
+        pq.Q(2, 3) | DummyInstruction(param=10)
 
     with pq.Program() as program:
         pq.Q(0, 1, 2, 3) | sub_program
@@ -47,15 +47,15 @@ def test_multiple_instruction_program_stacking():
     assert program.instructions[2].params == {"param": 10}
 
 
-def test_multiple_instruction_mixed_program_stacking():
+def test_multiple_instruction_mixed_program_stacking(DummyInstruction):
     sub_program = pq.Program()
     with sub_program:
-        pq.Q(0, 1) | pq.DummyInstruction(param=10)
+        pq.Q(0, 1) | DummyInstruction(param=10)
 
     with pq.Program() as program:
-        pq.Q(2) | pq.DummyInstruction(param=2)
+        pq.Q(2) | DummyInstruction(param=2)
         pq.Q(0, 1) | sub_program
-        pq.Q(3) | pq.DummyInstruction(param=0)
+        pq.Q(3) | DummyInstruction(param=0)
 
     assert program.instructions[0].modes == (2,)
     assert program.instructions[0].params == {"param": 2}
@@ -67,11 +67,11 @@ def test_multiple_instruction_mixed_program_stacking():
     assert program.instructions[2].params == {"param": 0}
 
 
-def test_mixed_index_program_stacking():
+def test_mixed_index_program_stacking(DummyInstruction):
     sub_program = pq.Program()
     with sub_program:
-        pq.Q(0, 1) | pq.DummyInstruction(param=10)
-        pq.Q(2, 3) | pq.DummyInstruction(param=100)
+        pq.Q(0, 1) | DummyInstruction(param=10)
+        pq.Q(2, 3) | DummyInstruction(param=100)
 
     with pq.Program() as program:
         pq.Q(0, 2, 1, 3) | sub_program

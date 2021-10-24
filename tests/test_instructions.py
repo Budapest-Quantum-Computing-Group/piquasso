@@ -17,46 +17,7 @@ import pytest
 
 import piquasso as pq
 
-from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidParameter
-
-
-def test_instruction_initialization_from_dict():
-    instruction_dict = {
-        "type": "DummyInstruction",
-        "attributes": {
-            "constructor_kwargs": {
-                "first_param": "first_param_value",
-                "second_param": "second_param_value",
-            },
-            "modes": ["some", "modes"],
-        },
-    }
-
-    class DummyInstruction(Instruction):
-        def __init__(self, first_param, second_param):
-            super().__init__(
-                params=dict(
-                    first_param=first_param,
-                    second_param=second_param,
-                ),
-            )
-
-    class DummyPlugin:
-        classes = {
-            "DummyInstruction": DummyInstruction,
-        }
-
-    pq.use(DummyPlugin)
-
-    instruction = Instruction.from_dict(instruction_dict)
-
-    assert isinstance(instruction, DummyInstruction)
-    assert instruction.params == {
-        "first_param": "first_param_value",
-        "second_param": "second_param_value",
-    }
-    assert instruction.modes == ["some", "modes"]
 
 
 def test_displacement_raises_InvalidParameter_for_redundant_parameters():
