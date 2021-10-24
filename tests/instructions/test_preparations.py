@@ -19,9 +19,9 @@ import piquasso as pq
 
 
 def test_StateVector_is_valid_specifying_floats_close_to_integers():
-    pq.StateVector(1, 1.0, 2.0, 0.0)
+    pq.StateVector([1, 1.0, 2.0, 0.0])
 
 
 def test_StateVector_raises_InvalidState_when_nonintegers_specified():
     with pytest.raises(pq.api.errors.InvalidState):
-        pq.StateVector(1, 1.3, 2.4)
+        pq.StateVector([1, 1.3, 2.4])

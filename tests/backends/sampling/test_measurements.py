@@ -39,7 +39,7 @@ def test_sampling_raises_InvalidParameter_for_negative_shot_value(
     invalid_shots = -1
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
@@ -53,7 +53,7 @@ def test_sampling_samples_number(interferometer_matrix):
     shots = 100
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
@@ -69,7 +69,7 @@ def test_sampling_mode_permutation(interferometer_matrix):
     shots = 1
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
@@ -88,7 +88,7 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
     shots = 2
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.Sampling()
 
@@ -109,7 +109,7 @@ def test_mach_zehnder():
     ext = np.pi / 4
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
         pq.Q() | pq.Sampling()
 
@@ -119,7 +119,7 @@ def test_mach_zehnder():
 
 def test_fourier():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.Sampling()
 
@@ -129,7 +129,7 @@ def test_fourier():
 
 def test_uniform_loss():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(all) | pq.Loss(transmissivity=0.9)
 
@@ -143,7 +143,7 @@ def test_uniform_loss():
 
 def test_general_loss():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(1, 1, 1, 0, 0)
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
         pq.Q(0) | pq.Loss(transmissivity=0.4)
         pq.Q(1) | pq.Loss(transmissivity=0.5)
