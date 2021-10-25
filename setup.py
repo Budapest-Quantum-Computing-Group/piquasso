@@ -22,7 +22,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="piquasso",
-    version="0.2.1",
+    version="0.3.0",
     packages=find_packages(exclude=["tests.*", "tests", "scripts", "scripts.*"]),
     maintainer="Budapest Quantum Computing Group",
     maintainer_email="kolarovszki@inf.elte.hu",
