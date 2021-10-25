@@ -25,7 +25,7 @@ pytestmark = pytest.mark.benchmark(
 )
 
 
-def piquasso_benchmark(benchmark, d):
+def piquasso_benchmark(benchmark, pq_gaussian_simulator):
     @benchmark
     def func():
         with pq.Program() as program:
@@ -46,9 +46,7 @@ def piquasso_benchmark(benchmark, d):
 
             pq.Q(0, 1, 2) | pq.ThresholdMeasurement()
 
-        state = pq.GaussianState(d=d)
-
-        state.apply(program, shots=20)
+        pq_gaussian_simulator.execute(program, shots=20)
 
 
 def strawberryfields_benchmark(benchmark, d):

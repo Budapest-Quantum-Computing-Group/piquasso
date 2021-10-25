@@ -13,8 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TypeVar, List, Tuple, Generic
+import typing
 
+from typing import TypeVar, List, Tuple, Generic, Optional
+
+
+if typing.TYPE_CHECKING:
+    from piquasso.api.state import State
 
 TNum = TypeVar("TNum", int, float)
 
@@ -27,8 +32,11 @@ class Result(Generic[TNum]):
             The generated samples.
     """
 
-    def __init__(self, samples: List[Tuple[TNum, ...]]) -> None:
+    def __init__(
+        self, samples: List[Tuple[TNum, ...]], state: Optional["State"] = None
+    ) -> None:
         self.samples: List[Tuple[TNum, ...]] = samples
+        self.state = state
 
     def __repr__(self) -> str:
         return f"<Result samples={self.samples}>"

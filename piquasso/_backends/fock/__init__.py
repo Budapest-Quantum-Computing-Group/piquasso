@@ -14,4 +14,7 @@
 # limitations under the License.
 
 from .general.state import FockState  # noqa: F401
+from .general.simulator import FockSimulator  # noqa: F401
+
 from .pure.state import PureFockState  # noqa: F401
+from .pure.simulator import PureFockSimulator  # noqa: F401

@@ -55,7 +55,7 @@ def example_gaussian_pq_program():
 
 
 @pytest.fixture
-def example_purefock_pq_program(d, cutoff):
+def example_purefock_pq_program():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -79,19 +79,25 @@ def pq_config(cutoff, measurement_cutoff):
 
 
 @pytest.fixture
-def example_pq_gaussian_state(d, pq_config, example_gaussian_pq_program):
-    state = pq.GaussianState(d=d, config=pq_config)
+def pq_gaussian_simulator(d, pq_config):
+    return pq.GaussianSimulator(d=d, config=pq_config)
 
-    state.apply(example_gaussian_pq_program)
+
+@pytest.fixture
+def example_pq_gaussian_state(pq_gaussian_simulator, example_gaussian_pq_program):
+    state = pq_gaussian_simulator.execute(example_gaussian_pq_program).state
 
     return state
 
 
 @pytest.fixture
-def example_pq_purefock_state(d, pq_config, example_purefock_pq_program):
-    state = pq.PureFockState(config=pq_config, d=d)
+def pq_purefock_simulator(d, pq_config):
+    return pq.PureFockSimulator(d=d, config=pq_config)
 
-    state.apply(example_purefock_pq_program)
+
+@pytest.fixture
+def example_pq_purefock_state(pq_purefock_simulator, example_purefock_pq_program):
+    state = pq_purefock_simulator.execute(example_purefock_pq_program).state
 
     return state
 

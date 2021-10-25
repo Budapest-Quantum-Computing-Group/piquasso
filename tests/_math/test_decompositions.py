@@ -151,8 +151,8 @@ def test_williamson_with_squeezed_covariance_matrix():
         pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
         pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     covariance_matrix = state.xpxp_covariance_matrix
 
@@ -197,8 +197,8 @@ def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribut
         pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
         pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     covariance_matrix = state.xxpp_covariance_matrix
 
@@ -217,8 +217,8 @@ def test_decompose_to_pure_and_mixed_with_reduced_gaussian():
         pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
         pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
 
     reduced_state = state.reduced(modes=(0, 2))
 

@@ -59,17 +59,6 @@ from BoSS.simulation_strategies.simulation_strategy_interface import (
 
 
 class SamplingState(State):
-    _instruction_map = {
-        "StateVector": "_state_vector",
-        "Beamsplitter": "_passive_linear",
-        "Phaseshifter": "_passive_linear",
-        "MachZehnder": "_passive_linear",
-        "Fourier": "_passive_linear",
-        "Sampling": "_sampling",
-        "Interferometer": "_passive_linear",
-        "Loss": "_loss",
-    }
-
     def __init__(self, d: int, config: Config = None) -> None:
         super().__init__(config=config)
 

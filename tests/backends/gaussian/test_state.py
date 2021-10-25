@@ -144,8 +144,8 @@ def test_rotated():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
 
-    state = pq.GaussianState(d=3)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
     state.validate()
 
     phi = np.pi / 2
@@ -181,8 +181,8 @@ def test_reduced():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
 
-    state = pq.GaussianState(d=3)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
     state.validate()
 
     modes = (0, 2)
@@ -212,7 +212,9 @@ def test_reduced():
 def test_vacuum_covariance_is_proportional_to_identity():
     d = 2
 
-    state = pq.GaussianState(d=d)
+    simulator = pq.GaussianSimulator(d=d)
+
+    state = simulator.create_initial_state()
 
     expected_xpxp_mean = np.zeros(2 * d)
     expected_xpxp_covariance_matrix = np.identity(2 * d) * state._config.hbar
@@ -379,8 +381,8 @@ def test_mean_photon_number_vaccum():
     with pq.Program() as program:
         pass
 
-    state = pq.GaussianState(d=3)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
 
     assert np.isclose(0.0, state.mean_photon_number((0, 1, 2)))
     assert np.isclose(0.0, state.mean_photon_number((0, 1)))
@@ -397,8 +399,8 @@ def test_mean_photon_number():
         pq.Q(2) | pq.Squeezing(r=r, phi=phi)
         pq.Q(2) | pq.Displacement(alpha=alpha)
 
-    state = pq.GaussianState(d=3)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
 
     mean_photon_number_first_mode = np.abs(alpha) ** 2
     mean_photon_number_second_mode = np.sinh(r) ** 2
@@ -417,8 +419,8 @@ def test_GaussianState_get_particle_detection_probability():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
-    state = pq.GaussianState(d=2)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 

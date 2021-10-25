@@ -27,9 +27,9 @@ def test_create_number_state():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     assert np.isclose(state.norm, 1)
     assert np.allclose(
@@ -45,9 +45,9 @@ def test_create_and_annihilate_number_state():
         pq.Q(1) | pq.Create()
         pq.Q(1) | pq.Annihilate()
 
-    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     assert np.isclose(state.norm, 1)
     assert np.allclose(
@@ -67,9 +67,9 @@ def test_create_annihilate_and_create():
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
 
-    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     assert np.isclose(state.norm, 1)
     assert np.allclose(
@@ -85,10 +85,10 @@ def test_overflow_with_zero_norm_raises_InvalidState():
 
         pq.Q(1, 2) | pq.Create()
 
-    state = pq.PureFockState(d=3, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=3))
 
     with pytest.raises(pq.api.errors.InvalidState) as error:
-        state.apply(program)
+        simulator.execute(program).state
 
     assert error.value.args[0] == "The norm of the state is 0."
 
@@ -100,9 +100,9 @@ def test_creation_on_multiple_modes():
 
         pq.Q(1, 2) | pq.Create()
 
-    state = pq.PureFockState(d=3, config=pq.Config(cutoff=4))
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     assert np.isclose(state.norm, 1)
 
@@ -120,9 +120,9 @@ def test_state_is_renormalized_after_overflow():
 
         pq.Q(2) | pq.Create()
 
-    state = pq.PureFockState(d=3, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     assert np.isclose(state.norm, 1)
 

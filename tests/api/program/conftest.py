@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import Mock
-
 import pytest
 
 import piquasso as pq
@@ -27,20 +25,3 @@ def DummyInstruction():
             super().__init__(params=params)
 
     return DummyInstruction
-
-
-@pytest.fixture
-def FakeState():
-    class FakeState(pq.State):
-        _instruction_map = {
-            "DummyInstruction": "dummy_instruction",
-        }
-
-        dummy_instruction = Mock(name="dummy_instruction")
-
-        d = 42
-
-        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
-            raise NotImplementedError
-
-    return FakeState

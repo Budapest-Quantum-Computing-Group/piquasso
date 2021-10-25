@@ -28,7 +28,7 @@ def gbs_histogram_script():
     shots = 2000
 
     # NOTE: In SF the measurement cutoff is 5, and couldn't be changed.
-    pq_state = pq.GaussianState(d=d, config=pq.Config(measurement_cutoff=5))
+    pq_simulator = pq.GaussianSimulator(d=d, config=pq.Config(measurement_cutoff=5))
 
     with pq.Program() as pq_program:
         pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
@@ -71,7 +71,7 @@ def gbs_histogram_script():
 
         sf.ops.MeasureFock() | (q[0], q[1], q[2])
 
-    pq_results = np.array(pq_state.apply(pq_program, shots=shots).samples)
+    pq_results = np.array(pq_simulator.execute(pq_program, shots=shots).samples)
     sf_results = sf_engine.run(sf_program, shots=shots).samples
 
     n_bins = 20

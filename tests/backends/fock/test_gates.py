@@ -20,15 +20,15 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.parametrize("StateClass", (pq.PureFockState, pq.FockState))
-def test_squeezing_probabilities(StateClass):
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+def test_squeezing_probabilities(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Squeezing(r=0.5, phi=np.pi / 3)
 
-    state = StateClass(d=2, config=pq.Config(cutoff=3))
-    state.apply(program)
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=3))
+    state = simulator.execute(program).state
 
     state.validate()
 
@@ -39,16 +39,16 @@ def test_squeezing_probabilities(StateClass):
     assert np.allclose(state.fock_probabilities, [0.90352508, 0, 0, 0, 0, 0.09647492])
 
 
-@pytest.mark.parametrize("StateClass", (pq.PureFockState, pq.FockState))
-def test_displacement_probabilities(StateClass):
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+def test_displacement_probabilities(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(0) | pq.Displacement(r=0.5, phi=np.pi / 3)
 
-    state = StateClass(d=2, config=pq.Config(cutoff=3))
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     state.validate()
 
@@ -70,9 +70,9 @@ def test_PureFockState_squeezing():
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     # TODO: Better way of presenting the resulting state.
     nonzero_elements = list(state.nonzero_elements)
@@ -101,9 +101,9 @@ def test_PureFockState_displacement():
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    state = pq.PureFockState(d=2, config=pq.Config(cutoff=3))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
-    state.apply(program)
+    state = simulator.execute(program).state
 
     # TODO: Better way of presenting the resulting state.
     nonzero_elements = list(state.nonzero_elements)
@@ -141,9 +141,8 @@ def test_FockState_squeezing():
 
         pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    state = pq.FockState(d=2, config=pq.Config(cutoff=3))
-
-    state.apply(program)
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=3))
+    state = simulator.execute(program).state
 
     # TODO: Better way of presenting the resulting state.
     nonzero_elements = list(state.nonzero_elements)
@@ -183,8 +182,8 @@ def test_FockState_displacement():
 
         pq.Q(0) | pq.Displacement(alpha=alpha)
 
-    state = pq.FockState(d=2, config=pq.Config(cutoff=2))
-    state.apply(program)
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=2))
+    state = simulator.execute(program).state
 
     # TODO: Better way of presenting the resulting state.
     nonzero_elements = list(state.nonzero_elements)

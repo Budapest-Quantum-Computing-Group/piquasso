@@ -31,8 +31,8 @@ def state():
         pq.Q(1) | pq.Squeezing(np.log(1), phi=np.pi / 4)
         pq.Q(2) | pq.Squeezing(np.log(2), phi=np.pi / 2)
 
-    state = pq.GaussianState(d=3)
-    state.apply(initialization)
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(initialization).state
     state.validate()
 
     return state

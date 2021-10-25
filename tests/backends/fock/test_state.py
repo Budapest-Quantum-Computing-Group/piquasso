@@ -20,8 +20,8 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.parametrize("StateClass", (pq.FockState, pq.PureFockState))
-def test_FockState_get_particle_detection_probability(StateClass):
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_get_particle_detection_probability(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
@@ -29,8 +29,8 @@ def test_FockState_get_particle_detection_probability(StateClass):
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
-    state = StateClass(d=2, config=pq.Config(cutoff=4))
-    state.apply(program)
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=4))
+    state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 

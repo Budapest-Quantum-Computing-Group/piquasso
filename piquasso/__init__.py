@@ -28,10 +28,17 @@ from piquasso.api.instruction import (
 )
 from piquasso.api.program import Program
 from piquasso.api.state import State
+from piquasso.api.computer import Computer, Simulator
 
-from piquasso._backends.sampling import SamplingState
-from piquasso._backends.gaussian import GaussianState
-from piquasso._backends.fock import FockState, PureFockState
+from piquasso._backends.sampling import SamplingState, SamplingSimulator
+
+from piquasso._backends.gaussian import GaussianState, GaussianSimulator
+from piquasso._backends.fock import (
+    FockState,
+    PureFockState,
+    FockSimulator,
+    PureFockSimulator,
+)
 
 from .instructions.preparations import (
     Vacuum,
@@ -87,6 +94,13 @@ __all__ = [
     "Gate",
     "Measurement",
     "State",
+    "Computer",
+    "Simulator",
+    # Simulators
+    "GaussianSimulator",
+    "SamplingSimulator",
+    "FockSimulator",
+    "PureFockSimulator",
     # States
     "GaussianState",
     "SamplingState",

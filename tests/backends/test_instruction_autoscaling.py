@@ -22,10 +22,10 @@ import piquasso as pq
 NUMBER_OF_MODES = 3
 
 
-STATES = (
-    pq.GaussianState,
-    pq.PureFockState,
-    pq.FockState,
+SIMULATORS = (
+    pq.GaussianSimulator,
+    pq.FockSimulator,
+    pq.PureFockSimulator,
 )
 
 
@@ -77,68 +77,70 @@ INVALID_VECTOR_INSTRUCTIONS = (
 
 
 @pytest.mark.parametrize(
-    "StateClass, scalar_instruction", itertools.product(STATES, SCALAR_INSTRUCTIONS)
+    "SimulatorClass, scalar_instruction",
+    itertools.product(SIMULATORS, SCALAR_INSTRUCTIONS),
 )
-def test_scalar_parameters_are_scaled_when_applied(StateClass, scalar_instruction):
+def test_scalar_parameters_are_scaled_when_applied(SimulatorClass, scalar_instruction):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(all) | scalar_instruction
 
-    state = StateClass(d=NUMBER_OF_MODES)
-    state.apply(program)
+    simulator = SimulatorClass(d=NUMBER_OF_MODES)
+    result = simulator.execute(program)
 
-    state.validate()
+    result.state.validate()
 
 
 @pytest.mark.parametrize(
-    "StateClass, length_one_vector_instruction",
-    itertools.product(STATES, LENGTH_ONE_VECTOR_INSTRUCTIONS),
+    "SimulatorClass, length_one_vector_instruction",
+    itertools.product(SIMULATORS, LENGTH_ONE_VECTOR_INSTRUCTIONS),
 )
 def test_length_one_vector_instructions_are_applied_normally(
-    StateClass, length_one_vector_instruction
+    SimulatorClass, length_one_vector_instruction
 ):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(all) | length_one_vector_instruction
 
-    state = StateClass(d=NUMBER_OF_MODES)
-    state.apply(program)
+    simulator = SimulatorClass(d=NUMBER_OF_MODES)
+    result = simulator.execute(program)
 
-    state.validate()
+    result.state.validate()
 
 
 @pytest.mark.parametrize(
-    "StateClass, vector_instruction", itertools.product(STATES, VECTOR_INSTRUCTIONS)
+    "SimulatorClass, vector_instruction",
+    itertools.product(SIMULATORS, VECTOR_INSTRUCTIONS),
 )
-def test_vector_instructions_are_applied_normally(StateClass, vector_instruction):
+def test_vector_instructions_are_applied_normally(SimulatorClass, vector_instruction):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(all) | vector_instruction
 
-    state = StateClass(d=NUMBER_OF_MODES)
-    state.apply(program)
+    simulator = SimulatorClass(d=NUMBER_OF_MODES)
+    result = simulator.execute(program)
 
-    state.validate()
+    result.state.validate()
 
 
 @pytest.mark.parametrize(
-    "StateClass, invalid_vector_instruction",
-    itertools.product(STATES, INVALID_VECTOR_INSTRUCTIONS),
+    "SimulatorClass, invalid_vector_instruction",
+    itertools.product(SIMULATORS, INVALID_VECTOR_INSTRUCTIONS),
 )
 def test_applying_invalid_vector_instructions_raises_error(
-    StateClass, invalid_vector_instruction
+    SimulatorClass, invalid_vector_instruction
 ):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
         pq.Q(all) | invalid_vector_instruction
 
-    state = StateClass(d=NUMBER_OF_MODES)
+    simulator = SimulatorClass(d=NUMBER_OF_MODES)
 
     with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
-        state.apply(program)
+        simulator.execute(program)
 
     assert "is not applicable to modes" in str(excinfo.value)

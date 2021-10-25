@@ -32,10 +32,10 @@ def test_state_initialization_with_misshaped_mean():
     with pq.Program() as program:
         pq.Q() | pq.Mean(misshaped_mean)
 
-    state = pq.GaussianState(d=1)
+    simulator = pq.GaussianSimulator(d=1)
 
     with pytest.raises(InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_state_initialization_with_misshaped_covariance():
@@ -49,10 +49,10 @@ def test_state_initialization_with_misshaped_covariance():
     with pq.Program() as program:
         pq.Q() | pq.Covariance(misshaped_cov)
 
-    state = pq.GaussianState(d=1)
+    simulator = pq.GaussianSimulator(d=1)
 
     with pytest.raises(InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_state_initialization_with_nonsymmetric_covariance():
@@ -66,10 +66,10 @@ def test_state_initialization_with_nonsymmetric_covariance():
     with pq.Program() as program:
         pq.Q() | pq.Covariance(nonsymmetric_cov)
 
-    state = pq.GaussianState(d=1)
+    simulator = pq.GaussianSimulator(d=1)
 
     with pytest.raises(InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_state_initialization_with_nonpositive_covariance():
@@ -83,23 +83,25 @@ def test_state_initialization_with_nonpositive_covariance():
     with pq.Program() as program:
         pq.Q() | pq.Covariance(nonpositive_cov)
 
-    state = pq.GaussianState(d=1)
+    simulator = pq.GaussianSimulator(d=1)
 
     with pytest.raises(InvalidState):
-        state.apply(program)
+        simulator.execute(program)
 
 
 def test_vacuum_resets_the_state(state):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=state.d)
+
+    new_state = simulator.execute(program, initial_state=state).state
 
     assert np.allclose(
-        state.xpxp_mean_vector,
-        np.zeros(2 * state.d),
+        new_state.xpxp_mean_vector,
+        np.zeros(2 * new_state.d),
     )
     assert np.allclose(
-        state.xpxp_covariance_matrix,
-        np.identity(2 * state.d) * state._config.hbar,
+        new_state.xpxp_covariance_matrix,
+        np.identity(2 * new_state.d) * simulator.config.hbar,
     )

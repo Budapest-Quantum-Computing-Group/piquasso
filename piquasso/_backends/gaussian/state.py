@@ -56,35 +56,9 @@ class GaussianState(State):
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-        state = pq.GaussianState(d=5)
-        state.apply(program)
+        simulator = pq.GaussianSimulator(d=5)
+        result = simulator.execute(program)
     """
-
-    _instruction_map = {
-        "Interferometer": "_passive_linear",
-        "Beamsplitter": "_passive_linear",
-        "Phaseshifter": "_passive_linear",
-        "MachZehnder": "_passive_linear",
-        "Fourier": "_passive_linear",
-        "GaussianTransform": "_linear",
-        "Squeezing": "_linear",
-        "QuadraticPhase": "_linear",
-        "Squeezing2": "_linear",
-        "ControlledX": "_linear",
-        "ControlledZ": "_linear",
-        "Displacement": "_displacement",
-        "PositionDisplacement": "_displacement",
-        "MomentumDisplacement": "_displacement",
-        "Graph": "_graph",
-        "HomodyneMeasurement": "_homodyne_measurement",
-        "HeterodyneMeasurement": "_generaldyne_measurement",
-        "GeneraldyneMeasurement": "_generaldyne_measurement",
-        "Vacuum": "_vacuum",
-        "Mean": "_mean",
-        "Covariance": "_covariance",
-        "ParticleNumberMeasurement": "_particle_number_measurement",
-        "ThresholdMeasurement": "_threshold_measurement",
-    }
 
     def __init__(self, d: int, config: Config = None) -> None:
         super().__init__(config=config)

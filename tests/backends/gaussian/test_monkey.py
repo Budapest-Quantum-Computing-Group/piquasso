@@ -39,6 +39,6 @@ def test_random_gaussianstate(d):
     with pq.Program() as program:
         pq.Q(all) | prepare_random_program
 
-    state = pq.GaussianState(d=d)
-    state.apply(program)
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
     state.validate()

@@ -32,13 +32,17 @@ def shots():
     return 1
 
 
-def piquasso_benchmark(benchmark, example_pq_purefock_state, shots):
+def piquasso_benchmark(
+    benchmark, pq_purefock_simulator, example_pq_purefock_state, shots
+):
     @benchmark
     def func():
         with pq.Program() as new_program:
             pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
-        example_pq_purefock_state.apply(new_program, shots=shots)
+        pq_purefock_simulator.execute(
+            new_program, shots=shots, initial_state=example_pq_purefock_state
+        )
 
 
 def strawberryfields_benchmark(benchmark, example_sf_fock_state, d, cutoff, shots):
