@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Tuple
+from typing import Iterable
 
 import numpy as np
 
@@ -107,7 +107,7 @@ class StateVector(Preparation, _mixins.WeightMixin):
 
         super().__init__(
             params=dict(
-                occupation_numbers=occupation_numbers,
+                occupation_numbers=tuple(occupation_numbers),
                 coefficient=coefficient,
             ),
         )
@@ -135,14 +135,14 @@ class DensityMatrix(Preparation, _mixins.WeightMixin):
 
     def __init__(
         self,
-        ket: Tuple[complex, ...] = None,
-        bra: Tuple[complex, ...] = None,
+        ket: Iterable[int],
+        bra: Iterable[int],
         coefficient: complex = 1.0,
     ) -> None:
         super().__init__(
             params=dict(
-                ket=ket,
-                bra=bra,
+                ket=tuple(ket),
+                bra=tuple(bra),
                 coefficient=coefficient,
             ),
         )
