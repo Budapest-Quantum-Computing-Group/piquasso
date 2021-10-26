@@ -15,14 +15,16 @@
 
 import abc
 
-from typing import Optional, List, Type
+from typing import Optional, List, Type, Dict
 
 from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
 from piquasso.api.program import Program
-from piquasso.api.errors import InvalidParameter
-from piquasso.api.instruction import Instruction
+from piquasso.api.errors import InvalidParameter, InvalidInstruction, InvalidSimulation
+from piquasso.api.instruction import Gate, Instruction, Measurement, Preparation
+
+from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 
 
 class Computer(abc.ABC):
@@ -44,11 +46,83 @@ class Simulator(Computer, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def _instruction_map(self) -> dict:
+    def _instruction_map(self) -> Dict[str, str]:
         pass
 
     def create_initial_state(self):
         return self.state_class(d=self.d, config=self.config)
+
+    def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
+        for instruction in instructions:
+            if instruction.__class__.__name__ not in self._instruction_map:
+                raise InvalidInstruction(
+                    "\n"
+                    "No such instruction implemented for this simulator.\n"
+                    "Details:\n"
+                    f"instruction={instruction}\n"
+                    f"simulator={self}\n"
+                    f"Available instructions:\n"
+                    + str(", ".join(self._instruction_map.keys()))
+                    + "."
+                )
+
+    def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
+
+        all_instruction_categories = [Preparation, Gate, Measurement]
+
+        def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
+            for instruction_category in all_instruction_categories:
+                if isinstance(instruction, instruction_category):
+                    return instruction_category
+
+            raise InvalidInstruction(
+                "\n"
+                "The instruction is not a subclass of the following classes:\n"
+                "{all_instruction_classes}.\n"
+                "Make sure that all your instructions are subclassed properly from the "
+                "above classes.\n"
+                "instruction={instruction}."
+            )
+
+        instruction_category_projection = list(
+            map(_to_instruction_category, instructions)
+        )
+
+        measurement_count = instruction_category_projection.count(Measurement)
+
+        if measurement_count not in (0, 1):
+            raise InvalidSimulation(
+                "Up to one measurement could be registered for simulations."
+            )
+
+        if (
+            measurement_count == 1
+            and instruction_category_projection[-1] != Measurement
+        ):
+            raise InvalidSimulation(
+                "Measurement should be registered only at the end of a program during "
+                f"simulation: measurement={instruction_category_projection[-1]}."
+            )
+
+        current_instruction_categories_in_order = deduplicate_neighbours(
+            instruction_category_projection,
+        )
+
+        if not is_ordered_sublist(
+            current_instruction_categories_in_order,
+            all_instruction_categories,
+        ):
+            raise InvalidSimulation(
+                "The simulator could only execute instructions in the "
+                "preparation-gate-measurement order."
+            )
+
+    def _validate_instructions(self, instructions: List[Instruction]) -> None:
+        self._validate_instruction_existence(instructions)
+        self._validate_instruction_order(instructions)
+
+    def validate(self, program):
+        self._validate_instructions(program.instructions)
 
     def execute_instructions(
         self,
@@ -60,6 +134,8 @@ class Simulator(Computer, abc.ABC):
             raise InvalidParameter(
                 f"The number of shots should be a positive integer: shots={shots}."
             )
+
+        self._validate_instructions(instructions)
 
         state = initial_state.copy() if initial_state else self.create_initial_state()
 
@@ -73,19 +149,7 @@ class Simulator(Computer, abc.ABC):
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()  # type: ignore
 
-            method_name = self._instruction_map.get(instruction.__class__.__name__)
-
-            if not method_name:
-                raise NotImplementedError(
-                    "\n"
-                    "No such instruction implemented for this state.\n"
-                    "Details:\n"
-                    f"instruction={instruction}\n"
-                    f"state={state}\n"
-                    f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys()))
-                    + "."
-                )
+            method_name = self._instruction_map[instruction.__class__.__name__]
 
             getattr(state, method_name)(instruction)
 
@@ -103,8 +167,10 @@ class Simulator(Computer, abc.ABC):
                 The number of samples to generate.
         """
 
+        instructions: List[Instruction] = program.instructions
+
         state = self.execute_instructions(
-            program.instructions, initial_state=initial_state, shots=shots
+            instructions, initial_state=initial_state, shots=shots
         )
 
         return Result(

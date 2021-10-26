@@ -1,0 +1,190 @@
+#
+# Copyright 2021 Budapest Quantum Computing Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import pytest
+
+import piquasso as pq
+
+
+def test_correctly_defined_program_executes_without_exception(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program)
+
+
+def test_program_defined_without_measurement_executes_without_exception(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+
+    simulator = FakeSimulator(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program)
+
+
+def test_program_defined_with_multiple_gates_or_preparations_executes_without_exception(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakePreparation()
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program)
+
+
+def test_empty_program_executes_without_exception(
+    FakeSimulator,
+):
+    with pq.Program() as program:
+        pass
+
+    simulator = FakeSimulator(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program)
+
+
+def test_program_execution_with_no_proper_instruction(
+    FakeSimulator,
+    FakeGate,
+    FakeMeasurement,
+):
+    class ImproperInstruction(pq.Instruction):
+        pass
+
+    with pq.Program() as program:
+        pq.Q() | ImproperInstruction()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(pq.api.errors.InvalidInstruction):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidInstruction):
+        simulator.execute(program)
+
+
+def test_program_execution_with_wrong_instruction_order_raises_InvalidSimulation(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakeGate()
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.execute(program)
+
+
+def test_program_execution_with_duplicated_blocks_raises_InvalidSimulation(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.execute(program)
+
+
+def test_program_execution_with_multiple_measurements_raises_InvalidSimulation(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakeGate()
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeMeasurement()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.execute(program)
+
+
+def test_program_execution_with_measurement_not_being_last_raises_InvalidSimulation(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+        pq.Q() | FakePreparation()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidSimulation):
+        simulator.execute(program)

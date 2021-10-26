@@ -13,15 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import piquasso as pq
+from typing import Iterable
+
+import itertools
 
 
-def test_InvalidModes_are_raised_if_modes_are_already_measured():
-    with pytest.raises(pq.api.errors.InvalidProgram):
-        with pq.Program():
-            pq.Q() | pq.Vacuum()
+def is_ordered_sublist(smaller_list: Iterable, larger_list: Iterable) -> bool:
+    left_intersection = [element for element in smaller_list if element in larger_list]
+    right_intersection = [element for element in larger_list if element in smaller_list]
 
-            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+    return left_intersection == right_intersection
 
-            pq.Q(2) | pq.ParticleNumberMeasurement()
+
+def deduplicate_neighbours(redundant_list: Iterable) -> Iterable:
+    return [group[0] for group in itertools.groupby(redundant_list)]
