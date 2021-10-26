@@ -32,3 +32,11 @@ class InvalidModes(PiquassoException):
 
 class InvalidProgram(PiquassoException):
     """Raised when an invalid program is being created or used."""
+
+
+class InvalidInstruction(PiquassoException):
+    """Raised when an invalid instruction is specified."""
+
+
+class InvalidSimulation(PiquassoException):
+    """Raised when a simulation could not be executed."""

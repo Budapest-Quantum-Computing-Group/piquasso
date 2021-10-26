@@ -20,7 +20,7 @@ import numpy as np
 
 from .mode import Q
 from piquasso.core import _mixins
-from piquasso.api.errors import InvalidProgram, PiquassoException
+from piquasso.api.errors import PiquassoException
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -154,11 +154,3 @@ class Gate(Instruction):
 
 class Measurement(Instruction):
     r"""Base class for all measurements."""
-
-    def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
-        if any(
-            isinstance(instruction, type(self)) for instruction in program.instructions
-        ):
-            raise InvalidProgram("Measurement already registered.")
-
-        super()._apply_to_program_on_register(program, register)

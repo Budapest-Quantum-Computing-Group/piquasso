@@ -13,51 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import piquasso as pq
 
-from unittest.mock import Mock
 
-
-@pytest.fixture
-def FakeState():
-    class FakeState(pq.State):
-        def __init__(self, d: int, config: pq.Config = None) -> None:
-            super().__init__(config=config)
-
-            self._d = d
-
-        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
-            """
-            NOTE: This needs to be here to be able to instantiate this class.
-            """
-            raise NotImplementedError
-
-        @property
-        def d(self):
-            return self._d
-
-        dummy_instruction = Mock(name="dummy_instruction")
-
-    return FakeState
-
-
-@pytest.fixture
-def FakeSimulator(FakeState):
-    class FakeSimulator(pq.Simulator):
-        _instruction_map = {
-            "DummyInstruction": "dummy_instruction",
-        }
-
-        state_class = FakeState
-
-    return FakeSimulator
-
-
-def test_single_mode_single_instruction_registry(DummyInstruction):
+def test_single_mode_single_instruction_registry(FakeGate):
     with pq.Program() as program:
-        pq.Q(0) | DummyInstruction(dummyparam=420)
+        pq.Q(0) | FakeGate(dummyparam=420)
 
     assert len(program.instructions) == 1
 
@@ -65,9 +26,9 @@ def test_single_mode_single_instruction_registry(DummyInstruction):
     assert program.instructions[0].params == {"dummyparam": 420}
 
 
-def test_single_mode_multiple_instruction_registry(DummyInstruction):
+def test_single_mode_multiple_instruction_registry(FakeGate):
     with pq.Program() as program:
-        pq.Q(0, 1) | DummyInstruction(dummyparam=420) | DummyInstruction(
+        pq.Q(0, 1) | FakeGate(dummyparam=420) | FakeGate(
             dummyparam1=42, dummyparam2=320
         )
 
@@ -83,11 +44,11 @@ def test_single_mode_multiple_instruction_registry(DummyInstruction):
     }
 
 
-def test_multiple_mode_single_instructionregistry(DummyInstruction):
+def test_multiple_mode_single_instructionregistry(FakeGate):
     with pq.Program() as program:
-        pq.Q(2, 1, 0) | DummyInstruction(dummyparam1=421)
-        pq.Q(1) | DummyInstruction(dummyparam2=1)
-        pq.Q(0, 2) | DummyInstruction(dummyparam3=999)
+        pq.Q(2, 1, 0) | FakeGate(dummyparam1=421)
+        pq.Q(1) | FakeGate(dummyparam2=1)
+        pq.Q(0, 2) | FakeGate(dummyparam3=999)
 
     assert len(program.instructions) == 3
 
@@ -101,11 +62,11 @@ def test_multiple_mode_single_instructionregistry(DummyInstruction):
     assert program.instructions[2].params == {"dummyparam3": 999}
 
 
-def test_multiple_mode_multiple_instructionregistry(DummyInstruction):
+def test_multiple_mode_multiple_instructionregistry(FakeGate):
     with pq.Program() as program:
-        pq.Q(4) | DummyInstruction(param=2) | DummyInstruction(param=0)
-        pq.Q(0, 2) | DummyInstruction(param=999)
-        pq.Q(1, 0) | DummyInstruction(param=1) | DummyInstruction(param=9)
+        pq.Q(4) | FakeGate(param=2) | FakeGate(param=0)
+        pq.Q(0, 2) | FakeGate(param=999)
+        pq.Q(1, 0) | FakeGate(param=1) | FakeGate(param=9)
 
     assert len(program.instructions) == 5
 
@@ -126,11 +87,11 @@ def test_multiple_mode_multiple_instructionregistry(DummyInstruction):
 
 
 def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
-    DummyInstruction,
+    FakeGate,
     FakeSimulator,
 ):
     with pq.Program() as program:
-        pq.Q() | DummyInstruction(param="some-parameter")
+        pq.Q() | FakeGate(param="some-parameter")
 
     simulator = FakeSimulator(d=42)
     state = simulator.execute(program).state
@@ -139,11 +100,11 @@ def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
 
 
 def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes(
-    DummyInstruction,
+    FakeGate,
     FakeSimulator,
 ):
     with pq.Program() as program:
-        pq.Q(all) | DummyInstruction(param="some-parameter")
+        pq.Q(all) | FakeGate(param="some-parameter")
 
     simulator = FakeSimulator(d=42)
     state = simulator.execute(program).state
