@@ -43,13 +43,13 @@ def test_measure_particle_number_on_one_mode():
                 0.5773502691896258 * pq.StateVector([0, 0, 1]),
                 0.816496580927726 * pq.StateVector([0, 1, 1]),
             ]
-        )
+        ).state
 
     elif sample == (2,):
         expected_simulator = pq.PureFockSimulator(d=3)
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.StateVector([0, 0, 2])]
-        )
+        ).state
 
     assert result.state == expected_state
 
@@ -75,19 +75,19 @@ def test_measure_particle_number_on_two_modes():
         expected_simulator = pq.PureFockSimulator(d=3)
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.StateVector([0, 0, 1])]
-        )
+        ).state
 
     elif sample == (1, 1):
         expected_simulator = pq.PureFockSimulator(d=3)
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.StateVector([0, 1, 1])]
-        )
+        ).state
 
     elif sample == (0, 2):
         expected_simulator = pq.PureFockSimulator(d=3)
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.StateVector([0, 0, 2])]
-        )
+        ).state
 
     assert result.state == expected_state
 
@@ -117,7 +117,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.StateVector([0, 0, 0]),
             ],
-        )
+        ).state
 
     elif sample == (0, 0, 1):
         expected_simulator = pq.PureFockSimulator(d=3, config=config)
@@ -125,7 +125,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.StateVector([0, 0, 1]),
             ]
-        )
+        ).state
 
     elif sample == (1, 0, 0):
         expected_simulator = pq.PureFockSimulator(d=3, config=config)
@@ -133,7 +133,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.StateVector([1, 0, 0]),
             ],
-        )
+        ).state
 
     assert result.state == expected_state
 

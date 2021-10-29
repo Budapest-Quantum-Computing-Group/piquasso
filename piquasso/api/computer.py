@@ -141,7 +141,7 @@ class Simulator(Computer, abc.ABC):
         instructions: List[Instruction],
         initial_state: State = None,
         shots: int = 1,
-    ) -> State:
+    ) -> Result:
         if not isinstance(shots, int) or shots < 1:
             raise InvalidParameter(
                 f"The number of shots should be a positive integer: shots={shots}."
@@ -158,6 +158,8 @@ class Simulator(Computer, abc.ABC):
         # TODO: This is not a nice solution.
         state.shots = shots
 
+        result = Result(state=state)
+
         for instruction in instructions:
             if not hasattr(instruction, "modes") or instruction.modes is tuple():
                 instruction.modes = tuple(range(self.d))
@@ -167,13 +169,13 @@ class Simulator(Computer, abc.ABC):
 
             calculation = self._instruction_map[instruction.__class__.__name__]
 
-            state = calculation(state, instruction)
+            result = calculation(result.state, instruction)
 
-        return state
+        return result
 
     def execute(
         self, program: Program, shots: int = 1, initial_state: State = None
-    ) -> Optional[Result]:
+    ) -> Result:
         """Applies the given program to the state and executes it.
 
         Args:
@@ -185,11 +187,6 @@ class Simulator(Computer, abc.ABC):
 
         instructions: List[Instruction] = program.instructions
 
-        state = self.execute_instructions(
+        return self.execute_instructions(
             instructions, initial_state=initial_state, shots=shots
-        )
-
-        return Result(
-            samples=state.result.samples if state.result else [],
-            state=state,
         )

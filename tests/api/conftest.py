@@ -67,7 +67,7 @@ def FakeState():
 @pytest.fixture
 def FakeSimulator(FakeState):
     def fake_calculation(state: FakeState, instruction: pq.Instruction):
-        return state
+        return pq.api.result.Result(state=state)
 
     class FakeSimulator(pq.Simulator):
         state_class = FakeState
