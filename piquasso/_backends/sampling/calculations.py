@@ -51,7 +51,7 @@ from BoSS.simulation_strategies.simulation_strategy_interface import (
 )
 
 
-def state_vector(state: SamplingState, instruction: Instruction) -> Result:
+def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     if not np.all(state.initial_state == 0):
         raise InvalidState("State vector is already set.")
 
@@ -70,7 +70,9 @@ def state_vector(state: SamplingState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def passive_linear(state: SamplingState, instruction: Instruction) -> Result:
+def passive_linear(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> Result:
     r"""Applies an interferometer to the circuit.
 
     This can be interpreted as placing another interferometer in the network, just
@@ -99,7 +101,7 @@ def _apply_matrix_on_modes(
     state.interferometer = embedded @ state.interferometer
 
 
-def loss(state: SamplingState, instruction: Instruction) -> Result:
+def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
@@ -111,7 +113,7 @@ def loss(state: SamplingState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def sampling(state: SamplingState, instruction: Instruction) -> Result:
+def sampling(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     initial_state = np.array(state.initial_state)
     permanent_calculator = RyserGuanPermanentCalculator(
         matrix=state.interferometer, input_state=initial_state
@@ -122,7 +124,7 @@ def sampling(state: SamplingState, instruction: Instruction) -> Result:
     sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
     samples = sampling_simulator.get_classical_simulation_results(
-        initial_state, samples_number=state.shots
+        initial_state, samples_number=shots
     )
 
     return Result(state=state, samples=list(map(tuple, samples)))

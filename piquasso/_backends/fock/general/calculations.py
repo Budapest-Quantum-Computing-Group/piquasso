@@ -25,13 +25,13 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
 
-def vacuum(state: FockState, instruction: Instruction) -> Result:
+def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
     state.reset()
 
     return Result(state=state)
 
 
-def passive_linear(state: FockState, instruction: Instruction) -> Result:
+def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
     index = state._get_operator_index(instruction.modes)
@@ -49,7 +49,9 @@ def passive_linear(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def particle_number_measurement(state: FockState, instruction: Instruction) -> Result:
+def particle_number_measurement(
+    state: FockState, instruction: Instruction, shots: int
+) -> Result:
     probability_map = _get_probability_map(
         state=state,
         modes=instruction.modes,
@@ -58,7 +60,7 @@ def particle_number_measurement(state: FockState, instruction: Instruction) -> R
     samples = random.choices(
         population=list(probability_map.keys()),
         weights=list(probability_map.values()),
-        k=state.shots,
+        k=shots,
     )
 
     # NOTE: We choose the last sample for multiple shots.
@@ -131,7 +133,7 @@ def _get_projected_density_matrix(
     return new_density_matrix
 
 
-def create(state: FockState, instruction: Instruction) -> Result:
+def create(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_creation_operator(instruction.modes)
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
@@ -141,7 +143,7 @@ def create(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def annihilate(state: FockState, instruction: Instruction) -> Result:
+def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_annihilation_operator(instruction.modes)
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
@@ -151,7 +153,7 @@ def annihilate(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def kerr(state: FockState, instruction: Instruction) -> Result:
+def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
     mode = instruction.modes[0]
     xi = instruction._all_params["xi"]
 
@@ -168,7 +170,7 @@ def kerr(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def cross_kerr(state: FockState, instruction: Instruction) -> Result:
+def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     xi = instruction._all_params["xi"]
 
@@ -187,7 +189,7 @@ def cross_kerr(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def linear(state: FockState, instruction: Instruction) -> Result:
+def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
         cache_size=state._config.cache_size,
@@ -206,7 +208,9 @@ def linear(state: FockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def density_matrix_instruction(state: FockState, instruction: Instruction) -> Result:
+def density_matrix_instruction(
+    state: FockState, instruction: Instruction, shots: int
+) -> Result:
     _add_occupation_number_basis(state, **instruction.params)
 
     return Result(state=state)

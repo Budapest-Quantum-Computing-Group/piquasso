@@ -30,8 +30,6 @@ class State(abc.ABC):
     """
 
     def __init__(self, config: Config = None) -> None:
-        self.shots: int = None  # type: ignore
-
         self._config = config.copy() if config is not None else Config()
 
     @property

@@ -155,9 +155,6 @@ class Simulator(Computer, abc.ABC):
         else:
             state = self.create_initial_state()
 
-        # TODO: This is not a nice solution.
-        state.shots = shots
-
         result = Result(state=state)
 
         for instruction in instructions:
@@ -169,7 +166,7 @@ class Simulator(Computer, abc.ABC):
 
             calculation = self._instruction_map[instruction.__class__.__name__]
 
-            result = calculation(result.state, instruction)
+            result = calculation(result.state, instruction, shots)
 
         return result
 

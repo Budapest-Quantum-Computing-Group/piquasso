@@ -27,7 +27,7 @@ from piquasso._math.fock import FockBasis
 
 
 def particle_number_measurement(
-    state: PureFockState, instruction: Instruction
+    state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
     probability_map = _get_probability_map(
         state=state,
@@ -37,7 +37,7 @@ def particle_number_measurement(
     samples = random.choices(
         population=list(probability_map.keys()),
         weights=list(probability_map.values()),
-        k=state.shots,
+        k=shots,
     )
 
     # NOTE: We choose the last sample for multiple shots.
@@ -55,13 +55,15 @@ def particle_number_measurement(
     return Result(state=state, samples=samples)  # type: ignore
 
 
-def vacuum(state: PureFockState, instruction: Instruction) -> Result:
+def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     state.reset()
 
     return Result(state=state)
 
 
-def passive_linear(state: PureFockState, instruction: Instruction) -> Result:
+def passive_linear(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
     index = state._get_operator_index(instruction.modes)
@@ -132,7 +134,7 @@ def _get_projected_state_vector(
     return new_state_vector
 
 
-def create(state: PureFockState, instruction: Instruction) -> Result:
+def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_creation_operator(instruction.modes)
 
     state._state_vector = operator @ state._state_vector
@@ -142,7 +144,7 @@ def create(state: PureFockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def annihilate(state: PureFockState, instruction: Instruction) -> Result:
+def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_annihilation_operator(instruction.modes)
 
     state._state_vector = operator @ state._state_vector
@@ -152,7 +154,7 @@ def annihilate(state: PureFockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def kerr(state: PureFockState, instruction: Instruction) -> Result:
+def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     mode = instruction.modes[0]
     xi = instruction._all_params["xi"]
 
@@ -164,7 +166,7 @@ def kerr(state: PureFockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def cross_kerr(state: PureFockState, instruction: Instruction) -> Result:
+def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     xi = instruction._all_params["xi"]
 
@@ -175,7 +177,7 @@ def cross_kerr(state: PureFockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def linear(state: PureFockState, instruction: Instruction) -> Result:
+def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
         cache_size=state._config.cache_size,
@@ -192,7 +194,9 @@ def linear(state: PureFockState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def state_vector_instruction(state: PureFockState, instruction: Instruction) -> Result:
+def state_vector_instruction(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> Result:
     _add_occupation_number_basis(
         state=state,
         **instruction._all_params,

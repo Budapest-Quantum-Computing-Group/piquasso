@@ -36,7 +36,9 @@ from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
 
-def passive_linear(state: GaussianState, instruction: Instruction) -> Result:
+def passive_linear(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> Result:
     modes = instruction.modes
     T: np.ndarray = instruction._all_params["passive_block"]
 
@@ -81,7 +83,7 @@ def _apply_passive_linear_to_auxiliary_modes(
     state._G[:, modes] = state._G[modes, :].transpose()
 
 
-def linear(state: GaussianState, instruction: Instruction) -> Result:
+def linear(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     passive_block: np.ndarray = instruction._all_params["passive_block"]
     active_block: np.ndarray = instruction._all_params["active_block"]
@@ -149,7 +151,7 @@ def _apply_linear_to_auxiliary_modes(
     state._G[:, modes] = state._G[modes, :].transpose()
 
 
-def displacement(state: GaussianState, instruction: Instruction) -> Result:
+def displacement(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     displacement_vector: np.ndarray = instruction._all_params["displacement_vector"]
 
@@ -160,14 +162,16 @@ def displacement(state: GaussianState, instruction: Instruction) -> Result:
     return Result(state=state)
 
 
-def generaldyne_measurement(state: GaussianState, instruction: Instruction) -> Result:
+def generaldyne_measurement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> Result:
     modes = instruction.modes
     detection_covariance = instruction._all_params["detection_covariance"]
 
     samples = _get_generaldyne_samples(
         state,
         modes,
-        state.shots,
+        shots,
         detection_covariance,
     )
 
@@ -280,15 +284,16 @@ def _map_modes_to_xpxp_indices(modes):
 def particle_number_measurement(
     state: GaussianState,
     instruction: Instruction,
+    shots: int,
 ) -> Result:
 
-    samples = _get_particle_number_measurement_samples(state, instruction)
+    samples = _get_particle_number_measurement_samples(state, instruction, shots)
 
     return Result(state=state, samples=samples)
 
 
 def _get_particle_number_measurement_samples(
-    state: GaussianState, instruction: Instruction
+    state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Tuple[int, ...]]:
 
     modes: Tuple[int, ...] = instruction.modes
@@ -308,7 +313,7 @@ def _get_particle_number_measurement_samples(
 
     samples = []
 
-    for _ in itertools.repeat(None, state.shots):
+    for _ in itertools.repeat(None, shots):
         pure_state.xxpp_mean_vector = state._config.rng.multivariate_normal(
             reduced_state.xxpp_mean_vector, mixed_contribution
         )
@@ -416,7 +421,9 @@ def _get_particle_number_choice(
     return np.random.choice(possible_choices, p=weights)
 
 
-def threshold_measurement(state: GaussianState, instruction: Instruction) -> Result:
+def threshold_measurement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> Result:
     """
     NOTE: The same logic is used here, as for the particle number measurement.
     However, at threshold measurement there is no sense of measurement cutoff,
@@ -427,9 +434,11 @@ def threshold_measurement(state: GaussianState, instruction: Instruction) -> Res
     click is equal to one minus the probability of no click.
     """
     if state._config.use_torontonian:
-        samples = _generate_threshold_samples_using_torontonian(state, instruction)
+        samples = _generate_threshold_samples_using_torontonian(
+            state, instruction, shots
+        )
     else:
-        samples = _generate_threshold_samples_using_hafnian(state, instruction)
+        samples = _generate_threshold_samples_using_hafnian(state, instruction, shots)
 
     return Result(state=state, samples=samples)
 
@@ -437,6 +446,7 @@ def threshold_measurement(state: GaussianState, instruction: Instruction) -> Res
 def _generate_threshold_samples_using_torontonian(
     state,
     instruction,
+    shots,
 ):
     if not np.allclose(state.xpxp_mean_vector, np.zeros_like(state.xpxp_mean_vector)):
         raise NotImplementedError(
@@ -460,7 +470,7 @@ def _generate_threshold_samples_using_torontonian(
 
     samples = []
 
-    for _ in repeat(None, state.shots):
+    for _ in repeat(None, shots):
         sample: List[int] = []
 
         previous_probability = 1.0
@@ -492,8 +502,8 @@ def _generate_threshold_samples_using_torontonian(
     return samples
 
 
-def _generate_threshold_samples_using_hafnian(state, instruction):
-    samples = _get_particle_number_measurement_samples(state, instruction)
+def _generate_threshold_samples_using_hafnian(state, instruction, shots):
+    samples = _get_particle_number_measurement_samples(state, instruction, shots)
 
     threshold_samples = []
 
@@ -505,7 +515,9 @@ def _generate_threshold_samples_using_hafnian(state, instruction):
     return threshold_samples
 
 
-def homodyne_measurement(state: GaussianState, instruction: Instruction) -> Result:
+def homodyne_measurement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> Result:
     phi = instruction._all_params["phi"]
 
     instruction_copy: Instruction = instruction.copy()  # type: ignore
@@ -513,38 +525,40 @@ def homodyne_measurement(state: GaussianState, instruction: Instruction) -> Resu
     phaseshift = np.identity(len(instruction.modes)) * np.exp(-1j * phi)
     instruction_copy._extra_params["passive_block"] = phaseshift
 
-    result = passive_linear(state, instruction_copy)
+    result = passive_linear(state, instruction_copy, shots)
 
-    result = generaldyne_measurement(result.state, instruction)
+    result = generaldyne_measurement(result.state, instruction, shots)
 
     return Result(state=state, samples=result.samples)
 
 
-def vacuum(state: GaussianState, instruction: Instruction) -> Result:
+def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     state.reset()
 
     return Result(state=state)
 
 
-def mean(state: GaussianState, instruction: Instruction) -> Result:
+def mean(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     state.xpxp_mean_vector = instruction._all_params["mean"]
 
     return Result(state=state)
 
 
-def covariance(state: GaussianState, instruction: Instruction) -> Result:
+def covariance(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     state.xpxp_covariance_matrix = instruction._all_params["cov"]
 
     return Result(state=state)
 
 
-def graph(state: GaussianState, instruction: Instruction) -> Result:
+def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     """
     TODO: Find a better solution for multiple operations.
     """
     instruction._all_params["squeezing"].modes = instruction.modes
     instruction._all_params["interferometer"].modes = instruction.modes
 
-    result = linear(state, instruction._all_params["squeezing"])
+    result = linear(state, instruction._all_params["squeezing"], shots)
 
-    return passive_linear(result.state, instruction._all_params["interferometer"])
+    return passive_linear(
+        result.state, instruction._all_params["interferometer"], shots
+    )
