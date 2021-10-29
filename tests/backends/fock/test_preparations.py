@@ -22,8 +22,9 @@ def test_from_fock_state_preserves_fock_probabilities():
     with pq.Program() as pure_state_preparation_program:
         pq.Q(1) | pq.StateVector([1])
 
-    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=4))
-    pure_state_preparation_state = simulator.execute(
+    pure_simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=4))
+    mixed_simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=4))
+    pure_state_preparation_state = pure_simulator.execute(
         pure_state_preparation_program
     ).state
 
@@ -35,12 +36,12 @@ def test_from_fock_state_preserves_fock_probabilities():
     with pq.Program() as mixed_state_program:
         pq.Q(0, 1) | beamsplitter
 
-    pure_state = simulator.execute(
+    pure_state = pure_simulator.execute(
         pure_state_program,
         initial_state=pure_state_preparation_state,
     ).state
 
-    mixed_state = simulator.execute(
+    mixed_state = mixed_simulator.execute(
         mixed_state_program,
         initial_state=pq.FockState.from_fock_state(pure_state_preparation_state),
     ).state
