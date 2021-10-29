@@ -14,20 +14,21 @@
 # limitations under the License.
 
 from .state import SamplingState
+from .calculations import state_vector, passive_linear, sampling, loss
 
 from piquasso.api.computer import Simulator
 
 
 class SamplingSimulator(Simulator):
     _instruction_map = {
-        "StateVector": "_state_vector",
-        "Beamsplitter": "_passive_linear",
-        "Phaseshifter": "_passive_linear",
-        "MachZehnder": "_passive_linear",
-        "Fourier": "_passive_linear",
-        "Sampling": "_sampling",
-        "Interferometer": "_passive_linear",
-        "Loss": "_loss",
+        "StateVector": state_vector,
+        "Beamsplitter": passive_linear,
+        "Phaseshifter": passive_linear,
+        "MachZehnder": passive_linear,
+        "Fourier": passive_linear,
+        "Sampling": sampling,
+        "Interferometer": passive_linear,
+        "Loss": loss,
     }
 
     state_class = SamplingState

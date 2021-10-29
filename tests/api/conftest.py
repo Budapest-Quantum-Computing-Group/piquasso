@@ -17,8 +17,6 @@ import pytest
 
 import piquasso as pq
 
-from unittest.mock import Mock
-
 
 @pytest.fixture
 def FakePreparation():
@@ -63,22 +61,21 @@ def FakeState():
         def d(self):
             return self._d
 
-        fake_preparation = Mock(name="fake_preparation")
-        fake_gate = Mock(name="fake_gate")
-        fake_measurement = Mock(name="fake_measurement")
-
     return FakeState
 
 
 @pytest.fixture
 def FakeSimulator(FakeState):
+    def fake_calculation(state: FakeState, instruction: pq.Instruction):
+        return state
+
     class FakeSimulator(pq.Simulator):
         state_class = FakeState
 
         _instruction_map = {
-            "FakePreparation": "fake_preparation",
-            "FakeGate": "fake_gate",
-            "FakeMeasurement": "fake_measurement",
+            "FakePreparation": fake_calculation,
+            "FakeGate": fake_calculation,
+            "FakeMeasurement": fake_calculation,
         }
 
     return FakeSimulator

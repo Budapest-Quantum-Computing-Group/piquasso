@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Any, Generator, Dict, Mapping
+from typing import Tuple, Any, Generator
 
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidState
 from piquasso._math.linalg import is_selfadjoint
-from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis, FockBasis
+from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis
 
 from ..state import BaseFockState
 
@@ -47,7 +46,7 @@ class FockState(BaseFockState):
     def _get_empty(self) -> np.ndarray:
         return np.zeros(shape=(self._space.cardinality,) * 2, dtype=complex)
 
-    def _vacuum(self, *_args: Any, **_kwargs: Any) -> None:
+    def reset(self) -> None:
         self._density_matrix = self._get_empty()
         self._density_matrix[0, 0] = 1.0
 
@@ -65,139 +64,6 @@ class FockState(BaseFockState):
         new_instance._density_matrix = state.density_matrix
 
         return new_instance
-
-    def _passive_linear(self, instruction: Instruction) -> None:
-        operator: np.ndarray = instruction._all_params["passive_block"]
-
-        index = self._get_operator_index(instruction.modes)
-
-        embedded_operator = np.identity(self._space.d, dtype=complex)
-
-        embedded_operator[index] = operator
-
-        fock_operator = self._space.get_passive_fock_operator(embedded_operator)
-
-        self._density_matrix = (
-            fock_operator @ self._density_matrix @ fock_operator.conjugate().transpose()
-        )
-
-    def _get_probability_map(self, *, modes: Tuple[int, ...]) -> Dict[FockBasis, float]:
-        probability_map: Dict[FockBasis, float] = {}
-
-        for index, basis in self._space.operator_basis_diagonal_on_modes(modes=modes):
-            coefficient = float(self._density_matrix[index])
-
-            subspace_basis = basis.ket.on_modes(modes=modes)
-
-            if subspace_basis in probability_map:
-                probability_map[subspace_basis] += coefficient
-            else:
-                probability_map[subspace_basis] = coefficient
-
-        return probability_map
-
-    @staticmethod
-    def _get_normalization(
-        probability_map: Mapping[FockBasis, float], sample: FockBasis
-    ) -> float:
-        return 1 / probability_map[sample]
-
-    def _project_to_subspace(
-        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], normalization: float
-    ) -> None:
-        projected_density_matrix = self._get_projected_density_matrix(
-            subspace_basis=subspace_basis,
-            modes=modes,
-        )
-
-        self._density_matrix = projected_density_matrix * normalization
-
-    def _get_projected_density_matrix(
-        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
-    ) -> np.ndarray:
-        new_density_matrix = self._get_empty()
-
-        index = self._space.get_projection_operator_indices(
-            subspace_basis=subspace_basis,
-            modes=modes,
-        )
-
-        new_density_matrix[index] = self._density_matrix[index]
-
-        return new_density_matrix
-
-    def _create(self, instruction: Instruction) -> None:
-        operator = self._space.get_creation_operator(instruction.modes)
-
-        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
-
-        self.normalize()
-
-    def _annihilate(self, instruction: Instruction) -> None:
-        operator = self._space.get_annihilation_operator(instruction.modes)
-
-        self._density_matrix = operator @ self._density_matrix @ operator.transpose()
-
-        self.normalize()
-
-    def _add_occupation_number_basis(
-        self, *, ket: Tuple[int, ...], bra: Tuple[int, ...], coefficient: complex
-    ) -> None:
-        index = self._space.index(ket)
-        dual_index = self._space.index(bra)
-
-        self._density_matrix[index, dual_index] = coefficient
-
-    def _kerr(self, instruction: Instruction) -> None:
-        mode = instruction.modes[0]
-        xi = instruction._all_params["xi"]
-
-        for index, (basis, dual_basis) in self._space.operator_basis:
-            number = basis[mode]
-            dual_number = dual_basis[mode]
-
-            coefficient = np.exp(
-                1j
-                * xi
-                * (number * (2 * number + 1) - dual_number * (2 * dual_number + 1))
-            )
-
-            self._density_matrix[index] *= coefficient
-
-    def _cross_kerr(self, instruction: Instruction) -> None:
-        modes = instruction.modes
-        xi = instruction._all_params["xi"]
-
-        for index, (basis, dual_basis) in self._space.operator_basis:
-            coefficient = np.exp(
-                1j
-                * xi
-                * (
-                    basis[modes[0]] * basis[modes[1]]
-                    - dual_basis[modes[0]] * dual_basis[modes[1]]
-                )
-            )
-
-            self._density_matrix[index] *= coefficient
-
-    def _linear(self, instruction: Instruction) -> None:
-        operator = self._space.get_linear_fock_operator(
-            modes=instruction.modes,
-            cache_size=self._config.cache_size,
-            auxiliary_modes=self._get_auxiliary_modes(instruction.modes),
-            passive_block=instruction._all_params["passive_block"],
-            active_block=instruction._all_params["active_block"],
-            displacement=instruction._all_params["displacement_vector"],
-        )
-
-        self._density_matrix = (
-            operator @ self._density_matrix @ operator.conjugate().transpose()
-        )
-
-        self.normalize()
-
-    def _density_matrix_instruction(self, instruction: Instruction) -> None:
-        self._add_occupation_number_basis(**instruction.params)
 
     @property
     def nonzero_elements(
