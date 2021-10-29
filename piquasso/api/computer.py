@@ -21,7 +21,12 @@ from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
 from piquasso.api.program import Program
-from piquasso.api.errors import InvalidParameter, InvalidInstruction, InvalidSimulation
+from piquasso.api.errors import (
+    InvalidParameter,
+    InvalidInstruction,
+    InvalidSimulation,
+    InvalidState,
+)
 from piquasso.api.instruction import Gate, Instruction, Measurement, Preparation
 
 from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
@@ -121,6 +126,13 @@ class Simulator(Computer, abc.ABC):
         self._validate_instruction_existence(instructions)
         self._validate_instruction_order(instructions)
 
+    def _validate_state(self, initial_state: State) -> None:
+        if not isinstance(initial_state, self.state_class):
+            raise InvalidState(
+                f"State specified with type '{type(initial_state)}', but it should be "
+                f"{self.state_class} for this simulator."
+            )
+
     def validate(self, program):
         self._validate_instructions(program.instructions)
 
@@ -137,7 +149,11 @@ class Simulator(Computer, abc.ABC):
 
         self._validate_instructions(instructions)
 
-        state = initial_state.copy() if initial_state else self.create_initial_state()
+        if initial_state is not None:
+            self._validate_state(initial_state)
+            state = initial_state.copy()
+        else:
+            state = self.create_initial_state()
 
         # TODO: This is not a nice solution.
         state.shots = shots

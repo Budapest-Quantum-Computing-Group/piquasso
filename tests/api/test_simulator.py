@@ -188,3 +188,42 @@ def test_program_execution_with_measurement_not_being_last_raises_InvalidSimulat
 
     with pytest.raises(pq.api.errors.InvalidSimulation):
         simulator.execute(program)
+
+
+def test_program_execution_with_initial_state(
+    FakeSimulator,
+    FakeGate,
+    FakeState,
+):
+    with pq.Program() as program:
+        pq.Q() | FakeGate()
+
+    simulator = FakeSimulator(d=1)
+
+    state = FakeState(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program, initial_state=state)
+
+
+def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
+    FakeSimulator,
+    FakeGate,
+    FakeState,
+):
+    class OtherFakeState(FakeState):
+        pass
+
+    FakeSimulator.state_class = OtherFakeState
+
+    with pq.Program() as program:
+        pq.Q() | FakeGate()
+
+    simulator = FakeSimulator(d=1)
+
+    state = FakeState(d=1)
+
+    simulator.validate(program)
+
+    with pytest.raises(pq.api.errors.InvalidState):
+        simulator.execute(program, initial_state=state)
