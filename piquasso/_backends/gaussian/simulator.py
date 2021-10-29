@@ -14,35 +14,48 @@
 # limitations under the License.
 
 from .state import GaussianState
+from .calculations import (
+    passive_linear,
+    linear,
+    displacement,
+    graph,
+    homodyne_measurement,
+    generaldyne_measurement,
+    vacuum,
+    mean,
+    covariance,
+    particle_number_measurement,
+    threshold_measurement,
+)
 
 from piquasso.api.computer import Simulator
 
 
 class GaussianSimulator(Simulator):
     _instruction_map = {
-        "Interferometer": "_passive_linear",
-        "Beamsplitter": "_passive_linear",
-        "Phaseshifter": "_passive_linear",
-        "MachZehnder": "_passive_linear",
-        "Fourier": "_passive_linear",
-        "GaussianTransform": "_linear",
-        "Squeezing": "_linear",
-        "QuadraticPhase": "_linear",
-        "Squeezing2": "_linear",
-        "ControlledX": "_linear",
-        "ControlledZ": "_linear",
-        "Displacement": "_displacement",
-        "PositionDisplacement": "_displacement",
-        "MomentumDisplacement": "_displacement",
-        "Graph": "_graph",
-        "HomodyneMeasurement": "_homodyne_measurement",
-        "HeterodyneMeasurement": "_generaldyne_measurement",
-        "GeneraldyneMeasurement": "_generaldyne_measurement",
-        "Vacuum": "_vacuum",
-        "Mean": "_mean",
-        "Covariance": "_covariance",
-        "ParticleNumberMeasurement": "_particle_number_measurement",
-        "ThresholdMeasurement": "_threshold_measurement",
+        "Interferometer": passive_linear,
+        "Beamsplitter": passive_linear,
+        "Phaseshifter": passive_linear,
+        "MachZehnder": passive_linear,
+        "Fourier": passive_linear,
+        "GaussianTransform": linear,
+        "Squeezing": linear,
+        "QuadraticPhase": linear,
+        "Squeezing2": linear,
+        "ControlledX": linear,
+        "ControlledZ": linear,
+        "Displacement": displacement,
+        "PositionDisplacement": displacement,
+        "MomentumDisplacement": displacement,
+        "Graph": graph,
+        "HomodyneMeasurement": homodyne_measurement,
+        "HeterodyneMeasurement": generaldyne_measurement,
+        "GeneraldyneMeasurement": generaldyne_measurement,
+        "Vacuum": vacuum,
+        "Mean": mean,
+        "Covariance": covariance,
+        "ParticleNumberMeasurement": particle_number_measurement,
+        "ThresholdMeasurement": threshold_measurement,
     }
 
     state_class = GaussianState

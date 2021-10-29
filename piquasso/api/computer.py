@@ -15,7 +15,7 @@
 
 import abc
 
-from typing import Optional, List, Type, Dict
+from typing import Optional, List, Type, Dict, Callable
 
 from piquasso.api.result import Result
 from piquasso.api.state import State
@@ -51,7 +51,7 @@ class Simulator(Computer, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def _instruction_map(self) -> Dict[str, str]:
+    def _instruction_map(self) -> Dict[str, Callable]:
         pass
 
     def create_initial_state(self):
@@ -165,9 +165,9 @@ class Simulator(Computer, abc.ABC):
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()  # type: ignore
 
-            method_name = self._instruction_map[instruction.__class__.__name__]
+            calculation = self._instruction_map[instruction.__class__.__name__]
 
-            getattr(state, method_name)(instruction)
+            state = calculation(state, instruction)
 
         return state
 
