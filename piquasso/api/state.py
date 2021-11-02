@@ -15,12 +15,11 @@
 
 import abc
 import copy
-from typing import Tuple, Optional
+from typing import Tuple
 
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.result import Result
 
 
 class State(abc.ABC):
@@ -31,9 +30,6 @@ class State(abc.ABC):
     """
 
     def __init__(self, config: Config = None) -> None:
-        self.result: Optional[Result] = None
-        self.shots: int = None  # type: ignore
-
         self._config = config.copy() if config is not None else Config()
 
     @property

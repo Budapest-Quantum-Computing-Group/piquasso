@@ -51,7 +51,7 @@ from BoSS.simulation_strategies.simulation_strategy_interface import (
 )
 
 
-def state_vector(state: SamplingState, instruction: Instruction) -> SamplingState:
+def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     if not np.all(state.initial_state == 0):
         raise InvalidState("State vector is already set.")
 
@@ -67,10 +67,12 @@ def state_vector(state: SamplingState, instruction: Instruction) -> SamplingStat
 
     state.initial_state = np.rint(initial_state).astype(int)
 
-    return state
+    return Result(state=state)
 
 
-def passive_linear(state: SamplingState, instruction: Instruction) -> SamplingState:
+def passive_linear(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> Result:
     r"""Applies an interferometer to the circuit.
 
     This can be interpreted as placing another interferometer in the network, just
@@ -86,7 +88,7 @@ def passive_linear(state: SamplingState, instruction: Instruction) -> SamplingSt
         modes=instruction.modes,
     )
 
-    return state
+    return Result(state=state)
 
 
 def _apply_matrix_on_modes(
@@ -99,7 +101,7 @@ def _apply_matrix_on_modes(
     state.interferometer = embedded @ state.interferometer
 
 
-def loss(state: SamplingState, instruction: Instruction) -> SamplingState:
+def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
@@ -108,10 +110,10 @@ def loss(state: SamplingState, instruction: Instruction) -> SamplingState:
         modes=instruction.modes,
     )
 
-    return state
+    return Result(state=state)
 
 
-def sampling(state: SamplingState, instruction: Instruction) -> SamplingState:
+def sampling(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     initial_state = np.array(state.initial_state)
     permanent_calculator = RyserGuanPermanentCalculator(
         matrix=state.interferometer, input_state=initial_state
@@ -122,12 +124,10 @@ def sampling(state: SamplingState, instruction: Instruction) -> SamplingState:
     sampling_simulator = BosonSamplingSimulator(simulation_strategy)
 
     samples = sampling_simulator.get_classical_simulation_results(
-        initial_state, samples_number=state.shots
+        initial_state, samples_number=shots
     )
 
-    state.result = Result(samples=list(map(tuple, samples)))
-
-    return state
+    return Result(state=state, samples=list(map(tuple, samples)))
 
 
 def _get_sampling_simulation_strategy(

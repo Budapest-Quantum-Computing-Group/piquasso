@@ -60,7 +60,7 @@ def test_measure_particle_number_on_one_mode():
                 2 / 3 * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
                 2j * pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)),
             ]
-        )
+        ).state
 
     elif sample == (2,):
         expected_simulator = pq.FockSimulator(
@@ -69,7 +69,7 @@ def test_measure_particle_number_on_one_mode():
         )
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
-        )
+        ).state
 
     assert result.state == expected_state
 
@@ -110,7 +110,7 @@ def test_measure_particle_number_on_two_modes():
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
                 pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
             ]
-        )
+        ).state
 
     elif sample == (1, 1):
         expected_simulator = pq.FockSimulator(d=3, config=config)
@@ -118,13 +118,13 @@ def test_measure_particle_number_on_two_modes():
             instructions=[
                 pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
             ]
-        )
+        ).state
 
     elif sample == (0, 2):
         expected_simulator = pq.FockSimulator(d=3, config=config)
         expected_state = expected_simulator.execute_instructions(
             instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
-        )
+        ).state
 
     assert result.state == expected_state
 
@@ -161,7 +161,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
             ]
-        )
+        ).state
 
     elif sample == (0, 0, 1):
         expected_simulator = pq.FockSimulator(d=3, config=config)
@@ -169,7 +169,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
             ]
-        )
+        ).state
 
     elif sample == (1, 0, 0):
         expected_simulator = pq.FockSimulator(d=3, config=config)
@@ -177,7 +177,7 @@ def test_measure_particle_number_on_all_modes():
             instructions=[
                 pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
             ]
-        )
+        ).state
 
     assert result.state == expected_state
 
