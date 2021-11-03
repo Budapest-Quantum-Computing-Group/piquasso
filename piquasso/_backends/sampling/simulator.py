@@ -13,22 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso.api.computer import Simulator
+from piquasso.instructions import preparations, gates, measurements, channels
+
 from .state import SamplingState
 from .calculations import state_vector, passive_linear, sampling, loss
-
-from piquasso.api.computer import Simulator
 
 
 class SamplingSimulator(Simulator):
     _instruction_map = {
-        "StateVector": state_vector,
-        "Beamsplitter": passive_linear,
-        "Phaseshifter": passive_linear,
-        "MachZehnder": passive_linear,
-        "Fourier": passive_linear,
-        "Sampling": sampling,
-        "Interferometer": passive_linear,
-        "Loss": loss,
+        preparations.StateVector: state_vector,
+        gates.Beamsplitter: passive_linear,
+        gates.Phaseshifter: passive_linear,
+        gates.MachZehnder: passive_linear,
+        gates.Fourier: passive_linear,
+        gates.Interferometer: passive_linear,
+        measurements.Sampling: sampling,
+        channels.Loss: loss,
     }
 
     state_class = SamplingState

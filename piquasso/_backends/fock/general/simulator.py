@@ -14,9 +14,9 @@
 # limitations under the License.
 
 from piquasso.api.computer import Simulator
+from piquasso.instructions import preparations, gates, measurements
 
 from .state import FockState
-
 from .calculations import (
     passive_linear,
     linear,
@@ -32,25 +32,25 @@ from .calculations import (
 
 class FockSimulator(Simulator):
     _instruction_map = {
-        "DensityMatrix": density_matrix_instruction,
-        "Interferometer": passive_linear,
-        "Beamsplitter": passive_linear,
-        "Phaseshifter": passive_linear,
-        "MachZehnder": passive_linear,
-        "Fourier": passive_linear,
-        "Kerr": kerr,
-        "CrossKerr": cross_kerr,
-        "Squeezing": linear,
-        "QuadraticPhase": linear,
-        "Displacement": linear,
-        "PositionDisplacement": linear,
-        "MomentumDisplacement": linear,
-        "Squeezing2": linear,
-        "GaussianTransform": linear,
-        "ParticleNumberMeasurement": particle_number_measurement,
-        "Vacuum": vacuum,
-        "Create": create,
-        "Annihilate": annihilate,
+        preparations.Vacuum: vacuum,
+        preparations.Create: create,
+        preparations.Annihilate: annihilate,
+        preparations.DensityMatrix: density_matrix_instruction,
+        gates.Interferometer: passive_linear,
+        gates.Beamsplitter: passive_linear,
+        gates.Phaseshifter: passive_linear,
+        gates.MachZehnder: passive_linear,
+        gates.Fourier: passive_linear,
+        gates.Kerr: kerr,
+        gates.CrossKerr: cross_kerr,
+        gates.Squeezing: linear,
+        gates.QuadraticPhase: linear,
+        gates.Displacement: linear,
+        gates.PositionDisplacement: linear,
+        gates.MomentumDisplacement: linear,
+        gates.Squeezing2: linear,
+        gates.GaussianTransform: linear,
+        measurements.ParticleNumberMeasurement: particle_number_measurement,
     }
 
     state_class = FockState
