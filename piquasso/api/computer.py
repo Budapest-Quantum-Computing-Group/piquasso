@@ -51,7 +51,7 @@ class Simulator(Computer, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def _instruction_map(self) -> Dict[str, Callable]:
+    def _instruction_map(self) -> Dict[Type[Instruction], Callable]:
         pass
 
     def create_initial_state(self):
@@ -59,17 +59,23 @@ class Simulator(Computer, abc.ABC):
 
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
-            if instruction.__class__.__name__ not in self._instruction_map:
-                raise InvalidInstruction(
-                    "\n"
-                    "No such instruction implemented for this simulator.\n"
-                    "Details:\n"
-                    f"instruction={instruction}\n"
-                    f"simulator={self}\n"
-                    f"Available instructions:\n"
-                    + str(", ".join(self._instruction_map.keys()))
-                    + "."
-                )
+            self._get_calculation(instruction)
+
+    def _get_calculation(self, instruction: Instruction) -> Callable:
+        for instruction_class, calculation in self._instruction_map.items():
+            if type(instruction) == instruction_class:
+                return calculation
+
+        raise InvalidInstruction(
+            "\n"
+            "No such instruction implemented for this simulator.\n"
+            "Details:\n"
+            f"instruction={instruction}\n"
+            f"simulator={self}\n"
+            f"Available instructions:\n"
+            + str(", ".join(map(repr, self._instruction_map.keys())))
+            + "."
+        )
 
     def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
 
@@ -164,7 +170,7 @@ class Simulator(Computer, abc.ABC):
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()  # type: ignore
 
-            calculation = self._instruction_map[instruction.__class__.__name__]
+            calculation = self._get_calculation(instruction)
 
             result = calculation(result.state, instruction, shots)
 

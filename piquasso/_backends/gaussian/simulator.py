@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso.api.computer import Simulator
+from piquasso.instructions import preparations, gates, measurements
+
 from .state import GaussianState
 from .calculations import (
     passive_linear,
@@ -28,34 +31,32 @@ from .calculations import (
     threshold_measurement,
 )
 
-from piquasso.api.computer import Simulator
-
 
 class GaussianSimulator(Simulator):
     _instruction_map = {
-        "Interferometer": passive_linear,
-        "Beamsplitter": passive_linear,
-        "Phaseshifter": passive_linear,
-        "MachZehnder": passive_linear,
-        "Fourier": passive_linear,
-        "GaussianTransform": linear,
-        "Squeezing": linear,
-        "QuadraticPhase": linear,
-        "Squeezing2": linear,
-        "ControlledX": linear,
-        "ControlledZ": linear,
-        "Displacement": displacement,
-        "PositionDisplacement": displacement,
-        "MomentumDisplacement": displacement,
-        "Graph": graph,
-        "HomodyneMeasurement": homodyne_measurement,
-        "HeterodyneMeasurement": generaldyne_measurement,
-        "GeneraldyneMeasurement": generaldyne_measurement,
-        "Vacuum": vacuum,
-        "Mean": mean,
-        "Covariance": covariance,
-        "ParticleNumberMeasurement": particle_number_measurement,
-        "ThresholdMeasurement": threshold_measurement,
+        preparations.Vacuum: vacuum,
+        preparations.Mean: mean,
+        preparations.Covariance: covariance,
+        gates.Interferometer: passive_linear,
+        gates.Beamsplitter: passive_linear,
+        gates.Phaseshifter: passive_linear,
+        gates.MachZehnder: passive_linear,
+        gates.Fourier: passive_linear,
+        gates.GaussianTransform: linear,
+        gates.Squeezing: linear,
+        gates.QuadraticPhase: linear,
+        gates.Squeezing2: linear,
+        gates.ControlledX: linear,
+        gates.ControlledZ: linear,
+        gates.Displacement: displacement,
+        gates.PositionDisplacement: displacement,
+        gates.MomentumDisplacement: displacement,
+        gates.Graph: graph,
+        measurements.HomodyneMeasurement: homodyne_measurement,
+        measurements.HeterodyneMeasurement: generaldyne_measurement,
+        measurements.GeneraldyneMeasurement: generaldyne_measurement,
+        measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.ThresholdMeasurement: threshold_measurement,
     }
 
     state_class = GaussianState
