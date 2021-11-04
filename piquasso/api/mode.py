@@ -62,19 +62,20 @@ class Q:
             pq.Q(0, 1) | pq.Squeezing(r=0.5)
 
             pq.Q() | pq.ParticleNumberMeasurement()
-
-    Args:
-        *modes (int):
-            Variable length list of non-negative integers specifying the modes.
-
-    Raises:
-        InvalidModes:
-            Raised if
-            - the specified modes are not distinct;
-            - negative integers were specified.
     """
 
     def __init__(self, *modes: Union[int, Any]) -> None:
+        """
+        Args:
+            *modes (int):
+                Variable length list of non-negative integers specifying the modes.
+
+        Raises:
+            InvalidModes:
+                Raised if
+                - the specified modes are not distinct;
+                - negative integers were specified.
+        """
         is_all = modes == (all,)
 
         if not is_all and any(mode < 0 for mode in modes):

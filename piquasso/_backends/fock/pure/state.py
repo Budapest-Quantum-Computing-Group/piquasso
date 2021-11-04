@@ -36,14 +36,16 @@ class PureFockState(BaseFockState):
         {d + c - 1 \choose c - 1},
 
     where :math:`c \in \mathbb{N}` is the Fock space cutoff.
-
-    Args:
-        state_vector (numpy.ndarray, optional): The initial state vector.
-        d (int): The number of modes.
-        cutoff (int): The Fock space cutoff.
     """
 
     def __init__(self, *, d: int, config: Config = None) -> None:
+        """
+        Args:
+            state_vector (numpy.ndarray, optional): The initial state vector.
+            d (int): The number of modes.
+            cutoff (int): The Fock space cutoff.
+        """
+
         super().__init__(d=d, config=config)
 
         self._state_vector = self._get_empty()

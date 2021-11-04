@@ -91,13 +91,21 @@ class GeneraldyneMeasurement(Measurement):
     state characterizing the general-dyne detection. Notably, the heterodyne detection
     would correspond to a non-displaced Gaussian state with covariance
     :math:`\sigma_m = I_{d \times d}`.
-
-    Args:
-        detection_covariance (numpy.ndarray):
-            A 2-by-2 symplectic matrix corresponding to a purely quadratic Hamiltonian.
     """
 
     def __init__(self, detection_covariance: np.ndarray) -> None:
+        """
+        Args:
+            detection_covariance (numpy.ndarray):
+                A 2-by-2 symplectic matrix corresponding to a purely quadratic
+                Hamiltonian.
+
+        Raises:
+            InvalidParameter:
+                When the detection covariance does not satisfy the Robertson-Schrödinger
+                uncertainty relation.
+        """
+
         if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
             raise InvalidParameter(
                 "The parameter 'detection_covariance' is invalid, since it doesn't "
@@ -130,17 +138,19 @@ class HomodyneMeasurement(Measurement):
     with a strong coherent state :math:`| \alpha \rangle`, where :math:`\alpha >> 1`,
     then subtracting the detected intensities of the two outputs.
     The mixing is performed with a 50:50 beamsplitter.
-
-    Args:
-        phi (float): Phase space rotation angle.
-        z (float):
-            Squeezing amplitude. In the limit of `z` going to infinity one would recover
-            the pure homodyne measurement in the so-called strong oscillator limit.
-            Conversely, setting `z = 1` would correspond to
-            :class:`HeterodyneMeasurement`.
     """
 
     def __init__(self, phi: float = 0.0, z: float = 1e-4) -> None:
+        """
+        Args:
+            phi (float): Phase space rotation angle.
+            z (float):
+                Squeezing amplitude. In the limit of `z` going to infinity one would
+                recover the pure homodyne measurement in the so-called strong oscillator
+                limit. Conversely, setting `z = 1` would correspond to
+                :class:`HeterodyneMeasurement`.
+        """
+
         super().__init__(
             params=dict(
                 phi=phi,

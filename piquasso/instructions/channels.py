@@ -27,12 +27,13 @@ class Loss(Gate, _mixins.ScalingMixin):
     Note:
         Currently, this instruction can only be used along with
         :class:`~piquasso._backends.sampling.state.SamplingState`.
-
-    Args:
-        transmissivity (numpy.ndarray): The transmissivity array.
     """
 
     def __init__(self, transmissivity: np.ndarray) -> None:
+        """
+        Args:
+            transmissivity (numpy.ndarray): The transmissivity array.
+        """
         super().__init__(
             params=dict(transmissivity=transmissivity),
             extra_params=dict(

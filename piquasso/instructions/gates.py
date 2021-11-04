@@ -191,17 +191,19 @@ class Beamsplitter(_BogoliubovTransformation):
         \end{bmatrix},
 
     where :math:`t = \cos(\theta)` and :math:`r = e^{i \phi} \sin(\theta)`.
-
-    Args:
-        phi (float):
-            Phase angle of the beamsplitter.
-            (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
-        theta (float):
-            The transmittivity angle of the beamsplitter.
-            (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
     """
 
     def __init__(self, theta: float = 0.0, phi: float = np.pi / 4) -> None:
+        """
+        Args:
+            phi (float):
+                Phase angle of the beamsplitter.
+                (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
+            theta (float):
+                The transmittivity angle of the beamsplitter.
+                (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
+        """
+
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
 
@@ -237,12 +239,14 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
             e^{i \phi} & 0 \\
             0 & e^{- i \phi}
         \end{bmatrix}
-
-    Args:
-        phi (float): The angle of the rotation.
     """
 
     def __init__(self, phi: float) -> None:
+        """
+        Args:
+            phi (float): The angle of the rotation.
+        """
+
         super().__init__(
             params=dict(phi=phi), passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
         )
@@ -269,13 +273,14 @@ class MachZehnder(_BogoliubovTransformation):
         \end{bmatrix},
 
     where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
-
-    Args:
-        int_ (float): The internal angle.
-        ext (float): The external angle.
     """
 
     def __init__(self, int_: float, ext: float) -> None:
+        """
+        Args:
+            int_ (float): The internal angle.
+            ext (float): The external angle.
+        """
         int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
@@ -334,20 +339,21 @@ class GaussianTransform(_BogoliubovTransformation):
     .. math::
         P P^\dagger - A A^\dagger &= I_{d \times d} \\
         P A^T &= A P^T
-
-    Args:
-        passive (numpy.ndarray):
-            The passive submatrix of the symplectic matrix corresponding to the
-            transformation.
-        active (numpy.ndarray):
-            The active submatrix of the symplectic matrix corresponding to the
-            transformation.
-
-    Raises:
-        InvalidParameters: Raised if the parameters do not form a symplectic matrix.
     """
 
     def __init__(self, passive: np.ndarray, active: np.ndarray) -> None:
+        """
+        Args:
+            passive (numpy.ndarray):
+                The passive submatrix of the symplectic matrix corresponding to the
+                transformation.
+            active (numpy.ndarray):
+                The active submatrix of the symplectic matrix corresponding to the
+                transformation.
+
+        Raises:
+            InvalidParameters: Raised if the parameters do not form a symplectic matrix.
+        """
         if not is_symplectic(
             np.block([[passive, active], [active.conj(), passive.conj()]]),
             form_func=complex_symplectic_form,
@@ -390,13 +396,14 @@ class Squeezing(_ScalableBogoliubovTransformation):
         \right ),
 
     where :math:`z \in \mathbb{C}^{d \times d}` is a symmetric matrix.
-
-    Args:
-        r (float): The amplitude of the squeezing instruction.
-        phi (float): The squeezing angle.
     """
 
     def __init__(self, r: float, phi: float = 0.0) -> None:
+        """
+        Args:
+            r (float): The amplitude of the squeezing instruction.
+            phi (float): The squeezing angle.
+        """
         super().__init__(
             params=dict(r=r, phi=phi),
             passive_block=np.diag(np.atleast_1d(np.cosh(r))),
@@ -453,13 +460,14 @@ class Squeezing2(_BogoliubovTransformation):
             0 & e^{- i \phi} \sinh r & \cosh r & 0 \\
             e^{- i \phi} \sinh r & 0 & 0 & \cosh r
         \end{bmatrix}.
-
-    Args:
-        r (float): The amplitude of the squeezing instruction.
-        phi (float): The squeezing angle.
     """
 
     def __init__(self, r: float, phi: float = 0.0) -> None:
+        """
+        Args:
+            r (float): The amplitude of the squeezing instruction.
+            phi (float): The squeezing angle.
+        """
         super().__init__(
             params=dict(r=r, phi=phi),
             passive_block=np.array(
@@ -575,16 +583,17 @@ class Displacement(_ScalableBogoliubovTransformation):
         \alpha = r \exp \left (
             i \phi
         \right ).
-
-    Args:
-        alpha (complex): The displacement.
-        r (float): The displacement magnitude.
-        phi (float): The displacement angle.
     """
 
     def __init__(
         self, *, alpha: complex = None, r: float = None, phi: float = None
     ) -> None:
+        """
+        Args:
+            alpha (complex): The displacement.
+            r (float): The displacement magnitude.
+            phi (float): The displacement angle.
+        """
         alpha_: np.ndarray
 
         if alpha is not None and r is None and phi is None:
@@ -605,14 +614,15 @@ class Displacement(_ScalableBogoliubovTransformation):
 class PositionDisplacement(_ScalableBogoliubovTransformation):
     r"""Position displacement gate.
 
-    Args:
-        x (float): The position displacement.
-
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
     """
 
     def __init__(self, x: float) -> None:
+        """
+        Args:
+            x (float): The position displacement.
+        """
         super().__init__(
             params=dict(x=x),
             displacement_vector=np.atleast_1d(x),
@@ -622,14 +632,15 @@ class PositionDisplacement(_ScalableBogoliubovTransformation):
 class MomentumDisplacement(_ScalableBogoliubovTransformation):
     r"""Momentum displacement gate.
 
-    Args:
-        p (float): The momentum displacement.
-
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
     """
 
     def __init__(self, p: float) -> None:
+        """
+        Args:
+            p (float): The momentum displacement.
+        """
         super().__init__(
             params=dict(p=p),
             displacement_vector=1j * np.atleast_1d(p),
@@ -650,12 +661,13 @@ class Kerr(Gate):
 
     .. math::
         K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n))
-
-    Args:
-        xi (float): The magnitude of the Kerr nonlinear term.
     """
 
     def __init__(self, xi: float) -> None:
+        """
+        Args:
+            xi (float): The magnitude of the Kerr nonlinear term.
+        """
         super().__init__(params=dict(xi=xi))
 
 
@@ -674,12 +686,13 @@ class CrossKerr(Gate):
     .. math::
         CK_{ij} (\xi) a_i CK_{ij} (\xi) &= a_i \exp(- i \xi n_j) \\
         CK_{ij} (\xi) a_j CK_{ij} (\xi) &= a_j \exp(- i \xi n_i)
-
-    Args:
-        xi (float): The magnitude of the Cross-Kerr nonlinear term.
     """
 
     def __init__(self, xi: float) -> None:
+        """
+        Args:
+            xi (float): The magnitude of the Cross-Kerr nonlinear term.
+        """
         super().__init__(params=dict(xi=xi))
 
 

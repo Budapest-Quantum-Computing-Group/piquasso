@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 
 import blackbird
 from piquasso.core import _context, _blackbird
@@ -40,18 +40,20 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
         simulator = pq.GaussianSimulator(d=5)
         result = simulator.execute(program)
-
-    Args:
-        instructions (list[~piquasso.api.instruction.Instruction], optional):
-            The set of instructions, e.g. quantum gates and measurements.
     """
 
     instructions: list
 
     def __init__(
         self,
-        instructions: list = None,
+        instructions: Optional[list] = None,
     ) -> None:
+        """
+        Args:
+            instructions (list[~piquasso.api.instruction.Instruction], optional):
+                The set of instructions, e.g. quantum gates and measurements.
+        """
+
         self.instructions: List[Instruction] = instructions or []
 
     @staticmethod
