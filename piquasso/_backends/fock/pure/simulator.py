@@ -27,7 +27,7 @@ from .calculations import (
     annihilate,
 )
 
-from piquasso.api.computer import Simulator
+from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements
 
 

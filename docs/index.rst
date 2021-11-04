@@ -51,6 +51,8 @@ One could easily install Piquasso with the following command:
    :hidden:
 
    api/program
+   api/simulator
+   api/computer
    api/mode
    api/state
    api/instruction

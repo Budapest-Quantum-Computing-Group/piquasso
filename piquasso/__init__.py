@@ -28,7 +28,8 @@ from piquasso.api.instruction import (
 )
 from piquasso.api.program import Program
 from piquasso.api.state import State
-from piquasso.api.computer import Computer, Simulator
+from piquasso.api.computer import Computer
+from piquasso.api.simulator import Simulator
 
 from piquasso._backends.sampling import SamplingState, SamplingSimulator
 
