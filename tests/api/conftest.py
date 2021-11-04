@@ -61,6 +61,13 @@ def FakeState():
         def d(self):
             return self._d
 
+        @property
+        def fock_probabilities(self):
+            return list()
+
+        def validate(self):
+            pass
+
     return FakeState
 
 
@@ -70,7 +77,7 @@ def FakeSimulator(FakeState, FakePreparation, FakeGate, FakeMeasurement):
         return pq.api.result.Result(state=state)
 
     class FakeSimulator(pq.Simulator):
-        state_class = FakeState
+        _state_class = FakeState
 
         _instruction_map = {
             FakePreparation: fake_calculation,

@@ -20,9 +20,11 @@ import numpy as np
 
 from .state import FockState
 
-from piquasso._math.fock import FockBasis
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
+
+from piquasso._math.fock import FockBasis
+from piquasso._math.indices import get_operator_index
 
 
 def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
@@ -34,7 +36,7 @@ def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
 def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
-    index = state._get_operator_index(instruction.modes)
+    index = get_operator_index(instruction.modes)
 
     embedded_operator = np.identity(state._space.d, dtype=complex)
 

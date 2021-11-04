@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.computer import Simulator
+from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from .state import SamplingState
@@ -32,4 +32,4 @@ class SamplingSimulator(Simulator):
         channels.Loss: loss,
     }
 
-    state_class = SamplingState
+    _state_class = SamplingState

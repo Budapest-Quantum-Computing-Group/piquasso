@@ -104,6 +104,26 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     @classmethod
     def set_subclass(cls, instruction: Type["Instruction"]) -> None:
+        """Registers a class in the instruction subclass map.
+
+        This is meaningful in contexts when one has multiple instructions with the same
+        name.
+
+        Example:
+            When one creates a custom beamsplitter with name `Beamsplitter` and
+            subclasses :class:`~piquasso.instructions.gates.Beamsplitter`, then for e.g.
+            executing a Blackbird code will be performed with the custom one, not the
+            original one. When one wants to use the original one in this case, one can
+            reset it with this method.
+
+        Args:
+            instruction (Type[Instruction]): The instruction class to be registered.
+
+        Raises:
+            PiquassoException:
+                When the class is not actually an instance of :class:`Insruction`.
+        """
+
         if not issubclass(instruction, Instruction):
             raise PiquassoException(
                 f"The instruction '{instruction}' needs to be a subclass of "
@@ -114,6 +134,12 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     @classmethod
     def get_subclass(cls, name: str) -> Type["Instruction"]:
+        """Returns the instruction subclass specified by its name.
+
+        Returns:
+            Type[Instruction]: The instruction class.
+        """
+
         return cls._subclasses[name]
 
     def __repr__(self) -> str:
@@ -153,4 +179,4 @@ class Gate(Instruction):
 
 
 class Measurement(Instruction):
-    r"""Base class for all measurements."""
+    r"""Base class for measurements."""

@@ -22,6 +22,8 @@ import numpy as np
 
 
 class Config:
+    """The configuration for the simulation."""
+
     def __init__(
         self,
         *,
@@ -43,6 +45,8 @@ class Config:
 
     @property
     def seed_sequence(self):
+        """The seed sequence used to generate random numbers during the simulation."""
+
         return self._seed_sequence
 
     @seed_sequence.setter
@@ -51,5 +55,11 @@ class Config:
         self.rng = np.random.default_rng(self._seed_sequence)
         random.seed(self._seed_sequence)
 
-    def copy(self):
+    def copy(self) -> "Config":
+        """Returns an exact copy of this config object.
+
+        Returns:
+            Config: An exact copy of this config object.
+        """
+
         return copy.deepcopy(self)

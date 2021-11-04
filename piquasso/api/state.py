@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
 import abc
 import copy
-from typing import Tuple
 
 import numpy as np
 
@@ -32,37 +33,41 @@ class State(abc.ABC):
     def __init__(self, config: Config = None) -> None:
         self._config = config.copy() if config is not None else Config()
 
+    def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
+        return tuple(np.delete(np.arange(self.d), modes))
+
+    def copy(self) -> "State":
+        """Returns an exact copy of this state.
+
+        Returns:
+            State: An exact copy of this state.
+        """
+
+        return copy.deepcopy(self)
+
     @property
     @abc.abstractmethod
     def d(self) -> int:
         pass
 
-    def copy(self) -> "State":
-        return copy.deepcopy(self)
+    @property
+    @abc.abstractmethod
+    def fock_probabilities(self) -> np.ndarray:
+        """Returns the particle detection probabilities.
 
-    @staticmethod
-    def _get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
-        """
         Note:
-            For indexing of numpy arrays, see
-            https://numpy.org/doc/stable/reference/arrays.indexing.html#advanced-indexing
+            The ordering of the Fock basis is increasing with particle numbers, and in
+            each particle number conserving subspace, lexicographic ordering is used.
+
+        Returns:
+            np.ndarray: The particle detection probabilities.
         """
+        pass
 
-        transformed_columns = np.array([modes] * len(modes))
-        transformed_rows = transformed_columns.transpose()
-
-        return transformed_rows, transformed_columns
-
-    def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
-        return tuple(np.delete(np.arange(self.d), modes))
-
-    @staticmethod
-    def _get_auxiliary_operator_index(
-        modes: Tuple[int, ...], auxiliary_modes: Tuple[int, ...]
-    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
-        auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
-
-        return auxiliary_rows, auxiliary_modes
+    @abc.abstractmethod
+    def validate(self) -> None:
+        """Validates the state."""
+        pass
 
     @abc.abstractmethod
     def get_particle_detection_probability(

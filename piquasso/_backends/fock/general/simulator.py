@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.computer import Simulator
+from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements
 
 from .state import FockState
@@ -53,4 +53,4 @@ class FockSimulator(Simulator):
         measurements.ParticleNumberMeasurement: particle_number_measurement,
     }
 
-    state_class = FockState
+    _state_class = FockState

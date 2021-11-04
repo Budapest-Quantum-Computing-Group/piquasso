@@ -27,12 +27,12 @@ from .calculations import (
     annihilate,
 )
 
-from piquasso.api.computer import Simulator
+from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements
 
 
 class PureFockSimulator(Simulator):
-    state_class = PureFockState
+    _state_class = PureFockState
 
     _instruction_map = {
         preparations.Vacuum: vacuum,

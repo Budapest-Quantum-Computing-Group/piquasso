@@ -111,6 +111,12 @@ class PureFockState(BaseFockState):
         self._state_vector = self._state_vector / np.sqrt(self.norm)
 
     def validate(self) -> None:
+        """Validates the represented state.
+
+        Raises:
+            InvalidState:
+                Raised, if the norm of the state vector is not close to 1.0.
+        """
         sum_of_probabilities = sum(self.fock_probabilities)
 
         if not np.isclose(sum_of_probabilities, 1.0):
