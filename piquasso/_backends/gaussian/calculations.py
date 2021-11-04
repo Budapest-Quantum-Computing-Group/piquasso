@@ -33,6 +33,7 @@ from piquasso.api.instruction import Instruction
 
 from piquasso._math.linalg import reduce_
 from piquasso._math.hafnian import loop_hafnian
+from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
 
@@ -57,7 +58,7 @@ def passive_linear(
 def _apply_passive_linear_to_C_and_G(
     state: GaussianState, T: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    index = state._get_operator_index(modes)
+    index = get_operator_index(modes)
 
     state._C[index] = T.conjugate() @ state._C[index] @ T.transpose()
     state._G[index] = T @ state._G[index] @ T.transpose()
@@ -74,7 +75,7 @@ def _apply_passive_linear_to_auxiliary_modes(
     modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
-    auxiliary_index = state._get_auxiliary_operator_index(modes, auxiliary_modes)
+    auxiliary_index = get_auxiliary_operator_index(modes, auxiliary_modes)
 
     state._C[auxiliary_index] = T.conjugate() @ state._C[auxiliary_index]
     state._G[auxiliary_index] = T @ state._G[auxiliary_index]
@@ -102,7 +103,7 @@ def linear(state: GaussianState, instruction: Instruction, shots: int) -> Result
 def _apply_linear_to_C_and_G(
     state: GaussianState, P: np.ndarray, A: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    index = state._get_operator_index(modes)
+    index = get_operator_index(modes)
 
     original_C = state._C[index]
     original_G = state._G[index]
@@ -136,7 +137,7 @@ def _apply_linear_to_auxiliary_modes(
     modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
-    auxiliary_index = state._get_auxiliary_operator_index(modes, auxiliary_modes)
+    auxiliary_index = get_auxiliary_operator_index(modes, auxiliary_modes)
 
     auxiliary_C = state._C[auxiliary_index]
     auxiliary_G = state._G[auxiliary_index]

@@ -24,6 +24,7 @@ from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
 from piquasso._math.fock import FockBasis
+from piquasso._math.indices import get_operator_index
 
 
 def particle_number_measurement(
@@ -66,7 +67,7 @@ def passive_linear(
 ) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
-    index = state._get_operator_index(instruction.modes)
+    index = get_operator_index(instruction.modes)
 
     embedded_operator = np.identity(state._space.d, dtype=complex)
 
