@@ -97,9 +97,6 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
                 ]
             }
 
-        Note:
-            Numeric arrays and complex numbers are not yet supported.
-
         Args:
             dict_ (dict): The :class:`Program` in a key-value pair format.
 

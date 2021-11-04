@@ -64,17 +64,8 @@ class BaseFockState(State, abc.ABC):
         """Reduces the state to a subsystem corresponding to the specified modes."""
         pass
 
-    @property
-    @abc.abstractmethod
-    def fock_probabilities(self) -> np.ndarray:
-        pass
-
     @abc.abstractmethod
     def normalize(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    def validate(self) -> None:
         pass
 
     @abc.abstractmethod

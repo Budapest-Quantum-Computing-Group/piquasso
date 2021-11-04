@@ -61,6 +61,13 @@ def FakeState():
         def d(self):
             return self._d
 
+        @property
+        def fock_probabilities(self):
+            return list()
+
+        def validate(self):
+            pass
+
     return FakeState
 
 

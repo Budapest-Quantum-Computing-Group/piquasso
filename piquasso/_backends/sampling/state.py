@@ -86,7 +86,7 @@ class SamplingState(State):
         return subspace_probabilities[index]
 
     @property
-    def fock_probabilities(self) -> List[float]:
+    def fock_probabilities(self) -> np.ndarray:
         """
         TODO: All the `fock_probabilities` properties return a list according to the
         `cutoff` specified in `config`. However, here it does not make sense to adhere
@@ -109,11 +109,11 @@ class SamplingState(State):
 
             probabilities.extend(subspace_probabilities)
 
-        return probabilities
+        return np.array(probabilities)
 
     def _get_fock_probabilities_on_subspace(self) -> List[float]:
         """
-        The order if the returned Fock states is lexicographic, according to
+        The order of the returned Fock states is lexicographic, according to
         `BoSS.boson_sampling_utilities.boson_sampling_utilities
         .generate_possible_outputs`
         """

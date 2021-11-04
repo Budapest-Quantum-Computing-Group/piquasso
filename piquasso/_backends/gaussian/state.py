@@ -57,7 +57,7 @@ class GaussianState(State):
     def d(self) -> int:
         return len(self)
 
-    def reset(self):
+    def reset(self) -> None:
         r"""Resets the state to a vacuum."""
 
         vector_shape = (self.d,)

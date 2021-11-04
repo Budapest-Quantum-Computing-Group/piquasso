@@ -26,8 +26,8 @@ class Result(Generic[TState, TNum]):
     """Class for collecting results.
 
     Args:
-        samples (list[tuple[int or float]]):
-            The generated samples.
+        state (State): The resulting simulated state.
+        samples (list[tuple[int or float]]): The generated samples.
     """
 
     def __init__(
@@ -39,7 +39,7 @@ class Result(Generic[TState, TNum]):
         self.samples: List[Tuple[TNum, ...]] = samples or []
 
     def __repr__(self) -> str:
-        return f"<Result samples={self.samples}>"
+        return f"<Result samples={self.samples} state={self.state}>"
 
     def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.

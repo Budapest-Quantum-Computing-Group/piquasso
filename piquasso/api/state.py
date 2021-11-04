@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
 import abc
 import copy
-from typing import Tuple
 
 import numpy as np
 
@@ -31,14 +32,6 @@ class State(abc.ABC):
 
     def __init__(self, config: Config = None) -> None:
         self._config = config.copy() if config is not None else Config()
-
-    @property
-    @abc.abstractmethod
-    def d(self) -> int:
-        pass
-
-    def copy(self) -> "State":
-        return copy.deepcopy(self)
 
     @staticmethod
     def _get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
@@ -63,6 +56,39 @@ class State(abc.ABC):
         auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
 
         return auxiliary_rows, auxiliary_modes
+
+    def copy(self) -> "State":
+        """Returns an exact copy of this state.
+
+        Returns:
+            State: An exact copy of this state.
+        """
+
+        return copy.deepcopy(self)
+
+    @property
+    @abc.abstractmethod
+    def d(self) -> int:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def fock_probabilities(self) -> np.ndarray:
+        """Returns the particle detection probabilities.
+
+        Note:
+            The ordering of the Fock basis is increasing with particle numbers, and in
+            each particle number conserving subspace, lexicographic ordering is used.
+
+        Returns:
+            np.ndarray: The particle detection probabilities.
+        """
+        pass
+
+    @abc.abstractmethod
+    def validate(self) -> None:
+        """Validates the state."""
+        pass
 
     @abc.abstractmethod
     def get_particle_detection_probability(
