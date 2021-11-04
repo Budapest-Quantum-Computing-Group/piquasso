@@ -33,19 +33,33 @@ from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 
 
 class Computer(abc.ABC):
+    """Base class for all quantum computers or simulators supported by Piquasso."""
+
     @abc.abstractmethod
     def execute(
         self,
         program: Program,
         shots: int = 1,
-    ) -> Optional[Result]:
+    ) -> Result:
+        """Executes the program `shots` times.
+
+        Args:
+            program (Program): The program to be executes.
+            shots (int, optional):
+                The number of times the program should be executed. Defaults to 1.
+
+        Returns:
+            Result: The result of the execution containing `shots` number of samples.
+        """
         pass
 
 
 class Simulator(Computer, abc.ABC):
-    state_class: Type[State]
+    """Base class for all simulators defined in Piquasso."""
 
-    def __init__(self, d: int, config: Config = None) -> None:
+    _state_class: Type[State]
+
+    def __init__(self, d: int, config: Optional[Config] = None) -> None:
         self.d = d
         self.config = config.copy() if config is not None else Config()
 
@@ -55,7 +69,15 @@ class Simulator(Computer, abc.ABC):
         pass
 
     def create_initial_state(self):
-        return self.state_class(d=self.d, config=self.config)
+        """Creates an initial state with no instructions executed.
+
+        Note: This not necessarily needs to be a vacuum state.
+
+        Returns:
+            State: The initial state of the simulation.
+        """
+
+        return self._state_class(d=self.d, config=self.config)
 
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
@@ -66,7 +88,7 @@ class Simulator(Computer, abc.ABC):
             if type(instruction) == instruction_class:
                 return calculation
 
-        raise InvalidInstruction(
+        raise InvalidSimulation(
             "\n"
             "No such instruction implemented for this simulator.\n"
             "Details:\n"
@@ -133,13 +155,25 @@ class Simulator(Computer, abc.ABC):
         self._validate_instruction_order(instructions)
 
     def _validate_state(self, initial_state: State) -> None:
-        if not isinstance(initial_state, self.state_class):
+        if not isinstance(initial_state, self._state_class):
             raise InvalidState(
                 f"State specified with type '{type(initial_state)}', but it should be "
-                f"{self.state_class} for this simulator."
+                f"{self._state_class} for this simulator."
             )
 
-    def validate(self, program):
+    def validate(self, program: Program) -> None:
+        """Validates the specified program.
+
+        Raises:
+            InvalidInstruction: When invalid instructions are defined in the program.
+            InvalidSimulation:
+                When the instructions are valid, but the simulator couldn't execute the
+                specified program.
+
+        Args:
+            program (Program): The program to validate.
+        """
+
         self._validate_instructions(program.instructions)
 
     def execute_instructions(
@@ -148,6 +182,25 @@ class Simulator(Computer, abc.ABC):
         initial_state: State = None,
         shots: int = 1,
     ) -> Result:
+        """Executes the specified instruction list.
+
+        Args:
+            instructions (List[Instruction]): The instructions to execute.
+            initial_state (State, optional):
+                A state to execute the instructions on. Defaults to the state created by
+                :meth:`create_initial_state`.
+            shots (int, optional):
+                The number of times the program should execute. Defaults to 1.
+
+        Raises:
+            InvalidParameter: When `shots` is not a positive integer.
+
+        Returns:
+            Result:
+                The result of the simulation containing the resulting state and samples
+                if any measurement is specified in `instructions`.
+        """
+
         if not isinstance(shots, int) or shots < 1:
             raise InvalidParameter(
                 f"The number of shots should be a positive integer: shots={shots}."
@@ -179,13 +232,23 @@ class Simulator(Computer, abc.ABC):
     def execute(
         self, program: Program, shots: int = 1, initial_state: State = None
     ) -> Result:
-        """Applies the given program to the state and executes it.
+        """Executes the specified program.
 
         Args:
-            program (Program):
-                The program whose instructions are used in the simpulation.
-            shots (int):
-                The number of samples to generate.
+            program (Program): The program to execute.
+            initial_state (State, optional):
+                A state to execute the instructions on. Defaults to the state created by
+                :meth:`create_initial_state`.
+            shots (int, optional):
+                The number of times the program should execute. Defaults to 1.
+
+        Raises:
+            InvalidParameter: When `shots` is not a positive integer.
+
+        Returns:
+            Result:
+                The result of the simulation containing the resulting state and samples
+                if any measurement is specified in `program`.
         """
 
         instructions: List[Instruction] = program.instructions

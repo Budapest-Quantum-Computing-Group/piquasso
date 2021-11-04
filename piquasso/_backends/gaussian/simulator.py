@@ -59,4 +59,4 @@ class GaussianSimulator(Simulator):
         measurements.ThresholdMeasurement: threshold_measurement,
     }
 
-    state_class = GaussianState
+    _state_class = GaussianState

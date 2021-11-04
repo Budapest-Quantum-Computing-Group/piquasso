@@ -32,4 +32,4 @@ class SamplingSimulator(Simulator):
         channels.Loss: loss,
     }
 
-    state_class = SamplingState
+    _state_class = SamplingState

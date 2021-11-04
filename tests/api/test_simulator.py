@@ -83,7 +83,7 @@ def test_empty_program_executes_without_exception(
     simulator.execute(program)
 
 
-def test_program_execution_with_no_proper_instruction(
+def test_program_execution_with_unregistered_instruction_raises_InvalidSimulation(
     FakeSimulator,
     FakeGate,
     FakeMeasurement,
@@ -98,10 +98,10 @@ def test_program_execution_with_no_proper_instruction(
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidInstruction):
+    with pytest.raises(pq.api.errors.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidInstruction):
+    with pytest.raises(pq.api.errors.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -214,7 +214,7 @@ def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
     class OtherFakeState(FakeState):
         pass
 
-    FakeSimulator.state_class = OtherFakeState
+    FakeSimulator._state_class = OtherFakeState
 
     with pq.Program() as program:
         pq.Q() | FakeGate()

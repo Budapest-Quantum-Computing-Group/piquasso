@@ -32,7 +32,7 @@ from piquasso.instructions import preparations, gates, measurements
 
 
 class PureFockSimulator(Simulator):
-    state_class = PureFockState
+    _state_class = PureFockState
 
     _instruction_map = {
         preparations.Vacuum: vacuum,

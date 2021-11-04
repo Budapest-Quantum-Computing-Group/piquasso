@@ -53,4 +53,4 @@ class FockSimulator(Simulator):
         measurements.ParticleNumberMeasurement: particle_number_measurement,
     }
 
-    state_class = FockState
+    _state_class = FockState
