@@ -24,6 +24,20 @@ def is_unitary(matrix: np.ndarray) -> bool:
     )
 
 
+def is_real(matrix: np.ndarray) -> bool:
+    return bool(np.all(np.isreal(matrix)))
+
+
+def is_2n_by_2n(matrix: np.ndarray) -> bool:
+    dim = len(matrix)
+
+    return matrix.shape == (dim, dim) and dim % 2 == 0
+
+
+def is_real_2n_by_2n(matrix: np.ndarray) -> bool:
+    return is_real(matrix) and is_2n_by_2n(matrix)
+
+
 def is_symmetric(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, matrix.transpose())
 

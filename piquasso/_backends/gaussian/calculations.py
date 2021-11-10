@@ -30,6 +30,7 @@ from .probabilities import calculate_click_probability
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
+from piquasso.api.errors import InvalidInstruction
 
 from piquasso._math.linalg import reduce_
 from piquasso._math.hafnian import loop_hafnian
@@ -563,3 +564,31 @@ def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     return passive_linear(
         result.state, instruction._all_params["interferometer"], shots
     )
+
+
+def deterministic_gaussian_channel(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> Result:
+    X = instruction._all_params["X"]
+    Y = instruction._all_params["Y"] * state._config.hbar
+    modes = instruction.modes
+
+    if len(X) != 2 * len(modes) or len(Y) != 2 * len(modes):
+        raise InvalidInstruction(
+            f"The instruction should be specified for '{len(modes)}' modes: "
+            f"instruction={instruction}"
+        )
+
+    indices = _map_modes_to_xpxp_indices(modes)
+    matrix_indices = np.ix_(indices, indices)
+
+    mean_vector = state.xpxp_mean_vector
+    covariance_matrix = state.xpxp_covariance_matrix
+
+    mean_vector[indices] = X @ mean_vector[indices]
+    covariance_matrix[matrix_indices] = X @ covariance_matrix[matrix_indices] @ X.T + Y
+
+    state.xpxp_mean_vector = mean_vector
+    state.xpxp_covariance_matrix = covariance_matrix
+
+    return Result(state=state)

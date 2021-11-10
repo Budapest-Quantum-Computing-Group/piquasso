@@ -15,10 +15,130 @@
 
 import numpy as np
 
+from piquasso._math.linalg import is_positive_semidefinite, is_real_2n_by_2n
+from piquasso._math.symplectic import symplectic_form
+
 from piquasso.core import _mixins
 
 from piquasso.api.errors import InvalidParameter
 from piquasso.api.instruction import Gate
+
+
+class DeterministicGaussianChannel(Gate):
+    r"""Deterministic Gaussian channel.
+
+    It is a CP (completely positive) map between Gaussian states which is characterized
+    by the matrices :math:`X, Y \in \mathbb{R}^{2n \times 2n}` acting on the mean vector
+    and covariance matrix with the mapping
+
+    .. math::
+        \mu &\mapsto X \mu \\
+        \sigma &\mapsto X \sigma X^T + Y.
+
+    The matrices :math:`X` and :math:`Y` should satisfy the inequality
+
+    .. math::
+        Y + i \Omega \geq i X \Omega X^T.
+
+    Note:
+        The matrix :math:`Y` is not dimensionless originally, but should be specified
+        minding that it will automatically scaled with the value of the Planck constant
+        during execution.
+
+    Note:
+        Currently, this instruction can only be used along with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    """
+
+    def __init__(self, X: np.ndarray, Y: np.ndarray) -> None:
+        """
+        Args:
+            X (numpy.ndarray):
+                Transformation matrix on the quadrature vectors in `xpxp` order.
+            Y (numpy.ndarray):
+                The additive noise contributing to the covariance matrix in `xpxp`
+                order.
+
+        Raises:
+            InvalidParameter: If the specified 'X' and/or 'Y' matrices are invalid.
+        """
+
+        if not is_real_2n_by_2n(X):
+            raise InvalidParameter(
+                f"The parameter 'X' must be a real 2n-by-2n matrix: X={X}"
+            )
+
+        if not is_real_2n_by_2n(Y):
+            raise InvalidParameter(
+                f"The parameter 'Y' must be a real 2n-by-2n matrix: Y={Y}"
+            )
+
+        if X.shape != Y.shape:
+            raise InvalidParameter(
+                f"The shape of matrices 'X' and 'Y' should be equal: "
+                f"X.shape={X.shape}, Y.shape={Y.shape}"
+            )
+
+        omega = symplectic_form(len(X) // 2)
+
+        if not is_positive_semidefinite(
+            Y - 1j * omega - 1j * X @ omega @ X.transpose()
+        ):
+            raise InvalidParameter(
+                "The matrices 'X' and 'Y' does not satisfy the inequality "
+                "corresponding to Gaussian channels."
+            )
+
+        super().__init__(params=dict(X=X, Y=Y))
+
+
+class Attenuator(Gate):
+    r"""The attenuator channel.
+
+    It reduces the first moments' amplitude by :math:`\cos \theta` by mixing the input
+    state with a thermal state using a beamsplitter.
+
+    It can also be characterized as a deterministic Gaussian channel with mappings
+
+    .. math::
+        X &= \cos \theta I_{2 \times 2} \\
+        Y &= ( \sin \theta )^2 (2 N + 1) I_{2 \times 2},
+
+    where :math:`\theta \in [0, 2 \pi[` is the beampsplitters' mixing angle and
+    :math:`N \in \mathbb{R}^{+}`. :math:`N` is the mean number of thermal excitations of
+    the system interacting with the environment.
+
+    Note:
+        Currently, this instruction can only be used along with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    """
+
+    def __init__(self, theta: float, mean_thermal_excitation: float = 0) -> None:
+        """
+        Args:
+            theta (float): The mixing angle.
+            mean_thermal_excitation (int):
+                Mean number of thermal excitations of the system interacting with the
+                environment.
+
+        Raises:
+            InvalidParameter: If the specified mean thermal excitation is not positive.
+        """
+
+        if mean_thermal_excitation < 0:
+            raise InvalidParameter(
+                "The parameter 'mean_thermal_excitation' must be a positive real "
+                f"number: mean_thermal_excitation={mean_thermal_excitation}"
+            )
+
+        X = np.cos(theta) * np.identity(2)
+
+        Y = (np.sin(theta) ** 2) * (2 * mean_thermal_excitation + 1) * np.identity(2)
+
+        super().__init__(
+            params=dict(theta=theta, mean_thermal_excitation=mean_thermal_excitation),
+            extra_params=dict(X=X, Y=Y),
+        )
 
 
 class Loss(Gate, _mixins.ScalingMixin):
