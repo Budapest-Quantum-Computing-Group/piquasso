@@ -31,14 +31,16 @@ class FockState(BaseFockState):
     Note:
         If you only work with pure states, it is advised to use
         :class:`~piquasso._backends.fock.pure.state.PureFockState` instead.
-
-    Args:
-        density_matrix (numpy.ndarray, optional): The initial density matrix.
-        d (int): The number of modes.
-        cutoff (int): The Fock space cutoff.
     """
 
     def __init__(self, *, d: int, config: Config = None) -> None:
+        """
+        Args:
+            density_matrix (numpy.ndarray, optional): The initial density matrix.
+            d (int): The number of modes.
+            cutoff (int): The Fock space cutoff.
+        """
+
         super().__init__(d=d, config=config)
 
         self._density_matrix = self._get_empty()

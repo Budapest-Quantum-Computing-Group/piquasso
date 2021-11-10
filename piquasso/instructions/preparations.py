@@ -58,6 +58,11 @@ class Mean(Preparation):
     """
 
     def __init__(self, mean: np.ndarray) -> None:
+        """
+        Args:
+            mean (numpy.ndarray):
+                The vector of the first canonical moments in `xpxp`-ordering.
+        """
         super().__init__(params=dict(mean=mean))
 
 
@@ -77,6 +82,11 @@ class Covariance(Preparation):
     """
 
     def __init__(self, cov: np.ndarray) -> None:
+        """
+        Args:
+            cov (numpy.ndarray): The covariance matrix in `xpxp`-ordering.
+        """
+
         super().__init__(params=dict(cov=cov))
 
 
@@ -100,6 +110,17 @@ class StateVector(Preparation, _mixins.WeightMixin):
     def __init__(
         self, occupation_numbers: Iterable[int], coefficient: complex = 1.0
     ) -> None:
+        """
+        Args:
+            occupation_numbers (Iterable[int]): The occupation numbers.
+            coefficient (complex, optional):
+                The coefficient of the occupation number. Defaults to 1.0.
+
+        Raises:
+            InvalidState:
+                If the specified occupation numbers are not all natural numbers.
+        """
+
         if not all_natural(occupation_numbers):
             raise InvalidState(
                 f"Invalid occupation numbers: occupation_numbers={occupation_numbers}"
@@ -139,6 +160,25 @@ class DensityMatrix(Preparation, _mixins.WeightMixin):
         bra: Iterable[int],
         coefficient: complex = 1.0,
     ) -> None:
+        """
+        Args:
+            bra (Iterable[int]): The bra vector.
+            ket (Iterable[int]): The ket vector.
+            coefficient (complex, optional):
+                The coefficient of the operator defined by the "bra" and "ket" vectors.
+                Defaults to 1.0.
+
+        Raises:
+            InvalidState:
+                If the specified "bra" or "ket" vectors are not all natural numbers.
+        """
+
+        if not all_natural(ket):
+            raise InvalidState(f"Invalid ket vector: ket={ket}")
+
+        if not all_natural(bra):
+            raise InvalidState(f"Invalid ket vector: ket={bra}")
+
         super().__init__(
             params=dict(
                 ket=tuple(ket),

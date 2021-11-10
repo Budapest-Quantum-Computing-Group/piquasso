@@ -23,18 +23,19 @@ TState = TypeVar("TState", bound=State)
 
 
 class Result(Generic[TState, TNum]):
-    """Class for collecting results.
-
-    Args:
-        state (State): The resulting simulated state.
-        samples (list[tuple[int or float]]): The generated samples.
-    """
+    """Class for collecting results."""
 
     def __init__(
         self,
         state: TState,
         samples: Optional[List[Tuple[TNum, ...]]] = None,
     ) -> None:
+        """
+        Args:
+            state (State): The resulting simulated state.
+            samples (list[tuple[int or float]]): The generated samples.
+        """
+
         self.state: TState = state
         self.samples: List[Tuple[TNum, ...]] = samples or []
 

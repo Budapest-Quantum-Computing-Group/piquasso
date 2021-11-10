@@ -28,8 +28,11 @@ if typing.TYPE_CHECKING:
 
 class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     """
+    Base class for all instructions.
+
     Args:
-        *params: Variable length argument list.
+        params: Mapping of parameters specified by the users.
+        extra_params: Mapping of extra parameters, typically calculated ones.
     """
 
     _subclasses: Dict[str, Type["Instruction"]] = {}

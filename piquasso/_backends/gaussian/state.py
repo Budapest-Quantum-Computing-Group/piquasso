@@ -369,8 +369,8 @@ class GaussianState(State):
         .. math::
             \mu_{c} := W \mu_{xxpp},
 
-        where :math:`\mu_{xxpp}` is the xxpp-ordered mean vector :attr:`xxpp_mean`
-        and
+        where :math:`\mu_{xxpp}` is the xxpp-ordered mean vector
+        :attr:`xxpp_mean_vector` and
 
         .. math::
             W = \frac{1}{\sqrt{2}} \begin{bmatrix}
@@ -452,7 +452,7 @@ class GaussianState(State):
                 a_i \exp(-i \phi) + a_i^\dagger \exp(i \phi)
             \right),
 
-        meaning that e.g. the annihilation operators `a_i` are transformed just
+        meaning that e.g. the annihilation operators :math:`a_i` are transformed just
         multiplied by a phase factor :math:`\exp(-i \phi)` under this phase space
         rotation, i.e.
 

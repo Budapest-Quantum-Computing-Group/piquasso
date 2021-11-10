@@ -60,7 +60,7 @@ class State(abc.ABC):
             each particle number conserving subspace, lexicographic ordering is used.
 
         Returns:
-            np.ndarray: The particle detection probabilities.
+            numpy.ndarray: The particle detection probabilities.
         """
         pass
 

@@ -32,15 +32,16 @@ class T(np.ndarray):
 
     The matrix is automatically embedded in a `d` times `d` identity
     matrix, which can be readily applied during decomposition.
-
-    Args:
-        operation (dict):
-            A dict containing the angle parameters and the modes on which the
-            beamsplitter operation is applied.
-        d (int): The total number of modes.
     """
 
     def __new__(cls, operation: dict, d: int) -> "T":
+        """
+        Args:
+            operation (dict):
+                A dict containing the angle parameters and the modes on which the
+                beamsplitter operation is applied.
+            d (int): The total number of modes.
+        """
 
         theta, phi = operation["params"]
         i, j = operation["modes"]
@@ -94,15 +95,15 @@ class T(np.ndarray):
 
 
 class Clements:
-    """
-    Args:
-        U (numpy.ndarray): The (square) unitary matrix to be decomposed.
-        decompose (bool):
-            Optional, if `True`, the decomposition is automatically calculated.
-            Defaults to `True`.
-    """
-
     def __init__(self, U: np.ndarray, decompose: bool = True):
+        """
+        Args:
+            U (numpy.ndarray): The (square) unitary matrix to be decomposed.
+            decompose (bool):
+                Optional, if `True`, the decomposition is automatically calculated.
+                Defaults to `True`.
+        """
+
         self.U: np.ndarray = U
         self.d: int = U.shape[0]
         self.inverse_operations: List[dict] = []
