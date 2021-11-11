@@ -41,9 +41,10 @@ class DeterministicGaussianChannel(Gate):
         Y + i \Omega \geq i X \Omega X^T.
 
     Note:
-        The matrix :math:`Y` is not dimensionless originally, but should be specified
-        minding that it will automatically scaled with the value of the Planck constant
-        during execution.
+        The matrix :math:`Y` is dependent on :math:`\hbar`, but the value of
+        :math:`\hbar` is specified later when executed by a simulator. The parameter
+        `Y` should be specified keeping in mind that it will automatically be scaled
+        with :math:`\hbar` during execution.
 
     Note:
         Currently, this instruction can only be used along with

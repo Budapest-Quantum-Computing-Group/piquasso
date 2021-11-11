@@ -24,3 +24,7 @@ def is_natural(number: Union[int, float]) -> bool:
 
 def all_natural(array: Iterable) -> bool:
     return all(is_natural(number) for number in array)
+
+
+def all_real_and_positive(vector: Iterable) -> bool:
+    return all(element >= 0.0 or np.isclose(element, 0.0) for element in vector)

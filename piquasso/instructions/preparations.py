@@ -19,9 +19,9 @@ import numpy as np
 
 from piquasso.core import _mixins
 from piquasso.api.instruction import Preparation
-from piquasso.api.errors import InvalidState
+from piquasso.api.errors import InvalidParameter, InvalidState
 
-from piquasso._math.validations import all_natural
+from piquasso._math.validations import all_natural, all_real_and_positive
 
 
 class Vacuum(Preparation):
@@ -55,6 +55,12 @@ class Mean(Preparation):
 
     Can only be applied to the following states:
     :class:`~piquasso._backends.gaussian.state.GaussianState`.
+
+    Note:
+        The mean vector is dependent on :math:`\hbar`, but the value of :math:`\hbar`
+        is specified later when executed by a simulator. The parameter `mean` should be
+        specified keeping in mind that it will automatically be scaled with
+        :math:`\hbar` during execution.
     """
 
     def __init__(self, mean: np.ndarray) -> None:
@@ -79,6 +85,12 @@ class Covariance(Preparation):
 
     Can only be applied to the following states:
     :class:`~piquasso._backends.gaussian.state.GaussianState`.
+
+    Note:
+        The covariance matrix is dependent on :math:`\hbar`, but the value of
+        :math:`\hbar` is specified later when executed by a simulator. The parameter
+        `cov` should be specified keeping in mind that it will automatically be scaled
+        with :math:`\hbar` during execution.
     """
 
     def __init__(self, cov: np.ndarray) -> None:
@@ -88,6 +100,63 @@ class Covariance(Preparation):
         """
 
         super().__init__(params=dict(cov=cov))
+
+
+class Thermal(Preparation):
+    r"""Prepares a thermal state.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q(0, 1) | pq.Thermal([0.5, 1.5])
+            ...
+
+    The thermal state is defined by
+
+    .. math::
+        \rho = \sum_{\vec{n} = 0}^\infty
+            \frac{\overline{n}^{\vec{n}}}{(1 + \overline{n})^{\vec{n} + 1}}
+            | \vec{n} \rangle \langle \vec{n} |,
+
+    where :math:`\overline{n} \in \mathbb{R}^d` is the vector of mean photon numbers.
+    The power on vectors is defined as
+
+    .. math::
+        \vec{a}^{\vec{b}} = \prod_{i=1}^d a_i^{b_i}
+
+    In terms of Gaussian states, the mean vector and covariance matrix is
+
+    .. math::
+        \mu &= 0_{2d} \\
+        \sigma &= \hbar (
+            2 \operatorname{diag}(\operatorname{repeat}(\overline{n}, 2))
+            + I_{2d \times 2d}
+        )
+
+    Can only be applied to the following states:
+    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    """
+
+    def __init__(self, mean_photon_numbers: Iterable[float]) -> None:
+        """
+        Args:
+            mean_photon_numbers (Iterable[float]): The sequence of mean photon numbers.
+
+        Raises:
+            InvalidParameter: If the mean photon numbers are not positive real numbers.
+        """
+        if not all_real_and_positive(mean_photon_numbers):
+            raise InvalidParameter(
+                "The mean photon numbers must be positive real numbers: "
+                f"mean_photon_numbers: {mean_photon_numbers}"
+            )
+
+        cov = np.diag(2 * np.repeat(np.array(mean_photon_numbers), 2) + 1)
+
+        super().__init__(
+            params=dict(mean_photon_numbers=mean_photon_numbers),
+            extra_params=dict(cov=cov),
+        )
 
 
 class StateVector(Preparation, _mixins.WeightMixin):

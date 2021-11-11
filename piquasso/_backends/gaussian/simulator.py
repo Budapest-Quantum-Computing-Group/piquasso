@@ -38,6 +38,7 @@ class GaussianSimulator(Simulator):
         preparations.Vacuum: vacuum,
         preparations.Mean: mean,
         preparations.Covariance: covariance,
+        preparations.Thermal: covariance,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,
         gates.Phaseshifter: passive_linear,
