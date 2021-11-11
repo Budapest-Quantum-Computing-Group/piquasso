@@ -81,6 +81,8 @@ from .instructions.measurements import (
 )
 
 from .instructions.channels import (
+    DeterministicGaussianChannel,
+    Attenuator,
     Loss,
 )
 
@@ -141,6 +143,8 @@ __all__ = [
     "HeterodyneMeasurement",
     "GeneraldyneMeasurement",
     # Channels
+    "DeterministicGaussianChannel",
+    "Attenuator",
     "Loss",
 ]
 

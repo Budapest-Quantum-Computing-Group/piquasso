@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from piquasso.api.simulator import Simulator
-from piquasso.instructions import preparations, gates, measurements
+from piquasso.instructions import preparations, gates, measurements, channels
 
 from .state import GaussianState
 from .calculations import (
@@ -29,6 +29,7 @@ from .calculations import (
     covariance,
     particle_number_measurement,
     threshold_measurement,
+    deterministic_gaussian_channel,
 )
 
 
@@ -57,6 +58,8 @@ class GaussianSimulator(Simulator):
         measurements.GeneraldyneMeasurement: generaldyne_measurement,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
         measurements.ThresholdMeasurement: threshold_measurement,
+        channels.DeterministicGaussianChannel: deterministic_gaussian_channel,
+        channels.Attenuator: deterministic_gaussian_channel,
     }
 
     _state_class = GaussianState

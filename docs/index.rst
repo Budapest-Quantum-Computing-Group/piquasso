@@ -44,6 +44,7 @@ One could easily install Piquasso with the following command:
    instructions/preparations
    instructions/gates
    instructions/measurements
+   instructions/channels
 
 .. toctree::
    :maxdepth: 3
