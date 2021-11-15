@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Generator, Any
+from typing import Tuple, Generator, Any, Dict
 
 import numpy as np
 
@@ -105,6 +105,15 @@ class PureFockState(BaseFockState):
         cardinality = cutoff_cardinality(d=self._space.d, cutoff=self._config.cutoff)
 
         return (self._state_vector * self._state_vector.conjugate()).real[:cardinality]
+
+    @property
+    def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
+        probability_map: Dict[Tuple[int, ...], float] = {}
+
+        for index, basis in self._space.basis:
+            probability_map[tuple(basis)] = np.abs(self._state_vector[index]) ** 2
+
+        return probability_map
 
     def normalize(self) -> None:
         if np.isclose(self.norm, 0):

@@ -45,3 +45,38 @@ def test_FockState_reduced():
     reduced_state = state.reduced(modes=(1,))
 
     assert expected_reduced_state == reduced_state
+
+
+def test_FockState_fock_probabilities_map():
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+    simulator = pq.FockSimulator(d=2)
+    state = simulator.execute(program).state
+
+    expected_fock_probabilities = {
+        (0, 0): 0.0,
+        (0, 1): 0.25,
+        (1, 0): 0.0,
+        (0, 2): 0.25,
+        (1, 1): 0.0,
+        (2, 0): 0.5,
+        (0, 3): 0.0,
+        (1, 2): 0.0,
+        (2, 1): 0.0,
+        (3, 0): 0.0,
+    }
+
+    actual_fock_probabilities = state.fock_probabilities_map
+
+    for occupation_number, expected_probability in expected_fock_probabilities.items():
+        assert np.isclose(
+            actual_fock_probabilities[occupation_number],
+            expected_probability,
+        )

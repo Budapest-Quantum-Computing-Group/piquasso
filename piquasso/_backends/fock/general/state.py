@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Any, Generator
+from typing import Tuple, Any, Generator, Dict
 
 import numpy as np
 
@@ -104,6 +104,15 @@ class FockState(BaseFockState):
         cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
 
         return np.diag(self._density_matrix).real[:cardinality]
+
+    @property
+    def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
+        probability_map: Dict[Tuple[int, ...], float] = {}
+
+        for index, basis in self._space.basis:
+            probability_map[tuple(basis)] = np.abs(self._density_matrix[index, index])
+
+        return probability_map
 
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         modes_to_eliminate = self._get_auxiliary_modes(modes)

@@ -309,7 +309,7 @@ class FockSpace(tuple):
         return FockBasis(temp)
 
     def get_projection_operator_indices_for_pure(
-        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+        self, *, subspace_basis: Tuple[int, ...], modes: Tuple[int, ...]
     ) -> List[int]:
         return [
             index
@@ -318,7 +318,7 @@ class FockSpace(tuple):
         ]
 
     def get_projection_operator_indices(
-        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+        self, *, subspace_basis: Tuple[int, ...], modes: Tuple[int, ...]
     ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         return tuple(  # type: ignore
             zip(

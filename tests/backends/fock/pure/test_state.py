@@ -45,3 +45,35 @@ def test_PureFockState_reduced():
     reduced_state = state.reduced(modes=(1,))
 
     assert expected_reduced_state == reduced_state
+
+
+def test_PureFockState_fock_probabilities_map():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) / 2
+
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+    simulator = pq.PureFockSimulator(d=2)
+    state = simulator.execute(program).state
+
+    expected_fock_probabilities = {
+        (0, 0): 0.0,
+        (0, 1): 0.25,
+        (1, 0): 0.0,
+        (0, 2): 0.25,
+        (1, 1): 0.0,
+        (2, 0): 0.5,
+        (0, 3): 0.0,
+        (1, 2): 0.0,
+        (2, 1): 0.0,
+        (3, 0): 0.0,
+    }
+
+    actual_fock_probabilities = state.fock_probabilities_map
+
+    for occupation_number, expected_probability in expected_fock_probabilities.items():
+        assert np.isclose(
+            actual_fock_probabilities[occupation_number],
+            expected_probability,
+        )

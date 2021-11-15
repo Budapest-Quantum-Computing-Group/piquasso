@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Mapping, Dict
+from typing import Tuple, Mapping
 
 import random
 import numpy as np
@@ -23,7 +23,6 @@ from .state import FockState
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
-from piquasso._math.fock import FockBasis
 from piquasso._math.indices import get_operator_index
 
 
@@ -54,10 +53,10 @@ def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Re
 def particle_number_measurement(
     state: FockState, instruction: Instruction, shots: int
 ) -> Result:
-    probability_map = _get_probability_map(
-        state=state,
-        modes=instruction.modes,
-    )
+
+    reduced_state = state.reduced(instruction.modes)
+
+    probability_map = reduced_state.fock_probabilities_map
 
     samples = random.choices(
         population=list(probability_map.keys()),
@@ -77,29 +76,11 @@ def particle_number_measurement(
         normalization=normalization,
     )
 
-    return Result(state=state, samples=samples)  # type: ignore
-
-
-def _get_probability_map(
-    state: FockState, *, modes: Tuple[int, ...]
-) -> Dict[FockBasis, float]:
-    probability_map: Dict[FockBasis, float] = {}
-
-    for index, basis in state._space.operator_basis_diagonal_on_modes(modes=modes):
-        coefficient = float(state._density_matrix[index])
-
-        subspace_basis = basis.ket.on_modes(modes=modes)
-
-        if subspace_basis in probability_map:
-            probability_map[subspace_basis] += coefficient
-        else:
-            probability_map[subspace_basis] = coefficient
-
-    return probability_map
+    return Result(state=state, samples=samples)
 
 
 def _get_normalization(
-    probability_map: Mapping[FockBasis, float], sample: FockBasis
+    probability_map: Mapping[Tuple[int, ...], float], sample: Tuple[int, ...]
 ) -> float:
     return 1 / probability_map[sample]
 
@@ -107,7 +88,7 @@ def _get_normalization(
 def _project_to_subspace(
     state: FockState,
     *,
-    subspace_basis: FockBasis,
+    subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
     normalization: float
 ) -> None:
@@ -121,7 +102,7 @@ def _project_to_subspace(
 
 
 def _get_projected_density_matrix(
-    state: FockState, *, subspace_basis: FockBasis, modes: Tuple[int, ...]
+    state: FockState, *, subspace_basis: Tuple[int, ...], modes: Tuple[int, ...]
 ) -> np.ndarray:
     new_density_matrix = state._get_empty()
 

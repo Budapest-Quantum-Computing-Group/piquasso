@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Generator, Any
+from typing import Tuple, Generator, Any, Dict
 
 import abc
 import numpy as np
@@ -73,4 +73,9 @@ class BaseFockState(State, abc.ABC):
         """
         Resets this object to a vacuum state.
         """
+        pass
+
+    @property
+    @abc.abstractmethod
+    def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         pass
