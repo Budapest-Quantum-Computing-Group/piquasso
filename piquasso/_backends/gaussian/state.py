@@ -34,16 +34,7 @@ from .probabilities import DensityMatrixCalculation
 
 
 class GaussianState(State):
-    r"""Class to represent a Gaussian state.
-
-    Example usage::
-
-        with pq.Program() as program:
-            pq.Q() | pq.Vacuum()
-
-        simulator = pq.GaussianSimulator(d=5)
-        result = simulator.execute(program)
-    """
+    r"""Class to represent a Gaussian state."""
 
     def __init__(self, d: int, config: Config = None) -> None:
         super().__init__(config=config)
