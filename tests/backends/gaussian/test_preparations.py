@@ -18,7 +18,91 @@ import numpy as np
 
 import piquasso as pq
 
-from piquasso.api.errors import InvalidState
+from piquasso.api.errors import InvalidParameter, InvalidState
+
+
+def test_Mean_is_automatically_scaled_by_hbar():
+    config = pq.Config(hbar=42)
+
+    xpxp_mean_vector = np.array([1, 2])
+
+    with pq.Program() as program:
+        pq.Q() | pq.Mean(xpxp_mean_vector)
+
+    simulator = pq.GaussianSimulator(d=1, config=config)
+
+    result = simulator.execute(program)
+
+    assert np.allclose(
+        result.state.xpxp_mean_vector, xpxp_mean_vector * np.sqrt(config.hbar)
+    )
+
+
+def test_Covariance_is_automatically_scaled_by_hbar():
+    config = pq.Config(hbar=42)
+
+    xpxp_covariance_matrix = np.array(
+        [
+            [2, 1],
+            [1, 2],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.Covariance(xpxp_covariance_matrix)
+
+    simulator = pq.GaussianSimulator(d=1, config=config)
+
+    result = simulator.execute(program)
+
+    assert np.allclose(
+        result.state.xpxp_covariance_matrix, xpxp_covariance_matrix * config.hbar
+    )
+
+
+def test_Thermal_is_automatically_scaled_by_hbar():
+    config = pq.Config(hbar=42)
+
+    mean_photon_numbers = np.array([1, 2])
+
+    with pq.Program() as program:
+        pq.Q() | pq.Thermal(mean_photon_numbers)
+
+    simulator = pq.GaussianSimulator(d=2, config=config)
+
+    result = simulator.execute(program)
+
+    assert np.allclose(
+        result.state.xpxp_covariance_matrix,
+        config.hbar
+        * np.array(
+            [
+                [3, 0, 0, 0],
+                [0, 3, 0, 0],
+                [0, 0, 5, 0],
+                [0, 0, 0, 5],
+            ]
+        ),
+    )
+
+
+def test_Thermal_with_zero_mean_photon_numbers_yields_Vacuum():
+    config = pq.Config(hbar=42)
+
+    mean_photon_numbers = np.array([0, 0])
+
+    with pq.Program() as thermal_program:
+        pq.Q() | pq.Thermal(mean_photon_numbers)
+
+    with pq.Program() as vacuum_program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.GaussianSimulator(d=2, config=config)
+
+    thermal_state = simulator.execute(thermal_program).state
+    vacuum_state = simulator.execute(vacuum_program).state
+
+    assert thermal_state == vacuum_state
 
 
 def test_state_initialization_with_misshaped_mean():
@@ -87,6 +171,14 @@ def test_state_initialization_with_nonpositive_covariance():
 
     with pytest.raises(InvalidState):
         simulator.execute(program)
+
+
+def test_Thermal_with_negative_mean_photon_numbers_raises_InvalidParameter():
+
+    mean_photon_numbers = np.array([-1, 1])
+
+    with pytest.raises(InvalidParameter):
+        pq.Q() | pq.Thermal(mean_photon_numbers)
 
 
 def test_vacuum_resets_the_state(state):

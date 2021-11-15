@@ -17,6 +17,8 @@ from typing import Iterable, Tuple
 
 import numpy as np
 
+from .validations import all_real_and_positive
+
 
 def is_unitary(matrix: np.ndarray) -> bool:
     return np.allclose(
@@ -49,9 +51,7 @@ def is_selfadjoint(matrix: np.ndarray) -> bool:
 def is_positive_semidefinite(matrix: np.ndarray) -> bool:
     eigenvalues = np.linalg.eigvals(matrix)
 
-    return all(
-        eigenvalue >= 0.0 or np.isclose(eigenvalue, 0.0) for eigenvalue in eigenvalues
-    )
+    return all_real_and_positive(eigenvalues)
 
 
 def is_square(matrix: np.ndarray) -> bool:

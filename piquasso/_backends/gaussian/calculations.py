@@ -541,13 +541,15 @@ def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result
 
 
 def mean(state: GaussianState, instruction: Instruction, shots: int) -> Result:
-    state.xpxp_mean_vector = instruction._all_params["mean"]
+    state.xpxp_mean_vector = instruction._all_params["mean"] * np.sqrt(
+        state._config.hbar
+    )
 
     return Result(state=state)
 
 
 def covariance(state: GaussianState, instruction: Instruction, shots: int) -> Result:
-    state.xpxp_covariance_matrix = instruction._all_params["cov"]
+    state.xpxp_covariance_matrix = instruction._all_params["cov"] * state._config.hbar
 
     return Result(state=state)
 
