@@ -31,6 +31,47 @@ from .calculations import (
 
 
 class FockSimulator(Simulator):
+    """Performs photonic simulations using Fock representation.
+
+    The simulation (when executed) results in an instance of
+    :class:`~piquasso._backends.fock.general.state.FockState`.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+        simulator = pq.FockSimulator(d=5)
+        result = simulator.execute(program)
+
+    Supported preparations:
+        :class:`~piquasso.instructions.preparations.Vacuum`,
+        :class:`~piquasso.instructions.preparations.Create`,
+        :class:`~piquasso.instructions.preparations.Annihilate`,
+        :class:`~piquasso.instructions.preparations.DensityMatrix`.
+
+    Supported gates:
+        :class:`~piquasso.instructions.gates.Interferometer`,
+        :class:`~piquasso.instructions.gates.Beamsplitter`,
+        :class:`~piquasso.instructions.gates.Phaseshifter`,
+        :class:`~piquasso.instructions.gates.MachZehnder`,
+        :class:`~piquasso.instructions.gates.Fourier`,
+        :class:`~piquasso.instructions.gates.Kerr`,
+        :class:`~piquasso.instructions.gates.CrossKerr`,
+        :class:`~piquasso.instructions.gates.GaussianTransform`,
+        :class:`~piquasso.instructions.gates.Squeezing`,
+        :class:`~piquasso.instructions.gates.QuadraticPhase`,
+        :class:`~piquasso.instructions.gates.Squeezing2`,
+        :class:`~piquasso.instructions.gates.ControlledX`,
+        :class:`~piquasso.instructions.gates.ControlledZ`,
+        :class:`~piquasso.instructions.gates.Displacement`,
+        :class:`~piquasso.instructions.gates.PositionDisplacement`,
+        :class:`~piquasso.instructions.gates.MomentumDisplacement`.
+
+    Supported measurements:
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+    """
+
     _instruction_map = {
         preparations.Vacuum: vacuum,
         preparations.Create: create,
