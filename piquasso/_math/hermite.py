@@ -17,34 +17,25 @@ from typing import Collection
 
 import numpy as np
 
+from piquasso._math.linalg import reduce_
+from piquasso._math.hafnian import loop_hafnian
+
 
 def modified_hermite_multidim(
     B: np.ndarray, n: Collection[int], alpha: np.ndarray
 ) -> complex:
-    try:
-        index = tuple(n).index(next(filter(lambda x: x != 0, tuple(n))))
-    except StopIteration:
-        return 1.0
+    r"""
+    For the calculation of the modified Hermite polynomials :math:`G` the following
+    equation is used:
 
-    if sum(n) == 1:
-        return alpha[index]
-
-    n_minus_one = np.copy(n)
-    n_minus_one[index] -= 1
-
-    partial_sum = np.empty(shape=(len(n),), dtype=complex)
-
-    for idx, value in enumerate(n_minus_one):
-        n_minus_two = np.copy(n_minus_one)
-        n_minus_two[idx] -= 1
-
-        partial_sum[idx] = (
-            value * modified_hermite_multidim(B, n_minus_two, alpha)
-            if value != 0
-            else 0.0
+    .. math::
+        G_{\vec{n}}^{B}(\alpha) = \operatorname{lhaf}(
+            \operatorname{filldiag}(B_{\vec{n}}, \alpha_{\vec{n}})
         )
+    """
 
-    return (
-        alpha[index] * modified_hermite_multidim(B, n_minus_one, alpha)
-        - B[index, :] @ partial_sum
-    )
+    loop_hafnian_input = -reduce_(B, n)
+
+    np.fill_diagonal(loop_hafnian_input, reduce_(alpha, n))
+
+    return loop_hafnian(loop_hafnian_input)
