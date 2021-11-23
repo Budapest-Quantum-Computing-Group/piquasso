@@ -136,3 +136,49 @@ class PureFockState(BaseFockState):
                 "instead of 1.0:\n"
                 f"fock_probabilities={self.fock_probabilities}"
             )
+
+    def quadratures_mean(self, modes: Tuple[int, ...], phi: float = 0) -> float:
+        r"""This method calculates the mean of the qudrature operators for a single
+        qumode state.
+        The quadrature operators :math:`x` and :math:`p` for a mode :math:`i`
+        can be calculated using the creation and annihilation operators as follows:
+
+        .. math::
+            x_i &= \sqrt{\frac{\hbar}{2}} (a_i + a_i^\dagger) \\
+                p_i &= -i \sqrt{\frac{\hbar}{2}} (a_i - a_i^\dagger).
+
+        Let :math:`\phi \in [ 0, 2 \pi )`, we can rotate the quadratures using the
+        following transformation:
+
+        .. math::
+            Q_{i, \phi} = \cos\phi~x_i + \sin\phi~p_i.
+
+        The expectation value :math:`\langle Q_{i, \phi}\rangle` can be calculated as:
+
+        .. math::
+            \operatorname{Tr}(\rho_i Q_{i, \phi}),
+
+        where :math:`\rho_i` is the reduced density matrix of the mode :math:`i` and
+        :math:`Q_{i, \phi}` is the rotated quadrature operator for a single mode.
+
+        Args:
+            phi (float): The rotation angle. By default it is `0` which means that
+                the mean of the position operator is being calculated. For :math:`\phi=
+                \frac{\pi}{2}` the mean of the momentum operator is being calculated.
+            modes (tuple[int]): The correspoding mode at which the mean of the
+                quadratures are being calculated.
+        Returns:
+            float: The expectation value of the quadrature operator.
+        """
+        reduced_dm = self.reduced(modes=modes).density_matrix
+        annih = np.diag(np.sqrt(np.arange(1, self._config.cutoff)), 1)
+        create = annih.T
+        position = (create + annih) * np.sqrt(self._config.hbar / 2)
+        momentum = -1j * (annih - create) * np.sqrt(self._config.hbar / 2)
+
+        if phi != 0:
+            rotated_quadratures = position * np.cos(phi) + momentum * np.sin(phi)
+        else:
+            rotated_quadratures = position
+
+        return np.trace(np.dot(reduced_dm, rotated_quadratures)).real

@@ -77,3 +77,16 @@ def test_PureFockState_fock_probabilities_map():
             actual_fock_probabilities[occupation_number],
             expected_probability,
         )
+
+
+def test_PureFockState_quadratures_mean():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.5, phi=0)
+        pq.Q(1) | pq.Squeezing(r=1, phi=0)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=10))
+    result = simulator.execute(program)
+
+    mean_1 = result.state.quadratures_mean(modes=(0,))
+    assert round(mean_1) == 1.0
