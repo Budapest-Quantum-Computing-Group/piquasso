@@ -21,6 +21,37 @@ from .calculations import state_vector, passive_linear, sampling, loss
 
 
 class SamplingSimulator(Simulator):
+    """Performs photonic simulations using Fock representation with pure states.
+
+    The simulation (when executed) results in an instance of
+    :class:`~piquasso._backends.sampling.state.SamplingState`.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+        simulator = pq.SamplingSimulator(d=5)
+        result = simulator.execute(program)
+
+    Supported preparations:
+        :class:`~piquasso.instructions.preparations.StateVector`.
+
+    Supported gates:
+        :class:`~piquasso.instructions.gates.Interferometer`,
+        :class:`~piquasso.instructions.gates.Beamsplitter`,
+        :class:`~piquasso.instructions.gates.Phaseshifter`,
+        :class:`~piquasso.instructions.gates.MachZehnder`,
+        :class:`~piquasso.instructions.gates.Fourier`,
+        :class:`~piquasso.instructions.gates.Interferometer`.
+
+    Supported measurements:
+        :class:`~piquasso.instructions.measurements.Sampling`.
+
+    Supported channels:
+        :class:`~piquasso.instructions.channels.Loss`.
+    """
+
     _instruction_map = {
         preparations.StateVector: state_vector,
         gates.Beamsplitter: passive_linear,

@@ -34,6 +34,54 @@ from .calculations import (
 
 
 class GaussianSimulator(Simulator):
+    """Performs photonic simulations using Gaussian representation.
+
+    The simulation (when executed) results in an instance of
+    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+        simulator = pq.GaussianSimulator(d=5)
+        result = simulator.execute(program)
+
+    Supported preparations:
+        :class:`~piquasso.instructions.preparations.Vacuum`,
+        :class:`~piquasso.instructions.preparations.Mean`,
+        :class:`~piquasso.instructions.preparations.Covariance`,
+        :class:`~piquasso.instructions.preparations.Thermal`.
+
+    Supported gates:
+        :class:`~piquasso.instructions.gates.Interferometer`,
+        :class:`~piquasso.instructions.gates.Beamsplitter`,
+        :class:`~piquasso.instructions.gates.Phaseshifter`,
+        :class:`~piquasso.instructions.gates.MachZehnder`,
+        :class:`~piquasso.instructions.gates.Fourier`,
+        :class:`~piquasso.instructions.gates.GaussianTransform`,
+        :class:`~piquasso.instructions.gates.Squeezing`,
+        :class:`~piquasso.instructions.gates.QuadraticPhase`,
+        :class:`~piquasso.instructions.gates.Squeezing2`,
+        :class:`~piquasso.instructions.gates.ControlledX`,
+        :class:`~piquasso.instructions.gates.ControlledZ`,
+        :class:`~piquasso.instructions.gates.Displacement`,
+        :class:`~piquasso.instructions.gates.PositionDisplacement`,
+        :class:`~piquasso.instructions.gates.MomentumDisplacement`,
+        :class:`~piquasso.instructions.gates.Graph`.
+
+    Supported measurements:
+        :class:`~piquasso.instructions.measurements.HomodyneMeasurement`,
+        :class:`~piquasso.instructions.measurements.HeterodyneMeasurement`,
+        :class:`~piquasso.instructions.measurements.GeneraldyneMeasurement`,
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.ThresholdMeasurement`.
+
+    Supported channels:
+        :class:`~piquasso.instructions.channels.DeterministicGaussianChannel`,
+        :class:`~piquasso.instructions.channels.Attenuator`.
+    """
+
     _instruction_map = {
         preparations.Vacuum: vacuum,
         preparations.Mean: mean,
