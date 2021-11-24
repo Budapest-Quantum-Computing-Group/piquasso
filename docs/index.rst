@@ -29,6 +29,15 @@ One could easily install Piquasso with the following command:
 
 .. toctree::
    :maxdepth: 3
+   :caption: Simulators:
+   :hidden:
+
+   simulators/gaussian
+   simulators/fock
+   simulators/sampling
+
+.. toctree::
+   :maxdepth: 3
    :caption: States:
    :hidden:
 

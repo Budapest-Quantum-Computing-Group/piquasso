@@ -212,6 +212,19 @@ def test_Attenuator_with_zero_thermal_exciation():
     )
 
 
+def test_Attenuator_with_multiple_modes():
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(0.3)
+
+        pq.Q(0) | pq.Attenuator(theta=0.1, mean_thermal_excitation=0)
+
+    simulator = pq.GaussianSimulator(d=2)
+
+    state = simulator.execute(program).state
+
+    assert np.isclose(state.mean_photon_number(modes=(0, 1)), 0.18454097911952028)
+
+
 def test_Attenuator_with_nonzero_thermal_exciation():
     original_mean_photon_number = 2
     theta = np.pi / 6
