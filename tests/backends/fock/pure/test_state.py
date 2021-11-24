@@ -47,6 +47,19 @@ def test_PureFockState_reduced():
     assert expected_reduced_state == reduced_state
 
 
+def test_PureFockState_reduced_preserves_Config():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) / 2
+
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    assert state._config.cutoff == 10
+
+
 def test_PureFockState_fock_probabilities_map():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([0, 1]) / 2

@@ -117,7 +117,7 @@ class FockState(BaseFockState):
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         modes_to_eliminate = self._get_auxiliary_modes(modes)
 
-        reduced_state = FockState(d=len(modes))
+        reduced_state = FockState(d=len(modes), config=self._config)
 
         for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
             modes=modes_to_eliminate
