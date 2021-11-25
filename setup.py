@@ -22,7 +22,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="piquasso",
-    version="0.4.0",
+    version="0.4.1",
     packages=find_packages(exclude=["tests.*", "tests", "scripts", "scripts.*"]),
     maintainer="Budapest Quantum Computing Group",
     maintainer_email="kolarovszki@inf.elte.hu",
@@ -38,7 +38,7 @@ setup(
     ],
     classifiers=[
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: " "Apache License 2.0.",
+        "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
     ],
     license="Apache License 2.0.",
