@@ -38,7 +38,7 @@ setup(
     ],
     classifiers=[
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: " "Apache License 2.0.",
+        "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
     ],
     license="Apache License 2.0.",
