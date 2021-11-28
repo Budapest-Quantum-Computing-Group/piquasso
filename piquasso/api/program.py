@@ -156,4 +156,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
         for instruction in self.instructions:
             script += four_space + instruction._as_code() + "\n"
 
+        if len(self.instructions) == 0:
+            script += four_space + "pass\n"
+
         return script
