@@ -69,3 +69,21 @@ with pq.Program() as program:
     )
 
     exec(code)
+
+
+def test_code_generation_with_empty_program():
+    with pq.Program() as program:
+        pass
+
+    code = program.as_code()
+
+    assert code == (
+        """\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pass
+"""
+    )
