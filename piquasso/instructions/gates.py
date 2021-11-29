@@ -238,7 +238,7 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
         S_{(c)} = \begin{bmatrix}
             e^{i \phi} & 0 \\
             0 & e^{- i \phi}
-        \end{bmatrix}
+        \end{bmatrix}.
     """
 
     def __init__(self, phi: float) -> None:
@@ -317,11 +317,10 @@ class Fourier(_ScalableBogoliubovTransformation):
         S_{(c)} = \begin{bmatrix}
             i & 0  \\
             0 & -i \\
-        \end{bmatrix}
+        \end{bmatrix}.
 
     Note:
-        Corresponds to the :class:`Phaseshifter` gate :class:`R` with
-        :math:`\phi = \pi/2`.
+        Corresponds to the :class:`Phaseshifter` gate with :math:`\phi = \pi/2`.
     """
 
     def __init__(self) -> None:
@@ -655,17 +654,21 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
 class Kerr(Gate):
     r"""Kerr gate.
 
-    Note:
-        This is a non-linear gate, therefore it couldn't be used with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    The definition of the Kerr gate is
 
     .. math::
         K_i (\xi) = \exp \left (
             i \xi n_i n_i
-        \right )
+        \right ).
+
+    The Kerr gate transforms the annihilation operator as
 
     .. math::
-        K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n))
+        K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n)).
+
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
 
     def __init__(self, xi: float) -> None:
@@ -679,18 +682,23 @@ class Kerr(Gate):
 class CrossKerr(Gate):
     r"""Cross-Kerr gate.
 
-    Note:
-        This is a non-linear gate, therefore it couldn't be used with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    The definition of the Cross-Kerr gate is
 
     .. math::
         CK_{ij} (\xi) = \exp \left (
             i \xi n_i n_j
         \right )
 
+    The Cross-Kerr gate transforms the annihilation operators as
+
     .. math::
         CK_{ij} (\xi) a_i CK_{ij} (\xi) &= a_i \exp(- i \xi n_j) \\
         CK_{ij} (\xi) a_j CK_{ij} (\xi) &= a_j \exp(- i \xi n_i)
+
+
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
 
     def __init__(self, xi: float) -> None:
@@ -713,7 +721,7 @@ class Graph(Gate):
     ) -> None:
         r"""
         Args:
-            adjacency_matrix (np.ndarray): A symmetric matrix with a size of :math:`N
+            adjacency_matrix (numpy.ndarray): A symmetric matrix with a size of :math:`N
                 \times N` and it can be real or complex.
             mean_photon_number (float, optional): The mean photon number :math:`\bar{n}`
                 for a mode. Defaults to :math:`1.0`.
