@@ -295,7 +295,10 @@ def particle_number_measurement(
 
 
 def _get_particle_number_measurement_samples(
-    state: GaussianState, instruction: Instruction, shots: int
+    state: GaussianState,
+    instruction: Instruction,
+    shots: int,
+    loop_hafnian_func: Callable = loop_hafnian,
 ) -> List[Tuple[int, ...]]:
 
     modes: Tuple[int, ...] = instruction.modes
@@ -342,7 +345,11 @@ def _get_particle_number_measurement_samples(
                 heterodyne_detection_covariance,
             )
 
-            choice = _get_particle_number_choice(evolved_state, sample)
+            choice = _get_particle_number_choice(
+                evolved_state,
+                sample,
+                loop_hafnian_func,
+            )
 
             sample = sample + (choice,)
 
@@ -354,7 +361,7 @@ def _get_particle_number_measurement_samples(
 def _get_particle_number_choice(
     state: GaussianState,
     previous_sample: Tuple[int, ...],
-    loop_hafnian_func: Callable = loop_hafnian,
+    loop_hafnian_func: Callable,
 ) -> int:
     r"""
     The original equations are
