@@ -25,12 +25,12 @@ from piquasso.api.config import Config
 from piquasso.api.errors import InvalidState
 from piquasso.api.state import State
 
-from BoSS.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (
+from theboss.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (  # noqa: E501
     BSDistributionCalculatorWithFixedLosses,
     BosonSamplingExperimentConfiguration,
 )
 
-from BoSS.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
+from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
     RyserGuanPermanentCalculator,
 )
 
@@ -112,7 +112,7 @@ class SamplingState(State):
     def _get_fock_probabilities_on_subspace(self) -> List[float]:
         """
         The order of the returned Fock states is lexicographic, according to
-        `BoSS.boson_sampling_utilities.boson_sampling_utilities
+        `theboss.boson_sampling_utilities.boson_sampling_utilities
         .generate_possible_outputs`
         """
         permanent_calculator = RyserGuanPermanentCalculator(self.interferometer)

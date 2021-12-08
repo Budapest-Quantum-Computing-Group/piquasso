@@ -198,7 +198,7 @@ class Sampling(Measurement):
     from [Brod, Oszmaniec 2020].
 
     This method assumes that initial_state is given in the second quantization
-    description (mode occupation). BoSS requires input states as numpy arrays,
+    description (mode occupation). `theboss` requires input states as numpy arrays,
     therefore the state is prepared as such structure.
 
     Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
