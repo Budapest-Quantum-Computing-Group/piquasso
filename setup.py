@@ -22,7 +22,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="piquasso",
-    version="0.4.2",
+    version="0.5.0",
     packages=find_packages(exclude=["tests.*", "tests", "scripts", "scripts.*"]),
     maintainer="Budapest Quantum Computing Group",
     maintainer_email="kolarovszki@inf.elte.hu",
@@ -31,7 +31,7 @@ setup(
     url="https://github.com/Budapest-Quantum-Computing-Group/piquasso",
     keywords=["python", "piquasso"],
     install_requires=[
-        'boss-tomev==1.0.4; python_version >= "3.7"',
+        'theboss==1.0.6; python_version >= "3.7"',
         'numpy>=1.19.5; python_version >= "3.7"',
         'scipy>=1.5.4; python_version >= "3.7"',
         "quantum-blackbird==0.2.4",

@@ -24,29 +24,29 @@ from piquasso.api.errors import InvalidState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from BoSS.boson_sampling_simulator import BosonSamplingSimulator
+from theboss.boson_sampling_simulator import BosonSamplingSimulator
 
 # The fastest implemented permanent calculator is currently Ryser-Guan
-from BoSS.boson_sampling_utilities.permanent_calculators.bs_permanent_calculator_interface import (  # noqa: E501
+from theboss.boson_sampling_utilities.permanent_calculators.bs_permanent_calculator_interface import (  # noqa: E501
     BSPermanentCalculatorInterface,
 )
-from BoSS.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
+from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
     RyserGuanPermanentCalculator,
 )
 
 # Fastest boson sampling algorithm generalized for bunched states
-from BoSS.simulation_strategies.generalized_cliffords_simulation_strategy import (
+from theboss.simulation_strategies.generalized_cliffords_simulation_strategy import (
     GeneralizedCliffordsSimulationStrategy,
 )
-from BoSS.simulation_strategies.generalized_cliffords_uniform_losses_simulation_strategy import (  # noqa: E501
+from theboss.simulation_strategies.generalized_cliffords_uniform_losses_simulation_strategy import (  # noqa: E501
     GeneralizedCliffordsUniformLossesSimulationStrategy,
 )
 
 # Fastest BS algorithm generalized for bunched states, but with lossy network
-from BoSS.simulation_strategies.lossy_networks_generalized_cliffords_simulation_strategy import (  # noqa: E501
+from theboss.simulation_strategies.lossy_networks_generalized_cliffords_simulation_strategy import (  # noqa: E501
     LossyNetworksGeneralizedCliffordsSimulationStrategy,
 )
-from BoSS.simulation_strategies.simulation_strategy_interface import (
+from theboss.simulation_strategies.simulation_strategy_interface import (
     SimulationStrategyInterface,
 )
 
