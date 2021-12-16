@@ -56,7 +56,7 @@ class BaseFockState(State, abc.ABC):
     @property
     @abc.abstractmethod
     def density_matrix(self) -> np.ndarray:
-        """The density matrix of the state in terms of Fock basis vectors."""
+        """The density matrix of the state in terms of the Fock basis vectors."""
         pass
 
     @abc.abstractmethod
@@ -71,7 +71,7 @@ class BaseFockState(State, abc.ABC):
     @abc.abstractmethod
     def reset(self) -> None:
         """
-        Resets this object to a vacuum state.
+        Resets the Fock state to a vacuum state.
         """
         pass
 
