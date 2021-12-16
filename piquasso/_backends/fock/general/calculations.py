@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Mapping
+from typing import Tuple, Mapping, List, Any
 
 import random
 import numpy as np
@@ -189,6 +189,85 @@ def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     state.normalize()
 
     return Result(state=state)
+
+
+def generate_squeezing_operator(r: List[Any], phi: List[Any], cutoff_dims: int) -> List:
+    """
+    This function generates the Squeezing operator following a recursion rule.
+
+    Args:
+        r (float): This is the Squeezing amplitude. Typically this value can be
+            negative or positive depending on the desired squeezing direction.
+            Note:
+                Setting :math:`|r|` to higher values will require you to have a higer
+                cuttof dimensions.
+        phi (float): This is the Squeezing angle. Its ranges are
+            :math:`\phi \in [ 0, 2 \pi )`
+        cutoff_dims (int): The cutoff of the Fock operator. This value should be
+            equal to the cutoff of the Fock state.
+
+    Returns:
+        np.ndarray: The constructed Squeezing matrix representing the Fock operator.
+    """
+    squeezers = []
+    for amp, angle in zip(r, phi):
+        print(amp, angle)
+        sechr = 1.0 / np.cosh(amp)
+        A = np.exp(1j * angle) * np.tanh(amp)
+        squeezing_matrix = np.empty((cutoff_dims, cutoff_dims), dtype=complex)
+        squeezing_matrix[0, 0] = np.sqrt(sechr)
+        fock_numbers = np.sqrt(np.arange(cutoff_dims, dtype=complex))
+
+        for m in range(2, cutoff_dims, 2):  # even indices
+            squeezing_matrix[m, 0] = (
+                -fock_numbers[m - 1]
+                / fock_numbers[m]
+                * (squeezing_matrix[m - 2, 0] * A)
+            )
+
+        for m in range(0, cutoff_dims):
+            for n in range(1, cutoff_dims):
+                if (m + n) % 2 == 0:  # even indices
+                    squeezing_matrix[m, n] = (
+                        1
+                        / fock_numbers[n]
+                        * (
+                            (fock_numbers[m] * squeezing_matrix[m - 1, n - 1] * sechr)
+                            + (
+                                fock_numbers[n - 1]
+                                * A.conj()
+                                * squeezing_matrix[m, n - 2]
+                            )
+                        )
+                    )
+        squeezers.append(squeezing_matrix)
+
+    return squeezers
+
+
+def single_mode_squeezing(
+    state: FockState, instruction: Instruction, shots: int
+) -> Result:
+
+    amplitudes = instruction._all_params["r"]
+    angles = instruction._all_params["phi"]
+    cutoff = state._config.cutoff
+    # modes = instruction.modes
+    if not isinstance(amplitudes, list):
+        amplitudes = [amplitudes]
+    if not isinstance(angles, list):
+        angles = [angles]
+
+    if state.d == 1:  # TODO: this should be generalized to many qumodes
+        S = generate_squeezing_operator(amplitudes, angles, cutoff)[0]
+        for operator in S:
+            state._density_matrix = operator @ state._density_matrix @ operator.conj().T
+            state.normalize()
+        return Result(state=state)
+
+    else:
+        S = generate_squeezing_operator(amplitudes, angles, cutoff)
+        return Result(state=state)
 
 
 def density_matrix_instruction(

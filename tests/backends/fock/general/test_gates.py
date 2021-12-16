@@ -33,6 +33,32 @@ def test_5050_beamsplitter():
     )
 
 
+def test_single_mode_squeezing():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Squeezing(0.2, phi=0)
+
+    simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    assert np.allclose(
+        state.fock_probabilities,
+        [
+            9.80328020e-01,
+            0,
+            1.90953277e-02,
+            0,
+            5.57922754e-04,
+            0,
+            1.81125052e-05,
+            0,
+            6.17408027e-07,
+            0,
+        ],
+    )
+
+
 def test_beamsplitter():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1))
