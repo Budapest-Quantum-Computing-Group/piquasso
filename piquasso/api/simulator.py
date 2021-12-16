@@ -170,7 +170,7 @@ class Simulator(Computer, abc.ABC):
                 A state to execute the instructions on. Defaults to the state created by
                 :meth:`create_initial_state`.
             shots (int, optional):
-                The number of times the program should execute. Defaults to 1.
+                The number of times the program should be execute. Defaults to 1.
 
         Raises:
             InvalidParameter: When `shots` is not a positive integer.

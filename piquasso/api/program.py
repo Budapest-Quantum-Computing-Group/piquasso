@@ -115,7 +115,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
     def load_blackbird(self, filename: str) -> None:
         """
-        Loads the gates to apply into :attr:`instructions` from a BlackBird file
+        Loads the gates to be applied into :attr:`instructions` from a BlackBird file
         (.xbb).
 
         Args:

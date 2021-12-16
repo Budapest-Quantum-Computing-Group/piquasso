@@ -222,7 +222,7 @@ class Beamsplitter(_BogoliubovTransformation):
 
 
 class Phaseshifter(_ScalableBogoliubovTransformation):
-    r"""Applies a rotation or phaseshifter gate.
+    r"""Applies a rotation or a phaseshifter gate.
 
     The unitary operator corresponding to the phaseshifter gate on the :math:`i`-th mode
     is
@@ -297,7 +297,12 @@ class MachZehnder(_BogoliubovTransformation):
 
 
 class Fourier(_ScalableBogoliubovTransformation):
-    r"""Applies a Fourier gate.
+    r"""Applies a Fourier gate. It simply transforms the quadratures as follows:
+
+    .. math::
+        -\hat{p} = \operatorname{\textit{F}} \hat{x} \operatorname{\textit{F}}^\dagger
+            \\ \hat{x} = \operatorname{\textit{F}} \hat{p}
+                \operatorname{\textit{F}}^\dagger
 
     The unitary operator corresponding to the Fourier gate on the :math:`i`-th mode is
 
@@ -384,8 +389,8 @@ class Squeezing(_ScalableBogoliubovTransformation):
 
     .. math::
         S_{(c)} = \begin{bmatrix}
-            \cosh r & - e^{i phi} \sinh r \\
-            - e^{- i phi} \sinh r & \cosh r
+            \cosh r & - e^{i \phi} \sinh r \\
+            - e^{- i \phi} \sinh r & \cosh r
         \end{bmatrix}.
 
     The unitary squeezing operator is
@@ -395,7 +400,7 @@ class Squeezing(_ScalableBogoliubovTransformation):
             \frac{1}{2}(z^* a_i^2 - z a_i^{\dagger 2})
         \right ),
 
-    where :math:`z \in \mathbb{C}^{d \times d}` is a symmetric matrix.
+    where :math:`z = re^{i\phi}`.
     """
 
     def __init__(self, r: float, phi: float = 0.0) -> None:
@@ -576,13 +581,13 @@ class Displacement(_ScalableBogoliubovTransformation):
 
     where :math:`\alpha \in \mathbb{C}^{d \times d}`.
 
-    One must either specify `alpha` only, or the combination of `r` and `phi`.
-    When `r` and `phi` are the given parameters, `alpha` is calculated via:
+    One must either specify :math:`\alpha` only, or the combination of :math:`r` and
+    :math:`\phi`.
+    When :math:`r` and :math:`\phi` are the given parameters, :math:`\alpha` is
+    calculated via:
 
-    .. math:
-        \alpha = r \exp \left (
-            i \phi
-        \right ).
+    .. math::
+        \alpha = r e^{i\phi}
     """
 
     def __init__(
@@ -612,7 +617,7 @@ class Displacement(_ScalableBogoliubovTransformation):
 
 
 class PositionDisplacement(_ScalableBogoliubovTransformation):
-    r"""Position displacement gate.
+    r"""Position displacement gate. It affects only the :math:`\hat{x}` quadrature.
 
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
@@ -630,7 +635,7 @@ class PositionDisplacement(_ScalableBogoliubovTransformation):
 
 
 class MomentumDisplacement(_ScalableBogoliubovTransformation):
-    r"""Momentum displacement gate.
+    r"""Momentum displacement gate. It only affects the :math:`\hat{p}` quadrature.
 
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
@@ -698,15 +703,24 @@ class CrossKerr(Gate):
 
 class Graph(Gate):
     r"""Applies a graph given its adjacency matrix, see
-    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_.
-
-    Raises:
-        InvalidParameter: If the adjacency matrix is not invertible or not symmetric.
+    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
+    It decomposes the adjacency matrix of a graph into single mode squeezers and
+    interferometers.
     """
 
     def __init__(
         self, adjacency_matrix: np.ndarray, mean_photon_number: float = 1.0
     ) -> None:
+        r"""
+        Args:
+            adjacency_matrix (np.ndarray): A symmetric matrix with a size of :math:`N
+                \times N` and it can be real or complex.
+            mean_photon_number (float, optional): The mean photon number :math:`\bar{n}`
+                for a mode. Defaults to :math:`1.0`.
+        Raises:
+            InvalidParameter:
+                If the adjacency matrix is not invertible or not symmetric.
+        """
         self.adjacency_matrix = adjacency_matrix
 
         if not is_invertible(adjacency_matrix):

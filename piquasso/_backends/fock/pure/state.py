@@ -137,9 +137,11 @@ class PureFockState(BaseFockState):
                 f"fock_probabilities={self.fock_probabilities}"
             )
 
-    def quadratures_mean(self, modes: Tuple[int, ...], phi: float = 0) -> float:
-        r"""This method calculates the mean of the qudrature operators for a single
-        qumode state.
+    def quadratures_mean_variance(
+        self, modes: Tuple[int, ...], phi: float = 0
+    ) -> Tuple[float, float]:
+        r"""This method calculates the mean and the variance of the qudrature operators
+        for a single qumode state.
         The quadrature operators :math:`x` and :math:`p` for a mode :math:`i`
         can be calculated using the creation and annihilation operators as follows:
 
@@ -159,7 +161,12 @@ class PureFockState(BaseFockState):
             \operatorname{Tr}(\rho_i Q_{i, \phi}),
 
         where :math:`\rho_i` is the reduced density matrix of the mode :math:`i` and
-        :math:`Q_{i, \phi}` is the rotated quadrature operator for a single mode.
+        :math:`Q_{i, \phi}` is the rotated quadrature operator for a single mode and
+        the variance is calculated as:
+
+        .. math::
+            \operatorname{\textit{Var}(Q_{i,\phi})} = \langle Q_{i, \phi}^{2}\rangle
+                - \langle Q_{i, \phi}\rangle^{2}.
 
         Args:
             phi (float): The rotation angle. By default it is `0` which means that
@@ -168,7 +175,8 @@ class PureFockState(BaseFockState):
             modes (tuple[int]): The correspoding mode at which the mean of the
                 quadratures are being calculated.
         Returns:
-            float: The expectation value of the quadrature operator.
+            (float, float): A tuple that contains the expectation value and the
+                varianceof of the quadrature operator respectively.
         """
         reduced_dm = self.reduced(modes=modes).density_matrix
         annih = np.diag(np.sqrt(np.arange(1, self._config.cutoff)), 1)
@@ -181,4 +189,11 @@ class PureFockState(BaseFockState):
         else:
             rotated_quadratures = position
 
-        return np.trace(np.dot(reduced_dm, rotated_quadratures)).real
+        expctation = np.trace(np.dot(reduced_dm, rotated_quadratures)).real
+        variance = (
+            np.trace(
+                np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
+            ).real
+            - expctation ** 2
+        )
+        return expctation, variance

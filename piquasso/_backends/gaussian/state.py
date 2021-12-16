@@ -37,6 +37,10 @@ class GaussianState(State):
     r"""Class to represent a Gaussian state."""
 
     def __init__(self, d: int, config: Config = None) -> None:
+        """
+        Args:
+            d (int): The number of modes.
+        """
         super().__init__(config=config)
         self._d = d
         self.reset()
@@ -140,7 +144,7 @@ class GaussianState(State):
         :math:`Y = (x_1, \dots, x_d, p_1, \dots, p_d)^T`.
 
         Returns:
-            numpy.ndarray: A :math:`d`-vector.
+            numpy.ndarray: A :math:`2d`-vector where :math:`d` is the number of modes.
         """
 
         dimensionless_xxpp_mean_vector = np.concatenate(
@@ -240,10 +244,9 @@ class GaussianState(State):
         r"""Returns the xpxp-ordered mean of the state.
 
         Returns:
-            numpy.ndarray: A :math:`2d`-vector.
-                The expectation value of the quadrature operators in `xxpp`-ordering,
-                i.e. :math:`\operatorname{Tr} \rho R`, where
-                :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
+            numpy.ndarray: A :math:`2d`-vector. The expectation value of the quadrature
+            operators in `xxpp`-ordering, i.e. :math:`\operatorname{Tr} \rho R`, where
+            :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
         """
         T = from_xxpp_to_xpxp_transformation_matrix(self.d)
         return T @ self.xxpp_mean_vector
@@ -421,7 +424,7 @@ class GaussianState(State):
         return (self.complex_covariance + np.identity(2 * len(self))) / 2
 
     def rotated(self, phi: float) -> "GaussianState":
-        r"""Returns the copy of the current state, rotated by angle `phi`.
+        r"""Returns a copy of the current gaussian state, rotated by an angle `phi`.
 
         Let :math:`\phi \in [ 0, 2 \pi )`. Let us define the following:
 
@@ -444,8 +447,7 @@ class GaussianState(State):
             \right),
 
         meaning that e.g. the annihilation operators :math:`a_i` are transformed just
-        multiplied by a phase factor :math:`\exp(-i \phi)` under this phase space
-        rotation, i.e.
+        by multiplying it with a phase factor :math:`\exp(-i \phi)` i.e.
 
         .. math::
             (\langle a_i \rangle_{\rho} =: )~m_i &\mapsto \exp(-i \phi) m_i \\
@@ -468,7 +470,7 @@ class GaussianState(State):
         )
 
     def reduced(self, modes: Tuple[int, ...]) -> "GaussianState":
-        """Returns the copy of the current state, reduced to the given `modes`.
+        """Returns a copy of the current state, reduced to the given `modes`.
 
         This method essentially preserves the modes specified from the representation
         of the Gaussian state, but cuts out the other modes.
@@ -638,8 +640,8 @@ class GaussianState(State):
         modes: Tuple[int, ...] = None,
     ) -> np.ndarray:
         r"""
-        Calculates the Wigner function values at the specified position and momentum
-        vectors, according to the equation
+        This method calculates the Wigner function values at the specified position and
+        momentum vectors, according to the following equation:
 
         .. math::
             W(r) = \frac{1}{\pi^d \sqrt{\mathrm{det} \sigma}}
