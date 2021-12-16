@@ -24,6 +24,7 @@ from piquasso._math.validations import all_natural
 from piquasso.api.config import Config
 from piquasso.api.errors import InvalidState
 from piquasso.api.state import State
+from piquasso.api.errors import PiquassoException
 
 from theboss.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (  # noqa: E501
     BSDistributionCalculatorWithFixedLosses,
@@ -72,6 +73,12 @@ class SamplingState(State):
     def get_particle_detection_probability(
         self, occupation_number: Tuple[int, ...]
     ) -> float:
+        if len(occupation_number) != self.d:
+            raise PiquassoException(
+                f"The specified occupation number should have length '{self.d}': "
+                f"occupation_number='{occupation_number}'."
+            )
+
         number_of_particles = sum(occupation_number)
 
         if number_of_particles != self.particle_number:

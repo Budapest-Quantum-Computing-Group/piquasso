@@ -18,7 +18,7 @@ from typing import Tuple, Any, Generator, Dict
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState
+from piquasso.api.errors import InvalidState, PiquassoException
 from piquasso._math.linalg import is_selfadjoint
 from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis
 
@@ -96,6 +96,12 @@ class FockState(BaseFockState):
         return self._density_matrix[:cardinality, :cardinality]
 
     def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        if len(occupation_number) != self.d:
+            raise PiquassoException(
+                f"The specified occupation number should have length '{self.d}': "
+                f"occupation_number='{occupation_number}'."
+            )
+
         index = self._space.index(occupation_number)
         return np.diag(self._density_matrix)[index].real
 

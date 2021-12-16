@@ -61,6 +61,23 @@ def test_displacement_probabilities(SimulatorClass):
     )
 
 
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+def test_displacement_get_fock_prob(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.2, phi=np.pi / 3)
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=8))
+
+    state = simulator.execute(program).state
+
+    state.validate()
+    assert np.isclose(
+        state.get_particle_detection_probability(occupation_number=(0, 1)), 0.0
+    )
+
+
 def test_PureFockState_squeezing():
     r = 0.5
     phi = np.pi / 3
