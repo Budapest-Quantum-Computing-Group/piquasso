@@ -18,7 +18,7 @@ from typing import Tuple, List
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState, InvalidParameter
+from piquasso.api.errors import InvalidState, InvalidParameter, PiquassoException
 from piquasso.api.state import State
 
 from piquasso._math.functions import gaussian_wigner_function
@@ -684,6 +684,12 @@ class GaussianState(State):
     def get_particle_detection_probability(
         self, occupation_number: Tuple[int, ...]
     ) -> float:
+        if len(occupation_number) != self.d:
+            raise PiquassoException(
+                f"The specified occupation number should have length '{self.d}': "
+                f"occupation_number='{occupation_number}'."
+            )
+
         calculation = DensityMatrixCalculation(
             self.complex_displacement,
             self.complex_covariance,

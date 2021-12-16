@@ -18,7 +18,7 @@ from typing import Tuple, Generator, Any, Dict
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState
+from piquasso.api.errors import InvalidState, PiquassoException
 from piquasso._math.fock import cutoff_cardinality, FockBasis
 
 from ..state import BaseFockState
@@ -94,6 +94,12 @@ class PureFockState(BaseFockState):
     def get_particle_detection_probability(
         self, occupation_number: Tuple[int, ...]
     ) -> float:
+        if len(occupation_number) != self.d:
+            raise PiquassoException(
+                f"The specified occupation number should have length '{self.d}': "
+                f"occupation_number='{occupation_number}'."
+            )
+
         index = self._space.index(occupation_number)
 
         return np.real(
