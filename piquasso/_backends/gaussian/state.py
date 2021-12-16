@@ -569,6 +569,43 @@ class GaussianState(State):
         state = self.reduced(modes)
         return (np.trace(state._C) + state._m.conjugate() @ state._m).real
 
+    def variance_photon_number(self, modes: Tuple[int, ...]) -> float:
+        r"""
+        This method calculates the variance of the photon number operator as follows:
+
+        .. math::
+            \operatorname{\textit{Var(n)}} = \frac{1}{2} \operatorname{Tr}(
+                \sigma_{ij}/2\hbar)^2 +  \det (\sigma_{ij}/2\hbar) +
+                \frac{1}{2} \left \langle Q \right \rangle (\sigma_{ij}/2\hbar)
+                \left \langle Q \right \rangle - 0.25
+
+        where :math:`\sigma_{ij}` is the reduced :attr:`xpxp_covariance_matrix` since
+        :math:`i = j` i.e. the covariance matrix of the reduced Gaussian state and
+        :math:`\left \langle Q \right \rangle` is the :attr:`xpxp_mean_vector`.
+
+        For more details please see
+        `this article <https://arxiv.org/pdf/1612.01199.pdf>`_.
+
+        Args:
+            modes (Tuple[int, ...]): The correspoding modes at which the variance of
+                the photon number is calculated.
+
+        Returns:
+            float: Variance of the photon number operator
+        """
+        reduced_state = self.reduced(modes=modes)
+        mean, covariance = (
+            reduced_state.xpxp_mean_vector,
+            reduced_state.xpxp_covariance_matrix / (2 * self._config.hbar),
+        )
+
+        return (
+            0.5 * np.trace(covariance) ** 2
+            - np.linalg.det(covariance)
+            - 0.25
+            + (0.5 * mean @ covariance @ mean)
+        )
+
     def quadratic_polynomial_expectation(
         self, A: np.ndarray, b: np.ndarray, c: float = 0.0, phi: float = 0.0
     ) -> float:

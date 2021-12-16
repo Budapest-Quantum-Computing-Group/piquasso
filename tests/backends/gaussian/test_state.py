@@ -411,6 +411,23 @@ def test_mean_photon_number():
     assert np.isclose(total_mean_photon_number, state.mean_photon_number((0, 1, 2)))
 
 
+def test_variance_photon_number():
+    with pq.Program() as program:
+        pq.Q(0) | pq.Displacement(r=0.2, phi=np.pi / 3)
+        pq.Q(1) | pq.Squeezing(r=0.8, phi=np.pi / 2)
+        pq.Q(2) | pq.Displacement(alpha=1.0)
+
+    simulator = pq.GaussianSimulator(d=4)
+    state = simulator.execute(program).state
+
+    assert np.isclose(state.variance_photon_number((0,)), 0.04)
+    assert np.isclose(
+        state.variance_photon_number((1,)), 2 * np.sinh(0.8) ** 2 * np.cosh(0.8) ** 2
+    )
+    assert np.isclose(state.variance_photon_number((2,)), 1.0)
+    assert np.isclose(state.variance_photon_number((3,)), 0.0)
+
+
 def test_GaussianState_get_particle_detection_probability():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
