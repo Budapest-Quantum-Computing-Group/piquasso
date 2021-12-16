@@ -424,7 +424,7 @@ class GaussianState(State):
         return (self.complex_covariance + np.identity(2 * len(self))) / 2
 
     def rotated(self, phi: float) -> "GaussianState":
-        r"""Returns a copy of the current gaussian state, rotated by an angle `phi`.
+        r"""Returns a copy of the current Gaussian state, rotated by an angle `phi`.
 
         Let :math:`\phi \in [ 0, 2 \pi )`. Let us define the following:
 
