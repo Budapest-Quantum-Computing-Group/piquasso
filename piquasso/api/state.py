@@ -24,7 +24,7 @@ from piquasso.api.config import Config
 
 
 class State(abc.ABC):
-    """The base class from which all `*State` classes are derived.
+    """The base class from which all `State` classes are derived.
 
     Properties:
         d (int): Instance attribute specifying the number of modes.

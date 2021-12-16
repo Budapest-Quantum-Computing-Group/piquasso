@@ -129,8 +129,8 @@ class Thermal(Preparation):
     .. math::
         \mu &= 0_{2d} \\
         \sigma &= \hbar (
-            2 \operatorname{diag}(\operatorname{repeat}(\overline{n}, 2))
-            + I_{2d \times 2d}
+            2 \operatorname{\textit{diag}}(\operatorname{\textit{repeat}}
+                (\overline{n}, 2)) + I_{2d \times 2d}
         )
 
     Can only be applied to the following states:
@@ -183,7 +183,7 @@ class StateVector(Preparation, _mixins.WeightMixin):
         Args:
             occupation_numbers (Iterable[int]): The occupation numbers.
             coefficient (complex, optional):
-                The coefficient of the occupation number. Defaults to 1.0.
+                The coefficient of the occupation number. Defaults to :math:`1.0`.
 
         Raises:
             InvalidState:
@@ -235,7 +235,7 @@ class DensityMatrix(Preparation, _mixins.WeightMixin):
             ket (Iterable[int]): The ket vector.
             coefficient (complex, optional):
                 The coefficient of the operator defined by the "bra" and "ket" vectors.
-                Defaults to 1.0.
+                Defaults to :math:`1.0`.
 
         Raises:
             InvalidState:

@@ -103,11 +103,11 @@ class Attenuator(Gate):
 
     .. math::
         X &= \cos \theta I_{2 \times 2} \\
-        Y &= ( \sin \theta )^2 (2 N + 1) I_{2 \times 2},
+        Y &= ( \sin \theta )^2 (2 \bar{N} + 1) I_{2 \times 2},
 
-    where :math:`\theta \in [0, 2 \pi[` is the beampsplitters' mixing angle and
-    :math:`N \in \mathbb{R}^{+}`. :math:`N` is the mean number of thermal excitations of
-    the system interacting with the environment.
+    where :math:`\theta \in [0, 2 \pi)` is the beampsplitters' mixing angle and
+    :math:`\bar{N} \in \mathbb{R}^{+}`. :math:`\bar{N}` is the mean number of thermal
+    excitations of the system interacting with the environment.
 
     Note:
         Currently, this instruction can only be used along with

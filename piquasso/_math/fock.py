@@ -152,10 +152,10 @@ class FockSpace(tuple):
 
     def __deepcopy__(self, memo: Any) -> "FockSpace":
         """
-        This method exists, because `copy.deepcopy` goes mad with classes defining both
-        `__new__` and `__init__`.
+        This method exists, because `copy.deepcopy` produces errors with classes
+        defining both `__new__` and `__init__`.
 
-        Defines the deepcopy of this object. Since its state (:attr:`d` and
+        It defines the deepcopy of this object. Since its state (:attr:`d` and
         :attr:`cutoff`) is immutable, we don't really need to deepcopy this object, we
         could return with this instance, too.
         """

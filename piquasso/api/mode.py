@@ -67,7 +67,7 @@ class Q:
     def __init__(self, *modes: Union[int, Any]) -> None:
         """
         Args:
-            *modes (int):
+            modes (int):
                 Variable length list of non-negative integers specifying the modes.
 
         Raises:

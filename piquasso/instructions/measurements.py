@@ -94,11 +94,11 @@ class GeneraldyneMeasurement(Measurement):
     """
 
     def __init__(self, detection_covariance: np.ndarray) -> None:
-        """
+        r"""
         Args:
             detection_covariance (numpy.ndarray):
-                A 2-by-2 symplectic matrix corresponding to a purely quadratic
-                Hamiltonian.
+                A :math:`2\times2` symplectic matrix corresponding to a purely
+                quadratic Hamiltonian.
 
         Raises:
             InvalidParameter:
@@ -194,12 +194,13 @@ class HeterodyneMeasurement(Measurement):
 class Sampling(Measurement):
     r"""Boson Sampling.
 
-    Simulates a boson sampling using generalized Clifford&Clifford algorithm
-    from [Brod, Oszmaniec 2020].
+    Simulates a boson sampling using generalized Clifford & Clifford algorithm
+    from [Brod, Oszmaniec 2020] see
+    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
 
     This method assumes that initial_state is given in the second quantization
-    description (mode occupation). `theboss` requires input states as numpy arrays,
-    therefore the state is prepared as such structure.
+    description (mode occupation). `theboss` module requires the input states to be
+    numpy arrays, therefore the state is prepared as accordingly.
 
     Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
     as it allows effective simulation of broader range of input states than original
