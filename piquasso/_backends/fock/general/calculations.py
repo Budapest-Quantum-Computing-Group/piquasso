@@ -172,6 +172,33 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result
     return Result(state=state)
 
 
+def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
+    amplitudes = np.arccosh(np.diag(instruction._all_params["passive_block"]))
+    angles = np.angle(-np.diag(instruction._all_params["active_block"]))
+
+    for index, mode in enumerate(instruction.modes):
+        operator = state._space.get_single_mode_squeezing_operator(
+            r=amplitudes[index],
+            phi=angles[index],
+        )
+
+        embedded_operator = state._space.embed_matrix(
+            operator,
+            modes=(mode,),
+            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        )
+
+        state._density_matrix = (
+            embedded_operator
+            @ state._density_matrix
+            @ embedded_operator.conjugate().transpose()
+        )
+
+        state.normalize()
+
+    return Result(state=state)
+
+
 def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,

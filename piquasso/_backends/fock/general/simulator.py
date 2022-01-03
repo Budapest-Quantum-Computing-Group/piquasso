@@ -19,6 +19,7 @@ from piquasso.instructions import preparations, gates, measurements
 from .state import FockState
 from .calculations import (
     passive_linear,
+    squeezing,
     linear,
     density_matrix_instruction,
     kerr,
@@ -84,7 +85,7 @@ class FockSimulator(Simulator):
         gates.Fourier: passive_linear,
         gates.Kerr: kerr,
         gates.CrossKerr: cross_kerr,
-        gates.Squeezing: linear,
+        gates.Squeezing: squeezing,
         gates.QuadraticPhase: linear,
         gates.Displacement: linear,
         gates.PositionDisplacement: linear,

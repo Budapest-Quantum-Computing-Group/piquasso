@@ -78,6 +78,38 @@ def test_displacement_get_fock_prob(SimulatorClass):
     )
 
 
+def test_PureFockState_squeezing_on_single_mode():
+    r = 0.5
+    phi = np.pi / 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=r, phi=phi)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=3))
+
+    state = simulator.execute(program).state
+
+    # TODO: Better way of presenting the resulting state.
+    nonzero_elements = list(state.nonzero_elements)
+
+    assert len(nonzero_elements) == 2
+
+    normalization = 1 / np.sqrt((1 / np.cosh(r)) * (1 + np.tanh(r) ** 2 / 2))
+
+    assert nonzero_elements[0][1] == (0,)
+    assert np.isclose(nonzero_elements[0][0], normalization * 1 / np.sqrt(np.cosh(r)))
+
+    assert nonzero_elements[1][1] == (2,)
+    assert np.isclose(
+        nonzero_elements[1][0],
+        normalization
+        * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2))
+        / np.sqrt(np.cosh(r)),
+    )
+
+
 def test_PureFockState_squeezing():
     r = 0.5
     phi = np.pi / 3
