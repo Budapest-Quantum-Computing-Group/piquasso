@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Collection
-
 import numpy as np
 
 
-def modified_hermite_multidim(
-    B: np.ndarray, n: Collection[int], alpha: np.ndarray
-) -> complex:
+def modified_hermite_multidim(B, n, alpha):
     try:
         index = tuple(n).index(next(filter(lambda x: x != 0, tuple(n))))
     except StopIteration:

@@ -19,7 +19,7 @@ import numpy as np
 
 
 def is_natural(number: Union[int, float]) -> bool:
-    return np.isclose(number % 1, 0.0) and round(number) >= 0
+    return bool(np.isclose(number % 1, 0.0) and round(number) >= 0)
 
 
 def all_natural(array: Iterable) -> bool:

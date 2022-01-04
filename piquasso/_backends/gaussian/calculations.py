@@ -410,7 +410,7 @@ def _get_particle_number_choice(
 
     gamma = alpha.conj() - alpha @ B
 
-    weights = np.array([])
+    weights: np.ndarray = np.array([])
 
     possible_choices = tuple(range(state._config.measurement_cutoff))
 
