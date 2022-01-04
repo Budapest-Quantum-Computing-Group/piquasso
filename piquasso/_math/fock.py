@@ -167,6 +167,85 @@ class FockSpace(tuple):
             *(self.symmetric_tensorpower(operator, n) for n in range(self.cutoff))
         )
 
+    def get_single_mode_squeezing_operator(
+        self,
+        *,
+        r: float,
+        phi: float,
+    ) -> np.ndarray:
+        """
+        This method generates the Squeezing operator following a recursion rule.
+        Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
+
+        Args:
+        r (float): This is the Squeezing amplitude. Typically this value can be
+            negative or positive depending on the desired squeezing direction.
+            Note:
+                Setting :math:`|r|` to higher values will require you to have a higer
+                cuttof dimensions.
+        phi (float): This is the Squeezing angle. Its ranges are
+            :math:`\phi \in [ 0, 2 \pi )`
+
+        Returns:
+            np.ndarray: The constructed Squeezing matrix representing the Fock operator.
+        """
+
+        sechr = 1.0 / np.cosh(r)
+        A = np.exp(1j * phi) * np.tanh(r)
+
+        transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
+        transformation[0, 0] = np.sqrt(sechr)
+
+        fock_indices = np.sqrt(np.arange(self.cutoff, dtype=complex))
+
+        for index in range(2, self.cutoff, 2):
+            transformation[index, 0] = (
+                -fock_indices[index - 1]
+                / fock_indices[index]
+                * (transformation[index - 2, 0] * A)
+            )
+
+        for row in range(0, self.cutoff):
+            for col in range(1, self.cutoff):
+                if (row + col) % 2 == 0:
+                    transformation[row, col] = (
+                        1
+                        / fock_indices[col]
+                        * (
+                            (
+                                fock_indices[row]
+                                * transformation[row - 1, col - 1]
+                                * sechr
+                            )
+                            + (
+                                fock_indices[col - 1]
+                                * A.conj()
+                                * transformation[row, col - 2]
+                            )
+                        )
+                    )
+
+        return transformation
+
+    def embed_matrix(
+        self,
+        matrix: np.ndarray,
+        modes: Tuple[int, ...],
+        auxiliary_modes: Tuple[int, ...],
+    ) -> np.ndarray:
+        embedded_matrix = np.zeros((self.cardinality,) * 2, dtype=complex)
+
+        for embedded_index, operator_basis in self.operator_basis_diagonal_on_modes(
+            modes=auxiliary_modes
+        ):
+            index = (
+                operator_basis.ket.on_modes(modes=modes),
+                operator_basis.bra.on_modes(modes=modes),
+            )
+            embedded_matrix[embedded_index] = matrix[index]
+
+        return embedded_matrix
+
     def get_linear_fock_operator(
         self,
         *,
