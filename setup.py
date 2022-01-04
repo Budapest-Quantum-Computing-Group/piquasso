@@ -34,7 +34,7 @@ setup(
         'theboss==1.0.6; python_version >= "3.7"',
         'numpy>=1.19.5; python_version >= "3.7"',
         'scipy>=1.5.4; python_version >= "3.7"',
-        "quantum-blackbird==0.2.4",
+        "quantum-blackbird==0.3.0",
     ],
     classifiers=[
         "Intended Audience :: Developers",
