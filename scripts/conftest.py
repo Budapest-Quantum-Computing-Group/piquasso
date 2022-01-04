@@ -54,8 +54,6 @@ def cramer_hypothesis_test():
 
         rvector = cramer_test(xR, yR)
 
-        print(rvector)
-
         return not bool(rvector.rx2("result")[0])
 
     yield func
