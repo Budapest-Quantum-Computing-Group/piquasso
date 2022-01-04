@@ -167,6 +167,56 @@ class FockSpace(tuple):
             *(self.symmetric_tensorpower(operator, n) for n in range(self.cutoff))
         )
 
+    def get_single_mode_displacement_operator(
+        self,
+        *,
+        r: float,
+        phi: float,
+    ) -> np.ndarray:
+
+        """
+        This method generates the Displacement operator following a recursion rule.
+        Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
+
+        Args:
+        r (float): This is the Displacement amplitude. Typically this value can be
+            negative or positive depending on the desired displacement direction.
+            Note:
+                Setting :math:`|r|` to higher values will require you to have a higer
+                cuttof dimensions.
+        phi (float): This is the Dispalacement angle. Its ranges are
+            :math:`\phi \in [ 0, 2 \pi )`
+
+        Returns:
+            np.ndarray: The constructed Displacement matrix representing the Fock
+            operator.
+        """
+
+        fock_indices = np.sqrt(np.arange(self.cutoff, dtype=complex))
+        displacement = r * np.exp(1j * phi)
+
+        transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
+        transformation[0, 0] = np.exp(-0.5 * r ** 2)
+
+        for row in range(1, self.cutoff):
+            transformation[row, 0] = (
+                displacement / fock_indices[row] * transformation[row - 1, 0]
+            )
+
+        for row in range(self.cutoff):
+            for col in range(1, self.cutoff):
+                transformation[row, col] = (
+                    -displacement.conj()
+                    / fock_indices[col]
+                    * transformation[row, col - 1]
+                ) + (
+                    fock_indices[row]
+                    / fock_indices[col]
+                    * transformation[row - 1, col - 1]
+                )
+
+        return transformation
+
     def get_single_mode_squeezing_operator(
         self,
         *,
