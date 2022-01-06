@@ -1,0 +1,40 @@
+name: Bug report
+description: Create a report to help us improve.
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for reporting!
+
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Please tell us exactly which version of Piquasso you are using.
+      value: |
+        - **Python version**:
+        - **Piquasso version**: 
+        - **Operating system**:
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What is the error?
+      description: Please tell us 
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce the problem
+      description: Please give us the steps that produces the bug. Or a minimal working example.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What should happen?
+      description: Please tell us what the expected output of the code.
+    validations:
+      required: true
