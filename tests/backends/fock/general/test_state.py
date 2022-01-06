@@ -80,3 +80,32 @@ def test_FockState_fock_probabilities_map():
             actual_fock_probabilities[occupation_number],
             expected_probability,
         )
+
+
+def test_FockState_quadratures_mean_variance():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.2, phi=0)
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=1.0)
+        pq.Q(2) | pq.Displacement(r=0.2, phi=np.pi / 2)
+
+    simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=14, hbar=2))
+    result = simulator.execute(program)
+
+    mean_on_0th, variance_on_0th = result.state.quadratures_mean_variance(modes=(0,))
+    mean_on_1st, variance_on_1st = result.state.quadratures_mean_variance(modes=(1,))
+    mean_on_2nd, variance_on_2nd = result.state.quadratures_mean_variance(
+        modes=(0,), phi=np.pi / 2
+    )
+    mean_on_3rd, variance_on_3rd = result.state.quadratures_mean_variance(
+        modes=(2,), phi=np.pi / 2
+    )
+
+    assert np.isclose(mean_on_0th, 0.4, rtol=1e-5)
+    assert mean_on_1st == 0.0
+    assert np.isclose(mean_on_2nd, 0.0)
+    assert np.isclose(mean_on_3rd, 0.4, rtol=1e-5)
+    assert np.isclose(variance_on_0th, 1.0, rtol=1e-5)
+    assert np.isclose(variance_on_1st, 0.9112844, rtol=1e-5)
+    assert np.isclose(variance_on_2nd, 1, rtol=1e-5)
+    assert np.isclose(variance_on_3rd, 1, rtol=1e-5)
