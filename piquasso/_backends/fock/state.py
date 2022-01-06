@@ -79,3 +79,10 @@ class BaseFockState(State, abc.ABC):
     @abc.abstractmethod
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         pass
+
+    @abc.abstractmethod
+    def quadratures_mean_variance(
+        self, modes: Tuple[int, ...], phi: float = 0
+    ) -> Tuple[float, float]:
+        """Calculates the mean and the variance of the quadratures of a Fock State"""
+        pass

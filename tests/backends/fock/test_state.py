@@ -35,3 +35,20 @@ def test_FockState_get_particle_detection_probability(SimulatorClass):
     probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 
     assert np.isclose(probability, 0.0012355767142126952)
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_quadratures_mean_variance(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    mean, var = state.quadratures_mean_variance(modes=(0,))
+
+    assert np.isclose(mean, 1.6374076, atol=1e-5)
+    assert np.isclose(var, 0.6705157, atol=1e-4)

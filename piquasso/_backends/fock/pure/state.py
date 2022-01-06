@@ -83,7 +83,7 @@ class PureFockState(BaseFockState):
 
         state_vector = self._state_vector[:cardinality]
 
-        return np.outer(state_vector, state_vector)
+        return np.outer(state_vector, state_vector.conj())
 
     def _as_mixed(self) -> FockState:
         return FockState.from_fock_state(self)
