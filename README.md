@@ -7,13 +7,10 @@
 
 ## A Python library for designing and simulating photonic quantum computers
 
-Piquasso is based on a fine-grained model for photonic quantum computations. Besides
-general computational models, Piquasso allows the application of special cases, such as
-computations on particle number conserving or a pure Fock backend. The explicit use of
-those special cases results in certain benefits. First of all, in Piquasso one can avoid
-decoherence if the computation is theoretically guaranteed to be pure. Moreover, the
-execution time and memory requirements of the computations can be significantly reduced
-for those special cases.
+Piquasso is a simulator for photonic quantum computations.
+
+> This is a research project, bugs can be expected. If you encounter any, please report
+> it in the [Issues page](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues).
 
 ## Installation
 
@@ -24,12 +21,12 @@ pip install piquasso
 ```
 
 If you wish to, you can also install
-[piquassoboost]( https://github.com/Budapest-Quantum-Computing-Group/piquassoboost) for 
+[piquassoboost](https://github.com/Budapest-Quantum-Computing-Group/piquassoboost) for
 performance improvement.
 
 ## Documentation
 
-http://piquasso.com/
+The documentation is avaliable at [docs.piquasso.com](https://docs.piquasso.com/).
 
 ## How to contribute?
 
@@ -40,8 +37,8 @@ We also appreciate bug reports, suggestions, or any kind of idea regarding Piqua
 
 ## Development guide
 
-The `eigen3` C++ library needs to be installed for the
-`thewalrus` (dependency of `strawberryfields`).
+The `eigen3` C++ library needs to be installed for the `thewalrus` (dependency of
+`strawberryfields`).
 
 On Ubuntu/Debian you can install it with
 
@@ -70,4 +67,3 @@ following command:
 ```
 pytest tests
 ```
-
