@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest a new feature in Piquasso!
+labels: ["type: feature request"]
+
+body:
+  - type: markdown
+    attributes:
+      value: Please make sure that you have checked the pull requests and opened issues before submitting a new featuer request.
+
+  - type: textarea
+    attributes:
+      label: What should be added?
+    validations:
+      required: true
+      
