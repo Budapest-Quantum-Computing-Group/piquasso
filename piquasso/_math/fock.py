@@ -442,15 +442,6 @@ class FockSpace(tuple):
             if basis.is_diagonal_on_modes(modes=modes)
         ]
 
-    def subspace_operator_basis_diagonal_on_modes(
-        self, *, modes: Tuple[int, ...], n: int
-    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
-        yield from [
-            (index, basis)
-            for index, basis in self.enumerate_subspace_operator_basis(n)
-            if basis.is_diagonal_on_modes(modes=modes)
-        ]
-
     def get_occupied_basis(
         self, *, modes: Tuple[int, ...], occupation_numbers: Tuple[int, ...]
     ) -> FockBasis:
@@ -483,39 +474,11 @@ class FockSpace(tuple):
             )
         )
 
-    def get_projection_operator_indices_on_subspace(
-        self, *, subspace_basis: FockBasis, modes: Tuple[int, ...], n: int
-    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
-        return tuple(  # type: ignore
-            zip(
-                *[
-                    index
-                    for index, operator_basis in (
-                        self.enumerate_subspace_operator_basis(n)
-                    )
-                    if operator_basis.is_diagonal_on_modes(modes=modes)
-                    and subspace_basis == operator_basis.ket.on_modes(modes=modes)
-                ]
-            )
-        )
-
-    def _symmetric_cardinality(self, n: int) -> int:
-        return symmetric_subspace_cardinality(d=self.d, n=n)
-
     def get_subspace_indices(self, n: int) -> Tuple[int, int]:
         begin = cutoff_cardinality(cutoff=n, d=self.d)
         end = cutoff_cardinality(cutoff=n + 1, d=self.d)
 
         return begin, end
-
-    def _get_subspace_basis_on_modes(
-        self, modes: Tuple[int, ...] = None
-    ) -> List[FockBasis]:
-        modes_ = modes or tuple(range(self.d))
-
-        subspace_vectors = {vector.on_modes(modes=modes_) for vector in self}
-
-        return sorted(list(subspace_vectors))
 
     def get_subspace_basis(self, n: int, d: int = None) -> List[Tuple[int, ...]]:
         d = d or self.d
