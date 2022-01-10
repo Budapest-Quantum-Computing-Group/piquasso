@@ -99,7 +99,7 @@ def test_PureFockState_quadratures_mean_variance():
         pq.Q(1) | pq.Squeezing(r=0.1, phi=1.0)
         pq.Q(2) | pq.Displacement(r=0.2, phi=np.pi / 2)
 
-    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=14, hbar=2))
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=8, hbar=2))
     result = simulator.execute(program)
 
     mean_1, var_1 = result.state.quadratures_mean_variance(modes=(0,))

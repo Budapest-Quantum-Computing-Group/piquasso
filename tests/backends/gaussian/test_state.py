@@ -442,3 +442,24 @@ def test_GaussianState_get_particle_detection_probability():
     probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 
     assert np.isclose(probability, 0.0012355308401079989)
+
+
+def test_GaussianState_fidelity():
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=2, phi=np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=0.1, phi=0)
+
+    simulator = pq.GaussianSimulator(d=1)
+    state_1 = simulator.execute(program_1).state
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=2, phi=-np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=-0.1, phi=0)
+
+    state_2 = simulator.execute(program_2).state
+
+    assert np.isclose(state_2.fidelity(state_1), 0.042150949)
+    assert np.isclose(state_2.fidelity(state_1), state_1.fidelity(state_2))
+    assert np.isclose(state_2.fidelity(state_2), 1.0)
