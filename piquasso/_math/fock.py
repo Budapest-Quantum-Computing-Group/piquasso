@@ -20,13 +20,13 @@ from typing import Tuple, Iterable, Generator, Any, List
 import numpy as np
 
 from operator import add
+
 from scipy.special import factorial, comb
-from scipy.linalg import block_diag
+from scipy.linalg import block_diag, polar, logm
 
+from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
-
-from scipy.linalg import polar, logm, funm
-from piquasso._math.hermite import modified_hermite_multidim
+from piquasso._math.decompositions import takagi
 
 
 @functools.lru_cache()
@@ -162,9 +162,20 @@ class FockSpace(tuple):
 
         return self
 
-    def get_passive_fock_operator(self, operator: np.ndarray) -> np.ndarray:
+    def get_passive_fock_operator(
+        self, operator: np.ndarray, modes: Tuple[int, ...], d: int
+    ) -> np.ndarray:
+        index = get_operator_index(modes)
+
+        embedded_operator = np.identity(d, dtype=complex)
+
+        embedded_operator[index] = operator
+
         return block_diag(
-            *(self.symmetric_tensorpower(operator, n) for n in range(self.cutoff))
+            *(
+                self.symmetric_tensorpower(embedded_operator, n)
+                for n in range(self.cutoff)
+            )
         )
 
     def get_single_mode_displacement_operator(
@@ -300,99 +311,111 @@ class FockSpace(tuple):
         self,
         *,
         modes: Tuple[int, ...],
-        auxiliary_modes: Tuple[int, ...],
-        cache_size: int,
-        active_block: np.ndarray = None,
-        passive_block: np.ndarray = None,
-        displacement: np.ndarray = None,
+        active_block: np.ndarray,
+        passive_block: np.ndarray,
     ) -> np.ndarray:
-        if active_block is None and passive_block is None:
-            phase = np.identity(len(modes), dtype=complex)
-            S = np.identity(len(modes), dtype=complex)
-            T = np.zeros(shape=(len(modes),) * 2)
+        r"""The matrix of the symplectic transformation in Fock space.
 
-        else:
-            phase, _ = polar(passive_block)
-            active_phase, active_squeezing = polar(active_block)
+        Any symplectic transformation (in complex representation) can be written as
 
-            S = funm(active_squeezing, lambda x: 1 / np.sqrt(1 + x ** 2))
-            T = (
-                active_phase
-                @ funm(active_squeezing, lambda x: x / np.sqrt(1 + x ** 2))
-                @ phase.transpose()
-            )
+        .. math::
+            S = \begin{bmatrix}
+                P & A \\
+                A^* & P^*
+            \end{bmatrix}.
 
-        if displacement is None:
-            alpha = np.zeros(shape=(len(modes),), dtype=complex)
-        else:
-            alpha = displacement
+        As a first step, this symplectic matrix is polar decomposed:
 
-        normalization = np.exp(
-            np.trace(logm(S))
-            - (alpha.conjugate() + alpha @ T.conjugate().transpose()) @ alpha / 2
+        .. math::
+            S = R U,
+
+        where :math:`R` is a hermitian matrix and :math:`U` is a unitary one. The polar
+        decomposition of a symplectic matrix is also a symplectic matrix, therefore
+        :math:`U` (being unitary) corresponds to a passive transformation, and :math:`R`
+        to an active one.
+
+        The symplectic matrix :math:`R` has the form
+
+        .. math::
+            \exp \left ( i K \begin{bmatrix}
+                0 & Z \\
+                Z^* & 0
+            \end{bmatrix}
+            \right ),
+
+        where :math:`Z` is a (complex) symmetric matrix. This can be decomposed via
+        Takagi decomposition:
+
+        .. math::
+            Z = U D U^T,
+
+        where :math:`U` is a unitary matrix and :math:`D` is a diagonal matrix. The
+        diagonal entries in :math:`D` correspond to squeezing amplitudes, and :math:`U`
+        corresponds to an interferometer.
+
+        Args:
+            modes (Tuple[int, ...]):
+                The modes on which the transformation should be applied.
+            active_block (np.ndarray): Active part of the symplectic transformation.
+            passive_block (np.ndarray): Passive part of the symplectic transformation.
+
+        Returns:
+            np.ndarray:
+                The resulting transformation, which could be applied to the state.
+        """
+
+        d = len(modes)
+        identity = np.identity(d)
+        zeros = np.zeros_like(identity)
+
+        K = np.block(
+            [
+                [identity, zeros],
+                [zeros, -identity],
+            ],
         )
 
-        left_matrix = -T
-        left_vector = alpha @ S.transpose()
+        symplectic = np.block(
+            [
+                [passive_block, active_block],
+                [active_block.conj(), passive_block.conj()],
+            ],
+        )
 
-        right_matrix = phase.transpose() @ T.conjugate().transpose() @ phase
-        right_vector = -(alpha @ T.conjugate().transpose() + alpha.conjugate()) @ phase
+        U, R = polar(symplectic, side="left")
 
-        def get_f_vector(
-            upper_bound: Tuple[int, ...], matrix: np.ndarray, vector: np.ndarray
-        ) -> np.ndarray:
-            subspace_basis = self._get_subspace_basis_on_modes(modes=modes)
-            elements = np.empty(shape=(len(subspace_basis),), dtype=complex)
+        H_active = 1j * K @ logm(R)
+        H_passive = 1j * K @ logm(U)
 
-            for index, basis_vector in enumerate(subspace_basis):
-                nd_basis_vector = np.array(basis_vector)
-                if any(
-                    qelem > relem for qelem, relem in zip(basis_vector, upper_bound)
-                ):
-                    elements[index] = 0.0
-                    continue
+        singular_values, unitary = takagi(1j * H_active[:d, d:])
 
-                difference: np.ndarray = upper_bound - nd_basis_vector
+        transformation = np.identity(self.cardinality, dtype=complex)
 
-                elements[index] = (
-                    np.sqrt(
-                        np.prod(factorial(upper_bound))
-                        / np.prod(factorial(nd_basis_vector))
-                    )
-                    * modified_hermite_multidim(B=matrix, n=difference, alpha=vector)
-                ) / np.prod(factorial(difference))
+        fock_operator = self.get_passive_fock_operator(
+            unitary.conj().T @ H_passive[:d, :d], modes=modes, d=self.d
+        )
 
-            return elements
+        transformation = fock_operator @ transformation
 
-        @functools.lru_cache(cache_size)
-        def calculate_left(upper_bound: Tuple[int, ...]) -> np.ndarray:
-            return get_f_vector(
-                upper_bound=upper_bound,
-                matrix=left_matrix,
-                vector=left_vector,
+        for index, mode in enumerate(modes):
+            operator = self.get_single_mode_squeezing_operator(
+                r=singular_values[index],
+                phi=0.0,
             )
 
-        @functools.lru_cache(cache_size)
-        def calculate_right(upper_bound: Tuple[int, ...]) -> np.ndarray:
-            return get_f_vector(
-                upper_bound=upper_bound,
-                matrix=right_matrix,
-                vector=right_vector,
+            squeezing_matrix = self.embed_matrix(
+                operator,
+                modes=(mode,),
+                auxiliary_modes=tuple(np.delete(np.arange(self.d), (mode,))),
             )
 
-        fock_operator = self.get_passive_fock_operator(operator=S @ phase)
-        transformation = np.zeros((self.cardinality,) * 2, dtype=complex)
+            transformation = squeezing_matrix @ transformation
 
-        for index, operator_basis in self.operator_basis_diagonal_on_modes(
-            modes=auxiliary_modes
-        ):
-            transformation[index] = (
-                calculate_left(upper_bound=operator_basis.ket.on_modes(modes=modes))
-                @ fock_operator
-                @ calculate_right(upper_bound=operator_basis.bra.on_modes(modes=modes))
-            )
+        fock_operator = self.get_passive_fock_operator(unitary, modes=modes, d=self.d)
 
-        return normalization * transformation
+        transformation = fock_operator @ transformation
+
+        return transformation
 
     @property
     def cardinality(self) -> int:

@@ -23,8 +23,6 @@ from .state import FockState
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
-from piquasso._math.indices import get_operator_index
-
 
 def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
     state.reset()
@@ -35,13 +33,9 @@ def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
 def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
-    index = get_operator_index(instruction.modes)
-
-    embedded_operator = np.identity(state._space.d, dtype=complex)
-
-    embedded_operator[index] = operator
-
-    fock_operator = state._space.get_passive_fock_operator(embedded_operator)
+    fock_operator = state._space.get_passive_fock_operator(
+        operator, modes=instruction.modes, d=state._space.d
+    )
 
     state._density_matrix = (
         fock_operator @ state._density_matrix @ fock_operator.conjugate().transpose()
@@ -229,11 +223,8 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
 def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
-        cache_size=state._config.cache_size,
-        auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        displacement=instruction._all_params["displacement_vector"],
     )
 
     state._density_matrix = (

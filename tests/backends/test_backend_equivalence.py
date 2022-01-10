@@ -288,6 +288,35 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(SimulatorClass
         pq.FockSimulator,
     ),
 )
+def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=0.6)
+        pq.Q(1) | pq.Squeezing(r=0.2, phi=0.7)
+
+    simulator = SimulatorClass(d=2)
+    state = simulator.execute(program).state
+
+    probabilities = state.fock_probabilities
+
+    assert all(probability >= 0 for probability in probabilities)
+    assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
+
+    assert is_proportional(
+        probabilities,
+        [0.9754467, 0.0, 0.0, 0.01900025, 0.0, 0.0048449, 0.0, 0.0, 0.0, 0.0],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
 def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

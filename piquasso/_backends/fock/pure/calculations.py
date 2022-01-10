@@ -23,8 +23,6 @@ from .state import PureFockState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from piquasso._math.indices import get_operator_index
-
 
 def particle_number_measurement(
     state: PureFockState, instruction: Instruction, shots: int
@@ -65,13 +63,9 @@ def passive_linear(
 ) -> Result:
     operator: np.ndarray = instruction._all_params["passive_block"]
 
-    index = get_operator_index(instruction.modes)
-
-    embedded_operator = np.identity(state._space.d, dtype=complex)
-
-    embedded_operator[index] = operator
-
-    fock_operator = state._space.get_passive_fock_operator(embedded_operator)
+    fock_operator = state._space.get_passive_fock_operator(
+        operator, modes=instruction.modes, d=state._space.d
+    )
 
     state._state_vector = fock_operator @ state._state_vector
 
@@ -207,11 +201,8 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
-        cache_size=state._config.cache_size,
-        auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        displacement=instruction._all_params["displacement_vector"],
     )
 
     state._state_vector = operator @ state._state_vector
