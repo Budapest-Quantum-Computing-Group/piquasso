@@ -834,3 +834,31 @@ def test_sampling_backend_equivalence_with_random_interferometer(
         fock_state.fock_probabilities,
         sampling_state.fock_probabilities,
     )
+
+
+def test_wigner_function_equivalence():
+    config = pq.Config(cutoff=10, hbar=42)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=0.10 - 0.05j)
+        pq.Q(0) | pq.Squeezing(r=0.10)
+
+    fock_simulator = pq.FockSimulator(d=1, config=config)
+    fock_state = fock_simulator.execute(program).state
+
+    fock_wigner_function_values = fock_state.wigner_function(
+        positions=[0.10, 0.11],
+        momentums=[-0.05, -0.06],
+    )
+
+    gaussian_simulator = pq.GaussianSimulator(d=1, config=config)
+    gaussian_state = gaussian_simulator.execute(program).state
+
+    gaussian_wigner_function_values = gaussian_state.wigner_function(
+        positions=[[0.10], [0.11]],
+        momentums=[[-0.05], [-0.06]],
+    )
+
+    assert np.allclose(fock_wigner_function_values, gaussian_wigner_function_values)

@@ -52,3 +52,65 @@ def test_FockState_quadratures_mean_variance(SimulatorClass):
 
     assert np.isclose(mean, 1.6374076, atol=1e-5)
     assert np.isclose(var, 0.6705157, atol=1e-4)
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_wigner_function(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    wigner_function_values = state.wigner_function(
+        positions=[1, 1.1],
+        momentums=[-0.5, -0.6],
+    )
+
+    assert np.allclose(
+        wigner_function_values,
+        np.array([[0.09872782, 0.10777084], [0.10327266, 0.11273187]]),
+    )
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes(
+    SimulatorClass,
+):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = SimulatorClass(d=2)
+    state = simulator.execute(program).state
+
+    with pytest.raises(pq.api.errors.InvalidModes):
+        state.wigner_function(
+            positions=[1, 1.1],
+            momentums=[-0.5, -0.6],
+        )
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes_specified(
+    SimulatorClass,
+):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = SimulatorClass(d=2)
+    state = simulator.execute(program).state
+
+    with pytest.raises(pq.api.errors.InvalidModes):
+        state.wigner_function(
+            positions=[1, 1.1],
+            momentums=[-0.5, -0.6],
+        )
