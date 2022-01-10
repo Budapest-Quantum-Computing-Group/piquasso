@@ -42,16 +42,16 @@ def test_FockState_quadratures_mean_variance(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Displacement(alpha=0.2 - 0.2j)
         pq.Q(0) | pq.Squeezing(r=0.2)
 
-    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=6))
     state = simulator.execute(program).state
 
     mean, var = state.quadratures_mean_variance(modes=(0,))
 
-    assert np.isclose(mean, 1.6374076, atol=1e-5)
-    assert np.isclose(var, 0.6705157, atol=1e-4)
+    assert np.isclose(mean, 0.3275267, atol=1e-5)
+    assert np.isclose(var, 0.6709301, atol=1e-4)
 
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
@@ -114,3 +114,25 @@ def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes_specif
             positions=[1, 1.1],
             momentums=[-0.5, -0.6],
         )
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_calculate_fidelity(
+    SimulatorClass,
+):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=np.pi / 2)
+
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=6))
+    state = simulator.execute(program).state
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=-np.pi / 2)
+
+    state_2 = simulator.execute(program_2).state
+
+    assert np.isclose(state.calculate_fidelity(state_2), 0.92507584)

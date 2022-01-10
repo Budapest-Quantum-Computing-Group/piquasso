@@ -89,7 +89,7 @@ def test_FockState_quadratures_mean_variance():
         pq.Q(1) | pq.Squeezing(r=0.1, phi=1.0)
         pq.Q(2) | pq.Displacement(r=0.2, phi=np.pi / 2)
 
-    simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=14, hbar=2))
+    simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=8, hbar=2))
     result = simulator.execute(program)
 
     mean_on_0th, variance_on_0th = result.state.quadratures_mean_variance(modes=(0,))
