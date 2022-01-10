@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import functools
-import itertools
 from typing import Tuple, Iterable, Generator, Any, List
 
 import numpy as np
@@ -27,6 +26,10 @@ from scipy.linalg import block_diag, polar, logm
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
+
+from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
+    RyserGuanPermanentCalculator,
+)
 
 
 @functools.lru_cache()
@@ -86,15 +89,6 @@ class FockBasis(tuple):
 
         return ret
 
-    @property
-    def first_quantized(self) -> List[int]:
-        ret = []
-
-        for idx, repetition in enumerate(self):
-            ret.extend([idx + 1] * repetition)
-
-        return ret
-
     def on_modes(self, *, modes: Tuple[int, ...]) -> "FockBasis":
         return FockBasis(self[mode] for mode in modes)
 
@@ -104,10 +98,6 @@ class FockBasis(tuple):
             a[mode] = 1
 
         return self + a
-
-    @property
-    def all_possible_first_quantized_vectors(self) -> List[Tuple[int, ...]]:
-        return list(set(itertools.permutations(self.first_quantized)))  # type: ignore
 
 
 class FockOperatorBasis(tuple):
@@ -550,24 +540,13 @@ class FockSpace(tuple):
         )
 
         for index, basis in self.enumerate_subspace_operator_basis(n, d):
-            sum_ = 0
+            calculator = RyserGuanPermanentCalculator(operator, basis.bra, basis.ket)
 
-            for permutation1 in basis.ket.all_possible_first_quantized_vectors:
-                for permutation2 in basis.bra.all_possible_first_quantized_vectors:
-                    prod = 1
+            permanent = calculator.compute_permanent()
 
-                    for i in range(len(permutation1)):
-                        i1 = permutation1[i]
-                        i2 = permutation2[i]
-                        prod *= operator[i1 - 1, i2 - 1]
-
-                    sum_ += prod
-
-            normalization = np.sqrt(
-                np.prod(factorial(basis.ket)) * np.prod(factorial(basis.bra))
-            ) / factorial(n)
-
-            ret[index] = normalization * sum_
+            ret[index] = permanent / np.sqrt(
+                np.prod(factorial(basis.bra)) * np.prod(factorial(basis.ket))
+            )
 
         return ret
 
