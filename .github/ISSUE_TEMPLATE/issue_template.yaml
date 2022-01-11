@@ -28,7 +28,7 @@ body:
   - type: textarea
     attributes:
       label: Steps to reproduce the problem
-      description: Please give us the steps that produces the bug. Or a minimal working example.
+      description: Please give us the steps that produce the bug. Or a minimal working example.
     validations:
       required: true
 
