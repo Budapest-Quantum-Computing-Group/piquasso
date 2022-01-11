@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Tuple, Type, Optional
 
 import abc
 import copy
@@ -30,8 +30,10 @@ class State(abc.ABC):
         d (int): Instance attribute specifying the number of modes.
     """
 
-    def __init__(self, config: Config = None) -> None:
-        self._config = config.copy() if config is not None else Config()
+    _config_class: Type[Config] = Config
+
+    def __init__(self, config: Optional[Config] = None) -> None:
+        self._config = config.copy() if config is not None else self._config_class()
 
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return tuple(np.delete(np.arange(self.d), modes))

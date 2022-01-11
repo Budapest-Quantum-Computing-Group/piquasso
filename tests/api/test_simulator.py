@@ -227,3 +227,15 @@ def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
 
     with pytest.raises(pq.api.errors.InvalidState):
         simulator.execute(program, initial_state=state)
+
+
+def test_Config_override(FakeSimulator, FakeConfig):
+
+    with pq.Program() as program:
+        pass
+
+    simulator = FakeSimulator(d=1)
+    state = simulator.execute(program).state
+
+    assert isinstance(simulator.config, FakeConfig)
+    assert isinstance(state._config, FakeConfig)
