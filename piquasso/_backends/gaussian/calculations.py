@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List, Callable
+from typing import Tuple, List
 
 import itertools
 import scipy
@@ -33,7 +33,6 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidInstruction
 
 from piquasso._math.linalg import reduce_
-from piquasso._math.hafnian import loop_hafnian
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
@@ -298,7 +297,6 @@ def _get_particle_number_measurement_samples(
     state: GaussianState,
     instruction: Instruction,
     shots: int,
-    loop_hafnian_func: Callable = loop_hafnian,
 ) -> List[Tuple[int, ...]]:
 
     modes: Tuple[int, ...] = instruction.modes
@@ -348,7 +346,6 @@ def _get_particle_number_measurement_samples(
             choice = _get_particle_number_choice(
                 evolved_state,
                 sample,
-                loop_hafnian_func,
             )
 
             sample = sample + (choice,)
@@ -361,7 +358,6 @@ def _get_particle_number_measurement_samples(
 def _get_particle_number_choice(
     state: GaussianState,
     previous_sample: Tuple[int, ...],
-    loop_hafnian_func: Callable,
 ) -> int:
     r"""
     The original equations are
@@ -422,7 +418,7 @@ def _get_particle_number_choice(
 
         np.fill_diagonal(B_reduced, gamma_reduced)
 
-        weight = abs(loop_hafnian_func(B_reduced)) ** 2 / factorial(n)
+        weight = abs(state._config.loop_hafnian_function(B_reduced)) ** 2 / factorial(n)
         weights = np.append(weights, weight)
 
     weights /= np.sum(weights)

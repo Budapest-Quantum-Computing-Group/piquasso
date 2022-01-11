@@ -20,6 +20,11 @@ import copy
 import random
 import numpy as np
 
+from piquasso._math.permanent import glynn_gray_permanent
+from piquasso._math.hafnian import loop_hafnian
+
+from piquasso.api.typing import PermanentFunction, HafnianFunction
+
 
 class Config:
     """The configuration for the simulation."""
@@ -33,6 +38,8 @@ class Config:
         use_torontonian: bool = False,
         cutoff: int = 4,
         measurement_cutoff: int = 5,
+        permanent_function: PermanentFunction = glynn_gray_permanent,
+        loop_hafnian_function: HafnianFunction = loop_hafnian,
     ):
         self.seed_sequence = seed_sequence or int.from_bytes(
             os.urandom(8), byteorder="big"
@@ -42,6 +49,8 @@ class Config:
         self.use_torontonian = use_torontonian
         self.cutoff = cutoff
         self.measurement_cutoff = measurement_cutoff
+        self.permanent_function = permanent_function
+        self.loop_hafnian_function = loop_hafnian_function
 
     @property
     def seed_sequence(self):
