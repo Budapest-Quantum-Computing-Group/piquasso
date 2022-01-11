@@ -17,7 +17,7 @@ from typing import Tuple, Generator, Any, Dict, List
 
 import abc
 import numpy as np
-
+from scipy.linalg import sqrtm
 from piquasso.api.config import Config
 from piquasso.api.state import State
 
@@ -199,3 +199,28 @@ class BaseFockState(State, abc.ABC):
                 W += 2 * np.real(rho[m, n] * Wlist[n])
 
         return 0.5 * W * g ** 2
+
+    def fidelity(self, state: "BaseFockState") -> float:
+        r"""Calculates the state fidelity between two quantum states.
+
+        The state fidelity :math:`F` between two density matrices
+        :math:`\rho_1, \rho_2` is given by:
+
+        .. math::
+            \operatorname{F}(\rho_1, \rho_2) = \operatorname{Tr}(\sqrt{\sqrt{\rho_1}
+                \rho_2\sqrt{\rho_1}})^2
+
+        Args:
+            state: Either a :class:`~piquasso._backends.fock.pure.state.PureFockState`
+            or a :class:`~piquasso._backends.fock.general.state.FockState` that can be
+            used to calculate the fidelity aganist it.
+
+        Returns:
+            float: The calculated fidelity.
+        """
+
+        sqrt_density_1 = sqrtm(self.density_matrix)
+        f = sqrtm(sqrt_density_1 @ state.density_matrix @ sqrt_density_1)
+        # Trace norm of the matrix. For more details please check:
+        # https://www.quantiki.org/wiki/trace-norm
+        return float((np.linalg.norm(f, ord="nuc") ** 2).real)

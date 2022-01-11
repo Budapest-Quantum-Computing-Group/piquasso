@@ -862,3 +862,32 @@ def test_wigner_function_equivalence():
     )
 
     assert np.allclose(fock_wigner_function_values, gaussian_wigner_function_values)
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_fidelity(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=-np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=-0.1, phi=0)
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=-0.1, phi=0)
+
+    generic_simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
+
+    state_1 = generic_simulator.execute(program_1).state
+    state_2 = generic_simulator.execute(program_2).state
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 0.9421652615828)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))
