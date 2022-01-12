@@ -39,7 +39,6 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
         "Zgate": Instruction.get_subclass("MomentumDisplacement"),
         "Sgate": Instruction.get_subclass("Squeezing"),
         "Pgate": Instruction.get_subclass("QuadraticPhase"),
-        "Vgate": None,
         "Kgate": Instruction.get_subclass("Kerr"),
         "Rgate": Instruction.get_subclass("Phaseshifter"),
         "BSgate": Instruction.get_subclass("Beamsplitter"),
@@ -48,6 +47,7 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
         "CXgate": Instruction.get_subclass("ControlledX"),
         "CZgate": Instruction.get_subclass("ControlledZ"),
         "CKgate": Instruction.get_subclass("CrossKerr"),
+        "Vgate": Instruction.get_subclass("CubicPhase"),
         "Fouriergate": Instruction.get_subclass("Fourier"),
     }
 

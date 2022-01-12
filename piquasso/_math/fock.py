@@ -21,7 +21,7 @@ import numpy as np
 from operator import add
 
 from scipy.special import factorial, comb
-from scipy.linalg import block_diag, polar, logm
+from scipy.linalg import block_diag, polar, logm, expm
 
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
@@ -281,6 +281,44 @@ class FockSpace(tuple):
                     )
 
         return transformation
+
+    def get_single_mode_cubic_phase_operator(
+        self,
+        *,
+        gamma: float,
+        hbar: float,
+    ) -> np.ndarray:
+
+        r"""Cubic Phase gate.
+
+        The definition of the Cubic Phase gate is
+
+        .. math::
+            \operatorname{CP}(\gamma) = e^{i \hat{x}^3 \frac{\gamma}{3 \hbar}}
+
+        The Cubic Phase gate transforms the annihilation operator as
+
+        .. math::
+            \operatorname{CP}^\dagger(\gamma) \hat{a} \operatorname{CP}(\gamma) =
+                \hat{a} + i\frac{\gamma(\hat{a} +\hat{a}^\dagger)^2}{2\sqrt{2/\hbar}}
+
+        It transforms the :math:`\hat{p}` quadrature as follows:
+
+        .. math::
+            \operatorname{CP}^\dagger(\gamma) \hat{p} \operatorname{CP}(\gamma) =
+                \hat{p} + \gamma \hat{x}^2.
+
+        Args:
+            gamma (float): The Cubic Phase parameter.
+            hbar (float): Scaling parameter.
+        Returns:
+            np.ndarray:
+                The resulting transformation, which could be applied to the state.
+        """
+
+        annih = np.diag(np.sqrt(np.arange(1, self.cutoff)), 1)
+        position = (annih.T + annih) * np.sqrt(hbar / 2)
+        return expm(1j * np.linalg.matrix_power(position, 3) * (gamma / (3 * hbar)))
 
     def embed_matrix(
         self,

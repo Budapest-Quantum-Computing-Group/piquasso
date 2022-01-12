@@ -23,18 +23,20 @@ def test_loads_blackbird_parses_operations():
 
         BSgate(0.7853981633974483, 0) | [1, 2]
         Rgate(0.7853981633974483) | 1
+        Vgate(0.5) | 1
         """
 
     program = pq.Program()
 
     program.loads_blackbird(blackbird_code)
 
-    assert len(program.instructions) == 2
+    assert len(program.instructions) == 3
 
     assert program.instructions[0] == pq.Beamsplitter(
         theta=np.pi / 4, phi=0.0
     ).on_modes(1, 2)
     assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
+    assert program.instructions[2] == pq.CubicPhase(gamma=0.5).on_modes(1)
 
 
 def test_loads_blackbird_parses_operations_with_default_arguments():

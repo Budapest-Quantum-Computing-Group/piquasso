@@ -348,3 +348,17 @@ def test_cross_kerr():
 
     assert np.isclose(nonzero_elements[2][0], -1j * np.exp(-1j * xi))
     assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
+
+
+def test_cubic_phase():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.CubicPhase(gamma=0.1)
+
+    simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    nonzero_elements = list(state.nonzero_elements)
+
+    assert len(nonzero_elements) == 25

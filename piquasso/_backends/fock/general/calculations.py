@@ -150,6 +150,30 @@ def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
     return Result(state=state)
 
 
+def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Result:
+    gamma = instruction._all_params["gamma"]
+    hbar = state._config.hbar
+
+    for index, mode in enumerate(instruction.modes):
+        operator = state._space.get_single_mode_cubic_phase_operator(
+            gamma=gamma[index], hbar=hbar
+        )
+        embedded_operator = state._space.embed_matrix(
+            operator,
+            modes=(mode,),
+            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        )
+        state._density_matrix = (
+            embedded_operator
+            @ state._density_matrix
+            @ embedded_operator.conjugate().transpose()
+        )
+
+        state.normalize()
+
+    return Result(state=state)
+
+
 def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     xi = instruction._all_params["xi"]

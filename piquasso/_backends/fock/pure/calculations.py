@@ -201,6 +201,26 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
     return Result(state=state)
 
 
+def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    gamma = instruction._all_params["gamma"]
+    hbar = state._config.hbar
+
+    for index, mode in enumerate(instruction.modes):
+        operator = state._space.get_single_mode_cubic_phase_operator(
+            gamma=gamma[index], hbar=hbar
+        )
+        embedded_operator = state._space.embed_matrix(
+            operator,
+            modes=(mode,),
+            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        )
+        state._state_vector = embedded_operator @ state._state_vector
+
+        state.normalize()
+
+    return Result(state=state)
+
+
 def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,

@@ -651,6 +651,64 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
         )
 
 
+class _ScalableFockGates(Gate, _mixins.ScalingMixin):
+    def __init__(
+        self, *, params: dict = None, gamma: np.ndarray = None, xi: float = None
+    ):
+        params = params or {}
+        super().__init__(params=params, extra_params=dict(gamma=gamma, xi=xi))
+
+    ERROR_MESSAGE_TEMPLATE = (
+        "The instruction {instruction} is not applicable to modes {modes} with the "
+        "specified parameters."
+    )
+
+    def _autoscale(self) -> None:
+        gamma = self._extra_params["gamma"]
+        if gamma is not None and len(gamma) == len(self.modes):
+            pass
+        elif len(gamma) == 1:
+            self._extra_params["gamma"] = block_diag(*[gamma] * len(self.modes))
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
+
+
+class CubicPhase(_ScalableFockGates):
+    r"""Cubic Phase gate.
+
+    The definition of the Cubic Phase gate is
+
+    .. math::
+        \operatorname{CP}(\gamma) = e^{i \hat{x}^3 \frac{\gamma}{3 \hbar}}
+
+    The Cubic Phase gate transforms the annihilation operator as
+
+    .. math::
+        \operatorname{CP}^\dagger(\gamma) \hat{a} \operatorname{CP}(\gamma) = \hat{a}
+            + i\frac{\gamma(\hat{a} +\hat{a}^\dagger)^2}{2\sqrt{2/\hbar}}
+
+    It transforms the :math:`\hat{p}` quadrature as follows:
+
+    .. math::
+        \operatorname{CP}^\dagger(\gamma) \hat{p} \operatorname{CP}(\gamma) =
+            \hat{p} + \gamma \hat{x}^2.
+
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        Using this gate requires a high cutoff to make the more accurate simulation.
+    """
+
+    def __init__(self, gamma: float) -> None:
+        """
+        Args:
+            gamma (float): The Cubic Phase parameter.
+        """
+        super().__init__(params=dict(gamma=gamma), gamma=np.atleast_1d(gamma))
+
+
 class Kerr(Gate):
     r"""Kerr gate.
 
