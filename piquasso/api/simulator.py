@@ -17,6 +17,8 @@ import abc
 
 from typing import Optional, List, Type, Dict, Callable
 
+from piquasso.core import _mixins
+
 from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
@@ -34,7 +36,7 @@ from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 from .computer import Computer
 
 
-class Simulator(Computer, abc.ABC):
+class Simulator(Computer, _mixins.CodeMixin):
     """Base class for all simulators defined in Piquasso."""
 
     _state_class: Type[State]
@@ -48,6 +50,17 @@ class Simulator(Computer, abc.ABC):
     @abc.abstractmethod
     def _instruction_map(self) -> Dict[Type[Instruction], Callable]:
         pass
+
+    def _as_code(self):
+        if self.config == Config():
+            return f"pq.{self.__class__.__name__}(d={self.d})"
+
+        four_spaces = " " * 4
+        return (
+            f"pq.{self.__class__.__name__}(\n"
+            f"{four_spaces}d={self.d}, config={self.config._as_code()}\n"
+            ")"
+        )
 
     def create_initial_state(self):
         """Creates an initial state with no instructions executed.

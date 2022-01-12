@@ -25,8 +25,10 @@ from piquasso._math.hafnian import loop_hafnian
 
 from piquasso.api.typing import PermanentFunction, HafnianFunction
 
+from piquasso.core import _mixins
 
-class Config:
+
+class Config(_mixins.CodeMixin):
     """The configuration for the simulation."""
 
     def __init__(
@@ -41,6 +43,7 @@ class Config:
         permanent_function: PermanentFunction = glynn_gray_permanent,
         loop_hafnian_function: HafnianFunction = loop_hafnian,
     ):
+        self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
             os.urandom(8), byteorder="big"
         )
@@ -51,6 +54,43 @@ class Config:
         self.measurement_cutoff = measurement_cutoff
         self.permanent_function = permanent_function
         self.loop_hafnian_function = loop_hafnian_function
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Config):
+            return False
+        return (
+            self._original_seed_sequence == other._original_seed_sequence
+            and self.cache_size == other.cache_size
+            and self.hbar == other.hbar
+            and self.use_torontonian == other.use_torontonian
+            and self.cutoff == other.cutoff
+            and self.measurement_cutoff == other.measurement_cutoff
+        )
+
+    def _as_code(self) -> str:
+        default_config = Config()
+        non_default_params = dict()
+
+        if self._original_seed_sequence != default_config._original_seed_sequence:
+            non_default_params["seed_sequence"] = self._original_seed_sequence
+        if self.cache_size != default_config.cache_size:
+            non_default_params["cache_size"] = self.cache_size
+        if self.hbar != default_config.hbar:
+            non_default_params["hbar"] = self.hbar
+        if self.use_torontonian != default_config.use_torontonian:
+            non_default_params["use_torontonian"] = self.use_torontonian
+        if self.cutoff != default_config.cutoff:
+            non_default_params["cutoff"] = self.cutoff
+        if self.measurement_cutoff != default_config.measurement_cutoff:
+            non_default_params["measurement_cutoff"] = self.measurement_cutoff
+
+        if len(non_default_params) == 0:
+            return "pq.Config()"
+        else:
+            params_string = ", ".join(
+                f"{key}={value}" for key, value in non_default_params.items()
+            )
+            return f"pq.Config({params_string})"
 
     @property
     def seed_sequence(self):
