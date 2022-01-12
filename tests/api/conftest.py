@@ -72,12 +72,22 @@ def FakeState():
 
 
 @pytest.fixture
-def FakeSimulator(FakeState, FakePreparation, FakeGate, FakeMeasurement):
+def FakeConfig():
+    class FakeConfig(pq.api.config.Config):
+        pass
+
+    return FakeConfig
+
+
+@pytest.fixture
+def FakeSimulator(FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement):
     def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
         return pq.api.result.Result(state=state)
 
     class FakeSimulator(pq.Simulator):
         _state_class = FakeState
+
+        _config_class = FakeConfig
 
         _instruction_map = {
             FakePreparation: fake_calculation,

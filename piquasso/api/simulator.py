@@ -38,10 +38,11 @@ class Simulator(Computer, abc.ABC):
     """Base class for all simulators defined in Piquasso."""
 
     _state_class: Type[State]
+    _config_class: Type[Config] = Config
 
     def __init__(self, d: int, config: Optional[Config] = None) -> None:
         self.d = d
-        self.config = config.copy() if config is not None else Config()
+        self.config = config.copy() if config is not None else self._config_class()
 
     @property
     @abc.abstractmethod

@@ -27,9 +27,7 @@ from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
 
-from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
-    RyserGuanPermanentCalculator,
-)
+from piquasso.api.typing import PermanentFunction
 
 
 @functools.lru_cache()
@@ -153,7 +151,11 @@ class FockSpace(tuple):
         return self
 
     def get_passive_fock_operator(
-        self, operator: np.ndarray, modes: Tuple[int, ...], d: int
+        self,
+        operator: np.ndarray,
+        modes: Tuple[int, ...],
+        d: int,
+        permanent_function: PermanentFunction,
     ) -> np.ndarray:
         index = get_operator_index(modes)
 
@@ -163,7 +165,9 @@ class FockSpace(tuple):
 
         return block_diag(
             *(
-                self.symmetric_tensorpower(embedded_operator, n)
+                self.symmetric_tensorpower(
+                    embedded_operator, n, permanent_function=permanent_function
+                )
                 for n in range(self.cutoff)
             )
         )
@@ -303,6 +307,7 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         active_block: np.ndarray,
         passive_block: np.ndarray,
+        permanent_function: PermanentFunction,
     ) -> np.ndarray:
         r"""The matrix of the symplectic transformation in Fock space.
 
@@ -382,7 +387,10 @@ class FockSpace(tuple):
         transformation = np.identity(self.cardinality, dtype=complex)
 
         fock_operator = self.get_passive_fock_operator(
-            unitary.conj().T @ H_passive[:d, :d], modes=modes, d=self.d
+            unitary.conj().T @ H_passive[:d, :d],
+            modes=modes,
+            d=self.d,
+            permanent_function=permanent_function,
         )
 
         transformation = fock_operator @ transformation
@@ -401,7 +409,12 @@ class FockSpace(tuple):
 
             transformation = squeezing_matrix @ transformation
 
-        fock_operator = self.get_passive_fock_operator(unitary, modes=modes, d=self.d)
+        fock_operator = self.get_passive_fock_operator(
+            unitary,
+            modes=modes,
+            d=self.d,
+            permanent_function=permanent_function,
+        )
 
         transformation = fock_operator @ transformation
 
@@ -484,7 +497,12 @@ class FockSpace(tuple):
             for dual_index, dual_basis in enumerate(subspace_operator_basis):
                 yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
 
-    def symmetric_tensorpower(self, operator: np.ndarray, n: int) -> np.ndarray:
+    def symmetric_tensorpower(
+        self,
+        operator: np.ndarray,
+        n: int,
+        permanent_function: PermanentFunction,
+    ) -> np.ndarray:
         if n == 0:
             return np.array([[1]], dtype=complex)
 
@@ -503,9 +521,7 @@ class FockSpace(tuple):
         )
 
         for index, basis in self.enumerate_subspace_operator_basis(n, d):
-            calculator = RyserGuanPermanentCalculator(operator, basis.bra, basis.ket)
-
-            permanent = calculator.compute_permanent()
+            permanent = permanent_function(operator, basis.bra, basis.ket)
 
             ret[index] = permanent / np.sqrt(
                 np.prod(factorial(basis.bra)) * np.prod(factorial(basis.ket))

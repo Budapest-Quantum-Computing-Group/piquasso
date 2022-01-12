@@ -36,3 +36,67 @@ def test_Config_seed_generates_same_output():
     reproduced_sample = config2.rng.multivariate_normal(mean=mean, cov=covariance)
 
     assert np.allclose(sample, reproduced_sample)
+
+
+def test_Config_with_overriding_defaults():
+    """
+    NOTE: This test basically tests Python itself, but it is left here for us to
+    remember that the `Config` class defaults need to be able to overridden for any
+    plugin which might want to use e.g. different permanent or hafnian calculation.
+    """
+
+    def plugin_permanent_function():
+        return 42
+
+    def plugin_loop_hafnian_function():
+        return 43
+
+    class PluginConfig(pq.api.config.Config):
+        def __init__(
+            self,
+            permanent_function=plugin_permanent_function,
+            loop_hafnian_function=plugin_loop_hafnian_function,
+            **kwargs
+        ) -> None:
+            super().__init__(
+                permanent_function=permanent_function,
+                loop_hafnian_function=loop_hafnian_function,
+                **kwargs,
+            )
+
+    plugin_config = PluginConfig()
+
+    assert plugin_config.permanent_function is plugin_permanent_function
+    assert plugin_config.loop_hafnian_function is plugin_loop_hafnian_function
+
+    assert plugin_config.permanent_function() == 42
+    assert plugin_config.loop_hafnian_function() == 43
+
+
+def test_Config_subclass_defaults_can_be_overridden_by_user():
+    """
+    NOTE: This test basically tests Python itself, but it is left here for us to
+    remember that the `Config` class defaults need to be able to overridden for any
+    plugin which might want to use e.g. different permanent or hafnian calculation.
+    """
+
+    def plugin_permanent_function():
+        return 42
+
+    def user_defined_permanent_function():
+        return 44
+
+    class PluginConfig(pq.api.config.Config):
+        def __init__(
+            self, permanent_function=plugin_permanent_function, **kwargs
+        ) -> None:
+            super().__init__(
+                permanent_function=permanent_function,
+                **kwargs,
+            )
+
+    plugin_config = PluginConfig(permanent_function=user_defined_permanent_function)
+
+    assert plugin_config.permanent_function is not plugin_permanent_function
+
+    assert plugin_config.permanent_function is user_defined_permanent_function
