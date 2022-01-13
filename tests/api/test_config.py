@@ -38,6 +38,24 @@ def test_Config_seed_generates_same_output():
     assert np.allclose(sample, reproduced_sample)
 
 
+def test_eq():
+    config1 = pq.Config(seed_sequence=1, cutoff=7)
+    config2 = pq.Config(seed_sequence=1, cutoff=7)
+    config3 = pq.Config(
+        seed_sequence=0,
+        cache_size=64,
+        hbar=1,
+        use_torontonian=True,
+        cutoff=6,
+        measurement_cutoff=4,
+    )
+
+    assert config1 == config1
+    assert config3 == config3
+    assert config1 == config2
+    assert not (config1 == config3)
+
+
 def test_Config_with_overriding_defaults():
     """
     NOTE: This test basically tests Python itself, but it is left here for us to

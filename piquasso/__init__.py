@@ -30,6 +30,7 @@ from piquasso.api.program import Program
 from piquasso.api.state import State
 from piquasso.api.computer import Computer
 from piquasso.api.simulator import Simulator
+from piquasso.api.utils import as_code
 
 from piquasso._backends.sampling import SamplingState, SamplingSimulator
 
@@ -100,6 +101,7 @@ __all__ = [
     "State",
     "Computer",
     "Simulator",
+    "as_code",
     # Simulators
     "GaussianSimulator",
     "SamplingSimulator",

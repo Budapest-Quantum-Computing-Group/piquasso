@@ -22,7 +22,7 @@ from .instruction import Instruction
 from .mode import Q
 
 
-class Program(_mixins.DictMixin, _mixins.RegisterMixin):
+class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     r"""The class representing the quantum program.
 
     A `Program` object can be used with the `with` statement.
@@ -138,25 +138,18 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin):
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
-    def as_code(self) -> str:
+    def _as_code(self) -> str:
         """Export the :class:`Program` instance as Python code."""
 
-        with_statement = f"with pq.{self.__class__.__name__}() as program:"
+        script = f"with pq.{self.__class__.__name__}() as program:\n"
 
-        script = (
-            "import numpy as np\n"
-            "import piquasso as pq\n"
-            "\n"
-            "\n"
-            f"{with_statement}\n"
+        four_spaces = " " * 4
+
+        script += "\n".join(
+            four_spaces + instruction._as_code() for instruction in self.instructions
         )
 
-        four_space = " " * 4
-
-        for instruction in self.instructions:
-            script += four_space + instruction._as_code() + "\n"
-
         if len(self.instructions) == 0:
-            script += four_space + "pass\n"
+            script += four_spaces + "pass"
 
         return script
