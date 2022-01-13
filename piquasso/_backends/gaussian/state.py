@@ -72,7 +72,7 @@ class GaussianState(State):
         C: np.ndarray,
         config: Config,
     ) -> "GaussianState":
-        obj = cls(d=len(m))
+        obj = cls(d=len(m), config=config)
 
         obj._m = m
         obj._G = G

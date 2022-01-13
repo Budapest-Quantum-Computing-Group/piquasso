@@ -265,7 +265,7 @@ def _get_generaldyne_evolved_state(state, sample, modes, detection_covariance):
         cov_measured + full_detection_covariance
     ) @ (sample - mean_measured)
 
-    state = state.__class__(d=len(evolved_r_A) // 2)
+    state = GaussianState(d=len(evolved_r_A) // 2, config=state._config)
 
     state.xpxp_covariance_matrix = evolved_cov_outer
     state.xpxp_mean_vector = evolved_r_A
@@ -309,7 +309,7 @@ def _get_particle_number_measurement_samples(
         reduced_state.xxpp_covariance_matrix,
         hbar=state._config.hbar,
     )
-    pure_state = state.__class__(len(reduced_state))
+    pure_state = GaussianState(len(reduced_state), config=state._config)
     pure_state.xxpp_covariance_matrix = pure_covariance
 
     heterodyne_detection_covariance = np.identity(2)
