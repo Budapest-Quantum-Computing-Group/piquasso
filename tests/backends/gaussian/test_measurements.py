@@ -188,6 +188,52 @@ def test_measure_particle_number_on_all_modes(state):
     assert result
 
 
+@pytest.mark.parametrize(
+    "MeasurementClass",
+    (pq.HomodyneMeasurement, pq.HeterodyneMeasurement),
+)
+def test_dyneMeasurement_resulting_state_inherits_config(MeasurementClass):
+    with pq.Program() as program:
+        pq.Q(0) | pq.Fourier()
+        pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0)
+        pq.Q(0) | MeasurementClass()
+
+    custom_config = pq.Config(hbar=3, seed_sequence=42)
+
+    simulator = pq.GaussianSimulator(d=3, config=custom_config)
+
+    state = simulator.execute(program).state
+
+    assert state._config == custom_config
+
+
+@pytest.mark.parametrize(
+    "MeasurementClass",
+    (pq.HomodyneMeasurement, pq.HeterodyneMeasurement),
+)
+def test_dyneMeasurement_results_in_same_state_regardless_of_hbar(MeasurementClass):
+    seed_sequence = 42
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Fourier()
+        pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0)
+        pq.Q(0) | MeasurementClass()
+
+    simulator_hbar_1 = pq.GaussianSimulator(
+        d=3, config=pq.Config(hbar=1, seed_sequence=seed_sequence)
+    )
+    simulator_hbar_3 = pq.GaussianSimulator(
+        d=3, config=pq.Config(hbar=3, seed_sequence=seed_sequence)
+    )
+
+    state_hbar_1 = simulator_hbar_1.execute(program).state
+    state_hbar_3 = simulator_hbar_3.execute(program).state
+
+    assert state_hbar_1 == state_hbar_3
+
+
 def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_torontonian(
     state,
 ):

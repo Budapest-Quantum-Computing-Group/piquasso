@@ -173,6 +173,26 @@ def test_rotated():
     )
 
 
+def test_rotated_state_inherits_config():
+    with pq.Program() as program:
+        pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
+
+        pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
+
+    config = pq.Config(hbar=1, seed_sequence=42)
+
+    simulator = pq.GaussianSimulator(d=3, config=config)
+    state = simulator.execute(program).state
+    state.validate()
+
+    reduced_state = state.rotated(phi=np.pi / 5)
+
+    assert state._config == config
+    assert reduced_state._config == state._config
+
+
 def test_reduced():
     with pq.Program() as program:
         pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
@@ -207,6 +227,26 @@ def test_reduced():
         expected_reduced_covariance_matrix,
         reduced_state.xpxp_covariance_matrix,
     )
+
+
+def test_reduced_state_inherits_config():
+    with pq.Program() as program:
+        pq.Q(all) | pq.Displacement(alpha=[1.0, 2.0, 3.0j])
+
+        pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
+
+    config = pq.Config(hbar=1, seed_sequence=42)
+
+    simulator = pq.GaussianSimulator(d=3, config=config)
+    state = simulator.execute(program).state
+    state.validate()
+
+    reduced_state = state.reduced(modes=(0,))
+
+    assert state._config == config
+    assert reduced_state._config == state._config
 
 
 def test_vacuum_covariance_is_proportional_to_identity():
