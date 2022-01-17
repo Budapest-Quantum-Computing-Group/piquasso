@@ -71,6 +71,7 @@ from .instructions.gates import (
     ControlledZ,
     Interferometer,
     Graph,
+    CubicPhase,
 )
 
 from .instructions.measurements import (
@@ -135,6 +136,7 @@ __all__ = [
     "Squeezing2",
     "Kerr",
     "CrossKerr",
+    "CubicPhase",
     "ControlledX",
     "ControlledZ",
     "Interferometer",

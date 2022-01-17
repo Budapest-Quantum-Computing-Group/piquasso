@@ -302,3 +302,39 @@ def test_FockState_displacement():
         nonzero_elements[3][0],
         normalization * one_particle_probability,
     )
+
+
+def test_FockState_cubic_phase():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.2, phi=0)
+        pq.Q(0) | pq.CubicPhase(gamma=1.0)
+
+    simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    x_mean, x_var = state.quadratures_mean_variance(modes=(0,))
+    p_mean, p_var = state.quadratures_mean_variance(modes=(0,), phi=np.pi / 2)
+
+    assert np.isclose(x_mean, 0.4, atol=1e-4)
+    assert np.isclose(x_var, 1.0, atol=1e-4)
+    assert np.isclose(p_mean, 0.51863789, atol=1e-4)
+    assert np.isclose(p_var, 2.08869536, atol=1e-4)
+
+
+def test_PureFockState_cubic_phase():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.2, phi=0)
+        pq.Q(1) | pq.CubicPhase(gamma=1.0)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    x_mean, x_var = state.quadratures_mean_variance(modes=(0,))
+    p_mean, p_var = state.quadratures_mean_variance(modes=(1,), phi=np.pi / 2)
+
+    assert np.isclose(x_mean, 0.3929401, atol=1e-4)
+    assert np.isclose(x_var, 0.999321, atol=1e-4)
+    assert np.isclose(p_mean, 0.547729, atol=1e-4)
+    assert np.isclose(p_var, 1.8674705, atol=1e-4)
