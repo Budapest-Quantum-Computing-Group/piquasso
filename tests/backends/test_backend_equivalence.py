@@ -919,3 +919,31 @@ def test_cubic_phase_equivalency(SimulatorClass):
 
     assert np.isclose(fidelity, 1.0)
     assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_kerr_equivalency(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.05)
+        pq.Q(0, 1) | pq.Kerr(xi=[-1, 1])
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.05)
+        pq.Q(all) | pq.Kerr(xi=[-1, 1])
+
+    generic_simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+
+    state_1 = generic_simulator.execute(program_1).state
+    state_2 = generic_simulator.execute(program_2).state
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 1.0)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))

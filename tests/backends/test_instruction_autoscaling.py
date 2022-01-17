@@ -190,3 +190,51 @@ def test_cubic_phase_autoscaling_invalid(SimulatorClass):
         simulator.execute(program_2)
 
     assert "is not applicable to modes" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_kerr_autoscaling_invalid(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Kerr(xi=[0, 1])
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Kerr(xi=[0, 1, 2])
+
+    simulator = SimulatorClass(d=2)
+
+    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+        simulator.execute(program_1)
+
+    assert "is not applicable to modes" in str(excinfo.value)
+
+    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+        simulator.execute(program_2)
+
+    assert "is not applicable to modes" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_kerr_autoscaling_valid(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(all) | pq.Kerr(xi=2)
+
+    simulator = SimulatorClass(d=3)
+
+    state = simulator.execute(program).state
+
+    state.validate()
