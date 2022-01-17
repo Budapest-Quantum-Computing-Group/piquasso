@@ -653,7 +653,7 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
 
 class _ScalableFockGates(Gate, _mixins.ScalingMixin):
     def __init__(
-        self, *, params: dict = None, gamma: np.ndarray = None, xi: float = None
+        self, *, params: dict = None, gamma: np.ndarray = None, xi: np.ndarray = None
     ):
         params = params or {}
         super().__init__(params=params, extra_params=dict(gamma=gamma, xi=xi))
@@ -665,10 +665,24 @@ class _ScalableFockGates(Gate, _mixins.ScalingMixin):
 
     def _autoscale(self) -> None:
         gamma = self._extra_params["gamma"]
+        xi = self._extra_params["xi"]
         if gamma is not None and len(gamma) == len(self.modes):
             pass
+        elif gamma is None:
+            pass
         elif len(gamma) == 1:
-            self._extra_params["gamma"] = block_diag(*[gamma] * len(self.modes))
+            self._extra_params["gamma"] = np.array([gamma] * len(self.modes))
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
+
+        if xi is not None and len(xi) == len(self.modes):
+            pass
+        elif xi is None:
+            pass
+        elif len(xi) == 1:
+            self._extra_params["xi"] = np.array([xi] * len(self.modes))
         else:
             raise InvalidParameter(
                 self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
@@ -709,7 +723,7 @@ class CubicPhase(_ScalableFockGates):
         super().__init__(params=dict(gamma=gamma), gamma=np.atleast_1d(gamma))
 
 
-class Kerr(Gate):
+class Kerr(_ScalableFockGates):
     r"""Kerr gate.
 
     The definition of the Kerr gate is
@@ -734,7 +748,7 @@ class Kerr(Gate):
         Args:
             xi (float): The magnitude of the Kerr nonlinear term.
         """
-        super().__init__(params=dict(xi=xi))
+        super().__init__(params=dict(xi=xi), xi=np.atleast_1d(xi))
 
 
 class CrossKerr(Gate):

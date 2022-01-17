@@ -136,10 +136,12 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     mode = instruction.modes[0]
     xi = instruction._all_params["xi"]
 
-    for index, basis in state._space.basis:
-        number = basis[mode]
-        coefficient = np.exp(1j * xi * number * (2 * number + 1))
-        state._state_vector[index] *= coefficient
+    for x in xi:
+
+        for index, basis in state._space.basis:
+            number = basis[mode]
+            coefficient = np.exp(1j * x.squeeze() * number * (2 * number + 1))
+            state._state_vector[index] *= coefficient
 
     return Result(state=state)
 
@@ -147,7 +149,6 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
 def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
     xi = instruction._all_params["xi"]
-
     for index, basis in state._space.basis:
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
         state._state_vector[index] *= coefficient
