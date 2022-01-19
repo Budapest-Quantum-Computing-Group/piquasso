@@ -225,17 +225,30 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
 def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
     amplitudes = np.arccosh(np.diag(instruction._all_params["passive_block"]))
     angles = np.angle(-np.diag(instruction._all_params["active_block"]))
-
+    new_state = np.zeros_like(state.density_matrix)
     for index, mode in enumerate(instruction.modes):
         operator = state._space.get_single_mode_squeezing_operator(
             r=amplitudes[index],
             phi=angles[index],
         )
 
+        auxiliary_modes = state._get_auxiliary_modes(instruction.modes)
+        for i in range(operator.shape[0]):
+            for idx, basis in state._space.operator_basis_diagonal_on_modes(
+                modes=auxiliary_modes
+            ):
+                index = (
+                    basis.ket.on_modes(modes=(mode,)),
+                    basis.bra.on_modes(modes=(mode,)),
+                )
+                new_state[idx] = (
+                    operator[i] @ state.density_matrix[idx] @ operator[i].conj().T
+                )
+
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=auxiliary_modes,
         )
 
         state._density_matrix = (
