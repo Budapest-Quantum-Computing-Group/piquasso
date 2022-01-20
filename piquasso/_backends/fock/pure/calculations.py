@@ -18,6 +18,8 @@ from typing import Tuple, Mapping
 import random
 import numpy as np
 
+from scipy.linalg import block_diag
+
 from .state import PureFockState
 
 from piquasso.api.result import Result
@@ -61,16 +63,24 @@ def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result
 def passive_linear(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
-    operator: np.ndarray = instruction._all_params["passive_block"]
+    matrix: np.ndarray = instruction._all_params["passive_block"]
 
-    fock_operator = state._space.get_passive_fock_operator(
-        operator,
-        modes=instruction.modes,
-        d=state._space.d,
-        permanent_function=state._config.permanent_function,
+    matrix_on_fock_space = block_diag(
+        *(
+            state._space.symmetric_tensorpower(
+                matrix,
+                n,
+                permanent_function=state._config.permanent_function,
+            )
+            for n in range(state._space.cutoff)
+        )
     )
 
-    state._state_vector = fock_operator @ state._state_vector
+    modes = instruction.modes
+
+    _apply_subsystem_representation_to_state(
+        state, matrix_on_fock_space, modes, state._get_auxiliary_modes(modes)
+    )
 
     return Result(state=state)
 
@@ -112,23 +122,31 @@ def _get_projected_state_vector(
     return new_state_vector
 
 
-def _apply_single_mode_representation_to_state(
+def _apply_subsystem_representation_to_state(
     state: PureFockState,
     matrix: np.ndarray,
-    mode: int,
+    modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
     new_state_vector = np.zeros_like(state._state_vector)
 
+    from piquasso._math.fock import FockSpace
+
+    subsystem_space = FockSpace(d=len(modes), cutoff=state._space.cutoff)
+
     for multimode_index, multimode_vector in enumerate(state._space):
-        single_mode_basis_index = multimode_vector.on_modes(modes=(mode,))[0]
+        single_mode_basis_index = subsystem_space.index(
+            multimode_vector.on_modes(modes=modes)
+        )
 
         for running_vector in state._space:
             if multimode_vector.on_modes(
                 modes=auxiliary_modes
             ) == running_vector.on_modes(modes=auxiliary_modes):
 
-                single_mode_running_index = running_vector.on_modes(modes=(mode,))[0]
+                single_mode_running_index = subsystem_space.index(
+                    running_vector.on_modes(modes=modes)
+                )
 
                 index_on_multimode = state._space.index(running_vector)
 
@@ -199,8 +217,8 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
             phi=angles[index],
         )
 
-        _apply_single_mode_representation_to_state(
-            state, matrix, mode, state._get_auxiliary_modes((mode,))
+        _apply_subsystem_representation_to_state(
+            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
         )
 
         state.normalize()
@@ -218,8 +236,8 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
             phi=angles[index],
         )
 
-        _apply_single_mode_representation_to_state(
-            state, matrix, mode, state._get_auxiliary_modes((mode,))
+        _apply_subsystem_representation_to_state(
+            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
         )
 
         state.normalize()
@@ -235,8 +253,8 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         matrix = state._space.get_single_mode_cubic_phase_operator(
             gamma=gamma[index], hbar=hbar
         )
-        _apply_single_mode_representation_to_state(
-            state, matrix, mode, state._get_auxiliary_modes((mode,))
+        _apply_subsystem_representation_to_state(
+            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
         )
 
         state.normalize()
