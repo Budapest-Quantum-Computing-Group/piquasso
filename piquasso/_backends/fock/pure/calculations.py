@@ -112,6 +112,39 @@ def _get_projected_state_vector(
     return new_state_vector
 
 
+def _apply_single_mode_representation_to_state(
+    state: PureFockState,
+    matrix: np.ndarray,
+    mode: int,
+    auxiliary_modes: Tuple[int, ...],
+) -> None:
+    new_state_vector = np.zeros_like(state._state_vector)
+
+    for multimode_index, multimode_vector in enumerate(state._space):
+        single_mode_basis_index = multimode_vector.on_modes(modes=(mode,))[0]
+
+        for running_vector in state._space:
+            if multimode_vector.on_modes(
+                modes=auxiliary_modes
+            ) == running_vector.on_modes(modes=auxiliary_modes):
+
+                single_mode_running_index = running_vector.on_modes(modes=(mode,))[0]
+
+                index_on_multimode = state._space.index(running_vector)
+
+                single_mode_matrix_index = (
+                    single_mode_basis_index,
+                    single_mode_running_index,
+                )
+
+                new_state_vector[multimode_index] += (
+                    matrix[single_mode_matrix_index]
+                    * state._state_vector[index_on_multimode]
+                )
+
+    state._state_vector = new_state_vector
+
+
 def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     operator = state._space.get_creation_operator(instruction.modes)
 
@@ -161,18 +194,14 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
     angles = np.angle(instruction._all_params["displacement_vector"])
 
     for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_displacement_operator(
+        matrix = state._space.get_single_mode_displacement_operator(
             r=amplitudes[index],
             phi=angles[index],
         )
 
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        _apply_single_mode_representation_to_state(
+            state, matrix, mode, state._get_auxiliary_modes((mode,))
         )
-
-        state._state_vector = embedded_operator @ state._state_vector
 
         state.normalize()
 
@@ -184,18 +213,14 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
     angles = np.angle(-np.diag(instruction._all_params["active_block"]))
 
     for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_squeezing_operator(
+        matrix = state._space.get_single_mode_squeezing_operator(
             r=amplitudes[index],
             phi=angles[index],
         )
 
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        _apply_single_mode_representation_to_state(
+            state, matrix, mode, state._get_auxiliary_modes((mode,))
         )
-
-        state._state_vector = embedded_operator @ state._state_vector
 
         state.normalize()
 
@@ -207,15 +232,12 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
     hbar = state._config.hbar
 
     for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_cubic_phase_operator(
+        matrix = state._space.get_single_mode_cubic_phase_operator(
             gamma=gamma[index], hbar=hbar
         )
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+        _apply_single_mode_representation_to_state(
+            state, matrix, mode, state._get_auxiliary_modes((mode,))
         )
-        state._state_vector = embedded_operator @ state._state_vector
 
         state.normalize()
 
