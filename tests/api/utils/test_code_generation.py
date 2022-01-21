@@ -42,7 +42,7 @@ def test_empty_code_generation():
 
     assert (
         code
-        == """\
+        == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -50,7 +50,7 @@ import piquasso as pq
 with pq.Program() as program:
     pass
 
-simulator = pq.GaussianSimulator(d=2)
+simulator = pq.{pq.GaussianSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=1)
 """
@@ -72,7 +72,7 @@ def test_complicated_code_generation():
 
     assert (
         code
-        == """\
+        == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -83,7 +83,7 @@ with pq.Program() as program:
     pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0.7853981633974483)
     pq.Q() | pq.Fourier()
 
-simulator = pq.GaussianSimulator(
+simulator = pq.{pq.GaussianSimulator.__name__}(
     d=2, config=pq.Config(seed_sequence=1, cutoff=7)
 )
 
@@ -110,7 +110,7 @@ def test_numpy_ndarray_parameter_code_generation():
 
     assert (
         code
-        == """\
+        == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -119,7 +119,7 @@ with pq.Program() as program:
     pq.Q(0, 1) | pq.GeneraldyneMeasurement(detection_covariance=np.array([[1., 0.],
        [0., 1.]]))
 
-simulator = pq.GaussianSimulator(d=2)
+simulator = pq.{pq.GaussianSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=420)
 """
@@ -150,7 +150,7 @@ def test_full_config_code_generation():
 
     assert (
         code
-        == """\
+        == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -161,7 +161,7 @@ with pq.Program() as program:
     pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
     pq.Q() | pq.ParticleNumberMeasurement()
 
-simulator = pq.GaussianSimulator(
+simulator = pq.{pq.GaussianSimulator.__name__}(
     d=3, config=pq.Config(seed_sequence=0, cache_size=64, hbar=2.5, \
 use_torontonian=True, cutoff=6, measurement_cutoff=4)
 )
