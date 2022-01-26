@@ -400,6 +400,8 @@ def _get_particle_number_choice(
 
     d = len(state)
 
+    is_displaced = state._is_displaced()
+
     B = -np.linalg.inv(state.Q_matrix)[d:, :d]
     alpha = state.complex_displacement[:d]
 
@@ -412,9 +414,13 @@ def _get_particle_number_choice(
     for n in possible_choices:
         occupation_numbers = previous_sample + (n,)
 
-        weight = abs(
+        hafnian_value = (
             state._config.loop_hafnian_function(B, gamma, occupation_numbers)
-        ) ** 2 / factorial(n)
+            if is_displaced
+            else state._config.hafnian_function(B, occupation_numbers)
+        )
+
+        weight = abs(hafnian_value) ** 2 / factorial(n)
         weights = np.append(weights, weight)
 
     weights /= np.sum(weights)

@@ -158,6 +158,12 @@ def loop_hafnian(matrix):
     return _hafnian(matrix, polynom_function=_get_loop_polynom_coefficients)
 
 
+def hafnian_with_reduction(matrix, reduce_on):
+    reduced_matrix = reduce_(matrix, reduce_on)
+
+    return hafnian(reduced_matrix)
+
+
 def _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on):
     reduced_diagonal = reduce_(diagonal, reduce_on=reduce_on)
     reduced_matrix = reduce_(matrix, reduce_on=reduce_on)

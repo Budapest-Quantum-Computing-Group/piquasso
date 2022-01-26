@@ -19,4 +19,5 @@ from typing import Callable, Tuple
 
 
 PermanentFunction = Callable[[np.ndarray, Tuple[int, ...], Tuple[int, ...]], float]
-HafnianFunction = Callable[[np.ndarray, np.ndarray, Tuple[int, ...]], float]
+HafnianFunction = Callable[[np.ndarray, Tuple[int, ...]], float]
+LoopHafnianFunction = Callable[[np.ndarray, np.ndarray, Tuple[int, ...]], float]

@@ -31,7 +31,11 @@ from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
-from .probabilities import DensityMatrixCalculation
+from .probabilities import (
+    DensityMatrixCalculation,
+    DisplacedDensityMatrixCalculation,
+    NondisplacedDensityMatrixCalculation,
+)
 
 
 class GaussianState(State):
@@ -728,13 +732,25 @@ class GaussianState(State):
         # TODO: calculate the variance.
         return first_moment
 
+    def _is_displaced(self) -> bool:
+        return not np.allclose(self._m, 0.0)
+
+    def _get_density_matrix_calculation(self) -> DensityMatrixCalculation:
+        if self._is_displaced():
+            return DisplacedDensityMatrixCalculation(
+                complex_displacement=self.complex_displacement,
+                complex_covariance=self.complex_covariance,
+                loop_hafnian_function=self._config.loop_hafnian_function,
+            )
+
+        return NondisplacedDensityMatrixCalculation(
+            complex_covariance=self.complex_covariance,
+            hafnian_function=self._config.hafnian_function,
+        )
+
     @property
     def density_matrix(self) -> np.ndarray:
-        calculation = DensityMatrixCalculation(
-            complex_displacement=self.complex_displacement,
-            complex_covariance=self.complex_covariance,
-            loop_hafnian_function=self._config.loop_hafnian_function,
-        )
+        calculation = self._get_density_matrix_calculation()
 
         return calculation.get_density_matrix(
             get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
@@ -797,11 +813,7 @@ class GaussianState(State):
                 f"occupation_number='{occupation_number}'."
             )
 
-        calculation = DensityMatrixCalculation(
-            self.complex_displacement,
-            self.complex_covariance,
-            loop_hafnian_function=self._config.loop_hafnian_function,
-        )
+        calculation = self._get_density_matrix_calculation()
 
         return calculation.get_density_matrix_element(
             bra=occupation_number,
@@ -810,11 +822,7 @@ class GaussianState(State):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        calculation = DensityMatrixCalculation(
-            complex_displacement=self.complex_displacement,
-            complex_covariance=self.complex_covariance,
-            loop_hafnian_function=self._config.loop_hafnian_function,
-        )
+        calculation = self._get_density_matrix_calculation()
 
         return calculation.get_particle_number_detection_probabilities(
             get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
