@@ -21,7 +21,7 @@ import random
 import numpy as np
 
 from piquasso._math.permanent import glynn_gray_permanent
-from piquasso._math.hafnian import loop_hafnian
+from piquasso._math.hafnian import loop_hafnian_with_reduction
 
 from piquasso.api.typing import PermanentFunction, HafnianFunction
 
@@ -41,7 +41,7 @@ class Config(_mixins.CodeMixin):
         cutoff: int = 4,
         measurement_cutoff: int = 5,
         permanent_function: PermanentFunction = glynn_gray_permanent,
-        loop_hafnian_function: HafnianFunction = loop_hafnian,
+        loop_hafnian_function: HafnianFunction = loop_hafnian_with_reduction,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(

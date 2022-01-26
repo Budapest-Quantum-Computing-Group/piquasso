@@ -32,7 +32,6 @@ from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.errors import InvalidInstruction
 
-from piquasso._math.linalg import reduce_
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import decompose_to_pure_and_mixed
 
@@ -413,12 +412,9 @@ def _get_particle_number_choice(
     for n in possible_choices:
         occupation_numbers = previous_sample + (n,)
 
-        B_reduced = reduce_(B, reduce_on=occupation_numbers)
-        gamma_reduced = reduce_(gamma, reduce_on=occupation_numbers)
-
-        np.fill_diagonal(B_reduced, gamma_reduced)
-
-        weight = abs(state._config.loop_hafnian_function(B_reduced)) ** 2 / factorial(n)
+        weight = abs(
+            state._config.loop_hafnian_function(B, gamma, occupation_numbers)
+        ) ** 2 / factorial(n)
         weights = np.append(weights, weight)
 
     weights /= np.sum(weights)

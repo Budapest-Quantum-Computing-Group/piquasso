@@ -19,7 +19,7 @@ import numpy as np
 
 from scipy.special import factorial
 
-from piquasso._math.linalg import block_reduce, reduce_
+from piquasso._math.linalg import block_reduce
 from piquasso._math.torontonian import torontonian
 
 from piquasso.api.typing import HafnianFunction
@@ -56,23 +56,14 @@ class DensityMatrixCalculation:
 
         self.loop_hafnian_function = loop_hafnian_function
 
-    def _get_A_reduced(self, reduce_on: Tuple[int, ...]) -> np.ndarray:
-        A_reduced = reduce_(self._A, reduce_on=reduce_on)
-
-        np.fill_diagonal(A_reduced, reduce_(self._gamma, reduce_on=reduce_on))
-
-        return A_reduced
-
     def get_density_matrix_element(
         self, bra: Tuple[int, ...], ket: Tuple[int, ...]
     ) -> float:
         reduce_on = ket + bra
 
-        A_reduced = self._get_A_reduced(reduce_on=reduce_on)
-
         return (
             self._normalization
-            * self.loop_hafnian_function(A_reduced)
+            * self.loop_hafnian_function(self._A, self._gamma, reduce_on)
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
