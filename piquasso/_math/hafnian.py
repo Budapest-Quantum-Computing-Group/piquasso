@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import math
-from functools import lru_cache, partial
+from functools import lru_cache
 from itertools import combinations_with_replacement
 from typing import List, Callable
 
@@ -22,6 +22,7 @@ import numpy as np
 from scipy.linalg import block_diag
 
 from .combinatorics import powerset
+from .linalg import reduce_
 
 
 @lru_cache()
@@ -149,6 +150,30 @@ def _get_loop_polynom_coefficients(
     return ret
 
 
-hafnian = partial(_hafnian, polynom_function=_get_polynom_coefficients)
+def hafnian(matrix):
+    return _hafnian(matrix, polynom_function=_get_polynom_coefficients)
 
-loop_hafnian = partial(_hafnian, polynom_function=_get_loop_polynom_coefficients)
+
+def loop_hafnian(matrix):
+    return _hafnian(matrix, polynom_function=_get_loop_polynom_coefficients)
+
+
+def hafnian_with_reduction(matrix, reduce_on):
+    reduced_matrix = reduce_(matrix, reduce_on)
+
+    return hafnian(reduced_matrix)
+
+
+def _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on):
+    reduced_diagonal = reduce_(diagonal, reduce_on=reduce_on)
+    reduced_matrix = reduce_(matrix, reduce_on=reduce_on)
+
+    np.fill_diagonal(reduced_matrix, reduced_diagonal)
+
+    return reduced_matrix
+
+
+def loop_hafnian_with_reduction(matrix, diagonal, reduce_on):
+    reduced_matrix = _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on)
+
+    return loop_hafnian(reduced_matrix)

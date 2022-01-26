@@ -13,66 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+
 from typing import List, Tuple
 
 import numpy as np
 
 from scipy.special import factorial
 
-from piquasso._math.linalg import block_reduce, reduce_
+from piquasso._math.linalg import block_reduce
 from piquasso._math.torontonian import torontonian
 
-from piquasso.api.typing import HafnianFunction
+from piquasso.api.typing import HafnianFunction, LoopHafnianFunction
 
 
-class DensityMatrixCalculation:
-    def __init__(
-        self,
-        complex_displacement: np.ndarray,
-        complex_covariance: np.ndarray,
-        loop_hafnian_function: HafnianFunction,
-    ) -> None:
-        d = len(complex_displacement) // 2
-        Q = (complex_covariance + np.identity(2 * d)) / 2
+class DensityMatrixCalculation(abc.ABC):
+    _normalization: float
 
-        Qinv = np.linalg.inv(Q)
-        identity = np.identity(d)
-        zeros = np.zeros_like(identity)
-
-        X = np.block(
-            [
-                [zeros, identity],
-                [identity, zeros],
-            ],
-        )
-
-        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
-
-        self._gamma: np.ndarray = complex_displacement.conj() @ Qinv
-
-        self._normalization: np.ndarray = np.exp(
-            -0.5 * self._gamma @ complex_displacement
-        ) / np.sqrt(np.linalg.det(Q))
-
-        self.loop_hafnian_function = loop_hafnian_function
-
-    def _get_A_reduced(self, reduce_on: Tuple[int, ...]) -> np.ndarray:
-        A_reduced = reduce_(self._A, reduce_on=reduce_on)
-
-        np.fill_diagonal(A_reduced, reduce_(self._gamma, reduce_on=reduce_on))
-
-        return A_reduced
+    @abc.abstractmethod
+    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+        pass
 
     def get_density_matrix_element(
         self, bra: Tuple[int, ...], ket: Tuple[int, ...]
     ) -> float:
         reduce_on = ket + bra
 
-        A_reduced = self._get_A_reduced(reduce_on=reduce_on)
-
         return (
             self._normalization
-            * self.loop_hafnian_function(A_reduced)
+            * self.calculate_hafnian(reduce_on)
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
@@ -108,6 +77,71 @@ class DensityMatrixCalculation:
         ret[abs(ret) < 1e-10] = 0.0
 
         return ret
+
+
+class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
+    def __init__(
+        self,
+        complex_covariance: np.ndarray,
+        hafnian_function: HafnianFunction,
+    ) -> None:
+        d = len(complex_covariance) // 2
+        Q = (complex_covariance + np.identity(2 * d)) / 2
+
+        Qinv = np.linalg.inv(Q)
+        identity = np.identity(d)
+        zeros = np.zeros_like(identity)
+
+        X = np.block(
+            [
+                [zeros, identity],
+                [identity, zeros],
+            ],
+        )
+
+        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+
+        self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
+
+        self.hafnian_function = hafnian_function
+
+    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+        return self.hafnian_function(self._A, reduce_on)
+
+
+class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
+    def __init__(
+        self,
+        complex_displacement: np.ndarray,
+        complex_covariance: np.ndarray,
+        loop_hafnian_function: LoopHafnianFunction,
+    ) -> None:
+        d = len(complex_displacement) // 2
+        Q = (complex_covariance + np.identity(2 * d)) / 2
+
+        Qinv = np.linalg.inv(Q)
+        identity = np.identity(d)
+        zeros = np.zeros_like(identity)
+
+        X = np.block(
+            [
+                [zeros, identity],
+                [identity, zeros],
+            ],
+        )
+
+        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+
+        self._gamma: np.ndarray = complex_displacement.conj() @ Qinv
+
+        self._normalization: float = np.exp(
+            -0.5 * self._gamma @ complex_displacement
+        ) / np.sqrt(np.linalg.det(Q))
+
+        self.loop_hafnian_function = loop_hafnian_function
+
+    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+        return self.loop_hafnian_function(self._A, self._gamma, reduce_on)
 
 
 def calculate_click_probability(

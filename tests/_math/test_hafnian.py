@@ -18,7 +18,12 @@ import pytest
 import numpy as np
 
 from scipy.linalg import block_diag
-from piquasso._math.hafnian import hafnian, loop_hafnian
+from piquasso._math.hafnian import (
+    hafnian,
+    loop_hafnian,
+    hafnian_with_reduction,
+    loop_hafnian_with_reduction,
+)
 
 
 def test_hafnian_on_2_by_2_real_matrix():
@@ -244,4 +249,24 @@ def test_loop_hafnian_of_complex_symmetric_block_diagonal_matrix(
     assert np.isclose(
         submatrix_loop_hafnian.conj() * submatrix_loop_hafnian,
         matrix_loop_hafnian,
+    )
+
+
+def test_loop_hafnian_and_hafnian_with_zero_reduction():
+
+    matrix = np.array(
+        [
+            [1j, 2, 3j, 4],
+            [2, 6, 7, 8j],
+            [3j, 7, 3, 4],
+            [4, 8j, 4, 8j],
+        ],
+        dtype=complex,
+    )
+
+    reduce_on = (1, 2)
+
+    assert np.isclose(
+        hafnian_with_reduction(matrix, reduce_on),
+        loop_hafnian_with_reduction(matrix, np.zeros(len(matrix)), reduce_on),
     )
