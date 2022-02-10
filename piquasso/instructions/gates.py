@@ -25,7 +25,7 @@ ladder operators by linear gates could be expressed in the form
 
 .. math::
 
-    U \xi U^\dagger = S_{(c)} \xi + d,
+    U^\dagger \xi U = S_{(c)} \xi + d,
 
 where :math:`S_{(c)} \in \operatorname{Sp}(2d, \mathbb{R})`,
 :math:`d \in \mathbb{C}^{2d}`,
@@ -133,7 +133,7 @@ class Interferometer(_BogoliubovTransformation):
     The general unitary operator can be written as
 
     .. math::
-        U = \exp \left (
+        I = \exp \left (
             i \sum_{i, j = 1}^d H_{i j} a_i^\dagger a_j
         \right ),
 
@@ -141,8 +141,8 @@ class Interferometer(_BogoliubovTransformation):
 
     .. math::
         U = \exp \left (
-            i H \right
-        ).
+            i H
+        \right ).
 
     The evolution of the ladder operators can be described by
 
@@ -175,7 +175,7 @@ class Beamsplitter(_BogoliubovTransformation):
     The general unitary operator can be written as
 
     .. math::
-        BS_{ij} (\theta, \phi) = \exp \left (
+        B_{ij} (\theta, \phi) = \exp \left (
             \theta e^{i \phi} a^\dagger_i a_j
             - \theta e^{- i \phi} a^\dagger_j a_i
         \right ).
@@ -194,7 +194,7 @@ class Beamsplitter(_BogoliubovTransformation):
     """
 
     def __init__(self, theta: float = 0.0, phi: float = np.pi / 4) -> None:
-        """
+        r"""
         Args:
             phi (float):
                 Phase angle of the beamsplitter.
