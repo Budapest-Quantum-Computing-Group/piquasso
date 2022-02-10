@@ -578,7 +578,7 @@ class Displacement(_ScalableBogoliubovTransformation):
             \alpha^*
         \end{bmatrix},
 
-    where :math:`\alpha \in \mathbb{C}^{d \times d}`.
+    where :math:`\alpha \in \mathbb{C}^{d}`.
 
     One must either specify :math:`\alpha` only, or the combination of :math:`r` and
     :math:`\phi`.
@@ -736,7 +736,7 @@ class Kerr(_ScalableFockGates):
     The Kerr gate transforms the annihilation operator as
 
     .. math::
-        K(\xi) a K(\xi) = a \exp(- i \xi (1 + 2 n)).
+        K(\xi) a K(\xi)^\dagger = a \exp(- i \xi (1 + 2 n)).
 
     Note:
         This is a non-linear gate, therefore it couldn't be used with
