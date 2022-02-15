@@ -159,7 +159,7 @@ class HomodyneMeasurement(Measurement):
             extra_params=dict(
                 detection_covariance=np.array(
                     [
-                        [z ** 2, 0],
+                        [z**2, 0],
                         [0, (1 / z) ** 2],
                     ]
                 ),

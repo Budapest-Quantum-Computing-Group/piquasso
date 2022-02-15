@@ -43,7 +43,7 @@ def gaussian_wigner_function_for_scalar(
     X: List[float], *, d: int, mean: np.ndarray, cov: np.ndarray
 ) -> float:
     return (
-        (1 / (np.pi ** d))
+        (1 / (np.pi**d))
         * np.sqrt((1 / np.linalg.det(cov)))
         * np.exp(-(X - mean) @ np.linalg.inv(cov) @ (X - mean))
     ).real

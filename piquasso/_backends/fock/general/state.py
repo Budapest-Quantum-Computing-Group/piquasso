@@ -239,6 +239,6 @@ class FockState(BaseFockState):
             np.trace(
                 np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
             ).real
-            - expctation ** 2
+            - expctation**2
         )
         return expctation, variance
