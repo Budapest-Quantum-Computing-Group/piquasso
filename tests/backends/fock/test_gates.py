@@ -94,7 +94,7 @@ def test_PureFockState_displacement_on_single_mode():
     nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 20
-    np.isclose(nonzero_elements[0][0], np.exp(-0.5 * np.abs(alpha ** 2)))
+    np.isclose(nonzero_elements[0][0], np.exp(-0.5 * np.abs(alpha**2)))
 
 
 def test_FockState_displacement_on_single_mode():
@@ -113,7 +113,7 @@ def test_FockState_displacement_on_single_mode():
     nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 400.0
-    np.isclose(nonzero_elements[0][0], np.exp(-0.5 * np.abs(alpha ** 2)))
+    np.isclose(nonzero_elements[0][0], np.exp(-0.5 * np.abs(alpha**2)))
 
 
 def test_PureFockState_squeezing_on_single_mode():
@@ -215,7 +215,7 @@ def test_PureFockState_displacement():
     assert nonzero_elements[2][1] == (2, 0)
     assert np.isclose(
         nonzero_elements[2][0],
-        normalization * np.exp(-np.abs(alpha) ** 2 / 2) * (alpha ** 2) / np.sqrt(2),
+        normalization * np.exp(-np.abs(alpha) ** 2 / 2) * (alpha**2) / np.sqrt(2),
     )
 
 

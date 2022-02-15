@@ -201,7 +201,7 @@ class FockSpace(tuple):
         displacement = r * np.exp(1j * phi)
 
         transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
-        transformation[0, 0] = np.exp(-0.5 * r ** 2)
+        transformation[0, 0] = np.exp(-0.5 * r**2)
 
         for row in range(1, self.cutoff):
             transformation[row, 0] = (
