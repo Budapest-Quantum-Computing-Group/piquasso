@@ -184,16 +184,12 @@ class GaussianState(State):
         C = self._C
         G = self._G
 
-        dimensionless_xxpp_covariance_matrix = (
-            2
-            * np.block(
-                [
-                    [(G + C).real, (G + C).imag],
-                    [(G - C).imag, (-G + C).real],
-                ],
-            )
-            + np.identity(2 * self.d)
-        )
+        dimensionless_xxpp_covariance_matrix = 2 * np.block(
+            [
+                [(G + C).real, (G + C).imag],
+                [(G - C).imag, (-G + C).real],
+            ],
+        ) + np.identity(2 * self.d)
 
         return dimensionless_xxpp_covariance_matrix * self._config.hbar
 
@@ -465,7 +461,7 @@ class GaussianState(State):
 
         return self.__class__._from_representation(
             C=self._C,
-            G=(self._G * phase ** 2),
+            G=(self._G * phase**2),
             m=(self._m * phase),
             config=self._config,
         )
