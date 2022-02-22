@@ -57,7 +57,7 @@ from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 from piquasso.core import _mixins
 
 
-class _BogoliubovTransformation(Gate):
+class _GaussianGate(Gate):
     def __init__(
         self,
         *,
@@ -78,8 +78,8 @@ class _BogoliubovTransformation(Gate):
         )
 
 
-class _ScalableBogoliubovTransformation(
-    _BogoliubovTransformation,
+class _ScalableGaussianGate(
+    _GaussianGate,
     _mixins.ScalingMixin,
 ):
     ERROR_MESSAGE_TEMPLATE = (
@@ -127,7 +127,7 @@ class _ScalableBogoliubovTransformation(
             )
 
 
-class Interferometer(_BogoliubovTransformation):
+class Interferometer(_GaussianGate):
     r"""Applies a general interferometer gate.
 
     The general unitary operator can be written as
@@ -169,7 +169,7 @@ class Interferometer(_BogoliubovTransformation):
         super().__init__(params=dict(matrix=matrix), passive_block=matrix)
 
 
-class Beamsplitter(_BogoliubovTransformation):
+class Beamsplitter(_GaussianGate):
     r"""Applies a beamsplitter gate.
 
     The general unitary operator can be written as
@@ -221,7 +221,7 @@ class Beamsplitter(_BogoliubovTransformation):
         )
 
 
-class Phaseshifter(_ScalableBogoliubovTransformation):
+class Phaseshifter(_ScalableGaussianGate):
     r"""Applies a rotation or a phaseshifter gate.
 
     The unitary operator corresponding to the phaseshifter gate on the :math:`i`-th mode
@@ -252,7 +252,7 @@ class Phaseshifter(_ScalableBogoliubovTransformation):
         )
 
 
-class MachZehnder(_BogoliubovTransformation):
+class MachZehnder(_GaussianGate):
     r"""Mach-Zehnder interferometer.
 
     The Mach-Zehnder interferometer is equivalent to
@@ -296,7 +296,7 @@ class MachZehnder(_BogoliubovTransformation):
         )
 
 
-class Fourier(_ScalableBogoliubovTransformation):
+class Fourier(_ScalableGaussianGate):
     r"""Applies a Fourier gate. It simply transforms the quadratures as follows:
 
     .. math::
@@ -327,7 +327,7 @@ class Fourier(_ScalableBogoliubovTransformation):
         super().__init__(passive_block=np.array([[1j]]))
 
 
-class GaussianTransform(_BogoliubovTransformation):
+class GaussianTransform(_GaussianGate):
     r"""Applies a Gaussian transformation gate.
 
     The symplectic representation of the Gaussian gate is
@@ -374,7 +374,7 @@ class GaussianTransform(_BogoliubovTransformation):
         )
 
 
-class Squeezing(_ScalableBogoliubovTransformation):
+class Squeezing(_ScalableGaussianGate):
     r"""Applies the squeezing gate.
 
     The unitary operator corresponding to the squeezing gate is
@@ -417,7 +417,7 @@ class Squeezing(_ScalableBogoliubovTransformation):
         )
 
 
-class QuadraticPhase(_ScalableBogoliubovTransformation):
+class QuadraticPhase(_ScalableGaussianGate):
     r"""Applies the quadratic phase instruction to the state.
 
     The unitary operator corresponding to the Fourier gate is
@@ -445,7 +445,7 @@ class QuadraticPhase(_ScalableBogoliubovTransformation):
         )
 
 
-class Squeezing2(_BogoliubovTransformation):
+class Squeezing2(_GaussianGate):
     r"""Applies the two-mode squeezing gate to the state.
 
     The unitary operator corresponding to the two-mode squeezing gate is
@@ -489,7 +489,7 @@ class Squeezing2(_BogoliubovTransformation):
         )
 
 
-class ControlledX(_BogoliubovTransformation):
+class ControlledX(_GaussianGate):
     r"""Applies the controlled X gate to the state.
 
     The unitary operator corresponding to the controlled X gate is
@@ -528,7 +528,7 @@ class ControlledX(_BogoliubovTransformation):
         )
 
 
-class ControlledZ(_BogoliubovTransformation):
+class ControlledZ(_GaussianGate):
     r"""Applies the controlled Z gate to the state.
 
     The unitary operator corresponding to the controlled Z gate is
@@ -567,7 +567,7 @@ class ControlledZ(_BogoliubovTransformation):
         )
 
 
-class Displacement(_ScalableBogoliubovTransformation):
+class Displacement(_ScalableGaussianGate):
     r"""Phase space displacement instruction.
 
     Evolves the ladder operators by
@@ -615,7 +615,7 @@ class Displacement(_ScalableBogoliubovTransformation):
         super().__init__(params=params, displacement_vector=alpha_)
 
 
-class PositionDisplacement(_ScalableBogoliubovTransformation):
+class PositionDisplacement(_ScalableGaussianGate):
     r"""Position displacement gate. It affects only the :math:`\hat{x}` quadrature.
 
     Note:
@@ -633,7 +633,7 @@ class PositionDisplacement(_ScalableBogoliubovTransformation):
         )
 
 
-class MomentumDisplacement(_ScalableBogoliubovTransformation):
+class MomentumDisplacement(_ScalableGaussianGate):
     r"""Momentum displacement gate. It only affects the :math:`\hat{p}` quadrature.
 
     Note:
