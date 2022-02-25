@@ -113,7 +113,23 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     return Result(state=state)
 
 
-def sampling(state: SamplingState, instruction: Instruction, shots: int) -> Result:
+def particle_number_measurement(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> Result:
+    """
+    Simulates a boson sampling using generalized Clifford & Clifford algorithm
+    from [Brod, Oszmaniec 2020] see
+    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
+
+    This method assumes that initial_state is given in the second quantization
+    description (mode occupation). `theboss` module requires the input states to be
+    numpy arrays, therefore the state is prepared as accordingly.
+
+    Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
+    as it allows effective simulation of broader range of input states than original
+    algorithm.
+    """
+
     initial_state = np.array(state.initial_state)
     permanent_calculator = RyserGuanPermanentCalculator(
         matrix=state.interferometer, input_state=initial_state

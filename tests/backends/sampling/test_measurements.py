@@ -41,7 +41,7 @@ def test_sampling_raises_InvalidParameter_for_negative_shot_value(
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
 
@@ -55,7 +55,7 @@ def test_sampling_samples_number(interferometer_matrix):
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     result = simulator.execute(program, shots)
@@ -71,7 +71,7 @@ def test_sampling_mode_permutation(interferometer_matrix):
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     result = simulator.execute(program, shots)
@@ -90,7 +90,7 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     result = simulator.execute(program, shots)
@@ -111,7 +111,7 @@ def test_mach_zehnder():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     simulator.execute(program, shots=1)
@@ -121,7 +121,7 @@ def test_fourier():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q(0) | pq.Fourier()
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     simulator.execute(program, shots=1)
@@ -133,7 +133,7 @@ def test_uniform_loss():
 
         pq.Q(all) | pq.Loss(transmissivity=0.9)
 
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     state = simulator.execute(program, shots=1).state
@@ -148,7 +148,7 @@ def test_general_loss():
         pq.Q(0) | pq.Loss(transmissivity=0.4)
         pq.Q(1) | pq.Loss(transmissivity=0.5)
 
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     simulator.execute(program, shots=1)
