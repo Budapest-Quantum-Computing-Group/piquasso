@@ -189,23 +189,3 @@ class HeterodyneMeasurement(Measurement):
                 detection_covariance=np.identity(2),
             ),
         )
-
-
-class Sampling(Measurement):
-    r"""Boson Sampling.
-
-    Simulates a boson sampling using generalized Clifford & Clifford algorithm
-    from [Brod, Oszmaniec 2020] see
-    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
-
-    This method assumes that initial_state is given in the second quantization
-    description (mode occupation). `theboss` module requires the input states to be
-    numpy arrays, therefore the state is prepared as accordingly.
-
-    Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
-    as it allows effective simulation of broader range of input states than original
-    algorithm.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()

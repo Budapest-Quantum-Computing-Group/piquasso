@@ -28,7 +28,7 @@ def test_program():
         pq.Q(1, 2, 3) | pq.Interferometer(U)
         pq.Q(3) | pq.Phaseshifter(0.5)
         pq.Q(4) | pq.Phaseshifter(0.5)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=5)
     result = simulator.execute(program, shots=10)
@@ -130,7 +130,7 @@ def test_lossy_program():
 
         pq.Q() | pq.Loss(losses)
         pq.Q(0) | pq.Loss(transmissivity=0.0)
-        pq.Q() | pq.Sampling()
+        pq.Q() | pq.ParticleNumberMeasurement()
 
     result = simulator.execute(program, shots=1)
     sample = result.samples[0]

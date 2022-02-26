@@ -80,7 +80,6 @@ from .instructions.measurements import (
     HomodyneMeasurement,
     HeterodyneMeasurement,
     GeneraldyneMeasurement,
-    Sampling,
 )
 
 from .instructions.channels import (
@@ -140,7 +139,6 @@ __all__ = [
     "ControlledX",
     "ControlledZ",
     "Interferometer",
-    "Sampling",
     "Graph",
     # Measurements
     "ParticleNumberMeasurement",

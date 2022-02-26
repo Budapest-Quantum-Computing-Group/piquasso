@@ -17,7 +17,12 @@ from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from .state import SamplingState
-from .calculations import state_vector, passive_linear, sampling, loss
+from .calculations import (
+    state_vector,
+    passive_linear,
+    particle_number_measurement,
+    loss,
+)
 
 
 class SamplingSimulator(Simulator):
@@ -46,7 +51,7 @@ class SamplingSimulator(Simulator):
         :class:`~piquasso.instructions.gates.Interferometer`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.Sampling`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Loss`.
@@ -59,7 +64,7 @@ class SamplingSimulator(Simulator):
         gates.MachZehnder: passive_linear,
         gates.Fourier: passive_linear,
         gates.Interferometer: passive_linear,
-        measurements.Sampling: sampling,
+        measurements.ParticleNumberMeasurement: particle_number_measurement,
         channels.Loss: loss,
     }
 
