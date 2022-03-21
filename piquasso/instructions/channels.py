@@ -17,6 +17,7 @@ import numpy as np
 
 from piquasso._math.linalg import is_positive_semidefinite, is_real_2n_by_2n
 from piquasso._math.symplectic import symplectic_form
+from piquasso._math.validations import all_in_interval
 
 from piquasso.core import _mixins
 
@@ -147,7 +148,7 @@ class Loss(Gate, _mixins.ScalingMixin):
 
     Note:
         Currently, this instruction can only be used along with
-        :class:`~piquasso._backends.sampling.state.SamplingState`.
+        :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
     """
 
     def __init__(self, transmissivity: np.ndarray) -> None:
@@ -176,3 +177,44 @@ class Loss(Gate, _mixins.ScalingMixin):
                 f"The channel {self} is not applicable to modes {self.modes} with the "
                 "specified parameters."
             )
+
+
+class TransmissivityMatrix(Gate):
+    """Applies a loss channel to the state via a transmissivity matrix.
+
+    The transmissivity matrix :math:`A` should have singular values in the interval
+    :math:`[0, 1]`.
+
+    Applying :class:`TransmissivityMatrix` with parameter :math:`A` on all modes is
+    equivalent to the following::
+        pq.Q() | pq.Interferometer(W) | pq.Loss(np.diag(D)) | pq.Interferometer(V)
+
+    where :math:`A = V D W`, :math:`V, W` are unitary matrices and :math:`D` a
+    diagonal matrix. The diagonal entries in :math:`D` are called the singular values.
+
+    Note:
+        Currently, this instruction can only be used along with
+        :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
+
+    Raises:
+        InvalidParameter:
+            When the singular values are not in the interval :math:`[0, 1]`.
+    """
+
+    def __init__(self, transmissivity_matrix: np.ndarray) -> None:
+        """
+        Args:
+            transmissivity_matrix (numpy.ndarray): The transmissivity matrix.
+        """
+
+        _, singular_values, _ = np.linalg.svd(transmissivity_matrix)
+
+        if not all_in_interval(singular_values, lower=0.0, upper=1.0):
+            raise InvalidParameter(
+                "The specified transmissivity matrix has singular values outside of "
+                f"the interval [0, 1]: 'singular_values={singular_values}'"
+            )
+
+        super().__init__(
+            params=dict(transmissivity_matrix=transmissivity_matrix),
+        )

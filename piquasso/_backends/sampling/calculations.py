@@ -113,6 +113,20 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     return Result(state=state)
 
 
+def transmissivity_matrix(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> Result:
+    state.is_lossy = True
+
+    _apply_matrix_on_modes(
+        state=state,
+        matrix=instruction._all_params["transmissivity_matrix"],
+        modes=instruction.modes,
+    )
+
+    return Result(state=state)
+
+
 def particle_number_measurement(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> Result:

@@ -28,3 +28,11 @@ def all_natural(array: Iterable) -> bool:
 
 def all_real_and_positive(vector: Iterable) -> bool:
     return all(element >= 0.0 or np.isclose(element, 0.0) for element in vector)
+
+
+def all_in_interval(vector: Iterable, lower: float, upper: float) -> bool:
+    return all(
+        (element >= lower or np.isclose(element, lower))
+        and (element <= upper or np.isclose(element, upper))
+        for element in vector
+    )
