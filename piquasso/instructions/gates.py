@@ -200,7 +200,7 @@ class Beamsplitter(_GaussianGate):
                 Phase angle of the beamsplitter.
                 (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
             theta (float):
-                The transmittivity angle of the beamsplitter.
+                The transmissivity angle of the beamsplitter.
                 (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
         """
 
