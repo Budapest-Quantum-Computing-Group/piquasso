@@ -140,17 +140,12 @@ def test_lossy_program():
 
 
 @pytest.mark.monkey
-def test_TransmissivityMatrix(generate_unitary_matrix):
-    r"""
-    This test checks the average number of particles in the lossy BS with a
-    transmissivity matrix. We expect average number to be smaller than initial one.
-    """
-
+def test_LossyInterferometer_decreases_particle_number(generate_unitary_matrix):
     d = 5
 
-    singular_values = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+    singular_values = np.array([0.0, 0.2, 0.3, 0.4, 0.5])
 
-    transmissivity_matrix = (
+    lossy_interferometer_matrix = (
         generate_unitary_matrix(d)
         @ np.diag(singular_values)
         @ generate_unitary_matrix(d)
@@ -161,7 +156,7 @@ def test_TransmissivityMatrix(generate_unitary_matrix):
     with pq.Program() as program:
         pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q() | pq.TransmissivityMatrix(transmissivity_matrix)
+        pq.Q() | pq.LossyInterferometer(lossy_interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
     result = simulator.execute(program, shots=1)
@@ -170,32 +165,29 @@ def test_TransmissivityMatrix(generate_unitary_matrix):
 
 
 @pytest.mark.monkey
-def test_TransmissivityMatrix_is_equivalent_to_Loss_and_Interferometers(
+def test_LossyInterferometer_is_equivalent_to_Loss_and_Interferometers(
     generate_unitary_matrix,
 ):
-    r"""
-    This test checks the average number of particles in the lossy BS with a
-    transmissivity matrix. We expect average number to be smaller than initial one.
-    """
-
     d = 5
 
-    singular_values = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+    singular_values = np.array([0.0, 0.2, 0.3, 0.4, 0.5])
 
     first_unitary = generate_unitary_matrix(d)
     second_unitary = generate_unitary_matrix(d)
 
-    transmissivity_matrix = first_unitary @ np.diag(singular_values) @ second_unitary
+    lossy_interferometer_matrix = (
+        first_unitary @ np.diag(singular_values) @ second_unitary
+    )
 
     simulator = pq.SamplingSimulator(d=d)
 
-    with pq.Program() as program_using_transmissivity_matrix:
+    with pq.Program() as program_using_lossy_interferometer:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q() | pq.TransmissivityMatrix(transmissivity_matrix)
+        pq.Q() | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    state_obtained_via_transmissivity_matrix = simulator.execute(
-        program_using_transmissivity_matrix
+    state_obtained_via_lossy_interferometer = simulator.execute(
+        program_using_lossy_interferometer
     ).state
 
     with pq.Program() as program_using_loss:
@@ -207,27 +199,22 @@ def test_TransmissivityMatrix_is_equivalent_to_Loss_and_Interferometers(
 
     state_obtained_via_loss = simulator.execute(program_using_loss).state
 
-    assert state_obtained_via_transmissivity_matrix == state_obtained_via_loss
+    assert state_obtained_via_lossy_interferometer == state_obtained_via_loss
 
 
 @pytest.mark.monkey
-def test_transmissivity_matrix_raises_InvalidParameter_for_invalid_matrix(
+def test_LossyInterferometer_raises_InvalidParameter_for_invalid_matrix(
     generate_unitary_matrix,
 ):
-    r"""
-    This test checks the average number of particles in the lossy BS with a
-    transmissivity matrix. We expect average number to be smaller than initial one.
-    """
-
     d = 5
 
     singular_values_out_of_bound = np.array([42, 0.2, 0.3, 0.4, 0.5])
 
-    invalid_transmissivity_matrix = (
+    invalid_matrix = (
         generate_unitary_matrix(d)
         @ np.diag(singular_values_out_of_bound)
         @ generate_unitary_matrix(d)
     )
 
     with pytest.raises(pq.api.errors.InvalidParameter):
-        pq.TransmissivityMatrix(invalid_transmissivity_matrix)
+        pq.LossyInterferometer(invalid_matrix)

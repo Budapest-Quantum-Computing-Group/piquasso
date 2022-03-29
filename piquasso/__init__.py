@@ -86,7 +86,7 @@ from .instructions.channels import (
     DeterministicGaussianChannel,
     Attenuator,
     Loss,
-    TransmissivityMatrix,
+    LossyInterferometer,
 )
 
 
@@ -151,7 +151,7 @@ __all__ = [
     "DeterministicGaussianChannel",
     "Attenuator",
     "Loss",
-    "TransmissivityMatrix",
+    "LossyInterferometer",
 ]
 
 __version__ = "0.8.1"

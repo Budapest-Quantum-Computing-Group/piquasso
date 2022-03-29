@@ -22,7 +22,7 @@ from .calculations import (
     passive_linear,
     particle_number_measurement,
     loss,
-    transmissivity_matrix,
+    lossy_interferometer,
 )
 
 
@@ -67,7 +67,7 @@ class SamplingSimulator(Simulator):
         gates.Interferometer: passive_linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
         channels.Loss: loss,
-        channels.TransmissivityMatrix: transmissivity_matrix,
+        channels.LossyInterferometer: lossy_interferometer,
     }
 
     _state_class = SamplingState
