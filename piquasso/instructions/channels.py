@@ -179,18 +179,22 @@ class Loss(Gate, _mixins.ScalingMixin):
             )
 
 
-class TransmissivityMatrix(Gate):
-    """Applies a loss channel to the state via a transmissivity matrix.
+class LossyInterferometer(Gate):
+    """Applies a lossy interferometer (specified by a matrix) to the state.
 
-    The transmissivity matrix :math:`A` should have singular values in the interval
-    :math:`[0, 1]`.
+    The lossy interferometer matrix :math:`A` should have singular values in the
+    interval :math:`[0, 1]`.
 
-    Applying :class:`TransmissivityMatrix` with parameter :math:`A` on all modes is
+    Applying :class:`LossyInterferometer` with parameter :math:`A` on all modes is
     equivalent to the following::
         pq.Q() | pq.Interferometer(W) | pq.Loss(np.diag(D)) | pq.Interferometer(V)
 
     where :math:`A = V D W`, :math:`V, W` are unitary matrices and :math:`D` a
     diagonal matrix. The diagonal entries in :math:`D` are called the singular values.
+
+    Note that the :math:`W` and :math:`V` interferometer matrices and the vector
+    :math:`D` are the results of the singular value decomposition (SVD) of the
+    (possibly lossy) interferometer A.
 
     Note:
         Currently, this instruction can only be used along with
@@ -201,20 +205,20 @@ class TransmissivityMatrix(Gate):
             When the singular values are not in the interval :math:`[0, 1]`.
     """
 
-    def __init__(self, transmissivity_matrix: np.ndarray) -> None:
+    def __init__(self, matrix: np.ndarray) -> None:
         """
         Args:
-            transmissivity_matrix (numpy.ndarray): The transmissivity matrix.
+            matrix (numpy.ndarray): The matrix representing the lossy interferometer.
         """
 
-        _, singular_values, _ = np.linalg.svd(transmissivity_matrix)
+        _, singular_values, _ = np.linalg.svd(matrix)
 
         if not all_in_interval(singular_values, lower=0.0, upper=1.0):
             raise InvalidParameter(
-                "The specified transmissivity matrix has singular values outside of "
-                f"the interval [0, 1]: 'singular_values={singular_values}'"
+                "The specified lossy interferometer matrix has singular values outside "
+                f"of the interval [0, 1]: 'singular_values={singular_values}'"
             )
 
         super().__init__(
-            params=dict(transmissivity_matrix=transmissivity_matrix),
+            params=dict(matrix=matrix),
         )

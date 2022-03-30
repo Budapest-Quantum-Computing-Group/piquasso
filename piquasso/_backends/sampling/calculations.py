@@ -113,14 +113,14 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     return Result(state=state)
 
 
-def transmissivity_matrix(
+def lossy_interferometer(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> Result:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
         state=state,
-        matrix=instruction._all_params["transmissivity_matrix"],
+        matrix=instruction._all_params["matrix"],
         modes=instruction.modes,
     )
 
