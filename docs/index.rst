@@ -67,4 +67,4 @@ One could easily install Piquasso with the following command:
    api/state
    api/instruction
    api/result
-   api/errors
+   api/exceptions

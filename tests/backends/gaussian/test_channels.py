@@ -92,7 +92,7 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_X():
         ]
     )
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as error:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         pq.DeterministicGaussianChannel(X=invalid_X, Y=Y)
 
     assert "The parameter 'X' must be a real 2n-by-2n matrix:" in error.value.args[0]
@@ -114,7 +114,7 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_Y():
         ]
     )
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as error:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         pq.DeterministicGaussianChannel(X=X, Y=invalid_Y)
 
     assert "The parameter 'Y' must be a real 2n-by-2n matrix:" in error.value.args[0]
@@ -127,7 +127,7 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_incompatible_s
     X = generate_symmetric_matrix(2)
     Y = generate_symmetric_matrix(4)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as error:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         pq.DeterministicGaussianChannel(X=X, Y=Y)
 
     assert "The shape of matrices 'X' and 'Y' should be equal:" in error.value.args[0]
@@ -148,7 +148,7 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_X_and_
         ]
     )
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as error:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         pq.DeterministicGaussianChannel(X=X, Y=Y)
 
     assert (
@@ -177,7 +177,7 @@ def test_DeterministicGaussianChannel_raises_InvalidInstruction_at_incompatible_
 
     simulator = pq.GaussianSimulator(d=2)
 
-    with pytest.raises(pq.api.errors.InvalidInstruction) as error:
+    with pytest.raises(pq.api.exceptions.InvalidInstruction) as error:
         simulator.execute(program)
 
     assert "The instruction should be specified for '2' modes:" in error.value.args[0]
@@ -263,7 +263,7 @@ def test_Attenuator_raises_InvalidParameter_for_negative_thermal_exciations():
     theta = np.pi / 6
     invalid_mean_thermal_excitation = -1
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as error:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         pq.Attenuator(
             theta=theta, mean_thermal_excitation=invalid_mean_thermal_excitation
         )
@@ -285,7 +285,7 @@ def test_Attenuator_raises_InvalidInstruction_for_multiple_modes():
 
     simulator = pq.GaussianSimulator(d=2)
 
-    with pytest.raises(pq.api.errors.InvalidInstruction) as error:
+    with pytest.raises(pq.api.exceptions.InvalidInstruction) as error:
         simulator.execute(program)
 
     assert "The instruction should be specified for '2' modes:" in error.value.args[0]

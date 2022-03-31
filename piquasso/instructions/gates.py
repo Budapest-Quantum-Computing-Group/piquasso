@@ -48,7 +48,7 @@ from scipy.optimize import root_scalar
 from scipy.linalg import block_diag
 
 from piquasso.api.instruction import Gate
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 
 from piquasso._math.decompositions import takagi
 from piquasso._math.linalg import is_square, is_symmetric, is_invertible

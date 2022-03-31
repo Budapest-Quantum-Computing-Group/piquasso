@@ -18,7 +18,7 @@ from typing import Collection, Tuple, Union, Any
 
 from piquasso.core import _context
 
-from .errors import InvalidModes, PiquassoException
+from .exceptions import InvalidModes, PiquassoException
 
 if typing.TYPE_CHECKING:
     from piquasso.api.instruction import Instruction

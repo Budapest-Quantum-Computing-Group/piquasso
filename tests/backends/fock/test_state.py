@@ -89,7 +89,7 @@ def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes(
     simulator = SimulatorClass(d=2)
     state = simulator.execute(program).state
 
-    with pytest.raises(pq.api.errors.InvalidModes):
+    with pytest.raises(pq.api.exceptions.InvalidModes):
         state.wigner_function(
             positions=[1, 1.1],
             momentums=[-0.5, -0.6],
@@ -109,7 +109,7 @@ def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes_specif
     simulator = SimulatorClass(d=2)
     state = simulator.execute(program).state
 
-    with pytest.raises(pq.api.errors.InvalidModes):
+    with pytest.raises(pq.api.exceptions.InvalidModes):
         state.wigner_function(
             positions=[1, 1.1],
             momentums=[-0.5, -0.6],

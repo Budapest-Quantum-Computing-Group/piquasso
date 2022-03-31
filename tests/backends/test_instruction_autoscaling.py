@@ -140,7 +140,7 @@ def test_applying_invalid_vector_instructions_raises_error(
 
     simulator = SimulatorClass(d=NUMBER_OF_MODES)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as excinfo:
         simulator.execute(program)
 
     assert "is not applicable to modes" in str(excinfo.value)
@@ -181,12 +181,12 @@ def test_cubic_phase_autoscaling_invalid(SimulatorClass):
 
     simulator = SimulatorClass(d=2)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as excinfo:
         simulator.execute(program_1)
 
     assert "is not applicable to modes" in str(excinfo.value)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as excinfo:
         simulator.execute(program_2)
 
     assert "is not applicable to modes" in str(excinfo.value)
@@ -210,12 +210,12 @@ def test_kerr_autoscaling_invalid(SimulatorClass):
 
     simulator = SimulatorClass(d=2)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as excinfo:
         simulator.execute(program_1)
 
     assert "is not applicable to modes" in str(excinfo.value)
 
-    with pytest.raises(pq.api.errors.InvalidParameter) as excinfo:
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as excinfo:
         simulator.execute(program_2)
 
     assert "is not applicable to modes" in str(excinfo.value)

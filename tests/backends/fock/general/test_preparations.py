@@ -86,7 +86,7 @@ def test_overflow_with_zero_norm_raises_InvalidState():
 
     simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=3))
 
-    with pytest.raises(pq.api.errors.InvalidState) as error:
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program).state
 
     assert error.value.args[0] == "The norm of the state is 0."

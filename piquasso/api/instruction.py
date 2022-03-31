@@ -20,7 +20,7 @@ import numpy as np
 
 from .mode import Q
 from piquasso.core import _mixins
-from piquasso.api.errors import PiquassoException
+from piquasso.api.exceptions import PiquassoException
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program

@@ -23,7 +23,7 @@ from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
 from piquasso.api.program import Program
-from piquasso.api.errors import (
+from piquasso.api.exceptions import (
     InvalidParameter,
     InvalidInstruction,
     InvalidSimulation,

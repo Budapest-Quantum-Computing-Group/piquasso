@@ -22,9 +22,9 @@ from piquasso._math.linalg import is_unitary
 from piquasso._math.validations import all_natural
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState
+from piquasso.api.exceptions import InvalidState
 from piquasso.api.state import State
-from piquasso.api.errors import PiquassoException
+from piquasso.api.exceptions import PiquassoException
 
 from theboss.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (  # noqa: E501
     BSDistributionCalculatorWithFixedLosses,

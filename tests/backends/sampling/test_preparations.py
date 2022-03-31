@@ -48,7 +48,7 @@ def test_initial_state_raises_InvalidState_for_noninteger_input_state():
 
     simulator = pq.SamplingSimulator(d=5)
 
-    with pytest.raises(pq.api.errors.InvalidState):
+    with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
 
 
@@ -59,7 +59,7 @@ def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified(
 
     simulator = pq.SamplingSimulator(d=5)
 
-    with pytest.raises(pq.api.errors.InvalidState):
+    with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
 
 

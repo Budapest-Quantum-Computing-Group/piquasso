@@ -22,7 +22,7 @@ from piquasso.api.config import Config
 from piquasso.api.state import State
 
 from piquasso._math import fock
-from piquasso.api.errors import InvalidModes
+from piquasso.api.exceptions import InvalidModes
 
 
 class BaseFockState(State, abc.ABC):

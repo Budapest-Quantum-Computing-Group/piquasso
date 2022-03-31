@@ -18,7 +18,7 @@ from typing import Tuple, Generator, Any, Dict
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState, PiquassoException
+from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso._math.fock import cutoff_cardinality, FockBasis
 
 from ..state import BaseFockState

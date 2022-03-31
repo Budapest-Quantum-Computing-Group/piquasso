@@ -16,7 +16,7 @@
 import pytest
 
 import piquasso as pq
-from piquasso.api.errors import InvalidModes
+from piquasso.api.exceptions import InvalidModes
 
 
 def test_try_registering_nondistinct_modes():

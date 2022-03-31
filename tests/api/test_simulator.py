@@ -98,10 +98,10 @@ def test_program_execution_with_unregistered_instruction_raises_InvalidSimulatio
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -118,10 +118,10 @@ def test_program_execution_with_wrong_instruction_order_raises_InvalidSimulation
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -142,10 +142,10 @@ def test_program_execution_with_duplicated_blocks_raises_InvalidSimulation(
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -163,10 +163,10 @@ def test_program_execution_with_multiple_measurements_raises_InvalidSimulation(
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -183,10 +183,10 @@ def test_program_execution_with_measurement_not_being_last_raises_InvalidSimulat
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation):
         simulator.execute(program)
 
 
@@ -225,7 +225,7 @@ def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
 
     simulator.validate(program)
 
-    with pytest.raises(pq.api.errors.InvalidState):
+    with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program, initial_state=state)
 
 

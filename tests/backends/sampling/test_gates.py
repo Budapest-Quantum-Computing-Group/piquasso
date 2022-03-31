@@ -216,5 +216,5 @@ def test_LossyInterferometer_raises_InvalidParameter_for_invalid_matrix(
         @ generate_unitary_matrix(d)
     )
 
-    with pytest.raises(pq.api.errors.InvalidParameter):
+    with pytest.raises(pq.api.exceptions.InvalidParameter):
         pq.LossyInterferometer(invalid_matrix)

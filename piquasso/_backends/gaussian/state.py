@@ -19,7 +19,7 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 from piquasso.api.config import Config
-from piquasso.api.errors import InvalidState, InvalidParameter, PiquassoException
+from piquasso.api.exceptions import InvalidState, InvalidParameter, PiquassoException
 from piquasso.api.state import State
 
 from piquasso._math.functions import gaussian_wigner_function

@@ -24,7 +24,7 @@
 
 import numpy as np
 
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Measurement
 from piquasso._math.linalg import is_positive_semidefinite
 from piquasso._math.symplectic import symplectic_form
