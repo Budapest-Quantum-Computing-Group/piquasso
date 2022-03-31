@@ -17,7 +17,7 @@ import pytest
 
 import piquasso as pq
 
-from piquasso.api.errors import PiquassoException
+from piquasso.api.exceptions import PiquassoException
 
 
 def test_registering_instruction_by_subclassing():

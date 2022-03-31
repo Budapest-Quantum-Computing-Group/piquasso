@@ -17,7 +17,7 @@ import pytest
 
 import piquasso as pq
 
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 
 
 def test_displacement_raises_InvalidParameter_for_redundant_parameters():

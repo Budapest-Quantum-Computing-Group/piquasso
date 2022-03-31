@@ -30,7 +30,7 @@ from .probabilities import calculate_click_probability
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
-from piquasso.api.errors import InvalidInstruction
+from piquasso.api.exceptions import InvalidInstruction
 
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import decompose_to_pure_and_mixed

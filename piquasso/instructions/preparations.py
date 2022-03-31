@@ -19,7 +19,7 @@ import numpy as np
 
 from piquasso.core import _mixins
 from piquasso.api.instruction import Preparation
-from piquasso.api.errors import InvalidParameter, InvalidState
+from piquasso.api.exceptions import InvalidParameter, InvalidState
 
 from piquasso._math.validations import all_natural, all_real_and_positive
 

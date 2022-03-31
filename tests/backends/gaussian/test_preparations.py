@@ -18,7 +18,7 @@ import numpy as np
 
 import piquasso as pq
 
-from piquasso.api.errors import InvalidParameter, InvalidState
+from piquasso.api.exceptions import InvalidParameter, InvalidState
 
 
 def test_Mean_is_automatically_scaled_by_hbar():

@@ -20,7 +20,7 @@ from typing import List, Mapping, Optional, Type
 import blackbird as bb
 
 from .. import Instruction
-from ..api.errors import PiquassoException
+from ..api.exceptions import PiquassoException
 
 
 def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instruction]:

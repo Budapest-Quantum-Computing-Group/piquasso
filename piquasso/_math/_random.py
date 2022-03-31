@@ -16,7 +16,7 @@
 import random
 from typing import Sequence
 
-from piquasso.api.errors import PiquassoException
+from piquasso.api.exceptions import PiquassoException
 
 
 def choose_from_cumulated_probabilities(cumulated_probabilities: Sequence) -> int:

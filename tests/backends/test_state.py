@@ -41,7 +41,7 @@ def test_get_particle_detection_probability_raises_PiquassoException_wrong_modes
 
     state = simulator.execute(program).state
 
-    with pytest.raises(pq.api.errors.PiquassoException):
+    with pytest.raises(pq.api.exceptions.PiquassoException):
         state.get_particle_detection_probability(
             occupation_number=wrong_occupation_number
         )

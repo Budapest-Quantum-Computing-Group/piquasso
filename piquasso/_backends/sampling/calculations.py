@@ -20,7 +20,7 @@ from piquasso._backends.sampling.state import SamplingState
 
 from piquasso._math.validations import all_natural
 
-from piquasso.api.errors import InvalidState
+from piquasso.api.exceptions import InvalidState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 

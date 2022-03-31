@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 import piquasso as pq
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 
 
 @pytest.fixture

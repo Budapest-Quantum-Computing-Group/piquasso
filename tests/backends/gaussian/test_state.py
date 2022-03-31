@@ -17,7 +17,7 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 
 
 def test_xxpp_representation(state, assets):

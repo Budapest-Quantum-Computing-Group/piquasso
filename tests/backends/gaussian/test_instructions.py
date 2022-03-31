@@ -491,7 +491,7 @@ def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
     with pq.Program():
         pq.Q() | pq.Vacuum()
 
-        with pytest.raises(pq.api.errors.InvalidParameter):
+        with pytest.raises(pq.api.exceptions.InvalidParameter):
             pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
 
 

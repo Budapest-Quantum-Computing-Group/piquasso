@@ -21,7 +21,7 @@ from piquasso._math.validations import all_in_interval
 
 from piquasso.core import _mixins
 
-from piquasso.api.errors import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Gate
 
 
