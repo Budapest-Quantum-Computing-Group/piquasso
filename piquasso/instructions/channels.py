@@ -187,6 +187,7 @@ class LossyInterferometer(Gate):
 
     Applying :class:`LossyInterferometer` with parameter :math:`A` on all modes is
     equivalent to the following::
+
         pq.Q() | pq.Interferometer(W) | pq.Loss(np.diag(D)) | pq.Interferometer(V)
 
     where :math:`A = V D W`, :math:`V, W` are unitary matrices and :math:`D` a
