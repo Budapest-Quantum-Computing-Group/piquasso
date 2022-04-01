@@ -1,17 +1,18 @@
+strawberryfields==0.21.0
+matplotlib==3.3.4
+
+# Testing
 pytest==5.2
 pytest-profiling==1.7.0
 pytest-benchmark==3.2.3
 coverage==5.3
-flake8==3.8.3
 mypy==0.910
-strawberryfields==0.21.0
-recommonmark==0.6.0
-sphinx_rtd_theme==0.5.0
-llvmlite>=0.36.0
-furo>=2021.2.28-beta.28
-matplotlib==3.3.4
-nbsphinx==0.8.5
-pandoc==1.0.2
-ipykernel==5.5.0
+flake8==3.8.3
+
+# Formatting
 black==22.3.0
 black[jupyter]
+
+# Documentation
+nbsphinx>=0.8.8
+furo>=2021.2.28-beta.28
