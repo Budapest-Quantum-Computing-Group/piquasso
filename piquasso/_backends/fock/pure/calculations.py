@@ -22,6 +22,9 @@ from scipy.linalg import block_diag
 
 from .state import PureFockState
 
+from piquasso._math.fock import FockSpace, cutoff_cardinality
+from piquasso._math.indices import get_index_in_fock_space
+
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
@@ -130,35 +133,34 @@ def _apply_subsystem_representation_to_state(
 ) -> None:
     new_state_vector = np.zeros_like(state._state_vector)
 
-    from piquasso._math.fock import FockSpace
+    subspace = FockSpace(
+        d=len(modes),
+        cutoff=state._space.cutoff,
+    )
 
-    subsystem_space = FockSpace(d=len(modes), cutoff=state._space.cutoff)
+    embedded_basis = np.empty((len(modes) + len(auxiliary_modes)), dtype=int)
 
-    for multimode_index, multimode_vector in enumerate(state._space):
-        single_mode_basis_index = subsystem_space.index(
-            multimode_vector.on_modes(modes=modes)
+    for index, basis in enumerate(state._space):
+        embedded_basis[(auxiliary_modes,)] = basis.on_modes(modes=auxiliary_modes)
+
+        subspace_basis_index = get_index_in_fock_space(basis.on_modes(modes=modes))
+
+        subspace_cutoff = state._space.cutoff - sum(
+            basis.on_modes(modes=auxiliary_modes)
         )
 
-        for running_vector in state._space:
-            if multimode_vector.on_modes(
-                modes=auxiliary_modes
-            ) == running_vector.on_modes(modes=auxiliary_modes):
+        subspace_cardinality = cutoff_cardinality(cutoff=subspace_cutoff, d=len(modes))
 
-                single_mode_running_index = subsystem_space.index(
-                    running_vector.on_modes(modes=modes)
-                )
+        for subspace_index in range(subspace_cardinality):
+            embedded_basis[(modes,)] = subspace[subspace_index]
 
-                index_on_multimode = state._space.index(running_vector)
+            index_on_multimode = get_index_in_fock_space(tuple(embedded_basis))
 
-                single_mode_matrix_index = (
-                    single_mode_basis_index,
-                    single_mode_running_index,
-                )
+            subspace_matrix_index = subspace_basis_index, subspace_index
 
-                new_state_vector[multimode_index] += (
-                    matrix[single_mode_matrix_index]
-                    * state._state_vector[index_on_multimode]
-                )
+            new_state_vector[index] += (
+                matrix[subspace_matrix_index] * state._state_vector[index_on_multimode]
+            )
 
     state._state_vector = new_state_vector
 

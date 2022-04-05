@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 from typing import Tuple, Iterable, Generator, Any, List
 
 import numpy as np
@@ -23,27 +22,22 @@ from operator import add
 from scipy.special import factorial, comb
 from scipy.linalg import block_diag, polar, logm, expm
 
-from piquasso._math.indices import get_operator_index
+from piquasso._math.indices import (
+    get_operator_index,
+    cumulated_combinations_with_repetition,
+)
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
 
 from piquasso.api.typing import PermanentFunction
 
 
-@functools.lru_cache()
 def cutoff_cardinality(*, cutoff: int, d: int) -> int:
-    r"""
-    Calculates the dimension of the cutoff Fock space with the relation
-
-    ..math::
-        \sum_{i=0}^{c - 1} {d + i - 1 \choose i} = {d + c - 1 \choose c - 1}.
-    """
-    return comb(d + cutoff - 1, cutoff - 1, exact=True)
+    return cumulated_combinations_with_repetition(boxes=d, max_particles=cutoff - 1)
 
 
-@functools.lru_cache()
 def symmetric_subspace_cardinality(*, d: int, n: int) -> int:
-    return comb(d + n - 1, n, exact=True)
+    return comb(d, n, exact=True, repetition=True)
 
 
 class FockBasis(tuple):
