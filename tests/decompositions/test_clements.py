@@ -139,3 +139,44 @@ def test_clements_decomposition_and_composition_on_n_modes(n, dummy_unitary, tol
     original = Clements.from_decomposition(decomposition)
 
     assert (U - original < tolerance).all()
+
+
+@pytest.mark.parametrize("n", [2, 3, 4, 5])
+def test_clements_decomposition_and_composition_on_n_modes_for_identity(n):
+    identity = np.identity(n)
+
+    decomposition = Clements(identity)
+
+    diagonalized = decomposition.U
+
+    assert np.isclose(
+        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
+    ), "Absolute sum of matrix elements should be equal to the "
+    "diagonal elements, if the matrix is properly diagonalized."
+
+    matrix_from_decomposition = Clements.from_decomposition(decomposition)
+
+    assert np.allclose(identity, matrix_from_decomposition)
+
+
+def test_clements_decomposition_and_composition_on_n_modes_for_matrix_with_0_terms():
+    matrix = np.array(
+        [
+            [1 / np.sqrt(2), 0, 1 / np.sqrt(2)],
+            [0, 1, 0],
+            [1 / np.sqrt(2), 0, -1 / np.sqrt(2)],
+        ]
+    )
+
+    decomposition = Clements(matrix)
+
+    diagonalized = decomposition.U
+
+    assert np.isclose(
+        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
+    ), "Absolute sum of matrix elements should be equal to the "
+    "diagonal elements, if the matrix is properly diagonalized."
+
+    matrix_from_decomposition = Clements.from_decomposition(decomposition)
+
+    assert np.allclose(matrix, matrix_from_decomposition)
