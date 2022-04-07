@@ -13,5 +13,5 @@ matplotlib==3.3.4
 nbsphinx==0.8.5
 pandoc==1.0.2
 ipykernel==5.5.0
-black==21.9b0
+black==22.3.0
 black[jupyter]

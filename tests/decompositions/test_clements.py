@@ -17,9 +17,14 @@ import pytest
 import numpy as np
 from scipy.stats import unitary_group
 
+import piquasso as pq
+
 from piquasso import _math
 
 from piquasso.decompositions.clements import T, Clements
+
+
+pytestmark = pytest.mark.monkey
 
 
 @pytest.fixture
@@ -139,3 +144,176 @@ def test_clements_decomposition_and_composition_on_n_modes(n, dummy_unitary, tol
     original = Clements.from_decomposition(decomposition)
 
     assert (U - original < tolerance).all()
+
+
+@pytest.mark.parametrize("n", [2, 3, 4, 5])
+def test_clements_decomposition_and_composition_on_n_modes_for_identity(n):
+    identity = np.identity(n)
+
+    decomposition = Clements(identity)
+
+    diagonalized = decomposition.U
+
+    assert np.isclose(
+        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
+    ), "Absolute sum of matrix elements should be equal to the "
+    "diagonal elements, if the matrix is properly diagonalized."
+
+    matrix_from_decomposition = Clements.from_decomposition(decomposition)
+
+    assert np.allclose(identity, matrix_from_decomposition)
+
+
+def test_clements_decomposition_and_composition_on_n_modes_for_matrix_with_0_terms():
+    matrix = np.array(
+        [
+            [1 / np.sqrt(2), 0, 1 / np.sqrt(2)],
+            [0, 1, 0],
+            [1 / np.sqrt(2), 0, -1 / np.sqrt(2)],
+        ]
+    )
+
+    decomposition = Clements(matrix)
+
+    diagonalized = decomposition.U
+
+    assert np.isclose(
+        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
+    ), "Absolute sum of matrix elements should be equal to the "
+    "diagonal elements, if the matrix is properly diagonalized."
+
+    matrix_from_decomposition = Clements.from_decomposition(decomposition)
+
+    assert np.allclose(matrix, matrix_from_decomposition)
+
+
+def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
+    d = 3
+    U = dummy_unitary(d)
+
+    decomposition = Clements(U)
+
+    with pq.Program() as program_with_interferometer:
+        pq.Q() | pq.StateVector(tuple([1] * d))
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        pq.Q() | pq.StateVector(tuple([1] * d))
+
+        for operation in decomposition.inverse_operations:
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+
+        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+
+        for operation in reversed(decomposition.direct_operations):
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+
+    simulator = pq.SamplingSimulator(d=d)
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
+    d = 4
+    U = dummy_unitary(d)
+
+    decomposition = Clements(U)
+
+    occupation_numbers = (1, 1, 0, 0)
+
+    with pq.Program() as program_with_interferometer:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+        for operation in decomposition.inverse_operations:
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+
+        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+
+        for operation in reversed(decomposition.direct_operations):
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+
+    simulator = pq.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=sum(occupation_numbers) + 1)
+    )
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
+    d = 4
+    U = dummy_unitary(d)
+
+    decomposition = Clements(U)
+
+    with pq.Program() as program_with_interferometer:
+        pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
+
+        for operation in decomposition.inverse_operations:
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+
+        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+
+        for operation in reversed(decomposition.direct_operations):
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+
+    simulator = pq.FockSimulator(d=d, config=pq.Config(cutoff=3))
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
+    d = 3
+    U = dummy_unitary(d)
+
+    decomposition = Clements(U)
+
+    with pq.Program() as program_with_interferometer:
+        pq.Q() | pq.Squeezing([0.1, 0.2, 0.3])
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        pq.Q() | pq.Squeezing([0.1, 0.2, 0.3])
+
+        for operation in decomposition.inverse_operations:
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+
+        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+
+        for operation in reversed(decomposition.direct_operations):
+            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
+            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+
+    simulator = pq.GaussianSimulator(d=d, config=pq.Config(cutoff=2))
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition

@@ -165,6 +165,12 @@ class Clements:
         Calculates the parameters required to eliminate the lower triangular
         element `i`, `j` of `U` using `T`.
         """
+        if np.isclose(self.U[i - 1, j], 0.0):
+            return {
+                "modes": (i - 1, i),
+                "params": (np.pi / 2, 0),
+            }
+
         r = -self.U[i, j] / self.U[i - 1, j]
         theta = np.arctan(np.abs(r))
         phi = np.angle(r)
@@ -179,6 +185,13 @@ class Clements:
         Calculates the parameters required to eliminate the upper triangular
         `i`, `j` of `U` using `T.transposed`.
         """
+
+        if np.isclose(self.U[i, j + 1], 0.0):
+            return {
+                "modes": (j, j + 1),
+                "params": (np.pi / 2, 0),
+            }
+
         r = self.U[i, j] / self.U[i, j + 1]
         theta = np.arctan(np.abs(r))
         phi = np.angle(r)

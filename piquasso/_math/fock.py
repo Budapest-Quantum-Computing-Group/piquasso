@@ -201,7 +201,7 @@ class FockSpace(tuple):
         displacement = r * np.exp(1j * phi)
 
         transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
-        transformation[0, 0] = np.exp(-0.5 * r ** 2)
+        transformation[0, 0] = np.exp(-0.5 * r**2)
 
         for row in range(1, self.cutoff):
             transformation[row, 0] = (
@@ -515,12 +515,6 @@ class FockSpace(tuple):
             )
         )
 
-    def get_subspace_indices(self, n: int) -> Tuple[int, int]:
-        begin = cutoff_cardinality(cutoff=n, d=self.d)
-        end = cutoff_cardinality(cutoff=n + 1, d=self.d)
-
-        return begin, end
-
     def get_subspace_basis(self, n: int, d: int = None) -> List[Tuple[int, ...]]:
         d = d or self.d
         return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
@@ -541,19 +535,9 @@ class FockSpace(tuple):
         n: int,
         permanent_function: PermanentFunction,
     ) -> np.ndarray:
-        if n == 0:
-            return np.array([[1]], dtype=complex)
-
-        if n == 1:
-            # NOTE: This stuff is really awkward.
-            # The operator in the one-particle-subspace is ordered by e.g.
-            # |100>, |010>, |001>, but here we need the order
-            # |001>, |010>, |100>.
-            return operator[::-1, ::-1].transpose()
-
         d = len(operator)
 
-        ret = np.empty(
+        matrix = np.empty(
             shape=(symmetric_subspace_cardinality(d=d, n=n),) * 2,
             dtype=complex,
         )
@@ -561,11 +545,11 @@ class FockSpace(tuple):
         for index, basis in self.enumerate_subspace_operator_basis(n, d):
             permanent = permanent_function(operator, basis.bra, basis.ket)
 
-            ret[index] = permanent / np.sqrt(
+            matrix[index] = permanent / np.sqrt(
                 np.prod(factorial(basis.bra)) * np.prod(factorial(basis.ket))
             )
 
-        return ret
+        return matrix
 
     def get_creation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
         operator = np.zeros(shape=(self.cardinality,) * 2, dtype=complex)

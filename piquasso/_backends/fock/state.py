@@ -198,7 +198,7 @@ class BaseFockState(State, abc.ABC):
                 # Wlist[n] = Wigner function for |m><n|
                 W += 2 * np.real(rho[m, n] * Wlist[n])
 
-        return 0.5 * W * g ** 2
+        return 0.5 * W * g**2
 
     def fidelity(self, state: "BaseFockState") -> float:
         r"""Calculates the state fidelity between two quantum states.
