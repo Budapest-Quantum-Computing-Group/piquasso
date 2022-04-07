@@ -135,3 +135,13 @@ class SamplingState(State):
             config, permanent_calculator
         )
         return distribution_calculator.calculate_distribution()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SamplingState):
+            return False
+
+        return (
+            np.allclose(self.initial_state, other.initial_state)
+            and np.allclose(self.interferometer, other.interferometer)
+            and self.is_lossy == other.is_lossy
+        )
