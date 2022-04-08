@@ -33,7 +33,7 @@ def test_create_number_state():
     assert np.isclose(state.norm, 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.6545085, 0.3454915, 0, 0, 0],
+        [0.0, 0.3454915, 0.6545085, 0.0, 0.0, 0.0],
     )
 
 
@@ -73,7 +73,7 @@ def test_create_annihilate_and_create():
     assert np.isclose(state.norm, 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.6545085, 0.3454915, 0, 0, 0],
+        [0.0, 0.3454915, 0.6545085, 0.0, 0.0, 0.0],
     )
 
 
@@ -107,7 +107,28 @@ def test_creation_on_multiple_modes():
 
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 / 5, 3 / 5, 0, 0, 0, 0, 0, 0, 0],
+        [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            3 / 5,
+            2 / 5,
+            0.0,
+        ],
     )
 
 
@@ -127,5 +148,5 @@ def test_state_is_renormalized_after_overflow():
 
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0, 0, 0, 0.4, 0.6, 0, 0, 0, 0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
     )

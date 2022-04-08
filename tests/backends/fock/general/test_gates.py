@@ -45,7 +45,7 @@ def test_beamsplitter():
 
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.6545085, 0.3454915, 0, 0, 0],
+        [0.0, 0.3454915, 0.6545085, 0.0, 0.0, 0.0],
     )
 
 
@@ -71,7 +71,7 @@ def test_beamsplitter_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.16362712, 0.08637288, 0.24672554, 0.17929466, 0.32397979],
+        [0.0, 0.08637288, 0.16362712, 0.32397979, 0.17929466, 0.24672554],
     )
 
 
@@ -93,7 +93,7 @@ def test_beamsplitter_leaves_vacuum_unchanged():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0.25, 0.32725425, 0.17274575, 0.10709534, 0.11306356, 0.02984109],
+        [0.25, 0.17274575, 0.32725425, 0.02984109, 0.11306356, 0.10709534],
     )
 
 
@@ -110,7 +110,7 @@ def test_multiple_beamsplitters():
 
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.75, 0.25, 0, 0, 0, 0, 0, 0, 0],
+        [0.0, 0.0, 0.25, 0.75, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     )
 
 
@@ -136,7 +136,7 @@ def test_multiple_beamsplitters_with_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.1875, 0.0625, 0, 0.234375, 0.15625, 0.109375, 0.1875, 0.0625, 0],
+        [0.0, 0.0, 0.0625, 0.1875, 0.0, 0.0625, 0.1875, 0.109375, 0.15625, 0.234375],
     )
 
 
@@ -161,7 +161,7 @@ def test_phaseshift():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.25, 0, 0.5, 0.25, 0],
+        [0.0, 0.0, 0.25, 0.0, 0.25, 0.5],
     )
 
 
@@ -186,7 +186,7 @@ def test_fourier():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.25, 0, 0.5, 0.25, 0],
+        [0.0, 0.0, 0.25, 0.0, 0.25, 0.5],
     )
 
 
@@ -211,7 +211,7 @@ def test_mach_zehnder():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.0625, 0.1875, 0.04845345, 0.09690689, 0.60463966],
+        [0.0, 0.1875, 0.0625, 0.60463966, 0.09690689, 0.04845345],
     )
 
 
@@ -239,7 +239,18 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
     assert np.isclose(sum(state.fock_probabilities), 1)
     assert np.allclose(
         state.fock_probabilities,
-        [0, 0.1875, 0.0625, 0, 0.43324878, 0.02366748, 0.04308374, 0.1875, 0.0625, 0],
+        [
+            0.0,
+            0.0,
+            0.0625,
+            0.1875,
+            0.0,
+            0.0625,
+            0.1875,
+            0.04308374,
+            0.02366748,
+            0.43324878,
+        ],
     )
 
 
@@ -274,16 +285,16 @@ def test_interferometer():
     assert np.allclose(
         state.fock_probabilities,
         [
-            0,
-            0.1875,
-            0.015625,
+            0.0,
             0.046875,
-            0.01443139,
-            0.10696977,
-            0.0192306,
-            0.32090931,
-            0.11538358,
+            0.015625,
+            0.1875,
             0.17307537,
+            0.11538358,
+            0.32090931,
+            0.0192306,
+            0.10696977,
+            0.01443139,
         ],
     )
 
@@ -309,14 +320,14 @@ def test_kerr():
 
     assert len(nonzero_elements) == 3
 
-    assert np.isclose(nonzero_elements[0][0], 1)
-    assert nonzero_elements[0][1] == ((0, 0, 3), (0, 0, 3))
+    assert np.isclose(nonzero_elements[0][0], 1j * np.exp(1j * xi))
+    assert nonzero_elements[0][1] == ((0, 1, 2), (0, 0, 3))
 
     assert np.isclose(nonzero_elements[1][0], -1j * np.exp(-1j * xi))
     assert nonzero_elements[1][1] == ((0, 0, 3), (0, 1, 2))
 
-    assert np.isclose(nonzero_elements[2][0], 1j * np.exp(1j * xi))
-    assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
+    assert np.isclose(nonzero_elements[2][0], 1)
+    assert nonzero_elements[2][1] == ((0, 0, 3), (0, 0, 3))
 
 
 def test_cross_kerr():
@@ -340,14 +351,14 @@ def test_cross_kerr():
 
     assert len(nonzero_elements) == 3
 
-    assert np.isclose(nonzero_elements[0][0], 1)
-    assert nonzero_elements[0][1] == ((0, 0, 3), (0, 0, 3))
+    assert np.isclose(nonzero_elements[0][0], -1j * np.exp(-1j * xi))
+    assert nonzero_elements[0][1] == ((0, 1, 2), (0, 0, 3))
 
     assert np.isclose(nonzero_elements[1][0], 1j * np.exp(1j * xi))
     assert nonzero_elements[1][1] == ((0, 0, 3), (0, 1, 2))
 
-    assert np.isclose(nonzero_elements[2][0], -1j * np.exp(-1j * xi))
-    assert nonzero_elements[2][1] == ((0, 1, 2), (0, 0, 3))
+    assert np.isclose(nonzero_elements[2][0], 1)
+    assert nonzero_elements[2][1] == ((0, 0, 3), (0, 0, 3))
 
 
 def test_cubic_phase():
