@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Budapest Quantum Computing Group
+# Copyright 2021-2022 Budapest Quantum Computing Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
 
 import os
 import glob
+
 from itertools import islice
 from pathlib import Path
+from datetime import date
 
-COPYRIGHT = """\
+
+COPYRIGHT = f"""\
 #
-# Copyright 2021 Budapest Quantum Computing Group
+# Copyright 2021-{date.today().year} Budapest Quantum Computing Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,6 +46,7 @@ def test_copyrights():
         root / ".venv",
         root / "docs",
         root / "dist",
+        root / "build",
     ]
 
     extensions = ["*.py"]
