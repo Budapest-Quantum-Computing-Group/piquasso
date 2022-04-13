@@ -179,7 +179,7 @@ class FockSpace(tuple):
         phi: float,
     ) -> np.ndarray:
 
-        """
+        r"""
         This method generates the Displacement operator following a recursion rule.
         Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
 
