@@ -35,8 +35,11 @@ def partitions(
     masks = np.rot90(np.identity(boxes, dtype=int))
 
     return sorted(
-        class_(sum(c))  # type: ignore
-        for c in combinations_with_replacement(masks, particles)
+        (
+            class_(sum(c))  # type: ignore
+            for c in combinations_with_replacement(masks, particles)
+        ),
+        reverse=True,
     )
 
 

@@ -36,7 +36,9 @@ def test_squeezing_probabilities(SimulatorClass):
         sum(state.fock_probabilities), 1.0
     ), "The state should be renormalized for probability conservation."
 
-    assert np.allclose(state.fock_probabilities, [0.90352508, 0, 0, 0, 0, 0.09647492])
+    assert np.allclose(
+        state.fock_probabilities, [0.90352508, 0.0, 0.0, 0.09647492, 0.0, 0.0]
+    )
 
 
 @pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
@@ -57,7 +59,7 @@ def test_displacement_probabilities(SimulatorClass):
     ), "The state should be renormalized for probability conservation."
 
     assert np.allclose(
-        state.fock_probabilities, [0.7804878, 0, 0.19512195, 0, 0, 0.02439024]
+        state.fock_probabilities, [0.7804878, 0.19512195, 0.0, 0.02439024, 0.0, 0.0]
     )
 
 
