@@ -58,7 +58,7 @@ Tests and additional checks can be run using `tox`. After installation, run the
 following command:
 
 ```
-tox -e py39
+tox -e py310
 ```
 
 Alternatively, you can run only the tests using `pytest`. After installation, run the
