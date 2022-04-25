@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from piquasso.api.simulator import Simulator
-from piquasso.instructions import preparations, gates, measurements
+from piquasso.instructions import preparations, gates, measurements, channels
 
 from .state import FockState
 from .calculations import (
@@ -31,6 +31,8 @@ from .calculations import (
     create,
     annihilate,
 )
+
+from ..calculations import attenuator
 
 
 class FockSimulator(Simulator):
@@ -74,6 +76,9 @@ class FockSimulator(Simulator):
 
     Supported measurements:
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+
+    Supported channels:
+        :class:`~piquasso.instructions.channels.Attenuator`
     """
 
     _instruction_map = {
@@ -97,6 +102,7 @@ class FockSimulator(Simulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        channels.Attenuator: attenuator,
     }
 
     _state_class = FockState

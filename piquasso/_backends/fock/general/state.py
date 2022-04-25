@@ -52,6 +52,9 @@ class FockState(BaseFockState):
         self._density_matrix = self._get_empty()
         self._density_matrix[0, 0] = 1.0
 
+    def _as_mixed(self):
+        return self.copy()
+
     @classmethod
     def from_fock_state(cls, state: BaseFockState) -> "FockState":
         """Instantiation using another :class:`BaseFockState` instance.

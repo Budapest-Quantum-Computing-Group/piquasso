@@ -30,8 +30,10 @@ from .calculations import (
     annihilate,
 )
 
+from ..calculations import attenuator
+
 from piquasso.api.simulator import Simulator
-from piquasso.instructions import preparations, gates, measurements
+from piquasso.instructions import preparations, gates, measurements, channels
 
 
 class PureFockSimulator(Simulator):
@@ -75,6 +77,9 @@ class PureFockSimulator(Simulator):
 
     Supported measurements:
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+
+    Supported channels:
+        :class:`~piquasso.instructions.channels.Attenuator`
     """
 
     _state_class = PureFockState
@@ -100,4 +105,5 @@ class PureFockSimulator(Simulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        channels.Attenuator: attenuator,
     }
