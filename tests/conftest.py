@@ -22,6 +22,11 @@ import piquasso as pq
 from pathlib import Path
 
 
+@pytest.fixture(autouse=True)
+def _set_printoptions_for_debugging():
+    np.set_printoptions(suppress=True, linewidth=200)
+
+
 @pytest.fixture
 def generate_symmetric_matrix():
     def func(N):
