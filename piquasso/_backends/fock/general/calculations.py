@@ -163,7 +163,7 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
         state._density_matrix = (
             embedded_operator
@@ -208,7 +208,7 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
 
         state._density_matrix = (
@@ -235,7 +235,7 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
 
         state._density_matrix = (
