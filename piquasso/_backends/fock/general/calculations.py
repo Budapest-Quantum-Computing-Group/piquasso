@@ -134,16 +134,18 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
 
 
 def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
-    mode = instruction.modes[0]
-    xi = instruction._all_params["xi"]
-    for x in xi:
+    xi_vector = instruction._all_params["xi"]
+
+    for mode_index, mode in enumerate(instruction.modes):
+        xi = xi_vector[mode_index]
+
         for index, (basis, dual_basis) in state._space.operator_basis:
             number = basis[mode]
             dual_number = dual_basis[mode]
 
             coefficient = np.exp(
                 1j
-                * x
+                * xi
                 * (number * (2 * number + 1) - dual_number * (2 * dual_number + 1))
             )
 

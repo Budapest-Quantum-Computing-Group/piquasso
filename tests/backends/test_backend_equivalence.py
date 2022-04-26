@@ -1027,22 +1027,19 @@ def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
         pq.FockSimulator,
     ),
 )
-def test_kerr_equivalency(SimulatorClass):
-    with pq.Program() as program_1:
+def test_Kerr_equivalence(SimulatorClass):
+    with pq.Program() as program:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.05)
-        pq.Q(0, 1) | pq.Kerr(xi=[-1, 1])
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi / 6)
 
-    with pq.Program() as program_2:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.05)
-        pq.Q(all) | pq.Kerr(xi=[-1, 1])
+        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
 
-    generic_simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+    simulator = SimulatorClass(d=2)
 
-    state_1 = generic_simulator.execute(program_1).state
-    state_2 = generic_simulator.execute(program_2).state
-    fidelity = state_1.fidelity(state_2)
+    state = simulator.execute(program).state
 
-    assert np.isclose(fidelity, 1.0)
-    assert np.isclose(fidelity, state_2.fidelity(state_1))
+    assert is_proportional(
+        state.fock_probabilities,
+        [0.97613795, 0.0, 0.0, 0.01901371, 0.0, 0.00484834, 0.0, 0.0, 0.0, 0.0],
+    )

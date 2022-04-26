@@ -199,6 +199,42 @@ def test_cubic_phase_autoscaling_invalid(SimulatorClass):
         pq.FockSimulator,
     ),
 )
+def test_CubicPhase_multimode_equivalence(SimulatorClass):
+    with pq.Program() as preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Create() | pq.Create()
+        pq.Q(1) | pq.Create()
+
+    with pq.Program() as program_with_multimode_instruction:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.CubicPhase(gamma=[1, 2])
+
+    with pq.Program() as program_with_two_onemode_instructions:
+        pq.Q() | preparation
+
+        pq.Q(0) | pq.CubicPhase(gamma=1)
+        pq.Q(1) | pq.CubicPhase(gamma=2)
+
+    simulator = SimulatorClass(d=2)
+
+    state_with_multimode_instruction = simulator.execute(
+        program_with_multimode_instruction
+    ).state
+    state_with_two_onemode_instructions = simulator.execute(
+        program_with_two_onemode_instructions
+    ).state
+
+    assert state_with_multimode_instruction == state_with_two_onemode_instructions
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
 def test_kerr_autoscaling_invalid(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
@@ -231,6 +267,9 @@ def test_kerr_autoscaling_invalid(SimulatorClass):
 def test_kerr_autoscaling_valid(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Create() | pq.Create()
+        pq.Q(1) | pq.Create()
+
         pq.Q(all) | pq.Kerr(xi=2)
 
     simulator = SimulatorClass(d=3)
@@ -238,3 +277,73 @@ def test_kerr_autoscaling_valid(SimulatorClass):
     state = simulator.execute(program).state
 
     state.validate()
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_Kerr_multimode_equivalence(SimulatorClass):
+    with pq.Program() as preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Create() | pq.Create()
+        pq.Q(1) | pq.Create()
+
+    with pq.Program() as program_with_multimode_instruction:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.Kerr(xi=[1, 2])
+
+    with pq.Program() as program_with_two_onemode_instructions:
+        pq.Q() | preparation
+
+        pq.Q(0) | pq.Kerr(xi=1)
+        pq.Q(1) | pq.Kerr(xi=2)
+
+    simulator = SimulatorClass(d=2)
+
+    state_with_multimode_instruction = simulator.execute(
+        program_with_multimode_instruction
+    ).state
+    state_with_two_onemode_instructions = simulator.execute(
+        program_with_two_onemode_instructions
+    ).state
+
+    assert state_with_multimode_instruction == state_with_two_onemode_instructions
+
+
+def test_Kerr_scaling_on_mixed_states():
+    with pq.Program() as preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+    with pq.Program() as program_with_multimode_instruction:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+
+    with pq.Program() as program_with_two_onemode_instructions:
+        pq.Q() | preparation
+
+        pq.Q(0) | pq.Kerr(xi=-0.1)
+        pq.Q(1) | pq.Kerr(xi=0.2)
+
+    simulator = pq.FockSimulator(d=2)
+
+    state_with_multimode_instruction = simulator.execute(
+        program_with_multimode_instruction
+    ).state
+    state_with_two_onemode_instructions = simulator.execute(
+        program_with_two_onemode_instructions
+    ).state
+
+    assert state_with_multimode_instruction == state_with_two_onemode_instructions
