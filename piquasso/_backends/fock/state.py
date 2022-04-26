@@ -49,6 +49,10 @@ class BaseFockState(State, abc.ABC):
     def _get_empty(self) -> np.ndarray:
         pass
 
+    @abc.abstractmethod
+    def _as_mixed(self):
+        pass
+
     @property
     @abc.abstractmethod
     def nonzero_elements(self) -> Generator[Tuple[complex, tuple], Any, None]:

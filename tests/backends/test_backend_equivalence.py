@@ -1046,3 +1046,148 @@ def test_kerr_equivalency(SimulatorClass):
 
     assert np.isclose(fidelity, 1.0)
     assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+        pq.GaussianSimulator,
+    ),
+)
+def test_Attenuator_equivalence_on_one_mode(SimulatorClass):
+    config = pq.Config(cutoff=7)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1)
+
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi / 12)
+
+        pq.Q(0) | pq.Attenuator(theta=np.pi / 3)
+
+    simulator = SimulatorClass(d=1, config=config)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [0.9978124, 0.00186894, 0.00031674, 0.00000177, 0.00000015, 0.0, 0.0],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+        pq.GaussianSimulator,
+    ),
+)
+def test_Attenuator_equivalence(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Displacement(alpha=[0.01, 0.02])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+        pq.Q(0) | pq.Attenuator(theta=np.pi / 3)
+
+    simulator = SimulatorClass(d=2)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [
+            0.99965195,
+            0.00005061,
+            0.00029737,
+            0.0,
+            0.00000002,
+            0.00000004,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass", (pq.GaussianSimulator, pq.PureFockSimulator, pq.FockSimulator)
+)
+def test_Attenuator_and_Beamsplitter_with_ancilla_qumode_equivalence(SimulatorClass):
+    theta = np.pi / 3
+
+    with pq.Program() as lossy_program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Squeezing2(0.03)
+
+        pq.Q(0) | pq.Attenuator(theta=theta)
+
+    with pq.Program() as program_with_ancilla_qumode:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Squeezing2(0.03)
+
+        pq.Q(0, 2) | pq.Beamsplitter(theta=theta)
+
+    lossy_simulator = SimulatorClass(d=2)
+    ancilla_simulator = SimulatorClass(d=3)
+
+    lossy_state = lossy_simulator.execute(lossy_program).state
+
+    state_with_ancilla_qumode = ancilla_simulator.execute(
+        program_with_ancilla_qumode
+    ).state
+    reduced_state = state_with_ancilla_qumode.reduced(modes=(0, 1))
+
+    assert reduced_state == lossy_state
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass", (pq.GaussianSimulator, pq.PureFockSimulator, pq.FockSimulator)
+)
+def test_Attenuator_raises_InvalidInstruction_for_multiple_modes(SimulatorClass):
+    theta = np.pi / 6
+    mean_thermal_excitation = 5
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Attenuator(
+            theta=theta, mean_thermal_excitation=mean_thermal_excitation
+        )
+
+    simulator = SimulatorClass(d=2)
+
+    with pytest.raises(pq.api.exceptions.InvalidInstruction) as error:
+        simulator.execute(program)
+
+    assert "The instruction should be specified for '2' modes:" in error.value.args[0]
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+def test_Attenuator_raises_InvalidParam_for_non_zero_mean_thermal_excitation(
+    SimulatorClass,
+):
+    theta = np.pi / 6
+    nonzero_mean_thermal_excitation = 5
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Attenuator(
+            theta=theta, mean_thermal_excitation=nonzero_mean_thermal_excitation
+        )
+
+    simulator = SimulatorClass(d=2)
+
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
+        simulator.execute(program)
+
+    assert (
+        "Non-zero mean thermal excitation is not supported in this backend."
+        in error.value.args[0]
+    )
