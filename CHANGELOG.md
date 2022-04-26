@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- `Kerr` gate calculations were incorrect for multiple modes in `FockSimulator`
+  and `PureFockSimulator`.
 - Calculations that were incorrect for multiple modes using `FockSimulator`
   along with `Squeezing`, `Displacement` or `CubicPhase`.
 
