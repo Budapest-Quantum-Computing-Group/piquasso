@@ -134,16 +134,18 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
 
 
 def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
-    mode = instruction.modes[0]
-    xi = instruction._all_params["xi"]
-    for x in xi:
+    xi_vector = instruction._all_params["xi"]
+
+    for mode_index, mode in enumerate(instruction.modes):
+        xi = xi_vector[mode_index]
+
         for index, (basis, dual_basis) in state._space.operator_basis:
             number = basis[mode]
             dual_number = dual_basis[mode]
 
             coefficient = np.exp(
                 1j
-                * x
+                * xi
                 * (number * (2 * number + 1) - dual_number * (2 * dual_number + 1))
             )
 
@@ -163,7 +165,7 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
         state._density_matrix = (
             embedded_operator
@@ -208,7 +210,7 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
 
         state._density_matrix = (
@@ -235,7 +237,7 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
         embedded_operator = state._space.embed_matrix(
             operator,
             modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(instruction.modes),
+            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
         )
 
         state._density_matrix = (

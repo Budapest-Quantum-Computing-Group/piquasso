@@ -652,16 +652,16 @@ class MomentumDisplacement(_ScalableBogoliubovTransformation):
 
 
 class _ScalableFockGates(Gate, _mixins.ScalingMixin):
+    ERROR_MESSAGE_TEMPLATE = (
+        "The instruction {instruction} is not applicable to modes {modes} with the "
+        "specified parameters."
+    )
+
     def __init__(
         self, *, params: dict = None, gamma: np.ndarray = None, xi: np.ndarray = None
     ):
         params = params or {}
         super().__init__(params=params, extra_params=dict(gamma=gamma, xi=xi))
-
-    ERROR_MESSAGE_TEMPLATE = (
-        "The instruction {instruction} is not applicable to modes {modes} with the "
-        "specified parameters."
-    )
 
     def _autoscale(self) -> None:
         gamma = self._extra_params["gamma"]

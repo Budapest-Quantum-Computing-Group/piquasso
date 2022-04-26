@@ -169,3 +169,167 @@ use_torontonian=True, cutoff=6, measurement_cutoff=4)
 result = simulator.execute(program, shots=100)
 """
     )
+
+
+def test_Kerr_scalar_parameter_on_multimode_code_generation():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+        pq.Q(0, 1) | pq.Kerr(xi=0.2)
+
+    simulator = pq.FockSimulator(d=2)
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q() | pq.Vacuum()
+    pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
+    pq.Q(0, 1) | pq.Kerr(xi=0.2)
+
+simulator = pq.{pq.FockSimulator.__name__}(d=2)
+
+result = simulator.execute(program, shots=10)
+"""
+    )
+
+
+def test_Kerr_vector_parameter_code_generation():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+
+    simulator = pq.FockSimulator(d=2)
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q() | pq.Vacuum()
+    pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
+    pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+
+simulator = pq.{pq.FockSimulator.__name__}(d=2)
+
+result = simulator.execute(program, shots=10)
+"""
+    )
+
+
+def test_CubicPhase_vector_parameter_code_generation():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+        pq.Q(0, 1) | pq.CubicPhase(gamma=[-0.1, 0.2])
+
+    simulator = pq.FockSimulator(d=2)
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q() | pq.Vacuum()
+    pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
+    pq.Q(0, 1) | pq.CubicPhase(gamma=[-0.1, 0.2])
+
+simulator = pq.{pq.FockSimulator.__name__}(d=2)
+
+result = simulator.execute(program, shots=10)
+"""
+    )
+
+
+def test_CubicPhase_scalar_parameter_on_multimode_code_generation():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+        pq.Q(0, 1) | pq.CubicPhase(gamma=0.2)
+
+    simulator = pq.FockSimulator(d=2)
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q() | pq.Vacuum()
+    pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2), coefficient=0.25)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
+    pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
+    pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
+    pq.Q(0, 1) | pq.CubicPhase(gamma=0.2)
+
+simulator = pq.{pq.FockSimulator.__name__}(d=2)
+
+result = simulator.execute(program, shots=10)
+"""
+    )

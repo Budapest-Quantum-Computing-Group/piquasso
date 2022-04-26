@@ -183,6 +183,43 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+        pq.GaussianSimulator,
+    ),
+)
+def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Displacement(alpha=[0.01, 0.02])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+    simulator = SimulatorClass(d=2)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [
+            0.99950012,
+            0.00029733,
+            0.00020242,
+            0.00000004,
+            0.00000006,
+            0.00000002,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         pq.FockSimulator,
@@ -306,6 +343,32 @@ def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
     assert is_proportional(
         probabilities,
         [0.9754467, 0.0, 0.0, 0.01900025, 0.0, 0.0048449, 0.0, 0.0, 0.0, 0.0],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0, 1) | pq.Squeezing(r=[0.1, 0.2], phi=[np.pi / 5, np.pi / 3])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+    simulator = SimulatorClass(d=2)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [0.9754467, 0.0, 0.0, 0.00537618, 0.00601511, 0.01245386, 0.0, 0.0, 0.0, 0.0],
     )
 
 
@@ -928,22 +991,55 @@ def test_cubic_phase_equivalency(SimulatorClass):
         pq.FockSimulator,
     ),
 )
-def test_kerr_equivalency(SimulatorClass):
-    with pq.Program() as program_1:
+def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
+    with pq.Program() as program:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.05)
-        pq.Q(0, 1) | pq.Kerr(xi=[-1, 1])
 
-    with pq.Program() as program_2:
+        pq.Q(0, 1) | pq.CubicPhase(gamma=[0.1, 0.2])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+    simulator = SimulatorClass(d=2)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [
+            0.97960898,
+            0.00710543,
+            0.00474935,
+            0.0001192,
+            0.00030477,
+            0.00029005,
+            0.00039293,
+            0.00261566,
+            0.00174448,
+            0.00306916,
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_Kerr_equivalence(SimulatorClass):
+    with pq.Program() as program:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.05)
-        pq.Q(all) | pq.Kerr(xi=[-1, 1])
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi / 6)
 
-    generic_simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
 
-    state_1 = generic_simulator.execute(program_1).state
-    state_2 = generic_simulator.execute(program_2).state
-    fidelity = state_1.fidelity(state_2)
+    simulator = SimulatorClass(d=2)
 
-    assert np.isclose(fidelity, 1.0)
-    assert np.isclose(fidelity, state_2.fidelity(state_1))
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [0.97613795, 0.0, 0.0, 0.01901371, 0.0, 0.00484834, 0.0, 0.0, 0.0, 0.0],
+    )
