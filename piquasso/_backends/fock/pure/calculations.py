@@ -184,14 +184,14 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    mode = instruction.modes[0]
-    xi = instruction._all_params["xi"]
+    xi_vector = instruction._all_params["xi"]
 
-    for x in xi:
+    for mode_index, mode in enumerate(instruction.modes):
+        xi = xi_vector[mode_index]
 
         for index, basis in state._space.basis:
             number = basis[mode]
-            coefficient = np.exp(1j * x.squeeze() * number * (2 * number + 1))
+            coefficient = np.exp(1j * xi.squeeze() * number * (2 * number + 1))
             state._state_vector[index] *= coefficient
 
     return Result(state=state)
