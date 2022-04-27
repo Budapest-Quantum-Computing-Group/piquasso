@@ -21,6 +21,7 @@ import numpy as np
 from .mode import Q
 from piquasso.core import _mixins
 from piquasso.api.exceptions import PiquassoException
+from piquasso.api.calculator import BaseCalculator
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -80,6 +81,9 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     def on_modes(self, *modes: int) -> "Instruction":
         self.modes: Tuple[int, ...] = modes
         return self
+
+    def _postprocess(self, calculator: BaseCalculator) -> None:
+        pass
 
     def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         program.instructions.append(self.on_modes(*register.modes))

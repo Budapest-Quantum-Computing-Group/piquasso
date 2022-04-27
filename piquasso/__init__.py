@@ -41,6 +41,7 @@ from piquasso._backends.fock import (
     FockSimulator,
     PureFockSimulator,
 )
+from piquasso._backends.tensorflow import TensorflowPureFockSimulator
 
 from .instructions.preparations import (
     Vacuum,
@@ -108,6 +109,7 @@ __all__ = [
     "SamplingSimulator",
     "FockSimulator",
     "PureFockSimulator",
+    "TensorflowPureFockSimulator",
     # States
     "GaussianState",
     "SamplingState",

@@ -219,6 +219,8 @@ class Simulator(Computer, _mixins.CodeMixin):
             if not hasattr(instruction, "modes") or instruction.modes is tuple():
                 instruction.modes = tuple(range(self.d))
 
+            instruction._postprocess(self._calculator)
+
             if hasattr(instruction, "_autoscale"):
                 instruction._autoscale()  # type: ignore
 

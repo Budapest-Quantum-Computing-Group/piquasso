@@ -48,6 +48,7 @@ from scipy.optimize import root_scalar
 from scipy.linalg import block_diag
 
 from piquasso.api.instruction import Gate
+from piquasso.api.calculator import BaseCalculator
 from piquasso.api.exceptions import InvalidParameter
 
 from piquasso._math.decompositions import takagi
@@ -204,20 +205,27 @@ class Beamsplitter(_GaussianGate):
                 (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
         """
 
-        t = np.cos(theta)
-        r = np.exp(1j * phi) * np.sin(theta)
-
         super().__init__(
             params=dict(
                 theta=theta,
                 phi=phi,
             ),
-            passive_block=np.array(
-                [
-                    [t, -np.conj(r)],
-                    [r, t],
-                ]
-            ),
+        )
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+
+        theta = self._params["theta"]
+        phi = self._params["phi"]
+
+        t = np.cos(theta)
+        r = np.exp(1j * phi) * np.sin(theta)
+
+        self._extra_params["passive_block"] = np.array(
+            [
+                [t, -np.conj(r)],
+                [r, t],
+            ]
         )
 
 
@@ -248,8 +256,15 @@ class Phaseshifter(_ScalableGaussianGate):
         """
 
         super().__init__(
-            params=dict(phi=phi), passive_block=np.diag(np.exp(1j * np.atleast_1d(phi)))
+            params=dict(phi=phi),
         )
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+
+        phi = self._params["phi"]
+
+        self._extra_params["passive_block"] = np.diag(np.exp(1j * np.atleast_1d(phi)))
 
 
 class MachZehnder(_GaussianGate):
@@ -410,10 +425,17 @@ class Squeezing(_ScalableGaussianGate):
         """
         super().__init__(
             params=dict(r=r, phi=phi),
-            passive_block=np.diag(np.atleast_1d(np.cosh(r))),
-            active_block=np.diag(
-                -np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
-            ),
+        )
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+
+        r = self.params["r"]
+        phi = self.params["phi"]
+
+        self._extra_params["passive_block"] = np.diag(np.atleast_1d(np.cosh(r)))
+        self._extra_params["active_block"] = np.diag(
+            -np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
         )
 
 
@@ -472,20 +494,25 @@ class Squeezing2(_GaussianGate):
             r (float): The amplitude of the squeezing instruction.
             phi (float): The squeezing angle.
         """
-        super().__init__(
-            params=dict(r=r, phi=phi),
-            passive_block=np.array(
-                [
-                    [np.cosh(r), 0],
-                    [0, np.cosh(r)],
-                ]
-            ),
-            active_block=np.array(
-                [
-                    [0, np.sinh(r) * np.exp(1j * phi)],
-                    [np.sinh(r) * np.exp(1j * phi), 0],
-                ]
-            ),
+        super().__init__(params=dict(r=r, phi=phi))
+
+    def _postprocess(self, calculator: BaseCalculator) -> None:
+        np = calculator.np
+
+        r = self._params["r"]
+        phi = self._params["phi"]
+
+        self._extra_params["passive_block"] = np.array(
+            [
+                [np.cosh(r), 0],
+                [0, np.cosh(r)],
+            ]
+        )
+        self._extra_params["active_block"] = np.array(
+            [
+                [0, np.sinh(r) * np.exp(1j * phi)],
+                [np.sinh(r) * np.exp(1j * phi), 0],
+            ]
         )
 
 
@@ -598,21 +625,32 @@ class Displacement(_ScalableGaussianGate):
             r (float): The displacement magnitude.
             phi (float): The displacement angle.
         """
-        alpha_: np.ndarray
-
         if alpha is not None and r is None and phi is None:
             params = dict(alpha=alpha)
-            alpha_ = np.atleast_1d(alpha)
         elif alpha is None and r is not None and phi is not None:
             params = dict(r=r, phi=phi)
-            alpha_ = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
         else:
             raise InvalidParameter(
                 "Either specify 'alpha' only, or the combination of 'r' and 'phi': "
                 f"alpha={alpha}, r={r}, phi={phi}."
             )
 
-        super().__init__(params=params, displacement_vector=alpha_)
+        super().__init__(params=params)
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+
+        displacement_vector: np.ndarray
+
+        if "alpha" in self._params:
+            alpha = self._params["alpha"]
+            displacement_vector = np.atleast_1d(alpha)
+        else:
+            r = self._params["r"]
+            phi = self._params["phi"]
+            displacement_vector = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
+
+        self._extra_params["displacement_vector"] = displacement_vector
 
 
 class PositionDisplacement(_ScalableGaussianGate):
@@ -809,7 +847,18 @@ class Graph(Gate):
         if not is_symmetric(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix should be symmetric.")
 
-        singular_values, unitary = takagi(adjacency_matrix)
+        super().__init__(
+            params=dict(
+                adjacency_matrix=adjacency_matrix,
+                mean_photon_number=mean_photon_number,
+            ),
+        )
+
+    def _postprocess(self, calculator: BaseCalculator) -> None:
+        adjacency_matrix = self._params["adjacency_matrix"]
+        mean_photon_number = self._params["mean_photon_number"]
+
+        singular_values, unitary = takagi(adjacency_matrix, calculator)
 
         scaling = self._get_scaling(singular_values, mean_photon_number)
 
@@ -823,16 +872,8 @@ class Graph(Gate):
 
         interferometer = Interferometer(unitary)
 
-        super().__init__(
-            params=dict(
-                adjacency_matrix=adjacency_matrix,
-                mean_photon_number=mean_photon_number,
-            ),
-            extra_params=dict(
-                squeezing=squeezing,
-                interferometer=interferometer,
-            ),
-        )
+        self._extra_params["squeezing"] = squeezing
+        self._extra_params["interferometer"] = interferometer
 
     def _get_scaling(
         self, singular_values: np.ndarray, mean_photon_number: float

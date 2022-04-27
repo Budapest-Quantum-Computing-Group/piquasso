@@ -21,7 +21,7 @@ import numpy as np
 from operator import add
 
 from scipy.special import factorial, comb
-from scipy.linalg import block_diag, polar, logm, expm
+from scipy.linalg import expm
 
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
@@ -138,6 +138,8 @@ class FockSpace(tuple):
         self.cutoff = cutoff
         self.calculator = calculator
 
+        self._calculator = calculator
+
     def __deepcopy__(self, memo: Any) -> "FockSpace":
         """
         This method exists, because `copy.deepcopy` produces errors with classes
@@ -156,13 +158,11 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         d: int,
     ) -> np.ndarray:
-        index = get_operator_index(modes)
+        indices = get_operator_index(modes)
 
-        embedded_operator = np.identity(d, dtype=complex)
+        embedded_operator = self._calculator.embed_in_identity(operator, indices, d)
 
-        embedded_operator[index] = operator
-
-        return block_diag(
+        return self._calculator.block_diag(
             *(
                 self.symmetric_tensorpower(embedded_operator, n)
                 for n in range(self.cutoff)
@@ -193,31 +193,26 @@ class FockSpace(tuple):
             np.ndarray: The constructed Displacement matrix representing the Fock
             operator.
         """
+        np = self._calculator.np
 
-        fock_indices = np.sqrt(np.arange(self.cutoff, dtype=complex))
-        displacement = r * np.exp(1j * phi)
+        fock_indices = np.sqrt(np.arange(self.cutoff))
+        displacement = np.dot(r, np.exp(np.dot(1j, phi)))
 
-        transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
-        transformation[0, 0] = np.exp(-0.5 * r**2)
+        matrix: List[List[complex]] = [[] for _ in range(self.cutoff)]
+
+        matrix[0].append(np.exp(-0.5 * r**2))
 
         for row in range(1, self.cutoff):
-            transformation[row, 0] = (
-                displacement / fock_indices[row] * transformation[row - 1, 0]
-            )
+            matrix[row].append(displacement / fock_indices[row] * matrix[row - 1][0])
 
-        for row in range(self.cutoff):
-            for col in range(1, self.cutoff):
-                transformation[row, col] = (
-                    -displacement.conj()
-                    / fock_indices[col]
-                    * transformation[row, col - 1]
-                ) + (
-                    fock_indices[row]
-                    / fock_indices[col]
-                    * transformation[row - 1, col - 1]
+        for col in range(1, self.cutoff):
+            for row in range(self.cutoff):
+                matrix[row].append(
+                    (-np.conj(displacement) / fock_indices[col] * matrix[row][col - 1])
+                    + (fock_indices[row] / fock_indices[col] * matrix[row - 1][col - 1])
                 )
 
-        return transformation
+        return np.array(matrix)
 
     def get_single_mode_squeezing_operator(
         self,
@@ -242,42 +237,39 @@ class FockSpace(tuple):
             np.ndarray: The constructed Squeezing matrix representing the Fock operator.
         """
 
+        np = self._calculator.np
+
         sechr = 1.0 / np.cosh(r)
         A = np.exp(1j * phi) * np.tanh(r)
-
-        transformation = np.zeros((self.cutoff,) * 2, dtype=complex)
-        transformation[0, 0] = np.sqrt(sechr)
-
         fock_indices = np.sqrt(np.arange(self.cutoff, dtype=complex))
 
-        for index in range(2, self.cutoff, 2):
-            transformation[index, 0] = (
-                -fock_indices[index - 1]
-                / fock_indices[index]
-                * (transformation[index - 2, 0] * A)
+        matrix: List[List[complex]] = [[] for _ in range(self.cutoff)]
+
+        matrix[0].append(np.sqrt(sechr))
+
+        for row in range(1, self.cutoff):
+            matrix[row].append(
+                (-fock_indices[row - 1] / fock_indices[row] * (matrix[row - 2][0] * A))
+                if row % 2 == 0
+                else 0.0
             )
 
-        for row in range(0, self.cutoff):
-            for col in range(1, self.cutoff):
-                if (row + col) % 2 == 0:
-                    transformation[row, col] = (
-                        1
-                        / fock_indices[col]
-                        * (
-                            (
-                                fock_indices[row]
-                                * transformation[row - 1, col - 1]
-                                * sechr
-                            )
-                            + (
-                                fock_indices[col - 1]
-                                * A.conj()
-                                * transformation[row, col - 2]
-                            )
-                        )
-                    )
+        if len(matrix[-1]) == 0:
+            matrix[-1].append(0.0)
 
-        return transformation
+        for col in range(1, self.cutoff):
+            for row in range(self.cutoff):
+                matrix[row].append(
+                    (
+                        (fock_indices[row] * matrix[row - 1][col - 1] * sechr)
+                        + (fock_indices[col - 1] * np.conj(A) * matrix[row][col - 2])
+                    )
+                    / fock_indices[col]
+                    if (row + col) % 2 == 0
+                    else 0.0
+                )
+
+        return np.array(matrix)
 
     def get_single_mode_cubic_phase_operator(
         self,
@@ -323,7 +315,7 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         auxiliary_modes: Tuple[int, ...],
     ) -> np.ndarray:
-        embedded_matrix = np.zeros((self.cardinality,) * 2, dtype=complex)
+        index_map = {}
 
         for embedded_index, operator_basis in self.operator_basis_diagonal_on_modes(
             modes=auxiliary_modes
@@ -332,9 +324,10 @@ class FockSpace(tuple):
                 operator_basis.ket.on_modes(modes=modes),
                 operator_basis.bra.on_modes(modes=modes),
             )
-            embedded_matrix[embedded_index] = matrix[index]
 
-        return embedded_matrix
+            index_map[embedded_index] = matrix[index][0]
+
+        return self._calculator.to_dense(index_map, dim=self.cardinality)
 
     def get_linear_fock_operator(
         self,
@@ -392,36 +385,38 @@ class FockSpace(tuple):
             np.ndarray:
                 The resulting transformation, which could be applied to the state.
         """
+        np = self._calculator.np
+        fallback_np = self._calculator.fallback_np
 
         d = len(modes)
         identity = np.identity(d)
         zeros = np.zeros_like(identity)
 
-        K = np.block(
+        K = self._calculator.block(
             [
                 [identity, zeros],
                 [zeros, -identity],
             ],
         )
 
-        symplectic = np.block(
+        symplectic = self._calculator.block(
             [
                 [passive_block, active_block],
-                [active_block.conj(), passive_block.conj()],
+                [np.conj(active_block), np.conj(passive_block)],
             ],
         )
 
-        U, R = polar(symplectic, side="left")
+        U, R = self._calculator.polar(symplectic, side="left")
 
-        H_active = 1j * K @ logm(R)
-        H_passive = 1j * K @ logm(U)
+        H_active = 1j * K @ self._calculator.logm(R)
+        H_passive = 1j * K @ self._calculator.logm(U)
 
-        singular_values, unitary = takagi(1j * H_active[:d, d:])
+        singular_values, unitary = takagi(1j * H_active[:d, d:], self._calculator)
 
         transformation = np.identity(self.cardinality, dtype=complex)
 
         fock_operator = self.get_passive_fock_operator(
-            unitary.conj().T @ H_passive[:d, :d],
+            np.conj(unitary).T @ H_passive[:d, :d],
             modes=modes,
             d=self.d,
         )
@@ -437,7 +432,9 @@ class FockSpace(tuple):
             squeezing_matrix = self.embed_matrix(
                 operator,
                 modes=(mode,),
-                auxiliary_modes=tuple(np.delete(np.arange(self.d), (mode,))),
+                auxiliary_modes=tuple(
+                    fallback_np.delete(fallback_np.arange(self.d), (mode,))
+                ),
             )
 
             transformation = squeezing_matrix @ transformation
@@ -513,16 +510,6 @@ class FockSpace(tuple):
         d = d or self.d
         return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
 
-    def enumerate_subspace_operator_basis(
-        self, n: int, d: int = None
-    ) -> Generator[Tuple[Tuple[int, int], FockOperatorBasis], Any, None]:
-        d = d or self.d
-        subspace_operator_basis = self.get_subspace_basis(n, d)
-
-        for index, basis in enumerate(subspace_operator_basis):
-            for dual_index, dual_basis in enumerate(subspace_operator_basis):
-                yield (index, dual_index), FockOperatorBasis(ket=basis, bra=dual_basis)
-
     def symmetric_tensorpower(
         self,
         operator: np.ndarray,
@@ -530,19 +517,27 @@ class FockSpace(tuple):
     ) -> np.ndarray:
         d = len(operator)
 
-        matrix = np.empty(
-            shape=(symmetric_subspace_cardinality(d=d, n=n),) * 2,
-            dtype=complex,
-        )
+        np = self.calculator.np
 
-        for index, basis in self.enumerate_subspace_operator_basis(n, d):
-            permanent = self.calculator.permanent(operator, basis.bra, basis.ket)
+        dim = symmetric_subspace_cardinality(d=d, n=n)
 
-            matrix[index] = permanent / np.sqrt(
-                np.prod(factorial(basis.bra)) * np.prod(factorial(basis.ket))
-            )
+        matrix: List[List[complex]] = [[] for _ in range(dim)]
 
-        return matrix
+        subspace_operator_basis = self.get_subspace_basis(n, d)
+
+        for row, row_basis in enumerate(subspace_operator_basis):
+            for col_basis in subspace_operator_basis:
+                cell = self.calculator.permanent(
+                    operator,
+                    col_basis,
+                    row_basis,
+                ) / np.sqrt(
+                    np.prod(factorial(col_basis)) * np.prod(factorial(row_basis))
+                )
+
+                matrix[row].append(cell)
+
+        return np.array(matrix)
 
     def get_creation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
         operator = np.zeros(shape=(self.cardinality,) * 2, dtype=complex)

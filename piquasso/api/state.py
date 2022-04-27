@@ -43,6 +43,10 @@ class State(abc.ABC):
         self._config = config.copy() if config is not None else self._config_class()
         self._calculator = calculator
 
+    @property
+    def _np(self):
+        return self._calculator.np
+
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return tuple(np.delete(np.arange(self.d), modes))
 

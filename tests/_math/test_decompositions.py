@@ -26,23 +26,29 @@ from piquasso._math.decompositions import (
     decompose_to_pure_and_mixed,
 )
 
+from piquasso._backends.calculator import NumpyCalculator
+from piquasso._backends.tensorflow.calculator import TensorflowCalculator
 
-def test_takagi_on_real_symmetric_2_by_2_matrix():
+
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+def test_takagi_on_real_symmetric_2_by_2_matrix(calculator):
     matrix = np.array(
         [
             [1, 2],
             [2, 1],
-        ]
+        ],
+        dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix)
+    singular_values, unitary = takagi(matrix, calculator)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities():
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(calculator):
     matrix = np.array(
         [
             [1, 2j],
@@ -51,30 +57,33 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities():
         dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix)
+    singular_values, unitary = takagi(matrix, calculator)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-def test_takagi_on_real_symmetric_3_by_3_matrix():
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+def test_takagi_on_real_symmetric_3_by_3_matrix(calculator):
     matrix = np.array(
         [
             [1, 2, 3],
             [2, 1, 5],
             [3, 5, 9],
-        ]
+        ],
+        dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix)
+    singular_values, unitary = takagi(matrix, calculator)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-def test_takagi_on_complex_symmetric_3_by_3_matrix():
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+def test_takagi_on_complex_symmetric_3_by_3_matrix(calculator):
     matrix = np.array(
         [
             [1, 2, 3j],
@@ -83,7 +92,7 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix():
         ],
     )
 
-    singular_values, unitary = takagi(matrix)
+    singular_values, unitary = takagi(matrix, calculator)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
@@ -91,7 +100,9 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix():
 
 
 @pytest.mark.monkey
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
+    calculator,
     generate_unitary_matrix,
 ):
     singular_values = np.array([1, 1, 2, 2, 2, 3], dtype=complex)
@@ -100,7 +111,7 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
     matrix = unitary @ np.diag(singular_values) @ unitary.transpose()
 
-    calculated_singular_values, calculated_unitary = takagi(matrix)
+    calculated_singular_values, calculated_unitary = takagi(matrix, calculator)
 
     assert is_unitary(calculated_unitary)
     assert np.allclose(np.abs(calculated_singular_values), calculated_singular_values)
@@ -114,11 +125,12 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
 @pytest.mark.monkey
 @pytest.mark.parametrize("N", [2, 3, 4, 5, 6])
+@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
 def test_takagi_on_complex_symmetric_N_by_N_matrix(
-    N, generate_complex_symmetric_matrix
+    N, calculator, generate_complex_symmetric_matrix
 ):
     matrix = generate_complex_symmetric_matrix(N)
-    singular_values, unitary = takagi(matrix)
+    singular_values, unitary = takagi(matrix, calculator)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
