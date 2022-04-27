@@ -17,6 +17,8 @@ import pytest
 import numpy as np
 import piquasso as pq
 
+import collections
+
 from scipy.linalg import polar, sinhm, coshm, expm
 
 
@@ -36,6 +38,7 @@ def is_proportional(first, second):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -50,7 +53,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
 
     probabilities = state.fock_probabilities
 
-    assert isinstance(probabilities, np.ndarray)
+    assert isinstance(probabilities, collections.Iterable)
     assert probabilities.dtype == np.float64
 
 
@@ -59,6 +62,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -136,6 +140,7 @@ def test_density_matrix_with_squeezed_state():
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -185,6 +190,7 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.GaussianSimulator,
     ),
 )
@@ -222,6 +228,7 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -272,6 +279,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(SimulatorClas
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -322,6 +330,7 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(SimulatorClass
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -351,6 +360,7 @@ def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -377,6 +387,7 @@ def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -426,6 +437,7 @@ def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -476,6 +488,7 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(SimulatorCl
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -523,6 +536,7 @@ def test_fock_probabilities_with_quadratic_phase(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -570,6 +584,7 @@ def test_fock_probabilities_with_position_displacement(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -617,6 +632,7 @@ def test_fock_probabilities_with_momentum_displacement(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -645,6 +661,7 @@ def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -673,6 +690,7 @@ def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )

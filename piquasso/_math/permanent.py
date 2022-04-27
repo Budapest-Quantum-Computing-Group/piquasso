@@ -13,19 +13,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Tuple, Any
 
-from theboss.boson_sampling_utilities.permanent_calculators.glynn_gray_permanent_calculator import (  # noqa: E501
-    GlynnGrayPermanentCalculator,
-)
+from functools import lru_cache
 
+import numpy as np
 
-def _permanent(matrix, rows, columns, calculator_class):
-    calculator = calculator_class(matrix, rows, columns)
-
-    return calculator.compute_permanent()
+from piquasso._math.linalg import assym_reduce
 
 
-def glynn_gray_permanent(matrix, rows, columns):
-    return _permanent(
-        matrix, rows, columns, calculator_class=GlynnGrayPermanentCalculator
+@lru_cache()
+def _generate_gray_code_update_indices(n: int) -> List[int]:
+    """
+    Computes and returns the update indices for Gray code iteration.
+
+    :param n:   The length of the code.
+
+    :return:    The list of indices to bit-flip during iteration.
+    """
+    if n == 0:
+        return []
+    if n == 1:
+        return [0]
+
+    subproblem_update_indices = _generate_gray_code_update_indices(n - 1)
+
+    return (
+        subproblem_update_indices + [n - 1] + list(reversed(subproblem_update_indices))
     )
+
+
+def glynn_gray_permanent(
+    matrix: np.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...], np: Any
+) -> complex:
+    n = sum(rows)
+
+    if n == 0:
+        return complex(1.0)
+
+    reduced_matrix = assym_reduce(matrix, rows, columns)
+
+    sums = []
+
+    for j in range(n):
+        sums.append(sum(reduced_matrix[:, j]))
+
+    permanent = np.prod(sums)
+
+    update_indices = _generate_gray_code_update_indices(n - 1)
+
+    multiplier = 1
+    delta = [1] * n
+
+    for i in update_indices:
+        multiplier = -multiplier
+        delta[i] = -delta[i]
+
+        for j in range(n):
+            sums[j] += 2 * delta[i] * reduced_matrix[i][j]
+
+        permanent += multiplier * np.prod(sums)
+
+    return permanent / 2 ** (n - 1)
+
+
+def np_glynn_gray_permanent(
+    matrix: np.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...]
+) -> complex:
+    return glynn_gray_permanent(matrix, rows, columns, np)

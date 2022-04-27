@@ -44,6 +44,10 @@ class State(abc.ABC):
     def _set_calculator(self, calculator: Calculator) -> None:
         self._calculator = calculator
 
+    @property
+    def _np(self):
+        return self._calculator.np
+
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return tuple(np.delete(np.arange(self.d), modes))
 

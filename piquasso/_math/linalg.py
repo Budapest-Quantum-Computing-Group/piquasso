@@ -22,7 +22,7 @@ from .validations import all_real_and_positive
 
 def is_unitary(matrix: np.ndarray) -> bool:
     return np.allclose(
-        matrix @ matrix.conjugate().transpose(), np.identity(matrix.shape[0])
+        matrix @ np.conj(matrix).T, np.identity(matrix.shape[0])
     )
 
 
@@ -81,3 +81,21 @@ def reduce_(array: np.ndarray, reduce_on: Iterable[int]) -> np.ndarray:
 
 def block_reduce(array: np.ndarray, reduce_on: Tuple[int, ...]) -> np.ndarray:
     return reduce_(array, reduce_on=(reduce_on * 2))
+
+
+def assym_reduce(
+    array: np.ndarray, row_reduce_on: Iterable[int], column_reduce_on: Iterable[int]
+) -> np.ndarray:
+    proper_row_index = []
+    proper_column_index = []
+
+    for index, multiplier in enumerate(row_reduce_on):
+        proper_row_index.extend([index] * multiplier)
+
+    if array.ndim == 1:
+        return array[proper_row_index]
+
+    for index, multiplier in enumerate(column_reduce_on):
+        proper_column_index.extend([index] * multiplier)
+
+    return array[np.ix_(proper_column_index, proper_row_index)]

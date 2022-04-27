@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+from piquasso._backends.fock.pure.simulator import PureFockSimulator
 
-from typing import Callable, Tuple
+from .calculator import TensorflowCalculator
 
 
-PermanentFunction = Callable[[np.ndarray, Tuple[int, ...], Tuple[int, ...]], complex]
-HafnianFunction = Callable[[np.ndarray, Tuple[int, ...]], float]
-LoopHafnianFunction = Callable[[np.ndarray, np.ndarray, Tuple[int, ...]], float]
+class TensorflowPureFockSimulator(PureFockSimulator):
+    _calculator_class = TensorflowCalculator

@@ -15,7 +15,6 @@
 
 from typing import Tuple
 
-import scipy
 import numpy as np
 
 from piquasso._math.symplectic import xp_symplectic_form
@@ -23,7 +22,7 @@ from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matr
 from scipy.linalg import sqrtm, schur, block_diag
 
 
-def takagi(matrix, rounding=12):
+def takagi(matrix, calculator, rounding=12):
     """Takagi factorization of complex symmetric matrices.
 
     Note:
@@ -37,14 +36,16 @@ def takagi(matrix, rounding=12):
     - https://journals.aps.org/pra/abstract/10.1103/PhysRevA.94.062109
     """
 
-    V, singular_values, W_adjoint = np.linalg.svd(matrix)
+    np = calculator.np
 
-    W = W_adjoint.conjugate().transpose()
+    V, singular_values, W_adjoint = calculator.svd(matrix)
+
+    W = np.conj(W_adjoint).T
 
     singular_value_multiplicity_map = {}
 
     for index, value in enumerate(singular_values):
-        value = np.round(value, decimals=rounding)
+        value = calculator.fallback_np.round(value, decimals=rounding)
 
         if value not in singular_value_multiplicity_map:
             singular_value_multiplicity_map[value] = [index]
@@ -56,11 +57,11 @@ def takagi(matrix, rounding=12):
     for indices in singular_value_multiplicity_map.values():
         Z = V[:, indices].transpose() @ W[:, indices]
 
-        diagonal_blocks_for_Q.append(scipy.linalg.sqrtm(Z))
+        diagonal_blocks_for_Q.append(calculator.sqrtm(Z))
 
-    Q = scipy.linalg.block_diag(*diagonal_blocks_for_Q)
+    Q = calculator.block_diag(*diagonal_blocks_for_Q)
 
-    return singular_values, V @ Q.conjugate()
+    return singular_values, V @ np.conj(Q)
 
 
 def _rotation_to_positive_above_diagonals(block_diagonal_matrix):

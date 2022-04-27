@@ -13,11 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-
-from typing import Callable, Tuple
-
-
-PermanentFunction = Callable[[np.ndarray, Tuple[int, ...], Tuple[int, ...]], complex]
-HafnianFunction = Callable[[np.ndarray, Tuple[int, ...]], float]
-LoopHafnianFunction = Callable[[np.ndarray, np.ndarray, Tuple[int, ...]], float]
+from .simulator import TensorflowPureFockSimulator  # noqa: F401

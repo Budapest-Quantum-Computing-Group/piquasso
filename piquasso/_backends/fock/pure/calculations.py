@@ -18,12 +18,12 @@ from typing import Tuple, Mapping
 import random
 import numpy as np
 
-from scipy.linalg import block_diag
-
 from .state import PureFockState
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
+
+from piquasso._math.fock import FockSpace
 
 
 def particle_number_measurement(
@@ -65,13 +65,9 @@ def passive_linear(
 ) -> Result:
     matrix: np.ndarray = instruction._all_params["passive_block"]
 
-    matrix_on_fock_space = block_diag(
+    matrix_on_fock_space = state._calculator.block_diag(
         *(
-            state._space.symmetric_tensorpower(
-                matrix,
-                n,
-                permanent_function=state._calculator.permanent_function,
-            )
+            state._space.symmetric_tensorpower(matrix, n)
             for n in range(state._space.cutoff)
         )
     )
@@ -128,16 +124,20 @@ def _apply_subsystem_representation_to_state(
     modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
-    new_state_vector = np.zeros_like(state._state_vector)
+    np = state._np
 
-    from piquasso._math.fock import FockSpace
+    new_state_vector = []
 
-    subsystem_space = FockSpace(d=len(modes), cutoff=state._space.cutoff)
+    subsystem_space = FockSpace(
+        d=len(modes), cutoff=state._space.cutoff, calculator=state._calculator
+    )
 
-    for multimode_index, multimode_vector in enumerate(state._space):
+    for multimode_vector in state._space:
         single_mode_basis_index = subsystem_space.index(
             multimode_vector.on_modes(modes=modes)
         )
+
+        accumulator = 0.0
 
         for running_vector in state._space:
             if multimode_vector.on_modes(
@@ -155,12 +155,14 @@ def _apply_subsystem_representation_to_state(
                     single_mode_running_index,
                 )
 
-                new_state_vector[multimode_index] += (
+                accumulator += (
                     matrix[single_mode_matrix_index]
                     * state._state_vector[index_on_multimode]
                 )
 
-    state._state_vector = new_state_vector
+        new_state_vector.append(accumulator)
+
+    state._state_vector = np.stack(new_state_vector)
 
 
 def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
@@ -208,6 +210,8 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def displacement(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    np = state._np
+
     amplitudes = np.abs(instruction._all_params["displacement_vector"])
     angles = np.angle(instruction._all_params["displacement_vector"])
 
@@ -218,7 +222,10 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
         )
 
         _apply_subsystem_representation_to_state(
-            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
+            state,
+            matrix,
+            (mode,),
+            state._get_auxiliary_modes((mode,)),
         )
 
         state.normalize()
@@ -227,6 +234,8 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
 
 
 def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    np = state._np
+
     amplitudes = np.arccosh(np.diag(instruction._all_params["passive_block"]))
     angles = np.angle(-np.diag(instruction._all_params["active_block"]))
 
@@ -237,7 +246,10 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
         )
 
         _apply_subsystem_representation_to_state(
-            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
+            state,
+            matrix,
+            (mode,),
+            state._get_auxiliary_modes((mode,)),
         )
 
         state.normalize()
@@ -267,7 +279,6 @@ def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result
         modes=instruction.modes,
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        permanent_function=state._calculator.permanent_function,
     )
 
     state._state_vector = operator @ state._state_vector
@@ -302,4 +313,4 @@ def _add_occupation_number_basis(  # type: ignore
 
     index = state._space.index(occupation_numbers)
 
-    state._state_vector[index] = coefficient
+    state._state_vector = state._calculator.assign(state._state_vector, index, coefficient)
