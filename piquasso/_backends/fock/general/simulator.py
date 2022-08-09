@@ -16,6 +16,8 @@
 from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
+from piquasso._backends.calculator import NumpyCalculator
+
 from .state import FockState
 from .calculations import (
     passive_linear,
@@ -106,3 +108,5 @@ class FockSimulator(Simulator):
     }
 
     _state_class = FockState
+
+    _calculator_class = NumpyCalculator

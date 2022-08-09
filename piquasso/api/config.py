@@ -20,11 +20,6 @@ import copy
 import random
 import numpy as np
 
-from piquasso._math.permanent import glynn_gray_permanent
-from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
-
-from piquasso.api.typing import PermanentFunction, HafnianFunction, LoopHafnianFunction
-
 from piquasso.core import _mixins
 
 
@@ -40,9 +35,6 @@ class Config(_mixins.CodeMixin):
         use_torontonian: bool = False,
         cutoff: int = 4,
         measurement_cutoff: int = 5,
-        permanent_function: PermanentFunction = glynn_gray_permanent,
-        hafnian_function: HafnianFunction = hafnian_with_reduction,
-        loop_hafnian_function: LoopHafnianFunction = loop_hafnian_with_reduction,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
@@ -53,9 +45,6 @@ class Config(_mixins.CodeMixin):
         self.use_torontonian = use_torontonian
         self.cutoff = cutoff
         self.measurement_cutoff = measurement_cutoff
-        self.permanent_function = permanent_function
-        self.hafnian_function = hafnian_function
-        self.loop_hafnian_function = loop_hafnian_function
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Config):

@@ -25,6 +25,7 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState
 from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
+from piquasso.api.calculator import BaseCalculator
 
 from theboss.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (  # noqa: E501
     BSDistributionCalculatorWithFixedLosses,
@@ -37,8 +38,16 @@ from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent
 
 
 class SamplingState(State):
-    def __init__(self, d: int, config: Config = None) -> None:
-        super().__init__(config=config)
+    def __init__(
+        self, d: int, calculator: BaseCalculator, config: Config = None
+    ) -> None:
+        """
+        Args:
+            d (int): The number of modes.
+            calculator (BaseCalculator): Instance containing calculation functions.
+            config (Config): Instance containing constants for the simulation.
+        """
+        super().__init__(calculator=calculator, config=config)
 
         self.initial_state: np.ndarray = np.zeros((d,), dtype=int)
         self.interferometer: np.ndarray = np.diag(np.ones(d, dtype=complex))

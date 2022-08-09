@@ -67,11 +67,7 @@ def passive_linear(
 
     matrix_on_fock_space = block_diag(
         *(
-            state._space.symmetric_tensorpower(
-                matrix,
-                n,
-                permanent_function=state._config.permanent_function,
-            )
+            state._space.symmetric_tensorpower(matrix, n)
             for n in range(state._space.cutoff)
         )
     )
@@ -132,7 +128,9 @@ def _apply_subsystem_representation_to_state(
 
     from piquasso._math.fock import FockSpace
 
-    subsystem_space = FockSpace(d=len(modes), cutoff=state._space.cutoff)
+    subsystem_space = FockSpace(
+        d=len(modes), cutoff=state._space.cutoff, calculator=state._calculator
+    )
 
     for multimode_index, multimode_vector in enumerate(state._space):
         single_mode_basis_index = subsystem_space.index(
@@ -267,7 +265,6 @@ def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result
         modes=instruction.modes,
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        permanent_function=state._config.permanent_function,
     )
 
     state._state_vector = operator @ state._state_vector

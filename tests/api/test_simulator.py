@@ -195,38 +195,45 @@ def test_program_execution_with_initial_state(
     FakeGate,
     FakeState,
 ):
+    simulator = FakeSimulator(d=1)
+
+    with pq.Program() as program:
+        pass
+
+    initial_state = simulator.execute(program).state
+
     with pq.Program() as program:
         pq.Q() | FakeGate()
 
-    simulator = FakeSimulator(d=1)
-
-    state = FakeState(d=1)
-
     simulator.validate(program)
-    simulator.execute(program, initial_state=state)
+    simulator.execute(program, initial_state=initial_state)
 
 
 def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
     FakeSimulator,
-    FakeGate,
     FakeState,
 ):
-    class OtherFakeState(FakeState):
-        pass
-
-    FakeSimulator._state_class = OtherFakeState
-
-    with pq.Program() as program:
-        pq.Q() | FakeGate()
-
     simulator = FakeSimulator(d=1)
 
-    state = FakeState(d=1)
+    with pq.Program() as program:
+        pass
 
     simulator.validate(program)
 
+    initial_state = simulator.execute(program).state
+
+    class OtherFakeState(FakeState):
+        pass
+
+    class OtherFakeSimulator(FakeSimulator):
+        _state_class = OtherFakeState
+
+    other_simulator = OtherFakeSimulator(d=1)
+
+    other_simulator.validate(program)
+
     with pytest.raises(pq.api.exceptions.InvalidState):
-        simulator.execute(program, initial_state=state)
+        other_simulator.execute(program, initial_state=initial_state)
 
 
 def test_Config_override(FakeSimulator, FakeConfig):

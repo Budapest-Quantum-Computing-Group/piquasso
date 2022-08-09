@@ -16,6 +16,7 @@
 import pytest
 
 import piquasso as pq
+from piquasso.api.calculator import BaseCalculator
 
 
 @pytest.fixture
@@ -46,8 +47,10 @@ def FakeMeasurement():
 @pytest.fixture
 def FakeState():
     class FakeState(pq.State):
-        def __init__(self, d: int, config: pq.Config = None) -> None:
-            super().__init__(config=config)
+        def __init__(
+            self, d: int, calculator: BaseCalculator, config: pq.Config = None
+        ) -> None:
+            super().__init__(calculator=calculator, config=config)
 
             self._d = d
 

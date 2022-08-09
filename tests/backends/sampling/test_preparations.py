@@ -64,7 +64,12 @@ def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified(
 
 
 def test_interferometer_init():
-    state = pq.SamplingState(d=5)
+    with pq.Program() as program:
+        pass
+
+    simulator = pq.SamplingSimulator(d=5)
+
+    state = simulator.execute(program).state
 
     expected_interferometer = np.diag(np.ones(state.d, dtype=complex))
     assert np.allclose(state.interferometer, expected_interferometer)

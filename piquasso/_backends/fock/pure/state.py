@@ -19,6 +19,8 @@ import numpy as np
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
+from piquasso.api.calculator import BaseCalculator
+
 from piquasso._math.fock import cutoff_cardinality, FockBasis
 
 from ..state import BaseFockState
@@ -38,15 +40,17 @@ class PureFockState(BaseFockState):
     where :math:`c \in \mathbb{N}` is the Fock space cutoff.
     """
 
-    def __init__(self, *, d: int, config: Config = None) -> None:
+    def __init__(
+        self, *, d: int, calculator: BaseCalculator, config: Config = None
+    ) -> None:
         """
         Args:
-            state_vector (numpy.ndarray, optional): The initial state vector.
             d (int): The number of modes.
-            cutoff (int): The Fock space cutoff.
+            calculator (BaseCalculator): Instance containing calculation functions.
+            config (Config): Instance containing constants for the simulation.
         """
 
-        super().__init__(d=d, config=config)
+        super().__init__(d=d, calculator=calculator, config=config)
 
         self._state_vector = self._get_empty()
 

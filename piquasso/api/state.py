@@ -21,6 +21,7 @@ import copy
 import numpy as np
 
 from piquasso.api.config import Config
+from piquasso.api.calculator import BaseCalculator
 
 
 class State(abc.ABC):
@@ -28,12 +29,19 @@ class State(abc.ABC):
 
     Properties:
         d (int): Instance attribute specifying the number of modes.
+        calculator (BaseCalculator): Instance containing calculation functions.
+        config (Config): Instance containing constants for the simulation.
     """
 
     _config_class: Type[Config] = Config
 
-    def __init__(self, config: Optional[Config] = None) -> None:
+    def __init__(
+        self,
+        calculator: BaseCalculator,
+        config: Optional[Config] = None,
+    ) -> None:
         self._config = config.copy() if config is not None else self._config_class()
+        self._calculator = calculator
 
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return tuple(np.delete(np.arange(self.d), modes))
