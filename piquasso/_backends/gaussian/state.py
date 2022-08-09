@@ -736,12 +736,12 @@ class GaussianState(State):
             return DisplacedDensityMatrixCalculation(
                 complex_displacement=self.complex_displacement,
                 complex_covariance=self.complex_covariance,
-                loop_hafnian_function=self._config.loop_hafnian_function,
+                loop_hafnian_function=self._calculator.loop_hafnian_function,
             )
 
         return NondisplacedDensityMatrixCalculation(
             complex_covariance=self.complex_covariance,
-            hafnian_function=self._config.hafnian_function,
+            hafnian_function=self._calculator.hafnian_function,
         )
 
     @property

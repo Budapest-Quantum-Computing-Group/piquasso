@@ -415,9 +415,9 @@ def _get_particle_number_choice(
         occupation_numbers = previous_sample + (n,)
 
         hafnian_value = (
-            state._config.loop_hafnian_function(B, gamma, occupation_numbers)
+            state._calculator.loop_hafnian_function(B, gamma, occupation_numbers)
             if is_displaced
-            else state._config.hafnian_function(B, occupation_numbers)
+            else state._calculator.hafnian_function(B, occupation_numbers)
         )
 
         weight = abs(hafnian_value) ** 2 / factorial(n)

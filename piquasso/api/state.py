@@ -21,6 +21,7 @@ import copy
 import numpy as np
 
 from piquasso.api.config import Config
+from piquasso.api.calculator import Calculator
 
 
 class State(abc.ABC):
@@ -31,9 +32,17 @@ class State(abc.ABC):
     """
 
     _config_class: Type[Config] = Config
+    _calculator_class: Type[Calculator] = Calculator
 
-    def __init__(self, config: Optional[Config] = None) -> None:
+    def __init__(
+        self,
+        config: Optional[Config] = None,
+    ) -> None:
         self._config = config.copy() if config is not None else self._config_class()
+        self._calculator: Calculator = self._calculator_class()
+
+    def _set_calculator(self, calculator: Calculator) -> None:
+        self._calculator = calculator
 
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return tuple(np.delete(np.arange(self.d), modes))

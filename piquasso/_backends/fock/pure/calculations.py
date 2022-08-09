@@ -70,7 +70,7 @@ def passive_linear(
             state._space.symmetric_tensorpower(
                 matrix,
                 n,
-                permanent_function=state._config.permanent_function,
+                permanent_function=state._calculator.permanent_function,
             )
             for n in range(state._space.cutoff)
         )
@@ -267,7 +267,7 @@ def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result
         modes=instruction.modes,
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        permanent_function=state._config.permanent_function,
+        permanent_function=state._calculator.permanent_function,
     )
 
     state._state_vector = operator @ state._state_vector
