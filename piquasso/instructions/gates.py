@@ -758,7 +758,11 @@ class CubicPhase(_ScalableFockGates):
         Args:
             gamma (float): The Cubic Phase parameter.
         """
-        super().__init__(params=dict(gamma=gamma), gamma=np.atleast_1d(gamma))
+        super().__init__(params=dict(gamma=gamma))
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+        self._extra_params["gamma"] = np.atleast_1d(self._params["gamma"])
 
 
 class Kerr(_ScalableFockGates):

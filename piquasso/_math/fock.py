@@ -21,14 +21,11 @@ import numpy as np
 from operator import add
 
 from scipy.special import factorial, comb
-from scipy.linalg import polar, logm, expm
 
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
 from piquasso.api.calculator import Calculator
-
-from piquasso.api.typing import PermanentFunction
 
 
 @functools.lru_cache()
@@ -159,7 +156,6 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         d: int,
     ) -> np.ndarray:
-        np = self.calculator.np
 
         indices = get_operator_index(modes)
 
@@ -336,9 +332,11 @@ class FockSpace(tuple):
                 The resulting transformation, which could be applied to the state.
         """
 
+        np = self.calculator.np
         annih = np.diag(np.sqrt(np.arange(1, self.cutoff)), 1)
         position = (annih.T + annih) * np.sqrt(hbar / 2)
-        return expm(1j * np.linalg.matrix_power(position, 3) * (gamma / (3 * hbar)))
+        position = (position @ position @ position) * (gamma / (3 * hbar))
+        return self.calculator.expm(np.array(1j) * position)
 
     def embed_matrix(
         self,

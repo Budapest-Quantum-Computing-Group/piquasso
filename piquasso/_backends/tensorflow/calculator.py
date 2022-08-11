@@ -52,6 +52,7 @@ class TensorflowCalculator(Calculator):
             polar=self._polar,
             sqrtm=tf.linalg.sqrtm,
             svd=self._svd,
+            expm=self._expm,
         )
 
     def _block_diag(self, *arrs):
@@ -118,25 +119,20 @@ class TensorflowCalculator(Calculator):
 
         return self._to_dense(index_map, dim)
 
+    def _funm(self, matrix, func):
+        eigenvalues, U = self._tf.linalg.eig(matrix)
+
+        return U @ self._tf.linalg.diag(func(eigenvalues)) @ self._tf.linalg.inv(U)
+
     def _logm(self, matrix):
         # NOTE: Tensorflow 2.0 has matrix logarithm, but it doesn't support gradient.
         # Therefore we had to implement our own.
+        return self._funm(matrix, self.np.log)
 
-        eigenvalues, U = self._tf.linalg.eig(matrix)
-
-        log_eigenvalues = self.np.log(eigenvalues)
-
-        assert self.np.allclose(
-            matrix,
-            U @ self.np.diag(eigenvalues) @ self._tf.linalg.inv(U)
-        )
-
-        assert self.np.allclose(
-            self._tf.linalg.logm(matrix),
-            U @ self.np.diag(log_eigenvalues) @ self._tf.linalg.inv(U),
-        )
-
-        return U @ self.np.diag(log_eigenvalues) @ self._tf.linalg.inv(U)
+    def _expm(self, matrix):
+        # NOTE: Tensorflow 2.0 has matrix exponential, but it doesn't support gradient.
+        # Therefore we had to implement our own.
+        return self._funm(matrix, self._tf.math.exp)
 
     def _polar(self, matrix, side="right"):
         P = self._tf.linalg.sqrtm(self.np.conj(matrix) @ matrix.T)

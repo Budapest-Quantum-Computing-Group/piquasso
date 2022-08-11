@@ -67,6 +67,7 @@ class Calculator:
         polar=scipy.linalg.polar,
         sqrtm=scipy.linalg.sqrtm,
         svd=np.linalg.svd,
+        expm=scipy.linalg.expm,
         permanent_function: PermanentFunction = np_glynn_gray_permanent,
         hafnian_function: HafnianFunction = hafnian_with_reduction,
         loop_hafnian_function: LoopHafnianFunction = loop_hafnian_with_reduction,
@@ -82,6 +83,7 @@ class Calculator:
         self.polar = polar
         self.sqrtm = sqrtm
         self.svd = svd
+        self.expm = expm
         self.permanent_function = permanent_function
         self.hafnian_function = hafnian_function
         self.loop_hafnian_function = loop_hafnian_function

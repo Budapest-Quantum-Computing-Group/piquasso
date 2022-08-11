@@ -1,6 +1,6 @@
 strawberryfields~=0.22.0
 matplotlib~=3.5.1
-
+tensorflow==2.8.0
 # Testing
 pytest~=7.1.1
 pytest-profiling~=1.7.0
