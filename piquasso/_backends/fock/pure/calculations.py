@@ -131,10 +131,9 @@ def _apply_subsystem_representation_to_state(
     new_state_vector = np.zeros_like(state._state_vector)
 
     from piquasso._math.fock import FockSpace
-    from piquasso.api.calculator import Calculator
 
     subsystem_space = FockSpace(
-        d=len(modes), cutoff=state._space.cutoff, calculator=Calculator
+        d=len(modes), cutoff=state._space.cutoff, calculator=state._calculator
     )
 
     for multimode_index, multimode_vector in enumerate(state._space):
