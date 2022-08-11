@@ -335,7 +335,7 @@ class FockSpace(tuple):
         np = self.calculator.np
         annih = np.diag(np.sqrt(np.arange(1, self.cutoff)), 1)
         position = (annih.T + annih) * np.sqrt(hbar / 2)
-        position = (position @ position @ position) * (gamma / (3 * hbar))
+        position = (position @ position @ position) * (gamma / (3 * np.array(hbar)))
         return self.calculator.expm(np.array(1j) * position)
 
     def embed_matrix(

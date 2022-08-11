@@ -122,7 +122,7 @@ class TensorflowCalculator(Calculator):
     def _funm(self, matrix, func):
         eigenvalues, U = self._tf.linalg.eig(matrix)
 
-        return U @ self._tf.linalg.diag(func(eigenvalues)) @ self._tf.linalg.inv(U)
+        return U @ self.np.diag(func(eigenvalues)) @ self._tf.linalg.inv(U)
 
     def _logm(self, matrix):
         # NOTE: Tensorflow 2.0 has matrix logarithm, but it doesn't support gradient.
@@ -132,7 +132,7 @@ class TensorflowCalculator(Calculator):
     def _expm(self, matrix):
         # NOTE: Tensorflow 2.0 has matrix exponential, but it doesn't support gradient.
         # Therefore we had to implement our own.
-        return self._funm(matrix, self._tf.math.exp)
+        return self._funm(matrix, self.np.exp)
 
     def _polar(self, matrix, side="right"):
         P = self._tf.linalg.sqrtm(self.np.conj(matrix) @ matrix.T)

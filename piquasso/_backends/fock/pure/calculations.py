@@ -250,6 +250,7 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     gamma = instruction._all_params["gamma"]
     hbar = state._config.hbar
+    hbar = state._calculator.np.array(hbar)
 
     for index, mode in enumerate(instruction.modes):
         matrix = state._space.get_single_mode_cubic_phase_operator(
