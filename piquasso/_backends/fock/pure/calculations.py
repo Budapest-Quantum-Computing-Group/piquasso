@@ -14,16 +14,19 @@
 # limitations under the License.
 
 from typing import Tuple, Mapping
+from itertools import product
 
 import random
 import numpy as np
 
 from scipy.linalg import block_diag
+from scipy.special import factorial
 
 from .state import PureFockState
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
+from piquasso._math.functions import hermite
 
 
 def particle_number_measurement(
@@ -303,3 +306,71 @@ def _add_occupation_number_basis(  # type: ignore
     index = state._space.index(occupation_numbers)
 
     state._state_vector[index] = coefficient
+
+
+def measure_homodyne(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> Result:
+    modes = instruction.modes
+    phi = instruction._all_params["phi"]
+    reduced_state = state.reduced(modes=modes)
+    scaled_hbar = 1 / reduced_state._config.hbar
+
+    resolution = 100000
+    cutoff = reduced_state._config.cutoff
+    quadrature_range = np.linspace(-cutoff, cutoff, resolution)
+    scaled_quadrature_range = np.sqrt(1 / state._config.hbar) * quadrature_range
+
+    # Calculating physicist's Hermite polynomials
+    hvalues = []
+    for n in range(cutoff):
+        hvalues.append(hermite(scaled_quadrature_range, n))
+
+    hermite_matrix = np.zeros((cutoff, cutoff, resolution))
+    num_fact = factorial(np.arange(0, cutoff))
+    for n, m in product(range(cutoff), repeat=2):
+        hermite_matrix[n][m] = (
+            1.0
+            / np.sqrt(2**n * num_fact[n] * 2**m * num_fact[m])
+            * hvalues[m]
+            * hvalues[n]
+        )
+    if phi != 0:
+        phi_scaled = np.diag(np.exp(1j * np.atleast_1d(phi)))
+        fock_operator = reduced_state._space.get_passive_fock_operator(
+            phi_scaled,
+            modes=instruction.modes,
+            d=reduced_state._space.d,
+            permanent_function=reduced_state._config.permanent_function,
+        )
+        reduced_state._density_matrix = (
+            fock_operator
+            @ reduced_state._density_matrix
+            @ fock_operator.conjugate().transpose()
+        )
+    hermite_values = np.expand_dims(reduced_state.density_matrix, -1) * np.expand_dims(
+        hermite_matrix, 0
+    )
+
+    pdf_rho = (
+        (
+            (quadrature_range[1] - quadrature_range[0])
+            * np.sum(hermite_values, axis=(1, 2))
+            * np.exp(-scaled_hbar * quadrature_range**2)
+            * np.sqrt(scaled_hbar / np.pi)
+        )
+        .flatten()
+        .real
+    )
+
+    pdf_rho /= np.sum(pdf_rho)
+
+    pdf_rho[pdf_rho < 0.0] = 0
+
+    homodyne_result = []
+    for _ in range(shots):
+        homodyne_result.append(
+            quadrature_range[np.where(np.random.multinomial(1, pdf_rho) == 1)[0]]
+        )
+    # The remaining state is not collapsed but the reduced density matrix
+    return Result(state=reduced_state, samples=homodyne_result)

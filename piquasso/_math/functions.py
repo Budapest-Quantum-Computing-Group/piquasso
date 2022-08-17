@@ -47,3 +47,12 @@ def gaussian_wigner_function_for_scalar(
         * np.sqrt((1 / np.linalg.det(cov)))
         * np.exp(-(X - mean) @ np.linalg.inv(cov) @ (X - mean))
     ).real
+
+
+def hermite(x, n):
+    if n == 0:
+        return 1.0 + 0.0 * x
+    elif n == 1:
+        return 2.0 * x
+    else:
+        return 2.0 * x * hermite(x, n - 1) - 2.0 * (n - 1) * hermite(x, n - 2)

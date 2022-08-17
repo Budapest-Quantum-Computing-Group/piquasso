@@ -25,6 +25,7 @@ from .calculations import (
     displacement,
     linear,
     particle_number_measurement,
+    measure_homodyne,
     vacuum,
     create,
     annihilate,
@@ -76,7 +77,8 @@ class PureFockSimulator(Simulator):
         :class:`~piquasso.instructions.gates.MomentumDisplacement`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.HomodyneMeasurement`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Attenuator`
@@ -105,5 +107,6 @@ class PureFockSimulator(Simulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.HomodyneMeasurement: measure_homodyne,
         channels.Attenuator: attenuator,
     }

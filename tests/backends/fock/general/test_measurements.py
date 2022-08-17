@@ -205,3 +205,29 @@ def test_measure_particle_number_with_multiple_shots():
 
     assert np.isclose(sum(result.state.fock_probabilities), 1)
     assert len(result.samples) == shots
+
+
+def test_measure_homodyne():
+    shots = 1000
+
+    with pq.Program() as position:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(alpha=0.5)
+
+        pq.Q(0) | pq.HomodyneMeasurement(phi=0)
+
+    with pq.Program() as momentum:
+        pq.Q() | pq.Vacuum()
+        pq.Q() | pq.Displacement(alpha=0.5)
+        pq.Q(0) | pq.HomodyneMeasurement(phi=np.pi / 2)
+
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=10))
+
+    result_position = simulator.execute(position, shots)
+
+    result_momentum = simulator.execute(momentum, shots)
+
+    assert len(result_momentum.samples) == shots
+    assert len(result_position.samples) == shots
+    assert np.isclose(np.array(result_position.samples).mean(), 1, atol=0.1)
+    assert np.isclose(np.array(result_momentum.samples).mean(), 0, atol=0.1)

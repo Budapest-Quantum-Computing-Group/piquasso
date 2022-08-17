@@ -27,6 +27,7 @@ from .calculations import (
     cross_kerr,
     cubic_phase,
     particle_number_measurement,
+    measure_homodyne,
     vacuum,
     create,
     annihilate,
@@ -75,7 +76,8 @@ class FockSimulator(Simulator):
         :class:`~piquasso.instructions.gates.MomentumDisplacement`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.HomodyneMeasurement`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Attenuator`
@@ -102,6 +104,7 @@ class FockSimulator(Simulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.HomodyneMeasurement: measure_homodyne,
         channels.Attenuator: attenuator,
     }
 
