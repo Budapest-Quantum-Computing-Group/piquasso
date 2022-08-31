@@ -73,3 +73,6 @@ class BaseCalculator(abc.ABC):
 
     def logm(self, matrix):
         raise NotImplementedCalculation()
+
+    def expm(self, matrix):
+        raise NotImplementedCalculation()

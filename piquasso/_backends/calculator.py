@@ -32,6 +32,7 @@ class NumpyCalculator(BaseCalculator):
         self.block_diag = scipy.linalg.block_diag
         self.block = np.block
         self.logm = scipy.linalg.logm
+        self.expm = scipy.linalg.expm
         self.polar = scipy.linalg.polar
         self.sqrtm = scipy.linalg.sqrtm
         self.svd = np.linalg.svd

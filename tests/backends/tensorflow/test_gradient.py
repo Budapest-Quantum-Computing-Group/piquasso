@@ -153,6 +153,50 @@ def test_Squeezing_mean_photon_number_gradient_1_mode():
     assert np.isclose(gradient, 2 * np.sinh(r) * np.cosh(r))
 
 
+def test_CubicPhase_mean_photon_number_gradient_1_mode():
+    gamma = tf.Variable(0.2)
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=6))
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.CubicPhase(gamma=gamma)
+
+        state = simulator.execute(program).state
+
+        mean = state.mean_photon_number()
+
+    gradient = tape.gradient(mean, [gamma])
+
+    assert np.isclose(mean, 0.029567)
+    assert np.isclose(gradient, 0.291416)
+
+
+def test_Kerr_gates_mean_photon_number_gradient():
+    alpha = tf.Variable(0.2)
+    xi = tf.Variable(np.pi)
+    simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=6))
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q() | pq.Displacement(alpha=alpha)
+            pq.Q(0) | pq.Kerr(xi=xi)
+            pq.Q(0, 1) | pq.CrossKerr(xi=xi)
+
+        state = simulator.execute(program).state
+
+        mean = state.mean_photon_number()
+
+    gradient = tape.gradient(mean, [xi])
+
+    assert np.isclose(mean, alpha**2 + alpha**2)
+    assert np.isclose(gradient, 0.0)
+
+
 def test_Beamsplitter_fock_probabilities_gradient_1_particle():
     theta = tf.Variable(np.pi / 3)
 

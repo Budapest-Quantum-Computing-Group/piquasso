@@ -758,7 +758,12 @@ class CubicPhase(_ScalableFockGates):
         Args:
             gamma (float): The Cubic Phase parameter.
         """
-        super().__init__(params=dict(gamma=gamma), gamma=np.atleast_1d(gamma))
+        super().__init__(params=dict(gamma=gamma))
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+        gamma = self._params["gamma"]
+        self._extra_params["gamma"] = np.atleast_1d(gamma)
 
 
 class Kerr(_ScalableFockGates):
@@ -786,7 +791,12 @@ class Kerr(_ScalableFockGates):
         Args:
             xi (float): The magnitude of the Kerr nonlinear term.
         """
-        super().__init__(params=dict(xi=xi), xi=np.atleast_1d(xi))
+        super().__init__(params=dict(xi=xi))
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+        xi = self._params["xi"]
+        self._extra_params["xi"] = np.atleast_1d(xi)
 
 
 class CrossKerr(Gate):
@@ -817,6 +827,11 @@ class CrossKerr(Gate):
             xi (float): The magnitude of the Cross-Kerr nonlinear term.
         """
         super().__init__(params=dict(xi=xi))
+
+    def _postprocess(self, calculator):
+        np = calculator.np
+        xi = self._params["xi"]
+        self._extra_params["xi"] = np.atleast_1d(xi)
 
 
 class Graph(Gate):

@@ -186,25 +186,33 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    xi_vector = instruction._all_params["xi"]
+    np = state._np
+    xi_vector = np.array(instruction._all_params["xi"])
 
     for mode_index, mode in enumerate(instruction.modes):
         xi = xi_vector[mode_index]
 
         for index, basis in state._space.basis:
             number = basis[mode]
-            coefficient = np.exp(1j * xi.squeeze() * number * (2 * number + 1))
-            state._state_vector[index] *= coefficient
+            coefficient = np.exp(1j * np.squeeze(xi) * number * (2 * number + 1))
+            value = state._state_vector[index] * coefficient
+            state._state_vector = state._calculator.assign(
+                state._state_vector, index, value
+            )
 
     return Result(state=state)
 
 
 def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    np = state._np
     modes = instruction.modes
-    xi = instruction._all_params["xi"]
+    xi = np.array(instruction._all_params["xi"])
     for index, basis in state._space.basis:
-        coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
-        state._state_vector[index] *= coefficient
+        coefficient = np.exp(1j * np.squeeze(xi) * basis[modes[0]] * basis[modes[1]])
+        value = state._state_vector[index] * coefficient
+        state._state_vector = state._calculator.assign(
+            state._state_vector, index, value
+        )
 
     return Result(state=state)
 
@@ -258,8 +266,9 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 
 
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    gamma = instruction._all_params["gamma"]
-    hbar = state._config.hbar
+    np = state._np
+    gamma = np.array(instruction._all_params["gamma"])
+    hbar = np.array(state._config.hbar)
 
     for index, mode in enumerate(instruction.modes):
         matrix = state._space.get_single_mode_cubic_phase_operator(
