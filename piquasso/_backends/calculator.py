@@ -13,11 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+from piquasso._math.permanent import glynn_gray_permanent
+from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
 
-from typing import Callable, Tuple
+from piquasso.api.calculator import BaseCalculator
 
 
-PermanentFunction = Callable[[np.ndarray, Tuple[int, ...], Tuple[int, ...]], float]
-HafnianFunction = Callable[[np.ndarray, Tuple[int, ...]], float]
-LoopHafnianFunction = Callable[[np.ndarray, np.ndarray, Tuple[int, ...]], float]
+class NumpyCalculator(BaseCalculator):
+    """The calculations for a simulation using NumPy."""
+
+    def __init__(self):
+        self.permanent = glynn_gray_permanent
+        self.hafnian = hafnian_with_reduction
+        self.loop_hafnian = loop_hafnian_with_reduction

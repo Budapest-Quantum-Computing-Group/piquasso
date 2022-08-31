@@ -40,3 +40,7 @@ class InvalidInstruction(PiquassoException):
 
 class InvalidSimulation(PiquassoException):
     """Raised when a simulation could not be executed."""
+
+
+class NotImplementedCalculation(PiquassoException):
+    """Raiesed when a calculation is not implemented."""

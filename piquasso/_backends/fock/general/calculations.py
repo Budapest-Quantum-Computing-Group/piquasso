@@ -37,7 +37,6 @@ def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Re
         operator,
         modes=instruction.modes,
         d=state._space.d,
-        permanent_function=state._config.permanent_function,
     )
 
     state._density_matrix = (
@@ -256,7 +255,6 @@ def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
         modes=instruction.modes,
         passive_block=instruction._all_params["passive_block"],
         active_block=instruction._all_params["active_block"],
-        permanent_function=state._config.permanent_function,
     )
 
     state._density_matrix = (

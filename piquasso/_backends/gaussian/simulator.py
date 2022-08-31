@@ -16,6 +16,8 @@
 from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
+from piquasso._backends.calculator import NumpyCalculator
+
 from .state import GaussianState
 from .calculations import (
     passive_linear,
@@ -112,3 +114,5 @@ class GaussianSimulator(Simulator):
     }
 
     _state_class = GaussianState
+
+    _calculator_class = NumpyCalculator

@@ -21,6 +21,8 @@ import piquasso as pq
 
 from pathlib import Path
 
+from piquasso._backends.calculator import NumpyCalculator
+
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
@@ -181,7 +183,7 @@ def gaussian_state_assets(AssetHandler):
 
             d = len(properties["xpxp_mean_vector"]) // 2
 
-            state = pq.GaussianState(d=d)
+            state = pq.GaussianState(d=d, calculator=NumpyCalculator())
 
             state.xpxp_mean_vector = properties["xpxp_mean_vector"]
             state.xpxp_covariance_matrix = properties["xpxp_covariance_matrix"]

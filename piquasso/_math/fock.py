@@ -26,8 +26,7 @@ from scipy.linalg import block_diag, polar, logm, expm
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
-
-from piquasso.api.typing import PermanentFunction
+from piquasso.api.calculator import BaseCalculator
 
 
 @functools.lru_cache()
@@ -129,14 +128,15 @@ class FockSpace(tuple):
     transformation to acquire the symmetrized tensor in the symmetrized representation.
     """
 
-    def __new__(cls, d: int, cutoff: int) -> "FockSpace":
+    def __new__(cls, d: int, cutoff: int, calculator: BaseCalculator) -> "FockSpace":
         return super().__new__(
             cls, FockBasis.create_all(d=d, cutoff=cutoff)  # type: ignore
         )
 
-    def __init__(self, *, d: int, cutoff: int) -> None:
+    def __init__(self, *, d: int, cutoff: int, calculator: BaseCalculator) -> None:
         self.d = d
         self.cutoff = cutoff
+        self.calculator = calculator
 
     def __deepcopy__(self, memo: Any) -> "FockSpace":
         """
@@ -155,7 +155,6 @@ class FockSpace(tuple):
         operator: np.ndarray,
         modes: Tuple[int, ...],
         d: int,
-        permanent_function: PermanentFunction,
     ) -> np.ndarray:
         index = get_operator_index(modes)
 
@@ -165,9 +164,7 @@ class FockSpace(tuple):
 
         return block_diag(
             *(
-                self.symmetric_tensorpower(
-                    embedded_operator, n, permanent_function=permanent_function
-                )
+                self.symmetric_tensorpower(embedded_operator, n)
                 for n in range(self.cutoff)
             )
         )
@@ -345,7 +342,6 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         active_block: np.ndarray,
         passive_block: np.ndarray,
-        permanent_function: PermanentFunction,
     ) -> np.ndarray:
         r"""The matrix of the symplectic transformation in Fock space.
 
@@ -428,7 +424,6 @@ class FockSpace(tuple):
             unitary.conj().T @ H_passive[:d, :d],
             modes=modes,
             d=self.d,
-            permanent_function=permanent_function,
         )
 
         transformation = fock_operator @ transformation
@@ -451,7 +446,6 @@ class FockSpace(tuple):
             unitary,
             modes=modes,
             d=self.d,
-            permanent_function=permanent_function,
         )
 
         transformation = fock_operator @ transformation
@@ -533,7 +527,6 @@ class FockSpace(tuple):
         self,
         operator: np.ndarray,
         n: int,
-        permanent_function: PermanentFunction,
     ) -> np.ndarray:
         d = len(operator)
 
@@ -543,7 +536,7 @@ class FockSpace(tuple):
         )
 
         for index, basis in self.enumerate_subspace_operator_basis(n, d):
-            permanent = permanent_function(operator, basis.bra, basis.ket)
+            permanent = self.calculator.permanent(operator, basis.bra, basis.ket)
 
             matrix[index] = permanent / np.sqrt(
                 np.prod(factorial(basis.bra)) * np.prod(factorial(basis.ket))

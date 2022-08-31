@@ -16,6 +16,8 @@
 from piquasso.api.simulator import Simulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
+from piquasso._backends.calculator import NumpyCalculator
+
 from .state import SamplingState
 from .calculations import (
     state_vector,
@@ -71,3 +73,5 @@ class SamplingSimulator(Simulator):
     }
 
     _state_class = SamplingState
+
+    _calculator_class = NumpyCalculator

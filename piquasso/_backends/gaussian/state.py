@@ -21,6 +21,7 @@ from scipy.linalg import sqrtm
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, InvalidParameter, PiquassoException
 from piquasso.api.state import State
+from piquasso.api.calculator import BaseCalculator
 
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
@@ -41,12 +42,15 @@ from .probabilities import (
 class GaussianState(State):
     r"""Class to represent a Gaussian state."""
 
-    def __init__(self, d: int, config: Config = None) -> None:
+    def __init__(
+        self, d: int, calculator: BaseCalculator, config: Config = None
+    ) -> None:
         """
         Args:
             d (int): The number of modes.
+
         """
-        super().__init__(config=config)
+        super().__init__(calculator=calculator, config=config)
         self._d = d
         self.reset()
 
@@ -75,8 +79,9 @@ class GaussianState(State):
         G: np.ndarray,
         C: np.ndarray,
         config: Config,
+        calculator: BaseCalculator,
     ) -> "GaussianState":
-        obj = cls(d=len(m), config=config)
+        obj = cls(d=len(m), calculator=calculator, config=config)
 
         obj._m = m
         obj._G = G
@@ -468,6 +473,7 @@ class GaussianState(State):
             G=(self._G * phase**2),
             m=(self._m * phase),
             config=self._config,
+            calculator=self._calculator,
         )
 
     def reduced(self, modes: Tuple[int, ...]) -> "GaussianState":
@@ -487,6 +493,7 @@ class GaussianState(State):
             G=self._G[np.ix_(modes, modes)],
             m=self._m[np.ix_(modes)],
             config=self._config,
+            calculator=self._calculator,
         )
 
     def xpxp_reduced_rotated_mean_and_covariance(
@@ -736,12 +743,11 @@ class GaussianState(State):
             return DisplacedDensityMatrixCalculation(
                 complex_displacement=self.complex_displacement,
                 complex_covariance=self.complex_covariance,
-                loop_hafnian_function=self._config.loop_hafnian_function,
+                calculator=self._calculator,
             )
 
         return NondisplacedDensityMatrixCalculation(
-            complex_covariance=self.complex_covariance,
-            hafnian_function=self._config.hafnian_function,
+            complex_covariance=self.complex_covariance, calculator=self._calculator
         )
 
     @property

@@ -264,12 +264,14 @@ def _get_generaldyne_evolved_state(state, sample, modes, detection_covariance):
         cov_measured + full_detection_covariance
     ) @ (sample - mean_measured)
 
-    state = GaussianState(d=len(evolved_r_A) // 2, config=state._config)
+    new_state = GaussianState(
+        d=len(evolved_r_A) // 2, calculator=state._calculator, config=state._config
+    )
 
-    state.xpxp_covariance_matrix = evolved_cov_outer
-    state.xpxp_mean_vector = evolved_r_A
+    new_state.xpxp_covariance_matrix = evolved_cov_outer
+    new_state.xpxp_mean_vector = evolved_r_A
 
-    return state
+    return new_state
 
 
 def _map_modes_to_xpxp_indices(modes):
@@ -308,7 +310,10 @@ def _get_particle_number_measurement_samples(
         reduced_state.xxpp_covariance_matrix,
         hbar=state._config.hbar,
     )
-    pure_state = GaussianState(len(reduced_state), config=state._config)
+    pure_state = GaussianState(
+        len(reduced_state), calculator=state._calculator, config=state._config
+    )
+
     pure_state.xxpp_covariance_matrix = pure_covariance
 
     heterodyne_detection_covariance = np.identity(2)
@@ -415,9 +420,9 @@ def _get_particle_number_choice(
         occupation_numbers = previous_sample + (n,)
 
         hafnian_value = (
-            state._config.loop_hafnian_function(B, gamma, occupation_numbers)
+            state._calculator.loop_hafnian(B, gamma, occupation_numbers)
             if is_displaced
-            else state._config.hafnian_function(B, occupation_numbers)
+            else state._calculator.hafnian(B, occupation_numbers)
         )
 
         weight = abs(hafnian_value) ** 2 / factorial(n)

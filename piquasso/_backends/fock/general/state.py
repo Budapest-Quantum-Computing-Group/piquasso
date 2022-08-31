@@ -16,6 +16,7 @@
 from typing import Tuple, Any, Generator, Dict
 
 import numpy as np
+from piquasso.api.calculator import BaseCalculator
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
@@ -33,15 +34,17 @@ class FockState(BaseFockState):
         :class:`~piquasso._backends.fock.pure.state.PureFockState` instead.
     """
 
-    def __init__(self, *, d: int, config: Config = None) -> None:
+    def __init__(
+        self, *, d: int, calculator: BaseCalculator, config: Config = None
+    ) -> None:
         """
         Args:
-            density_matrix (numpy.ndarray, optional): The initial density matrix.
             d (int): The number of modes.
-            cutoff (int): The Fock space cutoff.
+            calculator (BaseCalculator): Instance containing calculation functions.
+            config (Config): Instance containing constants for the simulation.
         """
 
-        super().__init__(d=d, config=config)
+        super().__init__(d=d, calculator=calculator, config=config)
 
         self._density_matrix = self._get_empty()
 
@@ -64,7 +67,9 @@ class FockState(BaseFockState):
                 The instance from which a :class:`FockState` instance is created.
         """
 
-        new_instance = cls(d=state.d, config=state._config)
+        new_instance = cls(
+            d=state.d, calculator=state._calculator, config=state._config
+        )
 
         new_instance._density_matrix = state.density_matrix
 
@@ -126,7 +131,9 @@ class FockState(BaseFockState):
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         modes_to_eliminate = self._get_auxiliary_modes(modes)
 
-        reduced_state = FockState(d=len(modes), config=self._config)
+        reduced_state = FockState(
+            d=len(modes), calculator=self._calculator, config=self._config
+        )
 
         for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
             modes=modes_to_eliminate

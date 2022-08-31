@@ -20,18 +20,22 @@ import numpy as np
 from scipy.linalg import sqrtm
 from piquasso.api.config import Config
 from piquasso.api.state import State
+from piquasso.api.calculator import BaseCalculator
 
 from piquasso._math import fock
 from piquasso.api.exceptions import InvalidModes
 
 
 class BaseFockState(State, abc.ABC):
-    def __init__(self, *, d: int, config: Config = None) -> None:
-        super().__init__(config=config)
+    def __init__(
+        self, *, d: int, calculator: BaseCalculator, config: Config = None
+    ) -> None:
+        super().__init__(calculator=calculator, config=config)
 
         self._space = fock.FockSpace(
             d=d,
             cutoff=self._config.cutoff,
+            calculator=calculator,
         )
 
     @property
