@@ -15,9 +15,9 @@
 
 import abc
 
-from typing import Tuple
+from typing import Any, Tuple
 
-import numpy as np
+import numpy
 
 from piquasso.api.exceptions import NotImplementedCalculation
 
@@ -28,15 +28,48 @@ class BaseCalculator(abc.ABC):
     NOTE: Every attribute of this class should be stateless!
     """
 
+    np: Any
+    fallback_np: Any
+
+    def __deepcopy__(self, memo: Any) -> "BaseCalculator":
+        """
+        This method exists, because `copy.deepcopy` could not copy the entire modules
+        and functions, and we don't need to, since every attribute of this class should
+        be stateless.
+        """
+
+        return self
+
     def permanent(
-        self, matrix: np.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...]
+        self, matrix: numpy.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...]
     ) -> float:
         raise NotImplementedCalculation()
 
-    def hafnian(self, matrix: np.ndarray, reduce_on: Tuple[int, ...]) -> float:
+    def hafnian(self, matrix: numpy.ndarray, reduce_on: Tuple[int, ...]) -> float:
         raise NotImplementedCalculation()
 
     def loop_hafnian(
-        self, matrix: np.ndarray, diagonal: np.ndarray, reduce_on: Tuple[int, ...]
+        self, matrix: numpy.ndarray, diagonal: numpy.ndarray, reduce_on: Tuple[int, ...]
     ) -> float:
+        raise NotImplementedCalculation()
+
+    def assign(self, array, index, value):
+        raise NotImplementedCalculation()
+
+    def to_dense(self, index_map, dim):
+        raise NotImplementedCalculation()
+
+    def embed_in_identity(self, matrix, indices, dim):
+        raise NotImplementedCalculation()
+
+    def block(self, arrays):
+        raise NotImplementedCalculation()
+
+    def block_diag(self, *arrs):
+        raise NotImplementedCalculation()
+
+    def polar(self, matrix, side="right"):
+        raise NotImplementedCalculation()
+
+    def logm(self, matrix):
         raise NotImplementedCalculation()

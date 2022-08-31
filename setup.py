@@ -36,6 +36,9 @@ setup(
         'scipy>=1.5.4; python_version >= "3.7"',
         "quantum-blackbird==0.3.0",
     ],
+    extras_require={
+        "tensorflow": "tensorflow",
+    },
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",

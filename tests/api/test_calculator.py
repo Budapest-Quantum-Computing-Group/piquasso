@@ -27,7 +27,7 @@ def dummy_matrix():
 
 
 @pytest.fixture
-def dummy_diagonal():
+def dummy_array():
     return np.array([0.0])
 
 
@@ -36,45 +36,97 @@ def dummy_occupation_number():
     return (0,)
 
 
-def test_BaseCalculator_raises_NotImplementedCalculation_for_permanent(
-    dummy_matrix, dummy_occupation_number
-):
-    class PluginCalculator(pq.api.calculator.BaseCalculator):
+@pytest.fixture
+def empty_calculator():
+    class EmptyCalculator(pq.api.calculator.BaseCalculator):
         def __init__(self) -> None:
             super().__init__()
 
-    calculator = PluginCalculator()
+    return EmptyCalculator()
 
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_permanent(
+    empty_calculator, dummy_matrix, dummy_occupation_number
+):
     with pytest.raises(NotImplementedCalculation):
-        calculator.permanent(
+        empty_calculator.permanent(
             dummy_matrix, dummy_occupation_number, dummy_occupation_number
         )
 
 
 def test_BaseCalculator_raises_NotImplementedCalculation_for_hafnian(
-    dummy_matrix, dummy_occupation_number
+    empty_calculator,
+    dummy_matrix,
+    dummy_occupation_number,
 ):
-    class PluginCalculator(pq.api.calculator.BaseCalculator):
-        def __init__(self) -> None:
-            super().__init__()
-
-    calculator = PluginCalculator()
-
     with pytest.raises(NotImplementedCalculation):
-        calculator.hafnian(dummy_matrix, dummy_occupation_number)
+        empty_calculator.hafnian(dummy_matrix, dummy_occupation_number)
 
 
 def test_BaseCalculator_raises_NotImplementedCalculation_for_loop_hafnian(
-    dummy_matrix, dummy_diagonal, dummy_occupation_number
+    empty_calculator, dummy_matrix, dummy_array, dummy_occupation_number
 ):
-    class PluginCalculator(pq.api.calculator.BaseCalculator):
-        def __init__(self) -> None:
-            super().__init__()
-
-    calculator = PluginCalculator()
-
     with pytest.raises(NotImplementedCalculation):
-        calculator.loop_hafnian(dummy_matrix, dummy_diagonal, dummy_occupation_number)
+        empty_calculator.loop_hafnian(
+            dummy_matrix, dummy_array, dummy_occupation_number
+        )
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_assign(
+    empty_calculator,
+    dummy_array,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.assign(dummy_array, index=0, value=3)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_to_dense(
+    empty_calculator,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.to_dense(index_map={(0, 1): 3}, dim=2)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_embed_in_identity(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.embed_in_identity(dummy_matrix, indices=(0, 0), dim=1)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_block(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.block(
+            [[dummy_matrix, dummy_matrix], [dummy_matrix, dummy_matrix]]
+        )
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_block_diag(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.block_diag(dummy_matrix, dummy_matrix)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_polar(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.polar(dummy_matrix, side="left")
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_logm(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.logm(dummy_matrix)
 
 
 def test_BaseCalculator_with_overriding_defaults():

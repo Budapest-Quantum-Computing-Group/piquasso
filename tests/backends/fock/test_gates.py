@@ -20,7 +20,14 @@ import numpy as np
 import piquasso as pq
 
 
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
 def test_squeezing_probabilities(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -41,7 +48,14 @@ def test_squeezing_probabilities(SimulatorClass):
     )
 
 
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.FockSimulator))
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
 def test_displacement_probabilities(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

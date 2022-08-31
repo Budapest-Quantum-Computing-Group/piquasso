@@ -54,12 +54,17 @@ class PureFockState(BaseFockState):
 
         self._state_vector = self._get_empty()
 
+    def _get_empty_list(self) -> list:
+        return [0.0] * self._space.cardinality
+
     def _get_empty(self) -> np.ndarray:
-        return np.zeros(shape=(self._space.cardinality,), dtype=complex)
+        return self._np.zeros(shape=(self._space.cardinality,), dtype=complex)
 
     def reset(self) -> None:
-        self._state_vector = self._get_empty()
-        self._state_vector[0] = 1.0
+        state_vector_list = self._get_empty_list()
+        state_vector_list[0] = 1.0
+
+        self._state_vector = self._np.array(state_vector_list)
 
     @property
     def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
@@ -79,7 +84,7 @@ class PureFockState(BaseFockState):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PureFockState):
             return False
-        return np.allclose(self._state_vector, other._state_vector)
+        return self._np.allclose(self._state_vector, other._state_vector)
 
     @property
     def density_matrix(self) -> np.ndarray:
@@ -87,7 +92,7 @@ class PureFockState(BaseFockState):
 
         state_vector = self._state_vector[:cardinality]
 
-        return np.outer(state_vector, state_vector.conj())
+        return self._np.outer(state_vector, self._np.conj(state_vector))
 
     def _as_mixed(self) -> FockState:
         return FockState.from_fock_state(self)
@@ -106,7 +111,7 @@ class PureFockState(BaseFockState):
 
         index = self._space.index(occupation_number)
 
-        return np.real(
+        return self._np.real(
             self._state_vector[index].conjugate() * self._state_vector[index]
         )
 
@@ -114,22 +119,24 @@ class PureFockState(BaseFockState):
     def fock_probabilities(self) -> np.ndarray:
         cardinality = cutoff_cardinality(d=self._space.d, cutoff=self._config.cutoff)
 
-        return (self._state_vector * self._state_vector.conjugate()).real[:cardinality]
+        return self._np.real((self._state_vector * self._np.conj(self._state_vector)))[
+            :cardinality
+        ]
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
 
         for index, basis in self._space.basis:
-            probability_map[tuple(basis)] = np.abs(self._state_vector[index]) ** 2
+            probability_map[tuple(basis)] = self._np.abs(self._state_vector[index]) ** 2
 
         return probability_map
 
     def normalize(self) -> None:
-        if np.isclose(self.norm, 0):
+        if self._np.isclose(self.norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
-        self._state_vector = self._state_vector / np.sqrt(self.norm)
+        self._state_vector = self._state_vector / self._np.sqrt(self.norm)
 
     def validate(self) -> None:
         """Validates the represented state.
@@ -140,7 +147,7 @@ class PureFockState(BaseFockState):
         """
         sum_of_probabilities = sum(self.fock_probabilities)
 
-        if not np.isclose(sum_of_probabilities, 1.0):
+        if not self._np.isclose(sum_of_probabilities, 1.0):
             raise InvalidState(
                 f"The sum of probabilities is {sum_of_probabilities}, "
                 "instead of 1.0:\n"
@@ -207,3 +214,13 @@ class PureFockState(BaseFockState):
             - expctation**2
         )
         return expctation, variance
+
+    def mean_photon_number(self):
+        accumulator = 0.0
+
+        for index, basis in enumerate(self._space):
+            number = sum(basis)
+
+            accumulator += number * self._np.abs(self._state_vector[index]) ** 2
+
+        return accumulator

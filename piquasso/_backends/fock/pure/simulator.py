@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Type
+
 from .state import PureFockState
 
 from .calculations import (
@@ -33,6 +35,7 @@ from .calculations import (
 from ..calculations import attenuator
 
 from piquasso.api.simulator import Simulator
+from piquasso.api.calculator import BaseCalculator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from piquasso._backends.calculator import NumpyCalculator
@@ -110,4 +113,4 @@ class PureFockSimulator(Simulator):
         channels.Attenuator: attenuator,
     }
 
-    _calculator_class = NumpyCalculator
+    _calculator_class: Type[BaseCalculator] = NumpyCalculator
