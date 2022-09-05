@@ -169,6 +169,9 @@ def _get_sampling_simulation_strategy(
     _, singular_values, _ = np.linalg.svd(state.interferometer)
 
     if np.all(np.isclose(singular_values, singular_values[0])):
-        return GeneralizedCliffordsUniformLossesSimulationStrategy(permanent_calculator)
+        uniform_transmission_probability = singular_values[0] ** 2
+        return GeneralizedCliffordsUniformLossesSimulationStrategy(
+            permanent_calculator, uniform_transmission_probability
+        )
 
     return LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
