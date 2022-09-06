@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1] - 2022-09-05
+
+### Fixed
+
+- `SamplingSimulator` along with `Loss` using uniform transmissivity
+  (transmittance) parameters and `ParticleNumberMeasurement` produced only-zero
+  samples instead of the expected samples.
+
+
 ## [1.0.0] - 2022-04-26
 
 ### Added
