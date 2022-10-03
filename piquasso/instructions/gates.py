@@ -45,7 +45,6 @@ Most of the gates defined here are linear gates, which can be characterized by
 import numpy as np
 
 from scipy.optimize import root_scalar
-from scipy.linalg import block_diag
 
 from piquasso.api.instruction import Gate
 from piquasso.api.calculator import BaseCalculator
@@ -83,13 +82,17 @@ class _ScalableGaussianGate(
     _GaussianGate,
     _mixins.ScalingMixin,
 ):
-    def _autoscale(self) -> None:
+    ERROR_MESSAGE_TEMPLATE = (
+        "The instruction {instruction} is not applicable to modes {modes} with the "
+        "specified parameters."
+    )
 
+    def _autoscale(self, calculator: BaseCalculator) -> None:
         passive_block = self._extra_params["passive_block"]
         if passive_block is None or len(self.modes) == len(passive_block):
             pass
         elif len(passive_block) == 1:
-            self._extra_params["passive_block"] = block_diag(
+            self._extra_params["passive_block"] = calculator.block_diag(
                 *[passive_block] * len(self.modes)
             )
         else:
@@ -101,7 +104,7 @@ class _ScalableGaussianGate(
         if active_block is None or len(self.modes) == len(active_block):
             pass
         elif len(active_block) == 1:
-            self._extra_params["active_block"] = block_diag(
+            self._extra_params["active_block"] = calculator.block_diag(
                 *[active_block] * len(self.modes)
             )
         else:
@@ -113,7 +116,7 @@ class _ScalableGaussianGate(
         if displacement_vector is None or len(self.modes) == len(displacement_vector):
             pass
         elif len(displacement_vector) == 1:
-            self._extra_params["displacement_vector"] = np.array(
+            self._extra_params["displacement_vector"] = calculator.np.array(
                 [displacement_vector[0]] * len(self.modes),
                 dtype=complex,
             )
@@ -715,17 +718,19 @@ class CubicPhase(Gate, _mixins.ScalingMixin):
         Args:
             gamma (float): The Cubic Phase parameter.
         """
-        super().__init__(
-            params=dict(gamma=gamma),
-            extra_params=dict(gamma_vector=np.atleast_1d(gamma)),
+        super().__init__(params=dict(gamma=gamma))
+
+    def _postprocess(self, calculator: BaseCalculator) -> None:
+        self._extra_params["gamma_vector"] = calculator.np.atleast_1d(
+            self._params["gamma"]
         )
 
-    def _autoscale(self) -> None:
+    def _autoscale(self, calculator: BaseCalculator) -> None:
         gamma_vector = self._extra_params["gamma_vector"]
         if gamma_vector is not None and len(gamma_vector) == len(self.modes):
             pass
         elif len(gamma_vector) == 1:
-            self._extra_params["gamma_vector"] = np.array(
+            self._extra_params["gamma_vector"] = calculator.np.array(
                 [gamma_vector] * len(self.modes)
             )
         else:
@@ -759,16 +764,19 @@ class Kerr(Gate, _mixins.ScalingMixin):
         Args:
             xi (float): The magnitude of the Kerr nonlinear term.
         """
-        super().__init__(
-            params=dict(xi=xi), extra_params=dict(xi_vector=np.atleast_1d(xi))
-        )
+        super().__init__(params=dict(xi=xi))
 
-    def _autoscale(self) -> None:
+    def _postprocess(self, calculator: BaseCalculator) -> None:
+        self._extra_params["xi_vector"] = calculator.np.atleast_1d(self._params["xi"])
+
+    def _autoscale(self, calculator: BaseCalculator) -> None:
         xi_vector = self._extra_params["xi_vector"]
         if xi_vector is not None and len(xi_vector) == len(self.modes):
             pass
         elif len(xi_vector) == 1:
-            self._extra_params["xi_vector"] = np.array([xi_vector[0]] * len(self.modes))
+            self._extra_params["xi_vector"] = calculator.np.array(
+                [xi_vector[0]] * len(self.modes)
+            )
         else:
             raise InvalidParameter(
                 self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)

@@ -159,7 +159,7 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
 
     for index, mode in enumerate(instruction.modes):
         operator = state._space.get_single_mode_cubic_phase_operator(
-            gamma=gamma_vector[index], hbar=hbar
+            gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
         )
         embedded_operator = state._space.embed_matrix(
             operator,

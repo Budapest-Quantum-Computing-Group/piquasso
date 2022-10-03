@@ -21,7 +21,6 @@ import numpy as np
 from operator import add
 
 from scipy.special import factorial, comb
-from scipy.linalg import expm
 
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
@@ -272,10 +271,7 @@ class FockSpace(tuple):
         return np.array(matrix)
 
     def get_single_mode_cubic_phase_operator(
-        self,
-        *,
-        gamma: float,
-        hbar: float,
+        self, *, gamma: float, hbar: float, calculator: BaseCalculator
     ) -> np.ndarray:
 
         r"""Cubic Phase gate.
@@ -305,9 +301,11 @@ class FockSpace(tuple):
                 The resulting transformation, which could be applied to the state.
         """
 
+        np = calculator.np
+
         annih = np.diag(np.sqrt(np.arange(1, self.cutoff)), 1)
         position = (annih.T + annih) * np.sqrt(hbar / 2)
-        return expm(1j * np.linalg.matrix_power(position, 3) * (gamma / (3 * hbar)))
+        return calculator.expm(1j * calculator.powm(position, 3) * (gamma / (3 * hbar)))
 
     def embed_matrix(
         self,
