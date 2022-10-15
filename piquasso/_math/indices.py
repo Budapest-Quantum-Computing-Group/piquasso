@@ -15,7 +15,11 @@
 
 from typing import Tuple
 
+import functools
+
 import numpy as np
+
+from scipy.special import comb
 
 
 def get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
@@ -37,3 +41,13 @@ def get_auxiliary_operator_index(
     auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
 
     return auxiliary_rows, auxiliary_modes
+
+
+@functools.lru_cache()
+def get_index_in_fock_space(element: Tuple[int, ...]) -> int:
+    return sum(
+        [
+            comb(sum(element[-i:]) + i - 1, i, exact=True)
+            for i in range(1, len(element) + 1)
+        ]
+    )
