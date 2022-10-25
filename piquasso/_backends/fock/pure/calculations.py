@@ -193,7 +193,7 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    xi_vector = instruction._all_params["xi"]
+    xi_vector = instruction._all_params["xi_vector"]
 
     for mode_index, mode in enumerate(instruction.modes):
         xi = xi_vector[mode_index]
@@ -263,12 +263,12 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 
 
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    gamma = instruction._all_params["gamma"]
+    gamma_vector = instruction._all_params["gamma_vector"]
     hbar = state._config.hbar
 
     for index, mode in enumerate(instruction.modes):
         matrix = state._space.get_single_mode_cubic_phase_operator(
-            gamma=gamma[index], hbar=hbar
+            gamma=gamma_vector[index], hbar=hbar
         )
         _apply_subspace_matrix_to_state(
             state,

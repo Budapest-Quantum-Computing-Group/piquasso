@@ -80,6 +80,11 @@ class CodeMixin(abc.ABC):
 
 
 class ScalingMixin(abc.ABC):
+    ERROR_MESSAGE_TEMPLATE = (
+        "The instruction {instruction} is not applicable to modes {modes} with the "
+        "specified parameters."
+    )
+
     @abc.abstractmethod
     def _autoscale(self) -> None:
         pass

@@ -83,11 +83,6 @@ class _ScalableGaussianGate(
     _GaussianGate,
     _mixins.ScalingMixin,
 ):
-    ERROR_MESSAGE_TEMPLATE = (
-        "The instruction {instruction} is not applicable to modes {modes} with the "
-        "specified parameters."
-    )
-
     def _autoscale(self) -> None:
 
         passive_block = self._extra_params["passive_block"]
@@ -689,45 +684,7 @@ class MomentumDisplacement(_ScalableGaussianGate):
         )
 
 
-class _ScalableFockGates(Gate, _mixins.ScalingMixin):
-    ERROR_MESSAGE_TEMPLATE = (
-        "The instruction {instruction} is not applicable to modes {modes} with the "
-        "specified parameters."
-    )
-
-    def __init__(
-        self, *, params: dict = None, gamma: np.ndarray = None, xi: np.ndarray = None
-    ):
-        params = params or {}
-        super().__init__(params=params, extra_params=dict(gamma=gamma, xi=xi))
-
-    def _autoscale(self) -> None:
-        gamma = self._extra_params["gamma"]
-        xi = self._extra_params["xi"]
-        if gamma is not None and len(gamma) == len(self.modes):
-            pass
-        elif gamma is None:
-            pass
-        elif len(gamma) == 1:
-            self._extra_params["gamma"] = np.array([gamma] * len(self.modes))
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
-
-        if xi is not None and len(xi) == len(self.modes):
-            pass
-        elif xi is None:
-            pass
-        elif len(xi) == 1:
-            self._extra_params["xi"] = np.array([xi] * len(self.modes))
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
-
-
-class CubicPhase(_ScalableFockGates):
+class CubicPhase(Gate, _mixins.ScalingMixin):
     r"""Cubic Phase gate.
 
     The definition of the Cubic Phase gate is
@@ -758,10 +715,26 @@ class CubicPhase(_ScalableFockGates):
         Args:
             gamma (float): The Cubic Phase parameter.
         """
-        super().__init__(params=dict(gamma=gamma), gamma=np.atleast_1d(gamma))
+        super().__init__(
+            params=dict(gamma=gamma),
+            extra_params=dict(gamma_vector=np.atleast_1d(gamma)),
+        )
+
+    def _autoscale(self) -> None:
+        gamma_vector = self._extra_params["gamma_vector"]
+        if gamma_vector is not None and len(gamma_vector) == len(self.modes):
+            pass
+        elif len(gamma_vector) == 1:
+            self._extra_params["gamma_vector"] = np.array(
+                [gamma_vector] * len(self.modes)
+            )
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
 
 
-class Kerr(_ScalableFockGates):
+class Kerr(Gate, _mixins.ScalingMixin):
     r"""Kerr gate.
 
     The definition of the Kerr gate is
@@ -786,7 +759,20 @@ class Kerr(_ScalableFockGates):
         Args:
             xi (float): The magnitude of the Kerr nonlinear term.
         """
-        super().__init__(params=dict(xi=xi), xi=np.atleast_1d(xi))
+        super().__init__(
+            params=dict(xi=xi), extra_params=dict(xi_vector=np.atleast_1d(xi))
+        )
+
+    def _autoscale(self) -> None:
+        xi_vector = self._extra_params["xi_vector"]
+        if xi_vector is not None and len(xi_vector) == len(self.modes):
+            pass
+        elif len(xi_vector) == 1:
+            self._extra_params["xi_vector"] = np.array([xi_vector[0]] * len(self.modes))
+        else:
+            raise InvalidParameter(
+                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
+            )
 
 
 class CrossKerr(Gate):
