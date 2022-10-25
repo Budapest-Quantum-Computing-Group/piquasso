@@ -18,12 +18,14 @@ from typing import Tuple, Mapping
 import random
 import numpy as np
 
+from piquasso._math.fock import FockSpace, cutoff_cardinality
+
+from piquasso._math.indices import get_index_in_fock_space
+
 from .state import PureFockState
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
-
-from piquasso._math.fock import FockSpace
 
 
 def particle_number_measurement(
@@ -74,8 +76,10 @@ def passive_linear(
 
     modes = instruction.modes
 
-    _apply_subsystem_representation_to_state(
-        state, matrix_on_fock_space, modes, state._get_auxiliary_modes(modes)
+    _apply_subspace_matrix_to_state(
+        state,
+        matrix_on_fock_space,
+        modes,
     )
 
     return Result(state=state)
@@ -118,49 +122,52 @@ def _get_projected_state_vector(
     return new_state_vector
 
 
-def _apply_subsystem_representation_to_state(
+def _apply_subspace_matrix_to_state(
     state: PureFockState,
     matrix: np.ndarray,
     modes: Tuple[int, ...],
-    auxiliary_modes: Tuple[int, ...],
 ) -> None:
     np = state._np
+    fallback_np = state._calculator.fallback_np
 
+    old_state_vector = state._state_vector
     new_state_vector = []
 
-    subsystem_space = FockSpace(
+    space = state._space
+    subspace = FockSpace(
         d=len(modes), cutoff=state._space.cutoff, calculator=state._calculator
     )
 
-    for multimode_vector in state._space:
-        single_mode_basis_index = subsystem_space.index(
-            multimode_vector.on_modes(modes=modes)
+    for row_vector in state._space:
+        row_vector_array = fallback_np.array(row_vector, dtype=int)
+        row_index_on_subspace = get_index_in_fock_space(
+            tuple(row_vector_array[(modes,)])
+        )
+        row_vector_array[(modes,)] = [0] * len(modes)
+
+        matrix_row = matrix[row_index_on_subspace, :]
+
+        matrix_column_indices = []
+        state_indices = []
+
+        limit = cutoff_cardinality(
+            cutoff=(space.cutoff - sum(row_vector_array)), d=len(modes)
         )
 
-        accumulator = 0.0
+        for column_index_on_subspace, column_vector_on_subspace in enumerate(
+            subspace[:limit]
+        ):
+            row_vector_array[(modes,)] = column_vector_on_subspace
+            column_index = get_index_in_fock_space(tuple(row_vector_array))
+            matrix_column_indices.append(column_index_on_subspace)
+            state_indices.append(column_index)
 
-        for running_vector in state._space:
-            if multimode_vector.on_modes(
-                modes=auxiliary_modes
-            ) == running_vector.on_modes(modes=auxiliary_modes):
-
-                single_mode_running_index = subsystem_space.index(
-                    running_vector.on_modes(modes=modes)
-                )
-
-                index_on_multimode = state._space.index(running_vector)
-
-                single_mode_matrix_index = (
-                    single_mode_basis_index,
-                    single_mode_running_index,
-                )
-
-                accumulator += (
-                    matrix[single_mode_matrix_index]
-                    * state._state_vector[index_on_multimode]
-                )
-
-        new_state_vector.append(accumulator)
+        new_state_vector.append(
+            np.dot(
+                matrix_row[matrix_column_indices],
+                old_state_vector[state_indices],
+            )
+        )
 
     state._state_vector = np.stack(new_state_vector)
 
@@ -221,11 +228,10 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
             phi=angles[index],
         )
 
-        _apply_subsystem_representation_to_state(
+        _apply_subspace_matrix_to_state(
             state,
             matrix,
             (mode,),
-            state._get_auxiliary_modes((mode,)),
         )
 
         state.normalize()
@@ -245,11 +251,10 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
             phi=angles[index],
         )
 
-        _apply_subsystem_representation_to_state(
+        _apply_subspace_matrix_to_state(
             state,
             matrix,
             (mode,),
-            state._get_auxiliary_modes((mode,)),
         )
 
         state.normalize()
@@ -265,8 +270,10 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         matrix = state._space.get_single_mode_cubic_phase_operator(
             gamma=gamma[index], hbar=hbar
         )
-        _apply_subsystem_representation_to_state(
-            state, matrix, (mode,), state._get_auxiliary_modes((mode,))
+        _apply_subspace_matrix_to_state(
+            state,
+            matrix,
+            (mode,),
         )
 
         state.normalize()
