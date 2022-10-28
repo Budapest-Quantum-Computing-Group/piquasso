@@ -80,11 +80,11 @@ def test_BaseCalculator_raises_NotImplementedCalculation_for_assign(
         empty_calculator.assign(dummy_array, index=0, value=3)
 
 
-def test_BaseCalculator_raises_NotImplementedCalculation_for_to_dense(
+def test_BaseCalculator_raises_NotImplementedCalculation_for_scatter(
     empty_calculator,
 ):
     with pytest.raises(NotImplementedCalculation):
-        empty_calculator.to_dense(index_map={(0, 1): 3}, dim=2)
+        empty_calculator.scatter(indices=[], updates=[], dim=2)
 
 
 def test_BaseCalculator_raises_NotImplementedCalculation_for_embed_in_identity(

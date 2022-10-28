@@ -313,7 +313,8 @@ class FockSpace(tuple):
         modes: Tuple[int, ...],
         auxiliary_modes: Tuple[int, ...],
     ) -> np.ndarray:
-        index_map = {}
+        indices = []
+        updates = []
 
         for embedded_index, operator_basis in self.operator_basis_diagonal_on_modes(
             modes=auxiliary_modes
@@ -323,9 +324,10 @@ class FockSpace(tuple):
                 operator_basis.bra.on_modes(modes=modes),
             )
 
-            index_map[embedded_index] = matrix[index][0]
+            indices.append(embedded_index)
+            updates.append(matrix[index][0])
 
-        return self._calculator.to_dense(index_map, dim=self.cardinality)
+        return self._calculator.scatter(indices, updates, dim=self.cardinality)
 
     def get_linear_fock_operator(
         self,

@@ -56,7 +56,7 @@ class BaseCalculator(abc.ABC):
     def assign(self, array, index, value):
         raise NotImplementedCalculation()
 
-    def to_dense(self, index_map, dim):
+    def scatter(self, indices, updates, dim):
         raise NotImplementedCalculation()
 
     def embed_in_identity(self, matrix, indices, dim):
