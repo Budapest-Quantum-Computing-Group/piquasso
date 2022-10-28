@@ -20,7 +20,10 @@ import numpy as np
 
 from piquasso._math.fock import FockSpace, cutoff_cardinality
 
-from piquasso._math.indices import get_index_in_fock_space
+from piquasso._math.indices import (
+    get_index_in_fock_space,
+    get_index_in_fock_subspace,
+)
 
 from .state import PureFockState
 
@@ -62,24 +65,110 @@ def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result
     return Result(state=state)
 
 
+def _get_interferometer_on_fock_space(interferometer, space, calculator):
+    """Calculates finite representation of interferometer in the Fock space.
+
+    The function assumes the knowledge of the 1-particle unitary.
+
+    Sources:
+    - Fast optimization of parametrized quantum optical circuits
+    (https://quantum-journal.org/papers/q-2020-11-30-366/)
+
+    Args:
+        interferometer (numpy.ndarray): The 1-particle unitary
+        space (FockSpace): List of basis elements on the Fock space.
+        calculator (BaseCalculator): Object containing calculations.
+
+    Returns:
+        numpy.ndarray: Finite representation of interferometer in the Fock space
+    """
+
+    np = calculator.np
+    true_np = calculator.fallback_np
+
+    cutoff = space.cutoff
+    d = space.d
+
+    space = [true_np.array(element, dtype=int) for element in space]
+
+    subspace_representations = []
+
+    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
+    subspace_representations.append(interferometer)
+
+    indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
+
+    for n in range(2, cutoff):
+        size = indices[n] - indices[n - 1]
+
+        new_subspace_representation = np.zeros(shape=(size,) * 2, dtype=complex)
+        previous_representation = subspace_representations[n - 1]
+
+        subspace = space[indices[n - 1] : indices[n]]
+
+        update_indices = []
+        updates = []
+
+        for row_index, row_vector in enumerate(subspace):
+            first_nonzero_row_index = true_np.nonzero(row_vector)[0][0]
+            row_occupation_number = row_vector[first_nonzero_row_index]
+
+            row_vector[first_nonzero_row_index] -= 1
+            subspace_row_index = get_index_in_fock_subspace(tuple(row_vector))
+            row_vector[first_nonzero_row_index] += 1
+
+            for column_index, column_vector in enumerate(subspace):
+
+                nonzero_column_indices = true_np.nonzero(column_vector)[0]
+                subspace_column_indices = []
+
+                for nonzero_column_index in nonzero_column_indices:
+                    column_vector[nonzero_column_index] -= 1
+                    subspace_column_indices.append(
+                        get_index_in_fock_subspace(tuple(column_vector))
+                    )
+                    column_vector[nonzero_column_index] += 1
+
+                update_indices.append([row_index, column_index])
+                updates.append(
+                    (
+                        np.sqrt(column_vector[(nonzero_column_indices,)])
+                        * interferometer[
+                            first_nonzero_row_index, nonzero_column_indices
+                        ]
+                    )
+                    @ previous_representation[
+                        subspace_row_index, subspace_column_indices
+                    ]
+                    / np.sqrt(row_occupation_number)
+                )
+
+        new_subspace_representation = calculator.scatter(update_indices, updates, size)
+
+        subspace_representations.append(
+            new_subspace_representation.astype(interferometer.dtype)
+        )
+
+    return calculator.block_diag(*subspace_representations)
+
+
 def passive_linear(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
-    matrix: np.ndarray = instruction._all_params["passive_block"]
+    calculator = state._calculator
 
-    matrix_on_fock_space = state._calculator.block_diag(
-        *(
-            state._space.symmetric_tensorpower(matrix, n)
-            for n in range(state._space.cutoff)
-        )
+    interferometer: np.ndarray = instruction._all_params["passive_block"]
+
+    subspace = FockSpace(
+        d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
     )
 
-    modes = instruction.modes
+    interferometer_on_fock_space = _get_interferometer_on_fock_space(
+        interferometer, subspace, calculator
+    )
 
     _apply_subspace_matrix_to_state(
-        state,
-        matrix_on_fock_space,
-        modes,
+        state, interferometer_on_fock_space, instruction.modes
     )
 
     return Result(state=state)

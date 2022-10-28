@@ -17,6 +17,7 @@ import pytest
 
 from piquasso._math.indices import (
     get_index_in_fock_space,
+    get_index_in_fock_subspace,
 )
 
 
@@ -68,3 +69,53 @@ def test_get_index_in_fock_space_for_2_particles(vector, index):
 )
 def test_get_index_in_fock_space_for_3_particles(vector, index):
     assert get_index_in_fock_space(vector) == index
+
+
+def test_get_index_in_fock_subspace_for_0_particles():
+    assert get_index_in_fock_subspace((0, 0, 0)) == 0
+
+
+@pytest.mark.parametrize(
+    "vector, index",
+    [
+        ((0, 0, 1), 2),
+        ((0, 1, 0), 1),
+        ((1, 0, 0), 0),
+    ],
+)
+def test_get_index_in_fock_subspace_for_1_particle(vector, index):
+    assert get_index_in_fock_subspace(vector) == index
+
+
+@pytest.mark.parametrize(
+    "vector, index",
+    [
+        ((0, 0, 2), 5),
+        ((0, 1, 1), 4),
+        ((0, 2, 0), 3),
+        ((1, 0, 1), 2),
+        ((1, 1, 0), 1),
+        ((2, 0, 0), 0),
+    ],
+)
+def test_get_index_in_fock_subspace_for_2_particles(vector, index):
+    assert get_index_in_fock_subspace(vector) == index
+
+
+@pytest.mark.parametrize(
+    "vector, index",
+    [
+        ((0, 0, 3), 9),
+        ((0, 1, 2), 8),
+        ((0, 2, 1), 7),
+        ((0, 3, 0), 6),
+        ((1, 0, 2), 5),
+        ((1, 1, 1), 4),
+        ((1, 2, 0), 3),
+        ((2, 0, 1), 2),
+        ((2, 1, 0), 1),
+        ((3, 0, 0), 0),
+    ],
+)
+def test_get_index_in_fock_subspace_for_3_particles(vector, index):
+    assert get_index_in_fock_subspace(vector) == index

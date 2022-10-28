@@ -51,3 +51,10 @@ def get_index_in_fock_space(element: Tuple[int, ...]) -> int:
             for i in range(1, len(element) + 1)
         ]
     )
+
+
+@functools.lru_cache()
+def get_index_in_fock_subspace(element: Tuple[int, ...]) -> int:
+    return sum(
+        [comb(sum(element[-i:]) + i - 1, i, exact=True) for i in range(1, len(element))]
+    )
