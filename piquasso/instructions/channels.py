@@ -21,6 +21,7 @@ from piquasso._math.validations import all_in_interval
 
 from piquasso.core import _mixins
 
+from piquasso.api.calculator import BaseCalculator
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Gate
 
@@ -163,12 +164,12 @@ class Loss(Gate, _mixins.ScalingMixin):
             ),
         )
 
-    def _autoscale(self) -> None:
+    def _autoscale(self, calculator: BaseCalculator) -> None:
         transmissivity = self._extra_params["transmissivity"]
         if transmissivity is None or len(self.modes) == len(transmissivity):
             pass
         elif len(transmissivity) == 1:
-            self._extra_params["transmissivity"] = np.array(
+            self._extra_params["transmissivity"] = calculator.np.array(
                 [transmissivity[0]] * len(self.modes),
                 dtype=complex,
             )

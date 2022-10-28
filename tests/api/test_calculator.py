@@ -129,6 +129,22 @@ def test_BaseCalculator_raises_NotImplementedCalculation_for_logm(
         empty_calculator.logm(dummy_matrix)
 
 
+def test_BaseCalculator_raises_NotImplementedCalculation_for_expm(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.expm(dummy_matrix)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_powm(
+    empty_calculator,
+    dummy_matrix,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.powm(dummy_matrix, 42)
+
+
 def test_BaseCalculator_with_overriding_defaults():
     """
     NOTE: This test basically tests Python itself, but it is left here for us to

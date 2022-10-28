@@ -306,3 +306,116 @@ def test_Squeezing2_mean_photon_number():
     jacobian = tape.jacobian(fock_probabilities, [r])
 
     assert np.allclose(jacobian, [-0.19349256, 0.0, 0.0, 0.0, 0.19349256, 0.0])
+
+
+def test_Kerr_fock_probabilities_on_1_mode():
+    xi = tf.Variable(0.1)
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=3))
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
+        pq.Q(all) | pq.StateVector([2]) / np.sqrt(2)
+
+        pq.Q(all) | pq.Kerr(xi=xi)
+
+    with tf.GradientTape() as tape:
+        state = simulator.execute(program).state
+
+        fock_probabilities = state.fock_probabilities
+
+    jacobian = tape.jacobian(fock_probabilities, [xi])
+
+    assert np.allclose(jacobian, [0.0, 0.0, 0.0], atol=1e-6)
+
+
+def test_Kerr_density_matrix_on_1_mode():
+    xi = tf.Variable(np.pi / 4)
+
+    n = 2
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=n + 1))
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
+        pq.Q(all) | pq.StateVector([n]) / np.sqrt(2)
+
+        pq.Q(all) | pq.Kerr(xi=xi)
+
+    with tf.GradientTape() as tape:
+        state = simulator.execute(program).state
+
+        density_matrix = state.density_matrix
+
+    jacobian = tape.jacobian(density_matrix, [xi])
+
+    coefficient = n * (2 * n + 1)
+
+    gradient_of_0n_component = coefficient * np.exp(1j * xi * coefficient * 2) / 2
+
+    assert np.allclose(
+        jacobian,
+        [
+            [0.0, 0.0, gradient_of_0n_component],
+            [0.0, 0.0, 0.0],
+            [gradient_of_0n_component, 0.0, 0.0],
+        ],
+    )
+
+
+def test_CubicPhase_fock_probabilities_on_1_mode():
+    gamma = tf.Variable(0.1)
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=4))
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
+        pq.Q(all) | pq.StateVector([2]) / np.sqrt(2)
+
+        pq.Q(all) | pq.CubicPhase(gamma=gamma)
+
+    with tf.GradientTape() as tape:
+        state = simulator.execute(program).state
+
+        fock_probabilities = state.fock_probabilities
+
+    jacobian = tape.jacobian(fock_probabilities, [gamma])
+
+    assert np.allclose(jacobian, [-0.16857366, 0.35571513, -0.5196387, 0.33249724])
+
+
+def test_CrossKerr_density_matrix():
+    xi = tf.Variable(0.1)
+
+    simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=4))
+
+    n = np.array(
+        [
+            [1, 1],
+            [1, 2],
+        ]
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(0, 1) | pq.StateVector(n[0]) * np.sqrt(0.5)
+            pq.Q(0, 1) | pq.StateVector(n[1]) * np.sqrt(0.5)
+
+            pq.Q(all) | pq.CrossKerr(xi=xi)
+
+        state = simulator.execute(program).state
+
+        density_matrix = state.density_matrix
+
+    jacobian = tape.jacobian(density_matrix, [xi])
+
+    expected_jacobian = np.zeros_like(density_matrix)
+
+    relative_phase_angle = n[0, 0] * n[0, 1] - n[1, 0] * n[1, 1]
+
+    coefficient = 1j * relative_phase_angle * np.exp(1j * xi * relative_phase_angle)
+
+    expected_jacobian[4, 8] = np.real(coefficient / 2)
+    expected_jacobian[8, 4] = np.real(coefficient / 2)
+
+    assert np.allclose(jacobian, expected_jacobian)

@@ -200,18 +200,24 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
 
         for index, basis in state._space.basis:
             number = basis[mode]
-            coefficient = np.exp(1j * xi.squeeze() * number * (2 * number + 1))
-            state._state_vector[index] *= coefficient
+            coefficient = state._np.exp(1j * xi * number * (2 * number + 1))
+            state._state_vector = state._calculator.assign(
+                state._state_vector, index, state._state_vector[index] * coefficient
+            )
 
     return Result(state=state)
 
 
 def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    np = state._calculator.np
+
     modes = instruction.modes
     xi = instruction._all_params["xi"]
     for index, basis in state._space.basis:
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
-        state._state_vector[index] *= coefficient
+        state._state_vector = state._calculator.assign(
+            state._state_vector, index, state._state_vector[index] * coefficient
+        )
 
     return Result(state=state)
 
@@ -268,7 +274,7 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
 
     for index, mode in enumerate(instruction.modes):
         matrix = state._space.get_single_mode_cubic_phase_operator(
-            gamma=gamma_vector[index], hbar=hbar
+            gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
         )
         _apply_subspace_matrix_to_state(
             state,

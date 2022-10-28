@@ -222,7 +222,7 @@ class Simulator(Computer, _mixins.CodeMixin):
             instruction._postprocess(self._calculator)
 
             if hasattr(instruction, "_autoscale"):
-                instruction._autoscale()  # type: ignore
+                instruction._autoscale(self._calculator)  # type: ignore
 
             calculation = self._get_calculation(instruction)
 

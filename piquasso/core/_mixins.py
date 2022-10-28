@@ -19,6 +19,7 @@ import typing
 from typing import TypeVar, Generic
 
 if typing.TYPE_CHECKING:
+    from piquasso.api.calculator import BaseCalculator
     from piquasso.api.program import Program
     from piquasso.api.mode import Q
 
@@ -86,5 +87,5 @@ class ScalingMixin(abc.ABC):
     )
 
     @abc.abstractmethod
-    def _autoscale(self) -> None:
+    def _autoscale(self, calculator: "BaseCalculator") -> None:
         pass

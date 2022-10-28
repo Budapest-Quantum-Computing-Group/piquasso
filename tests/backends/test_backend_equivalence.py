@@ -979,6 +979,7 @@ def test_fidelity(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
+        pq.TensorflowPureFockSimulator,
     ),
 )
 def test_cubic_phase_equivalency(SimulatorClass):
@@ -1007,6 +1008,7 @@ def test_cubic_phase_equivalency(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
+        pq.TensorflowPureFockSimulator,
     ),
 )
 def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
@@ -1043,6 +1045,7 @@ def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
+        pq.TensorflowPureFockSimulator,
     ),
 )
 def test_Kerr_equivalence(SimulatorClass):
