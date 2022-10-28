@@ -75,33 +75,29 @@ class TensorflowCalculator(BaseCalculator):
 
         return self.np.stack(output)
 
-    def to_dense(self, index_map, dim):
-        matrix = [[] for _ in range(dim)]
-
-        for row in range(dim):
-            for col in range(dim):
-                index = (row, col)
-                matrix[row].append(index_map.get(index, 0.0))
-
-        return self.np.array(matrix)
+    def scatter(self, indices, updates, dim):
+        return self._tf.scatter_nd(indices, updates, (dim, dim))
 
     def embed_in_identity(self, matrix, indices, dim):
-        index_map = {}
+        tf_indices = []
+        updates = []
 
         small_dim = len(indices[0])
         for row in range(small_dim):
             for col in range(small_dim):
-                index = (indices[0][row][col], indices[1][row][col])
-                value = matrix[row, col]
+                index = [indices[0][row][col], indices[1][row][col]]
+                update = matrix[row, col]
 
-                index_map[index] = value
+                tf_indices.append(index)
+                updates.append(update)
 
         for index in range(dim):
-            diagonal_index = (index, index)
-            if diagonal_index not in index_map:
-                index_map[diagonal_index] = 1.0
+            diagonal_index = [index, index]
+            if diagonal_index not in tf_indices:
+                tf_indices.append(diagonal_index)
+                updates.append(1.0)
 
-        return self.to_dense(index_map, dim)
+        return self.scatter(tf_indices, updates, dim)
 
     def _funm(self, matrix, func):
         eigenvalues, U = self._tf.linalg.eig(matrix)

@@ -47,11 +47,11 @@ class NumpyCalculator(BaseCalculator):
 
         return array
 
-    def to_dense(self, index_map, dim):
+    def scatter(self, indices, updates, dim):
         embedded_matrix = np.zeros((dim,) * 2, dtype=complex)
+        composite_index = np.array(indices)[:, 0], np.array(indices)[:, 1]
 
-        for index, value in index_map.items():
-            embedded_matrix[index] = value
+        embedded_matrix[composite_index] = np.array(updates)
 
         return embedded_matrix
 
