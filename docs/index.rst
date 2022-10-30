@@ -26,6 +26,7 @@ One could easily install Piquasso with the following command:
    tutorials/separating-programs
    tutorials/boson-sampling
    tutorials/gaussian-boson-sampling
+   tutorials/pure-fock-tensorflow
 
 .. toctree::
    :maxdepth: 3
@@ -35,6 +36,7 @@ One could easily install Piquasso with the following command:
    simulators/gaussian
    simulators/fock
    simulators/sampling
+   simulators/tensorflow
 
 .. toctree::
    :maxdepth: 3
