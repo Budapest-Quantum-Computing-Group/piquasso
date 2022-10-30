@@ -145,11 +145,17 @@ class Attenuator(Gate):
 
 
 class Loss(Gate, _mixins.ScalingMixin):
-    """Applies a loss channel to the state.
+    r"""Applies a loss channel to the state.
+
+    The transmissivity is defined by :math:`t = \cos \theta`, where :math:`\theta` is
+    the beamsplitter parameter and the angle between the initial and resulting state.
+    Considering only one particle, :math:`1-t^2` is the probability of losing this
+    particle.
 
     Note:
-        Currently, this instruction can only be used along with
+        - Currently, this instruction can only be used along with
         :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
+        - The parameter `transmissivity` is usually called `transmittance`.
     """
 
     def __init__(self, transmissivity: np.ndarray) -> None:
