@@ -69,7 +69,7 @@ class PureFockSimulator(Simulator):
         :class:`~piquasso.instructions.gates.Fourier`,
         :class:`~piquasso.instructions.gates.Kerr`,
         :class:`~piquasso.instructions.gates.CrossKerr`,
-        :class:`~piquasso.instructions.gates.CubicPhse`,
+        :class:`~piquasso.instructions.gates.CubicPhase`,
         :class:`~piquasso.instructions.gates.GaussianTransform`,
         :class:`~piquasso.instructions.gates.Squeezing`,
         :class:`~piquasso.instructions.gates.QuadraticPhase`,
@@ -84,7 +84,7 @@ class PureFockSimulator(Simulator):
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
 
     Supported channels:
-        :class:`~piquasso.instructions.channels.Attenuator`
+        :class:`~piquasso.instructions.channels.Attenuator`.
     """
 
     _state_class = PureFockState
