@@ -35,6 +35,7 @@ One could easily install Piquasso with the following command:
    simulators/gaussian
    simulators/fock
    simulators/sampling
+   simulators/tensorflow
 
 .. toctree::
    :maxdepth: 3
