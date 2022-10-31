@@ -62,7 +62,7 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def d(self) -> int:
-        pass
+        """The number of modes."""
 
     @property
     @abc.abstractmethod
@@ -76,12 +76,10 @@ class State(abc.ABC):
         Returns:
             numpy.ndarray: The particle detection probabilities.
         """
-        pass
 
     @abc.abstractmethod
     def validate(self) -> None:
         """Validates the state."""
-        pass
 
     @abc.abstractmethod
     def get_particle_detection_probability(
@@ -99,4 +97,3 @@ class State(abc.ABC):
         Returns:
             float: The probability of detection.
         """
-        pass

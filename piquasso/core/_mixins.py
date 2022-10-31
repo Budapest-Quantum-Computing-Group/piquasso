@@ -35,14 +35,19 @@ class DictMixin(abc.ABC):
         Args:
             dict_ (dict): The desired instance in the format of a `dict`.
         """
-        pass
 
 
 class WeightMixin(abc.ABC, Generic[_T]):
+    """Class for registering coefficients into `params`.
+
+    Most notably, it is used for specifying coefficents for `StateVector`
+    and `DensityMatrix` instances.
+    """
+
     @property
     @abc.abstractmethod
     def params(self) -> dict:
-        pass
+        """The coefficient to be multiplied must be in a `params` property."""
 
     def __mul__(self, coefficient: _T) -> "WeightMixin":
         self.params["coefficient"] *= coefficient
@@ -63,7 +68,6 @@ class RegisterMixin(abc.ABC):
             program (Program): [description]
             register (Q): [description]
         """
-        pass
 
     def copy(self) -> "RegisterMixin":
         """Copies the current object with :func:`copy.deepcopy`.
@@ -77,7 +81,7 @@ class RegisterMixin(abc.ABC):
 class CodeMixin(abc.ABC):
     @abc.abstractmethod
     def _as_code(self) -> str:
-        pass
+        """The method which returns the generated code corresponding to the instance."""
 
 
 class ScalingMixin(abc.ABC):
@@ -88,4 +92,4 @@ class ScalingMixin(abc.ABC):
 
     @abc.abstractmethod
     def _autoscale(self, calculator: "BaseCalculator") -> None:
-        pass
+        """The method to be executed for autoscaling."""

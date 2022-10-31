@@ -51,50 +51,46 @@ class BaseFockState(State, abc.ABC):
 
     @abc.abstractmethod
     def _get_empty(self) -> np.ndarray:
-        pass
+        """Returns a full-zero representation (i.e. norm 0)."""
 
     @abc.abstractmethod
     def _as_mixed(self):
-        pass
+        """Returns the density matrix of the Fock state."""
 
     @property
     @abc.abstractmethod
     def nonzero_elements(self) -> Generator[Tuple[complex, tuple], Any, None]:
-        pass
+        """The nonzero contributions to the state representation in Fock basis."""
 
     @property
     @abc.abstractmethod
     def density_matrix(self) -> np.ndarray:
         """The density matrix of the state in terms of the Fock basis vectors."""
-        pass
 
     @abc.abstractmethod
     def reduced(self, modes: Tuple[int, ...]) -> "BaseFockState":
         """Reduces the state to a subsystem corresponding to the specified modes."""
-        pass
 
     @abc.abstractmethod
     def normalize(self) -> None:
-        pass
+        """Normalizes the state to have norm 1."""
 
     @abc.abstractmethod
     def reset(self) -> None:
         """
         Resets the Fock state to a vacuum state.
         """
-        pass
 
     @property
     @abc.abstractmethod
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
-        pass
+        """The particle number detection probabilities in a map."""
 
     @abc.abstractmethod
     def quadratures_mean_variance(
         self, modes: Tuple[int, ...], phi: float = 0
     ) -> Tuple[float, float]:
         """Calculates the mean and the variance of the quadratures of a Fock State"""
-        pass
 
     def wigner_function(
         self,

@@ -39,4 +39,3 @@ class Computer(abc.ABC):
         Returns:
             Result: The result of the execution containing `shots` number of samples.
         """
-        pass

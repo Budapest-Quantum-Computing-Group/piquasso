@@ -34,7 +34,7 @@ class DensityMatrixCalculation(abc.ABC):
 
     @abc.abstractmethod
     def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
-        pass
+        """Calculates the hafnian given a reduction."""
 
     def get_density_matrix_element(
         self, bra: Tuple[int, ...], ket: Tuple[int, ...]
