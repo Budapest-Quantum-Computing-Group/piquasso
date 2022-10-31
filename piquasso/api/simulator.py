@@ -52,7 +52,7 @@ class Simulator(Computer, _mixins.CodeMixin):
     @property
     @abc.abstractmethod
     def _instruction_map(self) -> Dict[Type[Instruction], Callable]:
-        pass
+        """The map which associates an `Instruction` to a calculation function."""
 
     def _as_code(self):
         if self.config == Config():
