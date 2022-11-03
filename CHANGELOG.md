@@ -1,14 +1,6 @@
 # Changelog
 
 
-## [2.0.1] - 2022-11-03
-
-### Fixed
-
-- `GaussianState.fidelity` gave incorrect results for multiple modes and it
-  needed to be corrected.
-
-
 ## [2.0.0] - 2022-10-30
 
 ### Added
