@@ -16,7 +16,6 @@
 from typing import Tuple, List
 
 import numpy as np
-from scipy.linalg import sqrtm
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, InvalidParameter, PiquassoException
@@ -28,7 +27,7 @@ from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
 )
-from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
+from piquasso._math.symplectic import symplectic_form
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
@@ -621,66 +620,99 @@ class GaussianState(State):
         :math:`\rho_1, \rho_2` is given by:
 
         .. math::
-            \operatorname{F}(\rho_1, \rho_2) = \operatorname{Tr}(\sqrt{\sqrt{\rho_1}
-                \rho_2\sqrt{\rho_1}})^2
+            \operatorname{F}(\rho_1, \rho_2) = \left [
+                \operatorname{Tr} \sqrt{\sqrt{\rho_1}
+                \rho_2 \sqrt{\rho_1} }
+            \right ]
 
-        A gaussian state can be represented by its Covariance matrix and the vector of
-        Means. Hence, the above equation can be rewritten as:
+        A Gaussian state can be represented by its covariance matrix and displacement
+        vector.
 
-        .. math::
-            \operatorname{F} = \operatorname{F_0}(V_1, V_2) \exp(
-                -\frac{1}{2} \delta_u^T(V_1 + V_2)^{-1}\delta_u^T)
-
-        where :math:`V` is the :attr:`xpxp_covariance_matrix` of the gaussian state,
-        :math:`\delta_u` is the difference between mean vectors of the two gaussian
-        states represented by :attr:`xpxp_mean_vector`, and :math:`F_0` is given by:
-
-        .. math::
-            \operatorname{F_0} = \sqrt{\det{[2(\sqrt{I +
-                \frac{(V_{aux}\Omega)^-2}{4}} + I)V_{aux}]} \det{[(V_1 + V_2)^{-1}]}}
-
-        where :math:`V_{aux}` is given by
+        Let :math:`\mu_1, \mu_2` be the displacement vectors and
+        :math:`\sigma_1, \sigma_2` be the covariance matrices of the
+        :math:`\rho_1, \rho_2` Gaussian states, respectively. Define
+        :math:`\hat{\sigma} = \frac{\sigma_1 + \sigma_2}{2}` and
+        :math:`\Delta\mu = \mu_2 - \mu_1`.
+        The fidelity can be written as
 
         .. math::
-            \Omega^T (V_1 + V_2)^{-1} (\frac{\Omega}{4} V_2 \Omega V_1)
+            \operatorname{F}(\rho_1, \rho_2) = \operatorname{F_0}(\sigma_1, \sigma_2)
+            \exp \left(
+                -\frac{1}{4} \Delta\mu^T (\hat{\sigma})^{-1} \Delta\mu
+            \right),
 
-        and :math:`\Omega` is a symplectic matrix of shape :math:`2*d \times 2*d`.
-        For more details please check:
-        https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.115.260501.
+        where :math:`F_0` can be written as
+
+        .. math::
+            \operatorname{F_0} = \frac{
+                \prod_{i=1}^d \left [w_i + \sqrt{w_i^2 - 1} \right]
+            }{
+                \sqrt{\det \hat{\sigma}}
+            },
+
+        where :math:`w_i \geq 1` and :math:`\pm w_i` are the eigenvalues of the matrix
+
+        .. math::
+            W := - \frac{i}{2} \Omega^T \hat{\sigma}^{-1} \left(
+                I - \sigma_2 \Omega \sigma_1 \Omega
+            \right)
+
+        and
+
+        .. math::
+            \Omega = \begin{bmatrix}
+                0 & 1 \\-1 & 0
+            \end{bmatrix} \otimes I_{2d \times 2d}.
+
+        References:
+            - `Quantum fidelity for arbitrary Gaussian states <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.115.260501>`_.
+
+        Note:
+            In this notation :math:`\sqrt{\hbar} \mu_i` is equivalent to
+            :attr:`xpxp_mean_vector` and :math:`\hbar \sigma_i` is equivalent to
+            :attr:`xpxp_covariance_matrix`.
 
         Args:
-            state: A gaussian state
-                :class:`~piquasso._backends.gaussian.state.GaussianState` that can be
-                used to calculate the fidelity aganist it.
+            state: Another :class:`~piquasso._backends.gaussian.state.GaussianState`
+                instance.
 
         Returns:
             float: The calculated fidelity.
-        """
-        mean_1, cov_1 = (
-            self.xpxp_mean_vector,
-            self.xpxp_covariance_matrix / (2 * self._config.hbar),
+        """  # noqa: E501
+        hbar = self._config.hbar
+
+        sigma_1 = self.xpxp_covariance_matrix / hbar
+        sigma_2 = state.xpxp_covariance_matrix / hbar
+
+        sigma_mean = (sigma_1 + sigma_2) / 2
+
+        Omega = symplectic_form(self.d)
+
+        Id = np.identity(2 * self.d)
+
+        W_aux = (
+            -1j
+            / 2
+            * Omega.T
+            @ np.linalg.inv(sigma_mean)
+            @ (Id - sigma_2 @ Omega @ sigma_1 @ Omega)
         )
-        mean_2, cov_2 = (
-            state.xpxp_mean_vector,
-            state.xpxp_covariance_matrix / (2 * state._config.hbar),
+
+        eigenvalues = np.linalg.eigvals(W_aux)
+        positive_eigenvalues = eigenvalues[eigenvalues >= 0]
+
+        F_0 = np.prod(
+            [w + np.sqrt(w**2 - 1) for w in positive_eigenvalues]
+        ) / np.sqrt(np.linalg.det(sigma_mean))
+
+        mu_1 = self.xpxp_mean_vector / np.sqrt(hbar)
+        mu_2 = state.xpxp_mean_vector / np.sqrt(hbar)
+        delta_mu = mu_2 - mu_1
+        displaced_contribition = np.exp(
+            -1 / 2 * delta_mu @ np.linalg.inv(sigma_mean) @ delta_mu
         )
 
-        W = xp_symplectic_form(self.d)
-        ident = np.identity(self.d * 2, dtype=complex)
-
-        sum_cov_inv = np.linalg.inv(cov_1 + cov_2)
-        V_aux = W.T @ sum_cov_inv @ (0.25 * W + cov_2 @ W @ cov_1)
-        delta_mu = (mean_1 - mean_2) / np.sqrt(self._config.hbar)
-
-        f1 = np.exp(-0.5 * delta_mu @ sum_cov_inv @ delta_mu)
-        f_total = (
-            2
-            * (sqrtm(ident + 0.25 * np.linalg.inv(V_aux @ W @ V_aux @ W)) + ident)
-            @ V_aux
-        )
-        f_total = np.sqrt(np.linalg.det(f_total) * np.linalg.det(sum_cov_inv))
-
-        return float((f_total * f1).real)
+        return np.real(displaced_contribition * F_0)
 
     def quadratic_polynomial_expectation(
         self, A: np.ndarray, b: np.ndarray, c: float = 0.0, phi: float = 0.0
