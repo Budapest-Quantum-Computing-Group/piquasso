@@ -953,7 +953,7 @@ def test_wigner_function_equivalence():
         pq.FockSimulator,
     ),
 )
-def test_fidelity(SimulatorClass):
+def test_fidelity_for_1_mode(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
         pq.Q(0) | pq.Squeezing(r=0.2, phi=-np.pi / 3)
@@ -971,6 +971,140 @@ def test_fidelity(SimulatorClass):
     fidelity = state_1.fidelity(state_2)
 
     assert np.isclose(fidelity, 0.9421652615828)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_fidelity_for_nondisplaced_states_on_2_modes(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Squeezing([0.1, 0.2])
+        pq.Q(all) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Squeezing([0.3, 0.1])
+        pq.Q(all) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=9))
+
+    state_1 = simulator.execute(program_1).state
+    state_2 = simulator.execute(program_2).state
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 0.9735085877314046)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_fidelity_for_displaced_states_on_2_modes(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.4, 0.5])
+        pq.Q(all) | pq.Squeezing([0.1, 0.2])
+        pq.Q(all) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.5, 0.4])
+        pq.Q(all) | pq.Squeezing([0.3, 0.1])
+        pq.Q(all) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+
+    state_1 = simulator.execute(program_1).state
+    state_2 = simulator.execute(program_2).state
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 0.9346675071279842)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_fidelity_for_nondisplaced_pure_states_on_3_modes(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.04, 0.05, 0.1])
+        pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.05, 0.04, 0.02])
+        pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
+
+    simulator = SimulatorClass(d=3, config=pq.Config(cutoff=7))
+
+    state_1 = simulator.execute(program_1).state
+    state_2 = simulator.execute(program_2).state
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 0.9889124929545777)
+    assert np.isclose(fidelity, state_2.fidelity(state_1))
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.GaussianSimulator,
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+    ),
+)
+def test_fidelity_for_nondisplaced_mixed_states_on_3_modes(SimulatorClass):
+    with pq.Program() as program_1:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.04, 0.05, 0.1])
+        pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
+
+    with pq.Program() as program_2:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=[0.05, 0.04, 0.02])
+        pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
+
+    simulator = SimulatorClass(d=3, config=pq.Config(cutoff=7))
+
+    state_1 = simulator.execute(program_1).state.reduced(modes=(0, 1))
+    state_2 = simulator.execute(program_2).state.reduced(modes=(0, 1))
+    fidelity = state_1.fidelity(state_2)
+
+    assert np.isclose(fidelity, 0.9959871270027937)
     assert np.isclose(fidelity, state_2.fidelity(state_1))
 
 
