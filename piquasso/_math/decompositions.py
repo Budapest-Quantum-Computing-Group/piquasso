@@ -157,7 +157,7 @@ def williamson(matrix: np.ndarray) -> tuple:
 
     omega = xp_symplectic_form(d)
 
-    root_matrix = sqrtm(matrix)
+    root_matrix = sqrtm(matrix).real
     inverse_root_matrix = np.linalg.inv(root_matrix)
 
     block_diagonal_part, orthogonal_part = schur(

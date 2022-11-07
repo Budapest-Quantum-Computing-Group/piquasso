@@ -191,6 +191,109 @@ def test_williamson_with_random_positive_definite_matrix(
     assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
 
 
+def test_williamson_with_special_matrix():
+    """
+    Sometimes scipy.linalg.sqrtm returns complex matrices even when real matrices with
+    positive eigenvalues got specified. This test specifies a matrix for which the
+    square root turns out to be complex even if it is real and positive definite.
+
+    When a complex matrix is specified to the schur algorithm, automatically the complex
+    schur algorithm is executed instead of the desired real schur algorithm.
+    """
+    matrix = np.array(
+        [
+            [
+                1.8577097765113275,
+                -0.03968353838339344,
+                -0.13480023344314673,
+                0.09038151421983714,
+                -0.19128617316388555,
+                0.061794725510946794,
+                0.14126733590055737,
+                -0.13966704763096188,
+            ],
+            [
+                -0.03968353838339344,
+                2.349487427421141,
+                -0.07259190627416134,
+                -0.01569343729182265,
+                0.06179472551094684,
+                0.05723660406987829,
+                -0.07428264466311996,
+                0.06923453621903403,
+            ],
+            [
+                -0.13480023344314673,
+                -0.07259190627416134,
+                2.1222235731327235,
+                0.21237578147380476,
+                0.14126733590055734,
+                -0.07428264466311996,
+                0.09628621679115495,
+                0.12278740167165433,
+            ],
+            [
+                0.09038151421983714,
+                -0.015693437291822643,
+                0.21237578147380476,
+                2.01240160261767,
+                -0.13966704763096188,
+                0.06923453621903401,
+                0.12278740167165435,
+                0.18926141391838203,
+            ],
+            [
+                -0.19128617316388555,
+                0.06179472551094682,
+                0.14126733590055737,
+                -0.13966704763096188,
+                2.2225572459649756,
+                0.03968353838339344,
+                0.13480023344314673,
+                -0.09038151421983714,
+            ],
+            [
+                0.061794725510946814,
+                0.05723660406987829,
+                -0.07428264466311996,
+                0.06923453621903403,
+                0.03968353838339344,
+                1.730779595055162,
+                0.07259190627416134,
+                0.015693437291822643,
+            ],
+            [
+                0.14126733590055734,
+                -0.07428264466311996,
+                0.09628621679115495,
+                0.12278740167165433,
+                0.13480023344314673,
+                0.07259190627416134,
+                1.9580434493435799,
+                -0.21237578147380476,
+            ],
+            [
+                -0.13966704763096188,
+                0.06923453621903401,
+                0.12278740167165435,
+                0.18926141391838203,
+                -0.09038151421983714,
+                0.015693437291822637,
+                -0.21237578147380476,
+                2.0678654198586335,
+            ],
+        ],
+        dtype=float,
+    )
+
+    symplectic, diagonal = williamson(matrix)
+
+    assert is_diagonal(diagonal)
+    assert is_symplectic(symplectic, form_func=xp_symplectic_form)
+    assert np.all(np.isreal(symplectic))
+    assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
+
+
 def test_decompose_to_pure_and_mixed_with_identity():
     hbar = 42
     covariance_matrix = hbar * np.identity(4)
