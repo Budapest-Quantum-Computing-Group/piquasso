@@ -61,3 +61,10 @@ class NumpyCalculator(BaseCalculator):
         embedded_matrix[indices] = matrix
 
         return embedded_matrix
+
+    def custom_gradient(self, func):
+        def wrapper(*args, **kwargs):
+            result, _ = func(*args, **kwargs)
+            return result
+
+        return wrapper
