@@ -136,3 +136,6 @@ class TensorflowCalculator(BaseCalculator):
         S, V, W = self._tf.linalg.svd(matrix)
 
         return V, S, self.np.conj(W).T
+
+    def custom_gradient(self, func):
+        return self._tf.custom_gradient(func)

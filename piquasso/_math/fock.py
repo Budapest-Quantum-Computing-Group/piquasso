@@ -17,7 +17,6 @@ import functools
 from typing import Tuple, Iterable, Generator, Any, List
 
 import numpy as np
-
 from operator import add
 
 from scipy.special import factorial, comb
@@ -25,6 +24,8 @@ from scipy.special import factorial, comb
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
+from piquasso._math.gradients import create_single_mode_displacement_gradient
+from piquasso._math.gate_matrices import create_single_mode_displacement_matrix
 from piquasso.api.calculator import BaseCalculator
 
 
@@ -167,51 +168,6 @@ class FockSpace(tuple):
                 for n in range(self.cutoff)
             )
         )
-
-    def get_single_mode_displacement_operator(
-        self,
-        *,
-        r: float,
-        phi: float,
-    ) -> np.ndarray:
-
-        r"""
-        This method generates the Displacement operator following a recursion rule.
-        Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
-
-        Args:
-        r (float): This is the Displacement amplitude. Typically this value can be
-            negative or positive depending on the desired displacement direction.
-            Note:
-                Setting :math:`|r|` to higher values will require you to have a higer
-                cuttof dimensions.
-        phi (float): This is the Dispalacement angle. Its ranges are
-            :math:`\phi \in [ 0, 2 \pi )`
-
-        Returns:
-            np.ndarray: The constructed Displacement matrix representing the Fock
-            operator.
-        """
-        np = self._calculator.np
-
-        fock_indices = np.sqrt(np.arange(self.cutoff))
-        displacement = np.dot(r, np.exp(np.dot(1j, phi)))
-
-        matrix: List[List[complex]] = [[] for _ in range(self.cutoff)]
-
-        matrix[0].append(np.exp(-0.5 * r**2))
-
-        for row in range(1, self.cutoff):
-            matrix[row].append(displacement / fock_indices[row] * matrix[row - 1][0])
-
-        for col in range(1, self.cutoff):
-            for row in range(self.cutoff):
-                matrix[row].append(
-                    (-np.conj(displacement) / fock_indices[col] * matrix[row][col - 1])
-                    + (fock_indices[row] / fock_indices[col] * matrix[row - 1][col - 1])
-                )
-
-        return np.array(matrix)
 
     def get_single_mode_squeezing_operator(
         self,
@@ -555,3 +511,14 @@ class FockSpace(tuple):
 
     def get_annihilation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
         return self.get_creation_operator(modes).transpose()
+
+    def get_single_mode_displacement_operator(self, *, r, phi):
+        @self.calculator.custom_gradient
+        def f(r, phi):
+            matrix = create_single_mode_displacement_matrix(r, phi, self.cutoff)
+            grad = create_single_mode_displacement_gradient(
+                r, phi, self.cutoff, matrix, self.calculator
+            )
+            return matrix, grad
+
+        return f(r, phi)

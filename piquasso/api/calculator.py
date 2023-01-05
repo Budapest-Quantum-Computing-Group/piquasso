@@ -79,3 +79,6 @@ class BaseCalculator(abc.ABC):
 
     def powm(self, matrix, power):
         raise NotImplementedCalculation()
+
+    def custom_gradient(self, func):
+        raise NotImplementedCalculation()
