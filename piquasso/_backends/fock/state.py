@@ -212,7 +212,7 @@ class BaseFockState(State, abc.ABC):
 
         .. math::
             \operatorname{F}(\rho_1, \rho_2) = \operatorname{Tr}(\sqrt{\sqrt{\rho_1}
-                \rho_2\sqrt{\rho_1}})^2
+                \rho_2\sqrt{\rho_1}})^2 = \operatorname{Tr}(\sqrt{\rho_1 \rho_2})^2 
 
         Args:
             state: Either a :class:`~piquasso._backends.fock.pure.state.PureFockState`
@@ -222,9 +222,5 @@ class BaseFockState(State, abc.ABC):
         Returns:
             float: The calculated fidelity.
         """
-
-        sqrt_density_1 = sqrtm(self.density_matrix)
-        f = sqrtm(sqrt_density_1 @ state.density_matrix @ sqrt_density_1)
-        # Trace norm of the matrix. For more details please check:
-        # https://www.quantiki.org/wiki/trace-norm
-        return float((np.linalg.norm(f, ord="nuc") ** 2).real)
+        geometric_mean = np.sqrt(np.linalg.eigvals(self.density_matrix @ state.density_matrix))
+        return np.abs(np.sum(geometric_mean))**2

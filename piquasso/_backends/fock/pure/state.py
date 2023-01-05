@@ -224,3 +224,11 @@ class PureFockState(BaseFockState):
             accumulator += number * self._np.abs(self._state_vector[index]) ** 2
 
         return accumulator
+
+    def fidelity(self, state: "BaseFockState") -> float:
+        if isinstance(state, self.__class__):
+            return (
+                np.abs(np.sum(np.conj(state._state_vector) @ self._state_vector)) ** 2
+            )
+
+        return super().fidelity(state)
