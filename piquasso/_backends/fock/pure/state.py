@@ -195,6 +195,8 @@ class PureFockState(BaseFockState):
             (float, float): A tuple that contains the expectation value and the
                 varianceof of the quadrature operator respectively.
         """
+        np = self._calculator.np
+
         reduced_dm = self.reduced(modes=modes).density_matrix
         annih = np.diag(np.sqrt(np.arange(1, self._config.cutoff)), 1)
         create = annih.T
@@ -206,14 +208,16 @@ class PureFockState(BaseFockState):
         else:
             rotated_quadratures = position
 
-        expctation = np.trace(np.dot(reduced_dm, rotated_quadratures)).real
+        expectation = np.real(np.trace(np.dot(reduced_dm, rotated_quadratures)))
         variance = (
-            np.trace(
-                np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
-            ).real
-            - expctation**2
+            np.real(
+                np.trace(
+                    np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
+                )
+            )
+            - expectation**2
         )
-        return expctation, variance
+        return expectation, variance
 
     def mean_photon_number(self):
         accumulator = 0.0

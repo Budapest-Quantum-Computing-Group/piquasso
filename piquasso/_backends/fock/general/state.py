@@ -129,11 +129,18 @@ class FockState(BaseFockState):
         return probability_map
 
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
+        np = self._calculator.np
+
         modes_to_eliminate = self._get_auxiliary_modes(modes)
 
         reduced_state = FockState(
             d=len(modes), calculator=self._calculator, config=self._config
         )
+
+        density_list = [
+            [0.0 for _ in range(reduced_state._density_matrix.shape[1])]
+            for _ in range(reduced_state._density_matrix.shape[0])
+        ]
 
         for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
             modes=modes_to_eliminate
@@ -143,10 +150,11 @@ class FockState(BaseFockState):
 
             reduced_index = reduced_state._space.index(reduced_basis)
             reduced_dual_index = reduced_state._space.index(reduced_dual_basis)
+            density_list[reduced_index][reduced_dual_index] += self._density_matrix[
+                index
+            ]
 
-            reduced_state._density_matrix[
-                reduced_index, reduced_dual_index
-            ] += self._density_matrix[index]
+        reduced_state._density_matrix = np.array(density_list)
 
         return reduced_state
 
@@ -244,11 +252,11 @@ class FockState(BaseFockState):
         else:
             rotated_quadratures = position
 
-        expctation = np.trace(np.dot(reduced_dm, rotated_quadratures)).real
+        expectation = np.trace(np.dot(reduced_dm, rotated_quadratures)).real
         variance = (
             np.trace(
                 np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
             ).real
-            - expctation**2
+            - expectation**2
         )
-        return expctation, variance
+        return expectation, variance

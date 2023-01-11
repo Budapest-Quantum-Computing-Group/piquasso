@@ -24,8 +24,14 @@ from scipy.special import factorial, comb
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
-from piquasso._math.gradients import create_single_mode_displacement_gradient
-from piquasso._math.gate_matrices import create_single_mode_displacement_matrix
+from piquasso._math.gradients import (
+    create_single_mode_displacement_gradient,
+    create_single_mode_squeezing_gradient,
+)
+from piquasso._math.gate_matrices import (
+    create_single_mode_displacement_matrix,
+    create_single_mode_squeezing_matrix,
+)
 from piquasso.api.calculator import BaseCalculator
 
 
@@ -175,56 +181,15 @@ class FockSpace(tuple):
         r: float,
         phi: float,
     ) -> np.ndarray:
-        """
-        This method generates the Squeezing operator following a recursion rule.
-        Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
-
-        Args:
-        r (float): This is the Squeezing amplitude. Typically this value can be
-            negative or positive depending on the desired squeezing direction.
-            Note:
-                Setting :math:`|r|` to higher values will require you to have a higer
-                cuttof dimensions.
-        phi (float): This is the Squeezing angle. Its ranges are
-            :math:`\phi \in [ 0, 2 \pi )`
-
-        Returns:
-            np.ndarray: The constructed Squeezing matrix representing the Fock operator.
-        """
-
-        np = self._calculator.np
-
-        sechr = 1.0 / np.cosh(r)
-        A = np.exp(1j * phi) * np.tanh(r)
-        fock_indices = np.sqrt(np.arange(self.cutoff, dtype=complex))
-
-        matrix: List[List[complex]] = [[] for _ in range(self.cutoff)]
-
-        matrix[0].append(np.sqrt(sechr))
-
-        for row in range(1, self.cutoff):
-            matrix[row].append(
-                (-fock_indices[row - 1] / fock_indices[row] * (matrix[row - 2][0] * A))
-                if row % 2 == 0
-                else 0.0
+        @self.calculator.custom_gradient
+        def f(r, phi):
+            matrix = create_single_mode_squeezing_matrix(r, phi, self.cutoff)
+            grad = create_single_mode_squeezing_gradient(
+                r, phi, self.cutoff, matrix, self.calculator
             )
+            return matrix, grad
 
-        if len(matrix[-1]) == 0:
-            matrix[-1].append(0.0)
-
-        for col in range(1, self.cutoff):
-            for row in range(self.cutoff):
-                matrix[row].append(
-                    (
-                        (fock_indices[row] * matrix[row - 1][col - 1] * sechr)
-                        + (fock_indices[col - 1] * np.conj(A) * matrix[row][col - 2])
-                    )
-                    / fock_indices[col]
-                    if (row + col) % 2 == 0
-                    else 0.0
-                )
-
-        return np.array(matrix)
+        return f(r, phi)
 
     def get_single_mode_cubic_phase_operator(
         self, *, gamma: float, hbar: float, calculator: BaseCalculator
