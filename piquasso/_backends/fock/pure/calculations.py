@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Mapping
+from typing import Optional, Tuple, Mapping, List
 
 import random
 import numpy as np
@@ -149,7 +149,7 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
             new_subspace_representation.astype(interferometer.dtype)
         )
 
-    return calculator.block_diag(*subspace_representations)
+    return subspace_representations
 
 
 def passive_linear(
@@ -163,12 +163,12 @@ def passive_linear(
         d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
     )
 
-    interferometer_on_fock_space = _get_interferometer_on_fock_space(
+    subspace_transformations = _get_interferometer_on_fock_space(
         interferometer, subspace, calculator
     )
 
-    _apply_subspace_matrix_to_state(
-        state, interferometer_on_fock_space, instruction.modes
+    _apply_passive_gate_matrix_to_state(
+        state, subspace_transformations, instruction.modes
     )
 
     return Result(state=state)
@@ -211,7 +211,57 @@ def _get_projected_state_vector(
     return new_state_vector
 
 
-def _apply_subspace_matrix_to_state(
+def _apply_passive_gate_matrix_to_state(
+    state: PureFockState,
+    subspace_transformations: List[np.ndarray],
+    modes: Tuple[int, ...],
+) -> None:
+    np = state._np
+    fallback_np = state._calculator.fallback_np
+
+    space = state._space
+    cutoff = space.cutoff
+    subspace = FockSpace(
+        d=len(modes), cutoff=space.cutoff, calculator=state._calculator
+    )
+    subspace_indices = [
+        cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)
+    ]
+
+    d = state._space.d
+    auxiliary_subspace = FockSpace(
+        d=d - len(modes), cutoff=space.cutoff, calculator=state._calculator
+    )
+
+    new_state_vector = [0.0] * len(state._state_vector)
+
+    auxiliary_modes = state._get_auxiliary_modes(modes)
+    all_occupation_numbers = fallback_np.zeros(d, dtype=int)
+
+    for auxiliary_occupation_numbers in auxiliary_subspace:
+        all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+
+        for n in range(cutoff - sum(auxiliary_occupation_numbers)):
+            state_indices = []
+
+            matrix = subspace_transformations[n]
+
+            for column_vector_on_subspace in subspace[
+                subspace_indices[n] : subspace_indices[n + 1]
+            ]:
+                all_occupation_numbers[(modes,)] = column_vector_on_subspace
+                column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
+                state_indices.append(column_index)
+
+            for matrix_index, state_index in enumerate(state_indices):
+                new_state_vector[state_index] = np.dot(
+                    matrix[matrix_index], state._state_vector[state_indices]
+                )
+
+    state._state_vector = np.stack(new_state_vector)
+
+
+def _apply_active_gate_matrix_to_state(
     state: PureFockState,
     matrix: np.ndarray,
     modes: Tuple[int, ...],
@@ -219,44 +269,42 @@ def _apply_subspace_matrix_to_state(
     np = state._np
     fallback_np = state._calculator.fallback_np
 
-    old_state_vector = state._state_vector
     new_state_vector = []
 
     space = state._space
+    d = space.d
+
     subspace = FockSpace(
         d=len(modes), cutoff=state._space.cutoff, calculator=state._calculator
     )
+    auxiliary_subspace = FockSpace(
+        d=d - len(modes), cutoff=space.cutoff, calculator=state._calculator
+    )
 
-    for row_vector in state._space:
-        row_vector_array = fallback_np.array(row_vector, dtype=int)
-        row_index_on_subspace = get_index_in_fock_space(
-            tuple(row_vector_array[(modes,)])
-        )
-        row_vector_array[(modes,)] = [0] * len(modes)
+    new_state_vector = [0.0] * len(state._state_vector)
 
-        matrix_row = matrix[row_index_on_subspace, :]
+    auxiliary_modes = state._get_auxiliary_modes(modes)
+    all_occupation_numbers = fallback_np.zeros(d)
 
-        matrix_column_indices = []
+    for auxiliary_occupation_numbers in auxiliary_subspace:
+        all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+
         state_indices = []
 
         limit = cutoff_cardinality(
-            cutoff=(space.cutoff - sum(row_vector_array)), d=len(modes)
+            cutoff=(space.cutoff - sum(auxiliary_occupation_numbers)), d=len(modes)
         )
 
-        for column_index_on_subspace, column_vector_on_subspace in enumerate(
-            subspace[:limit]
-        ):
-            row_vector_array[(modes,)] = column_vector_on_subspace
-            column_index = get_index_in_fock_space(tuple(row_vector_array))
-            matrix_column_indices.append(column_index_on_subspace)
+        for column_vector_on_subspace in subspace[:limit]:
+            all_occupation_numbers[(modes,)] = column_vector_on_subspace
+            column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
             state_indices.append(column_index)
 
-        new_state_vector.append(
-            np.dot(
-                matrix_row[matrix_column_indices],
-                old_state_vector[state_indices],
+        for matrix_index, state_index in enumerate(state_indices):
+            new_state_vector[state_index] = np.dot(
+                matrix[matrix_index, :limit],
+                state._state_vector[state_indices],
             )
-        )
 
     state._state_vector = np.stack(new_state_vector)
 
@@ -323,7 +371,7 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
             phi=angles[index],
         )
 
-        _apply_subspace_matrix_to_state(
+        _apply_active_gate_matrix_to_state(
             state,
             matrix,
             (mode,),
@@ -346,7 +394,7 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
             phi=angles[index],
         )
 
-        _apply_subspace_matrix_to_state(
+        _apply_active_gate_matrix_to_state(
             state,
             matrix,
             (mode,),
@@ -365,7 +413,7 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         matrix = state._space.get_single_mode_cubic_phase_operator(
             gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
         )
-        _apply_subspace_matrix_to_state(
+        _apply_active_gate_matrix_to_state(
             state,
             matrix,
             (mode,),

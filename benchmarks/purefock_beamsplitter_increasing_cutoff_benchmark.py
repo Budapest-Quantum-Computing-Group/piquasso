@@ -36,7 +36,7 @@ def d():
     return 5
 
 
-@pytest.mark.parametrize("cutoff", (3, 4, 5, 6))
+@pytest.mark.parametrize("cutoff", (3, 4, 5, 6, 7, 8))
 def piquasso_benchmark(benchmark, d, cutoff, theta):
     @benchmark
     def func():
@@ -51,7 +51,7 @@ def piquasso_benchmark(benchmark, d, cutoff, theta):
         simulator_fock.execute(program)
 
 
-@pytest.mark.parametrize("cutoff", (3, 4, 5, 6))
+@pytest.mark.parametrize("cutoff", (3, 4, 5, 6, 7, 8))
 def strawberryfields_benchmark(benchmark, d, cutoff, theta):
     @benchmark
     def func():
