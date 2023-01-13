@@ -55,16 +55,17 @@ from piquasso._math.linalg import is_square, is_symmetric, is_invertible
 from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 
 from piquasso.core import _mixins
+from typing import Optional
 
 
 class _GaussianGate(Gate):
     def __init__(
         self,
         *,
-        params: dict = None,
-        passive_block: np.ndarray = None,
-        active_block: np.ndarray = None,
-        displacement_vector: np.ndarray = None,
+        params: Optional[dict] = None,
+        passive_block: Optional[np.ndarray] = None,
+        active_block: Optional[np.ndarray] = None,
+        displacement_vector: Optional[np.ndarray] = None,
     ):
         params = params or {}
 
@@ -615,7 +616,11 @@ class Displacement(_ScalableGaussianGate):
     """
 
     def __init__(
-        self, *, alpha: complex = None, r: float = None, phi: float = None
+        self,
+        *,
+        alpha: Optional[complex] = None,
+        r: Optional[float] = None,
+        phi: Optional[float] = None,
     ) -> None:
         """
         Args:

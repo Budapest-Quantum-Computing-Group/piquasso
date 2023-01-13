@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List
+from typing import Optional, Tuple, List
 
 import numpy as np
 
@@ -42,7 +42,7 @@ class GaussianState(State):
     r"""Class to represent a Gaussian state."""
 
     def __init__(
-        self, d: int, calculator: BaseCalculator, config: Config = None
+        self, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         """
         Args:
@@ -794,7 +794,7 @@ class GaussianState(State):
         self,
         positions: List[List[float]],
         momentums: List[List[float]],
-        modes: Tuple[int, ...] = None,
+        modes: Optional[Tuple[int, ...]] = None,
     ) -> np.ndarray:
         r"""
         This method calculates the Wigner function values at the specified position and

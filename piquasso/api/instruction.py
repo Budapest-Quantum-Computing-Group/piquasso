@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import typing
-from typing import Tuple, Any, Type, Dict
+from typing import Optional, Tuple, Any, Type, Dict
 
 import numpy as np
 
@@ -38,7 +38,9 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     _subclasses: Dict[str, Type["Instruction"]] = {}
 
-    def __init__(self, *, params: dict = None, extra_params: dict = None) -> None:
+    def __init__(
+        self, *, params: Optional[dict] = None, extra_params: Optional[dict] = None
+    ) -> None:
         self._params: dict = params or dict()
 
         self._extra_params: dict = extra_params or dict()

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Any, Generator, Dict
+from typing import Optional, Tuple, Any, Generator, Dict
 
 import numpy as np
 from piquasso.api.calculator import BaseCalculator
@@ -35,7 +35,7 @@ class FockState(BaseFockState):
     """
 
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Config = None
+        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         """
         Args:

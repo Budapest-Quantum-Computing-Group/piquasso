@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
+from typing import Optional, Any
 
 import os
 import copy
@@ -29,7 +29,7 @@ class Config(_mixins.CodeMixin):
     def __init__(
         self,
         *,
-        seed_sequence: Any = None,
+        seed_sequence: Optional[Any] = None,
         cache_size: int = 32,
         hbar: float = 2.0,
         use_torontonian: bool = False,

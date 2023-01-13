@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Generator, Any, Dict
+from typing import Optional, Tuple, Generator, Any, Dict
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class PureFockState(BaseFockState):
     """
 
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Config = None
+        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         """
         Args:
