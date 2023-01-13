@@ -178,7 +178,7 @@ class Simulator(Computer, _mixins.CodeMixin):
     def execute_instructions(
         self,
         instructions: List[Instruction],
-        initial_state: State = None,
+        initial_state: Optional[State] = None,
         shots: int = 1,
     ) -> Result:
         """Executes the specified instruction list.
@@ -231,7 +231,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         return result
 
     def execute(
-        self, program: Program, shots: int = 1, initial_state: State = None
+        self, program: Program, shots: int = 1, initial_state: Optional[State] = None
     ) -> Result:
         """Executes the specified program.
 

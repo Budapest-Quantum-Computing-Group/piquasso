@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List
+from typing import Optional, Tuple, List
 import numpy as np
 
 from piquasso._math.combinatorics import partitions
@@ -39,7 +39,7 @@ from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent
 
 class SamplingState(State):
     def __init__(
-        self, d: int, calculator: BaseCalculator, config: Config = None
+        self, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         """
         Args:

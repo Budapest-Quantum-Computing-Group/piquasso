@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Generator, Any, Dict, List
+from typing import Optional, Tuple, Generator, Any, Dict, List
 
 import abc
 import numpy as np
@@ -27,7 +27,7 @@ from piquasso.api.exceptions import InvalidModes
 
 class BaseFockState(State, abc.ABC):
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Config = None
+        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         super().__init__(calculator=calculator, config=config)
 
@@ -95,7 +95,7 @@ class BaseFockState(State, abc.ABC):
         self,
         positions: List[float],
         momentums: List[float],
-        modes: Tuple[int, ...] = None,
+        modes: Optional[Tuple[int, ...]] = None,
     ) -> np.ndarray:
         r"""
         This method calculates the Wigner function values at the specified position and

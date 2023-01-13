@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Mapping
+from typing import Optional, Tuple, Mapping
 
 import random
 import numpy as np
@@ -406,7 +406,7 @@ def _add_occupation_number_basis(  # type: ignore
     state: PureFockState,
     coefficient: complex,
     occupation_numbers: Tuple[int, ...],
-    modes: Tuple[int, ...] = None,
+    modes: Optional[Tuple[int, ...]] = None,
 ) -> None:
     if modes:
         occupation_numbers = state._space.get_occupied_basis(

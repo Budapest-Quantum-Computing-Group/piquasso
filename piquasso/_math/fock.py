@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import functools
-from typing import Tuple, Iterable, Generator, Any, List
+from typing import Optional, Tuple, Iterable, Generator, Any, List
 
 import numpy as np
 from operator import add
@@ -462,7 +462,9 @@ class FockSpace(tuple):
             )
         )
 
-    def get_subspace_basis(self, n: int, d: int = None) -> List[Tuple[int, ...]]:
+    def get_subspace_basis(
+        self, n: int, d: Optional[int] = None
+    ) -> List[Tuple[int, ...]]:
         d = d or self.d
         return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
 
