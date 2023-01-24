@@ -36,13 +36,15 @@ def d():
     return 5
 
 
-@pytest.mark.parametrize("cutoff", (3, 4, 5, 6, 7, 8))
+@pytest.mark.parametrize("cutoff", range(3, 14))
 def piquasso_benchmark(benchmark, d, cutoff, theta):
     @benchmark
     def func():
+        state_vector = [cutoff // d] * d
+        state_vector[0] += cutoff % d - 1
+
         with pq.Program() as program:
-            pq.Q() | pq.Vacuum()
-            pq.Q(1) | pq.Squeezing(0.1)
+            pq.Q(all) | pq.StateVector(state_vector)
             for i in range(d - 1):
                 pq.Q(i, i + 1) | pq.Beamsplitter(theta)
 
@@ -51,7 +53,7 @@ def piquasso_benchmark(benchmark, d, cutoff, theta):
         simulator_fock.execute(program)
 
 
-@pytest.mark.parametrize("cutoff", (3, 4, 5, 6, 7, 8))
+@pytest.mark.parametrize("cutoff", (3, 4, 5))
 def strawberryfields_benchmark(benchmark, d, cutoff, theta):
     @benchmark
     def func():
@@ -59,8 +61,13 @@ def strawberryfields_benchmark(benchmark, d, cutoff, theta):
 
         circuit = sf.Program(d)
 
+        state_vector = [cutoff // d] * d
+        state_vector[0] += cutoff % d - 1
+
         with circuit.context as q:
-            sf.ops.Sgate(0.1) | q[1]
+            for i, n in enumerate(state_vector):
+                sf.ops.Fock(n) | q[i]
+
             for w in range(d - 1):
                 sf.ops.BSgate(theta) | (q[w], q[w + 1])
 
