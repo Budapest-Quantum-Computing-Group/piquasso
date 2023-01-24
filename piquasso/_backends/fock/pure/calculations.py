@@ -101,49 +101,53 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
     for n in range(2, cutoff):
         size = indices[n] - indices[n - 1]
 
-        new_subspace_representation = np.zeros(shape=(size,) * 2, dtype=complex)
         previous_representation = subspace_representations[n - 1]
 
         subspace = space[indices[n - 1] : indices[n]]
 
-        update_indices = []
-        updates = []
+        matrix = []
 
-        for row_index, row_vector in enumerate(subspace):
-            first_nonzero_row_index = true_np.nonzero(row_vector)[0][0]
-            row_occupation_number = row_vector[first_nonzero_row_index]
+        subspace_indices = []
+        first_subspace_indices = []
 
-            row_vector[first_nonzero_row_index] -= 1
-            subspace_row_index = get_index_in_fock_subspace(tuple(row_vector))
-            row_vector[first_nonzero_row_index] += 1
+        nonzero_indices = []
+        first_nonzero_indices = []
 
-            for column_index, column_vector in enumerate(subspace):
+        sqrt_occupation_numbers = []
+        first_occupation_numbers = true_np.empty(size)
 
-                nonzero_column_indices = true_np.nonzero(column_vector)[0]
-                subspace_column_indices = []
+        for index, vector in enumerate(subspace):
+            nonzero_multiindex = true_np.nonzero(vector)[0]
+            first_nonzero_multiindex = nonzero_multiindex[0]
 
-                for nonzero_column_index in nonzero_column_indices:
-                    column_vector[nonzero_column_index] -= 1
-                    subspace_column_indices.append(
-                        get_index_in_fock_subspace(tuple(column_vector))
-                    )
-                    column_vector[nonzero_column_index] += 1
+            subspace_multiindex = []
+            for nonzero_index in nonzero_multiindex:
+                vector[nonzero_index] -= 1
+                subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
+                vector[nonzero_index] += 1
 
-                update_indices.append([row_index, column_index])
-                updates.append(
-                    (
-                        np.sqrt(column_vector[(nonzero_column_indices,)])
-                        * interferometer[
-                            first_nonzero_row_index, nonzero_column_indices
-                        ]
-                    )
-                    @ previous_representation[
-                        subspace_row_index, subspace_column_indices
-                    ]
-                    / np.sqrt(row_occupation_number)
-                )
+            subspace_indices.append(subspace_multiindex)
+            first_subspace_indices.append(subspace_multiindex[0])
 
-        new_subspace_representation = calculator.scatter(update_indices, updates, size)
+            nonzero_indices.append(nonzero_multiindex)
+            first_nonzero_indices.append(first_nonzero_multiindex)
+
+            sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
+            first_occupation_numbers[index] = vector[first_nonzero_multiindex]
+
+        for index in range(size):
+            first_part = (
+                sqrt_occupation_numbers[index]
+                * interferometer[np.ix_(first_nonzero_indices, nonzero_indices[index])]
+            )
+            second_part = previous_representation[
+                np.ix_(first_subspace_indices, subspace_indices[index])
+            ]
+            matrix.append(np.einsum("ij,ij->i", first_part, second_part))
+
+        new_subspace_representation = np.transpose(
+            np.array(matrix) / np.sqrt(first_occupation_numbers)
+        )
 
         subspace_representations.append(
             new_subspace_representation.astype(interferometer.dtype)
