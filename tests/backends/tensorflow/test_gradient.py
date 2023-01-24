@@ -153,6 +153,28 @@ def test_Squeezing_mean_photon_number_gradient_1_mode():
     assert np.isclose(gradient, 2 * np.sinh(r) * np.cosh(r))
 
 
+def test_Squeezing_mean_photon_number_gradient_1_mode_with_phaseshift():
+    r = 0.1
+    phi = tf.Variable(np.pi / 5)
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=8))
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Squeezing(r=r, phi=phi)
+
+        state = simulator.execute(program).state
+
+        _, variance = state.quadratures_mean_variance(modes=(0,))
+
+    gradient = tape.jacobian(variance, [phi])
+
+    assert np.isclose(variance, np.cosh(2 * r) - np.sinh(2 * r) * np.cos(phi))
+    assert np.isclose(gradient, np.sinh(2 * r) * np.sin(phi))
+
+
 def test_Beamsplitter_fock_probabilities_gradient_1_particle():
     theta = tf.Variable(np.pi / 3)
 

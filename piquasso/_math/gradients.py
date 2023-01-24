@@ -59,3 +59,65 @@ def create_single_mode_displacement_gradient(
         return (r_grad_sum, phi_grad_sum)
 
     return grad
+
+
+def create_single_mode_squeezing_gradient(
+    r: float,
+    phi: float,
+    cutoff: int,
+    transformation: np.ndarray,
+    calculator: BaseCalculator,
+) -> Callable:
+    def grad(upstream):
+        np = calculator.fallback_np
+        tf = calculator._tf
+
+        r_ = r.numpy()
+        phi_ = phi.numpy() if tf.is_tensor(phi) else phi
+
+        r_grad = np.zeros((cutoff,) * 2, dtype=complex)
+        phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
+        sinhr = np.sinh(r_)
+        coshr = np.cosh(r_)
+        sechr = 1 / coshr
+        tanhr = np.tanh(r_)
+        c_coeff = -sinhr / (np.sqrt(2 * np.power(coshr, 3)))
+        sum_coeff = -(sechr**2) / 2
+        eiphi = np.exp(1j * phi_)
+        emiphi = np.exp(-1j * phi_)
+
+        # NOTE: This algorithm deliberately overindexes the gate matrix.
+        for row in range(cutoff):
+            for col in range(cutoff):
+                r_grad[row, col] = (
+                    c_coeff * transformation[row, col]
+                    - np.sqrt(row * col)
+                    * sechr
+                    * tanhr
+                    * transformation[row - 1, col - 1]
+                    + sum_coeff
+                    * (np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col])
+                    + np.sqrt(col * (col - 1)) * emiphi * transformation[row, col - 2]
+                )
+                phi_grad[row, col] = (
+                    -tanhr
+                    * 1j
+                    * (
+                        np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col]
+                        + np.sqrt(col * (col - 1))
+                        * emiphi
+                        * transformation[row, col - 2]
+                    )
+                    / 2
+                )
+
+        # NOTE: Possibly Tensorflow bug, cast needed.
+        # cannot compute AddN as input #1(zero-based) was expected to be\
+        #  a double tensor but is a float tensor [Op:AddN].
+        # The bug does not occur with Displacement gradient for unknown reasons.
+        r_grad_sum = tf.cast(tf.math.real(tf.reduce_sum(upstream * r_grad)), tf.float32)
+        phi_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(phi_grad)))
+
+        return (r_grad_sum, phi_grad_sum)
+
+    return grad
