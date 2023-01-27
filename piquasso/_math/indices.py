@@ -43,21 +43,26 @@ def get_auxiliary_operator_index(
     return auxiliary_rows, auxiliary_modes
 
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=None)
 def get_index_in_fock_space(element: Tuple[int, ...]) -> int:
-    return sum(
-        [
-            comb(sum(element[-i:]) + i - 1, i, exact=True)
-            for i in range(1, len(element) + 1)
-        ]
-    )
+    sum_ = 0
+    accumulator = 0
+    for i in range(len(element)):
+        sum_ += element[-1-i]
+        accumulator += comb(sum_ + i, i + 1, exact=True)
+
+    return accumulator
 
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=None)
 def get_index_in_fock_subspace(element: Tuple[int, ...]) -> int:
-    return sum(
-        [comb(sum(element[-i:]) + i - 1, i, exact=True) for i in range(1, len(element))]
-    )
+    sum_ = 0
+    accumulator = 0
+    for i in range(len(element)-1):
+        sum_ += element[-1-i]
+        accumulator += comb(sum_ + i, i + 1, exact=True)
+
+    return accumulator
 
 
 def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> Tuple[int, ...]:
