@@ -34,6 +34,9 @@ def create_single_mode_displacement_gradient(
         r_ = r.numpy()
         phi_ = phi.numpy()
 
+        epiphi = np.exp(1j * phi_)
+        eimphi = np.exp(-1j * phi_)
+
         r_grad = np.zeros((cutoff,) * 2, dtype=complex)
         phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
         # NOTE: This algorithm deliberately overindexes the gate matrix.
@@ -41,21 +44,19 @@ def create_single_mode_displacement_gradient(
             for col in range(cutoff):
                 r_grad[row, col] = (
                     -r_ * transformation[row, col]
-                    + np.exp(1j * phi_) * np.sqrt(row) * transformation[row - 1, col]
-                    - np.exp(-1j * phi_) * np.sqrt(col) * transformation[row, col - 1]
+                    + epiphi * np.sqrt(row) * transformation[row - 1, col]
+                    - eimphi * np.sqrt(col) * transformation[row, col - 1]
                 )
                 phi_grad[row, col] = (
                     r_
                     * 1j
                     * (
-                        np.sqrt(row) * np.exp(1j * phi_) * transformation[row - 1, col]
-                        + np.sqrt(col)
-                        * np.exp(-1j * phi_)
-                        * transformation[row, col - 1]
+                        np.sqrt(row) * epiphi * transformation[row - 1, col]
+                        + np.sqrt(col) * eimphi * transformation[row, col - 1]
                     )
                 )
         r_grad_sum = tf.math.real(tf.reduce_sum(upstream * r_grad))
-        phi_grad_sum = tf.math.real(tf.reduce_sum(upstream * phi_grad))
+        phi_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(phi_grad)))
         return (r_grad_sum, phi_grad_sum)
 
     return grad
