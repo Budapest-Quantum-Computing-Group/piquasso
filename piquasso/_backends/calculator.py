@@ -42,6 +42,9 @@ class NumpyCalculator(BaseCalculator):
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
 
+    def maybe_convert_to_numpy(self, value):
+        return value
+
     def assign(self, array, index, value):
         array[index] = value
 
