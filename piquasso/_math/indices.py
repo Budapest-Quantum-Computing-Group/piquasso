@@ -65,5 +65,6 @@ def get_index_in_fock_subspace(element: Tuple[int, ...]) -> int:
     return accumulator
 
 
+
 def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> Tuple[int, ...]:
     return tuple(np.delete(np.arange(d), modes))
