@@ -58,3 +58,7 @@ def get_index_in_fock_subspace(element: Tuple[int, ...]) -> int:
     return sum(
         [comb(sum(element[-i:]) + i - 1, i, exact=True) for i in range(1, len(element))]
     )
+
+
+def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> Tuple[int, ...]:
+    return tuple(np.delete(np.arange(d), modes))
