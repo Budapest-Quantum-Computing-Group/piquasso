@@ -36,6 +36,13 @@ class BaseFockState(State, abc.ABC):
             cutoff=self._config.cutoff,
             calculator=calculator,
         )
+        # NOTE: This is instantiated here, since it is costly to do so, and is needed
+        # for several, repeating calculations.
+        self._auxiliary_subspace = fock.FockSpace(
+            d=d - 1,
+            cutoff=self._config.cutoff,
+            calculator=calculator,
+        )
 
     @property
     def d(self) -> int:
