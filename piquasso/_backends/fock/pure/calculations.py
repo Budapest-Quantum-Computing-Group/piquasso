@@ -23,6 +23,7 @@ from piquasso._math.fock import FockSpace, cutoff_cardinality
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_index_in_fock_subspace,
+    get_auxiliary_modes,
 )
 
 from .state import PureFockState

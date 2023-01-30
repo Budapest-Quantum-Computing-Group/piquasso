@@ -22,7 +22,7 @@ import numpy as np
 
 from piquasso.api.config import Config
 from piquasso.api.calculator import BaseCalculator
-
+from piquasso._math.indices import get_auxiliary_modes
 
 class State(abc.ABC):
     """The base class from which all `State` classes are derived.
@@ -48,7 +48,7 @@ class State(abc.ABC):
         return self._calculator.np
 
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
-        return tuple(np.delete(np.arange(self.d), modes))
+        return get_auxiliary_modes(self.d, modes)
 
     def copy(self) -> "State":
         """Returns an exact copy of this state.
