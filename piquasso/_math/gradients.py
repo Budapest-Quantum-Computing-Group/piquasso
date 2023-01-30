@@ -31,11 +31,8 @@ def create_single_mode_displacement_gradient(
         np = calculator.fallback_np
         tf = calculator._tf
 
-        r_ = r.numpy()
-        phi_ = phi.numpy()
-
-        epiphi = np.exp(1j * phi_)
-        eimphi = np.exp(-1j * phi_)
+        epiphi = np.exp(1j * phi)
+        eimphi = np.exp(-1j * phi)
 
         r_grad = np.zeros((cutoff,) * 2, dtype=complex)
         phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
@@ -43,12 +40,12 @@ def create_single_mode_displacement_gradient(
         for row in range(cutoff):
             for col in range(cutoff):
                 r_grad[row, col] = (
-                    -r_ * transformation[row, col]
+                    -r * transformation[row, col]
                     + epiphi * np.sqrt(row) * transformation[row - 1, col]
                     - eimphi * np.sqrt(col) * transformation[row, col - 1]
                 )
                 phi_grad[row, col] = (
-                    r_
+                    r
                     * 1j
                     * (
                         np.sqrt(row) * epiphi * transformation[row - 1, col]
@@ -73,19 +70,16 @@ def create_single_mode_squeezing_gradient(
         np = calculator.fallback_np
         tf = calculator._tf
 
-        r_ = r.numpy()
-        phi_ = phi.numpy() if tf.is_tensor(phi) else phi
-
         r_grad = np.zeros((cutoff,) * 2, dtype=complex)
         phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
-        sinhr = np.sinh(r_)
-        coshr = np.cosh(r_)
+        sinhr = np.sinh(r)
+        coshr = np.cosh(r)
         sechr = 1 / coshr
-        tanhr = np.tanh(r_)
+        tanhr = np.tanh(r)
         c_coeff = -sinhr / (np.sqrt(2 * np.power(coshr, 3)))
         sum_coeff = -(sechr**2) / 2
-        eiphi = np.exp(1j * phi_)
-        emiphi = np.exp(-1j * phi_)
+        eiphi = np.exp(1j * phi)
+        emiphi = np.exp(-1j * phi)
 
         # NOTE: This algorithm deliberately overindexes the gate matrix.
         for row in range(cutoff):

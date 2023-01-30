@@ -40,6 +40,12 @@ class BaseCalculator(abc.ABC):
 
         return self
 
+    def maybe_convert_to_numpy(self, value):
+        """
+        Converts tensorflow objects to numpy objects if applicable.
+        """
+        raise NotImplementedCalculation()
+
     def permanent(
         self, matrix: numpy.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...]
     ) -> float:
