@@ -24,6 +24,7 @@ from piquasso.api.config import Config
 from piquasso.api.calculator import BaseCalculator
 from piquasso._math.indices import get_auxiliary_modes
 
+
 class State(abc.ABC):
     """The base class from which all `State` classes are derived.
 

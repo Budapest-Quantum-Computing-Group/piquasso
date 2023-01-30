@@ -21,9 +21,9 @@ import piquasso as pq
 
 
 def test_Displacement_mean_photon_number_gradient_1_mode():
-    alpha = tf.Variable(0.43)
+    alpha = tf.Variable(0.01)
 
-    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=6))
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=10))
 
     with tf.GradientTape() as tape:
 
