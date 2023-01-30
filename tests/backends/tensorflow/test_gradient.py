@@ -42,6 +42,28 @@ def test_Displacement_mean_photon_number_gradient_1_mode():
     assert np.isclose(gradient, 2 * alpha)
 
 
+def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
+    r = 0.1
+    phi = tf.Variable(np.pi / 5)
+
+    simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=8))
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r, phi=phi)
+
+        state = simulator.execute(program).state
+
+        mean, _ = state.quadratures_mean_variance(modes=(0,))
+
+    gradient = tape.gradient(mean, [phi])
+
+    assert np.isclose(mean, np.sqrt(2 * simulator.config.hbar) * r * np.cos(phi))
+    assert np.isclose(gradient, -np.sqrt(2 * simulator.config.hbar) * r * np.sin(phi))
+
+
 def test_Displacement_mean_photon_number_gradient_2_modes():
     alpha = tf.Variable([0.15, 0.2])
 
