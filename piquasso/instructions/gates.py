@@ -78,6 +78,20 @@ class _GaussianGate(Gate):
             ),
         )
 
+    def _postprocess(self, calculator):
+        np = calculator.np
+
+        passive_block = self._extra_params["passive_block"]
+        active_block = self._extra_params["active_block"]
+        displacement_vector = self._extra_params["displacement_vector"]
+
+        if passive_block is not None:
+            self._extra_params["passive_block"] = np.array(passive_block)
+        if active_block is not None:
+            self._extra_params["active_block"] = np.array(active_block)
+        if displacement_vector is not None:
+            self._extra_params["displacement_vector"] = np.array(displacement_vector)
+
 
 class _ScalableGaussianGate(
     _GaussianGate,
