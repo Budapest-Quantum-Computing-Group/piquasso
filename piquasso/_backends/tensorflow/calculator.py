@@ -44,6 +44,9 @@ class TensorflowCalculator(BaseCalculator):
         self.fallback_np = fallback_np
         self.sqrtm = tf.linalg.sqrtm
 
+    def maybe_convert_to_numpy(self, value):
+        return value.numpy() if self._tf.is_tensor(value) else value
+
     def block_diag(self, *arrs):
         block_diagonalized = self._tf.linalg.LinearOperatorBlockDiag(
             [self._tf.linalg.LinearOperatorFullMatrix(arr) for arr in arrs]
