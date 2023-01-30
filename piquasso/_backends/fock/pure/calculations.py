@@ -23,6 +23,7 @@ from piquasso._math.fock import FockSpace, cutoff_cardinality
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_index_in_fock_subspace,
+    get_auxiliary_modes,
 )
 
 from .state import PureFockState
@@ -271,46 +272,121 @@ def _apply_active_gate_matrix_to_state(
     mode: int,
 ) -> None:
     calculator = state._calculator
-    np = calculator.np
-    fallback_np = calculator.fallback_np
-
+    state_vector = state._state_vector
     space = state._space
+    auxiliary_subspace = state._auxiliary_subspace
+
+    @calculator.custom_gradient
+    def f(state_vector, matrix):
+        state_vector = calculator.maybe_convert_to_numpy(state_vector)
+        matrix = calculator.maybe_convert_to_numpy(matrix)
+
+        state_index_matrix_list = _calculate_state_index_matrix_list(
+            space, auxiliary_subspace, mode
+        )
+        new_state_vector = _calculate_state_vector_after_apply_active_gate(
+            state_vector, matrix, state_index_matrix_list
+        )
+        grad = _create_linear_active_gate_gradient_function(
+            state_vector, matrix, state_index_matrix_list, calculator
+        )
+        return new_state_vector, grad
+
+    state._state_vector = f(state_vector, matrix)
+
+
+def _calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
     d = space.d
     cutoff = space.cutoff
 
-    auxiliary_modes = state._get_auxiliary_modes((mode,))
-    all_occupation_numbers = fallback_np.zeros(d, dtype=int)
+    state_index_matrix_list = []
+    auxiliary_modes = get_auxiliary_modes(d, (mode,))
+    all_occupation_numbers = np.zeros(d, dtype=int)
 
     indices = [cutoff_cardinality(cutoff=n - 1, d=d - 1) for n in range(1, cutoff + 2)]
-
-    state_indices = []
-    state_vector = []
 
     for n in range(cutoff):
         limit = space.cutoff - n
         subspace_size = indices[n + 1] - indices[n]
 
-        state_index_matrix = fallback_np.empty(shape=(limit, subspace_size), dtype=int)
+        state_index_matrix = np.empty(shape=(limit, subspace_size), dtype=int)
 
         for i, auxiliary_occupation_numbers in enumerate(
-            state._auxiliary_subspace[indices[n] : indices[n + 1]]
+            auxiliary_subspace[indices[n] : indices[n + 1]]
         ):
             all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
 
             for j in range(limit):
                 all_occupation_numbers[mode] = j
-                column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
-                state_index_matrix[j, i] = column_index
+                state_index_matrix[j, i] = get_index_in_fock_space(
+                    tuple(all_occupation_numbers)
+                )
 
-        product = matrix[:limit, :limit] @ state._state_vector[state_index_matrix]
+        state_index_matrix_list.append(state_index_matrix)
 
-        state_indices.append(state_index_matrix.reshape(-1))
-        state_vector.append(product.reshape(-1))
+    return state_index_matrix_list
 
-    sort_by = fallback_np.concatenate(state_indices).argsort()
-    state_vector_array = np.concatenate(state_vector)
 
-    state._state_vector = state_vector_array[sort_by]
+def _calculate_state_vector_after_apply_active_gate(
+    state_vector, matrix, state_index_matrix_list
+):
+    new_state_vector = np.empty_like(state_vector, dtype=complex)
+
+    for state_index_matrix in state_index_matrix_list:
+        limit = state_index_matrix.shape[0]
+        new_state_vector[state_index_matrix] = (
+            matrix[:limit, :limit] @ state_vector[state_index_matrix]
+        )
+
+    return new_state_vector
+
+
+def _create_linear_active_gate_gradient_function(
+    state_vector,
+    matrix,
+    state_index_matrix_list,
+    calculator,
+):
+    def linear_active_gate_gradient(upstream):
+        tf = calculator._tf
+        cutoff = len(state_index_matrix_list)
+
+        sort_by = np.array([], dtype=int)
+        accumulator = []
+
+        for index_matrix in state_index_matrix_list:
+            limit = index_matrix.shape[0]
+            res = matrix[:limit, :limit].T @ upstream[index_matrix]
+
+            sort_by = np.concatenate([sort_by, index_matrix.reshape(-1)])
+            accumulator.append(res.reshape(-1))
+
+        result_initial_state_grad = calculator.np.concatenate(accumulator)[
+            sort_by.argsort()
+        ]
+
+        # NOTE: Very ugly solution, but tensorflow tensors could not be assigned
+        # elementwise, so one has to do calculate it this way.
+        result_matrix_grad_as_list = []
+        for _ in range(cutoff):
+            result_matrix_grad_as_list.append([0.0] * cutoff)
+
+        for index_matrix in state_index_matrix_list:
+            limit = index_matrix.shape[0]
+            partial_result = tf.einsum(
+                "ik,jk->ij",
+                upstream[index_matrix[:limit, :]],
+                state_vector[index_matrix[:limit, :]],
+            )
+            for i in range(limit):
+                for j in range(limit):
+                    result_matrix_grad_as_list[i][j] += partial_result[i, j]
+
+        result_matrix_grad = calculator.np.array(result_matrix_grad_as_list)
+
+        return result_initial_state_grad, result_matrix_grad
+
+    return linear_active_gate_gradient
 
 
 def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
