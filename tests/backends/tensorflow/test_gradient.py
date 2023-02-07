@@ -360,8 +360,7 @@ def test_Interferometer_fock_probabilities():
 
     jacobian = tape.jacobian(density_matrix, [param])
 
-    assert np.allclose(
-        jacobian,
+    expected_jacobian = np.array(
         [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, -0.4546487, 0.0, 0.0, -0.3162077, 0.0],
@@ -371,6 +370,8 @@ def test_Interferometer_fock_probabilities():
             [0.0, 0.0, -0.07391226, -0.3784013, 0.0, -0.37840137],
         ],
     )
+
+    assert np.allclose(jacobian, expected_jacobian)
 
 
 def test_Squeezing2_mean_photon_number():
