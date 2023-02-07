@@ -67,8 +67,26 @@ def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
 
 def _get_interferometer_on_fock_space(interferometer, space, calculator):
-    """Calculates finite representation of interferometer in the Fock space.
 
+    @calculator.custom_gradient
+    def f(interferometer):
+
+        interferometer = calculator.maybe_convert_to_numpy(interferometer)
+
+        subspace_representations = _calculate_interferometer_on_fock_space(
+            interferometer, space
+        )
+        grad = _calculate_interferometer_gradient_on_fock_space(
+            interferometer, space, calculator, subspace_representations
+        )
+
+        return subspace_representations, grad
+
+    return f(interferometer)
+
+def _calculate_interferometer_on_fock_space(interferometer, space):
+
+    """Calculates finite representation of interferometer in the Fock space.
     The function assumes the knowledge of the 1-particle unitary.
 
     Sources:
@@ -78,19 +96,15 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
     Args:
         interferometer (numpy.ndarray): The 1-particle unitary
         space (FockSpace): List of basis elements on the Fock space.
-        calculator (BaseCalculator): Object containing calculations.
 
     Returns:
         numpy.ndarray: Finite representation of interferometer in the Fock space
     """
 
-    np = calculator.np
-    true_np = calculator.fallback_np
-
     cutoff = space.cutoff
     d = space.d
 
-    space = [true_np.array(element, dtype=int) for element in space]
+    space = [np.array(element, dtype=int) for element in space]
 
     subspace_representations = []
 
@@ -115,10 +129,10 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
         first_nonzero_indices = []
 
         sqrt_occupation_numbers = []
-        first_occupation_numbers = true_np.empty(size)
+        first_occupation_numbers = np.empty(size)
 
         for index, vector in enumerate(subspace):
-            nonzero_multiindex = true_np.nonzero(vector)[0]
+            nonzero_multiindex = np.nonzero(vector)[0]
             first_nonzero_multiindex = nonzero_multiindex[0]
 
             subspace_multiindex = []
@@ -156,6 +170,90 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
 
     return subspace_representations
 
+def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space, calculator, subspace_representations):
+
+    def grad(*upstream):
+        cutoff = full_space.cutoff
+        d = full_space.d
+
+        space = [np.array(element, dtype=int) for element in full_space]
+
+        full_kl_grad = [] # d_kl e
+        for k in range(d):
+            full_kl_grad.append([0]*d)
+            for l in range(d):
+                subspace_grad = []  # d_kl U
+                subspace_grad.append(np.array([[0]], dtype=interferometer.dtype)) # d_kl U_0,0
+                second_subspace = np.zeros(shape=interferometer.shape, dtype=interferometer.dtype)
+                second_subspace[k, l] = 1  # d_kl U_1,1
+                subspace_grad.append(second_subspace)
+
+                indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
+
+                for n in range(2, cutoff):
+
+                    size = indices[n] - indices[n - 1]
+                    previous_subspace_grad = subspace_grad[n - 1]
+                    subspace = space[indices[n - 1] : indices[n]]
+                    matrix = []  # V^(symm tensor n)
+
+                    subspace_indices = [] # n
+                    first_subspace_indices = [] # m
+
+                    nonzero_indices = [] # j
+                    first_nonzero_indices = [] # i
+
+                    sqrt_occupation_numbers = [] # sqrt n
+                    first_occupation_numbers = np.empty(size) # to be sqrt m_i + 1
+
+                    for index, vector in enumerate(subspace):
+                        nonzero_multiindex = np.nonzero(vector)[0]
+                        first_nonzero_multiindex = nonzero_multiindex[0]
+
+                        subspace_multiindex = []
+                        for nonzero_index in nonzero_multiindex:
+                            vector[nonzero_index] -= 1
+                            subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
+                            vector[nonzero_index] += 1
+
+                        subspace_indices.append(subspace_multiindex)
+                        first_subspace_indices.append(subspace_multiindex[0])
+
+                        nonzero_indices.append(nonzero_multiindex)
+                        first_nonzero_indices.append(first_nonzero_multiindex)
+
+                        sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
+                        first_occupation_numbers[index] = vector[first_nonzero_multiindex]
+
+                    for index in range(size): # j
+                        first_part = (  # sqrt(n_j) * V_(i,j)
+                            sqrt_occupation_numbers[index]
+                            * interferometer[np.ix_(first_nonzero_indices, nonzero_indices[index])]
+                        )
+                        second_part = previous_subspace_grad[ # U_(m,(n-1)_j)
+                            np.ix_(first_subspace_indices, subspace_indices[index])
+                        ]
+                        matrix.append(np.einsum("ij,ij->i", first_part, second_part)) # The sum in Eq. 15
+
+                    matrix[k] += ( # + sqrt(n_l) * U_(m,(n-1)_l))
+                        sqrt_occupation_numbers[l] * (subspace_representations[n][np.ix_(first_subspace_indices, subspace_indices[l])])
+                        )
+
+                    new_subspace_representation = np.transpose( # /(m_i + 1))
+                        np.array(matrix) / np.sqrt(first_occupation_numbers)
+                    )
+
+                    subspace_grad.append(
+                        new_subspace_representation.astype(interferometer.dtype)
+                    )
+                # sum in list, then element-wise product and sum
+                for i in range(len(subspace_representations)):
+                    full_kl_grad[k][l] += calculator.np.sum(upstream[i] * subspace_grad[i])
+
+        return calculator.np.asarray(full_kl_grad)
+
+    return grad
+
 
 def passive_linear(
     state: PureFockState, instruction: Instruction, shots: int
@@ -168,8 +266,8 @@ def passive_linear(
         d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
     )
 
-    subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, subspace, calculator
+    subspace_transformations = list(_get_interferometer_on_fock_space(
+        interferometer, subspace, calculator)
     )
 
     _apply_passive_gate_matrix_to_state(
