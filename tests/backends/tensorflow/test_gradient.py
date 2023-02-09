@@ -244,15 +244,26 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles():
 
     assert np.allclose(
         fock_probabilities,
-        [0, 0, 0, np.cos(theta)**4, 2*(np.cos(theta)*np.sin(theta))**2, np.sin(theta)**4],
+        [
+            0,
+            0,
+            0,
+            np.cos(theta) ** 4,
+            2 * (np.cos(theta) * np.sin(theta)) ** 2,
+            np.sin(theta) ** 4,
+        ],
     )
 
     assert np.allclose(
         jacobian,
-        [0, 0, 0,
-        -4 * np.cos(theta)**3 * np.sin(theta),
-        2 * (np.sin(2*theta)) * np.cos(2*theta),
-        4 * np.sin(theta)**3 * np.cos(theta)],
+        [
+            0,
+            0,
+            0,
+            -4 * np.cos(theta) ** 3 * np.sin(theta),
+            2 * (np.sin(2 * theta)) * np.cos(2 * theta),
+            4 * np.sin(theta) ** 3 * np.cos(theta),
+        ],
     )
 
 
@@ -336,8 +347,7 @@ def test_Interferometer_fock_probabilities():
         )
 
         j = tf.complex(0.0, 1.0)
-        interferometer = tf.exp(j * hamiltonian)
-
+        interferometer = tf.linalg.expm(j * hamiltonian)
         with pq.Program() as program:
             pq.Q(all) | pq.StateVector((1, 0)) / np.sqrt(2)
             pq.Q(all) | pq.StateVector((1, 1)) / np.sqrt(2)
@@ -354,11 +364,11 @@ def test_Interferometer_fock_probabilities():
         jacobian,
         [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, -0.42073548, -0.5950098, -0.90929735, -0.5950098],
-            [0.0, -0.42073548, 0.0, 0.0, -0.84147096, 0.0],
-            [0.0, -0.5950098, 0.0, 0.0, -1.1900196, 0.0],
-            [0.0, -0.90929735, -0.84147096, -1.1900196, -1.8185948, -1.1900196],
-            [0.0, -0.5950098, 0.0, 0.0, -1.1900196, 0.0],
+            [0.0, -0.4546487, 0.0, 0.0, -0.3162077, 0.0],
+            [0.0, 0.0, 0.4546488, -0.07391234, 0.0, -0.07391226],
+            [0.0, 0.0, -0.07391234, -0.3784013, 0.0, -0.3784013],
+            [0.0, -0.3162077, 0.0, 0.0, 0.75680256, 0.0],
+            [0.0, 0.0, -0.07391226, -0.3784013, 0.0, -0.37840137],
         ],
     )
 
