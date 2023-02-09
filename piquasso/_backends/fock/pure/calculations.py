@@ -175,7 +175,7 @@ def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space,
     def grad(*upstream):
         cutoff = full_space.cutoff
         d = full_space.d
-
+        tf = calculator._tf
         space = [np.array(element, dtype=int) for element in full_space]
 
         full_kl_grad = [] # d_kl e
@@ -183,74 +183,48 @@ def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space,
             full_kl_grad.append([0]*d)
             for l in range(d):
                 subspace_grad = []  # d_kl U
-                subspace_grad.append(np.array([[0]], dtype=interferometer.dtype)) # d_kl U_0,0
-                second_subspace = np.zeros(shape=interferometer.shape, dtype=interferometer.dtype)
+                subspace_grad.append(np.array([[0]], dtype=complex)) # d_kl U_0,0
+                second_subspace = np.zeros(shape=interferometer.shape, dtype=complex)
                 second_subspace[k, l] = 1  # d_kl U_1,1
                 subspace_grad.append(second_subspace)
 
                 indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
 
-                for n in range(2, cutoff):
+                for p in range(2, cutoff):
 
-                    size = indices[n] - indices[n - 1]
-                    previous_subspace_grad = subspace_grad[n - 1]
-                    subspace = space[indices[n - 1] : indices[n]]
-                    matrix = []  # V^(symm tensor n)
+                    size = indices[p] - indices[p - 1]
+                    previous_subspace_grad = subspace_grad[p - 1]
+                    subspace = space[indices[p - 1] : indices[p]]
+                    matrix = np.zeros(shape=(size, size), dtype=complex)  # V^(symm tensor n)
 
-                    subspace_indices = [] # n
-                    first_subspace_indices = [] # m
+                    for mp1i in subspace:
+                        i = np.nonzero(mp1i)[0][0]
+                        m = np.copy(mp1i)
+                        m[i] -= 1
+                        for n in subspace:
+                            if k == i and n[l] != 0:
+                                nm1l = np.copy(n)
+                                nm1l[l] -= 1
+                                matrix[get_index_in_fock_subspace(tuple(mp1i)), get_index_in_fock_subspace(tuple(n))] += (
+                                    np.sqrt(n[l] / (m[i] + 1)) * subspace_representations[p - 1][get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1l))]
+                                )
 
-                    nonzero_indices = [] # j
-                    first_nonzero_indices = [] # i
+                            for j in range(d):
+                                if n[j] != 0:
+                                    nm1j = np.copy(n)
+                                    nm1j[j] -= 1
+                                    matrix[get_index_in_fock_subspace(tuple(mp1i)), get_index_in_fock_subspace(tuple(n))] += (
+                                        np.sqrt(n[j] / (m[i] + 1))
+                                        * interferometer[j, i]
+                                        * previous_subspace_grad[get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1j))]
+                                    )
 
-                    sqrt_occupation_numbers = [] # sqrt n
-                    first_occupation_numbers = np.empty(size) # to be sqrt m_i + 1
+                    subspace_grad.append(matrix)
 
-                    for index, vector in enumerate(subspace):
-                        nonzero_multiindex = np.nonzero(vector)[0]
-                        first_nonzero_multiindex = nonzero_multiindex[0]
+                for i in range(len(subspace_grad)):
+                    full_kl_grad[k][l] += tf.einsum("ij,ij", upstream[i], np.conj(subspace_grad[i]))
 
-                        subspace_multiindex = []
-                        for nonzero_index in nonzero_multiindex:
-                            vector[nonzero_index] -= 1
-                            subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
-                            vector[nonzero_index] += 1
-
-                        subspace_indices.append(subspace_multiindex)
-                        first_subspace_indices.append(subspace_multiindex[0])
-
-                        nonzero_indices.append(nonzero_multiindex)
-                        first_nonzero_indices.append(first_nonzero_multiindex)
-
-                        sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
-                        first_occupation_numbers[index] = vector[first_nonzero_multiindex]
-
-                    for index in range(size): # j
-                        first_part = (  # sqrt(n_j) * V_(i,j)
-                            sqrt_occupation_numbers[index]
-                            * interferometer[np.ix_(first_nonzero_indices, nonzero_indices[index])]
-                        )
-                        second_part = previous_subspace_grad[ # U_(m,(n-1)_j)
-                            np.ix_(first_subspace_indices, subspace_indices[index])
-                        ]
-                        matrix.append(np.einsum("ij,ij->i", first_part, second_part)) # The sum in Eq. 15
-
-                    matrix[k] += ( # + sqrt(n_l) * U_(m,(n-1)_l))
-                        sqrt_occupation_numbers[l] * (subspace_representations[n][np.ix_(first_subspace_indices, subspace_indices[l])])
-                        )
-
-                    new_subspace_representation = np.transpose( # /(m_i + 1))
-                        np.array(matrix) / np.sqrt(first_occupation_numbers)
-                    )
-
-                    subspace_grad.append(
-                        new_subspace_representation.astype(interferometer.dtype)
-                    )
-                # sum in list, then element-wise product and sum
-                for i in range(len(subspace_representations)):
-                    full_kl_grad[k][l] += calculator.np.sum(upstream[i] * subspace_grad[i])
-
-        return calculator.np.asarray(full_kl_grad)
+        return calculator.np.array(full_kl_grad)
 
     return grad
 
