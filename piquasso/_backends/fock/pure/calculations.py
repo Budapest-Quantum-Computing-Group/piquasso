@@ -201,11 +201,13 @@ def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space,
                         i = np.nonzero(mp1i)[0][0]
                         m = np.copy(mp1i)
                         m[i] -= 1
+                        mp1i_index = get_index_in_fock_subspace(tuple(mp1i))
                         for n in subspace:
+                            n_index = get_index_in_fock_subspace(tuple(n))
                             if k == i and n[l] != 0:
                                 nm1l = np.copy(n)
                                 nm1l[l] -= 1
-                                matrix[get_index_in_fock_subspace(tuple(mp1i)), get_index_in_fock_subspace(tuple(n))] += (
+                                matrix[mp1i_index, n_index] += (
                                     np.sqrt(n[l] / (m[i] + 1)) * subspace_representations[p - 1][get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1l))]
                                 )
 
@@ -213,14 +215,16 @@ def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space,
                                 if n[j] != 0:
                                     nm1j = np.copy(n)
                                     nm1j[j] -= 1
-                                    matrix[get_index_in_fock_subspace(tuple(mp1i)), get_index_in_fock_subspace(tuple(n))] += (
-                                        np.sqrt(n[j] / (m[i] + 1))
-                                        * interferometer[j, i]
-                                        * previous_subspace_grad[get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1j))]
-                                    )
+                                    if mp1i_index == 0 and n_index == 1:
+                                        pass
+                                    gyokos = np.sqrt(n[j] / (m[i] + 1))
+                                    inter = interferometer[i, j]
+                                    prev = previous_subspace_grad[get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1j))]
+                                    full = gyokos * inter * prev
+                                    matrix[mp1i_index, n_index] += full
 
                     subspace_grad.append(matrix)
-
+                breakpoint()
                 for i in range(len(subspace_grad)):
                     full_kl_grad[k][l] += tf.einsum("ij,ij", upstream[i], np.conj(subspace_grad[i]))
 
