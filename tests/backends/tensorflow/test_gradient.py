@@ -360,7 +360,8 @@ def test_Interferometer_fock_probabilities():
 
     jacobian = tape.jacobian(density_matrix, [param])
 
-    expected_jacobian = np.array([
+    expected_jacobian = np.array(
+        [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, -0.4546487, 0.0, 0.0, -0.3162077, 0.0],
             [0.0, 0.0, 0.4546488, -0.07391234, 0.0, -0.07391226],

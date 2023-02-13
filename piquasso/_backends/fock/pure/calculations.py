@@ -67,60 +67,42 @@ def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
 
 def _get_interferometer_on_fock_space(interferometer, space, calculator):
-
     @calculator.custom_gradient
     def f(interferometer):
 
         interferometer = calculator.maybe_convert_to_numpy(interferometer)
+        index_dict = _calculate_interferometer_helper_indices(space)
 
         subspace_representations = _calculate_interferometer_on_fock_space(
-            interferometer, space
+            interferometer, index_dict
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
-            interferometer, space, calculator, subspace_representations
+            interferometer, space.d, calculator, subspace_representations, index_dict
         )
 
         return subspace_representations, grad
 
     return f(interferometer)
 
-def _calculate_interferometer_on_fock_space(interferometer, space):
 
-    """Calculates finite representation of interferometer in the Fock space.
-    The function assumes the knowledge of the 1-particle unitary.
-
-    Sources:
-    - Fast optimization of parametrized quantum optical circuits
-    (https://quantum-journal.org/papers/q-2020-11-30-366/)
-
-    Args:
-        interferometer (numpy.ndarray): The 1-particle unitary
-        space (FockSpace): List of basis elements on the Fock space.
-
-    Returns:
-        numpy.ndarray: Finite representation of interferometer in the Fock space
-    """
-
-    cutoff = space.cutoff
+def _calculate_interferometer_helper_indices(space):
     d = space.d
-
+    cutoff = space.cutoff
     space = [np.array(element, dtype=int) for element in space]
-
-    subspace_representations = []
-
-    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
-    subspace_representations.append(interferometer)
-
     indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
+
+    subspace_index_tensor = []
+    first_subspace_index_tensor = []
+
+    nonzero_index_tensor = []
+    first_nonzero_index_tensor = []
+
+    sqrt_occupation_numbers_tensor = []
+    first_occupation_numbers_tensor = []
 
     for n in range(2, cutoff):
         size = indices[n] - indices[n - 1]
-
-        previous_representation = subspace_representations[n - 1]
-
         subspace = space[indices[n - 1] : indices[n]]
-
-        matrix = []
 
         subspace_indices = []
         first_subspace_indices = []
@@ -150,12 +132,71 @@ def _calculate_interferometer_on_fock_space(interferometer, space):
             sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
             first_occupation_numbers[index] = vector[first_nonzero_multiindex]
 
+        subspace_index_tensor.append(subspace_indices)
+        first_nonzero_index_tensor.append(first_nonzero_indices)
+
+        nonzero_index_tensor.append(nonzero_indices)
+        first_subspace_index_tensor.append(first_subspace_indices)
+
+        sqrt_occupation_numbers_tensor.append(sqrt_occupation_numbers)
+        first_occupation_numbers_tensor.append(first_occupation_numbers)
+
+    return {
+        "subspace_index_tensor": subspace_index_tensor,
+        "first_nonzero_index_tensor": first_nonzero_index_tensor,
+        "nonzero_index_tensor": nonzero_index_tensor,
+        "first_subspace_index_tensor": first_subspace_index_tensor,
+        "sqrt_occupation_numbers_tensor": sqrt_occupation_numbers_tensor,
+        "first_occupation_numbers_tensor": first_occupation_numbers_tensor,
+        "indices": indices,
+    }
+
+
+def _calculate_interferometer_on_fock_space(interferometer, index_dict):
+
+    """Calculates finite representation of interferometer in the Fock space.
+    The function assumes the knowledge of the 1-particle unitary.
+
+    Sources:
+    - Fast optimization of parametrized quantum optical circuits
+    (https://quantum-journal.org/papers/q-2020-11-30-366/)
+
+    Args:
+        interferometer (numpy.ndarray): The 1-particle unitary
+        space (FockSpace): List of basis elements on the Fock space.
+
+    Returns:
+        numpy.ndarray: Finite representation of interferometer in the Fock space
+    """
+
+    subspace_representations = []
+
+    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
+    subspace_representations.append(interferometer)
+
+    indices = index_dict["indices"]
+    cutoff = len(indices)
+
+    for n in range(2, cutoff):
+        size = indices[n] - indices[n - 1]
+
+        subspace_indices = index_dict["subspace_index_tensor"][n - 2]
+        first_subspace_indices = index_dict["first_subspace_index_tensor"][n - 2]
+
+        nonzero_indices = index_dict["nonzero_index_tensor"][n - 2]
+        first_nonzero_indices = index_dict["first_nonzero_index_tensor"][n - 2]
+
+        sqrt_occupation_numbers = index_dict["sqrt_occupation_numbers_tensor"][n - 2]
+        first_occupation_numbers = index_dict["first_occupation_numbers_tensor"][n - 2]
+
+        matrix = []
+
         for index in range(size):
             first_part = (
                 sqrt_occupation_numbers[index]
                 * interferometer[np.ix_(first_nonzero_indices, nonzero_indices[index])]
             )
-            second_part = previous_representation[
+            second_part = subspace_representations[n - 1][
                 np.ix_(first_subspace_indices, subspace_indices[index])
             ]
             matrix.append(np.einsum("ij,ij->i", first_part, second_part))
@@ -170,117 +211,95 @@ def _calculate_interferometer_on_fock_space(interferometer, space):
 
     return subspace_representations
 
-def _calculate_interferometer_gradient_on_fock_space(interferometer, full_space, calculator, subspace_representations):
 
-    def grad(*upstream):
-        cutoff = full_space.cutoff
-        d = full_space.d
+def _calculate_interferometer_gradient_on_fock_space(
+    interferometer, d, calculator, subspace_representations, index_dict
+):
+    def interferometer_gradient(*upstream):
+        cutoff = len(index_dict["indices"])
         tf = calculator._tf
-        space = [np.array(element, dtype=int) for element in full_space]
+        indices = index_dict["indices"]
 
-        full_kl_grad = [] # d_kl e
+        full_kl_grad = []
         for k in range(d):
-            full_kl_grad.append([0]*d)
+            full_kl_grad.append([0] * d)
             for l in range(d):
-                subspace_grad = []  # d_kl U
-                subspace_grad.append(np.array([[0]], dtype=complex)) # d_kl U_0,0
+                subspace_grad = []
+                subspace_grad.append(np.array([[0]], dtype=complex))
                 second_subspace = np.zeros(shape=interferometer.shape, dtype=complex)
-                second_subspace[k, l] = 1  # d_kl U_1,1
+                second_subspace[k, l] = 1
                 subspace_grad.append(second_subspace)
-
-                indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
 
                 for p in range(2, cutoff):
 
                     size = indices[p] - indices[p - 1]
                     previous_subspace_grad = subspace_grad[p - 1]
-                    subspace = space[indices[p - 1] : indices[p]]
-                    matrix = np.zeros(shape=(size, size), dtype=complex)  # V^(symm tensor n)
-                    """
-                    subspace_indices = []
-                    first_subspace_indices = []
+                    matrix = np.zeros(shape=(size, size), dtype=complex)
 
-                    nonzero_indices = []
-                    first_nonzero_indices = []
-
-                    sqrt_occupation_numbers = []
-                    first_occupation_numbers = np.empty(size)
-
-                    for index, vector in enumerate(subspace):
-                        nonzero_multiindex = np.nonzero(vector)[0]
-                        first_nonzero_multiindex = nonzero_multiindex[0]
-
-                        subspace_multiindex = []
-                        for nonzero_index in nonzero_multiindex:
-                            vector[nonzero_index] -= 1
-                            subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
-                            vector[nonzero_index] += 1
-
-                        subspace_indices.append(subspace_multiindex)
-                        first_subspace_indices.append(subspace_multiindex[0])
-
-                        nonzero_indices.append(nonzero_multiindex)
-                        first_nonzero_indices.append(first_nonzero_multiindex)
-
-                        sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
-                        first_occupation_numbers[index] = vector[first_nonzero_multiindex]
-
-                    first_nonzero_indices = np.array(first_nonzero_indices, dtype=int)
-                    for index in range(size):
-                        first_part = (
-                            sqrt_occupation_numbers[index] * interferometer[np.ix_(first_nonzero_indices, nonzero_indices[index])]
-                        )
-                        second_part = previous_subspace_grad[
-                            np.ix_(first_subspace_indices, subspace_indices[index])
-                        ]
-                        matrix[index, :] = np.einsum("ij,ij->i", first_part, second_part)
-
-                    subrep = subspace_representations[p-1]
-                    for i in range(p):
-                        for j in range(p):
-                            if i == k and j == l:
-                                # Without `np.sqrt(first_occupation_numbers[l])` it matches with the other solution
-                                # (given if this sqrt is taken out from there as well of course)
-                                matrix[i:(p+i),j:(p+j)] += np.sqrt(first_occupation_numbers[l]) * subspace_representations[p-1]
-
-                    new_subspace_representation = np.transpose(
-                        np.array(matrix) / np.sqrt(first_occupation_numbers)
+                    subspace_indices = index_dict["subspace_index_tensor"][p - 2]
+                    first_subspace_indices = np.asarray(
+                        index_dict["first_subspace_index_tensor"][p - 2]
                     )
 
-                    subspace_grad.append(new_subspace_representation)
-                    """
-                    for mp1i in subspace:
-                        i = np.nonzero(mp1i)[0][0]
-                        m = np.copy(mp1i)
-                        m[i] -= 1
-                        mp1i_index = get_index_in_fock_subspace(tuple(mp1i))
-                        for n in subspace:
-                            n_index = get_index_in_fock_subspace(tuple(n))
-                            if k == i and n[l] != 0:
-                                nm1l = np.copy(n)
-                                nm1l[l] -= 1
-                                gyokos1 = np.sqrt(n[l] / (m[i] + 1))
-                                subrep = subspace_representations[p - 1][get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1l))]
-                                full1 = gyokos1 * subrep
-                                matrix[mp1i_index, n_index] += full1
+                    nonzero_indices = index_dict["nonzero_index_tensor"][p - 2]
+                    first_nonzero_indices = index_dict["first_nonzero_index_tensor"][
+                        p - 2
+                    ]
 
-                            for j in range(d):
-                                if n[j] != 0:
-                                    nm1j = np.copy(n)
-                                    nm1j[j] -= 1
-                                    gyokos2 = np.sqrt(n[j] / (m[i] + 1))
-                                    inter = interferometer[i, j]
-                                    prev = previous_subspace_grad[get_index_in_fock_subspace(tuple(m)), get_index_in_fock_subspace(tuple(nm1j))]
-                                    full2 = gyokos2 * inter * prev
-                                    matrix[mp1i_index, n_index] += full2
+                    sqrt_occupation_numbers = index_dict[
+                        "sqrt_occupation_numbers_tensor"
+                    ][p - 2]
+                    first_occupation_numbers = index_dict[
+                        "first_occupation_numbers_tensor"
+                    ][p - 2]
+
+                    for n_index in range(size):
+                        first_part = (
+                            sqrt_occupation_numbers[n_index]
+                            * interferometer[
+                                np.ix_(first_nonzero_indices, nonzero_indices[n_index])
+                            ]
+                        )
+                        second_part = previous_subspace_grad[
+                            np.ix_(first_subspace_indices, subspace_indices[n_index])
+                        ]
+                        full = np.einsum("ij,ij->i", first_part, second_part)
+                        matrix[:, n_index] = full / np.sqrt(first_occupation_numbers)
+
+                    mp1i_indices = np.where(np.asarray(first_nonzero_indices) == k)[0]
+                    l_nonzero_indices_index = []
+                    l_nonzero_indices = []
+                    for index in range(size):
+                        if l in nonzero_indices[index]:
+                            l_nonzero_indices_index.append(
+                                nonzero_indices[index].tolist().index(l)
+                            )
+                            l_nonzero_indices.append(index)
+
+                    for index in range(len(l_nonzero_indices_index)):
+                        nm1l_index = subspace_indices[l_nonzero_indices[index]][
+                            l_nonzero_indices_index[index]
+                        ]
+                        matrix[mp1i_indices, l_nonzero_indices[index]] += (
+                            sqrt_occupation_numbers[l_nonzero_indices[index]][
+                                l_nonzero_indices_index[index]
+                            ]
+                            / np.sqrt(first_occupation_numbers[mp1i_indices])
+                            * subspace_representations[p - 1][
+                                first_subspace_indices[mp1i_indices], nm1l_index
+                            ]
+                        )
 
                     subspace_grad.append(matrix)
-                    # """
+
                 for i in range(len(subspace_grad)):
-                    full_kl_grad[k][l] += tf.einsum("ij,ij", upstream[i], np.conj(subspace_grad[i]))
+                    full_kl_grad[k][l] += tf.einsum(
+                        "ij,ij", upstream[i], np.conj(subspace_grad[i])
+                    )
+
         return calculator.np.array(full_kl_grad)
 
-    return grad
+    return interferometer_gradient
 
 
 def passive_linear(
@@ -294,8 +313,8 @@ def passive_linear(
         d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
     )
 
-    subspace_transformations = list(_get_interferometer_on_fock_space(
-        interferometer, subspace, calculator)
+    subspace_transformations = list(
+        _get_interferometer_on_fock_space(interferometer, subspace, calculator)
     )
 
     _apply_passive_gate_matrix_to_state(
