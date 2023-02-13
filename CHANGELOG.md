@@ -1,6 +1,27 @@
 # Changelog
 
 
+## [2.1.0] - 2023-02-08
+
+### Added
+
+- Performance increase for the `PureFockSimulator` and `TensorflowPureFockSimulator`.
+
+### Fixed
+
+- `GaussianState.fidelity` gave incorrect results for multiple modes and it
+  needed to be corrected.
+- During Williamson decomposition, sometimes `scipy.linalg.sqrtm` returned with
+  complex matrices instead of real ones which caused problems so it is manually
+  casted to real.
+- In `TensorflowPureFockSimulator`, the gradient of the displacement gate
+  matrix was not applied properly to the upstream gradient, a conjugation is
+  added.
+- Using `TensorflowPureFockSimulator`, the input of the `Interferometer` gate
+  was not converted to a `tensorflow.Tensor` automatically, which has been
+  included.
+
+
 ## [2.0.0] - 2022-10-30
 
 ### Added
