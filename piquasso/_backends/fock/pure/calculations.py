@@ -322,8 +322,8 @@ def passive_linear(
         d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
     )
 
-    subspace_transformations = list(_get_interferometer_on_fock_space(
-        interferometer, subspace, calculator)
+    subspace_transformations = list(
+        _get_interferometer_on_fock_space(interferometer, subspace, calculator)
     )
 
     _apply_passive_gate_matrix_to_state(
