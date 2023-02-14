@@ -117,11 +117,7 @@ class PureFockState(BaseFockState):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        cardinality = cutoff_cardinality(d=self._space.d, cutoff=self._config.cutoff)
-
-        return self._np.real((self._state_vector * self._np.conj(self._state_vector)))[
-            :cardinality
-        ]
+        return self._np.real((self._state_vector * self._np.conj(self._state_vector)))
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
