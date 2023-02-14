@@ -94,3 +94,15 @@ def assym_reduce(
         proper_column_index.extend([index] * multiplier)
 
     return array[np.ix_(proper_column_index, proper_row_index)]
+
+
+def vector_absolute_square(vector, calculator):
+    @calculator.custom_gradient
+    def _vector_absolute_square(v):
+        absolute_square = np.real((v * np.conj(v)))
+        def _vector_absolute_square_grad(upstream):
+            return 2 * upstream * v
+
+        return absolute_square, _vector_absolute_square_grad
+
+    return _vector_absolute_square(vector)

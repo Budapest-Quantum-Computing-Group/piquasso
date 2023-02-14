@@ -22,6 +22,7 @@ from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
 from piquasso._math.fock import cutoff_cardinality, FockBasis
+from piquasso._math.linalg import vector_absolute_square
 
 from ..state import BaseFockState
 from ..general.state import FockState
@@ -117,7 +118,7 @@ class PureFockState(BaseFockState):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return self._np.real((self._state_vector * self._np.conj(self._state_vector)))
+        return vector_absolute_square(self._state_vector, self._calculator)
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
