@@ -199,7 +199,6 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result
 def displacement(state: FockState, instruction: Instruction, shots: int) -> Result:
     amplitudes = np.abs(instruction._all_params["displacement_vector"])
     angles = np.angle(instruction._all_params["displacement_vector"])
-
     for index, mode in enumerate(instruction.modes):
         operator = state._space.get_single_mode_displacement_operator(
             r=amplitudes[index],
