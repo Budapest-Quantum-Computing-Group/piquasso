@@ -68,7 +68,6 @@ def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
 def _get_interferometer_on_fock_space(interferometer, space, calculator):
     def _get_interferometer_with_gradient_callback(interferometer):
-
         interferometer = calculator.maybe_convert_to_numpy(interferometer)
         index_dict = _calculate_interferometer_helper_indices(space)
 
@@ -425,7 +424,7 @@ def _apply_active_gate_matrix_to_state(
     auxiliary_subspace = state._auxiliary_subspace
 
     @calculator.custom_gradient
-    def f(state_vector, matrix):
+    def _apply_active_gate_matrix(state_vector, matrix):
         state_vector = calculator.maybe_convert_to_numpy(state_vector)
         matrix = calculator.maybe_convert_to_numpy(matrix)
 
@@ -440,7 +439,7 @@ def _apply_active_gate_matrix_to_state(
         )
         return new_state_vector, grad
 
-    state._state_vector = f(state_vector, matrix)
+    state._state_vector = _apply_active_gate_matrix(state_vector, matrix)
 
 
 def _calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
