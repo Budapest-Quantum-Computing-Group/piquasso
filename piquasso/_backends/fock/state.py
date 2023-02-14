@@ -50,7 +50,7 @@ class BaseFockState(State, abc.ABC):
 
     @property
     def norm(self) -> int:
-        return sum(self.fock_probabilities)
+        return self._calculator.np.sum(self.fock_probabilities)
 
     def _as_code(self) -> str:
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"
