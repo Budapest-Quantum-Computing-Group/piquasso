@@ -224,6 +224,33 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle():
         [0, -2 * np.cos(theta) * np.sin(theta), 2 * np.cos(theta) * np.sin(theta)],
     )
 
+def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift():
+    theta = tf.Variable(np.pi / 3)
+    phi = np.pi / 5
+
+    simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=2))
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((1, 0))
+
+            pq.Q(all) | pq.Beamsplitter(theta=theta, phi=phi)
+
+        state = simulator.execute(program).state
+
+        fock_probabilities = state.fock_probabilities
+
+    jacobian = tape.jacobian(fock_probabilities, [theta])
+
+    assert np.allclose(
+        fock_probabilities,
+        [0, np.cos(theta) ** 2, np.sin(theta) ** 2],
+    )
+
+    assert np.allclose(
+        jacobian,
+        [0, -2 * np.cos(theta) * np.sin(theta), 2 * np.cos(theta) * np.sin(theta)],
+    )
 
 def test_Beamsplitter_fock_probabilities_gradient_2_particles():
     theta = tf.Variable(np.pi / 3)
