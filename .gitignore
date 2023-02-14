@@ -19,3 +19,6 @@ prof
 # Sphinx
 docs/_build
 .ipynb_checkpoints/
+
+# Tensorboard
+logdir/
