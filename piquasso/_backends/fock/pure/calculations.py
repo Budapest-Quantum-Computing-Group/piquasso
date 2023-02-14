@@ -557,7 +557,7 @@ def _calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
 def _calculate_state_vector_after_apply_active_gate(
     state_vector, matrix, state_index_matrix_list
 ):
-    new_state_vector = np.empty_like(state_vector, dtype=complex)
+    new_state_vector = np.empty_like(state_vector, dtype=np.csingle)
 
     for state_index_matrix in state_index_matrix_list:
         limit = state_index_matrix.shape[0]
@@ -661,8 +661,8 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
 def displacement(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     np = state._np
 
-    amplitudes = np.abs(instruction._all_params["displacement_vector"])
-    angles = np.angle(instruction._all_params["displacement_vector"])
+    amplitudes = np.abs(instruction._all_params["displacement_vector"]).astype(np.float32)
+    angles = np.angle(instruction._all_params["displacement_vector"]).astype(np.float32)
 
     for index, mode in enumerate(instruction.modes):
         matrix = state._space.get_single_mode_displacement_operator(
