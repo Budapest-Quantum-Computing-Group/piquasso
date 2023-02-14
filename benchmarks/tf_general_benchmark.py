@@ -42,7 +42,7 @@ def xi():
     return 0.3
 
 
-parameters = [(d, unitary_group.rvs(d)) for d in range(3, 5)]
+parameters = [(d, unitary_group.rvs(d)) for d in range(2, 3)]
 
 
 @pytest.mark.parametrize("d, interferometer", parameters)
@@ -63,9 +63,9 @@ def piquasso_benchmark(benchmark, d, interferometer, alpha, r, xi):
 
         with tf.GradientTape() as tape:
             state = simulator_fock.execute(program).state
-            mean_photon_number = state.mean_photon_number()
+            fock_probabilities = state.fock_probabilities
 
-        tape.gradient(mean_photon_number, [alpha_])
+        tape.jacobian(fock_probabilities, [alpha_])
 
 
 @pytest.mark.parametrize("d, interferometer", parameters)
@@ -95,6 +95,6 @@ def strawberryfields_benchmark(benchmark, d, interferometer, alpha, r, xi):
         with tf.GradientTape() as tape:
             result = engine.run(program, args=mapping)
             state = result.state
-            mean = sum([state.mean_photon(mode)[0] for mode in range(d)])
+            fock_probabilities = state.all_fock_probs()
 
-        tape.gradient(mean, [alpha_])
+        tape.jacobian(fock_probabilities, [alpha_])
