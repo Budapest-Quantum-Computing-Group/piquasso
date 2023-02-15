@@ -533,3 +533,53 @@ def test_CrossKerr_density_matrix():
     expected_jacobian[8, 4] = np.real(coefficient / 2)
 
     assert np.allclose(jacobian, expected_jacobian)
+
+
+def test_mean_position_Displacement_gradient_on_1_mode():
+    d = 1
+    cutoff = 7
+
+    alpha_ = tf.Variable(0.02)
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=alpha_)
+
+    config = pq.Config(cutoff=cutoff)
+
+    simulator = pq.TensorflowPureFockSimulator(d=d, config=config)
+
+    with tf.GradientTape() as tape:
+        state = simulator.execute(program).state
+        mean = state.mean_position(mode=0)
+
+    grad = tape.gradient(mean, [alpha_])
+
+    assert np.allclose(mean, np.sqrt(2 * config.hbar) * alpha_)
+    assert np.allclose(grad, np.sqrt(2 * config.hbar))
+
+
+def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
+    d = 1
+    cutoff = 7
+
+    alpha_ = tf.Variable(0.01)
+    r_ = tf.Variable(0.05)
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=alpha_)
+        pq.Q(all) | pq.Squeezing(r_)
+
+    simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+
+    with tf.GradientTape() as tape:
+        state = simulator.execute(program).state
+        mean = state.mean_position(mode=0)
+
+    grad = tape.gradient(mean, [r_, alpha_])
+
+    assert np.allclose(mean, 0.019024584947048066)
+    assert np.allclose(grad, [-0.019024614, 1.9024585382680494])

@@ -115,3 +115,35 @@ def test_PureFockState_quadratures_mean_variance():
     assert np.isclose(var_2, 0.9112844, rtol=0.00001)
     assert np.isclose(var_3, 1, rtol=0.00001)
     assert np.isclose(var_4, 1, rtol=0.00001)
+
+
+def test_PureFockState_mean_position():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.2, phi=0)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=8))
+    state = simulator.execute(program).state
+
+    assert np.isclose(state.mean_position(mode=0), 0.4)
+
+
+def test_mean_position():
+    d = 1
+    cutoff = 7
+
+    alpha_ = 0.02
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(alpha=alpha_)
+
+    config = pq.Config(cutoff=cutoff)
+
+    simulator = pq.TensorflowPureFockSimulator(d=d, config=config)
+
+    state = simulator.execute(program).state
+    mean = state.mean_position(mode=0)
+
+    assert np.allclose(mean, np.sqrt(2 * config.hbar) * alpha_)
