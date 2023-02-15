@@ -34,8 +34,8 @@ def create_single_mode_displacement_gradient(
         epiphi = np.exp(1j * phi)
         eimphi = np.exp(-1j * phi)
 
-        r_grad = np.zeros((cutoff,) * 2, dtype=np.csingle)
-        phi_grad = np.zeros((cutoff,) * 2, dtype=np.csingle)
+        r_grad = np.zeros((cutoff,) * 2, dtype=complex)
+        phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
         # NOTE: This algorithm deliberately overindexes the gate matrix.
         for row in range(cutoff):
             for col in range(cutoff):

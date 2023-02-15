@@ -15,43 +15,35 @@
 
 import piquasso as pq
 import tensorflow as tf
-import time
+
 from scipy.stats import unitary_group
 
 
 alpha = 0.01
 r = 0.01
 xi = 0.3
-d = 2
-# interferometer = unitary_group.rvs(d)
-alpha_ = tf.Variable(alpha, dtype=tf.float32)
-xi_ = tf.Variable(xi)
-
-tf.debugging.disable_traceback_filtering()
-tf.debugging.disable_check_numerics()
+d = 5
+interferometer = unitary_group.rvs(d)
 
 with pq.Program() as program:
     pq.Q(all) | pq.Vacuum()
 
-    pq.Q(all) | pq.Displacement(alpha=alpha_)
-    #pq.Q(all) | pq.Squeezing(r)
-    #pq.Q(all) | pq.Interferometer(interferometer)
-    #pq.Q(all) | pq.Kerr(xi)
+    pq.Q(all) | pq.Displacement(alpha=alpha)
+    pq.Q(all) | pq.Squeezing(r)
+    pq.Q(all) | pq.Interferometer(interferometer)
+    pq.Q(all) | pq.Kerr(xi)
 
-simulator_fock = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=d))
+simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=d))
 
 options = tf.profiler.experimental.ProfilerOptions(
-    host_tracer_level=3, python_tracer_level=3, device_tracer_level=3
+    host_tracer_level=1, python_tracer_level=1, device_tracer_level=1
 )
 
-
-start_time = time.time()
-with tf.GradientTape() as tape:
-    state = simulator_fock.execute(program).state
-    fock_probabilities = state.fock_probabilities
-
 tf.profiler.experimental.start("logdir", options=options)
-gradient = tape.jacobian(fock_probabilities, [alpha_])
+
+state = simulator_fock.execute(program).state
+mean_photon_number = state.mean_photon_number()
+
 tf.profiler.experimental.stop()
 
-print("EXEC_TIME: ", time.time() - start_time)
+print("MEAN_PHOTON_NUM: ", mean_photon_number)
