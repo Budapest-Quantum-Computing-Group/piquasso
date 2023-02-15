@@ -153,6 +153,32 @@ class PureFockState(BaseFockState):
                 f"fock_probabilities={self.fock_probabilities}"
             )
 
+    def mean_position(self, mode: int):
+        np = self._calculator.np
+
+        from piquasso._math.indices import get_index_in_fock_space
+
+        accumulator = 0.0
+
+        for index, basis in enumerate(self._space):
+            i = basis[mode]
+            basis_array = np.array(basis)
+
+            parentheses = 0.0
+            if i > 0:
+                basis_array[mode] = i - 1
+                lower_index = get_index_in_fock_space(tuple(basis_array))
+                parentheses += self._state_vector[lower_index] * np.sqrt(i)
+
+            if sum(basis) + 1 < self._config.cutoff:
+                basis_array[mode] = i + 1
+                upper_index = get_index_in_fock_space(tuple(basis_array))
+                parentheses += self._state_vector[upper_index] * np.sqrt(i + 1)
+
+            accumulator += parentheses * self._state_vector[index]
+
+        return accumulator * np.sqrt(self._config.hbar / 2)
+
     def quadratures_mean_variance(
         self, modes: Tuple[int, ...], phi: float = 0
     ) -> Tuple[float, float]:
