@@ -24,7 +24,6 @@ r = 0.01
 xi = 0.3
 d = 1
 # interferometer = unitary_group.rvs(d)
-alpha_ = tf.Variable(alpha)
 
 program = sf.Program(d)
 

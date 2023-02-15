@@ -36,9 +36,9 @@ def create_single_mode_displacement_matrix(
         np.ndarray: The constructed Displacement matrix representing the Fock
         operator.
     """
-    fock_indices = np.sqrt(np.arange(cutoff, dtype=np.csingle))
+    fock_indices = np.sqrt(np.arange(cutoff), dtype=complex)
     displacement = r * np.exp(1j * phi)
-    transformation = np.zeros((cutoff,) * 2, dtype=np.csingle)
+    transformation = np.zeros((cutoff,) * 2, dtype=complex)
     transformation[0, 0] = np.exp(-0.5 * r**2)
     for row in range(1, cutoff):
         transformation[row, 0] = (
