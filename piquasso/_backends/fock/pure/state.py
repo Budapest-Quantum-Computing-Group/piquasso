@@ -23,6 +23,7 @@ from piquasso.api.calculator import BaseCalculator
 
 from piquasso._math.fock import cutoff_cardinality, FockBasis
 from piquasso._math.linalg import vector_absolute_square
+from piquasso._math.indices import get_index_in_fock_space
 
 from ..state import BaseFockState
 from ..general.state import FockState
@@ -156,6 +157,46 @@ class PureFockState(BaseFockState):
                 "instead of 1.0:\n"
                 f"fock_probabilities={self.fock_probabilities}"
             )
+
+    def mean_position(self, mode: int) -> np.ndarray:
+        fallback_np = self._calculator.fallback_np
+
+        left_indices = []
+        multipliers = []
+        right_indices = []
+
+        for index, basis in enumerate(self._space):
+            i = basis[mode]
+            basis_array = fallback_np.array(basis)
+
+            if i > 0:
+                basis_array[mode] = i - 1
+                lower_index = get_index_in_fock_space(tuple(basis_array))
+
+                left_indices.append(lower_index)
+                multipliers.append(fallback_np.sqrt(i))
+                right_indices.append(index)
+
+            if sum(basis) + 1 < self._config.cutoff:
+                basis_array[mode] = i + 1
+                upper_index = get_index_in_fock_space(tuple(basis_array))
+
+                left_indices.append(upper_index)
+                multipliers.append(fallback_np.sqrt(i + 1))
+                right_indices.append(index)
+
+        state_vector = self._state_vector
+
+        multipliers = fallback_np.array(multipliers)
+
+        np = self._calculator.np
+
+        accumulator = np.dot(
+            (multipliers * np.take(state_vector, left_indices)),
+            np.take(state_vector, right_indices),
+        )
+
+        return np.real(accumulator) * fallback_np.sqrt(self._config.hbar / 2)
 
     def quadratures_mean_variance(
         self, modes: Tuple[int, ...], phi: float = 0
