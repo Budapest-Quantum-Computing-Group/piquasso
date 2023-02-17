@@ -498,40 +498,28 @@ def _create_linear_active_gate_gradient_function(
         tf = calculator._tf
         cutoff = len(state_index_matrix_list)
 
-        sort_by = np.array([], dtype=int)
-        accumulator = []
+        state_vector_length = len(state_vector)
+
+        initial_state_jacobian = np.zeros(shape=(state_vector_length,) * 2, dtype=complex)
+        matrix_jacobian = np.zeros(shape=(cutoff, cutoff, state_vector_length), dtype=complex)
 
         for index_matrix in state_index_matrix_list:
-            limit = index_matrix.shape[0]
-            res = matrix[:limit, :limit].T @ upstream[index_matrix]
+            limit, subspace_size = index_matrix.shape
 
-            sort_by = np.concatenate([sort_by, index_matrix.reshape(-1)])
-            accumulator.append(res.reshape(-1))
+            matrix_slice = matrix[:limit, :limit].T
+            for i in range(subspace_size):
+                row_index = index_matrix[:, i]
+                matrix_index = np.ix_(row_index, row_index)
+                initial_state_jacobian[matrix_index] = matrix_slice
 
-        result_initial_state_grad = calculator.np.concatenate(accumulator)[
-            sort_by.argsort()
-        ]
-
-        # NOTE: Very ugly solution, but tensorflow tensors could not be assigned
-        # elementwise, so one has to do calculate it this way.
-        result_matrix_grad_as_list = []
-        for _ in range(cutoff):
-            result_matrix_grad_as_list.append([0.0] * cutoff)
-
-        for index_matrix in state_index_matrix_list:
-            limit = index_matrix.shape[0]
-            partial_result = tf.einsum(
-                "ik,jk->ij",
-                upstream[index_matrix[:limit, :]],
-                state_vector[index_matrix[:limit, :]],
-            )
+            state_vector_slice = state_vector[index_matrix[:limit, :]].T
             for i in range(limit):
-                for j in range(limit):
-                    result_matrix_grad_as_list[i][j] += partial_result[i, j]
+                matrix_jacobian[i, :limit, index_matrix[i, :]] = state_vector_slice
 
-        result_matrix_grad = calculator.np.array(result_matrix_grad_as_list)
-
-        return result_initial_state_grad, result_matrix_grad
+        return (
+            tf.einsum("ij,j->i", initial_state_jacobian, upstream),
+            tf.einsum("ijk,k->ij", matrix_jacobian, upstream)
+        )
 
     return linear_active_gate_gradient
 
