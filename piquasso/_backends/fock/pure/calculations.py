@@ -309,7 +309,7 @@ def passive_linear(
 ) -> Result:
     calculator = state._calculator
 
-    interferometer: np.ndarray = instruction._all_params["passive_block"]
+    interferometer: np.ndarray = instruction._all_params["passive_block"].astype(np.complex128)
 
     subspace = FockSpace(
         d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
