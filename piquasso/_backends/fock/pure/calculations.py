@@ -586,13 +586,9 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
             phi=angles[index],
         )
 
-        _apply_active_gate_matrix_to_state(
-            state,
-            matrix,
-            mode,
-        )
+        _apply_active_gate_matrix_to_state(state, matrix, mode)
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
@@ -609,13 +605,9 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
             phi=angles[index],
         )
 
-        _apply_active_gate_matrix_to_state(
-            state,
-            matrix,
-            mode,
-        )
+        _apply_active_gate_matrix_to_state(state, matrix, mode)
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
@@ -628,13 +620,9 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         matrix = state._space.get_single_mode_cubic_phase_operator(
             gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
         )
-        _apply_active_gate_matrix_to_state(
-            state,
-            matrix,
-            mode,
-        )
+        _apply_active_gate_matrix_to_state(state, matrix, mode)
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
