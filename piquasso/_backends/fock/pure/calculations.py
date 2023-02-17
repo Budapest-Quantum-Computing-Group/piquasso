@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Mapping, List
+from typing import Optional, Tuple, Mapping, List, Callable
 
 import random
 import numpy as np
@@ -25,6 +25,7 @@ from piquasso._math.indices import (
     get_index_in_fock_subspace,
     get_auxiliary_modes,
 )
+from piquasso.api.calculator import BaseCalculator
 
 from .state import PureFockState
 
@@ -368,49 +369,130 @@ def _apply_passive_gate_matrix_to_state(
     subspace_transformations: List[np.ndarray],
     modes: Tuple[int, ...],
 ) -> None:
-    np = state._np
-    fallback_np = state._calculator.fallback_np
-
+    calculator = state._calculator
+    state_vector = state._state_vector
     space = state._space
+
+    def _apply_interferometer_matrix(state_vector, subspace_transformations):
+        state_vector = calculator.maybe_convert_to_numpy(state_vector)
+
+        subspace_transformations = [
+            calculator.maybe_convert_to_numpy(matrix)
+            for matrix in subspace_transformations
+        ]
+
+        index_list = _calculate_index_list_for_appling_interferometer(
+            modes,
+            space,
+            calculator,
+        )
+
+        new_state_vector = _calculate_state_vector_after_interferometer(
+            state_vector,
+            subspace_transformations,
+            index_list,
+        )
+
+        grad = _create_linear_passive_gate_gradient_function(
+            state_vector,
+            subspace_transformations,
+            index_list,
+            calculator,
+        )
+        return new_state_vector, grad
+
+    wrapped = calculator.custom_gradient(_apply_interferometer_matrix)
+
+    state._state_vector = wrapped(state_vector, subspace_transformations)
+
+
+def _calculate_index_list_for_appling_interferometer(
+    modes: Tuple[int, ...],
+    space: FockSpace,
+    calculator: BaseCalculator,
+) -> List[np.ndarray]:
     cutoff = space.cutoff
-    subspace = FockSpace(
-        d=len(modes), cutoff=space.cutoff, calculator=state._calculator
+    d = space.d
+
+    subspace = FockSpace(d=len(modes), cutoff=space.cutoff, calculator=calculator)
+    auxiliary_subspace = FockSpace(
+        d=d - len(modes), cutoff=space.cutoff, calculator=calculator
     )
-    subspace_indices = [
-        cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)
+
+    indices = [cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)]
+    auxiliary_indices = [
+        cutoff_cardinality(cutoff=n, d=d - len(modes)) for n in range(cutoff + 1)
     ]
 
-    d = state._space.d
-    auxiliary_subspace = FockSpace(
-        d=d - len(modes), cutoff=space.cutoff, calculator=state._calculator
-    )
+    auxiliary_modes = get_auxiliary_modes(d, modes)
+    all_occupation_numbers = np.zeros(d, dtype=int)
 
-    new_state_vector = [0.0] * len(state._state_vector)
+    index_list = []
 
-    auxiliary_modes = state._get_auxiliary_modes(modes)
-    all_occupation_numbers = fallback_np.zeros(d, dtype=int)
-
-    for auxiliary_occupation_numbers in auxiliary_subspace:
-        all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
-
-        for n in range(cutoff - sum(auxiliary_occupation_numbers)):
-            state_indices = []
-
-            matrix = subspace_transformations[n]
-
-            for column_vector_on_subspace in subspace[
-                subspace_indices[n] : subspace_indices[n + 1]
-            ]:
+    for n in range(cutoff):
+        size = indices[n + 1] - indices[n]
+        n_particle_subspace = subspace[indices[n] : indices[n + 1]]
+        auxiliary_size = auxiliary_indices[cutoff - n]
+        state_index_matrix = np.empty(shape=(size, auxiliary_size), dtype=int)
+        for idx1, auxiliary_occupation_numbers in enumerate(
+            auxiliary_subspace[:auxiliary_size]
+        ):
+            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+            for idx2, column_vector_on_subspace in enumerate(n_particle_subspace):
                 all_occupation_numbers[(modes,)] = column_vector_on_subspace
                 column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
-                state_indices.append(column_index)
+                state_index_matrix[idx2, idx1] = column_index
 
-            for matrix_index, state_index in enumerate(state_indices):
-                new_state_vector[state_index] = np.dot(
-                    matrix[matrix_index], state._state_vector[state_indices]
-                )
+        index_list.append(state_index_matrix)
 
-    state._state_vector = np.stack(new_state_vector)
+    return index_list
+
+
+def _calculate_state_vector_after_interferometer(
+    state_vector: np.ndarray,
+    subspace_transformations: List[np.ndarray],
+    index_list: List[np.ndarray],
+) -> np.ndarray:
+    new_state_vector = np.empty_like(state_vector)
+
+    for n, indices in enumerate(index_list):
+        new_state_vector[indices] = subspace_transformations[n] @ state_vector[indices]
+
+    return new_state_vector
+
+
+def _create_linear_passive_gate_gradient_function(
+    state_vector: np.ndarray,
+    subspace_transformations: List[np.ndarray],
+    index_list: List[np.ndarray],
+    calculator: BaseCalculator,
+) -> Callable:
+    def applying_interferometer_gradient(upstream):
+        unordered_gradient_by_initial_state = []
+        order_by = []
+
+        gradient_by_matrix = []
+
+        for n, indices in enumerate(index_list):
+            matrix = subspace_transformations[n]
+            sliced_upstream = upstream[indices]
+
+            order_by.append(indices.reshape(-1))
+            product = matrix @ sliced_upstream
+            unordered_gradient_by_initial_state.append(product.reshape(-1))
+
+            state_vector_slice = state_vector[indices]
+            gradient_by_matrix.append(
+                calculator._tf.einsum("ij,kj->ki", state_vector_slice, sliced_upstream)
+            )
+
+        gradient_by_initial_state = calculator.np.concatenate(
+            unordered_gradient_by_initial_state
+        )[np.concatenate(order_by).argsort()]
+
+        return gradient_by_initial_state, gradient_by_matrix
+
+    return applying_interferometer_gradient
 
 
 def _apply_active_gate_matrix_to_state(
@@ -498,28 +580,32 @@ def _create_linear_active_gate_gradient_function(
         tf = calculator._tf
         cutoff = len(state_index_matrix_list)
 
-        state_vector_length = len(state_vector)
+        unordered_gradient_by_initial_state = []
+        order_by = []
 
-        initial_state_jacobian = np.zeros(shape=(state_vector_length,) * 2, dtype=complex)
-        matrix_jacobian = np.zeros(shape=(cutoff, cutoff, state_vector_length), dtype=complex)
+        gradient_by_matrix = tf.zeros(shape=(cutoff, cutoff), dtype=np.complex128)
 
-        for index_matrix in state_index_matrix_list:
-            limit, subspace_size = index_matrix.shape
+        for indices in state_index_matrix_list:
+            limit = indices.shape[0]
 
             matrix_slice = matrix[:limit, :limit].T
-            for i in range(subspace_size):
-                row_index = index_matrix[:, i]
-                matrix_index = np.ix_(row_index, row_index)
-                initial_state_jacobian[matrix_index] = matrix_slice
 
-            state_vector_slice = state_vector[index_matrix[:limit, :]].T
-            for i in range(limit):
-                matrix_jacobian[i, :limit, index_matrix[i, :]] = state_vector_slice
+            order_by.append(indices.reshape(-1))
+            unordered_gradient_by_initial_state.append(
+                (matrix_slice @ upstream[indices]).reshape(-1)
+            )
 
-        return (
-            tf.einsum("ij,j->i", initial_state_jacobian, upstream),
-            tf.einsum("ijk,k->ij", matrix_jacobian, upstream)
-        )
+            gradient_by_matrix += tf.pad(
+                tf.einsum("ij,kj->ki", state_vector[indices], upstream[indices]),
+                [[0, cutoff - limit], [0, cutoff - limit]],
+                "CONSTANT",
+            )
+
+        gradient_by_initial_state = calculator.np.concatenate(
+            unordered_gradient_by_initial_state
+        )[np.concatenate(order_by).argsort()]
+
+        return gradient_by_initial_state, gradient_by_matrix
 
     return linear_active_gate_gradient
 
