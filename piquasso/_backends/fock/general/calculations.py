@@ -142,11 +142,7 @@ def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
             number = basis[mode]
             dual_number = dual_basis[mode]
 
-            coefficient = np.exp(
-                1j
-                * xi
-                * (number * (2 * number + 1) - dual_number * (2 * dual_number + 1))
-            )
+            coefficient = np.exp(1j * xi * (number**2 - dual_number**2))
 
             state._density_matrix[index] *= coefficient
 

@@ -1195,8 +1195,19 @@ def test_Kerr_equivalence(SimulatorClass):
     state = simulator.execute(program).state
 
     assert is_proportional(
-        state.fock_probabilities,
-        [0.97613795, 0.0, 0.0, 0.00484834, 0.0, 0.01901371, 0.0, 0.0, 0.0, 0.0],
+        state._state_vector,
+        [
+            0.98799694 + 0.0j,
+            0.0 + 0.0j,
+            0.0 + 0.0j,
+            -0.06782298 - 0.01576005j,
+            0.0 + 0.0j,
+            -0.03374003 - 0.13369862j,
+            0.0 + 0.0j,
+            0.0 + 0.0j,
+            0.0 + 0.0j,
+            -0.0 + 0.0j,
+        ],
     )
 
 
