@@ -1,5 +1,5 @@
 
-
+import time
 import numpy as np
 import tensorflow as tf
 import strawberryfields as sf
@@ -123,7 +123,7 @@ np.random.seed(137)
 
 
 # define width and depth of CV quantum neural network
-modes = 8
+modes = 7
 layers = 1
 cutoff = 7
 
@@ -157,18 +157,18 @@ with qnn.context as q:
     for k in range(layers):
         layer(sf_params[k], q)
 
-
-
 with tf.GradientTape() as tape:
     mapping = {p.name: w for p, w in zip(sf_params.flatten(), tf.reshape(weights, [-1]))}
+    start_time = time.time()
     state = eng.run(qnn, args=mapping).state
+    print("EXECUTION TIME: ", time.time() - start_time)
 
     ket = state.ket()
 
     cost = tf.reduce_sum(tf.abs(ket - target_state))
 
-import time
 
 start_time = time.time()
-jacobian = tape.gradient(cost, weights)
+gradient = tape.gradient(cost, weights)
+print("gradient:", gradient)
 print("JACOBIAN CALCULATION TIME: ", time.time() - start_time)

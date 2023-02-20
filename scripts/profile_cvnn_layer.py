@@ -16,13 +16,8 @@
 import piquasso as pq
 import tensorflow as tf
 import time
-from piquasso._math.indices import get_operator_index
-from piquasso._backends.tensorflow.calculator import TensorflowCalculator
-from scipy.stats import unitary_group
 import numpy as np
 
-
-calculator = TensorflowCalculator()
 
 def create_layer_parameters(d: int):
     number_of_beamsplitters: int
@@ -58,83 +53,73 @@ def create_layer_parameters(d: int):
     }
 
 
-def _create_interferometer(d, thetas, phis):
-    np = calculator.np
-
-    interferometer = calculator.np.identity(d)
-
-    def BS(modes, theta):
-        index = get_operator_index(modes)
-
-        matrix = calculator.np.array(
-            [
-                [np.cos(theta), -np.sin(theta)],
-                [np.sin(theta), np.cos(theta)],
-            ]
-        )
-
-        return calculator.embed_in_identity(matrix, index, d)
-
-
-    i = 0
-    for col in range(d):
-        if col % 2 == 0:
-            for mode in range(0, d-1, 2):
-                interferometer = BS((mode, mode+1), thetas[i]) @ interferometer
-                i += 1
-
-        if col % 2 == 1:
-            for mode in range(1, d-1, 2):
-                interferometer = BS((mode, mode+1), thetas[i]) @ interferometer
-                i += 1
-
-    interferometer = np.diag(np.exp(phis + [0.0])) @ interferometer
-
-    return interferometer
-
-def create_layer(layer_parameters: dict):
-    d = layer_parameters["d"]
-
-    interferometer1 = _create_interferometer(d, layer_parameters["thetas_1"], layer_parameters["phis_1"])
-    interferometer2 = _create_interferometer(d, layer_parameters["thetas_2"], layer_parameters["phis_2"])
-
-
-    with pq.Program() as layer:
-        pq.Q(all) | pq.Interferometer(interferometer1)
-        pq.Q(all) | pq.Squeezing(layer_parameters["squeezings"])
-        pq.Q(all) | pq.Interferometer(interferometer2)
-        pq.Q(all) | pq.Displacement(alpha=layer_parameters["displacements"])
-        pq.Q(all) | pq.Kerr(layer_parameters["kappas"])
-
-    return layer
-
-
-
 input = 0.01
-d = 7
-cutoff = 7
+d = 8
+cutoff = 8
 from piquasso._math.fock import cutoff_cardinality
 
 target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex)
 target_state_vector[1] = 1.0
+target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 
 simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
 parameters = create_layer_parameters(d)
 
 with tf.GradientTape() as tape:
-    layer = create_layer(parameters)
 
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
         pq.Q(all) | pq.Displacement(alpha=input)
-        pq.Q(all) | layer
 
+        i = 0
+        for col in range(d):
+            if col % 2 == 0:
+                for mode in range(0, d-1, 2):
+                    modes = (mode, mode+1)
+                    pq.Q(*modes) | pq.Beamsplitter(parameters["thetas_1"][i], phi=0.0)
+                    i += 1
+
+            if col % 2 == 1:
+                for mode in range(1, d-1, 2):
+                    modes = (mode, mode+1)
+                    pq.Q(*modes) | pq.Beamsplitter(parameters["thetas_1"][i], phi=0.0)
+                    i += 1
+
+        for i in range(d-1):
+            pq.Q(i) | pq.Phaseshifter(parameters["phis_1"][i])
+
+        pq.Q(all) | pq.Squeezing(parameters["squeezings"])
+
+        i = 0
+        for col in range(d):
+            if col % 2 == 0:
+                for mode in range(0, d-1, 2):
+                    modes = (mode, mode+1)
+                    pq.Q(*modes) | pq.Beamsplitter(parameters["thetas_2"][i], phi=0.0)
+                    i += 1
+
+            if col % 2 == 1:
+                for mode in range(1, d-1, 2):
+                    modes = (mode, mode+1)
+                    pq.Q(*modes) | pq.Beamsplitter(parameters["thetas_2"][i], phi=0.0)
+                    i += 1
+
+        for i in range(d-1):
+            pq.Q(i) | pq.Phaseshifter(parameters["phis_2"][i])
+
+
+        pq.Q(all) | pq.Displacement(alpha=parameters["displacements"])
+        pq.Q(all) | pq.Kerr(parameters["kappas"])
+
+    start_time = time.time()
     state = simulator.execute(program).state
+    print("EXECUTION TIME: ", time.time() - start_time)
+
     state_vector = state._state_vector
 
-    cost = tf.reduce_sum(tf.abs(target_state_vector - state_vector) ** 2)
+    cost = tf.reduce_sum(tf.abs(target_state_vector - state_vector))
 
 
 profiler_options = tf.profiler.experimental.ProfilerOptions(
@@ -152,7 +137,8 @@ flattened_parameters = (
 
 start_time = time.time()
 gradient = tape.gradient(cost, flattened_parameters)
-print("JACOBIAN SHAPE:", len(gradient))
-print("JACOBIAN CALCULATION TIME: ", time.time() - start_time)
+
+print("JACOBIAN CALCULATION TIME:", time.time() - start_time)
+print("JACOBIAN SHAPE:", [g.numpy() for g in gradient])
 
 #tf.profiler.experimental.stop()
