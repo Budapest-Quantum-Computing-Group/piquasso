@@ -84,7 +84,6 @@ def _get_interferometer_on_fock_space(interferometer, space, calculator):
 
     return wrapped(interferometer)
 
-
 def _calculate_interferometer_helper_indices(space):
     d = space.d
     cutoff = space.cutoff
