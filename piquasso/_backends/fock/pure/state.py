@@ -155,14 +155,14 @@ class PureFockState(BaseFockState):
 
     def mean_position(self, mode: int):
         np = self._calculator.np
-
+        fallback_np = self._calculator.fallback_np
         from piquasso._math.indices import get_index_in_fock_space
 
         accumulator = 0.0
 
         for index, basis in enumerate(self._space):
             i = basis[mode]
-            basis_array = np.array(basis)
+            basis_array = fallback_np.array(basis)
 
             parentheses = 0.0
             if i > 0:
