@@ -216,6 +216,8 @@ def _calculate_interferometer_gradient_on_fock_space(
     interferometer, calculator, subspace_representations, index_dict
 ):
     def interferometer_gradient(*upstream):
+        import time
+        time_sum = 0.0
         tf = calculator._tf
 
         indices = index_dict["indices"]
@@ -253,6 +255,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                     sqrt_occupation_numbers = sqrt_occupation_numbers_tensor[p - 2]
                     first_occupation_numbers = first_occupation_numbers_tensor[p - 2]
 
+                    start_time = time.time()
                     for n_index in range(size):
                         first_part = (
                             sqrt_occupation_numbers[n_index]
@@ -265,6 +268,8 @@ def _calculate_interferometer_gradient_on_fock_space(
                         ]
                         full = np.einsum("ij,ij->i", first_part, second_part)
                         matrix[:, n_index] = full / np.sqrt(first_occupation_numbers)
+
+                    time_sum += time.time() - start_time
 
                     mp1i_indices = np.where(
                         np.asarray(first_nonzero_indices) == row_index
@@ -292,6 +297,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                             ]
                         )
 
+
                     subspace_grad.append(matrix)
 
                 for i in range(cutoff):
@@ -299,6 +305,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                         "ij,ij", upstream[i], np.conj(subspace_grad[i])
                     )
 
+        print("interferometer_gradient TIME:", time_sum)
         return calculator.np.array(full_kl_grad)
 
     return interferometer_gradient

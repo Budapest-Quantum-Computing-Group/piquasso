@@ -42,7 +42,6 @@ with tf.GradientTape() as tape:
     state = simulator_fock.execute(program).state
     fock_probabilities = state.fock_probabilities
 
-
 profiler_options = tf.profiler.experimental.ProfilerOptions(
     host_tracer_level=3, python_tracer_level=3, device_tracer_level=3
 )
