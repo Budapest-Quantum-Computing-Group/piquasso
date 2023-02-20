@@ -385,7 +385,7 @@ def _apply_passive_gate_matrix_to_state(
         )
 
         grad = _create_linear_passive_gate_gradient_function(
-            state_vector, subspace_transformations, index_list,
+            state_vector, subspace_transformations, index_list, calculator,
         )
         return new_state_vector, grad
 
@@ -456,30 +456,32 @@ def _create_linear_passive_gate_gradient_function(
     state_vector: np.ndarray,
     subspace_transformations: List[np.ndarray],
     index_list: List[np.ndarray],
+    calculator,
 ):
     def applying_interferometer_gradient(upstream):
-        state_vector_length = len(state_vector)
+        unordered_gradient_by_initial_state = []
+        order_by = []
 
-        initial_state_jacobian = np.zeros(shape=(state_vector_length,) * 2, dtype=state_vector.dtype)
-        matrix_jacobian = [
-            np.zeros(shape=(*matrix.shape, state_vector_length), dtype=state_vector.dtype)
-            for matrix
-            in subspace_transformations
-        ]
+        gradient_by_matrix = []
 
         for n, indices in enumerate(index_list):
             matrix = subspace_transformations[n]
-            limit, length = indices.shape
+            sliced_upstream = upstream[indices]
 
-            for i in range(length):
-                initial_state_jacobian[np.ix_(indices[:, i], indices[:, i])] = matrix
+            order_by.append(indices.reshape(-1))
+            product = matrix @ sliced_upstream
+            unordered_gradient_by_initial_state.append(product.reshape(-1))
 
-            state_vector_slice = state_vector[indices[:limit, :]].T
+            state_vector_slice = state_vector[indices]
+            gradient_by_matrix.append(
+                calculator._tf.einsum("ij,kj->ki", state_vector_slice, sliced_upstream)
+            )
 
-            for i in range(limit):
-                matrix_jacobian[n][i, :limit, indices[i, :]] = state_vector_slice
+        gradient_by_initial_state = calculator.np.concatenate(
+            unordered_gradient_by_initial_state
+        )[np.concatenate(order_by).argsort()]
 
-        return initial_state_jacobian @ upstream, [matrix @ upstream for matrix in matrix_jacobian]
+        return gradient_by_initial_state, gradient_by_matrix
 
     return applying_interferometer_gradient
 
@@ -569,28 +571,32 @@ def _create_linear_active_gate_gradient_function(
         tf = calculator._tf
         cutoff = len(state_index_matrix_list)
 
-        state_vector_length = len(state_vector)
+        unordered_gradient_by_initial_state = []
+        order_by = []
 
-        initial_state_jacobian = np.zeros(shape=(state_vector_length,) * 2, dtype=complex)
-        matrix_jacobian = np.zeros(shape=(cutoff, cutoff, state_vector_length), dtype=complex)
+        gradient_by_matrix = tf.zeros(shape=(cutoff, cutoff), dtype=np.complex128)
 
-        for index_matrix in state_index_matrix_list:
-            limit, subspace_size = index_matrix.shape
+        for indices in state_index_matrix_list:
+            limit = indices.shape[0]
 
             matrix_slice = matrix[:limit, :limit].T
-            for i in range(subspace_size):
-                row_index = index_matrix[:, i]
-                matrix_index = np.ix_(row_index, row_index)
-                initial_state_jacobian[matrix_index] = matrix_slice
 
-            state_vector_slice = state_vector[index_matrix[:limit, :]].T
-            for i in range(limit):
-                matrix_jacobian[i, :limit, index_matrix[i, :]] = state_vector_slice
+            order_by.append(indices.reshape(-1))
+            unordered_gradient_by_initial_state.append(
+                (matrix_slice @ upstream[indices]).reshape(-1)
+            )
 
-        return (
-            tf.einsum("ij,j->i", initial_state_jacobian, upstream),
-            tf.einsum("ijk,k->ij", matrix_jacobian, upstream)
-        )
+            gradient_by_matrix += tf.pad(
+                tf.einsum("ij,kj->ki", state_vector[indices], upstream[indices]),
+                [[0, cutoff-limit], [0, cutoff-limit]],
+                "CONSTANT",
+            )
+
+        gradient_by_initial_state = calculator.np.concatenate(
+            unordered_gradient_by_initial_state
+        )[np.concatenate(order_by).argsort()]
+
+        return gradient_by_initial_state, gradient_by_matrix
 
     return linear_active_gate_gradient
 
