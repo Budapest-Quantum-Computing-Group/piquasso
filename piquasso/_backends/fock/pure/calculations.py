@@ -304,7 +304,6 @@ def _calculate_interferometer_gradient_on_fock_space(
                         "ij,ij", upstream[i], np.conj(subspace_grad[i])
                     )
 
-        print("interferometer_gradient TIME:", time_sum)
         return calculator.np.array(full_kl_grad)
 
     return interferometer_gradient
