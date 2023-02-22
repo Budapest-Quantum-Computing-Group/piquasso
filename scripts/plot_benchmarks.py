@@ -2,53 +2,48 @@ import matplotlib.pyplot as plt
 import json
 import sys
 
-# NOTE: https://pytest-benchmark.readthedocs.io/en/latest/comparing.html
-#      Use --benchmark-autosave or --benchmark-save=<some-name> when running benchmarks.
-#      Don't add extension, json is appended on default.
+if(len(sys.argv) <= 2):
+    sf_benchmark_file = open("./scripts/json_dump/sf/20230221-153305_mean-position_2-5_modes_complete.json")
+    pq_benchmark_file = open("./scripts/json_dump/pq/20230221-153305_mean-position_2-5_modes_complete.json")
+else:
+    sf_benchmark_file = open(sys.argv[2])
+    pq_benchmark_file = open(sys.arv[3])
 
-benchmark_file = open(sys.argv[1])
-
-benchmark_json_file = json.load(benchmark_file)
-
-piquasso_runs = []
-strawberryfields_runs = []
-# Separating data
-for benchmark in benchmark_json_file["benchmarks"]:
-    if "piquasso" in benchmark["name"]:
-        piquasso_runs.append(benchmark)
-    else:
-        strawberryfields_runs.append(benchmark)
+sf_benchmark_json_file = json.load(sf_benchmark_file)
+pq_benchmark_json_file = json.load(pq_benchmark_file)
 
 x_data = []
+cutoff = sf_benchmark_json_file["benchmarks"][0]["cutoff"]  # NOTE: Alternatively "mode"
 pq_y_data = []
 sf_y_data = []
 
-# Filtering data into variables to plot
-for i in range(len(piquasso_runs)):
-    # print(
-    #     piquasso_runs[i]["param"], # for example: "3-interferometer0".
-    #     piquasso_runs[i]["stats"]["mean"],
-    #     strawberryfields_runs[i]["stats"]["mean"],
-    #     )
-    x_data.append(
-        int(piquasso_runs[i]["param"][0])
-    )  # Amount of modes, or cutoff possibly.
-    pq_y_data.append(float(piquasso_runs[i]["stats"]["mean"]))
-    sf_y_data.append(float(strawberryfields_runs[i]["stats"]["mean"]))
+# Separating data
+for benchmark in sf_benchmark_json_file["benchmarks"]:
+    x_data.append(benchmark["mode"])  # NOTE: Alternatively "cutoff"
+    sf_y_data.append(benchmark["sf"]["mean_exec_time"] + benchmark["sf"]["mean_gradient_time"])
 
-fig, ax = plt.subplots()
+for benchmark in pq_benchmark_json_file["benchmarks"]:
+    pq_y_data.append(benchmark["pq"]["mean_exec_time"] + benchmark["pq"]["mean_gradient_time"])
 
-ax.plot(x_data, pq_y_data)
-ax.plot(x_data, sf_y_data)
+fig, ax = plt.subplots(figsize = (12, 8))
+
+ax.plot(x_data, pq_y_data, linewidth=3)
+ax.plot(x_data, sf_y_data, linewidth=3)
 
 # Parameters which possibly need to be set depending on the benchmark
-ax.set_title(piquasso_runs[0]["group"])
-ax.set_xlabel("number of modes")
-ax.set_ylabel("runtime (ms)")
-ax.legend(["piquasso", "strawberryfields"])
+ax.set_title("Mean position value", fontsize = 22)
+ax.set_xlabel("number of modes", fontsize = 22)
+ax.set_ylabel("runtime (ms)", fontsize = 22)
+ax.legend(["piquasso", "strawberryfields"], loc=2, prop={'size': 18})
 ax.set_xticks(x_data)
+plt.tick_params(axis='both', which='major', labelsize=18)
 ax.set_yscale("log")
 
-plt.savefig(sys.argv[2])
+dpi = 300
+if len(sys.argv) == 1:
+    plt.savefig("./prof/plots/increase_qmode.png", dpi=dpi)
+else:
+    plt.savefig(sys.argv[1], dpi=dpi)
 
-benchmark_file.close()
+sf_benchmark_file.close()
+pq_benchmark_file.close()
