@@ -182,7 +182,7 @@ class FockSpace(tuple):
         phi: float,
     ) -> np.ndarray:
         @self.calculator.custom_gradient
-        def f(r, phi):
+        def _single_mode_squeezing_operator(r, phi):
             r = self.calculator.maybe_convert_to_numpy(r)
             phi = self.calculator.maybe_convert_to_numpy(phi)
 
@@ -192,7 +192,7 @@ class FockSpace(tuple):
             )
             return matrix, grad
 
-        return f(r, phi)
+        return _single_mode_squeezing_operator(r, phi)
 
     def get_single_mode_cubic_phase_operator(
         self, *, gamma: float, hbar: float, calculator: BaseCalculator
@@ -484,7 +484,7 @@ class FockSpace(tuple):
 
     def get_single_mode_displacement_operator(self, *, r, phi):
         @self.calculator.custom_gradient
-        def f(r, phi):
+        def _single_mode_displacement_operator(r, phi):
             r = self.calculator.maybe_convert_to_numpy(r)
             phi = self.calculator.maybe_convert_to_numpy(phi)
 
@@ -494,4 +494,4 @@ class FockSpace(tuple):
             )
             return matrix, grad
 
-        return f(r, phi)
+        return _single_mode_displacement_operator(r, phi)
