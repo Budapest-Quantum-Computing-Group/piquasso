@@ -129,10 +129,12 @@ class PureFockState(BaseFockState):
         return probability_map
 
     def normalize(self) -> None:
-        if self._np.isclose(self.norm, 0):
+        norm = self.norm
+
+        if np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
-        self._state_vector = self._state_vector / self._np.sqrt(self.norm)
+        self._state_vector = self._state_vector / self._np.sqrt(norm)
 
     def validate(self) -> None:
         """Validates the represented state.
