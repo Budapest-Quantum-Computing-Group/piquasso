@@ -1,0 +1,76 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 6,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 0.5996816539764405,
+                        "mean_gradient_time": 1.7771960759162904
+                  }
+            },
+            {
+                  "mode": 7,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 1.4146886157989502,
+                        "mean_gradient_time": 2.722514190673828
+                  }
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 3.167967474460602,
+                        "mean_gradient_time": 4.181162161827087
+                  }
+            },
+            {
+                  "mode": 9,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 6.769151647090911,
+                        "mean_gradient_time": 6.172252242565155
+                  }
+            },
+            {
+                  "mode": 10,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 13.915412106513976,
+                        "mean_gradient_time": 9.045470416545868
+                  }
+            },
+            {
+                  "mode": 11,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 27.959841704368593,
+                        "mean_gradient_time": 13.45115017414093
+                  }
+            },
+            {
+                  "mode": 12,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 50.47175282716751,
+                        "mean_gradient_time": 18.622896196842195
+                  }
+            },
+            {
+                  "mode": 13,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 92.39489188194275,
+                        "mean_gradient_time": 26.663730778694152
+                  }
+            },
+            {
+                  "mode": 14,
+                  "cutoff": 7,
+                  "pq": {
+                        "mean_exec_time": 162.79295644283295,
+                        "mean_gradient_time": 44.3715851187706
+                  }
+            }
+      ]
+}

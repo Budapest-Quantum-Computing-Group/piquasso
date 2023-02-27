@@ -1,0 +1,68 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 2,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.041436500549316406,
+                        "mean_gradient_time": 0.033171682357788085
+                  }
+            },
+            {
+                  "mode": 3,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.08053653001785278,
+                        "mean_gradient_time": 0.07297052145004272
+                  }
+            },
+            {
+                  "mode": 4,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.1430487036705017,
+                        "mean_gradient_time": 0.13518232107162476
+                  }
+            },
+            {
+                  "mode": 5,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.2352730679512024,
+                        "mean_gradient_time": 0.22731033325195313
+                  }
+            },
+            {
+                  "mode": 6,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.36326746463775633,
+                        "mean_gradient_time": 0.35705256938934327
+                  }
+            },
+            {
+                  "mode": 7,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.5666916513442993,
+                        "mean_gradient_time": 0.5752906155586243
+                  }
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 0.9471003007888794,
+                        "mean_gradient_time": 1.054978573322296
+                  }
+            },
+            {
+                  "mode": 9,
+                  "cutoff": 5,
+                  "sf": {
+                        "mean_exec_time": 5.401481864452362,
+                        "mean_gradient_time": 5.945166637897492
+                  }
+            }
+      ]
+}

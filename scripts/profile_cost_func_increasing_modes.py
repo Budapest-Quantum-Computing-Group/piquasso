@@ -26,9 +26,8 @@ from strawberryfields import ops
 
 displacement_input = 0.01
 
-MIN_MODE_NUM = 15
-MAX_MODE_NUM = 25
-cutoff = 7
+MIN_MODE_NUM = 2
+MAX_MODE_NUM = 15
 
 
 def sf_interferometer(params, q):
@@ -96,7 +95,7 @@ def init_weights(modes, layers, active_sd=0.0001, passive_sd=0.1):
     return weights
 
 
-def strawberryfields_mean_position_benchmark(d: int):
+def strawberryfields_mean_position_benchmark(d: int, cutoff: int):
     modes = d
     layers = 1
 
@@ -131,10 +130,10 @@ def strawberryfields_mean_position_benchmark(d: int):
 
         ket = state.ket()
 
-        mean = state.x_quad_values(mode=0)
+        cost = tf.reduce_sum(tf.abs(ket - target_state))
 
     start_time = time.time()
-    gradient = tape.gradient(mean, weights)
+    gradient = tape.gradient(cost, weights)
     gradient_time = time.time() - start_time
     # print("gradient:", gradient)
     # print("JACOBIAN CALCULATION TIME: ", jacobian_time)
@@ -176,12 +175,11 @@ def create_layer_parameters(d: int):
 from piquasso._math.fock import cutoff_cardinality
 
 
-def piquasso_mean_position_benchmark(d: int):
+def piquasso_mean_position_benchmark(d: int, cutoff: int):
     target_state_vector = np.zeros(
         cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex
     )
     target_state_vector[1] = 1.0
-    target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 
     simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
@@ -246,7 +244,9 @@ def piquasso_mean_position_benchmark(d: int):
         exec_time = time.time() - start_time
         # print("EXECUTION TIME: ", exec_time)
 
-        mean = state.mean_position(mode=0)
+        state_vector = state._state_vector
+
+        cost = tf.reduce_sum(tf.abs(target_state_vector - state_vector))
 
     flattened_parameters = (
         parameters["thetas_1"]
@@ -259,7 +259,7 @@ def piquasso_mean_position_benchmark(d: int):
     )
 
     start_time = time.time()
-    gradient = tape.gradient(mean, flattened_parameters)
+    gradient = tape.gradient(cost, flattened_parameters)
 
     gradient_time = time.time() - start_time
     # print("JACOBIAN CALCULATION TIME:", jacobian_time)
@@ -272,61 +272,62 @@ complete_pq_dict = {"benchmarks": []}
 complete_sf_dict = {"benchmarks": []}
 
 start_time = time.strftime("%Y%m%d-%H%M%S")
+for c in range(6, 7):
 
-pq_file_name = "./scripts/json_dump/pq/{}_mean-position_{}-{}_modes_complete.json".format(
-            start_time, MIN_MODE_NUM, MAX_MODE_NUM - 1)
+    sf_file_name = "./scripts/json_dump/sf/{}_cost-func_{}-{}_modes_complete_c{}.json".format(
+                start_time, MIN_MODE_NUM, MAX_MODE_NUM - 1, c)
+    pq_file_name = "./scripts/json_dump/pq/{}_cost-func_{}-{}_modes_complete_c{}.json".format(
+                start_time, MIN_MODE_NUM, MAX_MODE_NUM - 1, c)
 
-iterations = 50
+    iterations = 100
 
-for mode in range(MIN_MODE_NUM, MAX_MODE_NUM):
-    sum_pq_exec_time = 0
-    sum_pq_gradient_time = 0
-    for run in range(iterations):
-        pq_exec_time, pq_gradient_time = piquasso_mean_position_benchmark(mode)
-        sum_pq_exec_time += pq_exec_time
-        sum_pq_gradient_time += pq_gradient_time
-        print("pq run {} done in {}".format(run, pq_exec_time + pq_gradient_time))
+    for mode in range(MIN_MODE_NUM, MAX_MODE_NUM):
+        sum_pq_exec_time = 0
+        sum_pq_gradient_time = 0
+        for run in range(iterations):
+            pq_exec_time, pq_gradient_time = piquasso_mean_position_benchmark(mode, c)
+            sum_pq_exec_time += pq_exec_time
+            sum_pq_gradient_time += pq_gradient_time
+            print("({};{})pq run {} done in {}".format(c, mode, run, pq_exec_time + pq_gradient_time))
 
-    result_dict = {
-        "mode": mode,
-        "cutoff": cutoff,
-        "pq": {
-            "mean_exec_time": sum_pq_exec_time/iterations,
-            "mean_gradient_time": sum_pq_gradient_time/iterations
+        result_dict = {
+            "mode": mode,
+            "cutoff": c,
+            "pq": {
+                "mean_exec_time": sum_pq_exec_time/iterations,
+                "mean_gradient_time": sum_pq_gradient_time/iterations
+            }
         }
-    }
 
-    complete_pq_dict["benchmarks"].append(result_dict)
+        complete_pq_dict["benchmarks"].append(result_dict)
 
-    out_json = open(pq_file_name, "w+")
-    json.dump(complete_pq_dict, out_json, indent=6)
-    out_json.close()
-    print("pq_mode {} done".format(mode))
+        out_json = open(pq_file_name, "w+")
+        json.dump(complete_pq_dict, out_json, indent=6)
+        out_json.close()
+        print("pq_mode {} done".format(mode))
+    print("pq_cutoff {} done".format(c))
+    sum_sf_exec_time = 0
+    sum_sf_gradient_time = 0
+    for mode in range(MIN_MODE_NUM, MAX_MODE_NUM):
+        for run in range(iterations):
+            sf_exec_time, sf_gradient_time = strawberryfields_mean_position_benchmark(mode, c)
+            sum_sf_exec_time += sf_exec_time
+            sum_sf_gradient_time += sf_gradient_time
+            print("({};{})sf run {} done in {}".format(c, mode, run, sf_exec_time + sf_gradient_time))
 
-sf_file_name = "./scripts/json_dump/sf/{}_mean-position-new_{}-{}_modes_complete.json".format(
-            start_time, MIN_MODE_NUM, MAX_MODE_NUM - 1)
+        result_dict = {
+            "mode": mode,
+            "cutoff": c,
+            "sf": {
+                "mean_exec_time": sum_sf_exec_time/iterations,
+                "mean_gradient_time": sum_sf_gradient_time/iterations
+            }
+        }
 
-sum_sf_exec_time = 0
-sum_sf_gradient_time = 0
-#for mode in range(MIN_MODE_NUM, MAX_MODE_NUM):
-#    for run in range(iterations):
-#        sf_exec_time, sf_gradient_time = strawberryfields_mean_position_benchmark(mode)
-#        sum_sf_exec_time += sf_exec_time
-#        sum_sf_gradient_time += sf_gradient_time
-#        print("sf run {} done in {}".format(run, sf_exec_time + sf_gradient_time))
-#
-#    result_dict = {
-#        "mode": mode,
-#        "cutoff": cutoff,
-#        "sf": {
-#            "mean_exec_time": sum_sf_exec_time/iterations,
-#            "mean_gradient_time": sum_sf_gradient_time/iterations
-#        }
-#    }
-#
-#    complete_sf_dict["benchmarks"].append(result_dict)
-#
-#    out_json = open(sf_file_name, "w+")
-#    json.dump(complete_sf_dict, out_json, indent=6)
-#    out_json.close()
-#    print("sf_mode {} done",mode)
+        complete_sf_dict["benchmarks"].append(result_dict)
+
+        out_json = open(sf_file_name, "w+")
+        json.dump(complete_sf_dict, out_json, indent=6)
+        out_json.close()
+        print("sf_mode {} done",mode)
+    print("sf_cutoff {} done".format(c))

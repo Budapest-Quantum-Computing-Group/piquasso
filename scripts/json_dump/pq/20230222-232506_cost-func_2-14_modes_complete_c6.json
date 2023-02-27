@@ -1,0 +1,108 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 2,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.025029101371765138,
+                        "mean_gradient_time": 0.1232631516456604
+                  }
+            },
+            {
+                  "mode": 3,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.046029882431030275,
+                        "mean_gradient_time": 0.2421216368675232
+                  }
+            },
+            {
+                  "mode": 4,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.07806859254837036,
+                        "mean_gradient_time": 0.3914832735061646
+                  }
+            },
+            {
+                  "mode": 5,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.1369262456893921,
+                        "mean_gradient_time": 0.5773576164245605
+                  }
+            },
+            {
+                  "mode": 6,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.24685487747192383,
+                        "mean_gradient_time": 0.8076572680473327
+                  }
+            },
+            {
+                  "mode": 7,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.44969608545303347,
+                        "mean_gradient_time": 1.0623030614852906
+                  }
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.8250309157371521,
+                        "mean_gradient_time": 1.3528253960609435
+                  }
+            },
+            {
+                  "mode": 9,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 1.507158567905426,
+                        "mean_gradient_time": 1.6603911185264588
+                  }
+            },
+            {
+                  "mode": 10,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 2.670753951072693,
+                        "mean_gradient_time": 1.9982174921035767
+                  }
+            },
+            {
+                  "mode": 11,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 4.643388457298279,
+                        "mean_gradient_time": 2.3944378018379213
+                  }
+            },
+            {
+                  "mode": 12,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 7.822012662887573,
+                        "mean_gradient_time": 2.8359138798713683
+                  }
+            },
+            {
+                  "mode": 13,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 12.821224539279937,
+                        "mean_gradient_time": 3.2900959944725034
+                  }
+            },
+            {
+                  "mode": 14,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 20.93396701812744,
+                        "mean_gradient_time": 3.846137282848358
+                  }
+            }
+      ]
+}
