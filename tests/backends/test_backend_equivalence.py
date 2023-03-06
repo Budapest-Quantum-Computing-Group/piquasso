@@ -1182,7 +1182,7 @@ def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
         pq.TensorflowPureFockSimulator,
     ),
 )
-def test_Kerr_equivalence(SimulatorClass):
+def test_Kerr_gate_leaves_fock_probabilities_invariant(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 5)
@@ -1197,6 +1197,61 @@ def test_Kerr_equivalence(SimulatorClass):
     assert is_proportional(
         state.fock_probabilities,
         [0.97613795, 0.0, 0.0, 0.00484834, 0.0, 0.01901371, 0.0, 0.0, 0.0, 0.0],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.TensorflowPureFockSimulator,
+    ),
+)
+def test_Kerr_equivalence(SimulatorClass):
+    xi = np.pi / 4
+
+    n = 2
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
+        pq.Q(all) | pq.StateVector([n]) / np.sqrt(2)
+
+        pq.Q(all) | pq.Kerr(xi=xi)
+
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=n + 1))
+
+    state = simulator.execute(program).state
+
+    eixi = np.exp(1j * xi * n * n) / 2
+    emixi = np.exp(-1j * xi * n * n) / 2
+
+    assert np.allclose(
+        state.density_matrix, [[0.5, 0, emixi], [0, 0, 0], [eixi, 0, 0.5]]
+    )
+
+
+def test_Kerr_equivalence_for_FockSimulator():
+    xi = np.pi / 4
+
+    n = 2
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.DensityMatrix(ket=(0,), bra=(0,)) / 2
+        pq.Q(all) | pq.DensityMatrix(ket=(0,), bra=(2,)) / 2
+        pq.Q(all) | pq.DensityMatrix(ket=(2,), bra=(0,)) / 2
+        pq.Q(all) | pq.DensityMatrix(ket=(2,), bra=(2,)) / 2
+
+        pq.Q(all) | pq.Kerr(xi=xi)
+
+    simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=n + 1))
+
+    state = simulator.execute(program).state
+
+    eixi = np.exp(1j * xi * n * n) / 2
+    emixi = np.exp(-1j * xi * n * n) / 2
+
+    assert np.allclose(
+        state.density_matrix, [[0.5, 0, emixi], [0, 0, 0], [eixi, 0, 0.5]]
     )
 
 

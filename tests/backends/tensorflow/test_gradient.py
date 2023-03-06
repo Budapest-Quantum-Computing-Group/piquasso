@@ -445,7 +445,7 @@ def test_Kerr_fock_probabilities_on_1_mode():
 
 
 def test_Kerr_density_matrix_on_1_mode():
-    xi = tf.Variable(np.pi / 4)
+    xi = tf.Variable(np.pi / 5)
 
     n = 2
 
@@ -464,18 +464,17 @@ def test_Kerr_density_matrix_on_1_mode():
 
     jacobian = tape.jacobian(density_matrix, [xi])
 
-    coefficient = n * (2 * n + 1)
+    coefficient = n**2
 
-    gradient_of_0n_component = coefficient * np.exp(1j * xi * coefficient * 2) / 2
+    gradient_of_0n_component = 1j * coefficient * np.exp(1j * xi * coefficient) / 2
 
-    assert np.allclose(
-        jacobian,
-        [
-            [0.0, 0.0, gradient_of_0n_component],
-            [0.0, 0.0, 0.0],
-            [gradient_of_0n_component, 0.0, 0.0],
-        ],
-    )
+    excepted_jacobian = [
+        [0.0, 0.0, np.conj(gradient_of_0n_component)],
+        [0.0, 0.0, 0.0],
+        [gradient_of_0n_component, 0.0, 0.0],
+    ]
+
+    assert np.allclose(jacobian, np.real(excepted_jacobian))
 
 
 def test_CubicPhase_fock_probabilities_on_1_mode():
