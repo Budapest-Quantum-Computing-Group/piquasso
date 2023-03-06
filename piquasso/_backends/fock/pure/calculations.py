@@ -552,7 +552,7 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
 
         for index, basis in state._space.basis:
             number = basis[mode]
-            coefficient = state._np.exp(1j * xi * number * (2 * number + 1))
+            coefficient = state._np.exp(1j * xi * number * number)
             state._state_vector = state._calculator.assign(
                 state._state_vector, index, state._state_vector[index] * coefficient
             )
