@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [2.2.0] - 2023-03-07
+
+### Changed
+
+- Several major performance improvements got implemented in
+  `TensorflowPureFockSimulator`.
+
+### Fixed
+
+- `quantum-blackbird` version got bumped for `numpy` compatibility.
+- `Kerr` gate was applied with a wrong equation, it got corrected.
+- Typing error was fixed when applying `Interferometer` in
+  `TensorflowPureFockSimulator`.
+
+
 ## [2.1.0] - 2023-02-08
 
 ### Added
