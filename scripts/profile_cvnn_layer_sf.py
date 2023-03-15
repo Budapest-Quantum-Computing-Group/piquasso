@@ -18,6 +18,9 @@ This code has been copied from the following website with minor modifications:
 https://strawberryfields.ai/photonics/demos/run_quantum_neural_network.html
 """
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import time
 import numpy as np
 import tensorflow as tf
@@ -76,17 +79,17 @@ def layer(params, q):
         ops.Kgate(k[i]) | q[i]
 
 
-def init_weights(modes, layers, active_sd=0.0001, passive_sd=0.1):
+def init_weights(modes, layers):
     # Number of interferometer parameters:
     M = int(modes * (modes - 1)) + max(1, modes - 1)
 
     # Create the TensorFlow variables
-    int1_weights = tf.random.normal(shape=[layers, M], stddev=passive_sd)
-    s_weights = tf.random.normal(shape=[layers, modes], stddev=active_sd)
-    int2_weights = tf.random.normal(shape=[layers, M], stddev=passive_sd)
-    dr_weights = tf.random.normal(shape=[layers, modes], stddev=active_sd)
-    dp_weights = tf.random.normal(shape=[layers, modes], stddev=passive_sd)
-    k_weights = tf.random.normal(shape=[layers, modes], stddev=active_sd)
+    int1_weights = tf.random.uniform(shape=[layers, M], maxval=np.pi*2)
+    s_weights = tf.ones(shape=[layers, modes])*0.1
+    int2_weights = tf.random.uniform(shape=[layers, M], maxval=np.pi*2)
+    dr_weights = tf.ones(shape=[layers, modes])*0.1
+    dp_weights = tf.zeros(shape=[layers, modes])
+    k_weights = tf.random.uniform(shape=[layers, modes])
 
     weights = tf.concat(
         [int1_weights, s_weights, int2_weights, dr_weights, dp_weights, k_weights],
@@ -104,9 +107,9 @@ np.random.seed(137)
 
 
 # define width and depth of CV quantum neural network
-modes = 7
+modes = 6
 layers = 1
-cutoff = 7
+cutoff = 5
 
 # defining desired state (single photon state)
 target_state = np.zeros([cutoff] * modes)
@@ -147,11 +150,13 @@ with tf.GradientTape() as tape:
     print("EXECUTION TIME: ", time.time() - start_time)
 
     ket = state.ket()
-
+    flatten_ket = tf.reshape(ket, (-1))
+    norm = tf.tensordot(flatten_ket, tf.math.conj(flatten_ket), 1)
+    print("NORM:",norm)
     cost = tf.reduce_sum(tf.abs(ket - target_state))
 
 
 start_time = time.time()
 gradient = tape.gradient(cost, weights)
-print("gradient:", gradient)
+# print("gradient:", gradient)
 print("JACOBIAN CALCULATION TIME: ", time.time() - start_time)

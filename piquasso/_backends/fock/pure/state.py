@@ -134,7 +134,10 @@ class PureFockState(BaseFockState):
 
         if np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
-
+        file = open("lofasz.txt", "a")
+        file.write(str(norm.numpy()) + "\n")
+        file.close()
+        # print("before:", norm.numpy())
         self._state_vector = self._state_vector / self._np.sqrt(norm)
 
     def validate(self) -> None:
