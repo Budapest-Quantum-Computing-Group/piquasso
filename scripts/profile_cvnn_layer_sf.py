@@ -107,56 +107,60 @@ np.random.seed(137)
 
 
 # define width and depth of CV quantum neural network
-modes = 6
-layers = 1
+modes = 8
+layers = 12
+min_cutoff = 2
+max_cutoff = 8
 cutoff = 5
-
 # defining desired state (single photon state)
-target_state = np.zeros([cutoff] * modes)
-target_state[([1] + [0] * (modes - 1))] = 1.0
-target_state = tf.constant(target_state, dtype=tf.complex64)
+for layers in range(1, 6):
+    print("###############")
+    print("CUTOFF:", cutoff)
+    target_state = np.zeros([cutoff] * modes)
+    target_state[([1] + [0] * (modes - 1))] = 1.0
+    target_state = tf.constant(target_state, dtype=tf.complex64)
 
 
-# initialize engine and program
-eng = sf.Engine(backend="tf", backend_options={"cutoff_dim": cutoff})
-qnn = sf.Program(modes)
+    # initialize engine and program
+    eng = sf.Engine(backend="tf", backend_options={"cutoff_dim": cutoff})
+    qnn = sf.Program(modes)
 
-# initialize QNN weights
-weights = init_weights(modes, layers)  # our TensorFlow weights
-num_params = np.prod(weights.shape)  # total number of parameters in our model
-
-
-# Create array of Strawberry Fields symbolic gate arguments, matching
-# the size of the weights Variable.
-sf_params = np.arange(num_params).reshape(weights.shape).astype(np.str)
-sf_params = np.array([qnn.params(*i) for i in sf_params])
+    # initialize QNN weights
+    weights = init_weights(modes, layers)  # our TensorFlow weights
+    num_params = np.prod(weights.shape)  # total number of parameters in our model
 
 
-# Construct the symbolic Strawberry Fields program by
-# looping and applying layers to the program.
-with qnn.context as q:
-    for i in range(modes):
-        sf.ops.Dgate(0.1) | q[i]
+    # Create array of Strawberry Fields symbolic gate arguments, matching
+    # the size of the weights Variable.
+    sf_params = np.arange(num_params).reshape(weights.shape).astype(np.str)
+    sf_params = np.array([qnn.params(*i) for i in sf_params])
 
-    for k in range(layers):
-        layer(sf_params[k], q)
 
-with tf.GradientTape() as tape:
-    mapping = {
-        p.name: w for p, w in zip(sf_params.flatten(), tf.reshape(weights, [-1]))
-    }
+    # Construct the symbolic Strawberry Fields program by
+    # looping and applying layers to the program.
+    with qnn.context as q:
+        for i in range(modes):
+            sf.ops.Dgate(0.1) | q[i]
+
+        for k in range(layers):
+            layer(sf_params[k], q)
+
+    with tf.GradientTape() as tape:
+        mapping = {
+            p.name: w for p, w in zip(sf_params.flatten(), tf.reshape(weights, [-1]))
+        }
+        start_time = time.time()
+        state = eng.run(qnn, args=mapping).state
+        # print("EXECUTION TIME: ", time.time() - start_time)
+
+        ket = state.ket()
+        flatten_ket = tf.reshape(ket, (-1))
+        norm = tf.tensordot(flatten_ket, tf.math.conj(flatten_ket), 1)
+        # print("NORM:", norm)
+        cost = tf.reduce_sum(tf.abs(ket - target_state))
+
+
     start_time = time.time()
-    state = eng.run(qnn, args=mapping).state
-    print("EXECUTION TIME: ", time.time() - start_time)
-
-    ket = state.ket()
-    flatten_ket = tf.reshape(ket, (-1))
-    norm = tf.tensordot(flatten_ket, tf.math.conj(flatten_ket), 1)
-    print("NORM:",norm)
-    cost = tf.reduce_sum(tf.abs(ket - target_state))
-
-
-start_time = time.time()
-gradient = tape.gradient(cost, weights)
-# print("gradient:", gradient)
-print("JACOBIAN CALCULATION TIME: ", time.time() - start_time)
+    gradient = tape.gradient(cost, weights)
+    # print("gradient:", gradient)
+    print("JACOBIAN CALCULATION TIME: ", time.time() - start_time)

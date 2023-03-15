@@ -59,13 +59,13 @@ def create_layer_parameters(d: int, number_of_layers: int,):
     return tf.Variable(weights)
 
 
-d = 6
-# cutoff = 12
-min_cutoff = 5
-max_cutoff = 12
-number_of_layers = 1
+d = 8
+cutoff = 5
+min_cutoff = 2
+max_cutoff = 10
+number_of_layers = 12
 
-for cutoff in range(min_cutoff, max_cutoff):
+for number_of_layers in range(1, 6):
     print("###############")
     print("CUTOFF:", cutoff)
     target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex)
@@ -142,7 +142,6 @@ for cutoff in range(min_cutoff, max_cutoff):
                 pq.Q(all) | layer
 
 
-        start_time = time.time()
         state = simulator.execute(program).state
 
         state_vector = state._state_vector
@@ -153,7 +152,7 @@ for cutoff in range(min_cutoff, max_cutoff):
     start_time = time.time()
     gradient = tape.gradient(cost, parameters)
 
-    # print(gradient)
+    #print(gradient)
 
     print("GRADIENT CALCULATION TIME:", time.time() - start_time)
 
@@ -163,6 +162,6 @@ for cutoff in range(min_cutoff, max_cutoff):
     for line in lines:
         result *= float(line)
 
-    print(result)
+    # print(result)
     file.close()
     os.remove("lofasz.txt")

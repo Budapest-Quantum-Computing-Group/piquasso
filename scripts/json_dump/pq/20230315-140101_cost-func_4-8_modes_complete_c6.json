@@ -1,0 +1,44 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 4,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.13423418998718262,
+                        "mean_gradient_time": 0.45171427726745605
+                  }
+            },
+            {
+                  "mode": 5,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.16402816772460938,
+                        "mean_gradient_time": 0.6051931381225586
+                  }
+            },
+            {
+                  "mode": 6,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.24950170516967773,
+                        "mean_gradient_time": 0.8377091884613037
+                  }
+            },
+            {
+                  "mode": 7,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.4604377746582031,
+                        "mean_gradient_time": 1.1032745838165283
+                  }
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 6,
+                  "pq": {
+                        "mean_exec_time": 0.8256063461303711,
+                        "mean_gradient_time": 1.388274908065796
+                  }
+            }
+      ]
+}
