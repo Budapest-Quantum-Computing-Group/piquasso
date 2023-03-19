@@ -20,6 +20,7 @@ def create_single_mode_displacement_matrix(
     r: float,
     phi: float,
     cutoff: int,
+    complex_dtype: np.dtype,
 ) -> np.ndarray:
     r"""
     This method generates the Displacement operator following a recursion rule.
@@ -36,9 +37,9 @@ def create_single_mode_displacement_matrix(
         np.ndarray: The constructed Displacement matrix representing the Fock
         operator.
     """
-    fock_indices = np.sqrt(np.arange(cutoff, dtype=complex))
+    fock_indices = np.sqrt(np.arange(cutoff, dtype=complex_dtype))
     displacement = r * np.exp(1j * phi)
-    transformation = np.zeros((cutoff,) * 2, dtype=complex)
+    transformation = np.zeros((cutoff,) * 2, dtype=complex_dtype)
     transformation[0, 0] = np.exp(-0.5 * r**2)
     for row in range(1, cutoff):
         transformation[row, 0] = (
@@ -61,6 +62,7 @@ def create_single_mode_squeezing_matrix(
     r: float,
     phi: float,
     cutoff: int,
+    complex_dtype: np.dtype,
 ) -> np.ndarray:
     """
     This method generates the Squeezing operator following a recursion rule.
@@ -82,10 +84,10 @@ def create_single_mode_squeezing_matrix(
     sechr = 1.0 / np.cosh(r)
     A = np.exp(1j * phi) * np.tanh(r)
 
-    transformation = np.zeros((cutoff,) * 2, dtype=complex)
+    transformation = np.zeros((cutoff,) * 2, dtype=complex_dtype)
     transformation[0, 0] = np.sqrt(sechr)
 
-    fock_indices = np.sqrt(np.arange(cutoff, dtype=complex))
+    fock_indices = np.sqrt(np.arange(cutoff, dtype=complex_dtype))
 
     for index in range(2, cutoff, 2):
         transformation[index, 0] = (

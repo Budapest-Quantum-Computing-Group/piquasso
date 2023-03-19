@@ -235,15 +235,17 @@ def _calculate_interferometer_gradient_on_fock_space(
             full_kl_grad.append([0] * d)
             for col_index in range(d):
                 subspace_grad = []
-                subspace_grad.append(np.array([[0]], dtype=complex))
-                second_subspace = np.zeros(shape=interferometer.shape, dtype=complex)
+                subspace_grad.append(np.array([[0]], dtype=interferometer.dtype))
+                second_subspace = np.zeros(
+                    shape=interferometer.shape, dtype=interferometer.dtype
+                )
                 second_subspace[row_index, col_index] = 1
                 subspace_grad.append(second_subspace)
 
                 for p in range(2, cutoff):
                     size = indices[p] - indices[p - 1]
                     previous_subspace_grad = subspace_grad[p - 1]
-                    matrix = np.zeros(shape=(size, size), dtype=complex)
+                    matrix = np.zeros(shape=(size, size), dtype=interferometer.dtype)
 
                     subspace_indices = subspace_index_tensor[p - 2]
                     first_subspace_indices = np.asarray(
@@ -315,7 +317,10 @@ def passive_linear(
     )
 
     subspace = FockSpace(
-        d=len(interferometer), cutoff=state._space.cutoff, calculator=calculator
+        d=len(interferometer),
+        cutoff=state._space.cutoff,
+        calculator=calculator,
+        config=state._config,
     )
 
     subspace_transformations = _get_interferometer_on_fock_space(
@@ -416,9 +421,14 @@ def _calculate_index_list_for_appling_interferometer(
     cutoff = space.cutoff
     d = space.d
 
-    subspace = FockSpace(d=len(modes), cutoff=space.cutoff, calculator=calculator)
+    subspace = FockSpace(
+        d=len(modes), cutoff=space.cutoff, calculator=calculator, config=space.config
+    )
     auxiliary_subspace = FockSpace(
-        d=d - len(modes), cutoff=space.cutoff, calculator=calculator
+        d=d - len(modes),
+        cutoff=space.cutoff,
+        calculator=calculator,
+        config=space.config,
     )
 
     indices = [cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)]
@@ -561,7 +571,7 @@ def _calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
 def _calculate_state_vector_after_apply_active_gate(
     state_vector, matrix, state_index_matrix_list
 ):
-    new_state_vector = np.empty_like(state_vector, dtype=complex)
+    new_state_vector = np.empty_like(state_vector, dtype=state_vector.dtype)
 
     for state_index_matrix in state_index_matrix_list:
         limit = state_index_matrix.shape[0]
@@ -585,7 +595,7 @@ def _create_linear_active_gate_gradient_function(
         unordered_gradient_by_initial_state = []
         order_by = []
 
-        gradient_by_matrix = tf.zeros(shape=(cutoff, cutoff), dtype=np.complex128)
+        gradient_by_matrix = tf.zeros(shape=(cutoff, cutoff), dtype=state_vector.dtype)
 
         for indices in state_index_matrix_list:
             limit = indices.shape[0]

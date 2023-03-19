@@ -133,7 +133,7 @@ class _ScalableGaussianGate(
         elif len(displacement_vector) == 1:
             self._extra_params["displacement_vector"] = calculator.np.array(
                 [displacement_vector[0]] * len(self.modes),
-                dtype=complex,
+                dtype=displacement_vector.dtype,
             )
         else:
             raise InvalidParameter(

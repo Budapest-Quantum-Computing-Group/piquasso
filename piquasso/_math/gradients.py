@@ -26,6 +26,7 @@ def create_single_mode_displacement_gradient(
     cutoff: int,
     transformation: np.ndarray,
     calculator: BaseCalculator,
+    complex_dtype: type,
 ) -> Callable:
     def grad(upstream):
         np = calculator.fallback_np
@@ -34,8 +35,8 @@ def create_single_mode_displacement_gradient(
         epiphi = np.exp(1j * phi)
         eimphi = np.exp(-1j * phi)
 
-        r_grad = np.zeros((cutoff,) * 2, dtype=complex)
-        phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
+        r_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
+        phi_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
         # NOTE: This algorithm deliberately overindexes the gate matrix.
         for row in range(cutoff):
             for col in range(cutoff):
@@ -65,13 +66,14 @@ def create_single_mode_squeezing_gradient(
     cutoff: int,
     transformation: np.ndarray,
     calculator: BaseCalculator,
+    complex_dtype: type,
 ) -> Callable:
     def grad(upstream):
         np = calculator.fallback_np
         tf = calculator._tf
 
-        r_grad = np.zeros((cutoff,) * 2, dtype=complex)
-        phi_grad = np.zeros((cutoff,) * 2, dtype=complex)
+        r_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
+        phi_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
         sinhr = np.sinh(r)
         coshr = np.cosh(r)
         sechr = 1 / coshr

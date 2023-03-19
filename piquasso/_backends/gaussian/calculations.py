@@ -597,7 +597,7 @@ def deterministic_gaussian_channel(
     mean_vector = state.xpxp_mean_vector
     covariance_matrix = state.xpxp_covariance_matrix
 
-    embedded_X = np.identity(len(mean_vector), dtype=complex)
+    embedded_X = np.identity(len(mean_vector), dtype=state._config.complex_dtype)
     embedded_X[matrix_indices] = X
 
     embedded_Y = np.zeros_like(embedded_X)

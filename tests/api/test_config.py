@@ -54,3 +54,27 @@ def test_eq():
     assert config3 == config3
     assert config1 == config2
     assert not (config1 == config3)
+
+
+def test_as_code():
+    conf_f32 = pq.Config(dtype=np.float32)
+    conf_f64 = pq.Config(dtype=np.float64)
+    conf_f = pq.Config(dtype=float)
+
+    as_code_f32 = conf_f32._as_code()
+    as_code_f64 = conf_f64._as_code()
+    as_code_f = conf_f._as_code()
+
+    assert as_code_f32 == "pq.Config(dtype=np.float32)"
+    assert as_code_f64 == "pq.Config()"
+    assert as_code_f == "pq.Config()"
+
+
+def test_complex_dtype():
+    conf_f32 = pq.Config(dtype=np.float32)
+    conf_f64 = pq.Config(dtype=np.float64)
+    conf_f = pq.Config(dtype=float)
+
+    assert conf_f32.complex_dtype == np.complex64
+    assert conf_f64.complex_dtype == np.complex128
+    assert conf_f.complex_dtype == np.complex128

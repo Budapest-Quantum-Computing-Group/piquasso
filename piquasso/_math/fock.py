@@ -21,6 +21,7 @@ from operator import add
 
 from scipy.special import factorial, comb
 
+from piquasso.api.config import Config
 from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.decompositions import takagi
@@ -134,16 +135,20 @@ class FockSpace(tuple):
     transformation to acquire the symmetrized tensor in the symmetrized representation.
     """
 
-    def __new__(cls, d: int, cutoff: int, calculator: BaseCalculator) -> "FockSpace":
+    def __new__(
+        cls, d: int, cutoff: int, calculator: BaseCalculator, config: Config
+    ) -> "FockSpace":
         return super().__new__(
             cls, FockBasis.create_all(d=d, cutoff=cutoff)  # type: ignore
         )
 
-    def __init__(self, *, d: int, cutoff: int, calculator: BaseCalculator) -> None:
+    def __init__(
+        self, *, d: int, cutoff: int, calculator: BaseCalculator, config: Config
+    ) -> None:
         self.d = d
         self.cutoff = cutoff
         self.calculator = calculator
-
+        self.config = config
         self._calculator = calculator
 
     def __deepcopy__(self, memo: Any) -> "FockSpace":
@@ -186,9 +191,16 @@ class FockSpace(tuple):
             r = self.calculator.maybe_convert_to_numpy(r)
             phi = self.calculator.maybe_convert_to_numpy(phi)
 
-            matrix = create_single_mode_squeezing_matrix(r, phi, self.cutoff)
+            matrix = create_single_mode_squeezing_matrix(
+                r, phi, self.cutoff, complex_dtype=self.config.complex_dtype
+            )
             grad = create_single_mode_squeezing_gradient(
-                r, phi, self.cutoff, matrix, self.calculator
+                r,
+                phi,
+                self.cutoff,
+                matrix,
+                self.calculator,
+                self.config.complex_dtype,
             )
             return matrix, grad
 
@@ -337,7 +349,7 @@ class FockSpace(tuple):
 
         singular_values, unitary = takagi(1j * H_active[:d, d:], self._calculator)
 
-        transformation = np.identity(self.cardinality, dtype=complex)
+        transformation = np.identity(self.cardinality, dtype=self.config.complex_dtype)
 
         fock_operator = self.get_passive_fock_operator(
             np.conj(unitary).T @ H_passive[:d, :d],
@@ -466,7 +478,9 @@ class FockSpace(tuple):
         return np.array(matrix)
 
     def get_creation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
-        operator = np.zeros(shape=(self.cardinality,) * 2, dtype=complex)
+        operator = np.zeros(
+            shape=(self.cardinality,) * 2, dtype=self.config.complex_dtype
+        )
 
         for index, basis in enumerate(self):
             dual_basis = basis.increment_on_modes(modes)
@@ -488,9 +502,16 @@ class FockSpace(tuple):
             r = self.calculator.maybe_convert_to_numpy(r)
             phi = self.calculator.maybe_convert_to_numpy(phi)
 
-            matrix = create_single_mode_displacement_matrix(r, phi, self.cutoff)
+            matrix = create_single_mode_displacement_matrix(
+                r, phi, self.cutoff, complex_dtype=self.config.complex_dtype
+            )
             grad = create_single_mode_displacement_gradient(
-                r, phi, self.cutoff, matrix, self.calculator
+                r,
+                phi,
+                self.cutoff,
+                matrix,
+                self.calculator,
+                self.config.complex_dtype,
             )
             return matrix, grad
 

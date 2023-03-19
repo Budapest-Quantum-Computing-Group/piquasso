@@ -41,8 +41,8 @@ def get_partitions(boxes: int, particles: int) -> List[np.ndarray]:
 
 
 @lru_cache()
-def get_X(d: int) -> np.ndarray:
-    sigma_x = np.array([[0, 1], [1, 0]], dtype=complex)
+def get_X(d: int, complex_dtype: np.dtype) -> np.ndarray:
+    sigma_x = np.array([[0, 1], [1, 0]], dtype=complex_dtype)
     return block_diag(*([sigma_x] * d))
 
 
@@ -105,7 +105,9 @@ def _hafnian(
 def _get_polynom_coefficients(
     A: np.ndarray, indices: List[int], degree: int
 ) -> List[float]:
-    X = get_X(len(indices) // 2)
+    complex_dtype = np.complex64 if A.dtype is np.float32 else np.complex128
+
+    X = get_X(len(indices) // 2, complex_dtype)
 
     eigenvalues = np.linalg.eigvals(X @ A[np.ix_(indices, indices)])
 
@@ -126,7 +128,9 @@ def _get_loop_polynom_coefficients(
 ) -> List[float]:
     AZ = A[np.ix_(indices, indices)]
 
-    X = get_X(len(indices) // 2)
+    complex_dtype = np.complex64 if A.dtype is np.float32 else np.complex128
+
+    X = get_X(len(indices) // 2, complex_dtype)
 
     XAZ = X @ AZ
 

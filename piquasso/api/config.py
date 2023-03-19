@@ -35,6 +35,7 @@ class Config(_mixins.CodeMixin):
         use_torontonian: bool = False,
         cutoff: int = 4,
         measurement_cutoff: int = 5,
+        dtype: type = np.float64,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
@@ -45,6 +46,7 @@ class Config(_mixins.CodeMixin):
         self.use_torontonian = use_torontonian
         self.cutoff = cutoff
         self.measurement_cutoff = measurement_cutoff
+        self.dtype = np.float64 if dtype is float else dtype
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Config):
@@ -56,6 +58,7 @@ class Config(_mixins.CodeMixin):
             and self.use_torontonian == other.use_torontonian
             and self.cutoff == other.cutoff
             and self.measurement_cutoff == other.measurement_cutoff
+            and self.dtype == other.dtype
         )
 
     def _as_code(self) -> str:
@@ -74,6 +77,8 @@ class Config(_mixins.CodeMixin):
             non_default_params["cutoff"] = self.cutoff
         if self.measurement_cutoff != default_config.measurement_cutoff:
             non_default_params["measurement_cutoff"] = self.measurement_cutoff
+        if self.dtype != default_config.dtype:
+            non_default_params["dtype"] = "np." + self.dtype.__name__
 
         if len(non_default_params) == 0:
             return "pq.Config()"
@@ -94,6 +99,15 @@ class Config(_mixins.CodeMixin):
         self._seed_sequence = value
         self.rng = np.random.default_rng(self._seed_sequence)
         random.seed(self._seed_sequence)
+
+    @property
+    def complex_dtype(self):
+        """Returns the complex precision depending on the dtype of the Config class"""
+
+        if self.dtype is np.float64:
+            return np.complex128
+
+        return np.complex64
 
     def copy(self) -> "Config":
         """Returns an exact copy of this config object.
