@@ -59,7 +59,7 @@ def create_layer_parameters(d: int, number_of_layers: int,):
     return tf.Variable(weights)
 
 
-d = 8
+d = 9
 cutoff = 5
 min_cutoff = 2
 max_cutoff = 10

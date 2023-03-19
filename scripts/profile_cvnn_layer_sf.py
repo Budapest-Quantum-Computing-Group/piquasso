@@ -107,7 +107,7 @@ np.random.seed(137)
 
 
 # define width and depth of CV quantum neural network
-modes = 8
+modes = 9
 layers = 12
 min_cutoff = 2
 max_cutoff = 8

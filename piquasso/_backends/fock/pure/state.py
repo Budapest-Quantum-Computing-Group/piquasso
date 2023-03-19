@@ -136,7 +136,7 @@ class PureFockState(BaseFockState):
             raise InvalidState("The norm of the state is 0.")
         file = open("lofasz.txt", "a")
         file.write(str(norm.numpy()) + "\n")
-        file.close()
+        file.close() # TODO: State member variable for this
         # print("before:", norm.numpy())
         self._state_vector = self._state_vector / self._np.sqrt(norm)
 
