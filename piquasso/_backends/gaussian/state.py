@@ -66,9 +66,9 @@ class GaussianState(State):
         vector_shape = (self.d,)
         matrix_shape = vector_shape * 2
 
-        self._m = np.zeros(vector_shape, dtype=complex)
-        self._G = np.zeros(matrix_shape, dtype=complex)
-        self._C = np.zeros(matrix_shape, dtype=complex)
+        self._m = np.zeros(vector_shape, dtype=self._config.complex_dtype)
+        self._G = np.zeros(matrix_shape, dtype=self._config.complex_dtype)
+        self._C = np.zeros(matrix_shape, dtype=self._config.complex_dtype)
 
     @classmethod
     def _from_representation(

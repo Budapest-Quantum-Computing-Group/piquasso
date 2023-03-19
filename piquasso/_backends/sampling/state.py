@@ -50,7 +50,9 @@ class SamplingState(State):
         super().__init__(calculator=calculator, config=config)
 
         self.initial_state: np.ndarray = np.zeros((d,), dtype=int)
-        self.interferometer: np.ndarray = np.diag(np.ones(d, dtype=complex))
+        self.interferometer: np.ndarray = np.diag(
+            np.ones(d, dtype=self._config.complex_dtype)
+        )
 
         self.is_lossy = False
 

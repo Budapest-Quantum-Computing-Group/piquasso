@@ -49,7 +49,9 @@ class FockState(BaseFockState):
         self._density_matrix = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
-        return np.zeros(shape=(self._space.cardinality,) * 2, dtype=complex)
+        return np.zeros(
+            shape=(self._space.cardinality,) * 2, dtype=self._config.complex_dtype
+        )
 
     def reset(self) -> None:
         self._density_matrix = self._get_empty()

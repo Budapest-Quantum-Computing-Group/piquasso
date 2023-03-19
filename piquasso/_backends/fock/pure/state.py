@@ -59,13 +59,17 @@ class PureFockState(BaseFockState):
         return [0.0] * self._space.cardinality
 
     def _get_empty(self) -> np.ndarray:
-        return self._np.zeros(shape=(self._space.cardinality,), dtype=complex)
+        return self._np.zeros(
+            shape=(self._space.cardinality,), dtype=self._config.complex_dtype
+        )
 
     def reset(self) -> None:
         state_vector_list = self._get_empty_list()
         state_vector_list[0] = 1.0
 
-        self._state_vector = self._np.array(state_vector_list, dtype=complex)
+        self._state_vector = self._np.array(
+            state_vector_list, dtype=self._config.complex_dtype
+        )
 
     @property
     def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:

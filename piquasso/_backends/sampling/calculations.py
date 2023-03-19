@@ -94,7 +94,7 @@ def passive_linear(
 def _apply_matrix_on_modes(
     state: SamplingState, matrix: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    embedded = np.identity(len(state.interferometer), dtype=complex)
+    embedded = np.identity(len(state.interferometer), dtype=state._config.complex_dtype)
 
     embedded[np.ix_(modes, modes)] = matrix
 

@@ -172,12 +172,17 @@ class Loss(Gate, _mixins.ScalingMixin):
 
     def _autoscale(self, calculator: BaseCalculator) -> None:
         transmissivity = self._extra_params["transmissivity"]
+
+        complex_dtype = (
+            np.complex128 if transmissivity.dtype is np.float64 else np.complex64
+        )
+
         if transmissivity is None or len(self.modes) == len(transmissivity):
             pass
         elif len(transmissivity) == 1:
             self._extra_params["transmissivity"] = calculator.np.array(
                 [transmissivity[0]] * len(self.modes),
-                dtype=complex,
+                dtype=complex_dtype,
             )
         else:
             raise InvalidParameter(

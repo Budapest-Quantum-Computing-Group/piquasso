@@ -142,6 +142,7 @@ def test_full_config_code_generation():
             use_torontonian=True,
             cutoff=6,
             measurement_cutoff=4,
+            dtype=np.float32,
         ),
     )
 
@@ -163,7 +164,7 @@ with pq.Program() as program:
 
 simulator = pq.{pq.GaussianSimulator.__name__}(
     d=3, config=pq.Config(seed_sequence=0, cache_size=64, hbar=2.5, \
-use_torontonian=True, cutoff=6, measurement_cutoff=4)
+use_torontonian=True, cutoff=6, measurement_cutoff=4, dtype=np.float32)
 )
 
 result = simulator.execute(program, shots=100)

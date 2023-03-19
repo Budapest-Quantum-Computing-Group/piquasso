@@ -35,6 +35,7 @@ class BaseFockState(State, abc.ABC):
             d=d,
             cutoff=self._config.cutoff,
             calculator=calculator,
+            config=self._config,
         )
         # NOTE: This is instantiated here, since it is costly to do so, and is needed
         # for several, repeating calculations.
@@ -42,6 +43,7 @@ class BaseFockState(State, abc.ABC):
             d=d - 1,
             cutoff=self._config.cutoff,
             calculator=calculator,
+            config=self._config,
         )
 
     @property
@@ -185,7 +187,9 @@ class BaseFockState(State, abc.ABC):
         X, Y = np.meshgrid(positions, momentums)
         A = 0.5 * g * (X + 1.0j * Y)
 
-        Wlist = np.array([np.zeros(np.shape(A), dtype=complex) for k in range(M)])
+        Wlist = np.array(
+            [np.zeros(np.shape(A), dtype=self._config.complex_dtype) for k in range(M)]
+        )
         Wlist[0] = np.exp(-2.0 * abs(A) ** 2) / np.pi
 
         W = np.real(rho[0, 0]) * np.real(Wlist[0])
