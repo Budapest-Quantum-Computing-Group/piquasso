@@ -55,6 +55,9 @@ class PureFockState(BaseFockState):
 
         self._state_vector = self._get_empty()
 
+        # For benchmarking:
+        self.norm_values = []
+
     def _get_empty_list(self) -> list:
         return [0.0] * self._space.cardinality
 
@@ -134,10 +137,10 @@ class PureFockState(BaseFockState):
 
         if np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
-        file = open("lofasz.txt", "a")
-        file.write(str(norm.numpy()) + "\n")
-        file.close() # TODO: State member variable for this
-        # print("before:", norm.numpy())
+
+        # For benchmarking
+        self.norm_values.append(norm)
+
         self._state_vector = self._state_vector / self._np.sqrt(norm)
 
     def validate(self) -> None:
