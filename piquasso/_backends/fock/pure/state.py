@@ -68,7 +68,7 @@ class PureFockState(BaseFockState):
         state_vector_list = self._get_empty_list()
         state_vector_list[0] = 1.0
 
-        self._state_vector = self._np.array(state_vector_list)
+        self._state_vector = self._np.array(state_vector_list, dtype=complex)
 
     @property
     def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
