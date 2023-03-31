@@ -19,10 +19,23 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import strawberryfields as sf
 from strawberryfields import ops
 import piquasso as pq
-from piquasso._math.fock import cutoff_cardinality
 import time
 import numpy as np
 import json
+
+
+ITERATIONS = 100
+
+TIMESTAMP = time.strftime("%Y%m%d-%H%M%S")
+
+
+PQ_MODE_RANGE = range(8, 9)
+PQ_CUTOFF_RANGE = range(5, 6)
+PQ_LAYER_RANGE = range(1, 2)
+
+SF_MODE_RANGE = range(8, 9)
+SF_CUTOFF_RANGE = range(5, 6)
+SF_LAYER_RANGE = range(1, 2)
 
 
 def pq_benchmark():
@@ -40,8 +53,6 @@ def pq_benchmark():
 
     def create_layer_parameters(d: int, number_of_layers: int,):
         number_of_beamsplitters = _get_number_of_beamsplitters(d)
-
-        dtype = np.float64
 
         thetas_1 = np.random.uniform(size=(number_of_layers, number_of_beamsplitters), high=np.pi*2)
         phis_1 = np.random.uniform(size=(number_of_layers, d-1), high=np.pi*2)
@@ -62,22 +73,11 @@ def pq_benchmark():
 
         return weights
 
-
-    d = 7
-    cutoff = 14
-    number_of_layers = 8
-    min_d = 3
-    max_d = d
-    min_cutoff = min_d
-    max_cutoff = cutoff
-    min_number_of_layers = 1
-    max_number_of_layers = number_of_layers
-
     benchmark_json_list = {'benchmarks': []}
-    file_name = "./scripts/benchmark_results/pq/photon_losing/{}.json".format(time.strftime("%Y%m%d-%H%M%S"))
-    for number_of_layers in range(min_number_of_layers, max_number_of_layers):
-        for d in range(min_d, max_d):
-            for cutoff in range(min_cutoff, max_cutoff):
+    file_name = "./scripts/benchmark_results/pq/{}.json".format(TIMESTAMP)
+    for number_of_layers in PQ_LAYER_RANGE:
+        for d in PQ_MODE_RANGE:
+            for cutoff in PQ_CUTOFF_RANGE:
                 print("layernum:{}_mode:{}_cutoff:{}".format(number_of_layers, d, cutoff))
 
                 simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
@@ -139,28 +139,42 @@ def pq_benchmark():
 
                     return single_layer
 
-                layers = [create_layer(parameters[i]) for i in range(parameters.shape[0])]
+                exec_time_list = []
+                photons_lost_list = []
 
-                with pq.Program() as program:
-                    pq.Q(all) | pq.Vacuum()
+                for _ in range(ITERATIONS):
+                    layers = [create_layer(parameters[i]) for i in range(parameters.shape[0])]
 
-                    for layer in layers:
-                        pq.Q(all) | layer
+                    with pq.Program() as program:
+                        pq.Q(all) | pq.Vacuum()
 
-                start_time = time.time()
-                state = simulator.execute(program).state
-                exec_time = time.time() - start_time
-                norms = state.norm_values
-                result = 1
-                for norm in norms:
-                    result *= float(norm)
+                        for layer in layers:
+                            pq.Q(all) | layer
 
-                benchmark_values = {'mode':d,
-                                    'cutoff': cutoff,
-                                    'number_of_layers': number_of_layers,
-                                    'photons_lost': 1.0 - result,
-                                    'exec_time': exec_time,
-                                    }
+                    start_time = time.time()
+                    state = simulator.execute(program).state
+                    exec_time = time.time() - start_time
+                    exec_time_list.append(exec_time)
+
+                    norms = state.norm_values
+
+                    original_norm = 1
+                    for norm in norms:
+                        original_norm *= float(norm)
+
+                    photons_lost_list.append(1.0 - original_norm)
+
+                average_exec_time = np.average(exec_time_list)
+                average_photons_lost = np.average(photons_lost_list)
+
+                benchmark_values = {
+                    'mode': d,
+                    'cutoff': cutoff,
+                    'number_of_layers': number_of_layers,
+                    'photons_lost': average_photons_lost,
+                    'exec_time': average_exec_time,
+                    'iterations': ITERATIONS
+                }
 
                 benchmark_json_list['benchmarks'].append(benchmark_values)
 
@@ -238,65 +252,53 @@ def sf_benchmark():
 
         return weights
 
-
-    np.random.seed(137)
-
-    d = 7
-    cutoff = 14
-    number_of_layers = 8
-    min_d = 3
-    max_d = d
-    min_cutoff = min_d
-    max_cutoff = cutoff
-    min_number_of_layers = 1
-    max_number_of_layers = number_of_layers
-
     benchmark_json_list = {'benchmarks': []}
-    file_name = "./scripts/benchmark_results/sf/photon_losing/{}.json".format(time.strftime("%Y%m%d-%H%M%S"))
-    for number_of_layers in range(min_number_of_layers, max_number_of_layers):
-        for d in range(min_d, max_d):
-            for cutoff in range(min_cutoff, max_cutoff):
+    file_name = "./scripts/benchmark_results/sf/{}.json".format(TIMESTAMP)
+    for number_of_layers in SF_LAYER_RANGE:
+        for d in SF_MODE_RANGE:
+            for cutoff in SF_CUTOFF_RANGE:
                 print("layernum:{}_mode:{}_cutoff:{}".format(number_of_layers, d, cutoff))
 
-                eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
-                qnn = sf.Program(d)
+                exec_time_list = []
+                photons_lost_list = []
 
-                weights = init_weights(d, number_of_layers)
-                num_params = np.prod(weights.shape)
+                for _ in range(ITERATIONS):
+                    eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
+                    qnn = sf.Program(d)
+                    weights = init_weights(d, number_of_layers)
 
-                sf_params = np.arange(num_params).reshape(weights.shape).astype(np.str)
-                sf_params = np.array([qnn.params(*i) for i in sf_params])
+                    with qnn.context as q:
+                        for k in range(number_of_layers):
+                            layer(weights[k], q)
 
-                with qnn.context as q:
-                    for i in range(d):
-                        sf.ops.Dgate(0.1) | q[i]
+                    start_time = time.time()
+                    state = eng.run(qnn).state
+                    exec_time = time.time() - start_time
+                    exec_time_list.append(exec_time)
 
-                    for k in range(number_of_layers):
-                        layer(sf_params[k], q)
+                    ket = state.ket()
+                    flatten_ket = np.reshape(ket, (-1))
+                    photons_lost = 1.0 - np.real(np.dot(flatten_ket, np.conj(flatten_ket)))
 
-                mapping = {
-                    p.name: w for p, w in zip(sf_params.flatten(), np.reshape(weights, [-1]))
+                    photons_lost_list.append(photons_lost)
+
+                average_exec_time = np.average(exec_time_list)
+                average_photons_lost = np.average(photons_lost_list)
+
+                benchmark_values = {
+                    'mode':d,
+                    'cutoff': cutoff,
+                    'number_of_layers': number_of_layers,
+                    'photons_lost': average_photons_lost,
+                    'exec_time': average_exec_time,
+                    'iterations': ITERATIONS
                 }
-
-                start_time = time.time()
-                state = eng.run(qnn, args=mapping).state
-                exec_time = time.time() - start_time
-
-                ket = state.ket()
-                flatten_ket = np.reshape(ket, (-1))
-                norm = np.real(np.dot(flatten_ket, np.conj(flatten_ket)))
-
-                benchmark_values = {'mode':d,
-                                    'cutoff': cutoff,
-                                    'number_of_layers': number_of_layers,
-                                    'photons_lost': 1.0 - norm,
-                                    'exec_time': exec_time,
-                                    }
 
                 benchmark_json_list['benchmarks'].append(benchmark_values)
 
                 with open(file_name, "w") as file:
                     json.dump(benchmark_json_list, file, indent=6)
+
 
 pq_benchmark()
 sf_benchmark()
