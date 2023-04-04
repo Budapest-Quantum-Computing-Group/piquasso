@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [2.3.0] - 2023-03-07
+
+### Added
+
+- Possibility to change the `dtype` of the calculations in `Config`.
+
+### Fixed
+
+- A small typing error in `PureFockState.reset()`.
+
+### Changed
+
+- A small performance improvement got implemented in the `Kerr` gate.
+
+
 ## [2.2.0] - 2023-03-07
 
 ### Changed
