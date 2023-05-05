@@ -1,0 +1,52 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 8,
+                  "cutoff": 3,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.03549905184636966,
+                  "exec_time": 0.8069418430328369,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 4,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.008872209626864285,
+                  "exec_time": 5.943937382698059,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 5,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.0015631558017785729,
+                  "exec_time": 27.519832766056062,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 6,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.00020902662597666044,
+                  "exec_time": 133.81729340553284,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 7,
+                  "number_of_layers": 4,
+                  "photons_lost": 4.8487378732087194e-05,
+                  "exec_time": 387.7104139328003,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 8,
+                  "number_of_layers": 4,
+                  "photons_lost": 1.4693558412326446e-05,
+                  "exec_time": 1087.7629554271698,
+                  "iterations": 1
+            }
+      ]
+}

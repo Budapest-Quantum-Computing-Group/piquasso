@@ -1,0 +1,116 @@
+{
+      "benchmarks": [
+            {
+                  "mode": 8,
+                  "cutoff": 3,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.06625240753903906,
+                  "exec_time": 0.19858167171478272,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 4,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.027851156602047292,
+                  "exec_time": 0.5008230805397034,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 5,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.009811159208726328,
+                  "exec_time": 1.2138226103782654,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 6,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.001981800991112781,
+                  "exec_time": 2.8149067831039427,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 7,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.0009397740882904904,
+                  "exec_time": 6.185933997631073,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 8,
+                  "number_of_layers": 4,
+                  "photons_lost": 0.00042037562811358953,
+                  "exec_time": 12.462561535835267,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 9,
+                  "number_of_layers": 4,
+                  "photons_lost": 7.545949670639818e-05,
+                  "exec_time": 24.264491996765138,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 10,
+                  "number_of_layers": 4,
+                  "photons_lost": 5.098323037566743e-05,
+                  "exec_time": 55.884730267524716,
+                  "iterations": 100
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 11,
+                  "number_of_layers": 4,
+                  "photons_lost": 1.0651739701050822e-05,
+                  "exec_time": 85.62860608100891,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 12,
+                  "number_of_layers": 4,
+                  "photons_lost": 4.253940286580438e-06,
+                  "exec_time": 162.9772675037384,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 13,
+                  "number_of_layers": 4,
+                  "photons_lost": 9.89696150588415e-07,
+                  "exec_time": 266.1134293079376,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 14,
+                  "number_of_layers": 4,
+                  "photons_lost": 1.011780419002406e-06,
+                  "exec_time": 429.4488251209259,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 15,
+                  "number_of_layers": 4,
+                  "photons_lost": 1.8600028450777017e-07,
+                  "exec_time": 661.1716063022614,
+                  "iterations": 1
+            },
+            {
+                  "mode": 8,
+                  "cutoff": 16,
+                  "number_of_layers": 4,
+                  "photons_lost": 3.574796891836485e-08,
+                  "exec_time": 1042.3594481945038,
+                  "iterations": 1
+            }
+      ]
+}
