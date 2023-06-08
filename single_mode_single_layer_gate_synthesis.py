@@ -2,19 +2,29 @@ import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 import piquasso as pq
 # Passive gates on one mode are diagonal
 
 # Basic parameters
 d = 1
-cutoff = 8
-number_of_layers = 10
+cutoff = 14
+number_of_layers = 30
 number_of_params = 5
 number_of_steps = 1000
 calculator = pq._backends.tensorflow.calculator.TensorflowCalculator()
 np = calculator.np # gradient had None values
 config = pq.Config()
 fock_space = pq._math.fock.FockSpace(d=1, cutoff=cutoff, calculator=calculator, config=config)
+
+def norm1_cost(target_matrix, result_matrix):
+    return tf.reduce_sum(tf.math.abs(cubic_phase_matrix - result_matrix))
+
+def identity_cost(target_matrix, result_matrix):
+    cost = 0
+    for i in range(cutoff):
+        cost += tf.math.abs((target_matrix @ result_matrix)[i, i] - 1)
+    return cost / cutoff
 
 # Functions for matrices not directly avaiable via Piquasso API
 def get_single_mode_kerr_matrix(xi: float):
@@ -47,7 +57,7 @@ def init_single_layer_parameters_single_mode(d: int = 1, layer_num: int = 1):
     }
     """
 
-cubic_phase_param = 0.005
+cubic_phase_param = 0.01
 cubic_phase_matrix = fock_space.get_single_mode_cubic_phase_operator(gamma=cubic_phase_param, hbar=config.hbar, calculator=calculator)
 
 layer_params = init_single_layer_parameters_single_mode(layer_num=number_of_layers)
@@ -62,11 +72,11 @@ for i in range(number_of_steps):
             kerr_matrix = get_single_mode_kerr_matrix(layer_params[4+j*number_of_params])
 
             result_matrix = result_matrix @ phase_shifter_1_matrix @ squeezing_matrix @ phase_shifter_2_matrix @ displacement_matrix @ kerr_matrix
-        cost = tf.reduce_sum(tf.math.abs(cubic_phase_matrix - result_matrix))
+        cost = identity_cost(target_matrix=cubic_phase_matrix, result_matrix=result_matrix)
 
     print("Cost: " + str(cost.numpy()) + " at step: " + str(i))
     # Perform gradient descent
-    learning_rate = 0.01
+    learning_rate = 0.1
     gradient = tape.gradient(cost, layer_params)
     # Casting back to tf.Variable is important
     layer_params = [tf.Variable(layer_params[j] - learning_rate*gradient[j]) for j in range(len(layer_params))]
