@@ -40,9 +40,13 @@ Generating the polynomial:
     4.) Construct the gate. // `create_quantum_gate`
 
 Note, in the code, the degrees are increasing
+
+
+creation and annihilation operators, same thing.
+adagger in front, a back, check self-adjoint
 """
 
-rank = 2
+rank = 6
 cutoff = 3
 hbar = 2.0
 m = 1
@@ -217,10 +221,10 @@ def create_combinations(rank: int, perm: str):
         create_combinations(rank-1, perm+"p")
 
 
-#create_combinations.index = 0
-#create_combinations.symm_count = 0
-#create_combinations(rank,"")
-#print(create_combinations.symm_count)
+create_combinations.index = 0
+create_combinations.symm_count = 0
+create_combinations(rank,"")
+print(create_combinations.symm_count)
 #print(is_self_adjoint_coeffs(generate_polynomial(rank)))
 gate = create_quantum_gate(generate_polynomial(rank))
 print(gate)

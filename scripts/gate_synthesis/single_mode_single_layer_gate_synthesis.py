@@ -1,14 +1,16 @@
 import numpy as np
+import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import piquasso as pq
+import normal_ordering
 # Passive gates on one mode are diagonal
 
 # Basic parameters
 d = tf.constant(1)
-cutoff = tf.constant(14)
-number_of_layers = tf.constant(10)
+cutoff = tf.constant(20)
+number_of_layers = tf.constant(200)
 number_of_params = tf.constant(5)
 number_of_steps = tf.constant(1000)
 calculator = pq._backends.tensorflow.calculator.TensorflowCalculator()
@@ -23,9 +25,15 @@ def norm1_cost(target_matrix, result_matrix):
     return tf.cast(tf.reduce_sum(tf.math.abs(target_matrix - result_matrix)), dtype=np.float32)
 
 def identity_cost(target_matrix, result_matrix):
+    """
+    Eq. 9 in https://arxiv.org/pdf/1807.10781.pdf
+    """
     cost = 0
+    self_multiplication = target_matrix @ np.conj(result_matrix).T
+
     for i in range(cutoff):
-        cost += tf.math.abs((target_matrix @ result_matrix)[i, i] - 1)
+        cost += tf.math.abs((self_multiplication)[i, i] - 1)
+
     return cost / cutoff
 
 # Functions for matrices not directly avaiable via Piquasso API
@@ -62,29 +70,50 @@ def init_single_layer_parameters_single_mode(d: int = 1, layer_num: int = 1):
 cubic_phase_param = tf.constant(0.1)
 cubic_phase_matrix = fock_space.get_single_mode_cubic_phase_operator(gamma=cubic_phase_param, hbar=config.hbar, calculator=calculator)
 
-layer_params = init_single_layer_parameters_single_mode(layer_num=number_of_layers)
+order = 7  # What's a good order? # Maximal order for neural layer
+batch_size = 10
+
+unitaries = []
+for i in range(batch_size):
+    unitaries.append(normal_ordering.generate_unitary(order, cutoff))
+    # Koefficienseket kell átadni a hálónak
+
+layer_params = init_single_layer_parameters_single_mode(layer_num=number_of_layers)  # After neural layer try non-cvnn
 opt = tf.keras.optimizers.Adam(learning_rate=tf.constant(0.001))
-for i in tf.range(number_of_steps):
+min_cost = sys.maxsize - 1  # Although Python3 has no upper bound for integers
+sum_cost = 0
+
+for i in range(number_of_steps):
+
     with tf.GradientTape(persistent=False) as tape:
         result_matrix = np.identity(cutoff)
-        for j in tf.range(number_of_layers):
+
+        for j in range(number_of_layers):
             phase_shifter_1_matrix = get_single_mode_phase_shift_matrix(layer_params[0+j*number_of_params])
             squeezing_matrix = fock_space.get_single_mode_squeezing_operator(r=layer_params[1+j*number_of_params], phi=0)
             phase_shifter_2_matrix = get_single_mode_phase_shift_matrix(layer_params[2+j*number_of_params])
             displacement_matrix = fock_space.get_single_mode_displacement_operator(r=layer_params[3+j*number_of_params], phi=0)
             kerr_matrix = get_single_mode_kerr_matrix(layer_params[4+j*number_of_params])
-            #kerr_matrix = fock_space.get_single_mode_cubic_phase_operator(gamma=layer_params[j*number_of_params], hbar=config.hbar, calculator=calculator)
 
             result_matrix = result_matrix @ phase_shifter_1_matrix @ squeezing_matrix @ phase_shifter_2_matrix @ displacement_matrix @ kerr_matrix
-            #result_matrix = kerr_matrix
-        cost = norm1_cost(target_matrix=cubic_phase_matrix, result_matrix=result_matrix)
-    # breakpoint()
+
+        cost = 0
+        for k in range(batch_size):
+            cost += identity_cost(target_matrix=unitaries[k], result_matrix=result_matrix)
+            # sum cost -> multiple costs
+        if cost < min_cost:
+            min_cost = cost
+        sum_cost += cost
+
     print("Cost: " + str(cost.numpy()) + " at step: " + str(i))
     # Perform gradient descent
     gradient = tape.gradient(cost, layer_params)
     for j in tf.range(len(gradient)): # SOME elemnts are float64, others are not
         gradient[j] = tf.cast(gradient[j], dtype=np.float32)
-    # breakpoint()
+
     opt.apply_gradients(zip(gradient, layer_params))
     # Casting back to tf.Variable is important
     # layer_params = [tf.Variable(layer_params[j] - learning_rate*gradient[j]) for j in range(len(layer_params))]
+print("FINISHED")
+print("Min. cost:", min_cost)
+print("Avg. cost:", sum_cost/number_of_steps)
