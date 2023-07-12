@@ -44,104 +44,29 @@ Most of the gates defined here are linear gates, which can be characterized by
 
 import numpy as np
 
-from scipy.optimize import root_scalar
-
 from piquasso.api.instruction import Gate
-from piquasso.api.calculator import BaseCalculator
 from piquasso.api.exceptions import InvalidParameter
 
-from piquasso._math.decompositions import takagi
 from piquasso._math.linalg import is_square, is_symmetric, is_invertible
 from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 
-from piquasso.core import _mixins
 from typing import Optional
 
 
-class _GaussianGate(Gate):
-    def __init__(
-        self,
-        *,
-        params: Optional[dict] = None,
-        passive_block: Optional[np.ndarray] = None,
-        active_block: Optional[np.ndarray] = None,
-        displacement_vector: Optional[np.ndarray] = None,
-    ):
-        params = params or {}
-
-        super().__init__(
-            params=params,
-            extra_params=dict(
-                passive_block=passive_block,
-                active_block=active_block,
-                displacement_vector=displacement_vector,
-            ),
-        )
-
-    def _postprocess(self, calculator):
-        np = calculator.np
-
-        passive_block = self._extra_params["passive_block"]
-        active_block = self._extra_params["active_block"]
-        displacement_vector = self._extra_params["displacement_vector"]
-
-        if passive_block is not None:
-            self._extra_params["passive_block"] = np.array(passive_block)
-        if active_block is not None:
-            self._extra_params["active_block"] = np.array(active_block)
-        if displacement_vector is not None:
-            self._extra_params["displacement_vector"] = np.array(displacement_vector)
+class _PassiveLinearGate(Gate):
+    def _get_passive_block(self, calculator, config):
+        raise NotImplementedError("Symplectic matrix passive block is not specified.")
 
 
-class _ScalableGaussianGate(
-    _GaussianGate,
-    _mixins.ScalingMixin,
-):
-    ERROR_MESSAGE_TEMPLATE = (
-        "The instruction {instruction} is not applicable to modes {modes} with the "
-        "specified parameters."
-    )
+class _ActiveLinearGate(Gate):
+    def _get_passive_block(self, calculator, config):
+        raise NotImplementedError("Symplectic matrix passive block is not specified.")
 
-    def _autoscale(self, calculator: BaseCalculator) -> None:
-        passive_block = self._extra_params["passive_block"]
-        if passive_block is None or len(self.modes) == len(passive_block):
-            pass
-        elif len(passive_block) == 1:
-            self._extra_params["passive_block"] = calculator.block_diag(
-                *[passive_block] * len(self.modes)
-            )
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
-
-        active_block = self._extra_params["active_block"]
-        if active_block is None or len(self.modes) == len(active_block):
-            pass
-        elif len(active_block) == 1:
-            self._extra_params["active_block"] = calculator.block_diag(
-                *[active_block] * len(self.modes)
-            )
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
-
-        displacement_vector = self._extra_params["displacement_vector"]
-        if displacement_vector is None or len(self.modes) == len(displacement_vector):
-            pass
-        elif len(displacement_vector) == 1:
-            self._extra_params["displacement_vector"] = calculator.np.array(
-                [displacement_vector[0]] * len(self.modes),
-                dtype=displacement_vector.dtype,
-            )
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
+    def _get_active_block(self, calculator, config):
+        raise NotImplementedError("Symplectic matrix active block is not specified.")
 
 
-class Interferometer(_GaussianGate):
+class Interferometer(_PassiveLinearGate):
     r"""Applies a general interferometer gate.
 
     The general unitary operator can be written as
@@ -180,10 +105,13 @@ class Interferometer(_GaussianGate):
                 "The interferometer matrix should be a square matrix."
             )
 
-        super().__init__(params=dict(matrix=matrix), passive_block=matrix)
+        super().__init__(params=dict(matrix=matrix))
+
+    def _get_passive_block(self, calculator, config):
+        return self._params["matrix"]
 
 
-class Beamsplitter(_GaussianGate):
+class Beamsplitter(_PassiveLinearGate):
     r"""Applies a beamsplitter gate.
 
     The general unitary operator can be written as
@@ -207,6 +135,8 @@ class Beamsplitter(_GaussianGate):
     where :math:`t = \cos(\theta)` and :math:`r = e^{i \phi} \sin(\theta)`.
     """
 
+    NUMBER_OF_MODES = 2
+
     def __init__(self, theta: float = 0.0, phi: float = np.pi / 4) -> None:
         r"""
         Args:
@@ -225,7 +155,7 @@ class Beamsplitter(_GaussianGate):
             ),
         )
 
-    def _postprocess(self, calculator):
+    def _get_passive_block(self, calculator, config):
         np = calculator.np
 
         theta = self._params["theta"]
@@ -234,15 +164,16 @@ class Beamsplitter(_GaussianGate):
         t = np.cos(theta)
         r = np.exp(1j * phi) * np.sin(theta)
 
-        self._extra_params["passive_block"] = np.array(
+        return np.array(
             [
                 [t, -np.conj(r)],
                 [r, t],
-            ]
+            ],
+            dtype=config.complex_dtype,
         )
 
 
-class Phaseshifter(_ScalableGaussianGate):
+class Phaseshifter(_PassiveLinearGate):
     r"""Applies a rotation or a phaseshifter gate.
 
     The unitary operator corresponding to the phaseshifter gate on the :math:`i`-th mode
@@ -262,6 +193,8 @@ class Phaseshifter(_ScalableGaussianGate):
         \end{bmatrix}.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, phi: float) -> None:
         """
         Args:
@@ -272,15 +205,15 @@ class Phaseshifter(_ScalableGaussianGate):
             params=dict(phi=phi),
         )
 
-    def _postprocess(self, calculator):
+    def _get_passive_block(self, calculator, config):
         np = calculator.np
 
         phi = self._params["phi"]
 
-        self._extra_params["passive_block"] = np.diag(np.exp(1j * np.atleast_1d(phi)))
+        return np.array([[np.exp(1j * phi)]], dtype=complex)
 
 
-class MachZehnder(_GaussianGate):
+class MachZehnder(_PassiveLinearGate):
     r"""Mach-Zehnder interferometer.
 
     The Mach-Zehnder interferometer is equivalent to
@@ -303,28 +236,40 @@ class MachZehnder(_GaussianGate):
     where :math:`\phi_{int}, \phi_{ext} \in \mathbb{R}`.
     """
 
+    NUMBER_OF_MODES = 2
+
     def __init__(self, int_: float, ext: float) -> None:
         """
         Args:
             int_ (float): The internal angle.
             ext (float): The external angle.
         """
-        int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
 
         super().__init__(
             params=dict(int_=int_, ext=ext),
-            passive_block=1
+        )
+
+    def _get_passive_block(self, calculator, config):
+        np = calculator.np
+
+        int_ = self._params["int_"]
+        ext = self._params["ext"]
+        int_phase, ext_phase = np.exp(1j * np.array([int_, ext]))
+
+        return (
+            1
             / 2
-            * np.array(
+            * calculator.np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
                     [1j * ext_phase * (int_phase + 1), 1 - int_phase],
-                ]
-            ),
+                ],
+                dtype=config.complex_dtype,
+            )
         )
 
 
-class Fourier(_ScalableGaussianGate):
+class Fourier(_PassiveLinearGate):
     r"""Applies a Fourier gate. It simply transforms the quadratures as follows:
 
     .. math::
@@ -351,11 +296,16 @@ class Fourier(_ScalableGaussianGate):
         Corresponds to the :class:`Phaseshifter` gate with :math:`\phi = \pi/2`.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self) -> None:
-        super().__init__(passive_block=np.array([[1j]]))
+        super().__init__()
+
+    def _get_passive_block(self, calculator, config):
+        return calculator.np.array([[1j]], dtype=config.complex_dtype)
 
 
-class GaussianTransform(_GaussianGate):
+class GaussianTransform(_ActiveLinearGate):
     r"""Applies a Gaussian transformation gate.
 
     The symplectic representation of the Gaussian gate is
@@ -395,14 +345,16 @@ class GaussianTransform(_GaussianGate):
                 "a symplectic matrix."
             )
 
-        super().__init__(
-            params=dict(passive=passive, active=active),
-            passive_block=passive,
-            active_block=active,
-        )
+        super().__init__(params=dict(passive=passive, active=active))
+
+    def _get_passive_block(self, calculator, config):
+        return self._params["passive"]
+
+    def _get_active_block(self, calculator, config):
+        return self._params["active"]
 
 
-class Squeezing(_ScalableGaussianGate):
+class Squeezing(_ActiveLinearGate):
     r"""Applies the squeezing gate.
 
     The unitary operator corresponding to the squeezing gate is
@@ -430,29 +382,33 @@ class Squeezing(_ScalableGaussianGate):
     where :math:`z = re^{i\phi}`.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, r: float, phi: float = 0.0) -> None:
         """
         Args:
             r (float): The amplitude of the squeezing instruction.
             phi (float): The squeezing angle.
         """
-        super().__init__(
-            params=dict(r=r, phi=phi),
-        )
+        super().__init__(params=dict(r=r, phi=phi))
 
-    def _postprocess(self, calculator):
+    def _get_passive_block(self, calculator, config):
+        np = calculator.np
+
+        r = self.params["r"]
+
+        return np.array([[np.cosh(r)]], dtype=config.complex_dtype)
+
+    def _get_active_block(self, calculator, config):
         np = calculator.np
 
         r = self.params["r"]
         phi = self.params["phi"]
 
-        self._extra_params["passive_block"] = np.diag(np.atleast_1d(np.cosh(r)))
-        self._extra_params["active_block"] = np.diag(
-            -np.atleast_1d(np.sinh(r)) * np.exp(1j * np.atleast_1d(phi))
-        )
+        return np.array([[-np.sinh(r) * np.exp(1j * phi)]], dtype=config.complex_dtype)
 
 
-class QuadraticPhase(_ScalableGaussianGate):
+class QuadraticPhase(_ActiveLinearGate):
     r"""Applies the quadratic phase instruction to the state.
 
     The unitary operator corresponding to the Fourier gate is
@@ -472,15 +428,23 @@ class QuadraticPhase(_ScalableGaussianGate):
 
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, s: float) -> None:
-        super().__init__(
-            params=dict(s=s),
-            passive_block=np.diag(1 + np.atleast_1d(s) / 2 * 1j),
-            active_block=np.diag(np.atleast_1d(s) / 2 * 1j),
-        )
+        super().__init__(params=dict(s=s))
+
+    def _get_passive_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array([[1 + s / 2 * 1j]], dtype=config.complex_dtype)
+
+    def _get_active_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array([[s / 2 * 1j]], dtype=config.complex_dtype)
 
 
-class Squeezing2(_GaussianGate):
+class Squeezing2(_ActiveLinearGate):
     r"""Applies the two-mode squeezing gate to the state.
 
     The unitary operator corresponding to the two-mode squeezing gate is
@@ -501,6 +465,8 @@ class Squeezing2(_GaussianGate):
         \end{bmatrix}.
     """
 
+    NUMBER_OF_MODES = 2
+
     def __init__(self, r: float, phi: float = 0.0) -> None:
         """
         Args:
@@ -509,27 +475,35 @@ class Squeezing2(_GaussianGate):
         """
         super().__init__(params=dict(r=r, phi=phi))
 
-    def _postprocess(self, calculator: BaseCalculator) -> None:
+    def _get_passive_block(self, calculator, config):
+        np = calculator.np
+
+        r = self._params["r"]
+
+        return np.array(
+            [
+                [np.cosh(r), 0],
+                [0, np.cosh(r)],
+            ],
+            dtype=config.complex_dtype,
+        )
+
+    def _get_active_block(self, calculator, config):
         np = calculator.np
 
         r = self._params["r"]
         phi = self._params["phi"]
 
-        self._extra_params["passive_block"] = np.array(
-            [
-                [np.cosh(r), 0],
-                [0, np.cosh(r)],
-            ]
-        )
-        self._extra_params["active_block"] = np.array(
+        return np.array(
             [
                 [0, np.sinh(r) * np.exp(1j * phi)],
                 [np.sinh(r) * np.exp(1j * phi), 0],
-            ]
+            ],
+            dtype=config.complex_dtype,
         )
 
 
-class ControlledX(_GaussianGate):
+class ControlledX(_ActiveLinearGate):
     r"""Applies the controlled X gate to the state.
 
     The unitary operator corresponding to the controlled X gate is
@@ -550,25 +524,35 @@ class ControlledX(_GaussianGate):
         \end{bmatrix}.
     """
 
+    NUMBER_OF_MODES = 2
+
     def __init__(self, s: float):
-        super().__init__(
-            params=dict(s=s),
-            passive_block=np.array(
-                [
-                    [1, -s / 2],
-                    [s / 2, 1],
-                ]
-            ),
-            active_block=np.array(
-                [
-                    [0, s / 2],
-                    [s / 2, 0],
-                ]
-            ),
+        super().__init__(params=dict(s=s))
+
+    def _get_passive_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array(
+            [
+                [1, -s / 2],
+                [s / 2, 1],
+            ],
+            dtype=config.complex_dtype,
+        )
+
+    def _get_active_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array(
+            [
+                [0, s / 2],
+                [s / 2, 0],
+            ],
+            dtype=config.complex_dtype,
         )
 
 
-class ControlledZ(_GaussianGate):
+class ControlledZ(_ActiveLinearGate):
     r"""Applies the controlled Z gate to the state.
 
     The unitary operator corresponding to the controlled Z gate is
@@ -589,25 +573,35 @@ class ControlledZ(_GaussianGate):
         \end{bmatrix}.
     """
 
+    NUMBER_OF_MODES = 2
+
     def __init__(self, s: float):
-        super().__init__(
-            params=dict(s=s),
-            passive_block=np.array(
-                [
-                    [1, 1j * (s / 2)],
-                    [1j * (s / 2), 1],
-                ]
-            ),
-            active_block=np.array(
-                [
-                    [0, 1j * (s / 2)],
-                    [1j * (s / 2), 0],
-                ]
-            ),
+        super().__init__(params=dict(s=s))
+
+    def _get_passive_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array(
+            [
+                [1, 1j * (s / 2)],
+                [1j * (s / 2), 1],
+            ],
+            dtype=config.complex_dtype,
+        )
+
+    def _get_active_block(self, calculator, config):
+        s = self._params["s"]
+
+        return calculator.np.array(
+            [
+                [0, 1j * (s / 2)],
+                [1j * (s / 2), 0],
+            ],
+            dtype=config.complex_dtype,
         )
 
 
-class Displacement(_ScalableGaussianGate):
+class Displacement(_ActiveLinearGate):
     r"""Phase space displacement instruction.
 
     Evolves the ladder operators by
@@ -629,6 +623,8 @@ class Displacement(_ScalableGaussianGate):
         \alpha = r e^{i\phi}
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(
         self,
         r: float,
@@ -642,55 +638,42 @@ class Displacement(_ScalableGaussianGate):
 
         super().__init__(params=dict(r=r, phi=phi))
 
-    def _postprocess(self, calculator):
-        np = calculator.np
 
-        displacement_vector: np.ndarray
-
-        r = self._params["r"]
-        phi = self._params["phi"]
-        displacement_vector = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
-
-        self._extra_params["displacement_vector"] = displacement_vector
-
-
-class PositionDisplacement(_ScalableGaussianGate):
+class PositionDisplacement(_ActiveLinearGate):
     r"""Position displacement gate. It affects only the :math:`\hat{x}` quadrature.
 
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, x: float) -> None:
         """
         Args:
             x (float): The position displacement.
         """
-        super().__init__(
-            params=dict(x=x),
-            displacement_vector=np.atleast_1d(x),
-        )
+        super().__init__(params=dict(x=x), extra_params=dict(r=x, phi=0.0))
 
 
-class MomentumDisplacement(_ScalableGaussianGate):
+class MomentumDisplacement(_ActiveLinearGate):
     r"""Momentum displacement gate. It only affects the :math:`\hat{p}` quadrature.
 
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, p: float) -> None:
         """
         Args:
             p (float): The momentum displacement.
         """
-        super().__init__(
-            params=dict(p=p),
-            displacement_vector=1j * np.atleast_1d(p),
-        )
+        super().__init__(params=dict(p=p), extra_params=dict(r=p, phi=np.pi / 2))
 
 
-class CubicPhase(Gate, _mixins.ScalingMixin):
+class CubicPhase(Gate):
     r"""Cubic Phase gate.
 
     The definition of the Cubic Phase gate is
@@ -716,6 +699,8 @@ class CubicPhase(Gate, _mixins.ScalingMixin):
         Using this gate requires a high cutoff to make the more accurate simulation.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, gamma: float) -> None:
         """
         Args:
@@ -723,26 +708,8 @@ class CubicPhase(Gate, _mixins.ScalingMixin):
         """
         super().__init__(params=dict(gamma=gamma))
 
-    def _postprocess(self, calculator: BaseCalculator) -> None:
-        self._extra_params["gamma_vector"] = calculator.np.atleast_1d(
-            self._params["gamma"]
-        )
 
-    def _autoscale(self, calculator: BaseCalculator) -> None:
-        gamma_vector = self._extra_params["gamma_vector"]
-        if gamma_vector is not None and len(gamma_vector) == len(self.modes):
-            pass
-        elif len(gamma_vector) == 1:
-            self._extra_params["gamma_vector"] = calculator.np.array(
-                [gamma_vector] * len(self.modes)
-            )
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
-
-
-class Kerr(Gate, _mixins.ScalingMixin):
+class Kerr(Gate):
     r"""Kerr gate.
 
     The definition of the Kerr gate is
@@ -762,28 +729,14 @@ class Kerr(Gate, _mixins.ScalingMixin):
         :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
 
+    NUMBER_OF_MODES = 1
+
     def __init__(self, xi: float) -> None:
         """
         Args:
             xi (float): The magnitude of the Kerr nonlinear term.
         """
         super().__init__(params=dict(xi=xi))
-
-    def _postprocess(self, calculator: BaseCalculator) -> None:
-        self._extra_params["xi_vector"] = calculator.np.atleast_1d(self._params["xi"])
-
-    def _autoscale(self, calculator: BaseCalculator) -> None:
-        xi_vector = self._extra_params["xi_vector"]
-        if xi_vector is not None and len(xi_vector) == len(self.modes):
-            pass
-        elif len(xi_vector) == 1:
-            self._extra_params["xi_vector"] = calculator.np.array(
-                [xi_vector[0]] * len(self.modes)
-            )
-        else:
-            raise InvalidParameter(
-                self.ERROR_MESSAGE_TEMPLATE.format(instruction=self, modes=self.modes)
-            )
 
 
 class CrossKerr(Gate):
@@ -807,6 +760,8 @@ class CrossKerr(Gate):
         This is a non-linear gate, therefore it couldn't be used with
         :class:`~piquasso._backends.gaussian.state.GaussianState`.
     """
+
+    NUMBER_OF_MODES = 2
 
     def __init__(self, xi: float) -> None:
         """
@@ -850,74 +805,3 @@ class Graph(Gate):
                 mean_photon_number=mean_photon_number,
             ),
         )
-
-    def _postprocess(self, calculator: BaseCalculator) -> None:
-        adjacency_matrix = self._params["adjacency_matrix"]
-        mean_photon_number = self._params["mean_photon_number"]
-
-        singular_values, unitary = takagi(adjacency_matrix, calculator)
-
-        scaling = self._get_scaling(singular_values, mean_photon_number)
-
-        squeezing_parameters = np.arctanh(scaling * singular_values)
-
-        # TODO: find a better solution for these.
-        squeezing = GaussianTransform(
-            passive=np.diag(np.cosh(squeezing_parameters)),
-            active=np.diag(np.sinh(squeezing_parameters)),
-        )
-
-        interferometer = Interferometer(unitary)
-
-        self._extra_params["squeezing"] = squeezing
-        self._extra_params["interferometer"] = interferometer
-
-    def _get_scaling(
-        self, singular_values: np.ndarray, mean_photon_number: float
-    ) -> float:
-        r"""
-        For a squeezed state :math:`rho` the mean photon number is calculated by
-
-        .. math::
-            \langle n \rangle_\rho = \sum_{i = 0}^d \mathrm{sinh}(r_i)^2
-
-        where :math:`r_i = \mathrm{arctan}(s_i)`, where :math:`s_i` are the singular
-        values of the adjacency matrix.
-        """
-
-        def mean_photon_number_equation(scaling: float) -> float:
-            return (
-                sum(
-                    (scaling * singular_value) ** 2
-                    / (1 - (scaling * singular_value) ** 2)
-                    for singular_value in singular_values
-                )
-                / len(singular_values)
-                - mean_photon_number
-            )
-
-        def mean_photon_number_gradient(scaling: float) -> float:
-            return (2.0 / scaling) * np.sum(
-                (singular_values * scaling / (1 - (singular_values * scaling) ** 2))
-                ** 2
-            )
-
-        lower_bound = 0.0
-
-        tolerance = 1e-10  # Needed to avoid zero division.
-
-        upper_bound = 1.0 / (max(singular_values) + tolerance)
-
-        result = root_scalar(
-            mean_photon_number_equation,
-            fprime=mean_photon_number_gradient,
-            x0=(lower_bound - upper_bound) / 2.0,
-            bracket=(lower_bound, upper_bound),
-        )
-
-        if not result.converged:
-            raise InvalidParameter(
-                f"No scaling found for adjacency matrix: {self.adjacency_matrix}."
-            )
-
-        return result.root

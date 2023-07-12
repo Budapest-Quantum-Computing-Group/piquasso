@@ -198,7 +198,8 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.Displacement(r=[0.01, 0.02])
+        pq.Q(0) | pq.Displacement(r=0.01)
+        pq.Q(1) | pq.Displacement(r=0.02)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
@@ -368,7 +369,8 @@ def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.Squeezing(r=[0.1, 0.2], phi=[np.pi / 5, np.pi / 3])
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi / 3)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
@@ -986,13 +988,17 @@ def test_fidelity_for_nondisplaced_states_on_2_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Squeezing([0.1, 0.2])
+        pq.Q(0) | pq.Squeezing(0.1)
+        pq.Q(1) | pq.Squeezing(0.2)
+
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Squeezing([0.3, 0.1])
+        pq.Q(0) | pq.Squeezing(0.3)
+        pq.Q(1) | pq.Squeezing(0.1)
+
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
 
     simulator = SimulatorClass(d=2, config=pq.Config(cutoff=9))
@@ -1017,15 +1023,23 @@ def test_fidelity_for_displaced_states_on_2_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(r=[0.4, 0.5])
-        pq.Q(all) | pq.Squeezing([0.1, 0.2])
+        pq.Q(0) | pq.Displacement(0.4)
+        pq.Q(1) | pq.Displacement(0.5)
+
+        pq.Q(0) | pq.Squeezing(0.1)
+        pq.Q(1) | pq.Squeezing(0.2)
+
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(r=[0.5, 0.4])
-        pq.Q(all) | pq.Squeezing([0.3, 0.1])
+        pq.Q(0) | pq.Displacement(0.5)
+        pq.Q(1) | pq.Displacement(0.4)
+
+        pq.Q(0) | pq.Squeezing(0.3)
+        pq.Q(1) | pq.Squeezing(0.1)
+
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
 
     simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
@@ -1050,16 +1064,28 @@ def test_fidelity_for_nondisplaced_pure_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(r=[0.04, 0.05, 0.1])
-        pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
+        pq.Q(0) | pq.Displacement(0.04)
+        pq.Q(1) | pq.Displacement(0.05)
+        pq.Q(2) | pq.Displacement(0.1)
+
+        pq.Q(0) | pq.Squeezing(0.01)
+        pq.Q(1) | pq.Squeezing(0.02)
+        pq.Q(2) | pq.Squeezing(0.03)
+
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(r=[0.05, 0.04, 0.02])
-        pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
+        pq.Q(0) | pq.Displacement(0.05)
+        pq.Q(1) | pq.Displacement(0.04)
+        pq.Q(2) | pq.Displacement(0.02)
+
+        pq.Q(0) | pq.Squeezing(0.03)
+        pq.Q(1) | pq.Squeezing(0.01)
+        pq.Q(2) | pq.Squeezing(0.02)
+
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
 
@@ -1085,16 +1111,28 @@ def test_fidelity_for_nondisplaced_mixed_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement([0.04, 0.05, 0.1])
-        pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
+        pq.Q(0) | pq.Displacement(0.04)
+        pq.Q(1) | pq.Displacement(0.05)
+        pq.Q(2) | pq.Displacement(0.1)
+
+        pq.Q(0) | pq.Squeezing(0.01)
+        pq.Q(1) | pq.Squeezing(0.02)
+        pq.Q(2) | pq.Squeezing(0.03)
+
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement([0.05, 0.04, 0.02])
-        pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
+        pq.Q(0) | pq.Displacement(0.05)
+        pq.Q(1) | pq.Displacement(0.04)
+        pq.Q(2) | pq.Displacement(0.02)
+
+        pq.Q(0) | pq.Squeezing(0.03)
+        pq.Q(1) | pq.Squeezing(0.01)
+        pq.Q(2) | pq.Squeezing(0.02)
+
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
 
@@ -1149,7 +1187,8 @@ def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.CubicPhase(gamma=[0.1, 0.2])
+        pq.Q(0) | pq.CubicPhase(gamma=0.1)
+        pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
@@ -1188,7 +1227,8 @@ def test_Kerr_gate_leaves_fock_probabilities_invariant(SimulatorClass):
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 5)
         pq.Q(1) | pq.Squeezing(r=0.2, phi=np.pi / 6)
 
-        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+        pq.Q(0) | pq.Kerr(xi=-0.1)
+        pq.Q(1) | pq.Kerr(xi=0.2)
 
     simulator = SimulatorClass(d=2)
 
@@ -1241,7 +1281,7 @@ def test_Kerr_equivalence_for_FockSimulator():
         pq.Q(all) | pq.DensityMatrix(ket=(2,), bra=(0,)) / 2
         pq.Q(all) | pq.DensityMatrix(ket=(2,), bra=(2,)) / 2
 
-        pq.Q(all) | pq.Kerr(xi=xi)
+        pq.Q(0) | pq.Kerr(xi=xi)
 
     simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=n + 1))
 
@@ -1297,7 +1337,8 @@ def test_Attenuator_equivalence(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.Displacement(r=[0.01, 0.02])
+        pq.Q(0) | pq.Displacement(r=0.01)
+        pq.Q(1) | pq.Displacement(r=0.02)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 

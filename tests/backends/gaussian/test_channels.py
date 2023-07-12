@@ -36,7 +36,8 @@ def test_DeterministicGaussianChannel_for_one_mode():
     )
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing(1.0)
+        pq.Q(0) | pq.Squeezing(1.0)
+        pq.Q(1) | pq.Squeezing(1.0)
 
         pq.Q(1) | pq.DeterministicGaussianChannel(X=X, Y=Y)
 
@@ -66,7 +67,8 @@ def test_DeterministicGaussianChannel_for_multiple_modes():
     )
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing(1.0)
+        pq.Q(0) | pq.Squeezing(1.0)
+        pq.Q(1) | pq.Squeezing(1.0)
 
         pq.Q(0, 1) | pq.DeterministicGaussianChannel(X=X, Y=Y)
 
@@ -189,7 +191,8 @@ def test_Attenuator_with_zero_thermal_exciation():
     mean_thermal_excitation = 0
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing(np.arcsinh(np.sqrt(original_mean_photon_number)))
+        for i in [0, 1]:
+            pq.Q(i) | pq.Squeezing(np.arcsinh(np.sqrt(original_mean_photon_number)))
 
     with pq.Program() as attenuated_program:
         pq.Q(0, 1) | program
@@ -231,7 +234,8 @@ def test_Attenuator_with_nonzero_thermal_exciation():
     mean_thermal_excitation = 0.57721
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing(np.arcsinh(np.sqrt(original_mean_photon_number)))
+        for i in [0, 1]:
+            pq.Q(i) | pq.Squeezing(np.arcsinh(np.sqrt(original_mean_photon_number)))
 
     with pq.Program() as attenuated_program:
         pq.Q(0, 1) | program

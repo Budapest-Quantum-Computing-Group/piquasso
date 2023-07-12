@@ -19,9 +19,6 @@ from piquasso._math.linalg import is_positive_semidefinite, is_real_2n_by_2n
 from piquasso._math.symplectic import symplectic_form
 from piquasso._math.validations import all_in_interval
 
-from piquasso.core import _mixins
-
-from piquasso.api.calculator import BaseCalculator
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Gate
 
@@ -144,7 +141,7 @@ class Attenuator(Gate):
         )
 
 
-class Loss(Gate, _mixins.ScalingMixin):
+class Loss(Gate):
     r"""Applies a loss channel to the state.
 
     The transmissivity is defined by :math:`t = \cos \theta`, where :math:`\theta` is
@@ -157,38 +154,14 @@ class Loss(Gate, _mixins.ScalingMixin):
         :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
         - The parameter `transmissivity` is usually called `transmittance`.
     """
+    NUMBER_OF_MODES = 1
 
     def __init__(self, transmissivity: np.ndarray) -> None:
         """
         Args:
-            transmissivity (numpy.ndarray): The transmissivity array.
+            transmissivity (numpy.ndarray): The transmissivity.
         """
-        super().__init__(
-            params=dict(transmissivity=transmissivity),
-            extra_params=dict(
-                transmissivity=np.atleast_1d(transmissivity),
-            ),
-        )
-
-    def _autoscale(self, calculator: BaseCalculator) -> None:
-        transmissivity = self._extra_params["transmissivity"]
-
-        complex_dtype = (
-            np.complex128 if transmissivity.dtype is np.float64 else np.complex64
-        )
-
-        if transmissivity is None or len(self.modes) == len(transmissivity):
-            pass
-        elif len(transmissivity) == 1:
-            self._extra_params["transmissivity"] = calculator.np.array(
-                [transmissivity[0]] * len(self.modes),
-                dtype=complex_dtype,
-            )
-        else:
-            raise InvalidParameter(
-                f"The channel {self} is not applicable to modes {self.modes} with the "
-                "specified parameters."
-            )
+        super().__init__(params=dict(transmissivity=transmissivity))
 
 
 class LossyInterferometer(Gate):

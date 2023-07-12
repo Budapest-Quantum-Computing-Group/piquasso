@@ -20,6 +20,8 @@ import numpy as np
 
 from .state import FockState
 
+from piquasso.instructions import gates
+
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
@@ -30,8 +32,12 @@ def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
     return Result(state=state)
 
 
-def passive_linear(state: FockState, instruction: Instruction, shots: int) -> Result:
-    operator: np.ndarray = instruction._all_params["passive_block"]
+def passive_linear(
+    state: FockState, instruction: gates._PassiveLinearGate, shots: int
+) -> Result:
+    operator: np.ndarray = instruction._get_passive_block(
+        state._calculator, state._config
+    )
 
     fock_operator = state._space.get_passive_fock_operator(
         operator,
@@ -133,42 +139,40 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
 
 
 def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
-    xi_vector = instruction._all_params["xi_vector"]
+    xi = instruction._all_params["xi"]
 
-    for mode_index, mode in enumerate(instruction.modes):
-        xi = xi_vector[mode_index]
+    mode = instruction.modes[0]
 
-        for index, (basis, dual_basis) in state._space.operator_basis:
-            number = basis[mode]
-            dual_number = dual_basis[mode]
+    for index, (basis, dual_basis) in state._space.operator_basis:
+        number = basis[mode]
+        dual_number = dual_basis[mode]
 
-            coefficient = np.exp(1j * xi * (number**2 - dual_number**2))
+        coefficient = np.exp(1j * xi * (number**2 - dual_number**2))
 
-            state._density_matrix[index] *= coefficient
+        state._density_matrix[index] *= coefficient
 
     return Result(state=state)
 
 
 def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Result:
-    gamma_vector = instruction._all_params["gamma_vector"]
+    gamma = instruction._all_params["gamma"]
     hbar = state._config.hbar
 
-    for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_cubic_phase_operator(
-            gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
-        )
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
-        )
-        state._density_matrix = (
-            embedded_operator
-            @ state._density_matrix
-            @ embedded_operator.conjugate().transpose()
-        )
+    operator = state._space.get_single_mode_cubic_phase_operator(
+        gamma=gamma, hbar=hbar, calculator=state._calculator
+    )
+    embedded_operator = state._space.embed_matrix(
+        operator,
+        modes=instruction.modes,
+        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
+    )
+    state._density_matrix = (
+        embedded_operator
+        @ state._density_matrix
+        @ embedded_operator.conjugate().transpose()
+    )
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
@@ -193,64 +197,61 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result
 
 
 def displacement(state: FockState, instruction: Instruction, shots: int) -> Result:
-    amplitudes = np.abs(instruction._all_params["displacement_vector"])
-    angles = np.angle(instruction._all_params["displacement_vector"])
+    r = instruction._all_params["r"]
+    phi = instruction._all_params["phi"]
 
-    for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_displacement_operator(
-            r=amplitudes[index],
-            phi=angles[index],
-        )
+    operator = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
 
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
-        )
+    embedded_operator = state._space.embed_matrix(
+        operator,
+        modes=instruction.modes,
+        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
+    )
 
-        state._density_matrix = (
-            embedded_operator
-            @ state._density_matrix
-            @ embedded_operator.conjugate().transpose()
-        )
+    state._density_matrix = (
+        embedded_operator
+        @ state._density_matrix
+        @ embedded_operator.conjugate().transpose()
+    )
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
 
 def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
-    amplitudes = np.arccosh(np.diag(instruction._all_params["passive_block"]))
-    angles = np.angle(-np.diag(instruction._all_params["active_block"]))
+    r = instruction._all_params["r"]
+    phi = instruction._all_params["phi"]
 
-    for index, mode in enumerate(instruction.modes):
-        operator = state._space.get_single_mode_squeezing_operator(
-            r=amplitudes[index],
-            phi=angles[index],
-        )
+    operator = state._space.get_single_mode_squeezing_operator(
+        r=r,
+        phi=phi,
+    )
 
-        embedded_operator = state._space.embed_matrix(
-            operator,
-            modes=(mode,),
-            auxiliary_modes=state._get_auxiliary_modes(modes=(mode,)),
-        )
+    embedded_operator = state._space.embed_matrix(
+        operator,
+        modes=instruction.modes,
+        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
+    )
 
-        state._density_matrix = (
-            embedded_operator
-            @ state._density_matrix
-            @ embedded_operator.conjugate().transpose()
-        )
+    state._density_matrix = (
+        embedded_operator
+        @ state._density_matrix
+        @ embedded_operator.conjugate().transpose()
+    )
 
-        state.normalize()
+    state.normalize()
 
     return Result(state=state)
 
 
-def linear(state: FockState, instruction: Instruction, shots: int) -> Result:
+def linear(
+    state: FockState, instruction: gates._ActiveLinearGate, shots: int
+) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
-        passive_block=instruction._all_params["passive_block"],
-        active_block=instruction._all_params["active_block"],
+        passive_block=instruction._get_passive_block(state._calculator, state._config),
+        active_block=instruction._get_active_block(state._calculator, state._config),
     )
 
     state._density_matrix = (

@@ -39,7 +39,8 @@ def piquasso_benchmark(benchmark, cutoff, d):
 
             with pq.Program() as program:
                 pq.Q() | pq.Vacuum()
-                pq.Q() | pq.Displacement(r=r)
+                for i in range(d):
+                    pq.Q() | pq.Displacement(r=r)
 
             state = simulator.execute(program).state
             mean = state.mean_photon_number()

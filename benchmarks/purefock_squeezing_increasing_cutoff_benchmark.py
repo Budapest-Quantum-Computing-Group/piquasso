@@ -40,7 +40,9 @@ def piquasso_benchmark(benchmark, d, cutoff, r):
     def func():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
-            pq.Q() | pq.Squeezing(r=r)
+
+            for i in range(d):
+                pq.Q(i) | pq.Squeezing(r=r)
 
         simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
