@@ -355,6 +355,29 @@ def passive_linear(
     return Result(state=state)
 
 
+def phaseshifter(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    calculator = state._calculator
+    cutoff = state._space.cutoff
+
+    mode = instruction.modes[0]
+
+    phi = instruction._all_params["phi"]
+
+    np = calculator.np
+    eiphi_powers = np.exp(1j * phi * np.arange(cutoff))
+
+    multipliers = []
+
+    for index in range(len(state._state_vector)):
+        n = state._space[index][mode]
+
+        multipliers.append(eiphi_powers[n])
+
+    state._state_vector = state._state_vector * np.array(multipliers)
+
+    return Result(state=state)
+
+
 def _get_normalization(
     probability_map: Mapping[Tuple[int, ...], float], sample: Tuple[int, ...]
 ) -> float:
