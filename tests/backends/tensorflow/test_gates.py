@@ -20,7 +20,7 @@ import tensorflow as tf
 
 @pytest.mark.monkey
 def test_Interferometer_numpy_array_as_parameter(generate_unitary_matrix):
-    alpha = tf.Variable(0.01)
+    r = tf.Variable(0.01)
     d = 5
     interferometer = generate_unitary_matrix(d)
 
@@ -28,7 +28,7 @@ def test_Interferometer_numpy_array_as_parameter(generate_unitary_matrix):
 
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
-        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(0) | pq.Displacement(r=r)
 
         pq.Q(all) | pq.Interferometer(interferometer)
 

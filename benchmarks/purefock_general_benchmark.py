@@ -51,7 +51,7 @@ def piquasso_benchmark(benchmark, d, interferometer, r, alpha, xi):
         with pq.Program() as program:
             pq.Q(all) | pq.Vacuum()
 
-            pq.Q(all) | pq.Displacement(alpha=alpha)
+            pq.Q(all) | pq.Displacement(r=alpha)
             pq.Q(all) | pq.Squeezing(r)
 
             pq.Q(all) | pq.Interferometer(interferometer)

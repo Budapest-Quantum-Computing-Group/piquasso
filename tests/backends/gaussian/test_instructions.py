@@ -27,7 +27,9 @@ def generate_random_gaussian_state():
         with pq.Program() as random_state_generator:
             for i in range(d):
                 alpha = 2 * (np.random.rand() + 1j * np.random.rand()) - 1
-                displacement_gate = pq.Displacement(alpha=alpha)
+                displacement_gate = pq.Displacement(
+                    r=np.abs(alpha), phi=np.angle(alpha)
+                )
 
                 r = 2 * np.random.rand() - 1
                 phi = np.random.rand() * 2 * np.pi
@@ -132,7 +134,7 @@ def test_displacement_with_alpha(state, gaussian_state_assets):
     alpha = 3 - 4j
 
     with pq.Program() as program:
-        pq.Q(1) | pq.Displacement(alpha=alpha)
+        pq.Q(1) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -161,7 +163,7 @@ def test_displacement_on_multiple_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Displacement(alpha=alpha)
+        pq.Q(0, 1) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -175,7 +177,7 @@ def test_displacement_on_all_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
     with pq.Program() as program:
-        pq.Q() | pq.Displacement(alpha=alpha)
+        pq.Q() | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -220,8 +222,10 @@ def test_displacement(state, gaussian_state_assets):
 
     with pq.Program() as program:
         pq.Q(0) | pq.Displacement(r=r, phi=phi)
-        pq.Q(1) | pq.Displacement(alpha=alpha)
-        pq.Q(2) | pq.Displacement(r=r, phi=phi) | pq.Displacement(alpha=alpha)
+        pq.Q(1) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(2) | pq.Displacement(r=r, phi=phi) | pq.Displacement(
+            r=np.abs(alpha), phi=np.angle(alpha)
+        )
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -515,8 +519,10 @@ def test_graph_embedding(state):
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     d = 3
 
+    alpha = [np.exp(1j * np.pi / 4), 1, 1j]
+
     with pq.Program() as initialization:
-        pq.Q(all) | pq.Displacement(alpha=[np.exp(1j * np.pi / 4), 1, 1j])
+        pq.Q(all) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
         pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi / 2, np.pi / 3, np.pi / 4])
 
@@ -583,7 +589,7 @@ def test_random_interferometer(generate_random_gaussian_state, generate_unitary_
 
 def test_complex_circuit(gaussian_state_assets):
     with pq.Program() as program:
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
@@ -594,7 +600,7 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
@@ -639,7 +645,7 @@ def test_program_stacking_with_measurement():
 def test_complex_one_mode_scenario():
     with pq.Program() as program:
         pq.Q(0) | pq.Squeezing(r=np.log(2))
-        pq.Q(0) | pq.Displacement(alpha=1)
+        pq.Q(0) | pq.Displacement(r=1)
         pq.Q(0) | pq.Phaseshifter(np.pi / 4)
 
     simulator = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=4))

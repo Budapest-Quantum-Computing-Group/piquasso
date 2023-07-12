@@ -100,7 +100,7 @@ def test_PureFockState_displacement_on_single_mode():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(0) | pq.Displacement(r=alpha)
 
     simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=20))
 
@@ -119,7 +119,7 @@ def test_FockState_displacement_on_single_mode():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(0) | pq.Displacement(r=alpha)
 
     simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=20))
 
@@ -202,7 +202,7 @@ def test_PureFockState_displacement():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(0) | pq.Displacement(0.5, np.pi / 3)
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
@@ -283,7 +283,7 @@ def test_FockState_displacement():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=alpha)
+        pq.Q(0) | pq.Displacement(0.5, np.pi / 3)
 
     simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=2))
     state = simulator.execute(program).state

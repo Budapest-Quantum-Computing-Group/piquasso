@@ -27,7 +27,7 @@ def gbs_hypothesis_test_script(cramer_hypothesis_test):
     pq_simulator = pq.GaussianSimulator(d=d, config=pq.Config(measurement_cutoff=5))
 
     with pq.Program() as pq_program:
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(alpha=1)
+        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
