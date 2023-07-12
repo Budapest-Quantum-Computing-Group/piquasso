@@ -148,7 +148,7 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 + 2j)
+        pq.Q(0) | pq.Displacement(r=np.sqrt(5), phi=np.angle(1 + 2j))
 
     simulator = SimulatorClass(d=3)
     state = simulator.execute(program).state
@@ -198,7 +198,7 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.Displacement(alpha=[0.01, 0.02])
+        pq.Q(0, 1) | pq.Displacement(r=[0.01, 0.02])
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
@@ -236,7 +236,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(SimulatorClas
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 + 2j)
+        pq.Q(0) | pq.Displacement(r=np.sqrt(5), phi=np.angle(1 + 2j))
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 
     simulator = SimulatorClass(d=3)
@@ -923,7 +923,7 @@ def test_wigner_function_equivalence():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=0.10 - 0.05j)
+        pq.Q(0) | pq.Displacement(r=0.10, phi=np.angle(1 - 0.5j))
         pq.Q(0) | pq.Squeezing(r=0.10)
 
     fock_simulator = pq.FockSimulator(d=1, config=config)
@@ -1017,14 +1017,14 @@ def test_fidelity_for_displaced_states_on_2_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.4, 0.5])
+        pq.Q(all) | pq.Displacement(r=[0.4, 0.5])
         pq.Q(all) | pq.Squeezing([0.1, 0.2])
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.5, 0.4])
+        pq.Q(all) | pq.Displacement(r=[0.5, 0.4])
         pq.Q(all) | pq.Squeezing([0.3, 0.1])
         pq.Q(all) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
 
@@ -1050,7 +1050,7 @@ def test_fidelity_for_nondisplaced_pure_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.04, 0.05, 0.1])
+        pq.Q(all) | pq.Displacement(r=[0.04, 0.05, 0.1])
         pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
@@ -1058,7 +1058,7 @@ def test_fidelity_for_nondisplaced_pure_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.05, 0.04, 0.02])
+        pq.Q(all) | pq.Displacement(r=[0.05, 0.04, 0.02])
         pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
@@ -1085,7 +1085,7 @@ def test_fidelity_for_nondisplaced_mixed_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_1:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.04, 0.05, 0.1])
+        pq.Q(all) | pq.Displacement([0.04, 0.05, 0.1])
         pq.Q(all) | pq.Squeezing([0.01, 0.02, 0.03])
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 7)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 9)
@@ -1093,7 +1093,7 @@ def test_fidelity_for_nondisplaced_mixed_states_on_3_modes(SimulatorClass):
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=[0.05, 0.04, 0.02])
+        pq.Q(all) | pq.Displacement([0.05, 0.04, 0.02])
         pq.Q(all) | pq.Squeezing([0.03, 0.01, 0.02])
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=np.pi / 9)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 3)
@@ -1297,7 +1297,7 @@ def test_Attenuator_equivalence(SimulatorClass):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0, 1) | pq.Displacement(alpha=[0.01, 0.02])
+        pq.Q(0, 1) | pq.Displacement(r=[0.01, 0.02])
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
 

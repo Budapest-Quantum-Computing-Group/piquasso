@@ -38,21 +38,21 @@ class TensorflowPureFockSimulator(PureFockSimulator):
 
         import tensorflow as tf
 
-        alpha = tf.Variable(0.43)
+        r = tf.Variable(0.43)
 
         simulator = pq.TensorflowPureFockSimulator(d=1)
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0) | pq.Displacement(alpha=alpha)
+            pq.Q(0) | pq.Displacement(r=r)
 
         with tf.GradientTape() as tape:
             state = simulator.execute(program).state
 
             mean = state.mean_photon_number()
 
-        gradient = tape.gradient(mean, [alpha])
+        gradient = tape.gradient(mean, [r])
 
     Supported preparations:
         :class:`~piquasso.instructions.preparations.Vacuum`,

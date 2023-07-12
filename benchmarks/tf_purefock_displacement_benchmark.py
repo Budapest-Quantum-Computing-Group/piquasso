@@ -32,19 +32,19 @@ d_tuple = tuple(range(2, 6))
 def piquasso_benchmark(benchmark, cutoff, d):
     @benchmark
     def func():
-        alpha = tf.Variable(0.05)
+        r = tf.Variable(0.05)
         simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
         with tf.GradientTape() as tape:
 
             with pq.Program() as program:
                 pq.Q() | pq.Vacuum()
-                pq.Q() | pq.Displacement(alpha=alpha)
+                pq.Q() | pq.Displacement(r=r)
 
             state = simulator.execute(program).state
             mean = state.mean_photon_number()
 
-        tape.gradient(mean, [alpha])
+        tape.gradient(mean, [r])
 
 
 @pytest.mark.parametrize("d, cutoff", zip(d_tuple, d_tuple))

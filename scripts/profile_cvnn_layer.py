@@ -69,7 +69,7 @@ with tf.GradientTape() as tape:
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=input)
+        pq.Q(all) | pq.Displacement(r=input)
 
         i = 0
         for col in range(d):
@@ -107,7 +107,7 @@ with tf.GradientTape() as tape:
         for i in range(d - 1):
             pq.Q(i) | pq.Phaseshifter(parameters["phis_2"][i])
 
-        pq.Q(all) | pq.Displacement(alpha=parameters["displacements"])
+        pq.Q(all) | pq.Displacement(r=parameters["displacements"])
         pq.Q(all) | pq.Kerr(parameters["kappas"])
 
     start_time = time.time()

@@ -631,41 +631,25 @@ class Displacement(_ScalableGaussianGate):
 
     def __init__(
         self,
-        *,
-        alpha: Optional[complex] = None,
-        r: Optional[float] = None,
-        phi: Optional[float] = None,
+        r: float,
+        phi: Optional[float] = 0.0,
     ) -> None:
         """
         Args:
-            alpha (complex): The displacement.
-            r (float): The displacement magnitude.
-            phi (float): The displacement angle.
+            r (float): The magnitude of phase space displacement.
+            phi (float): The angle of phase space displacement
         """
-        if alpha is not None and r is None and phi is None:
-            params = dict(alpha=alpha)
-        elif alpha is None and r is not None and phi is not None:
-            params = dict(r=r, phi=phi)
-        else:
-            raise InvalidParameter(
-                "Either specify 'alpha' only, or the combination of 'r' and 'phi': "
-                f"alpha={alpha}, r={r}, phi={phi}."
-            )
 
-        super().__init__(params=params)
+        super().__init__(params=dict(r=r, phi=phi))
 
     def _postprocess(self, calculator):
         np = calculator.np
 
         displacement_vector: np.ndarray
 
-        if "alpha" in self._params:
-            alpha = self._params["alpha"]
-            displacement_vector = np.atleast_1d(alpha)
-        else:
-            r = self._params["r"]
-            phi = self._params["phi"]
-            displacement_vector = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
+        r = self._params["r"]
+        phi = self._params["phi"]
+        displacement_vector = np.atleast_1d(r) * np.exp(1j * np.atleast_1d(phi))
 
         self._extra_params["displacement_vector"] = displacement_vector
 

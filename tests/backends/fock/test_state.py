@@ -39,10 +39,12 @@ def test_FockState_get_particle_detection_probability(SimulatorClass):
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
 def test_FockState_quadratures_mean_variance(SimulatorClass):
+    alpha = 0.2 - 0.2j
+
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=0.2 - 0.2j)
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
         pq.Q(0) | pq.Squeezing(r=0.2)
 
     simulator = SimulatorClass(d=1, config=pq.Config(cutoff=6))
@@ -56,10 +58,12 @@ def test_FockState_quadratures_mean_variance(SimulatorClass):
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
 def test_FockState_wigner_function(SimulatorClass):
+    alpha = 1 - 0.5j
+
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
         pq.Q(0) | pq.Squeezing(r=0.2)
 
     simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
@@ -80,10 +84,12 @@ def test_FockState_wigner_function(SimulatorClass):
 def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes(
     SimulatorClass,
 ):
+    alpha = 1 - 0.5j
+
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
         pq.Q(0) | pq.Squeezing(r=0.2)
 
     simulator = SimulatorClass(d=2)
@@ -100,10 +106,12 @@ def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes(
 def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes_specified(
     SimulatorClass,
 ):
+    alpha = 1 - 0.5j
+
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha=1 - 0.5j)
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
         pq.Q(0) | pq.Squeezing(r=0.2)
 
     simulator = SimulatorClass(d=2)

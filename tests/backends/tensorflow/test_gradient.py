@@ -21,7 +21,7 @@ import piquasso as pq
 
 
 def test_Displacement_mean_photon_number_gradient_1_mode():
-    alpha = tf.Variable(0.43)
+    r = tf.Variable(0.43)
 
     simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=6))
 
@@ -30,16 +30,16 @@ def test_Displacement_mean_photon_number_gradient_1_mode():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0) | pq.Displacement(alpha=alpha)
+            pq.Q(0) | pq.Displacement(r=r)
 
         state = simulator.execute(program).state
 
         mean = state.mean_photon_number()
 
-    gradient = tape.gradient(mean, [alpha])
+    gradient = tape.gradient(mean, [r])
 
-    assert np.isclose(mean, alpha**2)
-    assert np.isclose(gradient, 2 * alpha)
+    assert np.isclose(mean, r**2)
+    assert np.isclose(gradient, 2 * r)
 
 
 def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
@@ -65,7 +65,7 @@ def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
 
 
 def test_Displacement_mean_photon_number_gradient_2_modes():
-    alpha = tf.Variable([0.15, 0.2])
+    r = tf.Variable([0.15, 0.2])
 
     simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=6))
 
@@ -73,7 +73,7 @@ def test_Displacement_mean_photon_number_gradient_2_modes():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0, 1) | pq.Displacement(alpha=alpha)
+            pq.Q(0, 1) | pq.Displacement(r=r)
 
         result = simulator.execute(program)
 
@@ -81,14 +81,14 @@ def test_Displacement_mean_photon_number_gradient_2_modes():
 
         mean = state.mean_photon_number()
 
-    gradient = tape.gradient(mean, [alpha])
+    gradient = tape.gradient(mean, [r])
 
-    assert np.isclose(mean, sum(alpha**2))
-    assert np.allclose(gradient, 2 * alpha)
+    assert np.isclose(mean, sum(r**2))
+    assert np.allclose(gradient, 2 * r)
 
 
 def test_Displacement_fock_probabilities_jacobian_2_modes():
-    alpha = tf.Variable([0.15, 0.2])
+    r = tf.Variable([0.15, 0.2])
 
     simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
@@ -96,47 +96,47 @@ def test_Displacement_fock_probabilities_jacobian_2_modes():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0, 1) | pq.Displacement(alpha=alpha)
+            pq.Q(0, 1) | pq.Displacement(r=r)
 
         state = simulator.execute(program).state
 
         fock_probabilities = state.fock_probabilities
 
-    jacobian = tape.jacobian(fock_probabilities, [alpha])
+    jacobian = tape.jacobian(fock_probabilities, [r])
 
-    expected_fock_probabilities = np.exp(-sum(alpha**2)) * np.array(
+    expected_fock_probabilities = np.exp(-sum(r**2)) * np.array(
         [
             1.0,
-            alpha[0] ** 2,
-            alpha[1] ** 2,
-            alpha[0] ** 4 / 2,
-            alpha[0] ** 2 * alpha[1] ** 2,
-            alpha[1] ** 4 / 2,
+            r[0] ** 2,
+            r[1] ** 2,
+            r[0] ** 4 / 2,
+            r[0] ** 2 * r[1] ** 2,
+            r[1] ** 4 / 2,
         ]
     )
 
-    expected_jacobian = np.exp(-sum(alpha**2)) * np.array(
+    expected_jacobian = np.exp(-sum(r**2)) * np.array(
         [
-            -2 * alpha,
+            -2 * r,
             [
-                2 * alpha[0] * (1 - alpha[0] ** 2),
-                -2 * alpha[1] * alpha[0] ** 2,
+                2 * r[0] * (1 - r[0] ** 2),
+                -2 * r[1] * r[0] ** 2,
             ],
             [
-                -2 * alpha[0] * alpha[1] ** 2,
-                2 * alpha[1] * (1 - alpha[1] ** 2),
+                -2 * r[0] * r[1] ** 2,
+                2 * r[1] * (1 - r[1] ** 2),
             ],
             [
-                2 * alpha[0] ** 3 - alpha[0] ** 5,
-                -2 * alpha[1] * alpha[0] ** 4 / 2,
+                2 * r[0] ** 3 - r[0] ** 5,
+                -2 * r[1] * r[0] ** 4 / 2,
             ],
             [
-                alpha[1] ** 2 * 2 * alpha[0] * (1 - alpha[0] ** 2),
-                alpha[0] ** 2 * 2 * alpha[1] * (1 - alpha[1] ** 2),
+                r[1] ** 2 * 2 * r[0] * (1 - r[0] ** 2),
+                r[0] ** 2 * 2 * r[1] * (1 - r[1] ** 2),
             ],
             [
-                -2 * alpha[0] * alpha[1] ** 4 / 2,
-                2 * alpha[1] ** 3 - alpha[1] ** 5,
+                -2 * r[0] * r[1] ** 4 / 2,
+                2 * r[1] ** 3 - r[1] ** 5,
             ],
         ]
     )
