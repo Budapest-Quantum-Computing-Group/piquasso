@@ -137,7 +137,7 @@ def test_mean_position():
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=alpha_)
+        pq.Q(all) | pq.Displacement(r=alpha_)
 
     config = pq.Config(cutoff=cutoff)
 
