@@ -31,20 +31,39 @@ class BaseFockState(State, abc.ABC):
     ) -> None:
         super().__init__(calculator=calculator, config=config)
 
-        self._space = fock.FockSpace(
-            d=d,
+        self._initialize_subspaces(d)
+
+    def _initialize_subspaces(self, d):
+        """
+        NOTE: Calculating the subspaces (the indices, essentially) is a costly
+        calculation, and it is beneficial to have them stored for later purposes
+        """
+        self._space = self._init_subspace(d)
+
+        self._subspace_cache = {
+            1: self._init_subspace(1),
+            2: self._init_subspace(2),
+            d - 1: self._init_subspace(d - 1),
+            d: self._space,
+        }
+
+    def _init_subspace(self, dim):
+        return fock.FockSpace(
+            d=dim,
             cutoff=self._config.cutoff,
-            calculator=calculator,
+            calculator=self._calculator,
             config=self._config,
         )
-        # NOTE: This is instantiated here, since it is costly to do so, and is needed
-        # for several, repeating calculations.
-        self._auxiliary_subspace = fock.FockSpace(
-            d=d - 1,
-            cutoff=self._config.cutoff,
-            calculator=calculator,
-            config=self._config,
-        )
+
+    def _get_subspace(self, dim):
+        if dim in self._subspace_cache.keys():
+            return self._subspace_cache[dim]
+
+        subspace = self._init_subspace(dim)
+
+        self._subspace_cache[dim] = subspace
+
+        return subspace
 
     @property
     def d(self) -> int:

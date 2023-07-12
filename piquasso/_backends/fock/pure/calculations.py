@@ -336,12 +336,7 @@ def passive_linear(
         state._calculator, state._config
     ).astype(np.complex128)
 
-    subspace = FockSpace(
-        d=len(interferometer),
-        cutoff=state._space.cutoff,
-        calculator=calculator,
-        config=state._config,
-    )
+    subspace = state._get_subspace(dim=len(interferometer))
 
     subspace_transformations = _get_interferometer_on_fock_space(
         interferometer, subspace, calculator
@@ -553,7 +548,7 @@ def _apply_active_gate_matrix_to_state(
     calculator = state._calculator
     state_vector = state._state_vector
     space = state._space
-    auxiliary_subspace = state._auxiliary_subspace
+    auxiliary_subspace = state._get_subspace(state.d - 1)
 
     @calculator.custom_gradient
     def _apply_active_gate_matrix(state_vector, matrix):

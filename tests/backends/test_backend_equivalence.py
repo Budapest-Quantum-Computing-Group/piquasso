@@ -1439,3 +1439,77 @@ def test_Attenuator_raises_InvalidParam_for_non_zero_mean_thermal_excitation(
         "Non-zero mean thermal excitation is not supported in this backend."
         in error.value.args[0]
     )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+        pq.GaussianSimulator,
+        pq.TensorflowPureFockSimulator,
+    ),
+)
+def test_Interferometer_smaller_than_system_size(SimulatorClass):
+    config = pq.Config(cutoff=3)
+
+    d = 5
+
+    interferometer_matrix = np.array(
+        [
+            [
+                0.67622072 - 0.02632995j,
+                -0.41993552 - 0.43404319j,
+                0.21135489 + 0.36417311j,
+            ],
+            [
+                0.48143126 - 0.18351759j,
+                -0.05256469 + 0.2714796j,
+                -0.7896096 - 0.18600457j,
+            ],
+            [
+                0.47764293 - 0.22007895j,
+                0.74644107 + 0.0402763j,
+                0.35346034 - 0.19922808j,
+            ],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.01 * i)
+
+        pq.Q(0, 4, 2) | pq.Interferometer(interferometer_matrix)
+
+    simulator = SimulatorClass(d=5, config=config)
+
+    state = simulator.execute(program).state
+
+    assert is_proportional(
+        state.fock_probabilities,
+        [
+            0.99850342,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.00015807,
+            0.0,
+            0.0002202,
+            0.0,
+            0.00011654,
+            0.00004992,
+            0.0,
+            0.0,
+            0.0,
+            0.00028562,
+            0.0,
+            0.00016609,
+            0.00044906,
+            0.0,
+            0.00005109,
+        ],
+    )
