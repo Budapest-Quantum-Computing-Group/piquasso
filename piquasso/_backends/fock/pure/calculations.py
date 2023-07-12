@@ -218,6 +218,15 @@ def _calculate_interferometer_gradient_on_fock_space(
 ):
     def interferometer_gradient(*upstream):
         tf = calculator._tf
+        fallback_np = calculator.fallback_np
+
+        static_valued = tf.get_static_value(upstream[0]) is not None
+
+        if static_valued:
+            np = calculator.fallback_np
+            upstream = [x.numpy() for x in upstream]
+        else:
+            np = calculator.np
 
         indices = index_dict["indices"]
         subspace_index_tensor = index_dict["subspace_index_tensor"]
@@ -235,8 +244,10 @@ def _calculate_interferometer_gradient_on_fock_space(
             full_kl_grad.append([0] * d)
             for col_index in range(d):
                 subspace_grad = []
-                subspace_grad.append(np.array([[0]], dtype=interferometer.dtype))
-                second_subspace = np.zeros(
+                subspace_grad.append(
+                    fallback_np.array([[0]], dtype=interferometer.dtype)
+                )
+                second_subspace = fallback_np.zeros(
                     shape=interferometer.shape, dtype=interferometer.dtype
                 )
                 second_subspace[row_index, col_index] = 1
@@ -245,10 +256,12 @@ def _calculate_interferometer_gradient_on_fock_space(
                 for p in range(2, cutoff):
                     size = indices[p] - indices[p - 1]
                     previous_subspace_grad = subspace_grad[p - 1]
-                    matrix = np.zeros(shape=(size, size), dtype=interferometer.dtype)
+                    matrix = fallback_np.zeros(
+                        shape=(size, size), dtype=interferometer.dtype
+                    )
 
                     subspace_indices = subspace_index_tensor[p - 2]
-                    first_subspace_indices = np.asarray(
+                    first_subspace_indices = fallback_np.asarray(
                         first_subspace_index_tensor[p - 2]
                     )
                     nonzero_indices = nonzero_index_tensor[p - 2]
@@ -260,17 +273,23 @@ def _calculate_interferometer_gradient_on_fock_space(
                         first_part = (
                             sqrt_occupation_numbers[n_index]
                             * interferometer[
-                                np.ix_(first_nonzero_indices, nonzero_indices[n_index])
+                                fallback_np.ix_(
+                                    first_nonzero_indices, nonzero_indices[n_index]
+                                )
                             ]
                         )
                         second_part = previous_subspace_grad[
-                            np.ix_(first_subspace_indices, subspace_indices[n_index])
+                            fallback_np.ix_(
+                                first_subspace_indices, subspace_indices[n_index]
+                            )
                         ]
-                        full = np.einsum("ij,ij->i", first_part, second_part)
-                        matrix[:, n_index] = full / np.sqrt(first_occupation_numbers)
+                        full = fallback_np.einsum("ij,ij->i", first_part, second_part)
+                        matrix[:, n_index] = full / fallback_np.sqrt(
+                            first_occupation_numbers
+                        )
 
-                    mp1i_indices = np.where(
-                        np.asarray(first_nonzero_indices) == row_index
+                    mp1i_indices = fallback_np.where(
+                        fallback_np.asarray(first_nonzero_indices) == row_index
                     )[0]
                     col_nonzero_indices_index = []
                     col_nonzero_indices = []
@@ -289,7 +308,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                             sqrt_occupation_numbers[col_nonzero_indices[index]][
                                 col_nonzero_indices_index[index]
                             ]
-                            / np.sqrt(first_occupation_numbers[mp1i_indices])
+                            / fallback_np.sqrt(first_occupation_numbers[mp1i_indices])
                             * subspace_representations[p - 1][
                                 first_subspace_indices[mp1i_indices], nm1l_index
                             ]
@@ -298,8 +317,8 @@ def _calculate_interferometer_gradient_on_fock_space(
                     subspace_grad.append(matrix)
 
                 for i in range(cutoff):
-                    full_kl_grad[row_index][col_index] += tf.einsum(
-                        "ij,ij", upstream[i], np.conj(subspace_grad[i])
+                    full_kl_grad[row_index][col_index] += np.einsum(
+                        "ij,ij", upstream[i], fallback_np.conj(subspace_grad[i])
                     )
 
         return calculator.np.array(full_kl_grad)
@@ -480,6 +499,17 @@ def _create_linear_passive_gate_gradient_function(
     calculator: BaseCalculator,
 ) -> Callable:
     def applying_interferometer_gradient(upstream):
+        tf = calculator._tf
+        fallback_np = calculator.fallback_np
+
+        static_valued = tf.get_static_value(upstream) is not None
+
+        if static_valued:
+            np = calculator.fallback_np
+            upstream = upstream.numpy()
+        else:
+            np = calculator.np
+
         unordered_gradient_by_initial_state = []
         order_by = []
 
@@ -487,20 +517,27 @@ def _create_linear_passive_gate_gradient_function(
 
         for n, indices in enumerate(index_list):
             matrix = subspace_transformations[n]
-            sliced_upstream = upstream[indices]
+            sliced_upstream = np.take(upstream, indices)
+            state_vector_slice = state_vector[indices]
 
             order_by.append(indices.reshape(-1))
-            product = matrix @ sliced_upstream
+            product = np.einsum("ij, jk->ik", matrix, sliced_upstream)
             unordered_gradient_by_initial_state.append(product.reshape(-1))
 
-            state_vector_slice = state_vector[indices]
             gradient_by_matrix.append(
-                calculator._tf.einsum("ij,kj->ki", state_vector_slice, sliced_upstream)
+                np.einsum("ij,kj->ki", state_vector_slice, sliced_upstream)
             )
 
-        gradient_by_initial_state = calculator.np.concatenate(
-            unordered_gradient_by_initial_state
-        )[np.concatenate(order_by).argsort()]
+        gradient_by_initial_state = np.take(
+            np.concatenate(unordered_gradient_by_initial_state),
+            fallback_np.concatenate(order_by).argsort(),
+        )
+
+        if static_valued:
+            return (
+                tf.constant(gradient_by_initial_state),
+                [tf.constant(matrix) for matrix in gradient_by_matrix],
+            )
 
         return gradient_by_initial_state, gradient_by_matrix
 
@@ -590,32 +627,52 @@ def _create_linear_active_gate_gradient_function(
 ):
     def linear_active_gate_gradient(upstream):
         tf = calculator._tf
-        cutoff = len(state_index_matrix_list)
+        fallback_np = calculator.fallback_np
+
+        static_valued = tf.get_static_value(upstream) is not None
+
+        if static_valued:
+            np = calculator.fallback_np
+            upstream = upstream.numpy()
+        else:
+            np = calculator.np
+
+        cutoff = len(matrix)
 
         unordered_gradient_by_initial_state = []
         order_by = []
 
-        gradient_by_matrix = tf.zeros(shape=(cutoff, cutoff), dtype=state_vector.dtype)
+        gradient_by_matrix = np.zeros(shape=(cutoff, cutoff), dtype=state_vector.dtype)
 
         for indices in state_index_matrix_list:
             limit = indices.shape[0]
 
-            matrix_slice = matrix[:limit, :limit].T
+            upstream_slice = np.take(upstream, indices)
+            state_vector_slice = state_vector[indices]
+
+            matrix_slice = matrix[:limit, :limit]
 
             order_by.append(indices.reshape(-1))
             unordered_gradient_by_initial_state.append(
-                (matrix_slice @ upstream[indices]).reshape(-1)
+                (np.einsum("ji,jk->ik", matrix_slice, upstream_slice)).reshape(-1)
             )
 
-            gradient_by_matrix += tf.pad(
-                tf.einsum("ij,kj->ki", state_vector[indices], upstream[indices]),
+            gradient_by_matrix += np.pad(
+                np.einsum("ij,kj->ki", state_vector_slice, upstream_slice),
                 [[0, cutoff - limit], [0, cutoff - limit]],
-                "CONSTANT",
+                "constant",
             )
 
-        gradient_by_initial_state = calculator.np.concatenate(
-            unordered_gradient_by_initial_state
-        )[np.concatenate(order_by).argsort()]
+        gradient_by_initial_state = np.take(
+            np.concatenate(unordered_gradient_by_initial_state),
+            fallback_np.concatenate(order_by).argsort(),
+        )
+
+        if static_valued:
+            return (
+                tf.constant(gradient_by_initial_state),
+                tf.constant(gradient_by_matrix),
+            )
 
         return gradient_by_initial_state, gradient_by_matrix
 
