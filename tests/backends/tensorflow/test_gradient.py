@@ -544,7 +544,7 @@ def test_mean_position_Displacement_gradient_on_1_mode():
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=alpha_)
+        pq.Q(all) | pq.Displacement(r=alpha_)
 
     config = pq.Config(cutoff=cutoff)
 
@@ -570,7 +570,7 @@ def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(alpha=alpha_)
+        pq.Q(all) | pq.Displacement(r=alpha_)
         pq.Q(all) | pq.Squeezing(r_)
 
     simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
