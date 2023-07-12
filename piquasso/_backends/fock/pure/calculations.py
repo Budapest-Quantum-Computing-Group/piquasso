@@ -29,6 +29,8 @@ from piquasso.api.calculator import BaseCalculator
 
 from .state import PureFockState
 
+from piquasso.instructions import gates
+
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
@@ -327,13 +329,13 @@ def _calculate_interferometer_gradient_on_fock_space(
 
 
 def passive_linear(
-    state: PureFockState, instruction: Instruction, shots: int
+    state: PureFockState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:
     calculator = state._calculator
 
-    interferometer: np.ndarray = instruction._all_params["passive_block"].astype(
-        np.complex128
-    )
+    interferometer: np.ndarray = instruction._get_passive_block(
+        state._calculator, state._config
+    ).astype(np.complex128)
 
     subspace = FockSpace(
         d=len(interferometer),
@@ -700,16 +702,16 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    xi_vector = instruction._all_params["xi_vector"]
+    xi = instruction._all_params["xi"]
     np = state._np
-    for mode_index, mode in enumerate(instruction.modes):
-        xi = xi_vector[mode_index]
 
-        coefficients = np.exp(
-            1j * xi * np.array([basis[mode] ** 2 for basis in state._space])
-        )
+    mode = instruction.modes[0]
 
-        state._state_vector = coefficients * state._state_vector
+    coefficients = np.exp(
+        1j * xi * np.array([basis[mode] ** 2 for basis in state._space])
+    )
+
+    state._state_vector = coefficients * state._state_vector
 
     return Result(state=state)
 
@@ -729,18 +731,12 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def displacement(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    np = state._np
+    r = instruction._all_params["r"]
+    phi = instruction._all_params["phi"]
 
-    amplitudes = np.abs(instruction._all_params["displacement_vector"])
-    angles = np.angle(instruction._all_params["displacement_vector"])
+    matrix = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
 
-    for index, mode in enumerate(instruction.modes):
-        matrix = state._space.get_single_mode_displacement_operator(
-            r=amplitudes[index],
-            phi=angles[index],
-        )
-
-        _apply_active_gate_matrix_to_state(state, matrix, mode)
+    _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
     state.normalize()
 
@@ -748,18 +744,12 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
 
 
 def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    np = state._np
+    matrix = state._space.get_single_mode_squeezing_operator(
+        r=instruction._all_params["r"],
+        phi=instruction._all_params["phi"],
+    )
 
-    amplitudes = np.arccosh(np.diag(instruction._all_params["passive_block"]))
-    angles = np.angle(-np.diag(instruction._all_params["active_block"]))
-
-    for index, mode in enumerate(instruction.modes):
-        matrix = state._space.get_single_mode_squeezing_operator(
-            r=amplitudes[index],
-            phi=angles[index],
-        )
-
-        _apply_active_gate_matrix_to_state(state, matrix, mode)
+    _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
     state.normalize()
 
@@ -767,25 +757,26 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 
 
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    gamma_vector = instruction._all_params["gamma_vector"]
+    gamma = instruction._all_params["gamma"]
     hbar = state._config.hbar
 
-    for index, mode in enumerate(instruction.modes):
-        matrix = state._space.get_single_mode_cubic_phase_operator(
-            gamma=gamma_vector[index], hbar=hbar, calculator=state._calculator
-        )
-        _apply_active_gate_matrix_to_state(state, matrix, mode)
+    matrix = state._space.get_single_mode_cubic_phase_operator(
+        gamma=gamma, hbar=hbar, calculator=state._calculator
+    )
+    _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
     state.normalize()
 
     return Result(state=state)
 
 
-def linear(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def linear(
+    state: PureFockState, instruction: gates._ActiveLinearGate, shots: int
+) -> Result:
     operator = state._space.get_linear_fock_operator(
         modes=instruction.modes,
-        passive_block=instruction._all_params["passive_block"],
-        active_block=instruction._all_params["active_block"],
+        passive_block=instruction._get_passive_block(state._calculator, state._config),
+        active_block=instruction._get_active_block(state._calculator, state._config),
     )
 
     state._state_vector = operator @ state._state_vector

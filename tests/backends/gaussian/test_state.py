@@ -138,7 +138,9 @@ def test_reduced_rotated_mean_and_covariance(state, assets):
 
 def test_rotated():
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[1.0, 2.0, 3.0], phi=[0.0, 0.0, np.pi / 2])
+        pq.Q(0) | pq.Displacement(r=1.0)
+        pq.Q(1) | pq.Displacement(r=2.0)
+        pq.Q(2) | pq.Displacement(r=3.0, phi=np.pi / 2)
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
@@ -175,7 +177,9 @@ def test_rotated():
 
 def test_rotated_state_inherits_config():
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[1.0, 2.0, 3.0], phi=[0.0, 0.0, np.pi / 2])
+        pq.Q(0) | pq.Displacement(r=1.0)
+        pq.Q(1) | pq.Displacement(r=2.0)
+        pq.Q(2) | pq.Displacement(r=3.0, phi=np.pi / 2)
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
@@ -195,7 +199,9 @@ def test_rotated_state_inherits_config():
 
 def test_reduced():
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[1.0, 2.0, 3.0], phi=[0.0, 0.0, np.pi / 2])
+        pq.Q(0) | pq.Displacement(r=1.0)
+        pq.Q(1) | pq.Displacement(r=2.0)
+        pq.Q(2) | pq.Displacement(r=3.0, phi=np.pi / 2)
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 
@@ -231,7 +237,9 @@ def test_reduced():
 
 def test_reduced_state_inherits_config():
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[1.0, 2.0, 3.0], phi=[0.0, 0.0, np.pi / 2])
+        pq.Q(0) | pq.Displacement(r=1.0)
+        pq.Q(1) | pq.Displacement(r=2.0)
+        pq.Q(2) | pq.Displacement(r=3.0, phi=np.pi / 2)
 
         pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
 

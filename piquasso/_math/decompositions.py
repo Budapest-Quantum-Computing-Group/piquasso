@@ -17,9 +17,13 @@ from typing import Tuple
 
 import numpy as np
 
+from scipy.linalg import sqrtm, schur, block_diag
+from scipy.optimize import root_scalar
+
 from piquasso._math.symplectic import xp_symplectic_form
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
-from scipy.linalg import sqrtm, schur, block_diag
+
+from piquasso.api.exceptions import InvalidParameter
 
 
 def takagi(matrix, calculator, rounding=12):
@@ -195,3 +199,64 @@ def decompose_to_pure_and_mixed(
         @ symplectic.transpose()
     )
     return pure_covariance, mixed_contribution
+
+
+def decompose_adjacency_matrix_into_circuit(
+    adjacency_matrix, mean_photon_number, calculator
+):
+    singular_values, unitary = takagi(adjacency_matrix, calculator)
+
+    scaling = _get_scaling(singular_values, mean_photon_number, adjacency_matrix)
+
+    squeezing_parameters = np.arctanh(scaling * singular_values)
+
+    return squeezing_parameters, unitary
+
+
+def _get_scaling(
+    singular_values: np.ndarray, mean_photon_number: float, adjacency_matrix: np.ndarray
+) -> float:
+    r"""
+    For a squeezed state :math:`rho` the mean photon number is calculated by
+
+    .. math::
+        \langle n \rangle_\rho = \sum_{i = 0}^d \mathrm{sinh}(r_i)^2
+
+    where :math:`r_i = \mathrm{arctan}(s_i)`, where :math:`s_i` are the singular
+    values of the adjacency matrix.
+    """
+
+    def mean_photon_number_equation(scaling: float) -> float:
+        return (
+            sum(
+                (scaling * singular_value) ** 2 / (1 - (scaling * singular_value) ** 2)
+                for singular_value in singular_values
+            )
+            / len(singular_values)
+            - mean_photon_number
+        )
+
+    def mean_photon_number_gradient(scaling: float) -> float:
+        return (2.0 / scaling) * np.sum(
+            (singular_values * scaling / (1 - (singular_values * scaling) ** 2)) ** 2
+        )
+
+    lower_bound = 0.0
+
+    tolerance = 1e-10  # Needed to avoid zero division.
+
+    upper_bound = 1.0 / (max(singular_values) + tolerance)
+
+    result = root_scalar(
+        mean_photon_number_equation,
+        fprime=mean_photon_number_gradient,
+        x0=(lower_bound - upper_bound) / 2.0,
+        bracket=(lower_bound, upper_bound),
+    )
+
+    if not result.converged:
+        raise InvalidParameter(
+            f"No scaling found for adjacency matrix: {adjacency_matrix}."
+        )
+
+    return result.root

@@ -205,7 +205,8 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
             pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
 
-        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
+            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
 
         for operation in reversed(decomposition.direct_operations):
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
@@ -239,7 +240,8 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
             pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
 
-        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
+            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
 
         for operation in reversed(decomposition.direct_operations):
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
@@ -273,7 +275,8 @@ def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
             pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
 
-        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
+            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
 
         for operation in reversed(decomposition.direct_operations):
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
@@ -293,19 +296,24 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
 
     decomposition = Clements(U)
 
+    squeezings = [0.1, 0.2, 0.3]
+
     with pq.Program() as program_with_interferometer:
-        pq.Q() | pq.Squeezing([0.1, 0.2, 0.3])
+        for mode, r in enumerate(squeezings):
+            pq.Q(mode) | pq.Squeezing(r)
 
         pq.Q() | pq.Interferometer(matrix=U)
 
     with pq.Program() as program_with_decomposition:
-        pq.Q() | pq.Squeezing([0.1, 0.2, 0.3])
+        for mode, r in enumerate(squeezings):
+            pq.Q(mode) | pq.Squeezing(r)
 
         for operation in decomposition.inverse_operations:
             pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
 
-        pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
+            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
 
         for operation in reversed(decomposition.direct_operations):
             pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)

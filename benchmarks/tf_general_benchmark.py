@@ -54,10 +54,13 @@ def piquasso_benchmark(benchmark, d, interferometer, alpha, r, xi):
         with pq.Program() as program:
             pq.Q(all) | pq.Vacuum()
 
-            pq.Q(all) | pq.Displacement(r=alpha_)
-            pq.Q(all) | pq.Squeezing(r)
+            for i in range(d):
+                pq.Q(i) | pq.Displacement(r=alpha) | pq.Squeezing(r)
+
             pq.Q(all) | pq.Interferometer(interferometer)
-            pq.Q(all) | pq.Kerr(xi)
+
+            for i in range(d):
+                pq.Q(i) | pq.Kerr(xi)
 
         simulator_fock = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=d))
 

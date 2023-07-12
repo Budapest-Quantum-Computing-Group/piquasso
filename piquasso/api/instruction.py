@@ -20,8 +20,7 @@ import numpy as np
 
 from .mode import Q
 from piquasso.core import _mixins
-from piquasso.api.exceptions import PiquassoException
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.exceptions import PiquassoException, InvalidProgram
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -35,6 +34,8 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         params: Mapping of parameters specified by the users.
         extra_params: Mapping of extra parameters, typically calculated ones.
     """
+
+    NUMBER_OF_MODES: Optional[int] = None
 
     _subclasses: Dict[str, Type["Instruction"]] = {}
 
@@ -52,6 +53,15 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     @property
     def _all_params(self) -> dict:
         return {**self._params, **self._extra_params}
+
+    @property
+    def modes(self) -> Tuple[int, ...]:
+        return getattr(self, "_modes", tuple())
+
+    @modes.setter
+    def modes(self, value: Tuple[int, ...]) -> None:
+        self._validate_modes(value)
+        self._modes = value
 
     def _as_code(self) -> str:
         if hasattr(self, "modes"):
@@ -81,11 +91,10 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         return value
 
     def on_modes(self, *modes: int) -> "Instruction":
-        self.modes: Tuple[int, ...] = modes
-        return self
+        if modes is not tuple():
+            self.modes: Tuple[int, ...] = modes
 
-    def _postprocess(self, calculator: BaseCalculator) -> None:
-        pass
+        return self
 
     def _apply_to_program_on_register(self, program: "Program", register: Q) -> None:
         program.instructions.append(self.on_modes(*register.modes))
@@ -177,6 +186,16 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         super().__init_subclass__()
 
         cls.set_subclass(cls)
+
+    def _validate_modes(self, modes):
+        if self.NUMBER_OF_MODES is not None and len(modes) != self.NUMBER_OF_MODES:
+            raise InvalidProgram(
+                f"The modes '{modes}' got specifed for the instruction '{self}', but "
+                f"exactly '{self.NUMBER_OF_MODES}' mode needs to be specified. "
+                f"Concretely, the total number of modes specified for this instruction "
+                f"is 'len(modes) == len({modes}) == {len(modes)} != "
+                f"{self.NUMBER_OF_MODES}'."
+            )
 
 
 class Preparation(Instruction):

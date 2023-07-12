@@ -19,7 +19,6 @@ import typing
 from typing import TypeVar, Generic
 
 if typing.TYPE_CHECKING:
-    from piquasso.api.calculator import BaseCalculator
     from piquasso.api.program import Program
     from piquasso.api.mode import Q
 
@@ -82,14 +81,3 @@ class CodeMixin(abc.ABC):
     @abc.abstractmethod
     def _as_code(self) -> str:
         """The method which returns the generated code corresponding to the instance."""
-
-
-class ScalingMixin(abc.ABC):
-    ERROR_MESSAGE_TEMPLATE = (
-        "The instruction {instruction} is not applicable to modes {modes} with the "
-        "specified parameters."
-    )
-
-    @abc.abstractmethod
-    def _autoscale(self, calculator: "BaseCalculator") -> None:
-        """The method to be executed for autoscaling."""

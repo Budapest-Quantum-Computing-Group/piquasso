@@ -128,14 +128,17 @@ def test_fourier():
 
 
 def test_uniform_loss():
+    d = 5
+
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q(all) | pq.Loss(transmissivity=0.9)
+        for i in range(d):
+            pq.Q(i) | pq.Loss(transmissivity=0.9)
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.SamplingSimulator(d=d)
     state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy

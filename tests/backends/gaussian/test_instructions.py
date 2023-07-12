@@ -73,32 +73,6 @@ def test_phaseshift(state, gaussian_state_assets):
     assert state == expected_state
 
 
-def test_phaseshift_on_multiple_modes(state):
-    with pq.Program() as separate_instructions:
-        pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
-        pq.Q(1) | pq.Phaseshifter(phi=np.pi / 3)
-
-    with pq.Program() as single_instruction:
-        pq.Q(0, 1) | pq.Phaseshifter(phi=np.pi / 3)
-
-    simulator = pq.GaussianSimulator(d=state.d)
-
-    separately_evolved_state = simulator.execute(
-        separate_instructions, initial_state=state
-    ).state
-    separately_evolved_state.validate()
-
-    jointly_evolved_state = simulator.execute(
-        single_instruction, initial_state=state
-    ).state
-    jointly_evolved_state.validate()
-
-    assert np.allclose(
-        separately_evolved_state.xpxp_mean_vector,
-        jointly_evolved_state.xpxp_mean_vector,
-    )
-
-
 def test_phaseshift_modes_are_shifted_from_original(state):
     original = state.copy()
 
@@ -163,7 +137,8 @@ def test_displacement_on_multiple_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        for i in [0, 1]:
+            pq.Q(i) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -177,7 +152,8 @@ def test_displacement_on_all_modes(state, gaussian_state_assets):
     alpha = 3 - 4j
 
     with pq.Program() as program:
-        pq.Q() | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        for i in range(state.d):
+            pq.Q(i) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
     simulator = pq.GaussianSimulator(d=state.d)
     state = simulator.execute(program, initial_state=state).state
@@ -519,12 +495,15 @@ def test_graph_embedding(state):
 def test_displacement_leaves_the_covariance_invariant_for_complex_program():
     d = 3
 
-    alpha = [np.exp(1j * np.pi / 4), 1, 1j]
+    alphas = [np.exp(1j * np.pi / 4), 1, 1j]
 
     with pq.Program() as initialization:
-        pq.Q(all) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        for i, alpha in enumerate(alphas):
+            pq.Q(i) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
 
-        pq.Q(all) | pq.Squeezing(r=[1, 2, 2], phi=[np.pi / 2, np.pi / 3, np.pi / 4])
+        pq.Q(0) | pq.Squeezing(r=1, phi=np.pi / 2)
+        pq.Q(1) | pq.Squeezing(r=2, phi=np.pi / 3)
+        pq.Q(2) | pq.Squeezing(r=2, phi=np.pi / 4)
 
     simulator = pq.GaussianSimulator(d=d)
     state = simulator.execute(initialization).state
@@ -563,7 +542,9 @@ def test_multiple_displacements_leave_the_covariance_invariant():
     initial_covariance_matrix = vacuum.xpxp_covariance_matrix
 
     with pq.Program() as program:
-        pq.Q(all) | pq.Displacement(r=[2, 1, 1], phi=[np.pi / 3, np.pi / 4, np.pi / 6])
+        pq.Q(0) | pq.Displacement(r=2, phi=np.pi / 3)
+        pq.Q(1) | pq.Displacement(r=1, phi=np.pi / 4)
+        pq.Q(2) | pq.Displacement(r=1, phi=np.pi / 6)
 
     state = simulator.execute(program).state
     state.validate()
@@ -588,8 +569,11 @@ def test_random_interferometer(generate_random_gaussian_state, generate_unitary_
 
 
 def test_complex_circuit(gaussian_state_assets):
+    d = 5
+
     with pq.Program() as program:
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
+        for i in range(5):
+            pq.Q(i) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
@@ -600,7 +584,8 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
+        for i in range(5):
+            pq.Q(i) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
@@ -611,7 +596,7 @@ def test_complex_circuit(gaussian_state_assets):
         pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
         pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
 
-    simulator = pq.GaussianSimulator(d=5)
+    simulator = pq.GaussianSimulator(d=d)
     state = simulator.execute(program).state
     state.validate()
 

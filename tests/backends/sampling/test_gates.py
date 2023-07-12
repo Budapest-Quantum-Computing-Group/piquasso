@@ -125,12 +125,15 @@ def test_lossy_program():
     """
     losses = 0.5
 
-    simulator = pq.SamplingSimulator(d=5)
+    d = 5
+    simulator = pq.SamplingSimulator(d=d)
 
     with pq.Program() as program:
         pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q() | pq.Loss(losses)
+        for i in range(d):
+            pq.Q(i) | pq.Loss(losses)
+
         pq.Q(0) | pq.Loss(transmissivity=0.0)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -193,9 +196,12 @@ def test_LossyInterferometer_is_equivalent_to_Loss_and_Interferometers(
     with pq.Program() as program_using_loss:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
 
-        pq.Q() | pq.Interferometer(second_unitary) | pq.Loss(
-            singular_values
-        ) | pq.Interferometer(first_unitary)
+        pq.Q() | pq.Interferometer(second_unitary)
+
+        for mode, loss in enumerate(singular_values):
+            pq.Q(mode) | pq.Loss(loss)
+
+        pq.Q() | pq.Interferometer(first_unitary)
 
     state_obtained_via_loss = simulator.execute(program_using_loss).state
 

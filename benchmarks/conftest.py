@@ -38,9 +38,10 @@ def measurement_cutoff():
 
 
 @pytest.fixture
-def example_gaussian_pq_program():
+def example_gaussian_pq_program(d):
     with pq.Program() as program:
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
@@ -55,11 +56,12 @@ def example_gaussian_pq_program():
 
 
 @pytest.fixture
-def example_purefock_pq_program():
+def example_purefock_pq_program(d):
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(all) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
 
         pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
         pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)

@@ -73,7 +73,8 @@ def test_Displacement_mean_photon_number_gradient_2_modes():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0, 1) | pq.Displacement(r=r)
+            pq.Q(0) | pq.Displacement(r=r[0])
+            pq.Q(1) | pq.Displacement(r=r[1])
 
         result = simulator.execute(program)
 
@@ -96,7 +97,8 @@ def test_Displacement_fock_probabilities_jacobian_2_modes():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0, 1) | pq.Displacement(r=r)
+            pq.Q(0) | pq.Displacement(r=r[0])
+            pq.Q(1) | pq.Displacement(r=r[1])
 
         state = simulator.execute(program).state
 

@@ -63,7 +63,8 @@ def test_complicated_code_generation():
         pq.Q(1) | pq.Squeezing(r=0.5, phi=0)
         pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0.7853981633974483)
 
-        pq.Q(all) | pq.Fourier()
+        pq.Q(0) | pq.Fourier()
+        pq.Q(1) | pq.Fourier()
 
     simulator = pq.GaussianSimulator(d=2, config=pq.Config(seed_sequence=1, cutoff=7))
 
@@ -81,7 +82,8 @@ with pq.Program() as program:
     pq.Q(0) | pq.Squeezing(r=0.5, phi=0)
     pq.Q(1) | pq.Squeezing(r=0.5, phi=0)
     pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0.7853981633974483)
-    pq.Q() | pq.Fourier()
+    pq.Q(0) | pq.Fourier()
+    pq.Q(1) | pq.Fourier()
 
 simulator = pq.{pq.GaussianSimulator.__name__}(
     d=2, config=pq.Config(seed_sequence=1, cutoff=7)
@@ -183,7 +185,8 @@ def test_Kerr_scalar_parameter_on_multimode_code_generation():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
-        pq.Q(0, 1) | pq.Kerr(xi=0.2)
+        pq.Q(0) | pq.Kerr(xi=0.2)
+        pq.Q(1) | pq.Kerr(xi=0.2)
 
     simulator = pq.FockSimulator(d=2)
 
@@ -204,7 +207,8 @@ with pq.Program() as program:
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
     pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
-    pq.Q(0, 1) | pq.Kerr(xi=0.2)
+    pq.Q(0) | pq.Kerr(xi=0.2)
+    pq.Q(1) | pq.Kerr(xi=0.2)
 
 simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
@@ -224,7 +228,8 @@ def test_Kerr_vector_parameter_code_generation():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
-        pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+        pq.Q(0) | pq.Kerr(xi=-0.1)
+        pq.Q(1) | pq.Kerr(xi=0.2)
 
     simulator = pq.FockSimulator(d=2)
 
@@ -245,7 +250,8 @@ with pq.Program() as program:
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
     pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
-    pq.Q(0, 1) | pq.Kerr(xi=[-0.1, 0.2])
+    pq.Q(0) | pq.Kerr(xi=-0.1)
+    pq.Q(1) | pq.Kerr(xi=0.2)
 
 simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
@@ -265,7 +271,8 @@ def test_CubicPhase_vector_parameter_code_generation():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
-        pq.Q(0, 1) | pq.CubicPhase(gamma=[-0.1, 0.2])
+        pq.Q(0) | pq.CubicPhase(gamma=-0.1)
+        pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
     simulator = pq.FockSimulator(d=2)
 
@@ -286,7 +293,8 @@ with pq.Program() as program:
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
     pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
-    pq.Q(0, 1) | pq.CubicPhase(gamma=[-0.1, 0.2])
+    pq.Q(0) | pq.CubicPhase(gamma=-0.1)
+    pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
 simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
@@ -306,7 +314,8 @@ def test_CubicPhase_scalar_parameter_on_multimode_code_generation():
         pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
         pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
 
-        pq.Q(0, 1) | pq.CubicPhase(gamma=0.2)
+        pq.Q(0) | pq.CubicPhase(gamma=0.2)
+        pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
     simulator = pq.FockSimulator(d=2)
 
@@ -327,7 +336,8 @@ with pq.Program() as program:
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0), coefficient=0.5)
     pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0), coefficient=0.3535533905932738)
     pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2), coefficient=0.3535533905932738)
-    pq.Q(0, 1) | pq.CubicPhase(gamma=0.2)
+    pq.Q(0) | pq.CubicPhase(gamma=0.2)
+    pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
 simulator = pq.{pq.FockSimulator.__name__}(d=2)
 

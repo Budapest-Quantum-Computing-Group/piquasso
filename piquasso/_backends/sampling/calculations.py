@@ -20,6 +20,8 @@ from piquasso._backends.sampling.state import SamplingState
 
 from piquasso._math.validations import all_natural
 
+from piquasso.instructions import gates
+
 from piquasso.api.exceptions import InvalidState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
@@ -71,7 +73,7 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
 
 
 def passive_linear(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: SamplingState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:
     r"""Applies an interferometer to the circuit.
 
@@ -84,7 +86,7 @@ def passive_linear(
     """
     _apply_matrix_on_modes(
         state=state,
-        matrix=instruction._all_params["passive_block"],
+        matrix=instruction._get_passive_block(state._calculator, state._config),
         modes=instruction.modes,
     )
 
@@ -106,7 +108,7 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
 
     _apply_matrix_on_modes(
         state=state,
-        matrix=np.diag(instruction._all_params["transmissivity"]),
+        matrix=np.array([[instruction._all_params["transmissivity"]]]),
         modes=instruction.modes,
     )
 

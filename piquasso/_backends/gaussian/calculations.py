@@ -28,30 +28,40 @@ from scipy.special import factorial
 from .state import GaussianState
 from .probabilities import calculate_click_probability
 
+from piquasso.instructions import gates
+
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.exceptions import InvalidInstruction
 
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
-from piquasso._math.decompositions import decompose_to_pure_and_mixed
+from piquasso._math.decompositions import (
+    decompose_to_pure_and_mixed,
+    decompose_adjacency_matrix_into_circuit,
+)
 
 
 def passive_linear(
-    state: GaussianState, instruction: Instruction, shots: int
+    state: GaussianState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:
     modes = instruction.modes
-    T: np.ndarray = instruction._all_params["passive_block"]
+    passive_block: np.ndarray = instruction._get_passive_block(
+        state._calculator, state._config
+    )
 
+    _apply_passive_linear(state, passive_block, modes=modes)
+
+    return Result(state=state)
+
+
+def _apply_passive_linear(state, passive_block, modes):
     state._m[(modes,)] = (
-        T
+        passive_block
         @ state._m[
             modes,
         ]
     )
-
-    _apply_passive_linear_to_C_and_G(state, T, modes=modes)
-
-    return Result(state=state)
+    _apply_passive_linear_to_C_and_G(state, passive_block, modes=modes)
 
 
 def _apply_passive_linear_to_C_and_G(
@@ -83,11 +93,23 @@ def _apply_passive_linear_to_auxiliary_modes(
     state._G[:, modes] = state._G[modes, :].transpose()
 
 
-def linear(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def linear(
+    state: GaussianState, instruction: gates._ActiveLinearGate, shots: int
+) -> Result:
     modes = instruction.modes
-    passive_block: np.ndarray = instruction._all_params["passive_block"]
-    active_block: np.ndarray = instruction._all_params["active_block"]
+    passive_block: np.ndarray = instruction._get_passive_block(
+        state._calculator, state._config
+    )
+    active_block: np.ndarray = instruction._get_active_block(
+        state._calculator, state._config
+    )
 
+    _apply_linear(state, passive_block, active_block, modes)
+
+    return Result(state=state)
+
+
+def _apply_linear(state, passive_block, active_block, modes):
     state._m[(modes,)] = passive_block @ state._m[(modes,)] + active_block @ np.conj(
         state._m[
             modes,
@@ -95,8 +117,6 @@ def linear(state: GaussianState, instruction: Instruction, shots: int) -> Result
     )
 
     _apply_linear_to_C_and_G(state, passive_block, active_block, modes)
-
-    return Result(state=state)
 
 
 def _apply_linear_to_C_and_G(
@@ -153,11 +173,12 @@ def _apply_linear_to_auxiliary_modes(
 
 def displacement(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     modes = instruction.modes
-    displacement_vector: np.ndarray = instruction._all_params["displacement_vector"]
+    r = instruction._all_params["r"]
+    phi = instruction._all_params["phi"]
 
     state._m[
         modes,
-    ] += displacement_vector
+    ] += r * np.exp(1j * phi)
 
     return Result(state=state)
 
@@ -532,14 +553,13 @@ def homodyne_measurement(
 ) -> Result:
     phi = instruction._all_params["phi"]
 
-    instruction_copy: Instruction = instruction.copy()  # type: ignore
+    modes = instruction.modes
 
     phaseshift = np.identity(len(instruction.modes)) * np.exp(-1j * phi)
-    instruction_copy._extra_params["passive_block"] = phaseshift
 
-    result = passive_linear(state, instruction_copy, shots)
+    _apply_passive_linear(state, phaseshift, modes=modes)
 
-    result = generaldyne_measurement(result.state, instruction, shots)
+    result = generaldyne_measurement(state, instruction, shots)
 
     return Result(state=state, samples=result.samples)
 
@@ -568,14 +588,23 @@ def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     """
     TODO: Find a better solution for multiple operations.
     """
-    instruction._all_params["squeezing"].modes = instruction.modes
-    instruction._all_params["interferometer"].modes = instruction.modes
-
-    result = linear(state, instruction._all_params["squeezing"], shots)
-
-    return passive_linear(
-        result.state, instruction._all_params["interferometer"], shots
+    squeezings, interferometer = decompose_adjacency_matrix_into_circuit(
+        adjacency_matrix=instruction._params["adjacency_matrix"],
+        mean_photon_number=instruction._params["mean_photon_number"],
+        calculator=state._calculator,
     )
+
+    for mode, r in zip(instruction.modes, squeezings):
+        _apply_linear(
+            state=state,
+            passive_block=np.array([[np.cosh(r)]]),
+            active_block=np.array([[np.sinh(r)]]),
+            modes=(mode,),
+        )
+
+    _apply_passive_linear(state, interferometer, instruction.modes)
+
+    return Result(state=state)
 
 
 def deterministic_gaussian_channel(

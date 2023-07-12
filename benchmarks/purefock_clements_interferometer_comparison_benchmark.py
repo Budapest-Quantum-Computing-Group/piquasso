@@ -42,7 +42,9 @@ def piquasso_interferometer_benchmark(benchmark, d, cutoff, U):
     def func():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
-            pq.Q() | pq.Squeezing(r=0.1)
+
+            for i in range(d):
+                pq.Q(i) | pq.Squeezing(r=0.1)
 
             pq.Q() | pq.Interferometer(U)
 
@@ -60,7 +62,9 @@ def piquasso_clements_benchmark(benchmark, d, cutoff, U):
     def func():
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
-            pq.Q() | pq.Squeezing(r=0.1)
+
+            for i in range(d):
+                pq.Q(i) | pq.Squeezing(r=0.1)
 
             for operation in decomposition.inverse_operations:
                 pq.Q(operation["modes"][0]) | pq.Phaseshifter(
