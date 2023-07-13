@@ -200,7 +200,6 @@ class FockSpace(tuple):
                 self.cutoff,
                 matrix,
                 self.calculator,
-                self.config.complex_dtype,
             )
             return matrix, grad
 
@@ -511,7 +510,6 @@ class FockSpace(tuple):
                 self.cutoff,
                 matrix,
                 self.calculator,
-                self.config.complex_dtype,
             )
             return matrix, grad
 

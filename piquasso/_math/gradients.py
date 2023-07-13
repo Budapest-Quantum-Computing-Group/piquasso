@@ -26,38 +26,45 @@ def create_single_mode_displacement_gradient(
     cutoff: int,
     transformation: np.ndarray,
     calculator: BaseCalculator,
-    complex_dtype: type,
 ) -> Callable:
-    def grad(upstream):
+    def displacement_matrix_gradient(upstream):
         np = calculator.fallback_np
+
+        index_sqrts = np.sqrt(range(cutoff))
+
+        row_sqrts = index_sqrts * np.exp(1j * phi)
+        col_sqrts = index_sqrts * np.exp(-1j * phi)
+
+        row_rolled_transformation = np.roll(transformation, 1, axis=0)
+        col_rolled_transformation = np.roll(transformation, 1, axis=1)
+
+        # NOTE: This algorithm rolls the last elements of the transormation matrix to
+        # the 0th place, but the 0th element of `row_sqrts` and `col_sqrts` is always
+        # zero, so it is fine.
+        phi_grad = (
+            row_sqrts * row_rolled_transformation.T
+        ).T + col_sqrts * col_rolled_transformation
+
+        r_grad = phi_grad - r * transformation
+
+        phi_grad *= r * 1j
+
         tf = calculator._tf
+        static_valued = tf.get_static_value(upstream) is not None
 
-        epiphi = np.exp(1j * phi)
-        eimphi = np.exp(-1j * phi)
+        if static_valued:
+            upstream = upstream.numpy()
+            r_grad_sum = tf.constant(np.real(np.sum(upstream * r_grad)))
+            phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
+        else:
+            r_grad_sum = tf.math.real(tf.reduce_sum(upstream * r_grad))
+            phi_grad_sum = tf.math.real(
+                tf.reduce_sum(upstream * tf.math.conj(phi_grad))
+            )
 
-        r_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-        phi_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-        # NOTE: This algorithm deliberately overindexes the gate matrix.
-        for row in range(cutoff):
-            for col in range(cutoff):
-                r_grad[row, col] = (
-                    -r * transformation[row, col]
-                    + epiphi * np.sqrt(row) * transformation[row - 1, col]
-                    - eimphi * np.sqrt(col) * transformation[row, col - 1]
-                )
-                phi_grad[row, col] = (
-                    r
-                    * 1j
-                    * (
-                        np.sqrt(row) * epiphi * transformation[row - 1, col]
-                        + np.sqrt(col) * eimphi * transformation[row, col - 1]
-                    )
-                )
-        r_grad_sum = tf.math.real(tf.reduce_sum(upstream * r_grad))
-        phi_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(phi_grad)))
         return (r_grad_sum, phi_grad_sum)
 
-    return grad
+    return displacement_matrix_gradient
 
 
 def create_single_mode_squeezing_gradient(
@@ -66,58 +73,63 @@ def create_single_mode_squeezing_gradient(
     cutoff: int,
     transformation: np.ndarray,
     calculator: BaseCalculator,
-    complex_dtype: type,
 ) -> Callable:
-    def grad(upstream):
+    def squeezing_matrix_gradient(upstream):
         np = calculator.fallback_np
+
+        sechr = 1 / np.cosh(r)
+        tanhr = np.tanh(r)
+
+        index_sqrts = np.sqrt(range(cutoff))
+
+        falling_index_sqrts = index_sqrts * np.roll(index_sqrts, 1)
+
+        row_sqrts = falling_index_sqrts * np.exp(1j * phi)
+        col_sqrts = falling_index_sqrts * np.exp(-1j * phi)
+
+        row_rolled_transformation = np.roll(transformation, 2, axis=0)
+        col_rolled_transformation = np.roll(transformation, 2, axis=1)
+
+        # NOTE: This algorithm rolls the last and penultimate elements of the
+        # transormation matrix to the 1st and 0th place, but the 0th and 1st element of
+        # `row_sqrts` and `col_sqrts` is always zero, so it is fine.
+        phi_grad = (
+            row_sqrts * row_rolled_transformation.T
+        ).T + col_sqrts * col_rolled_transformation
+
+        diagonally_rolled_transformation = np.roll(transformation, (1, 1), axis=(0, 1))
+
+        r_grad = -(
+            tanhr / 2 * transformation
+            + (sechr**2) / 2 * phi_grad
+            + np.outer(index_sqrts, index_sqrts)
+            * sechr
+            * tanhr
+            * diagonally_rolled_transformation
+        )
+
+        phi_grad *= -tanhr / 2 * 1j
+
         tf = calculator._tf
 
-        r_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-        phi_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-        coshr = np.cosh(r)
-        sechr = 1 / coshr
-        tanhr = np.tanh(r)
-        c_coeff = -tanhr / 2
-        sum_coeff = -(sechr**2) / 2
-        eiphi = np.exp(1j * phi)
-        emiphi = np.exp(-1j * phi)
+        static_valued = tf.get_static_value(upstream) is not None
 
-        # NOTE: This algorithm deliberately overindexes the gate matrix.
-        for row in range(cutoff):
-            for col in range(cutoff):
-                r_grad[row, col] = (
-                    c_coeff * transformation[row, col]
-                    - np.sqrt(row * col)
-                    * sechr
-                    * tanhr
-                    * transformation[row - 1, col - 1]
-                    + sum_coeff
-                    * (
-                        np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col]
-                        + np.sqrt(col * (col - 1))
-                        * emiphi
-                        * transformation[row, col - 2]
-                    )
-                )
-                phi_grad[row, col] = (
-                    -tanhr
-                    * 1j
-                    * (
-                        np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col]
-                        + np.sqrt(col * (col - 1))
-                        * emiphi
-                        * transformation[row, col - 2]
-                    )
-                    / 2
-                )
-
-        # NOTE: Possibly Tensorflow bug, cast needed.
-        # cannot compute AddN as input #1(zero-based) was expected to be\
-        #  a double tensor but is a float tensor [Op:AddN].
-        # The bug does not occur with Displacement gradient for unknown reasons.
-        r_grad_sum = tf.cast(tf.math.real(tf.reduce_sum(upstream * r_grad)), tf.float32)
-        phi_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(phi_grad)))
+        if static_valued:
+            upstream = upstream.numpy()
+            r_grad_sum = tf.constant(np.real(np.sum(upstream * r_grad)))
+            phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
+        else:
+            # NOTE: Possibly Tensorflow bug, cast needed.
+            # cannot compute AddN as input #1(zero-based) was expected to be\
+            #  a double tensor but is a float tensor [Op:AddN].
+            # The bug does not occur with Displacement gradient for unknown reasons.
+            r_grad_sum = tf.cast(
+                tf.math.real(tf.reduce_sum(upstream * r_grad)), tf.float32
+            )
+            phi_grad_sum = tf.math.real(
+                tf.reduce_sum(upstream * tf.math.conj(phi_grad))
+            )
 
         return (r_grad_sum, phi_grad_sum)
 
-    return grad
+    return squeezing_matrix_gradient
