@@ -74,11 +74,10 @@ def create_single_mode_squeezing_gradient(
 
         r_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
         phi_grad = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-        sinhr = np.sinh(r)
         coshr = np.cosh(r)
         sechr = 1 / coshr
         tanhr = np.tanh(r)
-        c_coeff = -sinhr / (np.sqrt(2 * np.power(coshr, 3)))
+        c_coeff = -tanhr / 2
         sum_coeff = -(sechr**2) / 2
         eiphi = np.exp(1j * phi)
         emiphi = np.exp(-1j * phi)
@@ -93,8 +92,12 @@ def create_single_mode_squeezing_gradient(
                     * tanhr
                     * transformation[row - 1, col - 1]
                     + sum_coeff
-                    * (np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col])
-                    + np.sqrt(col * (col - 1)) * emiphi * transformation[row, col - 2]
+                    * (
+                        np.sqrt(row * (row - 1)) * eiphi * transformation[row - 2, col]
+                        + np.sqrt(col * (col - 1))
+                        * emiphi
+                        * transformation[row, col - 2]
+                    )
                 )
                 phi_grad[row, col] = (
                     -tanhr

@@ -585,3 +585,212 @@ def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
 
     assert np.allclose(mean, 0.019024584947048066)
     assert np.allclose(grad, [-0.019024614, 1.9024585382680494])
+
+
+def test_Displacement_state_vector_gradient():
+    r = tf.Variable(0.1)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=1, config=pq.Config(cutoff=3, normalize=False)
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [r])
+
+    expected_state_vector = np.exp(-(r**2) / 2) * np.array(
+        [1, r, r**2 / np.sqrt(2)]
+    )
+    expected_jacobian = np.array(
+        [
+            -r * np.exp(-(r**2) / 2),
+            np.exp(-(r**2) / 2) * (1 - r**2),
+            np.exp(-(r**2) / 2) * r * (2 - r**2) / np.sqrt(2),
+        ]
+    )
+    assert np.allclose(state_vector, expected_state_vector)
+    assert np.allclose(jacobian, expected_jacobian)
+
+
+def test_complex_Displacement_state_vector_gradient():
+    r = tf.Variable(0.1)
+    phi = tf.Variable(np.pi / 3)
+
+    alpha = tf.cast(r, tf.complex64) * tf.exp(1j * tf.cast(phi, tf.complex64))
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=1, config=pq.Config(cutoff=3, normalize=False)
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r, phi=phi)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [r, phi])
+
+    expected_state_vector = np.exp(-(r**2) / 2) * np.array(
+        [1, alpha, alpha**2 / np.sqrt(2)], dtype=complex
+    )
+    expected_jacobian = np.real(
+        np.array(
+            [
+                [
+                    -r * np.exp(-(r**2) / 2),
+                    np.exp(-(r**2) / 2) * (1 - r**2) * np.exp(1j * phi),
+                    np.exp(-(r**2) / 2)
+                    * r
+                    * (2 - r**2)
+                    / np.sqrt(2)
+                    * np.exp(1j * 2 * phi),
+                ],
+                [
+                    0.0,
+                    np.exp(-(r**2) / 2) * alpha * 1j,
+                    np.exp(-(r**2) / 2) * alpha**2 / np.sqrt(2) * 2j,
+                ],
+            ]
+        )
+    )
+    assert np.allclose(state_vector, expected_state_vector)
+    assert np.allclose(jacobian, expected_jacobian)
+
+
+def test_Squeezing_state_vector_gradient():
+    r = tf.Variable(0.1)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=1, config=pq.Config(cutoff=3, normalize=False)
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Squeezing(r=r)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [r])
+
+    expected_state_vector = (
+        1 / np.sqrt(np.cosh(r)) * np.array([1, 0, -np.tanh(r) * np.sqrt(2) / 2])
+    )
+    expected_jacobian = np.array(
+        [
+            -np.sinh(r) / (2 * np.cosh(r) ** (3 / 2)),
+            0,
+            (3 * np.sinh(r) ** 2 - 2 * np.cosh(r) ** 2)
+            / (2 * np.sqrt(2) * np.cosh(r) ** (5 / 2)),
+        ]
+    )
+    assert np.allclose(state_vector, expected_state_vector)
+    assert np.allclose(jacobian, expected_jacobian)
+
+
+def test_complex_Squeezing_state_vector_gradient():
+    r = tf.Variable(0.1)
+    phi = tf.Variable(np.pi / 3)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=1, config=pq.Config(cutoff=3, normalize=False)
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Squeezing(r=r, phi=phi)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [r, phi])
+
+    expected_state_vector = (
+        1
+        / np.sqrt(np.cosh(r))
+        * np.array([1, 0, -np.exp(1j * phi) * np.tanh(r) * np.sqrt(2) / 2])
+    )
+    expected_jacobian = np.real(
+        np.array(
+            [
+                [
+                    -np.sinh(r) / (2 * np.cosh(r) ** (3 / 2)),
+                    0,
+                    np.exp(1j * phi)
+                    * (3 * np.sinh(r) ** 2 - 2 * np.cosh(r) ** 2)
+                    / (2 * np.sqrt(2) * np.cosh(r) ** (5 / 2)),
+                ],
+                [
+                    0,
+                    0,
+                    -1j
+                    * np.exp(1j * phi)
+                    * np.tanh(r)
+                    * np.sqrt(2)
+                    / (2 * np.sqrt(np.cosh(r))),
+                ],
+            ]
+        )
+    )
+
+    assert np.allclose(state_vector, expected_state_vector)
+    assert np.allclose(jacobian, expected_jacobian)
+
+
+def test_displaced_state_Squeezing_state_vector_gradient():
+    r = tf.Variable(0.1)
+    phi = tf.Variable(np.pi / 3)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=1, config=pq.Config(cutoff=5, normalize=False)
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=1.0, phi=np.pi / 5)
+
+            pq.Q(0) | pq.Squeezing(r=r, phi=phi)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [r, phi])
+
+    assert np.allclose(
+        state_vector,
+        [
+            0.63519669 + 0.00657421j,
+            0.50710742 + 0.37614499j,
+            0.11111278 + 0.38482443j,
+            -0.06637907 + 0.15485146j,
+            -0.04802964 + 0.0180018j,
+        ],
+    )
+    assert np.allclose(
+        jacobian,
+        [
+            [-0.33824897, -0.27522323, -0.26571158, 0.10121598, 0.4793388],
+            [-0.0209119, -0.00623743, 0.04549047, 0.02988929, -0.02153896],
+        ],
+    )
