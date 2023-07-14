@@ -147,3 +147,24 @@ def test_mean_position():
     mean = state.mean_position(mode=0)
 
     assert np.allclose(mean, np.sqrt(2 * config.hbar) * alpha_)
+
+
+def test_normalize_if_disabled_in_Config():
+    d = 1
+    cutoff = 3
+
+    alpha_ = 1.0
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(r=alpha_)
+
+    config = pq.Config(cutoff=cutoff, normalize=False)
+
+    simulator = pq.PureFockSimulator(d=d, config=config)
+
+    state = simulator.execute(program).state
+    norm = state.norm
+
+    assert not np.isclose(norm, 1.0)

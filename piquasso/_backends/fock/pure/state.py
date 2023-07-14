@@ -135,6 +135,9 @@ class PureFockState(BaseFockState):
         return probability_map
 
     def normalize(self) -> None:
+        if not self._config.normalize:
+            return
+
         norm = self.norm
 
         if np.isclose(norm, 0):
