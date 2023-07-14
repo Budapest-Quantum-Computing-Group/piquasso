@@ -166,6 +166,9 @@ class FockState(BaseFockState):
         Raises:
             RuntimeError: Raised if the current norm of the state is too close to 0.
         """
+        if not self._config.normalize:
+            return
+
         if np.isclose(self.norm, 0):
             raise InvalidState("The norm of the state is 0.")
 

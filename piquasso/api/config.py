@@ -36,6 +36,7 @@ class Config(_mixins.CodeMixin):
         cutoff: int = 4,
         measurement_cutoff: int = 5,
         dtype: type = np.float64,
+        normalize: bool = True,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
@@ -47,6 +48,7 @@ class Config(_mixins.CodeMixin):
         self.cutoff = cutoff
         self.measurement_cutoff = measurement_cutoff
         self.dtype = np.float64 if dtype is float else dtype
+        self.normalize = normalize
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Config):
@@ -59,6 +61,7 @@ class Config(_mixins.CodeMixin):
             and self.cutoff == other.cutoff
             and self.measurement_cutoff == other.measurement_cutoff
             and self.dtype == other.dtype
+            and self.normalize == other.normalize
         )
 
     def _as_code(self) -> str:
@@ -79,6 +82,8 @@ class Config(_mixins.CodeMixin):
             non_default_params["measurement_cutoff"] = self.measurement_cutoff
         if self.dtype != default_config.dtype:
             non_default_params["dtype"] = "np." + self.dtype.__name__
+        if self.normalize != default_config.normalize:
+            non_default_params["normalize"] = self.normalize
 
         if len(non_default_params) == 0:
             return "pq.Config()"
