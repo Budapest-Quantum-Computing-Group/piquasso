@@ -30,6 +30,7 @@ from piquasso._math.indices import (
 from piquasso.api.calculator import BaseCalculator
 
 from .state import PureFockState
+from .batch_state import BatchPureFockState
 
 from piquasso.instructions import gates
 
@@ -492,8 +493,14 @@ def _calculate_state_vector_after_interferometer(
 ) -> np.ndarray:
     new_state_vector = np.empty_like(state_vector)
 
+    is_batch = len(state_vector.shape) == 2
+
+    einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
+
     for n, indices in enumerate(index_list):
-        new_state_vector[indices] = subspace_transformations[n] @ state_vector[indices]
+        new_state_vector[indices] = np.einsum(
+            einsum_string, subspace_transformations[n], state_vector[indices]
+        )
 
     return new_state_vector
 
@@ -516,34 +523,40 @@ def _create_linear_passive_gate_gradient_function(
         else:
             np = calculator.np
 
+        is_batch = len(state_vector.shape) == 2
+
+        matrix_einsum_string = "ijl,kjl->ki" if is_batch else "ij,kj->ki"
+        initial_state_einsum_string = "ji,jkl->ikl" if is_batch else "ji,jk->ik"
+
+        reshape_arg = (-1, state_vector.shape[1]) if is_batch else (-1,)
+
         unordered_gradient_by_initial_state = []
         order_by = []
 
         gradient_by_matrix = []
+
         conjugated_state_vector = np.conj(state_vector)
+
         for n, indices in enumerate(index_list):
             matrix = np.conj(subspace_transformations[n])
-            sliced_upstream = np.take(upstream, indices)
+            sliced_upstream = upstream[indices]
             state_vector_slice = conjugated_state_vector[indices]
 
             order_by.append(indices.reshape(-1))
-            product = np.einsum("ji,jk->ik", matrix, sliced_upstream)
-            unordered_gradient_by_initial_state.append(product.reshape(-1))
+            product = np.einsum(initial_state_einsum_string, matrix, sliced_upstream)
+            unordered_gradient_by_initial_state.append(product.reshape(*reshape_arg))
 
             gradient_by_matrix.append(
-                np.einsum("ij,kj->ki", state_vector_slice, sliced_upstream)
+                np.einsum(matrix_einsum_string, state_vector_slice, sliced_upstream)
             )
 
-        gradient_by_initial_state = np.take(
-            np.concatenate(unordered_gradient_by_initial_state),
-            fallback_np.concatenate(order_by).argsort(),
-        )
+        gradient_by_initial_state = np.concatenate(unordered_gradient_by_initial_state)[
+            fallback_np.concatenate(order_by).argsort()
+        ]
 
         if static_valued:
-            return (
-                tf.constant(gradient_by_initial_state),
-                [tf.constant(matrix) for matrix in gradient_by_matrix],
-            )
+            gradient_by_initial_state = tf.constant(gradient_by_initial_state)
+            gradient_by_matrix = [tf.constant(matrix) for matrix in gradient_by_matrix]
 
         return gradient_by_initial_state, gradient_by_matrix
 
@@ -617,10 +630,14 @@ def _calculate_state_vector_after_apply_active_gate(
 ):
     new_state_vector = np.empty_like(state_vector, dtype=state_vector.dtype)
 
+    is_batch = len(state_vector.shape) == 2
+
+    einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
+
     for state_index_matrix in state_index_matrix_list:
         limit = state_index_matrix.shape[0]
-        new_state_vector[state_index_matrix] = (
-            matrix[:limit, :limit] @ state_vector[state_index_matrix]
+        new_state_vector[state_index_matrix] = np.einsum(
+            einsum_string, matrix[:limit, :limit], state_vector[state_index_matrix]
         )
 
     return new_state_vector
@@ -646,6 +663,13 @@ def _create_linear_active_gate_gradient_function(
 
         cutoff = len(matrix)
 
+        is_batch = len(state_vector.shape) == 2
+
+        matrix_einsum_string = "ijl,kjl->ki" if is_batch else "ij,kj->ki"
+        initial_state_einsum_string = "ji,jkl->ikl" if is_batch else "ji,jk->ik"
+
+        reshape_arg = (-1, state_vector.shape[1]) if is_batch else (-1,)
+
         unordered_gradient_by_initial_state = []
         order_by = []
 
@@ -656,18 +680,19 @@ def _create_linear_active_gate_gradient_function(
         for indices in state_index_matrix_list:
             limit = indices.shape[0]
 
-            upstream_slice = np.take(upstream, indices)
+            upstream_slice = upstream[indices]
             state_vector_slice = conjugated_state_vector[indices]
 
             matrix_slice = conjugated_matrix[:limit, :limit]
 
             order_by.append(indices.reshape(-1))
-            unordered_gradient_by_initial_state.append(
-                (np.einsum("ji,jk->ik", matrix_slice, upstream_slice)).reshape(-1)
+            product = np.einsum(
+                initial_state_einsum_string, matrix_slice, upstream_slice
             )
+            unordered_gradient_by_initial_state.append(product.reshape(*reshape_arg))
 
             partial_gradient = np.einsum(
-                "ij,kj->ki", state_vector_slice, upstream_slice
+                matrix_einsum_string, state_vector_slice, upstream_slice
             )
 
             if static_valued:
@@ -679,10 +704,9 @@ def _create_linear_active_gate_gradient_function(
                     "constant",
                 )
 
-        gradient_by_initial_state = np.take(
-            np.concatenate(unordered_gradient_by_initial_state),
-            fallback_np.concatenate(order_by).argsort(),
-        )
+        gradient_by_initial_state = np.concatenate(unordered_gradient_by_initial_state)[
+            fallback_np.concatenate(order_by).argsort()
+        ]
 
         if static_valued:
             return (
@@ -725,7 +749,8 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
         1j * xi * np.array([basis[mode] ** 2 for basis in state._space])
     )
 
-    state._state_vector = coefficients * state._state_vector
+    # NOTE: Transposition is done here in order to work with batch processing.
+    state._state_vector = (coefficients * state._state_vector.T).T
 
     return Result(state=state)
 
@@ -828,3 +853,46 @@ def _add_occupation_number_basis(  # type: ignore
     state._state_vector = state._calculator.assign(
         state._state_vector, index, coefficient
     )
+
+
+def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    subprograms = instruction._all_params["subprograms"]
+    execute = instruction._all_params["execute"]
+
+    state_vectors = [
+        execute(subprogram, shots).state._state_vector for subprogram in subprograms
+    ]
+
+    batch_state = BatchPureFockState(
+        d=state.d, calculator=state._calculator, config=state._config
+    )
+
+    batch_state._apply_separate_state_vectors(state_vectors)
+
+    return Result(state=batch_state)
+
+
+def batch_apply(
+    state: BatchPureFockState, instruction: Instruction, shots: int
+) -> Result:
+    subprograms = instruction._all_params["subprograms"]
+    execute = instruction._all_params["execute"]
+
+    d = state.d
+    calculator = state._calculator
+    config = state._config
+
+    resulting_state_vectors = []
+
+    for state_vector, subprogram in zip(state._batch_state_vectors, subprograms):
+        small_state = PureFockState(d=d, calculator=calculator, config=config)
+
+        small_state._state_vector = state_vector
+
+        resulting_state_vectors.append(
+            execute(subprogram, initial_state=small_state).state._state_vector
+        )
+
+    state._apply_separate_state_vectors(resulting_state_vectors)
+
+    return Result(state=state)
