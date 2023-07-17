@@ -13,9 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .general.state import FockState  # noqa: F401
-from .general.simulator import FockSimulator  # noqa: F401
+from piquasso.api.instruction import Preparation, Gate, BatchInstruction
 
-from .pure.state import PureFockState  # noqa: F401
-from .pure.batch_state import BatchPureFockState  # noqa: F401
-from .pure.simulator import PureFockSimulator  # noqa: F401
+
+class BatchPrepare(Preparation, BatchInstruction):
+    r"""Allows for batch processing of multiple states.
+
+    NOTE: This feature is experimental.
+    """
+
+    def __init__(self, subprograms):
+        super().__init__(params=dict(subprograms=subprograms))
+
+
+class BatchApply(Gate, BatchInstruction):
+    r"""Applies subprograms to each element in the batch.
+
+    NOTE: This feature is experimental.
+    """
+
+    def __init__(self, subprograms):
+        super().__init__(params=dict(subprograms=subprograms))

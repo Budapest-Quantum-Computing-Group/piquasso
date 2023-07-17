@@ -72,20 +72,25 @@ class PureFockState(BaseFockState):
             state_vector_list, dtype=self._config.complex_dtype
         )
 
-    @property
-    def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
+    def _nonzero_elements_for_single_state_vector(
+        self, state_vector: np.ndarray
+    ) -> Generator[Tuple[complex, FockBasis], Any, None]:
         for index, basis in self._space.basis:
-            coefficient: complex = self._state_vector[index]
-            if coefficient != 0:
+            coefficient: complex = state_vector[index]
+            if not np.isclose(coefficient, 0.0):
                 yield coefficient, basis
 
-    def __repr__(self) -> str:
+    @property
+    def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
+        return self._nonzero_elements_for_single_state_vector(self._state_vector)
+
+    def _get_repr_for_single_state_vector(self, nonzero_elements):
         return " + ".join(
-            [
-                str(coefficient) + str(basis)
-                for coefficient, basis in self.nonzero_elements
-            ]
+            [str(coefficient) + str(basis) for coefficient, basis in nonzero_elements]
         )
+
+    def __repr__(self) -> str:
+        return self._get_repr_for_single_state_vector(self.nonzero_elements)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PureFockState):
@@ -161,7 +166,7 @@ class PureFockState(BaseFockState):
                 f"fock_probabilities={self.fock_probabilities}"
             )
 
-    def mean_position(self, mode: int) -> np.ndarray:
+    def _get_mean_position_indices(self, mode):
         fallback_np = self._calculator.fallback_np
 
         left_indices = []
@@ -188,11 +193,16 @@ class PureFockState(BaseFockState):
                 multipliers.append(fallback_np.sqrt(i + 1))
                 right_indices.append(index)
 
-        state_vector = self._state_vector
-
         multipliers = fallback_np.array(multipliers)
 
+        return multipliers, left_indices, right_indices
+
+    def mean_position(self, mode: int) -> np.ndarray:
         np = self._calculator.np
+        fallback_np = self._calculator.fallback_np
+        multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
+
+        state_vector = self._state_vector
 
         accumulator = np.dot(
             (multipliers * np.take(state_vector, left_indices)),

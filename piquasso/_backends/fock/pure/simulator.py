@@ -30,13 +30,15 @@ from .calculations import (
     vacuum,
     create,
     annihilate,
+    batch_prepare,
+    batch_apply,
 )
 
 from ..calculations import attenuator
 
 from piquasso.api.simulator import Simulator
 from piquasso.api.calculator import BaseCalculator
-from piquasso.instructions import preparations, gates, measurements, channels
+from piquasso.instructions import preparations, gates, measurements, channels, batch
 
 from piquasso._backends.calculator import NumpyCalculator
 
@@ -111,6 +113,8 @@ class PureFockSimulator(Simulator):
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
         channels.Attenuator: attenuator,
+        batch.BatchPrepare: batch_prepare,
+        batch.BatchApply: batch_apply,
     }
 
     _calculator_class: Type[BaseCalculator] = NumpyCalculator

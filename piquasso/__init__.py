@@ -38,6 +38,7 @@ from piquasso._backends.gaussian import GaussianState, GaussianSimulator
 from piquasso._backends.fock import (
     FockState,
     PureFockState,
+    BatchPureFockState,
     FockSimulator,
     PureFockSimulator,
 )
@@ -90,6 +91,11 @@ from .instructions.channels import (
     LossyInterferometer,
 )
 
+from .instructions.batch import (
+    BatchPrepare,
+    BatchApply,
+)
+
 
 __all__ = [
     # API
@@ -115,6 +121,7 @@ __all__ = [
     "SamplingState",
     "FockState",
     "PureFockState",
+    "BatchPureFockState",
     # Preparations
     "Vacuum",
     "Mean",
@@ -154,6 +161,9 @@ __all__ = [
     "Attenuator",
     "Loss",
     "LossyInterferometer",
+    # Batch
+    "BatchPrepare",
+    "BatchApply",
 ]
 
 __version__ = "3.0.0"

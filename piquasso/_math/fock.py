@@ -52,6 +52,16 @@ def symmetric_subspace_cardinality(*, d: int, n: int) -> int:
     return comb(d + n - 1, n, exact=True)
 
 
+@functools.lru_cache(maxsize=None)
+def _create_all_fock_basis_elements(d: int, cutoff: int) -> List[Tuple[int, ...]]:
+    ret = []
+
+    for n in range(cutoff):
+        ret.extend(partitions(boxes=d, particles=n, class_=FockBasis))
+
+    return ret
+
+
 class FockBasis(tuple):
     def __str__(self) -> str:
         return self.display(template="|{}>")
@@ -79,19 +89,8 @@ class FockBasis(tuple):
         return sum(self)
 
     @classmethod
-    def create_on_particle_subspace(
-        cls, *, boxes: int, particles: int
-    ) -> List[Tuple[int, ...]]:
-        return partitions(boxes=boxes, particles=particles, class_=cls)
-
-    @classmethod
     def create_all(cls, *, d: int, cutoff: int) -> List[Tuple[int, ...]]:
-        ret = []
-
-        for n in range(cutoff):
-            ret.extend(cls.create_on_particle_subspace(boxes=d, particles=n))
-
-        return ret
+        return _create_all_fock_basis_elements(d, cutoff)
 
     def on_modes(self, *, modes: Tuple[int, ...]) -> "FockBasis":
         return FockBasis(self[mode] for mode in modes)
@@ -444,7 +443,7 @@ class FockSpace(tuple):
         self, n: int, d: Optional[int] = None
     ) -> List[Tuple[int, ...]]:
         d = d or self.d
-        return FockBasis.create_on_particle_subspace(boxes=d, particles=n)
+        return partitions(boxes=d, particles=n, class_=FockBasis)
 
     def symmetric_tensorpower(
         self,
