@@ -42,7 +42,7 @@ def passive_linear(
 
     interferometer: np.ndarray = instruction._get_passive_block(
         state._calculator, state._config
-    ).astype(np.complex128)
+    ).astype(state._config.complex_dtype)
 
     subspace = state._get_subspace(dim=len(interferometer))
 
