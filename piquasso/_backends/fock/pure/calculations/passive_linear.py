@@ -42,7 +42,7 @@ def passive_linear(
 
     interferometer: np.ndarray = instruction._get_passive_block(
         state._calculator, state._config
-    ).astype(np.complex128)
+    ).astype(state._config.complex_dtype)
 
     subspace = state._get_subspace(dim=len(interferometer))
 
@@ -318,7 +318,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                         "ij,ij", upstream[i], fallback_np.conj(subspace_grad[i])
                     )
 
-        return calculator.np.array(full_kl_grad)
+        return calculator.np.array(full_kl_grad, dtype=interferometer.dtype)
 
     return interferometer_gradient
 
