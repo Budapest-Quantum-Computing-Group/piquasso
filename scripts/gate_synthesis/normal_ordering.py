@@ -30,7 +30,10 @@ def normal_polynomial_text(order: int) -> str:
     return poly + normal_polynomial_text(order-1)
 
 
-def generate_random_normal_polynomial_coeffs(order: int) -> list:
+def generate_random_normal_polynomial_coeffs(order: int, seed=None) -> list:
+    if seed is not None:
+        np.random.seed(seed)
+
     if order == 0:
         return [np.random.uniform(0, 1, 1).item()]
 
@@ -54,14 +57,25 @@ def generate_random_normal_polynomial_coeffs(order: int) -> list:
     return poly
 
 
-def normal_polynomial(order: int, cutoff: int) -> str:
+def generate_all_random_normal_polynomial_coeffs(order: int, seed=None) -> list:
+    """
+    Same as above but calculates every single coefficient recursively, rather than for just one order
+    """
+
+    if order < 0:
+        return []
+
+    coeff = generate_random_normal_polynomial_coeffs(order, seed)
+    return coeff + generate_all_random_normal_polynomial_coeffs(order-1, seed)
+
+def normal_polynomial(order: int, cutoff: int, seed=None) -> str:
 
     if order == 0:
-        return generate_random_normal_polynomial_coeffs(order) * np.identity(cutoff, dtype=np.complex128)
+        return generate_random_normal_polynomial_coeffs(order, seed) * np.identity(cutoff, dtype=np.complex128)
 
     nth_order_terms = np.zeros((cutoff, cutoff), dtype=np.complex128)
 
-    coeffs = generate_random_normal_polynomial_coeffs(order)
+    coeffs = generate_random_normal_polynomial_coeffs(order, seed)
 
     for i in range(order+1):
         creation_op = creation_operator(cutoff)
@@ -73,18 +87,23 @@ def normal_polynomial(order: int, cutoff: int) -> str:
 
         nth_order_terms += coeffs[i] * (creation_power @ annihilation_power)
 
-    return nth_order_terms + normal_polynomial(order-1, cutoff)
+    return nth_order_terms + normal_polynomial(order-1, cutoff, seed)
 
 
-def generate_unitary(order: int, cutoff: int):
-    return scipy.linalg.expm(1j*normal_polynomial(order, cutoff))
+def generate_unitary(order: int, cutoff: int, seed=None):
+    return scipy.linalg.expm(1j*normal_polynomial(order, cutoff, seed))
 
 
 if __name__ == "__main__":
     while True:
         cutoff = 5
+        seed = 3
         order = int(input())
-        unitary = generate_unitary(order, cutoff)
-        self_multiplication = unitary @ np.conj(unitary).T
-        assert np.allclose(self_multiplication, np.identity(cutoff))
-        print(self_multiplication)
+        coeffs = generate_all_random_normal_polynomial_coeffs(order, seed)
+        print(coeffs)
+        coeffs = generate_all_random_normal_polynomial_coeffs(order, seed)
+        print(coeffs)
+        #unitary = generate_unitary(order, cutoff)
+        #self_multiplication = unitary @ np.conj(unitary).T
+        #assert np.allclose(self_multiplication, np.identity(cutoff))
+        #print(self_multiplication)
