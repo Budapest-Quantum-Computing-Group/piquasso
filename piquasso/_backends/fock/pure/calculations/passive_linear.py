@@ -318,7 +318,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                         "ij,ij", upstream[i], fallback_np.conj(subspace_grad[i])
                     )
 
-        return calculator.np.array(full_kl_grad)
+        return calculator.np.array(full_kl_grad, dtype=interferometer.dtype)
 
     return interferometer_gradient
 
