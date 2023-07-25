@@ -26,10 +26,12 @@ def experimental_cost(target_matrix, result_matrix):
 def norm1_cost(target_matrix, result_matrix):
     return tf.cast(tf.reduce_sum(tf.math.abs(target_matrix - result_matrix)), dtype=np.float32)
 
+@tf.function
 def identity_cost(target_matrix, result_matrix):
     """
     Eq. 9 in https://arxiv.org/pdf/1807.10781.pdf
     """
+
     cost = 0
     self_multiplication = target_matrix @ np.conj(result_matrix).T
 
@@ -93,6 +95,7 @@ def approximate_hamiltonian_unitary_cvnn(unitary, number_of_steps, number_of_lay
                 displacement_matrix = fock_space.get_single_mode_displacement_operator(r=layer_params[3+j*number_of_params], phi=0)
                 kerr_matrix = get_single_mode_kerr_matrix(layer_params[4+j*number_of_params])
                 # Lookup tf.einsum
+                # Reverse order
                 result_matrix = result_matrix @ phase_shifter_1_matrix @ squeezing_matrix @ phase_shifter_2_matrix @ displacement_matrix @ kerr_matrix
         # TODO: Tensorboard benchmarking
             # Somehow use the cost to adjust the model.
