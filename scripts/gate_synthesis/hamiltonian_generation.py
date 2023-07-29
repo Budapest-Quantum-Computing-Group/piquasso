@@ -52,6 +52,7 @@ hbar = 2.0
 m = 1
 omega = 1
 
+
 def create_creation_operator_matrix(size: int) -> np.ndarray:
     elements = np.sqrt(np.arange(1, size))
     return np.diag(elements, -1)
@@ -63,13 +64,19 @@ def create_annihilation_operator_matrix(size: int) -> np.ndarray:
 
 
 def create_position_operator_matrix(size: int) -> np.ndarray:
-    coeff = np.sqrt(hbar/(2*m*omega))
-    return coeff*(create_creation_operator_matrix(size) + create_annihilation_operator_matrix(size))
+    coeff = np.sqrt(hbar / (2 * m * omega))
+    return coeff * (
+        create_creation_operator_matrix(size)
+        + create_annihilation_operator_matrix(size)
+    )
 
 
 def create_momentum_operator_matrix(size: int) -> np.ndarray:
-    coeff = 1j*np.sqrt(hbar/(2*m*omega))
-    return coeff*(create_creation_operator_matrix(size) - create_annihilation_operator_matrix(size))
+    coeff = 1j * np.sqrt(hbar / (2 * m * omega))
+    return coeff * (
+        create_creation_operator_matrix(size)
+        - create_annihilation_operator_matrix(size)
+    )
 
 
 def find_index_path(index: int, rank: int) -> list:
@@ -83,7 +90,7 @@ def find_index_path(index: int, rank: int) -> list:
             direction_list.append(index == start)
             return direction_list
 
-        midpoint = math.floor((start + end)/2)
+        midpoint = math.floor((start + end) / 2)
 
         if index > midpoint:
             start = midpoint + 1
@@ -109,7 +116,7 @@ def find_conjugate_index(index: int, rank: int) -> int:
     direction_list.reverse()
 
     for i in range(rank):
-        midpoint = math.floor((start + end)/2)
+        midpoint = math.floor((start + end) / 2)
 
         if direction_list[i]:
             end = midpoint
@@ -125,8 +132,10 @@ def find_conjugate_index(index: int, rank: int) -> int:
 
 def generate_polynomial_of_rank(rank: int):
     # NOTE: Rank indexing does not start from 0. For future usage see `generate_polynomial`
-    coeff_amount = 2**(rank)
-    coeff_array = np.sqrt(np.random.uniform(0, 1, coeff_amount)) * np.exp(1.j * np.random.uniform(0, 2 * np.pi, coeff_amount))
+    coeff_amount = 2 ** (rank)
+    coeff_array = np.sqrt(np.random.uniform(0, 1, coeff_amount)) * np.exp(
+        1.0j * np.random.uniform(0, 2 * np.pi, coeff_amount)
+    )
 
     for j in range(coeff_amount):
         conjugate_index = find_conjugate_index(j, rank)
@@ -141,9 +150,9 @@ def generate_polynomial_of_rank(rank: int):
 
 def generate_polynomial(rank: int) -> list:  # Extreme prototype
     full_coeffs = []
-    full_coeffs.append(np.array(np.random.default_rng().random())) # Constant term
+    full_coeffs.append(np.array(np.random.default_rng().random()))  # Constant term
 
-    for i in range(1, rank-1):
+    for i in range(1, rank - 1):
         full_coeffs.append(generate_polynomial_of_rank(i + 1))
 
     return full_coeffs
@@ -156,7 +165,7 @@ def is_self_adjoint_coeffs(coeffs: list) -> bool:
 
         if idx == 0:
             if array != np.conjugate(array):
-                return False # len() failes on ndarray of size 1, and this is the constant value
+                return False  # len() failes on ndarray of size 1, and this is the constant value
             continue
 
         for i in range(len(array)):
@@ -169,7 +178,13 @@ def is_self_adjoint_coeffs(coeffs: list) -> bool:
     return True
 
 
-def calculate_polynomial_term_matrix(coefficient, index: int, rank: int, position_op: np.ndarray=None, momentum_op: np.ndarray=None) -> np.ndarray:
+def calculate_polynomial_term_matrix(
+    coefficient,
+    index: int,
+    rank: int,
+    position_op: np.ndarray = None,
+    momentum_op: np.ndarray = None,
+) -> np.ndarray:
     if position_op is None:
         position_op = create_position_operator_matrix(cutoff)
     if momentum_op is None:
@@ -194,7 +209,7 @@ def create_quantum_gate(coeffs: list) -> np.ndarray:
         return gate
 
     for i, array in enumerate(coeffs):
-        if i == 0:  #0d array error
+        if i == 0:  # 0d array error
             gate += array
         else:
             for j, coeff in enumerate(array):
@@ -202,29 +217,29 @@ def create_quantum_gate(coeffs: list) -> np.ndarray:
 
     assert np.all(np.isclose(gate - np.conj(gate).T, np.zeros(cutoff)))
 
-    return scipy.linalg.expm(1j*gate)
+    return scipy.linalg.expm(1j * gate)
 
 
 # Dummy debug function for printing
 def create_combinations(rank: int, perm: str):
     if rank == 0:
         symmetric = True
-        for i in range(int(len(perm)/2)):
-            symmetric = symmetric and perm[i] == perm[len(perm)-i-1]
+        for i in range(int(len(perm) / 2)):
+            symmetric = symmetric and perm[i] == perm[len(perm) - i - 1]
         if symmetric:
             # print(create_combinations.index, perm)
             create_combinations.symm_count += 1
         create_combinations.index += 1
         print(create_combinations.index, perm)
     else:
-        create_combinations(rank-1, perm+"x")
-        create_combinations(rank-1, perm+"p")
+        create_combinations(rank - 1, perm + "x")
+        create_combinations(rank - 1, perm + "p")
 
 
 create_combinations.index = 0
 create_combinations.symm_count = 0
-create_combinations(rank,"")
+create_combinations(rank, "")
 print(create_combinations.symm_count)
-#print(is_self_adjoint_coeffs(generate_polynomial(rank)))
+# print(is_self_adjoint_coeffs(generate_polynomial(rank)))
 gate = create_quantum_gate(generate_polynomial(rank))
 print(gate)
