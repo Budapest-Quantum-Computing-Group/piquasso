@@ -38,26 +38,25 @@ def create_single_mode_displacement_gradient(
         row_rolled_transformation = np.roll(transformation, 1, axis=0)
         col_rolled_transformation = np.roll(transformation, 1, axis=1)
 
+        row_term = (row_sqrts * row_rolled_transformation.T).T
+        col_term = col_sqrts * col_rolled_transformation
+
         # NOTE: This algorithm rolls the last elements of the transormation matrix to
         # the 0th place, but the 0th element of `row_sqrts` and `col_sqrts` is always
         # zero, so it is fine.
-        phi_grad = (
-            row_sqrts * row_rolled_transformation.T
-        ).T + col_sqrts * col_rolled_transformation
+        phi_grad = (row_term + col_term) * r * 1j
 
-        r_grad = phi_grad - r * transformation
-
-        phi_grad *= r * 1j
+        r_grad = -r * transformation + row_term - col_term
 
         tf = calculator._tf
         static_valued = tf.get_static_value(upstream) is not None
 
         if static_valued:
             upstream = upstream.numpy()
-            r_grad_sum = tf.constant(np.real(np.sum(upstream * r_grad)))
+            r_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(r_grad))))
             phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
         else:
-            r_grad_sum = tf.math.real(tf.reduce_sum(upstream * r_grad))
+            r_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad)))
             phi_grad_sum = tf.math.real(
                 tf.reduce_sum(upstream * tf.math.conj(phi_grad))
             )
@@ -76,11 +75,12 @@ def create_single_mode_squeezing_gradient(
 ) -> Callable:
     def squeezing_matrix_gradient(upstream):
         np = calculator.fallback_np
+        tf = calculator._tf
 
         sechr = 1 / np.cosh(r)
         tanhr = np.tanh(r)
 
-        index_sqrts = np.sqrt(range(cutoff))
+        index_sqrts = np.sqrt(np.arange(cutoff, dtype=np.complex128))
 
         falling_index_sqrts = index_sqrts * np.roll(index_sqrts, 1)
 
@@ -90,33 +90,29 @@ def create_single_mode_squeezing_gradient(
         row_rolled_transformation = np.roll(transformation, 2, axis=0)
         col_rolled_transformation = np.roll(transformation, 2, axis=1)
 
+        row_term = (row_sqrts * row_rolled_transformation.T).T
+        col_term = col_sqrts * col_rolled_transformation
+
         # NOTE: This algorithm rolls the last and penultimate elements of the
         # transormation matrix to the 1st and 0th place, but the 0th and 1st element of
         # `row_sqrts` and `col_sqrts` is always zero, so it is fine.
-        phi_grad = (
-            row_sqrts * row_rolled_transformation.T
-        ).T + col_sqrts * col_rolled_transformation
+        phi_grad = -0.5j * tanhr * (row_term + col_term)
 
         diagonally_rolled_transformation = np.roll(transformation, (1, 1), axis=(0, 1))
 
-        r_grad = -(
-            tanhr / 2 * transformation
-            + (sechr**2) / 2 * phi_grad
-            + np.outer(index_sqrts, index_sqrts)
-            * sechr
-            * tanhr
+        r_grad = (
+            (-tanhr * 0.5) * transformation
+            - (sechr * tanhr)
+            * np.outer(index_sqrts, index_sqrts)
             * diagonally_rolled_transformation
+            - (sechr**2 * 0.5) * (row_term - col_term)
         )
-
-        phi_grad *= -tanhr / 2 * 1j
-
-        tf = calculator._tf
 
         static_valued = tf.get_static_value(upstream) is not None
 
         if static_valued:
             upstream = upstream.numpy()
-            r_grad_sum = tf.constant(np.real(np.sum(upstream * r_grad)))
+            r_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(r_grad))))
             phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
         else:
             # NOTE: Possibly Tensorflow bug, cast needed.
@@ -124,7 +120,7 @@ def create_single_mode_squeezing_gradient(
             #  a double tensor but is a float tensor [Op:AddN].
             # The bug does not occur with Displacement gradient for unknown reasons.
             r_grad_sum = tf.cast(
-                tf.math.real(tf.reduce_sum(upstream * r_grad)), tf.float32
+                tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad))), np.float32
             )
             phi_grad_sum = tf.math.real(
                 tf.reduce_sum(upstream * tf.math.conj(phi_grad))
