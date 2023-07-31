@@ -516,11 +516,11 @@ def _create_linear_passive_gate_gradient_function(
         order_by = []
 
         gradient_by_matrix = []
-
+        conjugated_state_vector = np.conj(state_vector)
         for n, indices in enumerate(index_list):
-            matrix = subspace_transformations[n]
+            matrix = np.conj(subspace_transformations[n])
             sliced_upstream = np.take(upstream, indices)
-            state_vector_slice = state_vector[indices]
+            state_vector_slice = conjugated_state_vector[indices]
 
             order_by.append(indices.reshape(-1))
             product = np.einsum("ij, jk->ik", matrix, sliced_upstream)
@@ -646,13 +646,15 @@ def _create_linear_active_gate_gradient_function(
 
         gradient_by_matrix = np.zeros(shape=(cutoff, cutoff), dtype=state_vector.dtype)
 
+        conjugated_matrix = np.conj(matrix)
+        conjugated_state_vector = np.conj(state_vector)
         for indices in state_index_matrix_list:
             limit = indices.shape[0]
 
             upstream_slice = np.take(upstream, indices)
-            state_vector_slice = state_vector[indices]
+            state_vector_slice = conjugated_state_vector[indices]
 
-            matrix_slice = matrix[:limit, :limit]
+            matrix_slice = conjugated_matrix[:limit, :limit]
 
             order_by.append(indices.reshape(-1))
             unordered_gradient_by_initial_state.append(
