@@ -1,3 +1,18 @@
+#
+# Copyright 2021-2023 Budapest Quantum Computing Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import time
 
@@ -10,17 +25,16 @@ cuda = sys_details["cuda_version"]
 cudnn = sys_details["cudnn_version"]
 print(cuda, cudnn)
 
-gpu_start = time.time()
 
-a_gpu = tf.random.uniform((15000, 15000))
-b_gpu = tf.random.uniform((15000, 15000))
+a_gpu = tf.random.uniform((1500, 1500))
+b_gpu = tf.random.uniform((1500, 1500))
+gpu_start = time.time()
 c_gpu = tf.matmul(a_gpu, b_gpu)
 # print(c_gpu)
 print(time.time() - gpu_start)
-# cpu_start = time.time()
-# with tf.device('/CPU:0'):
-#    a_cpu =  tf.random.uniform((15000, 15000))
-#    b_cpu =  tf.random.uniform((15000, 15000))
-#    c_cpu = tf.matmul(a_cpu, b_cpu)
-# print(c_cpu)
-# print(time.time()-cpu_start)
+with tf.device("/CPU:0"):
+    a_cpu = tf.random.uniform((1500, 1500))
+    b_cpu = tf.random.uniform((1500, 1500))
+    cpu_start = time.time()
+    c_cpu = tf.matmul(a_cpu, b_cpu)
+    print(time.time() - cpu_start)

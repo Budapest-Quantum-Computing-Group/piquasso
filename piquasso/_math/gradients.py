@@ -49,17 +49,10 @@ def create_single_mode_displacement_gradient(
         r_grad = -r * transformation + row_term - col_term
 
         tf = calculator._tf
-        static_valued = tf.get_static_value(upstream) is not None
-
-        if static_valued:
-            upstream = upstream.numpy()
-            r_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(r_grad))))
-            phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
-        else:
-            r_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad)))
-            phi_grad_sum = tf.math.real(
-                tf.reduce_sum(upstream * tf.math.conj(phi_grad))
-            )
+        r_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad)))
+        phi_grad_sum = tf.math.real(
+            tf.reduce_sum(upstream * tf.math.conj(phi_grad))
+        )
 
         return (r_grad_sum, phi_grad_sum)
 
@@ -108,23 +101,14 @@ def create_single_mode_squeezing_gradient(
             - (sechr**2 * 0.5) * (row_term - col_term)
         )
 
-        static_valued = tf.get_static_value(upstream) is not None
-
-        if static_valued:
-            upstream = upstream.numpy()
-            r_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(r_grad))))
-            phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
-        else:
-            # NOTE: Possibly Tensorflow bug, cast needed.
-            # cannot compute AddN as input #1(zero-based) was expected to be\
-            #  a double tensor but is a float tensor [Op:AddN].
-            # The bug does not occur with Displacement gradient for unknown reasons.
-            r_grad_sum = tf.cast(
-                tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad))), np.float32
-            )
-            phi_grad_sum = tf.math.real(
-                tf.reduce_sum(upstream * tf.math.conj(phi_grad))
-            )
+        # NOTE: Possibly Tensorflow bug, cast needed.
+        # cannot compute AddN as input #1(zero-based) was expected to be\
+        #  a double tensor but is a float tensor [Op:AddN].
+        # The bug does not occur with Displacement gradient for unknown reasons.
+        r_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad)))
+        phi_grad_sum = tf.math.real(
+            tf.reduce_sum(upstream * tf.math.conj(phi_grad))
+        )
 
         return (r_grad_sum, phi_grad_sum)
 
