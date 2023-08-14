@@ -34,7 +34,7 @@ dtype = np.complex128
 
 ## Unitary ##
 degree = 5  # of Hamiltonian
-number_of_unitaries = 2
+number_of_unitaries = 10
 gate_cutoff = 4
 seed = None
 
@@ -42,7 +42,7 @@ seed = None
 isProfiling = False
 number_of_datapacks = 1
 number_of_cvnn_layers = 15
-number_of_cvnn_steps = 250
+number_of_cvnn_steps = 200
 cvnn_tolerance = 0.05
 cvnn_learning_rate = 0.05
 cvnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cvnn_learning_rate)
@@ -118,7 +118,7 @@ def benchmark_cvnn():
     sum_time = 0
     for i in range(number_of_unitaries):
         start_time = time.time()
-        cvnn_approximator.benchmark_gradient(random_kets[i])
+        cvnn_approximator.benchmark_two_gradients(random_kets[i])
         sum_time += time.time() - start_time
 
     print(
@@ -189,5 +189,5 @@ def save_datapack_result(data_to_save):
 
 
 if __name__ == "__main__":
-    main_task()
-    # benchmark_cvnn()
+    # main_task()
+    benchmark_cvnn()

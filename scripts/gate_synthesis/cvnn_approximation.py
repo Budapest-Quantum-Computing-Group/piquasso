@@ -71,7 +71,7 @@ class CVNNApproximator:
 
         with tf.GradientTape() as tape:
             cost, _ = self._cost_function(
-                target_kets, self._calculate_unitary_with_cvnn_1
+                target_kets, self._calculate_unitary_with_cvnn_default
             )
 
         print("Calculation took {} seconds".format(time.time() - start_time))
@@ -95,8 +95,8 @@ class CVNNApproximator:
         start_time = time.time()
 
         with tf.GradientTape() as tape1:
-            cost1, _ = self._cost_function(
-                target_kets, self._calculate_unitary_with_cvnn_default
+            cost1, ket_val1 = self._cost_function(
+                target_kets, self._calculate_unitary_with_cvnn_1
             )
         print("Calculation 1 took {} seconds".format(time.time() - start_time))
 
@@ -110,8 +110,8 @@ class CVNNApproximator:
         start_time = time.time()
 
         with tf.GradientTape() as tape2:
-            cost2, _ = self._cost_function(
-                target_kets, self._calculate_unitary_with_cvnn_1
+            cost2, ket_val2 = self._cost_function(
+                target_kets, self._calculate_unitary_with_cvnn_default
             )
         print("Calculation 2 took {} seconds".format(time.time() - start_time))
 
@@ -119,7 +119,8 @@ class CVNNApproximator:
         gradients2 = tape2.gradient(cost2, self._weights)
         self._optimizer.apply_gradients(zip([gradients2], [self._weights]))
         print("Gradient 2 took {} seconds".format(time.time() - start_time))
-
+        assert np.allclose(gradients1, gradients2)
+        assert np.allclose(ket_val1, ket_val2)
         if self._isProfiling:
             tf.profiler.experimental.stop()
 
@@ -174,7 +175,7 @@ class CVNNApproximator:
 
     def _cost_function(self, target_kets, cvnn_calculator):
         unitary = cvnn_calculator()
-        ket = unitary[:, : self._gate_cutoff].T
+        ket = tf.transpose(unitary[:, : self._gate_cutoff])
         overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(target_kets), ket))
         cost = tf.abs(tf.reduce_sum(overlaps - 1))
 
@@ -229,31 +230,30 @@ class CVNNApproximator:
     def _calculate_unitary_with_cvnn_1(self):
         result_matrix = np.identity(self._cutoff, dtype=self._dtype)
 
-        piquasso_gate_creator = gates_and_gradients.PiquassoGateCreator()
-        tf_gate_creator = gates_and_gradients.PureTensorFlowGateCreator()
+        tf_func_gate_creator = gates_and_gradients.TensorFlowFunctionGateCreator()
         for j in range(self._number_of_layers):
 
-            phase_shifter_1_matrix = tf_gate_creator.get_single_mode_phase_shift_matrix(
+            phase_shifter_1_matrix = tf_func_gate_creator.get_single_mode_phase_shift_matrix(
                 self._weights[j, 0]
             )
 
             squeezing_matrix = (
-                piquasso_gate_creator._fock_space.get_single_mode_squeezing_operator(
+                tf_func_gate_creator.get_single_mode_squeezing_operator(
                     r=self._weights[j, 1], phi=self._weights[j, 2]
                 )
             )
 
-            phase_shifter_2_matrix = tf_gate_creator.get_single_mode_phase_shift_matrix(
+            phase_shifter_2_matrix = tf_func_gate_creator.get_single_mode_phase_shift_matrix(
                 self._weights[j, 3]
             )
 
             displacement_matrix = (
-                piquasso_gate_creator._fock_space.get_single_mode_displacement_operator(
+                tf_func_gate_creator.get_single_mode_displacement_operator(
                     r=self._weights[j, 4], phi=self._weights[j, 5]
                 )
             )
 
-            kerr_matrix = tf_gate_creator.get_single_mode_kerr_matrix(
+            kerr_matrix = tf_func_gate_creator.get_single_mode_kerr_matrix(
                 self._weights[j, 6]
             )
 
