@@ -192,6 +192,27 @@ class PureTensorFlowGateCreator:
 
         return transformation, get_single_mode_kerr_matrix_grad
 
+
+class TensorFlowFunctionGateCreator:
+    def __init__(self, cutoff=12, dtype=tf.complex128):
+        self._cutoff = cutoff
+        self._dtype = dtype
+
+
+    def get_single_mode_squeezing_operator(self, params):
+        return get_single_mode_squeezing_operator_tf_func_decorator(params[0], params[1], self._cutoff)
+
+    def get_single_mode_displacement_operator(self, params):
+        return get_single_mode_displacement_operator_tf_func_decorator(params[0], params[1], self._cutoff)
+
+    def get_single_mode_phase_shift_matrix(self, phi):
+        return get_single_mode_phase_shift_matrix_tf_func_decorator(phi, self._cutoff)
+
+    def get_single_mode_kerr_matrix(self, kappa):
+        return get_single_mode_kerr_matrix_tf_func_decorator(kappa, self._cutoff)
+
+
+##### FUNCTION TO CALL INSIDE THE CLASSES ######
 @tf.function(jit_compile=True)
 def get_single_mode_squeezing_operator_tf_func_decorator(r, phi, cutoff):
     phi = tf.cast(phi, tf.complex128)
@@ -199,7 +220,7 @@ def get_single_mode_squeezing_operator_tf_func_decorator(r, phi, cutoff):
     sechr = 1.0 / tf.math.cosh(r)
     A = tf.math.exp(1j * phi) * tf.math.tanh(r)
     a_conj = tf.math.conj(A)
-    transformation = [[0j for _ in range(cutoff)] for _ in range(cutoff)]
+    transformation = [[tf.consant(0j) for _ in range(cutoff)] for _ in range(cutoff)]
     transformation[0][0] = tf.math.sqrt(sechr)
 
     fock_indices = tf.math.sqrt(tf.cast(tf.range(cutoff, dtype=tf.float64), tf.complex128))
@@ -227,7 +248,7 @@ def get_single_mode_squeezing_operator_tf_func_decorator(r, phi, cutoff):
                     )
                 )
 
-    return transformation
+    return tf.convert_to_tensor(transformation)
 
 @tf.function(jit_compile=True)
 def get_single_mode_displacement_operator_tf_func_decorator(r, phi, cutoff):
@@ -252,7 +273,7 @@ def get_single_mode_displacement_operator_tf_func_decorator(r, phi, cutoff):
                 fock_indices[row] / fock_indices[col] * transformation[row - 1][col - 1]
             )
 
-    return transformation
+    return tf.convert_to_tensor(transformation)
 
 @tf.function(jit_compile=True)
 def get_single_mode_kerr_matrix_tf_func_decorator(kappa, cutoff):
@@ -261,29 +282,9 @@ def get_single_mode_kerr_matrix_tf_func_decorator(kappa, cutoff):
     )
     return tf.linalg.diag(coefficients)
 
-
 @tf.function(jit_compile=True)
 def get_single_mode_phase_shift_matrix_tf_func_decorator(phi, cutoff):
     coefficients = tf.math.exp(
         1j * tf.cast(phi, tf.complex128) * tf.cast(tf.range(cutoff), tf.complex128)
     )
     return tf.linalg.diag(coefficients)
-
-
-class TensorFlowFunctionGateCreator:
-    def __init__(self, cutoff=12, dtype=tf.complex128):
-        self._cutoff = cutoff
-        self._dtype = dtype
-
-
-    def get_single_mode_squeezing_operator(self, r, phi):
-        return get_single_mode_squeezing_operator_tf_func_decorator(r, phi, self._cutoff)
-
-    def get_single_mode_displacement_operator(self, r, phi):
-        return get_single_mode_displacement_operator_tf_func_decorator(r, phi, self._cutoff)
-
-    def get_single_mode_phase_shift_matrix(self, phi):
-        return get_single_mode_phase_shift_matrix_tf_func_decorator(phi, self._cutoff)
-
-    def get_single_mode_kerr_matrix(self, kappa):
-        return get_single_mode_kerr_matrix_tf_func_decorator(kappa, self._cutoff)
