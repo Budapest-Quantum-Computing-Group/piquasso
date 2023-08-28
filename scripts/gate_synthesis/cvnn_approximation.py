@@ -154,6 +154,7 @@ class CVNNApproximator:
 
         return costs, weights_list
 
+
     def _perform_machine_learning(self, target_kets):
         cost = min_cost = sys.maxsize - 1
         best_cvnn_weights = None
@@ -192,7 +193,9 @@ class CVNNApproximator:
 
         return cost, ket
 
-    def _calculate_unitary_with_cvnn_default(self):
+    def _calculate_unitary_with_cvnn_default(self, weights=None):
+        if weights is not None:
+            self._weights = weights
         result_matrix = np.identity(self._cutoff, dtype=self._dtype)
 
         gate_creator = gates_and_gradients.AutoGradGateCreator()
@@ -313,7 +316,6 @@ class CVNNApproximator:
 
         #new_vectorized_result_matrix = tf.einsum("iab,ibc->ac", vectorized_result_matrix, vectorized_result_matrix)
         #new_vectorized_result_matrix = np.linalg.multi_dot(vectorized_result_matrix)
-        #breakpoint()
         result_matrix = tf.linalg.eye(self._cutoff, dtype=self._dtype)
         for i in range(self._number_of_layers):
             result_matrix = tf.matmul(result_matrix, vectorized_result_matrix[i])

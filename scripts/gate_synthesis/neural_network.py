@@ -19,9 +19,13 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Reshape
+from tensorflow.python.keras.layers import Dense, Reshape, Dropout
+from tensorflow.python.keras.optimizers import adam_v2, gradient_descent_v2
+import tensorflow.python.keras.regularizers as regularizers
 import json
 
+tf.random.set_seed(42)
+tf.keras.utils.set_random_seed(42)
 np.set_printoptions(suppress=True, linewidth=200)
 
 
@@ -35,6 +39,10 @@ def read_data(path: str):
     target_coeffs = data["target_coeffs"]
     cvnn_weights = data["cvnn_weights"]
 
+    min_costs = data["min_cost"]
+
+    print("Mean min cost in ", path, np.mean(min_costs))
+
     target_coeffs = eval(
         "np.array(" + target_coeffs + ")"
     )  # (unitary_amount, order_dependend)
@@ -46,11 +54,18 @@ def read_data(path: str):
 
 
 def matching_general_info(info1: dict, info2: dict):
-    return (
-        info1["number_of_layers"] == info2["number_of_layers"]
-        and info1["hamiltonian_order"] == info2["hamiltonian_order"]
-        and info1["gate_cutoff"] == info2["gate_cutoff"]
-    )
+    matching_number_of_layers = info1["number_of_layers"] == info2["number_of_layers"]
+    matching_gate_cutoff = info1["gate_cutoff"] == info2["gate_cutoff"]
+    if "hamiltonian_order" in info1 and "hamiltonian_order" in info2:
+        matching_degree = info1["hamiltonian_order"] == info2["hamiltonian_order"]
+    if "hamiltonian_order" in info1 and "hamiltonian_degree" in info2:
+        matching_degree = info1["hamiltonian_order"] == info2["hamiltonian_degree"]
+    if "hamiltonian_degree" in info1 and "hamiltonian_order" in info2:
+        matching_degree = info1["hamiltonian_degree"] == info2["hamiltonian_order"]
+    elif "hamiltonian_degree" in info1 and "hamiltonian_degree" in info2:
+        matching_degree = info1["hamiltonian_degree"] == info2["hamiltonian_degree"]
+
+    return matching_number_of_layers and matching_degree and matching_gate_cutoff
 
 
 def read_all_data(path: str, aslist: bool = False):
@@ -75,12 +90,10 @@ def read_all_data(path: str, aslist: bool = False):
 
     for i in range(1, len(general_info_list)):
         if not matching_general_info(general_info_list[i - 1], general_info_list[i]):
-            breakpoint()
             return None
 
     if aslist:
         return target_coeffs_list, cvnn_weights_list
-
     target_coeffs_array = np.vstack(target_coeffs_list)
     cvnn_weights_array = np.vstack(cvnn_weights_list)
 
@@ -88,7 +101,7 @@ def read_all_data(path: str, aslist: bool = False):
 
 
 def split_data(
-    data, train_ratio: float = 0.6, val_ratio: float = 0.3, test_ratio: float = 0.1
+    data, train_ratio: float = 0.7, val_ratio: float = 0.2, test_ratio: float = 0.1
 ):
 
     if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
@@ -109,30 +122,49 @@ def split_data(
     return train_data, val_data, test_data
 
 
-def create_model(input_size: int, output_size: int, loss="mse", optimizer="adam"):
+def create_model(input_size: int, output_size: int, loss="mse", optimizer="sgd"):
 
-    model = Sequential()
     output_product = output_size[0] * output_size[1]
-    model.add(Dense(units=16 * input_size, activation="relu", input_dim=input_size))
-    model.add(Dense(units=32 * input_size, activation="relu"))
-    model.add(Dense(units=64 * input_size, activation="relu"))
-    model.add(Dense(units=32 * input_size, activation="relu"))
-    model.add(Dense(units=16 * input_size, activation="relu"))
+    print("INPUTSIZE:", input_size)
+    print("OUTPUTPRODUCT:", output_product)
+    print("OUTPUTSIZE:", output_size)
+    optimizer = gradient_descent_v2.SGD(learning_rate=0.1)
+    kernel_regularizer=regularizers.l2(0.1)
+    kernel_regularizer=None
+    optimizer = adam_v2.Adam(learning_rate=0.001)
+    model = Sequential()
+    model.add(Dense(units=50 * input_size, activation="relu", input_dim=input_size))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    #model.add(Dropout(0.2))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    #model.add(Dropout(0.2))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    #model.add(Dropout(0.2))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
+    #model.add(Dropout(0.2))
+    model.add(Dense(units=30 * input_size, activation="relu"))
+    model.add(Dense(units=50 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
     model.add(Dense(units=output_product, activation="linear"))
     model.add(Reshape(output_size))
-    model.compile(loss=loss, optimizer=optimizer, metrics="accuracy")
+    model.compile(loss=loss, optimizer=optimizer)
 
     return model
 
 
-def train_model(path, epochs, batch_size):
+def train_model(path, epochs, batch_size, loss="mse", optimizer="adam"):
 
-    x_data, y_data = read_all_data("./scripts/gate_synthesis/cvnn_approximations/")
-    # x_train, y_train = read_all_data( "./scripts/gate_synthesis/cvnn_approximations/")
+    x_data, y_data = read_all_data(path)
+    # x_train, y_train = read_all_data(path)
     x_train, x_val, x_test = split_data(x_data)
     y_train, y_val, y_test = split_data(y_data)
 
-    model = create_model(x_train.shape[1], y_train[0].shape)
+    model = create_model(x_train.shape[1], y_train[0].shape, loss=loss, optimizer=optimizer)
     print(model.summary())
 
     history = model.fit(
@@ -142,25 +174,23 @@ def train_model(path, epochs, batch_size):
         epochs=epochs,
         batch_size=batch_size,
     )
-    # history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
-
     print("FINISHED")
+    return model, x_train, y_train
 
 
-def test_model(path, epochs, batch_size):
+def test_model(path, epochs, batch_size, loss="mse", optimizer="adam"):
 
     x_train_list, y_train_list = read_all_data(
-        "./scripts/gate_synthesis/cvnn_approximations/", aslist=True
+        path, aslist=True
     )
 
     for i in range(len(x_train_list)):
-        model = create_model(x_train_list[i].shape[1], y_train_list[i][0].shape)
-
+        model = create_model(x_train_list[i].shape[1], y_train_list[i][0].shape, loss, optimizer)
         print(model.summary())
         history = model.fit(
             x_train_list[i], y_train_list[i], epochs=epochs, batch_size=batch_size
         )
-
+        return model, x_train_list[i], y_train_list[i]
         breakpoint()
 
     print("FINISHED")
@@ -168,7 +198,9 @@ def test_model(path, epochs, batch_size):
 
 if __name__ == "__main__":
     # TODO: Generate even more data.
+    epochs = 1000
+    batch_size = 128
     train_model(
-        "./scripts/gate_synthesis/cvnn_approximations/", epochs=200, batch_size=32
+        "./scripts/gate_synthesis/cvnn_approximations/", epochs=epochs, batch_size=batch_size
     )
-    # test_model("./scripts/gate_synthesis/cvnn_approximations/", epochs=200, batch_size=32)
+    #test_model("./scripts/gate_synthesis/cvnn_approximations/", epochs=epochs, batch_size=batch_size)

@@ -12,175 +12,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import sys
-import time
-
-import numpy as np
 import tensorflow as tf
-
-import neural_network, cvnn_approximation, persistence, unitary_generation
-
-# If system does not do it automatically
-sys.path.append(".")
-tf.debugging.disable_traceback_filtering()
-### Initialize hyperparameters ###
-np.set_printoptions(suppress=True, linewidth=200, threshold=sys.maxsize)
 with tf.device("/CPU:0"):
-    ## Photonic Quantum Computing ##
-    number_of_modes = 1
-    cutoff = 12
-    dtype = np.complex128
+    import time
 
-    ## Unitary ##
-    degree = 6  # of Hamiltonian
-    number_of_unitaries = 300
-    gate_cutoff = 4
-    seed = None
-
-    ## CVNN Parameters ##
-    isProfiling = False
-    number_of_datapacks = 50
-    number_of_cvnn_layers = 15
-    number_of_cvnn_steps = 400
-    cvnn_tolerance = 0.025
-    cvnn_learning_rate = 0.05
-    cvnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cvnn_learning_rate)
-    passive_sd = 0.1
-    active_sd = 0.001
-
-    ## Neural network ##
-    number_of_nn_steps = 1
-    nn_learning_rate = 0.05
-    nn_optimizer = tf.keras.optimizers.Adam(learning_rate=nn_learning_rate)
-
-    ## Persistence ##
-    cvnn_path = "scripts/gate_synthesis/cvnn_approximations/"
-    nn_path = "scripts/gate_synthesis/neural_netwokr_checkpoints/"
-    general_cvnn_info = {
-        "cutoff": cutoff,
-        "mode_amount": number_of_modes,
-        "gate_cutoff": gate_cutoff,
-        "number_of_layers": number_of_cvnn_layers,
-        "number_of_steps": number_of_cvnn_steps,
-        "number_of_unitaries": number_of_unitaries,
-        "learnin_rate": cvnn_learning_rate,
-        "active_sd": active_sd,
-        "passive_sd": passive_sd,
-        "seed": seed,
-        "hamiltonian_degree": degree,
-        "optimizer": cvnn_optimizer.__str__(),
-        "tolerance": cvnn_tolerance,
-    }
-
-    general_nn_info = {
-        "number_of_steps": number_of_nn_steps,
-        "learnin_rate": nn_learning_rate,
-        "optimizer": nn_optimizer.__str__(),
-    }
-
-    #### Main ####
-    def main_task():
-        datapacks = generate_unitary_datapacks()
-        sum_time = 0
-        for i in range(number_of_datapacks):
-            print("Begin processing datapack {}".format(i + 1))
-            start_time = time.time()
-            data_to_save = approximate_datapack_with_cvnn(datapacks[i])
-            computation_time = time.time() - start_time
-            sum_time += computation_time
-            {"Datapack process finished in:", computation_time}
-            save_datapack_result(data_to_save)
-
-        print("Tasks finished. Average time on a single unitary:", sum_time/(number_of_datapacks * number_of_unitaries))
+    ### Initialize hyperparameters ###
+    from param_config import *
+    import neural_network, cvnn_approximation, persistence
+    from unitary_generation import random_generator, data_cube_generator
 
 
-    #### Benchmark ####
-    def benchmark_cvnn():
-        seed = 42
+    ### Unitary Data Generation ###
+    def generate_unitary_datacube(
+        degree=degree,
+    ):
 
-        unitary_generator = unitary_generation.UnitaryGenerator(
-            cutoff=cutoff, gate_cutoff=gate_cutoff, dtype=dtype, seed=seed
-        )
+        list_of_degree_combinations = []
+        list_of_degree_coeffs = []
 
-        random_kets, _ = unitary_generator.generate_number_of_random_unitaries(
-            degree=degree, amount=number_of_unitaries
-        )
+        for i in range(degree+1):
+            (combinations, coeffs) = \
+                data_cube_generator.get_hamiltonian_terms_of_degree(i)
 
-        cvnn_approximator = cvnn_approximation.CVNNApproximator(
-            cutoff=cutoff,
-            gate_cutoff=gate_cutoff,
-            dtype=dtype,
-            number_of_layers=number_of_cvnn_layers,
-            number_of_steps=1,
-            tolerance=cvnn_tolerance,
-            optimizer_learning_rate=cvnn_learning_rate,
-            optimizer=cvnn_optimizer,
-            passive_sd=passive_sd,
-            active_sd=active_sd,
-            isProfiling=False,
-            seed=seed,
-        )
+            list_of_degree_combinations.append(combinations)
+            list_of_degree_coeffs.append(coeffs)
 
-        sum_time = 0
-        for i in range(number_of_unitaries):
-            if i > 0:
-                cvnn_approximator._isProfiling =  True
-            times = cvnn_approximator.benchmark_gradient(random_kets[i])
-            sum_time += times[0] + times[1]
+        all_combinations, all_coeffs = \
+            data_cube_generator.add_up_all_combinations_tf(list_of_degree_combinations, list_of_degree_coeffs)
 
-        print(
-            "Average runtime over {} unitaries: {}".format(
-                number_of_unitaries, sum_time / number_of_unitaries
-            )
-        )
+        map_result = tf.constant(tf.vectorized_map(data_cube_generator.calculate_unitary_from_hamiltonian_tf, all_combinations))
 
-    def benchmark_two_cvnns():
-
-        seed = 42
-
-        unitary_generator = unitary_generation.UnitaryGenerator(
-            cutoff=cutoff, gate_cutoff=gate_cutoff, dtype=dtype, seed=seed
-        )
-
-        random_kets, _ = unitary_generator.generate_number_of_random_unitaries(
-            degree=degree, amount=number_of_unitaries
-        )
-
-        cvnn_approximator = cvnn_approximation.CVNNApproximator(
-            cutoff=cutoff,
-            gate_cutoff=gate_cutoff,
-            dtype=dtype,
-            number_of_layers=number_of_cvnn_layers,
-            number_of_steps=1,
-            tolerance=cvnn_tolerance,
-            optimizer_learning_rate=cvnn_learning_rate,
-            optimizer=cvnn_optimizer,
-            passive_sd=passive_sd,
-            active_sd=active_sd,
-            isProfiling=False,
-            seed=seed,
-        )
-
-        sum1_time = 0
-        sum2_time = 0
-        for i in range(number_of_unitaries):
-            if i > 0:
-                cvnn_approximator._isProfiling = isProfiling
-            times = cvnn_approximator.benchmark_two_gradients(random_kets[i])
-            if i > 0:
-                sum1_time += times[0] + times[1]
-                sum2_time += times[2] + times[3]
-
-        print(
-            "Average runtime1 was {} and runtime2 was {} over {} unitaries.".format(
-                sum1_time / number_of_unitaries, sum2_time / number_of_unitaries, number_of_unitaries
-            )
-        )
+        return tf.transpose(map_result, perm=(0, 2, 1)), all_coeffs # transpose for later usage in cvnn scripts
 
 
-    #### Subtask functions ####
-    ### Generate unitary data ###
     def generate_unitary_datapacks(
         degree=degree,
         number_of_unitaries=number_of_unitaries,
@@ -188,22 +52,60 @@ with tf.device("/CPU:0"):
     ):
         datapacks = []
 
-        unitary_generator = unitary_generation.UnitaryGenerator(
-            cutoff=cutoff, gate_cutoff=gate_cutoff, dtype=dtype, seed=seed
-        )
-
         for _ in range(number_of_datapacks):
 
-            (
-                random_kets,
-                random_coeffs,
-            ) = unitary_generator.generate_number_of_random_unitaries(
-                degree=degree, amount=number_of_unitaries
+            (random_kets, random_coeffs)\
+                = random_generator.generate_number_of_random_unitaries(
+                    degree=degree, amount=number_of_unitaries
             )
-
             datapacks.append((random_kets, random_coeffs))
 
         return datapacks
+
+
+    ### Save the results of the CVNN approximations ###
+    def save_datapack_result(data_to_save):
+        data_manager = persistence.Persistence(cvnn_path=cvnn_path, nn_path=nn_path)
+
+        data_manager.save_cvnn_data(general_cvnn_info, data_to_save)
+
+
+    ### Neural Network Testing ###
+    ## TODO: This should be the loss function of the new approach
+    def test_neural_network_prediciton():
+        model, x_train, y_train =\
+            neural_network.train_model(
+                path=nn_path,
+                epochs=number_of_nn_epochs,
+                batch_size=128,
+                loss=nn_loss,
+                optimizer=nn_optimizer
+                )
+        sum_cost = 0
+        cvnn_approximator = cvnn_approximation.CVNNApproximator(
+                cutoff=cutoff,
+                gate_cutoff=gate_cutoff,
+                dtype=dtype,
+                number_of_layers=number_of_cvnn_layers,
+                number_of_steps=number_of_cvnn_steps,
+                tolerance=cvnn_tolerance,
+                optimizer_learning_rate=cvnn_learning_rate,
+                optimizer=cvnn_optimizer,
+                passive_sd=passive_sd,
+                active_sd=active_sd,
+                isProfiling=isProfiling,
+                seed=seed,
+            )
+        predicted_cvnn_weights = model.predict(x_train)
+        for i in range(len(x_train)):
+            unitary, _ = random_generator.generate_random_unitary(degree, x_train[i])
+            cvnn_unitary = cvnn_approximator._calculate_unitary_with_cvnn_default(predicted_cvnn_weights[i])
+            ket = tf.transpose(cvnn_unitary[:, : cvnn_approximator._gate_cutoff])
+            overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(unitary), ket))
+            cost = tf.abs(tf.reduce_sum(overlaps - 1))
+            print("Cost:", cost)
+            sum_cost += cost
+        print("Avg Cost:", sum_cost/len(x_train))
 
 
     ### Approximate with CVNN ###
@@ -232,14 +134,33 @@ with tf.device("/CPU:0"):
         return data_to_save
 
 
-    ### Save the results of the CVNN approximations ###
-    def save_datapack_result(data_to_save):
-        data_manager = persistence.Persistence(cvnn_path=cvnn_path, nn_path=nn_path)
+    #### CVNN Data Generation ####
+    def cvnn_data_generation_from_random_unitaries():
+        datapacks = generate_unitary_datapacks()
+        sum_time = 0
+        for i in range(number_of_datapacks):
+            print("Begin processing datapack {}".format(i + 1))
+            start_time = time.time()
+            data_to_save = approximate_datapack_with_cvnn(datapacks[i])
+            computation_time = time.time() - start_time
+            sum_time += computation_time
+            {"Datapack process finished in:", computation_time}
+            save_datapack_result(data_to_save)
 
-        data_manager.save_cvnn_data(general_cvnn_info, data_to_save)
+        print("Tasks finished. Average time on a single unitary:", sum_time/(number_of_datapacks * number_of_unitaries))
 
+    def cvnn_data_generation_from_data_cube():
+        print("Generating data cube...")
+        datacube = generate_unitary_datacube()
+        # datapack = generate_unitary_datapacks(6, 10, 2)
+        print("Data generation finished")
+        print("Begin processing datacube")
+        start_time = time.time()
+        data_to_save = approximate_datapack_with_cvnn(datacube)
+        {"Datacube process finished in:", time.time() - start_time}
+        print("Saving data")
+        save_datapack_result(data_to_save)
+        print("Data saved")
 
     if __name__ == "__main__":
-        main_task()
-        # benchmark_two_cvnns()
-        # benchmark_cvnn()
+        cvnn_data_generation_from_data_cube()
