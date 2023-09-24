@@ -109,3 +109,9 @@ def generate_number_of_random_unitaries(degree, amount):
     target_kets_array = np.asarray(target_kets_list)
 
     return target_kets_array, coefficients
+
+
+def generate_number_of_random_unitaries_tf(degree=degree, amount=number_of_unitaries):
+    result = tf.vectorized_map(generate_random_unitary, tf.fill(dims=(amount,), value=degree))
+    breakpoint()
+    return result[0], result[1]

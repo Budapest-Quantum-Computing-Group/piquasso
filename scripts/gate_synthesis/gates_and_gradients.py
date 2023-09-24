@@ -18,6 +18,7 @@ import tensorflow as tf
 from numba import jit
 import time
 
+from param_config import *
 import piquasso as pq
 
 
@@ -107,7 +108,6 @@ class PureTensorFlowGateCreator:
                     )
 
         def get_squeezing_matrix_gradient(upstream):
-            breakpoint()
             start_time = time.time()
             sechr = 1 / tf.math.cosh(r)
             tanhr = tf.math.tanh(r)
@@ -193,37 +193,18 @@ class PureTensorFlowGateCreator:
         return transformation, get_single_mode_kerr_matrix_grad
 
 
-class TensorFlowFunctionGateCreator:
-    def __init__(self, cutoff=12, dtype=tf.complex128):
-        self._cutoff = cutoff
-        self._dtype = dtype
-
-
-    def get_single_mode_squeezing_operator(self, params):
-        return get_single_mode_squeezing_operator_tf_func_decorator(params[0], params[1], self._cutoff)
-
-    def get_single_mode_displacement_operator(self, params):
-        return get_single_mode_displacement_operator_tf_func_decorator(params[0], params[1], self._cutoff)
-
-    def get_single_mode_phase_shift_matrix(self, phi):
-        return get_single_mode_phase_shift_matrix_tf_func_decorator(phi, self._cutoff)
-
-    def get_single_mode_kerr_matrix(self, kappa):
-        return get_single_mode_kerr_matrix_tf_func_decorator(kappa, self._cutoff)
-
-
 ##### FUNCTION TO CALL INSIDE THE CLASSES ######
 @tf.function(jit_compile=True)
-def get_single_mode_squeezing_operator_tf_func_decorator(r, phi, cutoff):
-    phi = tf.cast(phi, tf.complex128)
-    r = tf.cast(r, tf.complex128)
+def get_single_mode_squeezing_operator_tf_func_decorator(params):
+    r = params[0]
+    phi = params[1]
     sechr = 1.0 / tf.math.cosh(r)
     A = tf.math.exp(1j * phi) * tf.math.tanh(r)
     a_conj = tf.math.conj(A)
-    transformation = [[tf.consant(0j) for _ in range(cutoff)] for _ in range(cutoff)]
+    transformation = [[tf.constant(0j) for _ in range(cutoff)] for _ in range(cutoff)]
     transformation[0][0] = tf.math.sqrt(sechr)
 
-    fock_indices = tf.math.sqrt(tf.cast(tf.range(cutoff, dtype=tf.float64), tf.complex128))
+    fock_indices = tf.math.sqrt(tf.cast(tf.range(cutoff, dtype=tf.float64), dtype))
 
     for index in range(2, cutoff, 2):
         transformation[index][0] = (
@@ -248,13 +229,13 @@ def get_single_mode_squeezing_operator_tf_func_decorator(r, phi, cutoff):
                     )
                 )
 
-    return tf.convert_to_tensor(transformation)
+    return tf.convert_to_tensor(transformation, dtype=dtype)
 
 @tf.function(jit_compile=True)
-def get_single_mode_displacement_operator_tf_func_decorator(r, phi, cutoff):
-    phi = tf.cast(phi, tf.complex128)
-    r = tf.cast(r, tf.complex128)
-    fock_indices = tf.math.sqrt(tf.cast(tf.range(cutoff, dtype=tf.float64), tf.complex128))
+def get_single_mode_displacement_operator_tf_func_decorator(params):
+    r = params[0]
+    phi = params[1]
+    fock_indices = tf.math.sqrt(tf.cast(tf.range(cutoff, dtype=tf.float64), dtype=dtype))
     displacement = r * tf.math.exp(1j * phi)
     displacement_conj = tf.math.conj(displacement)
     transformation = [[0j for _ in range(cutoff)] for _ in range(cutoff)]
@@ -273,18 +254,18 @@ def get_single_mode_displacement_operator_tf_func_decorator(r, phi, cutoff):
                 fock_indices[row] / fock_indices[col] * transformation[row - 1][col - 1]
             )
 
-    return tf.convert_to_tensor(transformation)
+    return tf.convert_to_tensor(transformation, dtype=dtype)
 
 @tf.function(jit_compile=True)
-def get_single_mode_kerr_matrix_tf_func_decorator(kappa, cutoff):
+def get_single_mode_kerr_matrix_tf_func_decorator(kappa):
     coefficients = tf.math.exp(
-        1j * tf.cast(kappa, tf.complex128) * tf.math.pow(tf.cast(tf.range(cutoff), tf.complex128), 2)
+        1j * tf.cast(kappa, dtype) * tf.math.pow(tf.cast(tf.range(cutoff), dtype), 2)
     )
     return tf.linalg.diag(coefficients)
 
 @tf.function(jit_compile=True)
-def get_single_mode_phase_shift_matrix_tf_func_decorator(phi, cutoff):
+def get_single_mode_phase_shift_matrix_tf_func_decorator(phi):
     coefficients = tf.math.exp(
-        1j * tf.cast(phi, tf.complex128) * tf.cast(tf.range(cutoff), tf.complex128)
+        1j * tf.cast(phi, dtype) * tf.cast(tf.range(cutoff), dtype)
     )
     return tf.linalg.diag(coefficients)

@@ -22,11 +22,46 @@ import tensorflow.experimental.numpy as tnp
 
 import gates_and_gradients
 
+from param_config import *
+
+number_of_cvnn_layers
 tnp.experimental_enable_numpy_behavior()
 profiler_options = tf.profiler.experimental.ProfilerOptions(
     host_tracer_level=3, python_tracer_level=3, device_tracer_level=3
 )
 
+global cvnn_weights
+cvnn_weights = None
+def init_weights(seed=None):
+    if seed is not None:
+        seed = seed
+    if seed is not None:
+        tf.random.set_seed(seed)
+        np.random.seed(seed)
+
+    # squeezing
+    sq_r = np.random.normal(size=[number_of_cvnn_layers], scale=active_sd)
+    sq_phi = np.random.normal(
+        size=[number_of_cvnn_layers], scale=passive_sd
+    )
+    # displacement gate
+    d_r = np.random.normal(size=[number_of_cvnn_layers], scale=active_sd)
+    d_phi = np.random.normal(
+        size=[number_of_cvnn_layers], scale=passive_sd
+    )
+    # rotation gates
+    r1 = np.random.normal(size=[number_of_cvnn_layers], scale=passive_sd)
+    r2 = np.random.normal(size=[number_of_cvnn_layers], scale=passive_sd)
+    # kerr gate
+    kappa = np.random.normal(size=[number_of_cvnn_layers], scale=active_sd)
+
+    weights = tf.convert_to_tensor(
+        [r1, sq_r, sq_phi, r2, d_r, d_phi, kappa], dtype=np.float64
+    )
+    cvnn_weights = tf.Variable(tf.transpose(weights))
+    cvnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cvnn_learning_rate)
+
+init_weights(seed)
 
 class CVNNApproximator:
     def __init__(
@@ -34,13 +69,9 @@ class CVNNApproximator:
         cutoff=12,
         gate_cutoff=4,
         dtype=np.complex128,
-        number_of_layers=15,
         number_of_steps=250,
         tolerance=0.05,
         optimizer_learning_rate=0.05,
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.05),
-        passive_sd=0.1,
-        active_sd=0.001,
         isProfiling=False,
         seed=None,
     ):
@@ -48,27 +79,20 @@ class CVNNApproximator:
         self._cutoff = cutoff
         self._gate_cutoff = gate_cutoff
         self._dtype = dtype
-        self._number_of_layers = number_of_layers
         self._number_of_steps = number_of_steps
         self._tolerance = tolerance
-        # TODO: Not working properly between unitaries.
-        # self._optimizer = optimizer
         self._learning_rate = optimizer_learning_rate
         self._optimizer = tf.keras.optimizers.Adam(
             learning_rate=optimizer_learning_rate
         )
-        self._passive_sd = passive_sd
-        self._active_sd = active_sd
         self._seed = seed
-        self._weights = None
-        self._init_weights(seed)
         self._isProfiling = isProfiling
 
     def benchmark_gradient(self, target_kets):
         if self._isProfiling:
             tf.profiler.experimental.start("logdir", options=profiler_options)
 
-        self._init_weights()
+        init_weights()
         start_time = time.time()
 
         with tf.GradientTape() as tape:
@@ -79,9 +103,9 @@ class CVNNApproximator:
         print("Calculation took {} seconds".format(calc_time))
 
         start_time = time.time()
-        gradients = tape.gradient(cost, self._weights)
-        self._optimizer.apply_gradients(zip([gradients], [self._weights]))
-        custom_apply_gradient(gradients, self._weights, self._learning_rate)
+        gradients = tape.gradient(cost, cvnn_weights)
+        self._optimizer.apply_gradients(zip([gradients], [cvnn_weights]))
+        custom_apply_gradient(gradients, cvnn_weights, self._learning_rate)
 
         grad_time = time.time() - start_time
         print("Gradient took {} seconds".format(grad_time))
@@ -96,7 +120,7 @@ class CVNNApproximator:
         seed = 42
         if self._isProfiling:
             tf.profiler.experimental.start("logdir", options=profiler_options)
-        self._init_weights(seed)
+        init_weights(seed)
         start_time = time.time()
 
         with tf.GradientTape() as tape1:
@@ -108,8 +132,8 @@ class CVNNApproximator:
         print("Calculation 1 took {} seconds".format(calc1_time))
 
         start_time = time.time()
-        gradients1 = tape1.gradient(cost1, self._weights)
-        self._optimizer.apply_gradients(zip([gradients1], [self._weights]))
+        gradients1 = tape1.gradient(cost1, cvnn_weights)
+        self._optimizer.apply_gradients(zip([gradients1], [cvnn_weights]))
         grad1_time = time.time() - start_time
         print("Gradient 1 took {} seconds".format(grad1_time))
 
@@ -124,8 +148,8 @@ class CVNNApproximator:
         print("Calculation 2 took {} seconds".format(calc2_time))
 
         start_time = time.time()
-        gradients2 = tape2.gradient(cost2, self._weights)
-        self._optimizer.apply_gradients(zip([gradients2], [self._weights]))
+        gradients2 = tape2.gradient(cost2, cvnn_weights)
+        self._optimizer.apply_gradients(zip([gradients2], [cvnn_weights]))
         grad2_time = time.time() - start_time
         print("Gradient 2 took {} seconds".format(grad2_time))
         assert np.allclose(gradients1, gradients2)
@@ -135,175 +159,130 @@ class CVNNApproximator:
 
         return (calc1_time, grad1_time, calc2_time, grad2_time)
 
-    def approximate_kets(self, kets):
-        costs = []
-        weights_list = []
 
-        for i in range(len(kets)):
-            self._init_weights()
+def calculate_unitary_with_cvnn_default(weights=None):
+    if weights is not None:
+        cvnn_weights = weights
 
-            print("Starting unitary approximation No.{}".format(i + 1))
-            start_time = time.time()
+    result_matrix = np.identity(cutoff, dtype=dtype)
 
-            cost, weights = self._perform_machine_learning(kets[i])
+    gate_creator = gates_and_gradients.AutoGradGateCreator()
+    piquasso_gate_creator = gates_and_gradients.PiquassoGateCreator()
 
-            print("Unitary approximation ended in:", time.time() - start_time)
+    for j in range(number_of_cvnn_layers):
 
-            costs.append(cost)
-            weights_list.append(weights)
+        phase_shifter_1_matrix = gate_creator.get_single_mode_phase_shift_matrix(
+            cvnn_weights[j, 0]
+        )
 
-        return costs, weights_list
+        squeezing_matrix = (
+            piquasso_gate_creator._fock_space.get_single_mode_squeezing_operator(
+                r=cvnn_weights[j, 1], phi=cvnn_weights[j, 2]
+            )
+        )
+
+        phase_shifter_2_matrix = gate_creator.get_single_mode_phase_shift_matrix(
+            cvnn_weights[j, 3]
+        )
+
+        displacement_matrix = (
+            piquasso_gate_creator._fock_space.get_single_mode_displacement_operator(
+                r=cvnn_weights[j, 4], phi=cvnn_weights[j, 5]
+            )
+        )
+
+        kerr_matrix = gate_creator.get_single_mode_kerr_matrix(cvnn_weights[j, 6])
+        result_matrix = result_matrix = tf.matmul(
+            tf.matmul(
+                tf.matmul(
+                    tf.matmul(
+                        tf.matmul(kerr_matrix, displacement_matrix),
+                        phase_shifter_2_matrix,
+                    ),
+                    squeezing_matrix,
+                ),
+                phase_shifter_1_matrix,
+            ),
+            result_matrix,
+        )
+
+    return result_matrix
 
 
-    def _perform_machine_learning(self, target_kets):
-        cost = min_cost = sys.maxsize - 1
-        best_cvnn_weights = None
+def calculate_unitary_with_cvnn_for_solution2(weights=None):
+    if weights is not None:
+            cvnn_weights = weights
 
-        if self._isProfiling:
-            tf.profiler.experimental.start("logdir", options=profiler_options)
+    result_matrix = tf.linalg.eye(cutoff, dtype=dtype)
 
-        i = 0
-        while i < self._number_of_steps and cost > self._tolerance:
-            with tf.GradientTape() as tape:
-                cost, _ = self._cost_function(
-                    target_kets, self._calculate_unitary_with_cvnn_default
-                )
+    for j in range(number_of_cvnn_layers):
+        phase_shifter_1_matrix = gates_and_gradients.get_single_mode_phase_shift_matrix_tf_func_decorator(
+            cvnn_weights[j, 0]
+        )
+        squeezing_matrix = gates_and_gradients.get_single_mode_squeezing_operator_tf_func_decorator(
+                (cvnn_weights[j, 1], cvnn_weights[j, 2])
+            )
+        phase_shifter_2_matrix = gates_and_gradients.get_single_mode_phase_shift_matrix_tf_func_decorator(
+            cvnn_weights[j, 3]
+        )
+        displacement_matrix = (
+            gates_and_gradients.get_single_mode_displacement_operator_tf_func_decorator(
+                (cvnn_weights[j, 4], cvnn_weights[j, 5])
+            )
+        )
+        kerr_matrix = gates_and_gradients.get_single_mode_kerr_matrix_tf_func_decorator(
+            cvnn_weights[j, 6]
+        )
+        result_matrix = result_matrix = tf.matmul(
+            tf.matmul(
+                tf.matmul(
+                    tf.matmul(
+                        tf.matmul(kerr_matrix, displacement_matrix),
+                        phase_shifter_2_matrix,
+                    ),
+                    squeezing_matrix,
+                ),
+                phase_shifter_1_matrix,
+            ),
+            result_matrix,
+        )
+    return result_matrix
 
-            if min_cost > cost.numpy():
-                min_cost = cost.numpy()
-                best_cvnn_weights = self._weights
-
-            gradients = tape.gradient(cost, self._weights)
-            self._optimizer.apply_gradients(zip([gradients], [self._weights]))
-
-            print("Rep: {} Cost: {:.4f}".format(i + 1, cost))
-            i += 1
-
-        if self._isProfiling:
-            tf.profiler.experimental.stop()
-
-        best_cvnn_weights = np.asarray(best_cvnn_weights)
-        return min_cost, best_cvnn_weights
-
-    def _cost_function(self, target_kets, cvnn_calculator):
-        unitary = cvnn_calculator()
-        ket = tf.transpose(unitary[:, : self._gate_cutoff])
-        overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(target_kets), ket))
-        cost = tf.abs(tf.reduce_sum(overlaps - 1))
-
-        return cost, ket
-
-    def _calculate_unitary_with_cvnn_default(self, weights=None):
+@tf.function(jit_compile=True)
+def calculate_unitary_with_cvnn_vectorized(weights=None):
         if weights is not None:
-            self._weights = weights
-        result_matrix = np.identity(self._cutoff, dtype=self._dtype)
+             cvnn_weights = weights
 
-        gate_creator = gates_and_gradients.AutoGradGateCreator()
-        piquasso_gate_creator = gates_and_gradients.PiquassoGateCreator()
-
-        for j in range(self._number_of_layers):
-
-            phase_shifter_1_matrix = gate_creator.get_single_mode_phase_shift_matrix(
-                self._weights[j, 0]
-            )
-
-            squeezing_matrix = (
-                piquasso_gate_creator._fock_space.get_single_mode_squeezing_operator(
-                    r=self._weights[j, 1], phi=self._weights[j, 2]
-                )
-            )
-
-            phase_shifter_2_matrix = gate_creator.get_single_mode_phase_shift_matrix(
-                self._weights[j, 3]
-            )
-
-            displacement_matrix = (
-                piquasso_gate_creator._fock_space.get_single_mode_displacement_operator(
-                    r=self._weights[j, 4], phi=self._weights[j, 5]
-                )
-            )
-
-            kerr_matrix = gate_creator.get_single_mode_kerr_matrix(self._weights[j, 6])
-
-            result_matrix = result_matrix = tf.matmul(
-                tf.matmul(
-                    tf.matmul(
-                        tf.matmul(
-                            tf.matmul(kerr_matrix, displacement_matrix),
-                            phase_shifter_2_matrix,
-                        ),
-                        squeezing_matrix,
-                    ),
-                    phase_shifter_1_matrix,
-                ),
-                result_matrix,
-            )
-
-        return result_matrix
-
-    def _calculate_unitary_with_cvnn_1(self):
-        result_matrix = tf.linalg.eye(self._cutoff, dtype=self._dtype)
-
-        piquasso_gate_creator = gates_and_gradients.PiquassoGateCreator()
-        tf_func_gate_creator = gates_and_gradients.TensorFlowFunctionGateCreator()
-        for j in range(self._number_of_layers):
-            phase_shifter_1_matrix = tf_func_gate_creator.get_single_mode_phase_shift_matrix(
-                self._weights[j, 0]
-            )
-            squeezing_matrix = piquasso_gate_creator._fock_space.get_single_mode_squeezing_operator(
-                    r=self._weights[j, 1], phi=self._weights[j, 2]
-                )
-            phase_shifter_2_matrix = tf_func_gate_creator.get_single_mode_phase_shift_matrix(
-                self._weights[j, 3]
-            )
-            displacement_matrix = (
-                piquasso_gate_creator._fock_space.get_single_mode_displacement_operator(
-                    r=self._weights[j, 4], phi=self._weights[j, 5]
-                )
-            )
-            kerr_matrix = tf_func_gate_creator.get_single_mode_kerr_matrix(
-                self._weights[j, 6]
-            )
-            result_matrix = result_matrix = tf.matmul(
-                tf.matmul(
-                    tf.matmul(
-                        tf.matmul(
-                            tf.matmul(kerr_matrix, displacement_matrix),
-                            phase_shifter_2_matrix,
-                        ),
-                        squeezing_matrix,
-                    ),
-                    phase_shifter_1_matrix,
-                ),
-                result_matrix,
-            )
-        return result_matrix
-
-    def _calculate_unitary_with_cvnn_vectorized(self):
-
-        tf_func_gate_creator = gates_and_gradients.TensorFlowFunctionGateCreator()
-
+        start_time = time.time()
         phase_shifter1_vectorization = tf.vectorized_map(
-            tf_func_gate_creator.get_single_mode_phase_shift_matrix,
-            self._weights[:, 0]
+            gates_and_gradients.get_single_mode_phase_shift_matrix_tf_func_decorator,
+            cvnn_weights[:, 0]
         )
+        print("Phaseshifter took {} seconds".format(time.time() - start_time))
+        start_time = time.time()
         squeeze_vectorization = tf.vectorized_map(
-            tf_func_gate_creator.get_single_mode_squeezing_operator,
-            (self._weights[:, 1], self._weights[:, 2])
+            gates_and_gradients.get_single_mode_squeezing_operator_tf_func_decorator,
+            (cvnn_weights[:, 1], cvnn_weights[:, 2])
         )
+        print("Squeezing took {} seconds".format(time.time() - start_time))
         phase_shifter2_vectorization = tf.vectorized_map(
-            tf_func_gate_creator.get_single_mode_phase_shift_matrix,
-            self._weights[:, 3]
+            gates_and_gradients.get_single_mode_phase_shift_matrix_tf_func_decorator,
+            cvnn_weights[:, 3]
         )
+        start_time = time.time()
         displacement_vectorization = tf.vectorized_map(
-            tf_func_gate_creator.get_single_mode_displacement_operator,
-            (self._weights[:, 4], self._weights[:, 5])
+            gates_and_gradients.get_single_mode_displacement_operator_tf_func_decorator,
+            (cvnn_weights[:, 4], cvnn_weights[:, 5])
         )
+        print("Displacement took {} seconds".format(time.time() - start_time))
+        start_time = time.time()
         kerr_vectorization = tf.vectorized_map(
-            tf_func_gate_creator.get_single_mode_kerr_matrix,
-            self._weights[:, 6]
+            gates_and_gradients.get_single_mode_kerr_matrix_tf_func_decorator,
+            cvnn_weights[:, 6]
         )
+        print("Kerr took {} seconds".format(time.time() - start_time))
 
+        start_time = time.time()
         vectorized_result_matrix = tf.reverse(
             tf.einsum(
             "abc,acd,ade,aef,afg->abg",
@@ -313,48 +292,75 @@ class CVNNApproximator:
             squeeze_vectorization,
             phase_shifter1_vectorization
         ), [0])
-
+        print("Einsum took {} seconds".format(time.time() - start_time))
         #new_vectorized_result_matrix = tf.einsum("iab,ibc->ac", vectorized_result_matrix, vectorized_result_matrix)
         #new_vectorized_result_matrix = np.linalg.multi_dot(vectorized_result_matrix)
-        result_matrix = tf.linalg.eye(self._cutoff, dtype=self._dtype)
-        for i in range(self._number_of_layers):
+        start_time = time.time()
+        result_matrix = tf.linalg.eye(cutoff, dtype=dtype)
+        for i in range(number_of_cvnn_layers):
             result_matrix = tf.matmul(result_matrix, vectorized_result_matrix[i])
-
+        print("Last for took {} seconds".format(time.time() - start_time))
         return result_matrix
 
-    def _init_weights(self, seed=None):
-        if seed is not None:
-            self._seed = seed
-        if self._seed is not None:
-            tf.random.set_seed(seed)
-            np.random.seed(seed)
 
-        # squeezing
-        sq_r = np.random.normal(size=[self._number_of_layers], scale=self._active_sd)
-        sq_phi = np.random.normal(
-            size=[self._number_of_layers], scale=self._passive_sd
-        )
+def approximate_kets(kets):
+        costs = []
+        weights_list = []
 
-        # displacement gate
-        d_r = np.random.normal(size=[self._number_of_layers], scale=self._active_sd)
-        d_phi = np.random.normal(
-            size=[self._number_of_layers], scale=self._passive_sd
-        )
+        for i in range(len(kets)):
+            init_weights()
 
-        # rotation gates
-        r1 = np.random.normal(size=[self._number_of_layers], scale=self._passive_sd)
-        r2 = np.random.normal(size=[self._number_of_layers], scale=self._passive_sd)
+            print("Starting unitary approximation No.{}".format(i + 1))
+            start_time = time.time()
 
-        # kerr gate
-        kappa = np.random.normal(size=[self._number_of_layers], scale=self._active_sd)
+            cost, weights = perform_machine_learning(kets[i])
 
-        weights = tf.convert_to_tensor(
-            [r1, sq_r, sq_phi, r2, d_r, d_phi, kappa], dtype=np.float64
-        )
+            print("Unitary approximation ended in:", time.time() - start_time)
 
-        self._weights = tf.Variable(tf.transpose(weights))
-        self._optimizer = tf.keras.optimizers.Adam(learning_rate=self._learning_rate)
+            costs.append(cost)
+            weights_list.append(weights)
 
+        return costs, weights_list
+
+
+def perform_machine_learning(target_kets):
+        cost = min_cost = sys.maxsize - 1
+        best_cvnn_weights = None
+
+        if isProfiling:
+            tf.profiler.experimental.start("logdir", options=profiler_options)
+
+        i = 0
+        while i < number_of_cvnn_steps and cost > cvnn_tolerance:
+            with tf.GradientTape() as tape:
+                cost, _ = cost_function(
+                    target_kets, calculate_unitary_with_cvnn_default
+                )
+
+            if min_cost > cost.numpy():
+                min_cost = cost.numpy()
+                best_cvnn_weights = cvnn_weights
+
+            gradients = tape.gradient(cost, cvnn_weights)
+            cvnn_optimizer.apply_gradients(zip([gradients], [cvnn_weights]))
+
+            print("Rep: {} Cost: {:.4f}".format(i + 1, cost))
+            i += 1
+
+        if isProfiling:
+            tf.profiler.experimental.stop()
+
+        best_cvnn_weights = np.asarray(best_cvnn_weights)
+        return min_cost, best_cvnn_weights
+
+
+def cost_function(target_kets, cvnn_calculator):
+        unitary = cvnn_calculator()
+        ket = tf.transpose(unitary[:, :gate_cutoff])
+        overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(target_kets), ket))
+        cost = tf.abs(tf.reduce_sum(overlaps - 1))
+
+        return cost, ket
 
 @tf.function(jit_compile=True)
 def custom_apply_gradient(gradients, variables, learning_rate):

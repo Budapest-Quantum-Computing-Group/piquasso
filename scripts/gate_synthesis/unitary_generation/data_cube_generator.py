@@ -106,12 +106,12 @@ def calculate_every_addition_combination_of_degree(degree,
             )
             if degree % 2 == 0:
                 matrix_sum += real_terms[0][index_comb[-1]]
-                coefficients.append(real_linspace[index_comb[-1]])
+                this_term_coefficients.append(real_linspace[index_comb[-1]][0][0])
 
-        combined_operator_terms.append(np.array(matrix_sum))
-        coefficients.append(np.array(this_term_coefficients))
+        combined_operator_terms.append(tf.constant(matrix_sum))
+        coefficients.append(tf.constant(this_term_coefficients))
 
-    return combined_operator_terms, coefficients
+    return tf.convert_to_tensor(combined_operator_terms), tf.convert_to_tensor(coefficients)
 
 
 def get_hamiltonian_terms_of_degree(degree):
@@ -152,12 +152,12 @@ def get_hamiltonian_terms_of_degree(degree):
             complex_list,
             complex_linspace,
             complex_conj_list,
-            complex_linspace,
+            complex_conj_linspace,
             real_terms,
             real_linspace,
         )
 
-    return np.array(combined_operator_terms), np.array(coefficients)
+    return combined_operator_terms, coefficients
 
 
 ### Functions utilizing Tensorflow
@@ -187,7 +187,7 @@ def add_up_all_combinations_tf(combination_list, coeffs):
     coeff_tile1 = coeffs[0]
     for i in range(len(combination_list)-1):  # degree amount of iterations.
         tile2 = tnp.full(((len(tile1),) + combination_list[i+1].shape), combination_list[i+1])
-        coeff_tile2 = tnp.full(((len(coeff_tile1),) + coeffs[i+1].shape), coeffs[i+1])
+        coeff_tile2 = tnp.full(((coeff_tile1.shape[0], len(coeffs[i+1],)) + coeffs[i+1][0].shape), coeffs[i+1])
         tile1 = tnp.full(((len(combination_list[i+1]),) + tile1.shape), tile1)
         coeff_tile1 = tnp.full(((len(coeffs[i+1]),) + coeff_tile1.shape), coeff_tile1)
         tile1 = tile1 + tf.transpose(tile2, perm=(1, 0, 2, 3))

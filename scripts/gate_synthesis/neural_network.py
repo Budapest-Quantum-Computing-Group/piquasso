@@ -12,21 +12,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from param_config import *
 
 import numpy as np
 import os
+import time
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Reshape, Dropout
-from tensorflow.python.keras.optimizers import adam_v2, gradient_descent_v2
-import tensorflow.python.keras.regularizers as regularizers
+if not is_on_cluster:
+    from tensorflow.python.keras.models import Sequential
+    from tensorflow.python.keras.layers import Dense, Dropout
+    import tensorflow.python.keras.regularizers as regularizers
+else:
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Dropout
+    import tensorflow.keras.regularizers as regularizers
+
 import json
 
-tf.random.set_seed(42)
-tf.keras.utils.set_random_seed(42)
-np.set_printoptions(suppress=True, linewidth=200)
+import cvnn_approximation
+
+
+#tf.random.set_seed(42)
+#tf.keras.utils.set_random_seed(42)
+
+@tf.function(jit_compile=True)
+def cvnn_loss(y_true, y_pred):
+    y_pred_drop_first_axes = y_pred[0]
+    y_pred_reshaped = y_pred_drop_first_axes.reshape(number_of_cvnn_layers, number_of_layer_parameters)
+    cvnn_unitary = cvnn_approximation.calculate_unitary_with_cvnn_vectorized(y_pred_reshaped)
+    y_true_drop_first_axes = y_true[0]
+    ket = tf.transpose(cvnn_unitary[:, : gate_cutoff])
+    #overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(y_true_drop_first_axes), ket))
+    overlaps = tf.einsum("bi,bi->b", tf.math.conj(y_true_drop_first_axes), ket)
+    # return tf.abs(tf.reduce_sum(overlaps - 1))
+    # Átlag vs maximum a diagonálisban meg nem csak a diag, hanem identity minus
+    return tf.reduce_sum((tf.abs(overlaps - 1))**2) / gate_cutoff
+
+
+def cvnn_loss_test(y_true, y_pred):
+    breakpoint()
+    y_pred_reshaped = y_pred.reshape(number_of_cvnn_layers, number_of_layer_parameters)
+    cvnn_unitary = cvnn_approximation.calculate_unitary_with_cvnn_for_solution2(y_pred_reshaped)
+    ket = tf.transpose(cvnn_unitary[:, : gate_cutoff])
+    overlaps = tf.math.real(tf.einsum("bi,bi->b", tf.math.conj(y_true), ket))
+    return tf.abs(tf.reduce_sum(overlaps - 1))
 
 
 def read_data(path: str):
@@ -122,37 +153,55 @@ def split_data(
     return train_data, val_data, test_data
 
 
-def create_model(input_size: int, output_size: int, loss="mse", optimizer="sgd"):
-
-    output_product = output_size[0] * output_size[1]
-    print("INPUTSIZE:", input_size)
-    print("OUTPUTPRODUCT:", output_product)
-    print("OUTPUTSIZE:", output_size)
-    optimizer = gradient_descent_v2.SGD(learning_rate=0.1)
-    kernel_regularizer=regularizers.l2(0.1)
-    kernel_regularizer=None
-    optimizer = adam_v2.Adam(learning_rate=0.001)
+def create_model(input_size: int, output_size: int, loss="mse", optimizer="adam"):
+    # kernel_regularizer=regularizers.l2(0.1)
+    scale_constant = input_size/4+1  # Could be any number
     model = Sequential()
-    model.add(Dense(units=50 * input_size, activation="relu", input_dim=input_size))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    #model.add(Dropout(0.2))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    #model.add(Dropout(0.2))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    #model.add(Dropout(0.2))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=30 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    #model.add(Dropout(0.2))
-    model.add(Dense(units=30 * input_size, activation="relu"))
-    model.add(Dense(units=50 * input_size, activation="relu", kernel_regularizer=kernel_regularizer))
-    model.add(Dense(units=output_product, activation="linear"))
-    model.add(Reshape(output_size))
+    activation_func = "relu"
+    # Dropout 0.1-gyel, relu helyett sigmoid
+    model.add(Dense(units=6 * scale_constant, activation=activation_func, input_dim=input_size))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    #model.add(Dense(units=10 * scale_constant, activation=activation_func, kernel_regularizer=regularizers.l2(0.2)))
+    #model.add(Dropout(0.1))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    #model.add(Dropout(0.1))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    #model.add(Dense(units=10 * scale_constant, activation=activation_func, kernel_regularizer=regularizers.l2(0.2)))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    model.add(Dense(units=6 * scale_constant, activation=activation_func))
+    model.add(Dense(units=output_size, activation="linear"))
+    # use gradient tape instead of compile
     model.compile(loss=loss, optimizer=optimizer)
+
+    return model
+
+def set_model_save_path():
+    if is_on_cluster:
+        return "ckpt" + str(time.time())
+
+    file_name = input("Enter the checkpoint file name to save (without extension): ")
+    checkpoint_path = nn_path + file_name + ".ckpt"
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+    dir_content = os.listdir(checkpoint_dir)
+    # Checking if the filename already exists, if not rename
+    while (file_name+".ckpt") in dir_content:
+        file_name = input("The file already exists! Enter a new checkpoint file name to save (without extension): ")
+        checkpoint_path = nn_path + file_name + ".ckpt"
+
+    return checkpoint_path, file_name
+
+
+def load_model(model):
+    file_name = input("Enter the checkpoint file name to load (without extension): ")
+
+    checkpoint_path = nn_path + file_name + ".ckpt"
+
+    print("Loading model at {}...".format(checkpoint_path))
+    model.load_weights(checkpoint_path)
+    print("Model loaded!")
 
     return model
 
@@ -163,7 +212,6 @@ def train_model(path, epochs, batch_size, loss="mse", optimizer="adam"):
     # x_train, y_train = read_all_data(path)
     x_train, x_val, x_test = split_data(x_data)
     y_train, y_val, y_test = split_data(y_data)
-
     model = create_model(x_train.shape[1], y_train[0].shape, loss=loss, optimizer=optimizer)
     print(model.summary())
 
@@ -191,7 +239,6 @@ def test_model(path, epochs, batch_size, loss="mse", optimizer="adam"):
             x_train_list[i], y_train_list[i], epochs=epochs, batch_size=batch_size
         )
         return model, x_train_list[i], y_train_list[i]
-        breakpoint()
 
     print("FINISHED")
 

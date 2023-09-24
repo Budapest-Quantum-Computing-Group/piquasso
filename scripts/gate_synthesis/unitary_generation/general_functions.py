@@ -26,7 +26,7 @@ tnp = tf.experimental.numpy
 ### Generation independent functions
 def get_number_of_coefficients_of_degree(degree):
     # NOTE: This coincidentally also matches the amount of float variables in the system
-    return (degree + 2) * (degree + 1) / 2
+    return int((degree + 2) * (degree + 1) / 2)
 
 
 def get_creation_operator():
