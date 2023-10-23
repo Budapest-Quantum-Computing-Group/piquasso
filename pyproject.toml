@@ -1,6 +1,65 @@
+#
+# Copyright 2021-2023 Budapest Quantum Computing Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 [build-system]
 requires = [
-  "setuptools >= 40.9.0",
+  "setuptools",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "piquasso"
+version="3.0.0"
+authors = [
+  { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" }
+]
+description = "A Python library for designing and simulating photonic quantum computation"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords=["python", "piquasso"]
+license = {file = "LICENSE.txt"}
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+]
+dependencies = [
+  'theboss==2.0.3; python_version >= "3.7"',
+  'numpy>=1.19.5; python_version >= "3.7"',
+  'scipy>=1.5.4; python_version >= "3.7"',
+  "quantum-blackbird==0.5.0",
+]
+
+[options.extras_require]
+tensorflow = [
+  "tensorflow",
+]
+
+[project.urls]
+Homepage = "https://piquasso.com"
+Documentation = "https://docs.piquasso.com"
+Repository = "https://github.com/Budapest-Quantum-Computing-Group/piquasso"
+Issue-Tracker = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+Download = "https://pypi.org/project/piquasso"
+
+[tool.setuptools.packages.find]
+exclude = [
+  "tests.*",
+  "tests",
+  "scripts",
+  "scripts.*"
+]
