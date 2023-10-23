@@ -5,17 +5,6 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.flake8]
-max-line-length = 88
-exclude = [
-  ".tox",
-  ".venv"
-]
-extend-ignore = [
-  "E201",  # Ignoring whitespace after '(' or '[' for matrices
-	"E203",
-]
-
 [tool.mypy]
 ignore_missing_imports = true
 disallow_incomplete_defs = true

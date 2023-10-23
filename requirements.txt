@@ -7,7 +7,7 @@ pytest-profiling~=1.7.0
 pytest-benchmark~=4.0.0
 coverage~=7.3.2
 mypy~=1.6.1
-pyproject-flake8~=6.1.0
+flake8~=6.1.0
 nbqa~=1.7.0
 nbmake~=1.4.6
 
