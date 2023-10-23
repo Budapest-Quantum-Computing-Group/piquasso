@@ -1,6 +1,0 @@
-[flake8]
-# Longer line-length is more convenient for math
-max-line-length = 88
-exclude = .tox,.venv
-extend-ignore = E201,  # Ignoring whitespace after '(' or '[' for matrices
-		E203

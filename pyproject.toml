@@ -4,3 +4,34 @@ requires = [
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.flake8]
+max-line-length = 88
+exclude = [
+  ".tox",
+  ".venv"
+]
+extend-ignore = [
+  "E201",  # Ignoring whitespace after '(' or '[' for matrices
+	"E203",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+markers = [
+  "monkey: marks tests with stochastic inputs.",
+]
+
+python_functions = [
+  "test_*",
+  "*_benchmark",
+   "*_script",
+]
+python_files = [
+  "test_*.py",
+  "*_benchmark.py",
+  "*_script.py",
+]
