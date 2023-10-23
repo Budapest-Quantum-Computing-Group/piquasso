@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.0.0] - 2023-10-23
+
+### Added
+
+- `dtype` configuration variable in `Config` to set precision of calculations.
+- `Kerr` gate calculation in `PureFockSimulator` performance improved.
+- Gradient calculation in `TensorflowPureFockSimulator` got improved.
+- A method called `PureFockState.mean_position` which calculates the average position
+  in a specified mode.
+- `normalize` configuration variable in `Config` to enable/disable normalization of
+  states `PureFockSimulator` and `FockSimulator`.
+
+### Changed
+
+- `Displacement` parametrization is simplified.
+- The autoscaling of single mode gates got deleted.
+
+### Fixed
+
+- Vacuum state typing issue fixed in `PureFockSimulator`.
+- Calculation error during gradient calculation.
+
 
 ## [2.2.0] - 2023-03-07
 
