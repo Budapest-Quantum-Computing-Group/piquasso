@@ -21,7 +21,6 @@ import piquasso as pq
 
 
 def pq_cvnn_gradient(weights, d, cutoff, layer_count):
-
     simulator = pq.TensorflowPureFockSimulator(
         d=d, config=pq.Config(cutoff=cutoff, normalize=True)
     )
@@ -43,7 +42,6 @@ def pq_cvnn_gradient(weights, d, cutoff, layer_count):
 
 
 def sf_cvnn_gradient(weights, d, cutoff, layer_count):
-
     eng = sf.Engine(backend="tf", backend_options={"cutoff_dim": cutoff})
     prog = sf.Program(d)
 

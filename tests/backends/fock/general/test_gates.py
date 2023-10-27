@@ -256,7 +256,6 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
 
 
 def test_interferometer():
-
     with pq.Program() as preparation:
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
         pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4

@@ -50,7 +50,6 @@ def test_T_beamsplitter_is_unitary():
 
 
 def test_eliminate_lower_offdiagonal_2_modes(dummy_unitary, tolerance):
-
     U = dummy_unitary(d=2)
 
     decomposition = Clements(U, decompose=False)
@@ -65,7 +64,6 @@ def test_eliminate_lower_offdiagonal_2_modes(dummy_unitary, tolerance):
 
 
 def test_eliminate_lower_offdiagonal_3_modes(dummy_unitary, tolerance):
-
     U = dummy_unitary(d=3)
 
     decomposition = Clements(U, decompose=False)
@@ -80,7 +78,6 @@ def test_eliminate_lower_offdiagonal_3_modes(dummy_unitary, tolerance):
 
 
 def test_eliminate_upper_offdiagonal_2_modes(dummy_unitary, tolerance):
-
     U = dummy_unitary(d=2)
 
     decomposition = Clements(U, decompose=False)
@@ -95,7 +92,6 @@ def test_eliminate_upper_offdiagonal_2_modes(dummy_unitary, tolerance):
 
 
 def test_eliminate_upper_offdiagonal_3_modes(dummy_unitary, tolerance):
-
     U = dummy_unitary(d=3)
 
     decomposition = Clements(U, decompose=False)
@@ -111,7 +107,6 @@ def test_eliminate_upper_offdiagonal_3_modes(dummy_unitary, tolerance):
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5])
 def test_clements_decomposition_on_n_modes(n, dummy_unitary, tolerance):
-
     U = dummy_unitary(d=n)
 
     decomposition = Clements(U)
@@ -129,7 +124,6 @@ def test_clements_decomposition_on_n_modes(n, dummy_unitary, tolerance):
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5])
 def test_clements_decomposition_and_composition_on_n_modes(n, dummy_unitary, tolerance):
-
     U = dummy_unitary(d=n)
 
     decomposition = Clements(U)

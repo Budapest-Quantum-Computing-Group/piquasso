@@ -114,7 +114,6 @@ class SamplingState(State):
         probabilities = []
 
         for particle_number in range(cutoff):
-
             if particle_number == self.particle_number:
                 subspace_probabilities = self._get_fock_probabilities_on_subspace()
             else:

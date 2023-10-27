@@ -95,7 +95,6 @@ def test_displacement_get_fock_prob(SimulatorClass):
 
 
 def test_PureFockState_displacement_on_single_mode():
-
     alpha = 2.0
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -114,7 +113,6 @@ def test_PureFockState_displacement_on_single_mode():
 
 
 def test_FockState_displacement_on_single_mode():
-
     alpha = 2.0
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

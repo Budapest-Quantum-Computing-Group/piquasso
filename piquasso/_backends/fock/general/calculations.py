@@ -55,7 +55,6 @@ def passive_linear(
 def particle_number_measurement(
     state: FockState, instruction: Instruction, shots: int
 ) -> Result:
-
     reduced_state = state.reduced(instruction.modes)
 
     probability_map = reduced_state.fock_probabilities_map

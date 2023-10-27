@@ -253,7 +253,6 @@ def test_loop_hafnian_of_complex_symmetric_block_diagonal_matrix(
 
 
 def test_loop_hafnian_and_hafnian_with_zero_reduction():
-
     matrix = np.array(
         [
             [1j, 2, 3j, 4],

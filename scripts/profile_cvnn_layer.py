@@ -65,7 +65,6 @@ simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 parameters = create_layer_parameters(d)
 
 with tf.GradientTape() as tape:
-
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 

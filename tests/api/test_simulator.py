@@ -237,7 +237,6 @@ def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
 
 
 def test_Config_override(FakeSimulator, FakeConfig):
-
     with pq.Program() as program:
         pass
 

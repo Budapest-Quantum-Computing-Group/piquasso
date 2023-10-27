@@ -55,7 +55,6 @@ def piquasso_interferometer_benchmark(benchmark, d, cutoff, U):
 
 @pytest.mark.parametrize("d, U", zip(d_tuple, U_tuple))
 def piquasso_clements_benchmark(benchmark, d, cutoff, U):
-
     decomposition = Clements(U)
 
     @benchmark

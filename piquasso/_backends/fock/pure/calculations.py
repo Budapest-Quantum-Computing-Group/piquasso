@@ -156,7 +156,6 @@ def _calculate_interferometer_helper_indices(space):
 
 
 def _calculate_interferometer_on_fock_space(interferometer, index_dict):
-
     """Calculates finite representation of interferometer in the Fock space.
     The function assumes the knowledge of the 1-particle unitary.
 

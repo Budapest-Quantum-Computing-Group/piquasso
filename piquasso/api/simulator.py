@@ -84,7 +84,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def _get_calculation(self, instruction: Instruction) -> Callable:
         for instruction_class, calculation in self._instruction_map.items():
-            if type(instruction) == instruction_class:
+            if type(instruction) is instruction_class:
                 return calculation
 
         raise InvalidSimulation(
@@ -99,7 +99,6 @@ class Simulator(Computer, _mixins.CodeMixin):
         )
 
     def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
-
         all_instruction_categories = [Preparation, Gate, Measurement]
 
         def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
