@@ -55,12 +55,7 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, passive_block, modes):
-    state._m[(modes,)] = (
-        passive_block
-        @ state._m[
-            modes,
-        ]
-    )
+    state._m[(modes,)] = passive_block @ state._m[modes,]
     _apply_passive_linear_to_C_and_G(state, passive_block, modes=modes)
 
 
@@ -111,9 +106,7 @@ def linear(
 
 def _apply_linear(state, passive_block, active_block, modes):
     state._m[(modes,)] = passive_block @ state._m[(modes,)] + active_block @ np.conj(
-        state._m[
-            modes,
-        ]
+        state._m[modes,]
     )
 
     _apply_linear_to_C_and_G(state, passive_block, active_block, modes)
@@ -176,9 +169,7 @@ def displacement(state: GaussianState, instruction: Instruction, shots: int) -> 
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
 
-    state._m[
-        modes,
-    ] += r * np.exp(1j * phi)
+    state._m[modes,] += r * np.exp(1j * phi)
 
     return Result(state=state)
 
@@ -309,7 +300,6 @@ def particle_number_measurement(
     instruction: Instruction,
     shots: int,
 ) -> Result:
-
     samples = _get_particle_number_measurement_samples(state, instruction, shots)
 
     return Result(state=state, samples=samples)
@@ -320,7 +310,6 @@ def _get_particle_number_measurement_samples(
     instruction: Instruction,
     shots: int,
 ) -> List[Tuple[int, ...]]:
-
     modes: Tuple[int, ...] = instruction.modes
 
     reduced_state = state.reduced(modes)

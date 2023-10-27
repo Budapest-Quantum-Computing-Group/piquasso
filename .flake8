@@ -2,6 +2,9 @@
 # Longer line-length is more convenient for math
 max-line-length = 88
 exclude = .tox,.venv
-extend-ignore = W605,  # Ignoring latex syntax in docstrings
-                E201,  # Ignoring whitespace after '(' or '[' for matrices
-		E203
+extend-ignore =
+        # Ignoring latex syntax in docstrings
+        W605,
+        # Ignoring whitespace after '(' or '[' for matrices
+        E201,
+	E203

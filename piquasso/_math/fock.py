@@ -208,7 +208,6 @@ class FockSpace(tuple):
     def get_single_mode_cubic_phase_operator(
         self, *, gamma: float, hbar: float, calculator: BaseCalculator
     ) -> np.ndarray:
-
         r"""Cubic Phase gate.
 
         The definition of the Cubic Phase gate is

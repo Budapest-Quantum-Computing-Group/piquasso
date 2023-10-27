@@ -319,7 +319,6 @@ def test_covariance_is_scaled_with_HBAR(state):
 
 
 def test_complex_covariance(state, assets):
-
     expected_complex_covariance = assets.load("expected_complex_covariance")
 
     assert np.allclose(state.complex_covariance, expected_complex_covariance)

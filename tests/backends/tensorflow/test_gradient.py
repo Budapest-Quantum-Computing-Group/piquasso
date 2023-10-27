@@ -26,7 +26,6 @@ def test_Displacement_mean_photon_number_gradient_1_mode():
     simulator = pq.TensorflowPureFockSimulator(d=1, config=pq.Config(cutoff=6))
 
     with tf.GradientTape() as tape:
-
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
@@ -369,7 +368,6 @@ def test_Interferometer_fock_probabilities():
     simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
     with tf.GradientTape() as tape:
-
         hamiltonian = tf.stack(
             [
                 tf.stack([0, tf.exp(param)]),

@@ -174,7 +174,6 @@ def test_state_initialization_with_nonpositive_covariance():
 
 
 def test_Thermal_with_negative_mean_photon_numbers_raises_InvalidParameter():
-
     mean_photon_numbers = np.array([-1, 1])
 
     with pytest.raises(InvalidParameter):

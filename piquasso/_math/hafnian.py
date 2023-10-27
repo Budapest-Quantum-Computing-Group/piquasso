@@ -49,10 +49,8 @@ def get_X(d: int, complex_dtype: np.dtype) -> np.ndarray:
 def fG(polynom_coefficients: List[float], degree: int) -> float:
     outer_sum = 0.0
     for j in range(1, degree + 1):
-
         inner_sum = 0.0
         for partition in get_partitions(j, degree):
-
             product = 1.0
             for index in partition:
                 product *= polynom_coefficients[index - 1]

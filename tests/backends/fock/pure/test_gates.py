@@ -217,7 +217,6 @@ def test_beamsplitters_and_phaseshifters_with_multiple_particles():
 
 
 def test_interferometer():
-
     T = np.array(
         [
             [0.5, 0.53033009 + 0.53033009j, 0.21650635 + 0.375j],
