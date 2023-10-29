@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "Piquasso"
-copyright = "2021-2022, Budapest Quantum Computing Group"
+copyright = "2021-2023, Budapest Quantum Computing Group"
 author = "Budapest Quantum Computing Group"
 
 
@@ -36,7 +36,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "nbsphinx",
-    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 
@@ -75,17 +74,50 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "furo"
 
-html_logo = "_static/logo_light.jpg"
-html_favicon = "_static/favicon.ico"
+html_static_path = ["_static"]
+html_favicon = "_static/favicon.png"
+
+pq_color = {
+    "pq-grey": "#656565",
+    "pq-smokey-white": "#f4f4f4",
+    "pq-blue-shade1": "#1e2844",
+    "pq-blue-shade2": "#273250",
+    "pq-blue-shade3": "#2f3b5a",
+    "pq-blue-shade4": "#364469",
+    "pq-font-color-shade1": "#ccd1da",
+    "pq-font-color-shade2": "#b2bac8",
+    "pq-font-color-shade3": "#8995a8",
+    "pq-font-color-shade4": "#717c8e",
+    "pq-color-red": "#e46363",
+    "pq-color-border": "#232d48",
+    "pq-color-border-dark": "#1a243e",
+}
 
 html_theme_options = {
     "sidebar_hide_name": True,
+    "light_logo": "logo_light.svg",
+    "dark_logo": "logo_main.svg",
+    "dark_css_variables": {
+        "color-background-primary": pq_color["pq-blue-shade1"],
+        "color-background-secondary": pq_color["pq-blue-shade2"],
+        "color-code-background": pq_color["pq-blue-shade3"],
+        "color-foreground-primary": pq_color["pq-font-color-shade1"],
+        "color-foreground-secondary": pq_color["pq-font-color-shade2"],
+        "color-sidebar-link-text--top-level": pq_color["pq-font-color-shade1"],
+        "color-brand-primary": pq_color["pq-font-color-shade4"],
+        "color-brand-content": pq_color["pq-color-red"],
+        "color-admonition-title--note": pq_color["pq-color-red"],
+        "color-admonition-background": pq_color["pq-blue-shade3"],
+        "color-admonition-title-background--note": pq_color["pq-blue-shade2"],
+        "color-background-hover": pq_color["pq-blue-shade3"],
+    },
 }
+
+html_css_files = ["custom.css"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
 
 
 # NBSPHINX
