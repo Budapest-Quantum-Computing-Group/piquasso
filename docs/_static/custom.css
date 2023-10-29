@@ -1,0 +1,14 @@
+body[data-theme="dark"] div.nbinput.container div.input_area, .highlight {
+    border-color: #232d48!important;
+}
+
+div.nbinput.container div.input_area, .highlight {
+    background: var(--color-code-background)!important;
+    color: var(--color-content-foreground)!important;
+}
+
+div.nbinput.container div.input_area {
+    padding: .5rem!important;
+    /* border-radius: 0.5rem!important; */
+    box-shadow: 0 0 7px 2px rgba(0,0,0,.1);
+}
