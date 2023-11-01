@@ -122,16 +122,16 @@ class Thermal(Preparation):
     The power on vectors is defined as
 
     .. math::
-        \vec{a}^{\vec{b}} = \prod_{i=1}^d a_i^{b_i}
+        \vec{a}^{\vec{b}} = \prod_{i=1}^d a_i^{b_i}.
 
     In terms of Gaussian states, the mean vector and covariance matrix is
 
     .. math::
         \mu &= 0_{2d} \\
         \sigma &= \hbar (
-            2 \operatorname{\textit{diag}}(\operatorname{\textit{repeat}}
+            2 \operatorname{diag}(\operatorname{repeat}
                 (\overline{n}, 2)) + I_{2d \times 2d}
-        )
+        ).
 
     Can only be applied to the following states:
     :class:`~piquasso._backends.gaussian.state.GaussianState`.

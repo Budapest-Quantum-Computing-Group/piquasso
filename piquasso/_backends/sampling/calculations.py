@@ -122,7 +122,7 @@ def particle_number_measurement(
     """
     Simulates a boson sampling using generalized Clifford & Clifford algorithm
     from [Brod, Oszmaniec 2020] see
-    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
+    `this article <https://arxiv.org/abs/1906.06696>`_ for more details.
 
     This is a contribution implementation from `theboss`, see
     https://github.com/Tomev-CTP/theboss.
