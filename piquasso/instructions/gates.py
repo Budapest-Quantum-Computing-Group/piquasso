@@ -793,8 +793,8 @@ class CrossKerr(Gate):
     The Cross-Kerr gate transforms the annihilation operators as
 
     .. math::
-        CK_{ij} (\xi) a_i CK_{ij} (\xi) &= a_i \exp(- i \xi n_j) \\
-        CK_{ij} (\xi) a_j CK_{ij} (\xi) &= a_j \exp(- i \xi n_i)
+        CK_{ij}^\dagger (\xi) a_i CK_{ij} (\xi) &= a_i \exp(- i \xi n_j) \\
+        CK_{ij}^\dagger (\xi) a_j CK_{ij} (\xi) &= a_j \exp(- i \xi n_i)
 
 
     Note:

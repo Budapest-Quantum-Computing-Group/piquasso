@@ -594,9 +594,6 @@ class GaussianState(State):
         :math:`i = j` i.e. the covariance matrix of the reduced Gaussian state and
         :math:`\left \langle Q \right \rangle` is the :attr:`xpxp_mean_vector`.
 
-        For more details please see
-        `this article <https://arxiv.org/pdf/1612.01199.pdf>`_.
-
         Args:
             modes (Tuple[int, ...]): The correspoding modes at which the variance of
                 the photon number is calculated.

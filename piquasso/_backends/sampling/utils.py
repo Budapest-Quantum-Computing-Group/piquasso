@@ -76,7 +76,7 @@ def generate_lossless_samples(input, shots, calculate_permanent, rng):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm
     from [Brod, Oszmaniec 2020] see
-    `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
+    `this article <https://arxiv.org/abs/1906.06696>`_ for more details.
 
     Args:
         input: The input Fock basis state.
