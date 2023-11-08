@@ -15,6 +15,8 @@
 
 from typing import Optional, Tuple, List
 
+from scipy.linalg import block_diag
+
 import numpy as np
 
 from piquasso.api.config import Config
@@ -30,6 +32,8 @@ from piquasso._math.linalg import (
 from piquasso._math.symplectic import symplectic_form
 from piquasso._math.combinatorics import get_occupation_numbers
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+
+from piquasso._math.decompositions import williamson
 
 from .probabilities import (
     DensityMatrixCalculation,
@@ -861,3 +865,62 @@ class GaussianState(State):
         return calculation.get_particle_number_detection_probabilities(
             get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
         )
+
+    def is_pure(self) -> bool:
+        d = self.d
+        cov = self.xpxp_covariance_matrix / self._config.hbar
+
+        J = np.array([[0, 1], [-1, 0]], dtype=cov.dtype)
+        Jp = block_diag(*[J] * self.d)
+
+        return np.allclose(np.linalg.matrix_power(Jp @ cov, 2), -np.identity(2 * d))
+
+    def purify(self) -> "GaussianState":
+        """
+        Returns a purification corresponding to the current state on a double-sized
+        system.
+
+        Note, that the purification results in a state where the mean vector on the
+        auxiliary system is identical with the mean vector in the original system.
+
+        Source:
+            - `Evaluating capacities of Bosonic Gaussian channels <https://arxiv.org/abs/quant-ph/9912067>`_
+
+        Returns:
+            GaussianState: The purified Gaussian state.
+        """  # noqa: E501
+        hbar = self._config.hbar
+        cov = self.xpxp_covariance_matrix / hbar
+
+        d = self.d
+
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
+
+        S, D = williamson(T.T @ cov @ T)
+
+        beta_diagonals = np.diag(np.sqrt(np.abs(np.diag(D)[:d] ** 2 - 1)))
+        zeros = np.zeros_like(beta_diagonals)
+
+        beta_skeleton = np.block([[zeros, beta_diagonals], [beta_diagonals, zeros]])
+
+        TS = T @ S
+
+        beta = TS @ beta_skeleton @ TS.T
+
+        purified_cov = np.block(
+            [
+                [cov, beta],
+                [beta, cov],
+            ]
+        )
+
+        purification = GaussianState(
+            d=2 * d, calculator=self._calculator, config=self._config
+        )
+
+        purification.xpxp_covariance_matrix = hbar * purified_cov
+
+        mean = self.xpxp_mean_vector
+        purification.xpxp_mean_vector = np.concatenate([mean] * 2)
+
+        return purification
