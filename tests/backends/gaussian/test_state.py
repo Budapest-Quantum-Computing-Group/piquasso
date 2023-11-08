@@ -510,3 +510,90 @@ def test_GaussianState_fidelity():
     assert np.isclose(state_2.fidelity(state_1), 0.042150949)
     assert np.isclose(state_2.fidelity(state_1), state_1.fidelity(state_2))
     assert np.isclose(state_2.fidelity(state_2), 1.0)
+
+
+def test_GaussianState_Vacuum_is_pure():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
+
+    assert state.is_pure()
+
+
+def test_GaussianState_purify_vacuum():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
+
+    purification = state.purify()
+
+    assert state.is_pure()
+    assert purification.is_pure()
+    assert purification.d == 2 * state.d
+    assert purification.reduced(modes=(0, 1, 2)) == state
+
+
+def test_GaussianState_purify_on_1_mode():
+    with pq.Program() as program:
+        pq.Q() | pq.Thermal([0.5])
+
+        pq.Q(0) | pq.Squeezing(r=2, phi=np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=0.1, phi=0)
+
+    simulator = pq.GaussianSimulator(d=1)
+    mixed_state = simulator.execute(program).state
+
+    purification = mixed_state.purify()
+
+    assert not mixed_state.is_pure()
+    assert purification.is_pure()
+    assert purification.d == 2 * mixed_state.d
+    assert purification.reduced(modes=(0,)) == mixed_state
+
+
+def test_GaussianState_purify_on_2_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.Thermal([0.5, 1.5])
+
+        pq.Q(0) | pq.Squeezing(r=2, phi=np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=0.1, phi=0)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=np.pi / 3)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
+
+    simulator = pq.GaussianSimulator(d=2)
+    mixed_state = simulator.execute(program).state
+
+    purification = mixed_state.purify()
+
+    assert not mixed_state.is_pure()
+    assert purification.is_pure()
+    assert purification.d == 2 * mixed_state.d
+    assert purification.reduced(modes=(0, 1)) == mixed_state
+
+
+def test_GaussianState_purify_on_3_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.Thermal([0.5, 1.5, 0.0])
+
+        pq.Q(0) | pq.Squeezing(r=2, phi=np.pi / 3)
+        pq.Q(0) | pq.Displacement(r=0.1, phi=0)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=np.pi / 3)
+        pq.Q(2) | pq.Displacement(r=0.3, phi=-np.pi / 3)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 6)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 6, phi=np.pi / 7)
+
+    simulator = pq.GaussianSimulator(d=3)
+    mixed_state = simulator.execute(program).state
+
+    purification = mixed_state.purify()
+
+    assert not mixed_state.is_pure()
+    assert purification.is_pure()
+    assert purification.d == 2 * mixed_state.d
+    assert purification.reduced(modes=(0, 1, 2)) == mixed_state
