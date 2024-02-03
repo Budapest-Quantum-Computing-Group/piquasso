@@ -21,8 +21,10 @@ import piquasso as pq
 
 
 def pq_cvnn_gradient(weights, d, cutoff, layer_count):
-    simulator = pq.TensorflowPureFockSimulator(
-        d=d, config=pq.Config(cutoff=cutoff, normalize=True)
+    simulator = pq.PureFockSimulator(
+        d=d,
+        config=pq.Config(cutoff=cutoff, normalize=True),
+        calculator=pq.TensorflowCalculator(),
     )
 
     with tf.GradientTape() as tape:

@@ -17,14 +17,23 @@ import scipy
 
 import numpy as np
 
-from piquasso._math.permanent import np_glynn_gray_permanent
+from functools import partial
+
+from piquasso._math.permanent import np_glynn_gray_permanent, glynn_gray_permanent
 from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
 
 from piquasso.api.calculator import BaseCalculator
 
 
-class NumpyCalculator(BaseCalculator):
-    """The calculations for a simulation using NumPy."""
+class _BuiltinCalculator(BaseCalculator):
+    """Base class for built-in calculators."""
+
+
+class NumpyCalculator(_BuiltinCalculator):
+    """The calculations for a simulation using NumPy (and SciPy).
+
+    This is enabled by default in the built-in simulators.
+    """
 
     def __init__(self):
         self.np = np
@@ -72,3 +81,160 @@ class NumpyCalculator(BaseCalculator):
             return result
 
         return wrapper
+
+
+class TensorflowCalculator(_BuiltinCalculator):
+    """Calculator enabling calculating the gradients of certain instructions.
+
+    This calculator is similar to
+    :class:`~piquasso._backends.calculator.NumpyCalculator`, but it enables the
+    simulator to use Tensorflow to be able to compute gradients.
+
+    Note:
+        Non-deterministic operations like
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement` are
+        non-differentiable, please use a deterministic attribute of the resulting state
+        instead.
+
+    Example usage::
+
+        import tensorflow as tf
+
+        r = tf.Variable(0.43)
+
+        tensorflow_calculator = pq.TensorflowCalculator()
+
+        simulator = pq.PureFockSimulator(d=1, calculator=tensorflow_calculator)
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r)
+
+        with tf.GradientTape() as tape:
+            state = simulator.execute(program).state
+
+            mean = state.mean_photon_number()
+
+        gradient = tape.gradient(mean, [r])
+    """
+
+    def __init__(self):
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise ImportError(
+                "You have invoked a feature which requires 'tensorflow'.\n"
+                "You can install tensorflow via:\n"
+                "\n"
+                "pip install piquasso[tensorflow]"
+            )
+
+        import tensorflow.experimental.numpy as tnp
+        from tensorflow.python.ops.numpy_ops import np_config
+
+        np_config.enable_numpy_behavior()
+
+        self._tf = tf
+        self.np = tnp
+        self.fallback_np = np
+        self.sqrtm = tf.linalg.sqrtm
+
+    def maybe_convert_to_numpy(self, value):
+        return value.numpy() if self._tf.is_tensor(value) else value
+
+    def block_diag(self, *arrs):
+        block_diagonalized = self._tf.linalg.LinearOperatorBlockDiag(
+            [self._tf.linalg.LinearOperatorFullMatrix(arr) for arr in arrs]
+        )
+
+        return block_diagonalized.to_dense()
+
+    def permanent(self, matrix, rows, columns):
+        return glynn_gray_permanent(matrix, rows, columns, np=self.np)
+
+    def assign(self, array, index, value):
+        # NOTE: This is not as advanced as Numpy's indexing, only supports 1D arrays.
+
+        return self._tf.tensor_scatter_nd_update(array, [[index]], [value])
+
+    def block(self, arrays):
+        # NOTE: This is not as advanced as `numpy.block`, this function only supports
+        # 4 same-length blocks.
+
+        d = len(arrays[0][0])
+
+        output = []
+
+        for i in range(d):
+            output.append(self.np.concatenate([arrays[0][0][i], arrays[0][1][i]]))
+
+        for i in range(d):
+            output.append(self.np.concatenate([arrays[1][0][i], arrays[1][1][i]]))
+
+        return self.np.stack(output)
+
+    def scatter(self, indices, updates, shape):
+        return self._tf.scatter_nd(indices, updates, shape)
+
+    def embed_in_identity(self, matrix, indices, dim):
+        tf_indices = []
+        updates = []
+
+        small_dim = len(indices[0])
+        for row in range(small_dim):
+            for col in range(small_dim):
+                index = [indices[0][row][col], indices[1][row][col]]
+                update = matrix[row, col]
+
+                tf_indices.append(index)
+                updates.append(update)
+
+        for index in range(dim):
+            diagonal_index = [index, index]
+            if diagonal_index not in tf_indices:
+                tf_indices.append(diagonal_index)
+                updates.append(1.0)
+
+        return self.scatter(tf_indices, updates, (dim, dim))
+
+    def _funm(self, matrix, func):
+        eigenvalues, U = self._tf.linalg.eig(matrix)
+
+        log_eigenvalues = func(eigenvalues)
+
+        return U @ self.np.diag(log_eigenvalues) @ self._tf.linalg.inv(U)
+
+    def logm(self, matrix):
+        # NOTE: Tensorflow 2.0 has matrix logarithm, but it doesn't support gradient.
+        # Therefore we had to implement our own.
+        return self._funm(matrix, self.np.log)
+
+    def expm(self, matrix):
+        # NOTE: Tensorflow 2.0 has matrix exponential, but it doesn't support gradient.
+        # Therefore we had to implement our own.
+        return self._funm(matrix, self.np.exp)
+
+    def powm(self, matrix, power):
+        return self._funm(matrix, partial(self.np.power, x2=power))
+
+    def polar(self, matrix, side="right"):
+        P = self._tf.linalg.sqrtm(self.np.conj(matrix) @ matrix.T)
+        Pinv = self._tf.linalg.inv(P)
+
+        if side == "right":
+            U = matrix @ Pinv
+        elif side == "left":
+            U = Pinv @ matrix
+
+        return U, P
+
+    def svd(self, matrix):
+        # NOTE: Tensorflow 2.0 SVD has different return tuple.
+
+        S, V, W = self._tf.linalg.svd(matrix)
+
+        return V, S, self.np.conj(W).T
+
+    def custom_gradient(self, func):
+        return self._tf.custom_gradient(func)

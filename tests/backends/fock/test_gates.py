@@ -19,12 +19,19 @@ import numpy as np
 
 import piquasso as pq
 
+from functools import partial
+
+TensorflowPureFockSimulator = partial(
+    pq.PureFockSimulator,
+    calculator=pq.TensorflowCalculator(),
+)
+
 
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -52,7 +59,7 @@ def test_squeezing_probabilities(SimulatorClass):
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
