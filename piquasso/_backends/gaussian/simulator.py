@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.simulator import Simulator
+from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from piquasso._backends.calculator import NumpyCalculator
@@ -35,7 +35,7 @@ from .calculations import (
 )
 
 
-class GaussianSimulator(Simulator):
+class GaussianSimulator(BuiltinSimulator):
     """Performs photonic simulations using Gaussian representation.
 
     The simulation (when executed) results in an instance of
@@ -115,4 +115,4 @@ class GaussianSimulator(Simulator):
 
     _state_class = GaussianState
 
-    _calculator_class = NumpyCalculator
+    _default_calculator_class = NumpyCalculator

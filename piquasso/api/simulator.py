@@ -48,12 +48,17 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     _state_class: Type[State]
     _config_class: Type[Config] = Config
-    _calculator_class: Type[BaseCalculator] = BaseCalculator
+    _default_calculator_class: Type[BaseCalculator] = BaseCalculator
 
-    def __init__(self, d: int, config: Optional[Config] = None) -> None:
+    def __init__(
+        self,
+        d: int,
+        config: Optional[Config] = None,
+        calculator: Optional[BaseCalculator] = None,
+    ) -> None:
         self.d = d
         self.config = config.copy() if config is not None else self._config_class()
-        self._calculator = self._calculator_class()
+        self._calculator = calculator or self._default_calculator_class()
 
     @property
     @abc.abstractmethod

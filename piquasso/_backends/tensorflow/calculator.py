@@ -17,12 +17,47 @@ from functools import partial
 
 import numpy as fallback_np
 
-from piquasso.api.calculator import BaseCalculator
+from ..calculator import _BuiltinCalculator
 
 from piquasso._math.permanent import glynn_gray_permanent
 
 
-class TensorflowCalculator(BaseCalculator):
+class TensorflowCalculator(_BuiltinCalculator):
+    """Calculator enabling calculating the gradients of certain instructions.
+
+    This calculator is similar to
+    :class:`~piquasso._backends.calculator.NumpyCalculator`, but it enables the
+    simulator to use Tensorflow to be able to compute gradients.
+
+    Note:
+        Non-deterministic operations like
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement` are
+        non-differentiable, please use a deterministic attribute of the resulting state
+        instead.
+
+    Example usage::
+
+        import tensorflow as tf
+
+        r = tf.Variable(0.43)
+
+        tensorflow_calculator = pq.TensorflowCalculator()
+
+        simulator = pq.PureFockSimulator(d=1, calculator=tensorflow_calculator)
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r)
+
+        with tf.GradientTape() as tape:
+            state = simulator.execute(program).state
+
+            mean = state.mean_photon_number()
+
+        gradient = tape.gradient(mean, [r])
+    """
+
     def __init__(self):
         try:
             import tensorflow as tf

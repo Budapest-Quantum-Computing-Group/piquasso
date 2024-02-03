@@ -23,7 +23,11 @@ from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_red
 from piquasso.api.calculator import BaseCalculator
 
 
-class NumpyCalculator(BaseCalculator):
+class _BuiltinCalculator(BaseCalculator):
+    """Base class for built-in calculators."""
+
+
+class NumpyCalculator(_BuiltinCalculator):
     """The calculations for a simulation using NumPy."""
 
     def __init__(self):

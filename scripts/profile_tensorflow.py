@@ -36,7 +36,9 @@ with pq.Program() as program:
     pq.Q(all) | pq.Interferometer(interferometer)
     pq.Q(all) | pq.Kerr(xi)
 
-simulator_fock = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=d))
+simulator_fock = pq.PureFockSimulator(
+    d=d, config=pq.Config(cutoff=d), calculator=pq.TensorflowCalculator()
+)
 
 with tf.GradientTape() as tape:
     state = simulator_fock.execute(program).state

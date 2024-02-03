@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.simulator import Simulator
+from ...simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from piquasso._backends.calculator import NumpyCalculator
@@ -37,7 +37,7 @@ from .calculations import (
 from ..calculations import attenuator
 
 
-class FockSimulator(Simulator):
+class FockSimulator(BuiltinSimulator):
     """Performs photonic simulations using Fock representation.
 
     The simulation (when executed) results in an instance of
@@ -109,4 +109,4 @@ class FockSimulator(Simulator):
 
     _state_class = FockState
 
-    _calculator_class = NumpyCalculator
+    _default_calculator_class = NumpyCalculator

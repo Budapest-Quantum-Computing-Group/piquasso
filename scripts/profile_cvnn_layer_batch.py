@@ -65,8 +65,10 @@ target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=com
 target_state_vector[1] = 1.0
 target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 
-simulator = pq.TensorflowPureFockSimulator(
-    d=d, config=pq.Config(cutoff=cutoff, normalize=False)
+simulator = pq.PureFockSimulator(
+    d=d,
+    config=pq.Config(cutoff=cutoff, normalize=False),
+    calculator=pq.TensorflowCalculator(),
 )
 
 parameters = create_layer_parameters(d)

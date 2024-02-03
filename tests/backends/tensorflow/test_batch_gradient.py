@@ -37,7 +37,9 @@ def test_batch_Beamsplitter_mean_position():
 
             pq.Q() | pq.Beamsplitter(theta=theta, phi=np.pi / 3)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -88,7 +90,9 @@ def test_batch_Squeezing_mean_position():
             pq.Q(0) | pq.Squeezing(r=r)
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -141,7 +145,9 @@ def test_batch_Displacement_mean_position():
             pq.Q(0) | pq.Displacement(r=r)
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -194,7 +200,9 @@ def test_batch_Kerr_mean_position():
             pq.Q(0) | pq.Kerr(xi=xi)
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -247,7 +255,9 @@ def test_batch_Phaseshifter_mean_position():
             pq.Q(0) | pq.Phaseshifter(phi=phi)
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -329,7 +339,9 @@ def test_batch_complex_circuit_mean_position():
             pq.Q(0) | pq.Kerr(xi=xi1)
             pq.Q(1) | pq.Kerr(xi=xi2)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 
@@ -446,7 +458,9 @@ def test_batch_complex_circuit_mean_position_with_batch_apply():
             pq.Q(0) | pq.Kerr(xi=xi1)
             pq.Q(1) | pq.Kerr(xi=xi2)
 
-        simulator = pq.TensorflowPureFockSimulator(d=2, config=pq.Config(cutoff=5))
+        simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+        )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
 

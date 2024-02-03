@@ -19,6 +19,8 @@ import piquasso as pq
 
 import collections
 
+from functools import partial
+
 from scipy.linalg import polar, sinhm, coshm, expm
 
 
@@ -33,12 +35,18 @@ def is_proportional(first, second):
     return np.allclose(first, proportion * second)
 
 
+TensorflowPureFockSimulator = partial(
+    pq.PureFockSimulator,
+    calculator=pq.TensorflowCalculator(),
+)
+
+
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -62,7 +70,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -140,7 +148,7 @@ def test_density_matrix_with_squeezed_state():
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -190,7 +198,7 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.GaussianSimulator,
     ),
 )
@@ -229,7 +237,7 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -280,7 +288,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(SimulatorClas
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -331,7 +339,7 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(SimulatorClass
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -361,7 +369,7 @@ def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -389,7 +397,7 @@ def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -439,7 +447,7 @@ def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -490,7 +498,7 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(SimulatorCl
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -538,7 +546,7 @@ def test_fock_probabilities_with_quadratic_phase(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -586,7 +594,7 @@ def test_fock_probabilities_with_position_displacement(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -634,7 +642,7 @@ def test_fock_probabilities_with_momentum_displacement(SimulatorClass):
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -663,7 +671,7 @@ def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -692,7 +700,7 @@ def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     (
         pq.GaussianSimulator,
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
         pq.FockSimulator,
     ),
 )
@@ -1151,7 +1159,7 @@ def test_fidelity_for_nondisplaced_mixed_states_on_3_modes(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
     ),
 )
 def test_cubic_phase_equivalency(SimulatorClass):
@@ -1180,7 +1188,7 @@ def test_cubic_phase_equivalency(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
     ),
 )
 def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
@@ -1218,7 +1226,7 @@ def test_CubicPhase_equivalence_on_multiple_modes(SimulatorClass):
     (
         pq.PureFockSimulator,
         pq.FockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
     ),
 )
 def test_Kerr_gate_leaves_fock_probabilities_invariant(SimulatorClass):
@@ -1244,7 +1252,7 @@ def test_Kerr_gate_leaves_fock_probabilities_invariant(SimulatorClass):
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
     ),
 )
 def test_Kerr_equivalence(SimulatorClass):
@@ -1447,7 +1455,7 @@ def test_Attenuator_raises_InvalidParam_for_non_zero_mean_thermal_excitation(
         pq.PureFockSimulator,
         pq.FockSimulator,
         pq.GaussianSimulator,
-        pq.TensorflowPureFockSimulator,
+        TensorflowPureFockSimulator,
     ),
 )
 def test_Interferometer_smaller_than_system_size(SimulatorClass):
