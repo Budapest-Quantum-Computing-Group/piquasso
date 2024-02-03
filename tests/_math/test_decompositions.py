@@ -26,8 +26,7 @@ from piquasso._math.decompositions import (
     decompose_to_pure_and_mixed,
 )
 
-from piquasso._backends.calculator import NumpyCalculator
-from piquasso._backends.tensorflow.calculator import TensorflowCalculator
+from piquasso._backends.calculator import NumpyCalculator, TensorflowCalculator
 
 
 @pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])

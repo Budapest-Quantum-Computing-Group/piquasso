@@ -46,21 +46,21 @@ def unimport_tensorflow():
         del sys.modules["tensorflow"]
 
 
-def test_TensorflowPureFockSimulator_imports_tensorflow_if_installed():
+def test_TensorflowCalculator_imports_tensorflow_if_installed():
     import piquasso as pq
 
-    pq.TensorflowPureFockSimulator(d=3)
+    pq.TensorflowCalculator()
 
     assert "tensorflow" in sys.modules
 
 
-def test_TensorflowPureFockSimulator_raises_ImportError_if_TensorFlow_not_installed(
+def test_TensorflowCalculator_raises_ImportError_if_TensorFlow_not_installed(
     raise_ImportError_when_importing_tensorflow,
 ):
     import piquasso as pq
 
     with pytest.raises(ImportError) as error:
-        pq.TensorflowPureFockSimulator(d=3)
+        pq.TensorflowCalculator()
 
     assert error.value.args[0] == (
         "You have invoked a feature which requires 'tensorflow'.\n"

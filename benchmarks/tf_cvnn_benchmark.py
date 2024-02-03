@@ -92,9 +92,10 @@ def test_state_vector_and_jacobian(weights, d, cutoff, layer_count):
 
 
 def _calculate_piquasso_results(weights, d, cutoff, layer_count):
-    simulator = pq.TensorflowPureFockSimulator(
+    simulator = pq.PureFockSimulator(
         d=d,
         config=pq.Config(cutoff=cutoff, dtype=weights.dtype, normalize=False),
+        calculator=pq.TensorflowCalculator(),
     )
 
     with tf.GradientTape() as tape:
