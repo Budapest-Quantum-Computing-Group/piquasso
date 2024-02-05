@@ -25,6 +25,8 @@ from piquasso.instructions import gates
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
+from piquasso._backends.fock.calculations import calculate_state_index_matrix_list
+
 
 def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
     state.reset()
@@ -157,23 +159,82 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
     gamma = instruction._all_params["gamma"]
     hbar = state._config.hbar
 
-    operator = state._space.get_single_mode_cubic_phase_operator(
+    matrix = state._space.get_single_mode_cubic_phase_operator(
         gamma=gamma, hbar=hbar, calculator=state._calculator
     )
-    embedded_operator = state._space.embed_matrix(
-        operator,
-        modes=instruction.modes,
-        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
-    )
-    state._density_matrix = (
-        embedded_operator
-        @ state._density_matrix
-        @ embedded_operator.conjugate().transpose()
-    )
+    _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
     state.normalize()
 
     return Result(state=state)
+
+
+def _apply_active_gate_matrix_to_state(
+    state: FockState,
+    matrix: np.ndarray,
+    mode: int,
+) -> None:
+    density_matrix = state._density_matrix
+    space = state._space
+    auxiliary_subspace = state._get_subspace(state.d - 1)
+
+    state_index_matrix_list = calculate_state_index_matrix_list(
+        space, auxiliary_subspace, mode
+    )
+    density_matrix = _calculate_density_matrix_after_apply_active_gate(
+        density_matrix, matrix, state_index_matrix_list
+    )
+
+    state._density_matrix = density_matrix
+
+
+def _calculate_density_matrix_after_apply_active_gate(
+    density_matrix, matrix, state_index_matrix_list
+):
+    """
+    Applies the active gate matrix to the density matrix specified by
+    `state_index_matrix_list`.
+    """
+
+    new_density_matrix = np.empty_like(density_matrix, dtype=density_matrix.dtype)
+
+    cutoff = len(state_index_matrix_list)
+
+    for ket in range(cutoff):
+        state_index_matrix_ket = state_index_matrix_list[ket]
+        limit_ket = state_index_matrix_ket.shape[0]
+        sliced_matrix_ket = matrix[:limit_ket, :limit_ket]
+
+        for bra in range(max(ket + 1, cutoff)):
+            state_index_matrix_bra = state_index_matrix_list[bra]
+            limit_bra = state_index_matrix_bra.shape[0]
+            sliced_matrix_bra = matrix[:limit_bra, :limit_bra]
+
+            for col_ket in range(state_index_matrix_ket.shape[1]):
+                for col_bra in range(state_index_matrix_bra.shape[1]):
+                    index = np.ix_(
+                        state_index_matrix_ket[:, col_ket],
+                        state_index_matrix_bra[:, col_bra].T,
+                    )
+                    partial_result = np.einsum(
+                        "ij,jk,kl->il",
+                        sliced_matrix_ket,
+                        density_matrix[index],
+                        sliced_matrix_bra.T.conj(),
+                    )
+
+                    new_density_matrix[index] = partial_result
+
+                    if bra < ket:
+                        # NOTE: We use the fact that the density matrix is self-adjoint.
+                        index = np.ix_(
+                            state_index_matrix_bra[:, col_bra],
+                            state_index_matrix_ket[:, col_ket].T,
+                        )
+
+                        new_density_matrix[index] = partial_result.conj().T
+
+    return new_density_matrix
 
 
 def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
@@ -198,20 +259,11 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result
 def displacement(state: FockState, instruction: Instruction, shots: int) -> Result:
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
+    mode = instruction.modes[0]
 
-    operator = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
+    matrix = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
 
-    embedded_operator = state._space.embed_matrix(
-        operator,
-        modes=instruction.modes,
-        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
-    )
-
-    state._density_matrix = (
-        embedded_operator
-        @ state._density_matrix
-        @ embedded_operator.conjugate().transpose()
-    )
+    _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
     state.normalize()
 
@@ -221,23 +273,14 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
 def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
+    mode = instruction.modes[0]
 
-    operator = state._space.get_single_mode_squeezing_operator(
+    matrix = state._space.get_single_mode_squeezing_operator(
         r=r,
         phi=phi,
     )
 
-    embedded_operator = state._space.embed_matrix(
-        operator,
-        modes=instruction.modes,
-        auxiliary_modes=state._get_auxiliary_modes(modes=instruction.modes),
-    )
-
-    state._density_matrix = (
-        embedded_operator
-        @ state._density_matrix
-        @ embedded_operator.conjugate().transpose()
-    )
+    _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
     state.normalize()
 

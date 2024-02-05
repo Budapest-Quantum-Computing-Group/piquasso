@@ -17,17 +17,10 @@ from .passive_linear import passive_linear  # noqa: F401
 
 from typing import Optional, Tuple, Mapping
 
-from functools import lru_cache
-
 import random
 import numpy as np
 
-from piquasso._math.fock import cutoff_cardinality
-
-from piquasso._math.indices import (
-    get_index_in_fock_space,
-    get_auxiliary_modes,
-)
+from ...calculations import calculate_state_index_matrix_list
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState
@@ -124,7 +117,7 @@ def _apply_active_gate_matrix_to_state(
         state_vector = calculator.maybe_convert_to_numpy(state_vector)
         matrix = calculator.maybe_convert_to_numpy(matrix)
 
-        state_index_matrix_list = _calculate_state_index_matrix_list(
+        state_index_matrix_list = calculate_state_index_matrix_list(
             space, auxiliary_subspace, mode
         )
         new_state_vector = _calculate_state_vector_after_apply_active_gate(
@@ -136,39 +129,6 @@ def _apply_active_gate_matrix_to_state(
         return new_state_vector, grad
 
     state._state_vector = _apply_active_gate_matrix(state_vector, matrix)
-
-
-@lru_cache(maxsize=None)
-def _calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
-    d = space.d
-    cutoff = space.cutoff
-
-    state_index_matrix_list = []
-    auxiliary_modes = get_auxiliary_modes(d, (mode,))
-    all_occupation_numbers = np.zeros(d, dtype=int)
-
-    indices = [cutoff_cardinality(cutoff=n - 1, d=d - 1) for n in range(1, cutoff + 2)]
-
-    for n in range(cutoff):
-        limit = space.cutoff - n
-        subspace_size = indices[n + 1] - indices[n]
-
-        state_index_matrix = np.empty(shape=(limit, subspace_size), dtype=int)
-
-        for i, auxiliary_occupation_numbers in enumerate(
-            auxiliary_subspace[indices[n] : indices[n + 1]]
-        ):
-            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
-
-            for j in range(limit):
-                all_occupation_numbers[mode] = j
-                state_index_matrix[j, i] = get_index_in_fock_space(
-                    tuple(all_occupation_numbers)
-                )
-
-        state_index_matrix_list.append(state_index_matrix)
-
-    return state_index_matrix_list
 
 
 def _calculate_state_vector_after_apply_active_gate(
