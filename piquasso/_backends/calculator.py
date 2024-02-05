@@ -68,13 +68,6 @@ class NumpyCalculator(_BuiltinCalculator):
 
         return embedded_matrix
 
-    def embed_in_identity(self, matrix, indices, dim):
-        embedded_matrix = np.identity(dim, dtype=complex)
-
-        embedded_matrix[indices] = matrix
-
-        return embedded_matrix
-
     def custom_gradient(self, func):
         def wrapper(*args, **kwargs):
             result, _ = func(*args, **kwargs)

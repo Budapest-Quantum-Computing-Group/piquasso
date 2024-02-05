@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Mapping
+from typing import Tuple, Mapping, List
 
 import random
 import numpy as np
@@ -27,7 +27,12 @@ from piquasso._math.decompositions import euler
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
-from piquasso._backends.fock.calculations import calculate_state_index_matrix_list
+from ..calculations import (
+    calculate_state_index_matrix_list,
+    calculate_interferometer_helper_indices,
+    calculate_interferometer_on_fock_space,
+    calculate_index_list_for_appling_interferometer,
+)
 
 
 def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
@@ -49,15 +54,63 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, interferometer, modes):
-    fock_operator = state._space.get_passive_fock_operator(
-        interferometer,
-        modes=modes,
-        d=state._space.d,
+    subspace = state._get_subspace(dim=len(interferometer))
+
+    subspace_transformations = _get_interferometer_on_fock_space(
+        interferometer, subspace
     )
 
-    state._density_matrix = (
-        fock_operator @ state._density_matrix @ fock_operator.conjugate().transpose()
+    _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
+
+
+def _apply_passive_gate_matrix_to_state(
+    state: FockState,
+    subspace_transformations: List[np.ndarray],
+    modes: Tuple[int, ...],
+) -> None:
+    space = state._space
+
+    index_list = calculate_index_list_for_appling_interferometer(
+        modes,
+        space,
     )
+
+    state._density_matrix = _calculate_density_matrix_after_interferometer(
+        state._density_matrix,
+        subspace_transformations,
+        index_list,
+    )
+
+
+def _calculate_density_matrix_after_interferometer(
+    density_matrix: np.ndarray,
+    subspace_transformations: List[np.ndarray],
+    index_list: List[np.ndarray],
+) -> np.ndarray:
+    new_density_matrix = np.empty_like(density_matrix)
+
+    for ket, indices_ket in enumerate(index_list):
+        for bra, indices_bra in enumerate(index_list):
+            for col_ket in range(indices_ket.shape[1]):
+                for col_bra in range(indices_bra.shape[1]):
+                    index = np.ix_(
+                        indices_ket[:, col_ket],
+                        indices_bra[:, col_bra].T,
+                    )
+                    new_density_matrix[index] = np.einsum(
+                        "ij,jk,kl->il",
+                        subspace_transformations[ket],
+                        density_matrix[index],
+                        subspace_transformations[bra].T.conj(),
+                    )
+
+    return new_density_matrix
+
+
+def _get_interferometer_on_fock_space(interferometer, space):
+    index_dict = calculate_interferometer_helper_indices(space)
+
+    return calculate_interferometer_on_fock_space(interferometer, index_dict)
 
 
 def particle_number_measurement(
