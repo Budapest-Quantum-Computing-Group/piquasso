@@ -20,10 +20,14 @@ from typing import Optional, Tuple, Mapping
 import random
 import numpy as np
 
+from .passive_linear import _apply_passive_linear
+
 from ...calculations import calculate_state_index_matrix_list
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState
+
+from piquasso._math.decompositions import euler
 
 from piquasso.instructions import gates
 
@@ -318,13 +322,30 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
 def linear(
     state: PureFockState, instruction: gates._ActiveLinearGate, shots: int
 ) -> Result:
-    operator = state._space.get_linear_fock_operator(
-        modes=instruction.modes,
-        passive_block=instruction._get_passive_block(state._calculator, state._config),
-        active_block=instruction._get_active_block(state._calculator, state._config),
+    calculator = state._calculator
+    modes = instruction.modes
+
+    np = calculator.np
+
+    passive_block = instruction._get_passive_block(state._calculator, state._config)
+    active_block = instruction._get_active_block(state._calculator, state._config)
+
+    symplectic = calculator.block(
+        [
+            [passive_block, active_block],
+            [np.conj(active_block), np.conj(passive_block)],
+        ],
     )
 
-    state._state_vector = operator @ state._state_vector
+    unitary_last, squeezings, unitary_first = euler(symplectic, calculator)
+
+    _apply_passive_linear(state, unitary_first, modes, calculator)
+
+    for mode, r in zip(instruction.modes, squeezings):
+        matrix = state._space.get_single_mode_squeezing_operator(r=r, phi=0.0)
+        _apply_active_gate_matrix_to_state(state, matrix, mode)
+
+    _apply_passive_linear(state, unitary_last, modes, calculator)
 
     state.normalize()
 

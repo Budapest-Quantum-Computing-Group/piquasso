@@ -84,9 +84,11 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix):
 
     return block_diag(
         *[
-            identity
-            if block_diagonal_matrix[2 * index, 2 * index + 1] > 0
-            else rotation
+            (
+                identity
+                if block_diagonal_matrix[2 * index, 2 * index + 1] > 0
+                else rotation
+            )
             for index in range(d)
         ]
     )
@@ -260,3 +262,28 @@ def _get_scaling(
         )
 
     return result.root
+
+
+def euler(symplectic, calculator):
+    np = calculator.np
+    d = len(symplectic) // 2
+
+    identity = np.identity(d)
+    zeros = np.zeros(shape=(d, d), dtype=complex)
+
+    U_orig, R = calculator.polar(symplectic, side="left")
+
+    K = calculator.block(
+        [
+            [identity, zeros],
+            [zeros, -identity],
+        ],
+    )
+
+    H_active = 1j * K @ calculator.logm(R)
+
+    Z = 1j * H_active[:d, d:]
+
+    D, U = takagi(Z, calculator)
+
+    return U, D, np.conj(U).T @ U_orig[:d, :d]

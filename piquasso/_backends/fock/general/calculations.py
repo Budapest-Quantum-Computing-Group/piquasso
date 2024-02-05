@@ -22,6 +22,8 @@ from .state import FockState
 
 from piquasso.instructions import gates
 
+from piquasso._math.decompositions import euler
+
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
@@ -41,17 +43,21 @@ def passive_linear(
         state._calculator, state._config
     )
 
+    _apply_passive_linear(state, operator, instruction.modes)
+
+    return Result(state=state)
+
+
+def _apply_passive_linear(state, interferometer, modes):
     fock_operator = state._space.get_passive_fock_operator(
-        operator,
-        modes=instruction.modes,
+        interferometer,
+        modes=modes,
         d=state._space.d,
     )
 
     state._density_matrix = (
         fock_operator @ state._density_matrix @ fock_operator.conjugate().transpose()
     )
-
-    return Result(state=state)
 
 
 def particle_number_measurement(
@@ -290,15 +296,30 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
 def linear(
     state: FockState, instruction: gates._ActiveLinearGate, shots: int
 ) -> Result:
-    operator = state._space.get_linear_fock_operator(
-        modes=instruction.modes,
-        passive_block=instruction._get_passive_block(state._calculator, state._config),
-        active_block=instruction._get_active_block(state._calculator, state._config),
+    calculator = state._calculator
+    modes = instruction.modes
+
+    np = calculator.np
+
+    passive_block = instruction._get_passive_block(state._calculator, state._config)
+    active_block = instruction._get_active_block(state._calculator, state._config)
+
+    symplectic = calculator.block(
+        [
+            [passive_block, active_block],
+            [np.conj(active_block), np.conj(passive_block)],
+        ],
     )
 
-    state._density_matrix = (
-        operator @ state._density_matrix @ operator.conjugate().transpose()
-    )
+    unitary_last, squeezings, unitary_first = euler(symplectic, calculator)
+
+    _apply_passive_linear(state, unitary_first, modes)
+
+    for mode, r in zip(instruction.modes, squeezings):
+        matrix = state._space.get_single_mode_squeezing_operator(r=r, phi=0.0)
+        _apply_active_gate_matrix_to_state(state, matrix, mode)
+
+    _apply_passive_linear(state, unitary_last, modes)
 
     state.normalize()
 
