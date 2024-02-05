@@ -260,3 +260,36 @@ def _get_scaling(
         )
 
     return result.root
+
+
+def _complex_to_real(X):
+    I = np.identity(len(X) // 2)
+
+    W = 1 / np.sqrt(2) * np.block([[I, 1j * I], [I, -1j * I]])
+
+    return W.conj().T @ X @ W
+
+
+def euler(symplectic, calculator):
+    np = calculator.np
+    d = len(symplectic) // 2
+
+    identity = np.identity(d)
+    zeros = np.zeros(shape=(d, d), dtype=complex)
+
+    U_orig, R = calculator.polar(symplectic, side="left")
+
+    K = calculator.block(
+        [
+            [identity, zeros],
+            [zeros, -identity],
+        ],
+    )
+
+    H_active = 1j * K @ calculator.logm(R)
+
+    Z = 1j * H_active[:d, d:]
+
+    D, U = takagi(Z, calculator)
+
+    return U, D, np.conj(U).T @ U_orig[:d, :d]

@@ -44,17 +44,19 @@ def passive_linear(
         state._calculator, state._config
     ).astype(state._config.complex_dtype)
 
+    _apply_passive_linear(state, interferometer, instruction.modes, calculator)
+
+    return Result(state=state)
+
+
+def _apply_passive_linear(state, interferometer, modes, calculator):
     subspace = state._get_subspace(dim=len(interferometer))
 
     subspace_transformations = _get_interferometer_on_fock_space(
         interferometer, subspace, calculator
     )
 
-    _apply_passive_gate_matrix_to_state(
-        state, subspace_transformations, instruction.modes
-    )
-
-    return Result(state=state)
+    _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
 
 
 def _get_interferometer_on_fock_space(interferometer, space, calculator):
