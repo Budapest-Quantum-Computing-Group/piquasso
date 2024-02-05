@@ -65,9 +65,6 @@ class BaseCalculator(abc.ABC):
     def scatter(self, indices, updates, shape):
         raise NotImplementedCalculation()
 
-    def embed_in_identity(self, matrix, indices, dim):
-        raise NotImplementedCalculation()
-
     def block(self, arrays):
         raise NotImplementedCalculation()
 

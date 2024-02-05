@@ -14,15 +14,14 @@
 # limitations under the License.
 
 import functools
-from typing import Optional, Tuple, Iterable, Generator, Any, List
+from typing import Tuple, Iterable, Generator, Any, List
 
 import numpy as np
 from operator import add
 
-from scipy.special import factorial, comb
+from scipy.special import comb
 
 from piquasso.api.config import Config
-from piquasso._math.indices import get_operator_index
 from piquasso._math.combinatorics import partitions
 from piquasso._math.gradients import (
     create_single_mode_displacement_gradient,
@@ -161,23 +160,6 @@ class FockSpace(tuple):
 
         return self
 
-    def get_passive_fock_operator(
-        self,
-        operator: np.ndarray,
-        modes: Tuple[int, ...],
-        d: int,
-    ) -> np.ndarray:
-        indices = get_operator_index(modes)
-
-        embedded_operator = self._calculator.embed_in_identity(operator, indices, d)
-
-        return self._calculator.block_diag(
-            *(
-                self.symmetric_tensorpower(embedded_operator, n)
-                for n in range(self.cutoff)
-            )
-        )
-
     def get_single_mode_squeezing_operator(
         self,
         *,
@@ -295,41 +277,6 @@ class FockSpace(tuple):
                 ]
             )
         )
-
-    def get_subspace_basis(
-        self, n: int, d: Optional[int] = None
-    ) -> List[Tuple[int, ...]]:
-        d = d or self.d
-        return partitions(boxes=d, particles=n, class_=FockBasis)
-
-    def symmetric_tensorpower(
-        self,
-        operator: np.ndarray,
-        n: int,
-    ) -> np.ndarray:
-        d = len(operator)
-
-        np = self.calculator.np
-
-        dim = symmetric_subspace_cardinality(d=d, n=n)
-
-        matrix: List[List[complex]] = [[] for _ in range(dim)]
-
-        subspace_operator_basis = self.get_subspace_basis(n, d)
-
-        for row, row_basis in enumerate(subspace_operator_basis):
-            for col_basis in subspace_operator_basis:
-                cell = self.calculator.permanent(
-                    operator,
-                    col_basis,
-                    row_basis,
-                ) / np.sqrt(
-                    np.prod(factorial(col_basis)) * np.prod(factorial(row_basis))
-                )
-
-                matrix[row].append(cell)
-
-        return np.array(matrix)
 
     def get_creation_operator(self, modes: Tuple[int, ...]) -> np.ndarray:
         operator = np.zeros(
