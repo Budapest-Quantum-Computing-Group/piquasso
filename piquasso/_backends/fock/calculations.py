@@ -17,11 +17,19 @@ import numpy as np
 
 from scipy.special import comb
 
+from functools import lru_cache
+
 from .state import BaseFockState
 
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 from piquasso.api.exceptions import InvalidInstruction, InvalidParameter
+
+from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.indices import (
+    get_index_in_fock_space,
+    get_auxiliary_modes,
+)
 
 
 def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Result:
@@ -89,3 +97,36 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
     new_state._density_matrix = new_density_matrix
 
     return Result(state=new_state)
+
+
+@lru_cache(maxsize=None)
+def calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
+    d = space.d
+    cutoff = space.cutoff
+
+    state_index_matrix_list = []
+    auxiliary_modes = get_auxiliary_modes(d, (mode,))
+    all_occupation_numbers = np.zeros(d, dtype=int)
+
+    indices = [cutoff_cardinality(cutoff=n - 1, d=d - 1) for n in range(1, cutoff + 2)]
+
+    for n in range(cutoff):
+        limit = space.cutoff - n
+        subspace_size = indices[n + 1] - indices[n]
+
+        state_index_matrix = np.empty(shape=(limit, subspace_size), dtype=int)
+
+        for i, auxiliary_occupation_numbers in enumerate(
+            auxiliary_subspace[indices[n] : indices[n + 1]]
+        ):
+            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+
+            for j in range(limit):
+                all_occupation_numbers[mode] = j
+                state_index_matrix[j, i] = get_index_in_fock_space(
+                    tuple(all_occupation_numbers)
+                )
+
+        state_index_matrix_list.append(state_index_matrix)
+
+    return state_index_matrix_list
