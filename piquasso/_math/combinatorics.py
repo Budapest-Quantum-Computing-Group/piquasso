@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import chain, combinations, combinations_with_replacement
+from itertools import chain, combinations
 from typing import Tuple, Iterable, Iterator, TypeVar, List, Type
 
 import numpy as np
@@ -28,19 +28,28 @@ def powerset(iterable: Iterable[_T]) -> Iterator[Tuple[_T, ...]]:
 
 def partitions(
     boxes: int, particles: int, class_: Type[tuple] = tuple
-) -> List[Tuple[int, ...]]:
-    if particles == 0:
-        return [class_([0] * boxes)]
+):
+    distributions = []
+    distribution = [0] * boxes
 
-    masks = np.rot90(np.identity(boxes, dtype=int))
+    while True:
+        if sum(distribution) == particles:
+            distributions.append(class_(distribution))
 
-    return sorted(
-        (
-            class_(sum(c))  # type: ignore
-            for c in combinations_with_replacement(masks, particles)
-        ),
-        reverse=True,
-    )
+        i = boxes - 1
+
+        while i >= 0 and distribution[i] == particles:
+            i -= 1
+
+        if i == -1:
+            break
+
+        distribution[i] += 1
+
+        for j in range(i + 1, boxes):
+            distribution[j] = 0
+
+    return list(reversed(distributions))
 
 
 def get_occupation_numbers(d: int, cutoff: int) -> List[Tuple[int, ...]]:
