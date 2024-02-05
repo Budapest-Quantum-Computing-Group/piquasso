@@ -45,15 +45,6 @@ def empty_calculator():
     return EmptyCalculator()
 
 
-def test_BaseCalculator_raises_NotImplementedCalculation_for_permanent(
-    empty_calculator, dummy_matrix, dummy_occupation_number
-):
-    with pytest.raises(NotImplementedCalculation):
-        empty_calculator.permanent(
-            dummy_matrix, dummy_occupation_number, dummy_occupation_number
-        )
-
-
 def test_BaseCalculator_raises_NotImplementedCalculation_for_hafnian(
     empty_calculator,
     dummy_matrix,
@@ -85,14 +76,6 @@ def test_BaseCalculator_raises_NotImplementedCalculation_for_scatter(
 ):
     with pytest.raises(NotImplementedCalculation):
         empty_calculator.scatter(indices=[], updates=[], shape=(3, 3))
-
-
-def test_BaseCalculator_raises_NotImplementedCalculation_for_embed_in_identity(
-    empty_calculator,
-    dummy_matrix,
-):
-    with pytest.raises(NotImplementedCalculation):
-        empty_calculator.embed_in_identity(dummy_matrix, indices=(0, 0), dim=1)
 
 
 def test_BaseCalculator_raises_NotImplementedCalculation_for_block(
@@ -152,9 +135,6 @@ def test_BaseCalculator_with_overriding_defaults():
     any plugin which might want to use e.g. different permanent or hafnian calculation.
     """
 
-    def plugin_permanent():
-        return 42
-
     def plugin_loop_hafnian():
         return 43
 
@@ -162,13 +142,10 @@ def test_BaseCalculator_with_overriding_defaults():
         def __init__(self) -> None:
             super().__init__()
 
-            self.permanent = plugin_permanent
             self.loop_hafnian = plugin_loop_hafnian
 
     plugin_calculator = PluginCalculator()
 
-    assert plugin_calculator.permanent is plugin_permanent
     assert plugin_calculator.loop_hafnian is plugin_loop_hafnian
 
-    assert plugin_calculator.permanent() == 42
     assert plugin_calculator.loop_hafnian() == 43

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple, List
+
 import numpy as np
 
 from scipy.special import comb
@@ -25,10 +27,11 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 from piquasso.api.exceptions import InvalidInstruction, InvalidParameter
 
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_cardinality, FockSpace
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_auxiliary_modes,
+    get_index_in_fock_subspace,
 )
 
 
@@ -130,3 +133,181 @@ def calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
         state_index_matrix_list.append(state_index_matrix)
 
     return state_index_matrix_list
+
+
+@lru_cache(maxsize=None)
+def calculate_interferometer_helper_indices(space):
+    d = space.d
+    cutoff = space.cutoff
+    space = [np.array(element, dtype=int) for element in space]
+    indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
+
+    subspace_index_tensor = []
+    first_subspace_index_tensor = []
+
+    nonzero_index_tensor = []
+    first_nonzero_index_tensor = []
+
+    sqrt_occupation_numbers_tensor = []
+    first_occupation_numbers_tensor = []
+
+    for n in range(2, cutoff):
+        size = indices[n] - indices[n - 1]
+        subspace = space[indices[n - 1] : indices[n]]
+
+        subspace_indices = []
+        first_subspace_indices = []
+
+        nonzero_indices = []
+        first_nonzero_indices = []
+
+        sqrt_occupation_numbers = []
+        first_occupation_numbers = np.empty(size)
+
+        for index, vector in enumerate(subspace):
+            nonzero_multiindex = np.nonzero(vector)[0]
+            first_nonzero_multiindex = nonzero_multiindex[0]
+
+            subspace_multiindex = []
+            for nonzero_index in nonzero_multiindex:
+                vector[nonzero_index] -= 1
+                subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
+                vector[nonzero_index] += 1
+
+            subspace_indices.append(subspace_multiindex)
+            first_subspace_indices.append(subspace_multiindex[0])
+
+            nonzero_indices.append(nonzero_multiindex)
+            first_nonzero_indices.append(first_nonzero_multiindex)
+
+            sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
+            first_occupation_numbers[index] = vector[first_nonzero_multiindex]
+
+        subspace_index_tensor.append(subspace_indices)
+        first_nonzero_index_tensor.append(first_nonzero_indices)
+
+        nonzero_index_tensor.append(nonzero_indices)
+        first_subspace_index_tensor.append(first_subspace_indices)
+
+        sqrt_occupation_numbers_tensor.append(sqrt_occupation_numbers)
+        first_occupation_numbers_tensor.append(first_occupation_numbers)
+
+    return {
+        "subspace_index_tensor": subspace_index_tensor,
+        "first_nonzero_index_tensor": first_nonzero_index_tensor,
+        "nonzero_index_tensor": nonzero_index_tensor,
+        "first_subspace_index_tensor": first_subspace_index_tensor,
+        "sqrt_occupation_numbers_tensor": sqrt_occupation_numbers_tensor,
+        "first_occupation_numbers_tensor": first_occupation_numbers_tensor,
+        "indices": indices,
+    }
+
+
+def calculate_interferometer_on_fock_space(interferometer, index_dict):
+    """Calculates finite representation of interferometer in the Fock space.
+    The function assumes the knowledge of the 1-particle unitary.
+
+    Sources:
+    - Fast optimization of parametrized quantum optical circuits
+    (https://quantum-journal.org/papers/q-2020-11-30-366/)
+
+    Args:
+        interferometer (numpy.ndarray): The 1-particle unitary
+        space (FockSpace): List of basis elements on the Fock space.
+
+    Returns:
+        numpy.ndarray: Finite representation of interferometer in the Fock space
+    """
+
+    subspace_representations = []
+
+    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
+    subspace_representations.append(interferometer)
+
+    indices = index_dict["indices"]
+    cutoff = len(indices)
+
+    for n in range(2, cutoff):
+        size = indices[n] - indices[n - 1]
+
+        subspace_indices = index_dict["subspace_index_tensor"][n - 2]
+        first_subspace_indices = index_dict["first_subspace_index_tensor"][n - 2]
+
+        nonzero_indices = index_dict["nonzero_index_tensor"][n - 2]
+        first_nonzero_indices = index_dict["first_nonzero_index_tensor"][n - 2]
+
+        sqrt_occupation_numbers = index_dict["sqrt_occupation_numbers_tensor"][n - 2]
+        first_occupation_numbers = index_dict["first_occupation_numbers_tensor"][n - 2]
+
+        first_part_partially_indexed = interferometer[first_nonzero_indices, :]
+        second_part_partially_indexed = subspace_representations[n - 1][
+            first_subspace_indices, :
+        ]
+
+        matrix = []
+
+        for index in range(size):
+            first_part = (
+                sqrt_occupation_numbers[index]
+                * first_part_partially_indexed[:, nonzero_indices[index]]
+            )
+            second_part = second_part_partially_indexed[:, subspace_indices[index]]
+            matrix.append(np.einsum("ij,ij->i", first_part, second_part))
+
+        new_subspace_representation = np.transpose(
+            np.array(matrix) / np.sqrt(first_occupation_numbers)
+        )
+
+        subspace_representations.append(
+            new_subspace_representation.astype(interferometer.dtype)
+        )
+
+    return subspace_representations
+
+
+@lru_cache(maxsize=None)
+def calculate_index_list_for_appling_interferometer(
+    modes: Tuple[int, ...],
+    space: FockSpace,
+) -> List[np.ndarray]:
+    cutoff = space.cutoff
+    d = space.d
+    calculator = space._calculator
+
+    subspace = FockSpace(
+        d=len(modes), cutoff=space.cutoff, calculator=calculator, config=space.config
+    )
+    auxiliary_subspace = FockSpace(
+        d=d - len(modes),
+        cutoff=space.cutoff,
+        calculator=calculator,
+        config=space.config,
+    )
+
+    indices = [cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)]
+    auxiliary_indices = [
+        cutoff_cardinality(cutoff=n, d=d - len(modes)) for n in range(cutoff + 1)
+    ]
+
+    auxiliary_modes = get_auxiliary_modes(d, modes)
+    all_occupation_numbers = np.zeros(d, dtype=int)
+
+    index_list = []
+
+    for n in range(cutoff):
+        size = indices[n + 1] - indices[n]
+        n_particle_subspace = subspace[indices[n] : indices[n + 1]]
+        auxiliary_size = auxiliary_indices[cutoff - n]
+        state_index_matrix = np.empty(shape=(size, auxiliary_size), dtype=int)
+        for idx1, auxiliary_occupation_numbers in enumerate(
+            auxiliary_subspace[:auxiliary_size]
+        ):
+            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+            for idx2, column_vector_on_subspace in enumerate(n_particle_subspace):
+                all_occupation_numbers[(modes,)] = column_vector_on_subspace
+                column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
+                state_index_matrix[idx2, idx1] = column_index
+
+        index_list.append(state_index_matrix)
+
+    return index_list

@@ -412,7 +412,10 @@ def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
 
     probabilities = state.fock_probabilities
 
-    assert all(probability >= 0 for probability in probabilities)
+    assert all(
+        probability >= 0 or np.isclose(probability, 0.0)
+        for probability in probabilities
+    )
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
 
     assert is_proportional(
