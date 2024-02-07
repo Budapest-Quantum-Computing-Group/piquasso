@@ -13,11 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import tensorflow as tf
 
 import numpy as np
 
 import piquasso as pq
+
+from scipy.stats import unitary_group
+from scipy.linalg import block_diag
 
 
 def test_Displacement_mean_photon_number_gradient_1_mode():
@@ -255,6 +260,42 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift():
     )
 
 
+def test_decomposed_Beamsplitter_state_vector_gradient_1_particle():
+    theta = tf.Variable(11 * np.pi / 17)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=2,
+        config=pq.Config(cutoff=2),
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((1, 0))
+
+            pq.Q(1) | pq.Phaseshifter(-np.pi / 2)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
+            pq.Q(0) | pq.Phaseshifter(theta)
+            pq.Q(1) | pq.Phaseshifter(np.pi - theta)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
+            pq.Q(1) | pq.Phaseshifter(-np.pi / 2)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [theta])
+
+    assert np.allclose(
+        state_vector,
+        [0, np.cos(theta), np.sin(theta)],
+    )
+
+    assert np.allclose(
+        jacobian,
+        np.real([0, -np.sin(theta), np.cos(theta)]),
+    )
+
+
 def test_Beamsplitter_fock_probabilities_gradient_2_particles():
     theta = tf.Variable(np.pi / 3)
 
@@ -294,6 +335,177 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles():
             2 * (np.sin(2 * theta)) * np.cos(2 * theta),
             4 * np.sin(theta) ** 3 * np.cos(theta),
         ],
+    )
+
+
+def test_multiple_Beamsplitter_state_vector_gradient_2_particles():
+    theta_1 = np.pi / 7
+    phi_1 = 5 * np.pi / 9
+    theta = tf.Variable(np.pi / 5)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=2,
+        config=pq.Config(cutoff=3),
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((2, 0))
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta_1, phi=phi_1)
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=0.0)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [theta])
+
+    u00 = np.cos(theta_1) * np.cos(theta) - np.exp(1j * phi_1) * np.sin(
+        theta_1
+    ) * np.sin(theta)
+
+    u10 = np.cos(theta_1) * np.sin(theta) + np.exp(1j * phi_1) * np.cos(theta) * np.sin(
+        theta_1
+    )
+
+    u00_diff = -u10
+    u10_diff = u00
+
+    assert np.allclose(
+        state_vector,
+        [
+            0,
+            0,
+            0,
+            u00**2,
+            np.sqrt(2) * u00 * u10,
+            u10**2,
+        ],
+    )
+
+    assert np.allclose(
+        jacobian,
+        np.real(
+            [
+                0,
+                0,
+                0,
+                2 * u00 * u00_diff,
+                np.sqrt(2) * (u00_diff * u10 + u00 * u10_diff),
+                2 * u10 * u10_diff,
+            ]
+        ),
+    )
+
+
+def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed():
+    theta_1 = np.pi / 7
+    phi_1 = 5 * np.pi / 9
+    theta = tf.Variable(np.pi / 5)
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=2,
+        config=pq.Config(cutoff=3),
+    )
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((2, 0))
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=0.0)
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta_1, phi=phi_1)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [theta])
+
+    u00 = np.cos(theta_1) * np.cos(theta) - np.exp(-1j * phi_1) * np.sin(
+        theta_1
+    ) * np.sin(theta)
+
+    u10 = np.cos(theta_1) * np.sin(theta) + np.exp(1j * phi_1) * np.cos(theta) * np.sin(
+        theta_1
+    )
+
+    u00_diff = -u10.conj()
+    u10_diff = u00.conj()
+
+    assert np.allclose(
+        state_vector,
+        [
+            0,
+            0,
+            0,
+            u00**2,
+            np.sqrt(2) * u00 * u10,
+            u10**2,
+        ],
+    )
+
+    assert np.allclose(
+        jacobian,
+        np.real(
+            [
+                0,
+                0,
+                0,
+                2 * u00 * u00_diff,
+                np.sqrt(2) * (u00_diff * u10 + u00 * u10_diff),
+                2 * u10 * u10_diff,
+            ]
+        ),
+    )
+
+
+@pytest.mark.monkey
+def test_jacobian_of_state_after_mixing_with_fix_Interferometer():
+    c1 = tf.Variable(np.sqrt(0.2))
+    c2 = tf.Variable(np.sqrt(0.3))
+    c3 = tf.Variable(np.sqrt(0.5))
+
+    d = 3
+
+    simulator = pq.TensorflowPureFockSimulator(
+        d=d,
+        config=pq.Config(cutoff=2),
+    )
+
+    U = unitary_group.rvs(3)
+
+    with tf.GradientTape() as tape:
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((1, 0, 0)) * c1
+            pq.Q(all) | pq.StateVector((0, 1, 0)) * c2
+            pq.Q(all) | pq.StateVector((0, 0, 1)) * c3
+
+            pq.Q(all) | pq.Interferometer(U)
+
+        state = simulator.execute(program).state
+
+        state_vector = state._state_vector
+
+    jacobian = tape.jacobian(state_vector, [c1, c2, c3])
+
+    initial_state_vector = np.array([0.0, c1, c2, c3])
+
+    fock_space_unitary = block_diag([1.0], U)
+
+    assert np.allclose(state_vector, fock_space_unitary @ initial_state_vector)
+
+    assert np.allclose(
+        jacobian,
+        np.real(
+            [
+                fock_space_unitary @ np.array([0, 1, 0, 0]),
+                fock_space_unitary @ np.array([0, 0, 1, 0]),
+                fock_space_unitary @ np.array([0, 0, 0, 1]),
+            ]
+        ),
     )
 
 

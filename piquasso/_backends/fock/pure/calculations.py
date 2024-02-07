@@ -527,7 +527,7 @@ def _create_linear_passive_gate_gradient_function(
             state_vector_slice = conjugated_state_vector[indices]
 
             order_by.append(indices.reshape(-1))
-            product = np.einsum("ij, jk->ik", matrix, sliced_upstream)
+            product = np.einsum("ji,jk->ik", matrix, sliced_upstream)
             unordered_gradient_by_initial_state.append(product.reshape(-1))
 
             gradient_by_matrix.append(
