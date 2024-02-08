@@ -50,9 +50,10 @@ class NumpyCalculator(BaseCalculator):
 
         return array
 
-    def scatter(self, indices, updates, dim):
-        embedded_matrix = np.zeros((dim,) * 2, dtype=complex)
-        composite_index = np.array(indices)[:, 0], np.array(indices)[:, 1]
+    def scatter(self, indices, updates, shape):
+        embedded_matrix = np.zeros(shape, dtype=complex)
+        indices_array = np.array(indices)
+        composite_index = tuple([indices_array[:, i] for i in range(len(shape))])
 
         embedded_matrix[composite_index] = np.array(updates)
 

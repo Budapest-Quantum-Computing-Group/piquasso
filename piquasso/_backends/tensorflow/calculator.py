@@ -78,8 +78,8 @@ class TensorflowCalculator(BaseCalculator):
 
         return self.np.stack(output)
 
-    def scatter(self, indices, updates, dim):
-        return self._tf.scatter_nd(indices, updates, (dim, dim))
+    def scatter(self, indices, updates, shape):
+        return self._tf.scatter_nd(indices, updates, shape)
 
     def embed_in_identity(self, matrix, indices, dim):
         tf_indices = []
@@ -100,7 +100,7 @@ class TensorflowCalculator(BaseCalculator):
                 tf_indices.append(diagonal_index)
                 updates.append(1.0)
 
-        return self.scatter(tf_indices, updates, dim)
+        return self.scatter(tf_indices, updates, (dim, dim))
 
     def _funm(self, matrix, func):
         eigenvalues, U = self._tf.linalg.eig(matrix)

@@ -261,7 +261,7 @@ class FockSpace(tuple):
             indices.append(embedded_index)
             updates.append(matrix[index][0])
 
-        return self._calculator.scatter(indices, updates, dim=self.cardinality)
+        return self._calculator.scatter(indices, updates, shape=(self.cardinality,) * 2)
 
     def get_linear_fock_operator(
         self,

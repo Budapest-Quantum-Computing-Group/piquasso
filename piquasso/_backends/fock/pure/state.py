@@ -275,3 +275,21 @@ class PureFockState(BaseFockState):
             accumulator += number * self._np.abs(self._state_vector[index]) ** 2
 
         return accumulator
+
+    def get_tensor_representation(self):
+        calculator = self._calculator
+        cutoff = self._config.cutoff
+        d = self.d
+
+        indices = []
+        updates = []
+
+        for index, number in enumerate(self._space):
+            indices.append(list(number))
+            updates.append(self._state_vector[index])
+
+        return calculator.scatter(
+            indices,
+            updates,
+            [cutoff] * d,
+        )

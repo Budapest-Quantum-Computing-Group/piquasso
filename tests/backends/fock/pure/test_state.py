@@ -168,3 +168,32 @@ def test_normalize_if_disabled_in_Config():
     norm = state.norm
 
     assert not np.isclose(norm, 1.0)
+
+
+def test_PureFockState_get_tensor_representation():
+    d = 2
+    cutoff = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) / 2
+
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    state = simulator.execute(program).state
+
+    state_tensor = state.get_tensor_representation()
+
+    assert state_tensor.shape == (3,) * 2
+
+    assert np.allclose(
+        state_tensor,
+        np.array(
+            [
+                [0.0 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j],
+                [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                [0.70710678 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+            ]
+        ),
+    )

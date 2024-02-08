@@ -84,7 +84,7 @@ def test_BaseCalculator_raises_NotImplementedCalculation_for_scatter(
     empty_calculator,
 ):
     with pytest.raises(NotImplementedCalculation):
-        empty_calculator.scatter(indices=[], updates=[], dim=2)
+        empty_calculator.scatter(indices=[], updates=[], shape=(3, 3))
 
 
 def test_BaseCalculator_raises_NotImplementedCalculation_for_embed_in_identity(
