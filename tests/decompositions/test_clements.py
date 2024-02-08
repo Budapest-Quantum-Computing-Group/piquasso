@@ -19,9 +19,18 @@ from scipy.stats import unitary_group
 
 import piquasso as pq
 
-from piquasso import _math
+import tensorflow as tf
 
-from piquasso.decompositions.clements import T, Clements
+from jax import grad
+
+from piquasso.decompositions.clements import (
+    clements,
+    inverse_clements,
+    get_weights_from_decomposition,
+    get_decomposition_from_weights,
+    get_weights_from_interferometer,
+    get_interferometer_from_weights,
+)
 
 
 pytestmark = pytest.mark.monkey
@@ -35,157 +44,11 @@ def dummy_unitary():
     return func
 
 
-@pytest.fixture(scope="session")
-def tolerance():
-    return 1e-9
-
-
-def test_T_beamsplitter_is_unitary():
-    theta = np.pi / 3
-    phi = np.pi / 4
-
-    beamsplitter = T({"params": [theta, phi], "modes": [0, 1]}, d=2)
-
-    assert _math.linalg.is_unitary(beamsplitter)
-
-
-def test_eliminate_lower_offdiagonal_2_modes(dummy_unitary, tolerance):
-    U = dummy_unitary(d=2)
-
-    decomposition = Clements(U, decompose=False)
-
-    operation = decomposition.eliminate_lower_offdiagonal(1, 0)
-
-    beamsplitter = T(operation, 2)
-
-    rotated_U = beamsplitter @ U
-
-    assert np.abs(rotated_U[1, 0]) < tolerance
-
-
-def test_eliminate_lower_offdiagonal_3_modes(dummy_unitary, tolerance):
-    U = dummy_unitary(d=3)
-
-    decomposition = Clements(U, decompose=False)
-
-    operation = decomposition.eliminate_lower_offdiagonal(1, 0)
-
-    beamsplitter = T(operation, 3)
-
-    rotated_U = beamsplitter @ U
-
-    assert np.abs(rotated_U[1, 0]) < tolerance
-
-
-def test_eliminate_upper_offdiagonal_2_modes(dummy_unitary, tolerance):
-    U = dummy_unitary(d=2)
-
-    decomposition = Clements(U, decompose=False)
-
-    operation = decomposition.eliminate_upper_offdiagonal(1, 0)
-
-    beamsplitter = T.i(operation, 2)
-
-    rotated_U = U @ beamsplitter
-
-    assert np.abs(rotated_U[1, 0]) < tolerance
-
-
-def test_eliminate_upper_offdiagonal_3_modes(dummy_unitary, tolerance):
-    U = dummy_unitary(d=3)
-
-    decomposition = Clements(U, decompose=False)
-
-    operation = decomposition.eliminate_upper_offdiagonal(1, 0)
-
-    beamsplitter = T.i(operation, 3)
-
-    rotated_U = U @ beamsplitter
-
-    assert np.abs(rotated_U[1, 0]) < tolerance
-
-
-@pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_clements_decomposition_on_n_modes(n, dummy_unitary, tolerance):
-    U = dummy_unitary(d=n)
-
-    decomposition = Clements(U)
-
-    diagonalized = decomposition.U
-
-    assert np.abs(diagonalized[0, 1]) < tolerance
-    assert np.abs(diagonalized[1, 0]) < tolerance
-
-    assert (
-        sum(sum(np.abs(diagonalized))) - sum(np.abs(np.diag(diagonalized))) < tolerance
-    ), "Absolute sum of matrix elements should be equal to the "
-    "diagonal elements, if the matrix is properly diagonalized."
-
-
-@pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_clements_decomposition_and_composition_on_n_modes(n, dummy_unitary, tolerance):
-    U = dummy_unitary(d=n)
-
-    decomposition = Clements(U)
-
-    diagonalized = decomposition.U
-
-    assert (
-        sum(sum(np.abs(diagonalized))) - sum(np.abs(np.diag(diagonalized))) < tolerance
-    ), "Absolute sum of matrix elements should be equal to the "
-    "diagonal elements, if the matrix is properly diagonalized."
-
-    original = Clements.from_decomposition(decomposition)
-
-    assert (U - original < tolerance).all()
-
-
-@pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_clements_decomposition_and_composition_on_n_modes_for_identity(n):
-    identity = np.identity(n)
-
-    decomposition = Clements(identity)
-
-    diagonalized = decomposition.U
-
-    assert np.isclose(
-        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
-    ), "Absolute sum of matrix elements should be equal to the "
-    "diagonal elements, if the matrix is properly diagonalized."
-
-    matrix_from_decomposition = Clements.from_decomposition(decomposition)
-
-    assert np.allclose(identity, matrix_from_decomposition)
-
-
-def test_clements_decomposition_and_composition_on_n_modes_for_matrix_with_0_terms():
-    matrix = np.array(
-        [
-            [1 / np.sqrt(2), 0, 1 / np.sqrt(2)],
-            [0, 1, 0],
-            [1 / np.sqrt(2), 0, -1 / np.sqrt(2)],
-        ]
-    )
-
-    decomposition = Clements(matrix)
-
-    diagonalized = decomposition.U
-
-    assert np.isclose(
-        sum(sum(np.abs(diagonalized))), sum(np.abs(np.diag(diagonalized)))
-    ), "Absolute sum of matrix elements should be equal to the "
-    "diagonal elements, if the matrix is properly diagonalized."
-
-    matrix_from_decomposition = Clements.from_decomposition(decomposition)
-
-    assert np.allclose(matrix, matrix_from_decomposition)
-
-
 def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = Clements(U)
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
 
     with pq.Program() as program_with_interferometer:
         pq.Q() | pq.StateVector(tuple([1] * d))
@@ -195,16 +58,16 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.StateVector(tuple([1] * d))
 
-        for operation in decomposition.inverse_operations:
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+        for operation in decomposition.first_beamsplitters:
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
+            pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
-            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
+        for operation in decomposition.middle_phaseshifters:
+            pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-        for operation in reversed(decomposition.direct_operations):
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+        for operation in decomposition.last_beamsplitters:
+            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.SamplingSimulator(d=d)
 
@@ -218,7 +81,7 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
     d = 4
     U = dummy_unitary(d)
 
-    decomposition = Clements(U)
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
 
     occupation_numbers = (1, 1, 0, 0)
 
@@ -230,16 +93,16 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.StateVector(occupation_numbers)
 
-        for operation in decomposition.inverse_operations:
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+        for operation in decomposition.first_beamsplitters:
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
+            pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
-            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
+        for operation in decomposition.middle_phaseshifters:
+            pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-        for operation in reversed(decomposition.direct_operations):
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+        for operation in decomposition.last_beamsplitters:
+            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.PureFockSimulator(
         d=d, config=pq.Config(cutoff=sum(occupation_numbers) + 1)
@@ -255,7 +118,7 @@ def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
     d = 4
     U = dummy_unitary(d)
 
-    decomposition = Clements(U)
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
 
     with pq.Program() as program_with_interferometer:
         pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
@@ -265,16 +128,16 @@ def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
 
-        for operation in decomposition.inverse_operations:
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+        for operation in decomposition.first_beamsplitters:
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
+            pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
-            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
+        for operation in decomposition.middle_phaseshifters:
+            pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-        for operation in reversed(decomposition.direct_operations):
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+        for operation in decomposition.last_beamsplitters:
+            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.FockSimulator(d=d, config=pq.Config(cutoff=3))
 
@@ -288,7 +151,7 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = Clements(U)
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
 
     squeezings = [0.1, 0.2, 0.3]
 
@@ -302,16 +165,16 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
         for mode, r in enumerate(squeezings):
             pq.Q(mode) | pq.Squeezing(r)
 
-        for operation in decomposition.inverse_operations:
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=operation["params"][1])
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+        for operation in decomposition.first_beamsplitters:
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
+            pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for mode, phaseshift_angle in enumerate(np.angle(decomposition.diagonals)):
-            pq.Q(mode) | pq.Phaseshifter(phaseshift_angle)
+        for operation in decomposition.middle_phaseshifters:
+            pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-        for operation in reversed(decomposition.direct_operations):
-            pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], np.pi)
-            pq.Q(operation["modes"][0]) | pq.Phaseshifter(phi=-operation["params"][1])
+        for operation in decomposition.last_beamsplitters:
+            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
+            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.GaussianSimulator(d=d, config=pq.Config(cutoff=2))
 
@@ -319,3 +182,171 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
     state_with_decomposition = simulator.execute(program_with_decomposition).state
 
     assert state_with_interferometer == state_with_decomposition
+
+
+@pytest.mark.parametrize(
+    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+)
+def test_clements_decomposition_roundtrip(calculator, dummy_unitary):
+    d = 5
+    U = dummy_unitary(d)
+
+    decomposition = clements(U, calculator)
+
+    new_U = inverse_clements(decomposition, calculator, dtype=U.dtype)
+
+    assert np.allclose(U, new_U)
+
+
+@pytest.mark.parametrize(
+    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+)
+def test_clements_decomposition_roundtrip_with_weights(calculator, dummy_unitary):
+    d = 6
+    U = dummy_unitary(d)
+
+    decomposition = clements(U, calculator)
+
+    weights = get_weights_from_decomposition(decomposition, d, calculator)
+
+    new_decomposition = get_decomposition_from_weights(weights, d, calculator)
+
+    assert decomposition == new_decomposition
+
+    new_U = inverse_clements(new_decomposition, calculator, dtype=U.dtype)
+
+    assert np.allclose(U, new_U)
+
+
+@pytest.mark.parametrize(
+    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+)
+def test_weigths_to_interferometer_roundtrip(calculator, dummy_unitary):
+    d = 6
+    U = calculator.np.array(dummy_unitary(d))
+
+    weights = get_weights_from_interferometer(U, calculator)
+
+    new_U = get_interferometer_from_weights(weights, d, calculator, dtype=U.dtype)
+
+    assert np.allclose(U, new_U)
+
+
+def test_clements_decomposition_with_TensorflowCalculator(dummy_unitary):
+    U = tf.Variable(dummy_unitary(2))
+
+    with tf.GradientTape() as tape:
+        decomposition = clements(U, calculator=pq.TensorflowCalculator())
+
+    assert len(decomposition.first_beamsplitters) == 0
+    assert len(decomposition.middle_phaseshifters) == 2
+    assert len(decomposition.last_beamsplitters) == 1
+
+    first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+
+    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
+
+    gradient = tape.gradient(first_beamsplitter_theta, U)
+
+    assert np.allclose(
+        gradient,
+        np.array(
+            [
+                [-np.abs(U[1, 0]) * U[0, 0] / np.abs(U[0, 0]), 0.0],
+                [np.abs(U[0, 0]) * U[1, 0] / np.abs(U[1, 0]), 0.0],
+            ]
+        ),
+    )
+
+
+def test_clements_decomposition_with_JaxCalculator(dummy_unitary):
+    def get_first_beamsplitter_theta(U):
+        decomposition = clements(U, calculator=pq.JaxCalculator())
+
+        assert len(decomposition.first_beamsplitters) == 0
+        assert len(decomposition.middle_phaseshifters) == 2
+        assert len(decomposition.last_beamsplitters) == 1
+
+        first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+
+        return first_beamsplitter_theta
+
+    U = dummy_unitary(2)
+
+    first_beamsplitter_theta = get_first_beamsplitter_theta(U)
+
+    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
+
+    grad_first_beamsplitter_theta = grad(get_first_beamsplitter_theta)
+
+    gradient = grad_first_beamsplitter_theta(U)
+
+    # NOTE: There is a difference between the differential with respect to a complex
+    # variable between Tensorflow and JAX, namely, that the gradients in the two
+    # frameworks are conjugate to each other.
+    assert np.allclose(
+        gradient,
+        np.conj(
+            np.array(
+                [
+                    [-np.abs(U[1, 0]) * U[0, 0] / np.abs(U[0, 0]), 0.0],
+                    [np.abs(U[0, 0]) * U[1, 0] / np.abs(U[1, 0]), 0.0],
+                ]
+            )
+        ),
+    )
+
+
+def test_clements_decomposition_with_TensorflowCalculator_from_weights(dummy_unitary):
+    d = 2
+    U = dummy_unitary(d)
+
+    weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyCalculator()))
+
+    with tf.GradientTape() as tape:
+        decomposition = get_decomposition_from_weights(
+            weights, d=d, calculator=pq.TensorflowCalculator()
+        )
+
+    assert len(decomposition.first_beamsplitters) == 0
+    assert len(decomposition.middle_phaseshifters) == 2
+    assert len(decomposition.last_beamsplitters) == 1
+
+    first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+
+    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
+
+    gradient = tape.gradient(first_beamsplitter_theta, weights)
+
+    assert np.allclose(gradient, [0.0, 0.0, 1.0, 0.0])
+
+
+def test_clements_decomposition_with_JaxCalculator_from_weights(dummy_unitary):
+    d = 2
+    U = dummy_unitary(d)
+
+    weights = get_weights_from_interferometer(U, pq.NumpyCalculator())
+
+    calculator = pq.JaxCalculator()
+
+    def get_first_beamsplitter_theta(weights):
+        decomposition = get_decomposition_from_weights(
+            weights, d=d, calculator=calculator
+        )
+
+        first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+
+        return first_beamsplitter_theta
+
+    first_beamsplitter_theta = get_first_beamsplitter_theta(weights)
+
+    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
+
+    grad_first_beamsplitter_theta = grad(get_first_beamsplitter_theta)
+
+    gradient = grad_first_beamsplitter_theta(weights)
+
+    assert np.allclose(
+        gradient,
+        [0.0, 0.0, 1.0, 0.0],
+    )

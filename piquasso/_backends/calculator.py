@@ -57,6 +57,13 @@ class _BuiltinCalculator(BaseCalculator):
     def transpose(self, matrix):
         return self.np.transpose(matrix)
 
+    def embed_in_identity(self, matrix, indices, dim):
+        embedded_matrix = self.np.identity(dim, dtype=complex)
+
+        embedded_matrix = self.assign(embedded_matrix, indices, matrix)
+
+        return embedded_matrix
+
 
 class NumpyCalculator(_BuiltinCalculator):
     """The calculations for a simulation using NumPy (and SciPy).

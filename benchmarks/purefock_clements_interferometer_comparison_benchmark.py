@@ -15,10 +15,8 @@
 
 import pytest
 
-import numpy as np
-
 import piquasso as pq
-from piquasso.decompositions.clements import Clements
+from piquasso.decompositions.clements import clements
 
 from scipy.stats import unitary_group
 
@@ -55,7 +53,7 @@ def piquasso_interferometer_benchmark(benchmark, d, cutoff, U):
 
 @pytest.mark.parametrize("d, U", zip(d_tuple, U_tuple))
 def piquasso_clements_benchmark(benchmark, d, cutoff, U):
-    decomposition = Clements(U)
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
 
     @benchmark
     def func():
@@ -65,22 +63,16 @@ def piquasso_clements_benchmark(benchmark, d, cutoff, U):
             for i in range(d):
                 pq.Q(i) | pq.Squeezing(r=0.1)
 
-            for operation in decomposition.inverse_operations:
-                pq.Q(operation["modes"][0]) | pq.Phaseshifter(
-                    phi=operation["params"][1]
-                )
-                pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
+            for operation in decomposition.first_beamsplitters:
+                pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
+                pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-            for i, angle in enumerate(np.angle(decomposition.diagonals)):
-                pq.Q(i) | pq.Phaseshifter(angle)
+            for operation in decomposition.middle_phaseshifters:
+                pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-            for operation in reversed(decomposition.direct_operations):
-                pq.Q(*operation["modes"]) | pq.Beamsplitter(
-                    operation["params"][0], np.pi
-                )
-                pq.Q(operation["modes"][0]) | pq.Phaseshifter(
-                    phi=-operation["params"][1]
-                )
+            for operation in decomposition.last_beamsplitters:
+                pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
+                pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
         simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
