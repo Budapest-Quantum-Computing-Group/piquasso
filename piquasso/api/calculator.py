@@ -112,6 +112,9 @@ class BaseCalculator(abc.ABC):
         """
         raise NotImplementedCalculation()
 
+    def embed_in_identity(self, matrix, indices, dim):
+        raise NotImplementedCalculation()
+
     def block(self, arrays):
         """Assembling submatrices into a single matrix.
 
