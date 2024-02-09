@@ -71,7 +71,8 @@ def piquasso_clements_benchmark(benchmark, d, cutoff, U):
                 )
                 pq.Q(*operation["modes"]) | pq.Beamsplitter(operation["params"][0], 0.0)
 
-                pq.Q() | pq.Phaseshifter(np.angle(decomposition.diagonals))
+            for i, angle in enumerate(np.angle(decomposition.diagonals)):
+                pq.Q(i) | pq.Phaseshifter(angle)
 
             for operation in reversed(decomposition.direct_operations):
                 pq.Q(*operation["modes"]) | pq.Beamsplitter(

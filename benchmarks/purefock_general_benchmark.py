@@ -41,11 +41,17 @@ def xi():
     return 0.3
 
 
-parameters = [(d, unitary_group.rvs(d)) for d in range(3, 7)]
+@pytest.fixture
+def cutoff():
+    return 15
 
 
-@pytest.mark.parametrize("d, interferometer", parameters)
-def piquasso_benchmark(benchmark, d, interferometer, r, alpha, xi):
+@pytest.fixture
+def d():
+    return 5
+
+
+def piquasso_benchmark(benchmark, cutoff, r, alpha, xi, d):
     @benchmark
     def func():
         with pq.Program() as program:
@@ -54,21 +60,20 @@ def piquasso_benchmark(benchmark, d, interferometer, r, alpha, xi):
             for i in range(d):
                 pq.Q(i) | pq.Displacement(r=alpha) | pq.Squeezing(r)
 
-            pq.Q(all) | pq.Interferometer(interferometer)
+            pq.Q(all) | pq.Interferometer(unitary_group.rvs(d))
 
             for i in range(d):
                 pq.Q(i) | pq.Kerr(xi)
 
-        simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=d))
+        simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
         simulator_fock.execute(program)
 
 
-@pytest.mark.parametrize("d, interferometer", parameters)
-def strawberryfields_benchmark(benchmark, d, interferometer, r, alpha, xi):
+def strawberryfields_benchmark(benchmark, cutoff, r, alpha, xi, d):
     @benchmark
     def func():
-        eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": d})
+        eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
 
         circuit = sf.Program(d)
 
@@ -77,7 +82,7 @@ def strawberryfields_benchmark(benchmark, d, interferometer, r, alpha, xi):
                 sf.ops.Dgate(alpha) | q[i]
                 sf.ops.Sgate(r) | q[i]
 
-            sf.ops.Interferometer(interferometer) | tuple(q[i] for i in range(d))
+            sf.ops.Interferometer(unitary_group.rvs(d)) | tuple(q[i] for i in range(d))
 
             for i in range(d):
                 sf.ops.Kgate(xi) | q[i]

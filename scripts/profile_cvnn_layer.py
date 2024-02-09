@@ -20,6 +20,9 @@ import time
 import numpy as np
 
 
+PROFILE = False
+
+
 def create_layer_parameters(d: int):
     number_of_beamsplitters: int
     if d % 2 == 0:
@@ -53,8 +56,8 @@ def create_layer_parameters(d: int):
 
 
 input = 0.01
-d = 8
-cutoff = 8
+d = 2
+cutoff = 10
 
 target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex)
 target_state_vector[1] = 1.0
@@ -64,11 +67,17 @@ simulator = pq.TensorflowPureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 
 parameters = create_layer_parameters(d)
 
+if PROFILE:
+    profiler_options = tf.profiler.experimental.ProfilerOptions(python_tracer_level=1)
+    tf.profiler.experimental.start("logdir", options=profiler_options)
+
+
 with tf.GradientTape() as tape:
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
 
-        pq.Q(all) | pq.Displacement(r=input)
+        for mode in range(d):
+            pq.Q(mode) | pq.Displacement(r=input)
 
         i = 0
         for col in range(d):
@@ -87,7 +96,8 @@ with tf.GradientTape() as tape:
         for i in range(d - 1):
             pq.Q(i) | pq.Phaseshifter(parameters["phis_1"][i])
 
-        pq.Q(all) | pq.Squeezing(parameters["squeezings"])
+        for mode, r in enumerate(parameters["squeezings"]):
+            pq.Q(mode) | pq.Squeezing(r)
 
         i = 0
         for col in range(d):
@@ -106,8 +116,11 @@ with tf.GradientTape() as tape:
         for i in range(d - 1):
             pq.Q(i) | pq.Phaseshifter(parameters["phis_2"][i])
 
-        pq.Q(all) | pq.Displacement(r=parameters["displacements"])
-        pq.Q(all) | pq.Kerr(parameters["kappas"])
+        for mode, r in enumerate(parameters["displacements"]):
+            pq.Q(mode) | pq.Displacement(r=r)
+
+        for mode, xi in enumerate(parameters["kappas"]):
+            pq.Q(mode) | pq.Kerr(xi=xi)
 
     start_time = time.time()
     state = simulator.execute(program).state
@@ -117,12 +130,6 @@ with tf.GradientTape() as tape:
 
     cost = tf.reduce_sum(tf.abs(target_state_vector - state_vector))
 
-
-profiler_options = tf.profiler.experimental.ProfilerOptions(
-    host_tracer_level=3, python_tracer_level=3, device_tracer_level=3
-)
-
-# tf.profiler.experimental.start("logdir", options=profiler_options)
 
 flattened_parameters = (
     parameters["thetas_1"]
@@ -137,7 +144,8 @@ flattened_parameters = (
 start_time = time.time()
 gradient = tape.gradient(cost, flattened_parameters)
 
-print("JACOBIAN CALCULATION TIME:", time.time() - start_time)
-print("JACOBIAN SHAPE:", [g.numpy() for g in gradient])
+print("GRADIENT CALCULATION TIME:", time.time() - start_time)
+print("GRADIENT:", [g.numpy() for g in gradient])
 
-# tf.profiler.experimental.stop()
+if PROFILE:
+    tf.profiler.experimental.stop()
