@@ -108,7 +108,7 @@ def _calculate_piquasso_results(weights, d, cutoff, layer_count):
         state = simulator.execute(program).state
         state_vector = state.get_tensor_representation()
 
-    return state_vector, tape.gradient(state_vector, weights)
+    return state_vector, tape.jacobian(state_vector, weights)
 
 
 def _pq_interferometer(params, d):
@@ -186,7 +186,7 @@ def _calculate_strawberryfields_results(weights, d, cutoff, layer_count):
         state = eng.run(qnn, args=mapping).state
         state_vector = state.ket()
 
-    return state_vector, tape.gradient(state_vector, weights)
+    return state_vector, tape.jacobian(state_vector, weights)
 
 
 def _sf_interferometer(params, q):
