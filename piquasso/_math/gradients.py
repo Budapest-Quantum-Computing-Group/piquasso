@@ -115,13 +115,7 @@ def create_single_mode_squeezing_gradient(
             r_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(r_grad))))
             phi_grad_sum = tf.constant(np.real(np.sum(upstream * np.conj(phi_grad))))
         else:
-            # NOTE: Possibly Tensorflow bug, cast needed.
-            # cannot compute AddN as input #1(zero-based) was expected to be\
-            #  a double tensor but is a float tensor [Op:AddN].
-            # The bug does not occur with Displacement gradient for unknown reasons.
-            r_grad_sum = tf.cast(
-                tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad))), np.float32
-            )
+            r_grad_sum = tf.math.real(tf.reduce_sum(upstream * tf.math.conj(r_grad)))
             phi_grad_sum = tf.math.real(
                 tf.reduce_sum(upstream * tf.math.conj(phi_grad))
             )
