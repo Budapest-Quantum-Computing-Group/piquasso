@@ -26,7 +26,7 @@ from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matr
 from piquasso.api.exceptions import InvalidParameter
 
 
-def takagi(matrix, calculator, rounding=12):
+def takagi(matrix, calculator, atol=1e-12):
     """Takagi factorization of complex symmetric matrices.
 
     Note:
@@ -46,19 +46,23 @@ def takagi(matrix, calculator, rounding=12):
 
     W = np.conj(W_adjoint).T
 
-    singular_value_multiplicity_map = {}
+    singular_value_multiplicity_indices = []
+    singular_value_multiplicity_values = []
 
     for index, value in enumerate(singular_values):
-        value = calculator.fallback_np.round(value, decimals=rounding)
+        matches = np.where(
+            np.isclose(value, np.array(singular_value_multiplicity_values), atol=atol)
+        )[0]
 
-        if value not in singular_value_multiplicity_map:
-            singular_value_multiplicity_map[value] = [index]
+        if len(matches) == 0:
+            singular_value_multiplicity_values.append(value)
+            singular_value_multiplicity_indices.append([index])
         else:
-            singular_value_multiplicity_map[value].append(index)
+            singular_value_multiplicity_indices[matches[0]].append(index)
 
     diagonal_blocks_for_Q = []
 
-    for indices in singular_value_multiplicity_map.values():
+    for indices in singular_value_multiplicity_indices:
         Z = V[:, indices].transpose() @ W[:, indices]
 
         diagonal_blocks_for_Q.append(calculator.sqrtm(Z))
@@ -270,7 +274,7 @@ def euler(symplectic, calculator):
 
     U_orig, R = calculator.polar(symplectic, side="left")
 
-    K = np.diag([1.0] * d + [-1.0] * d)
+    K = np.diag(np.array([1.0] * d + [-1.0] * d))
 
     H_active = 1j * K @ calculator.logm(R)
 

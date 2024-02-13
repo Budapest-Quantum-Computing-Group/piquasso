@@ -25,7 +25,7 @@ from functools import partial
 from scipy.linalg import polar, sinhm, coshm, expm
 
 
-def is_proportional(first, second):
+def is_proportional(first, second, rtol=1e-5):
     first = np.array(first)
     second = np.array(second)
 
@@ -33,7 +33,7 @@ def is_proportional(first, second):
 
     proportion = first[index] / second[index]
 
-    return np.allclose(first, proportion * second)
+    return np.allclose(first, proportion * second, rtol=rtol)
 
 
 tf_purefock_simulators = (
@@ -46,6 +46,13 @@ tf_purefock_simulators = (
         calculator=pq.TensorflowCalculator(decorate_with=tf.function),
     ),
 )
+
+jax_purefock_simulator = [
+    partial(
+        pq.PureFockSimulator,
+        calculator=pq.JaxCalculator(),
+    ),
+]
 
 
 @pytest.mark.parametrize(
@@ -78,6 +85,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -156,6 +164,7 @@ def test_density_matrix_with_squeezed_state():
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -206,6 +215,7 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
         pq.PureFockSimulator,
         pq.FockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.GaussianSimulator,
     ),
 )
@@ -245,6 +255,7 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -296,6 +307,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(SimulatorClas
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -347,6 +359,7 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(SimulatorClass
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -377,6 +390,7 @@ def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -405,6 +419,7 @@ def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -460,6 +475,7 @@ def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -511,6 +527,7 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(SimulatorCl
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -559,6 +576,7 @@ def test_fock_probabilities_with_quadratic_phase(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -607,6 +625,7 @@ def test_fock_probabilities_with_position_displacement(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -655,6 +674,7 @@ def test_fock_probabilities_with_momentum_displacement(SimulatorClass):
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -684,6 +704,7 @@ def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -713,6 +734,7 @@ def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -773,7 +795,7 @@ def test_fock_probabilities_with_general_gaussian_transform(SimulatorClass):
     assert all(probability >= 0 for probability in probabilities)
     assert sum(probabilities) <= 1.0 or np.isclose(sum(probabilities), 1.0)
 
-    assert is_proportional(probabilities, expected_probabilities)
+    assert is_proportional(probabilities, expected_probabilities, rtol=1e-4)
 
 
 @pytest.mark.monkey

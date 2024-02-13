@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
 
 import piquasso as pq
@@ -172,7 +174,8 @@ def test_normalize_if_disabled_in_Config():
     assert not np.isclose(norm, 1.0)
 
 
-def test_PureFockState_get_tensor_representation():
+@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
+def test_PureFockState_get_tensor_representation(calculator):
     d = 2
     cutoff = 3
 
@@ -182,7 +185,9 @@ def test_PureFockState_get_tensor_representation():
         pq.Q() | pq.StateVector([0, 2]) / 2
         pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
 
-    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    simulator = pq.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=cutoff), calculator=calculator
+    )
     state = simulator.execute(program).state
 
     state_tensor = state.get_tensor_representation()
