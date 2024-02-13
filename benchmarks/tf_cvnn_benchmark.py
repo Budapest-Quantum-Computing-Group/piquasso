@@ -21,15 +21,20 @@ Some of the code has been copyied from
 import pytest
 
 import numpy as np
-import tensorflow as tf
 
+import tensorflow as tf
 import strawberryfields as sf
+
 import piquasso as pq
+from piquasso import cvqnn
+
+
+np.set_printoptions(suppress=True, linewidth=200)
 
 
 @pytest.fixture
 def cutoff():
-    return 10
+    return 20
 
 
 @pytest.fixture
@@ -44,7 +49,7 @@ def d():
 
 @pytest.fixture
 def weights(layer_count, d):
-    active_sd = 0.0001
+    active_sd = 0.01
     passive_sd = 0.1
 
     M = int(d * (d - 1)) + max(1, d - 1)
@@ -69,104 +74,49 @@ def weights(layer_count, d):
     return weights
 
 
-def piquasso_benchmark(benchmark, weights, d, cutoff, layer_count):
-    benchmark(lambda: _calculate_piquasso_results(weights, d, cutoff, layer_count))
+def piquasso_benchmark(benchmark, weights, cutoff):
+    benchmark(lambda: _calculate_piquasso_results(weights, cutoff))
 
 
-def strawberryfields_benchmark(benchmark, weights, d, cutoff, layer_count):
-    benchmark(
-        lambda: _calculate_strawberryfields_results(weights, d, cutoff, layer_count)
-    )
+def strawberryfields_benchmark(benchmark, weights, cutoff):
+    benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff))
 
 
-def test_state_vector_and_jacobian(weights, d, cutoff, layer_count):
-    pq_state_vector, pq_jacobian = _calculate_piquasso_results(
-        weights, d, cutoff, layer_count
-    )
-    sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(
-        weights, d, cutoff, layer_count
-    )
+def test_state_vector_and_jacobian(weights, cutoff):
+    pq_state_vector, pq_jacobian = _calculate_piquasso_results(weights, cutoff)
+    sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(weights, cutoff)
 
-    assert np.allclose(pq_state_vector, sf_state_vector)
-    assert np.allclose(pq_jacobian, sf_jacobian)
+    assert np.sum(np.abs(pq_state_vector - sf_state_vector) ** 2) < 1e-10
+    assert np.sum(np.abs(pq_jacobian - sf_jacobian) ** 2) < 1e-10
 
 
-def _calculate_piquasso_results(weights, d, cutoff, layer_count):
+def _pq_state_vector(weights, cutoff):
+    d = cvqnn.get_number_of_modes(weights.shape[1])
+
     simulator = pq.PureFockSimulator(
         d=d,
-        config=pq.Config(cutoff=cutoff, dtype=weights.dtype, normalize=False),
+        config=pq.Config(cutoff=cutoff, normalize=False),
         calculator=pq.TensorflowCalculator(),
     )
 
+    program = cvqnn.create_program(weights)
+
+    state = simulator.execute(program).state
+
+    return state.get_tensor_representation()
+
+
+def _calculate_piquasso_results(weights, cutoff):
     with tf.GradientTape() as tape:
-        instructions = []
-
-        for i in range(layer_count):
-            instructions.extend(_pq_layer(weights[i], d))
-
-        program = pq.Program(instructions=[pq.Vacuum()] + instructions)
-
-        state = simulator.execute(program).state
-        state_vector = state.get_tensor_representation()
+        state_vector = _pq_state_vector(weights, cutoff)
 
     return state_vector, tape.jacobian(state_vector, weights)
 
 
-def _pq_interferometer(params, d):
-    instructions = []
+def _calculate_strawberryfields_results(weights, cutoff):
+    layer_count = weights.shape[0]
+    d = cvqnn.get_number_of_modes(weights.shape[1])
 
-    theta = params[: d * (d - 1) // 2]
-    phi = params[d * (d - 1) // 2 : d * (d - 1)]
-    rphi = params[-d + 1 :]
-
-    if d == 1:
-        return [pq.Phaseshifter(rphi[0]).on_modes(0)]
-
-    n = 0
-
-    q = tuple(range(d))
-
-    for j in range(d):
-        for k, (q1, q2) in enumerate(zip(q[:-1], q[1:])):
-            if (j + k) % 2 != 1:
-                instructions.append(
-                    pq.Beamsplitter(theta=theta[n], phi=phi[n]).on_modes(q1, q2)
-                )
-                n += 1
-
-    instructions.extend(
-        [pq.Phaseshifter(rphi[i]).on_modes(i) for i in range(max(1, d - 1))]
-    )
-
-    return instructions
-
-
-def _pq_layer(params, d):
-    M = int(d * (d - 1)) + max(1, d - 1)
-
-    int1 = params[:M]
-    s = params[M : M + d]
-    int2 = params[M + d : 2 * M + d]
-    dr = params[2 * M + d : 2 * M + 2 * d]
-    dp = params[2 * M + 2 * d : 2 * M + 3 * d]
-    k = params[2 * M + 3 * d : 2 * M + 4 * d]
-
-    instructions = []
-
-    instructions.extend(_pq_interferometer(int1, d))
-
-    instructions.extend([pq.Squeezing(s[i]).on_modes(i) for i in range(d)])
-
-    instructions.extend(_pq_interferometer(int2, d))
-
-    instructions.extend([pq.Displacement(dr[i], dp[i]).on_modes(i) for i in range(d)])
-
-    instructions.extend([pq.Kerr(k[i]).on_modes(i) for i in range(d)])
-
-    return instructions
-
-
-def _calculate_strawberryfields_results(weights, d, cutoff, layer_count):
     eng = sf.Engine(backend="tf", backend_options={"cutoff_dim": cutoff})
     qnn = sf.Program(d)
 
