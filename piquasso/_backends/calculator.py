@@ -79,13 +79,6 @@ class NumpyCalculator(_BuiltinCalculator):
 
         return embedded_matrix
 
-    def custom_gradient(self, func):
-        def wrapper(*args, **kwargs):
-            result, _ = func(*args, **kwargs)
-            return result
-
-        return wrapper
-
 
 class TensorflowCalculator(_BuiltinCalculator):
     """Calculator enabling calculating the gradients of certain instructions.
@@ -303,5 +296,42 @@ class TensorflowCalculator(_BuiltinCalculator):
 
         return V, S, self.np.conj(W).T
 
-    def custom_gradient(self, func):
-        return self._tf.custom_gradient(func)
+
+class JaxCalculator(_BuiltinCalculator):
+    """The calculations for a simulation using JAX."""
+
+    def __init__(self):
+        try:
+            import jax.numpy as jnp
+            import jax
+        except ImportError:
+            raise ImportError("You have invoked a feature which requires 'jax'.")
+
+        self.np = jnp
+        self.fallback_np = np
+        self.forward_pass_np = jnp
+        self.block_diag = jax.scipy.linalg.block_diag
+        self.block = jnp.block
+        self.logm = partial(jax.scipy.linalg.funm, func=jnp.log)
+        self.expm = jax.scipy.linalg.expm
+        self.powm = jnp.linalg.matrix_power
+        self.polar = jax.scipy.linalg.polar
+        self.sqrtm = jax.scipy.linalg.sqrtm
+        self.svd = jnp.linalg.svd
+
+        self.custom_gradient = _noop_custom_gradient
+
+    def preprocess_input_for_custom_gradient(self, value):
+        return value
+
+    def assign(self, array, index, value):
+        return array.at[index].set(value)
+
+    def scatter(self, indices, updates, shape):
+        embedded_matrix = self.np.zeros(shape, dtype=complex)
+        indices_array = self.np.array(indices)
+        composite_index = tuple([indices_array[:, i] for i in range(len(shape))])
+
+        embedded_matrix.at[composite_index].set(self.np.array(updates))
+
+        return embedded_matrix
