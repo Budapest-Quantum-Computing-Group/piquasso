@@ -99,6 +99,8 @@ def assym_reduce(
 def vector_absolute_square(vector, calculator):
     @calculator.custom_gradient
     def _vector_absolute_square(v):
+        np = calculator.forward_pass_np
+
         absolute_square = np.real((v * np.conj(v)))
 
         def _vector_absolute_square_grad(upstream):

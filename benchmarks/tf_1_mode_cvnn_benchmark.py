@@ -81,6 +81,7 @@ def test_state_vector_and_jacobian(weights, cutoff, layer_count):
     assert np.allclose(pq_jacobian, sf_jacobian)
 
 
+@tf.function
 def _calculate_piquasso_results(weights, cutoff, layer_count):
     simulator = pq.PureFockSimulator(
         d=1,

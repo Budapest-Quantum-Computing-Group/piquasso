@@ -55,7 +55,12 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, passive_block, modes):
-    state._m[(modes,)] = passive_block @ state._m[modes,]
+    state._m[(modes,)] = (
+        passive_block
+        @ state._m[
+            modes,
+        ]
+    )
     _apply_passive_linear_to_C_and_G(state, passive_block, modes=modes)
 
 
@@ -106,7 +111,9 @@ def linear(
 
 def _apply_linear(state, passive_block, active_block, modes):
     state._m[(modes,)] = passive_block @ state._m[(modes,)] + active_block @ np.conj(
-        state._m[modes,]
+        state._m[
+            modes,
+        ]
     )
 
     _apply_linear_to_C_and_G(state, passive_block, active_block, modes)
@@ -169,7 +176,9 @@ def displacement(state: GaussianState, instruction: Instruction, shots: int) -> 
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
 
-    state._m[modes,] += r * np.exp(1j * phi)
+    state._m[
+        modes,
+    ] += r * np.exp(1j * phi)
 
     return Result(state=state)
 
@@ -206,9 +215,9 @@ def generaldyne_measurement(
     evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
     evolved_cov = np.identity(2 * d) * state._config.hbar
-    evolved_cov[np.ix_(outer_indices, outer_indices)] = (
-        evolved_state.xpxp_covariance_matrix
-    )
+    evolved_cov[
+        np.ix_(outer_indices, outer_indices)
+    ] = evolved_state.xpxp_covariance_matrix
 
     state.xpxp_mean_vector = evolved_mean
     state.xpxp_covariance_matrix = evolved_cov
