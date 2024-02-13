@@ -70,3 +70,10 @@ One could easily install Piquasso with the following command:
    api/instruction
    api/result
    api/exceptions
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Miscellaneous:
+   :hidden:
+
+   misc/cvqnn
