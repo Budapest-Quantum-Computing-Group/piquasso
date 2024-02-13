@@ -57,7 +57,7 @@ def _apply_passive_linear(state, interferometer, modes):
     subspace = state._get_subspace(dim=len(interferometer))
 
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, subspace
+        interferometer, subspace, state._calculator
     )
 
     _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
@@ -107,10 +107,12 @@ def _calculate_density_matrix_after_interferometer(
     return new_density_matrix
 
 
-def _get_interferometer_on_fock_space(interferometer, space):
+def _get_interferometer_on_fock_space(interferometer, space, calculator):
     index_dict = calculate_interferometer_helper_indices(space)
 
-    return calculate_interferometer_on_fock_space(interferometer, index_dict)
+    return calculate_interferometer_on_fock_space(
+        interferometer, index_dict, calculator
+    )
 
 
 def particle_number_measurement(

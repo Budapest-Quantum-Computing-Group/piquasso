@@ -30,6 +30,7 @@ class BaseCalculator(abc.ABC):
 
     np: Any
     fallback_np: Any
+    forward_pass_np: Any
 
     def __deepcopy__(self, memo: Any) -> "BaseCalculator":
         """
@@ -40,9 +41,9 @@ class BaseCalculator(abc.ABC):
 
         return self
 
-    def maybe_convert_to_numpy(self, value):
+    def preprocess_input_for_custom_gradient(self, value):
         """
-        Converts tensorflow objects to numpy objects if applicable.
+        Applies modifications to inputs in custom gradients.
         """
         raise NotImplementedCalculation()
 

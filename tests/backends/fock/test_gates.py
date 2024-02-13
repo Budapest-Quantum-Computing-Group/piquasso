@@ -21,9 +21,15 @@ import piquasso as pq
 
 from functools import partial
 
-TensorflowPureFockSimulator = partial(
-    pq.PureFockSimulator,
-    calculator=pq.TensorflowCalculator(),
+tf_purefock_simulators = (
+    partial(
+        pq.PureFockSimulator,
+        calculator=pq.TensorflowCalculator(),
+    ),
+    partial(
+        pq.PureFockSimulator,
+        calculator=pq.TensorflowCalculator(no_custom_gradient=True),
+    ),
 )
 
 
@@ -31,7 +37,7 @@ TensorflowPureFockSimulator = partial(
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        TensorflowPureFockSimulator,
+        *tf_purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -59,7 +65,7 @@ def test_squeezing_probabilities(SimulatorClass):
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        TensorflowPureFockSimulator,
+        *tf_purefock_simulators,
         pq.FockSimulator,
     ),
 )

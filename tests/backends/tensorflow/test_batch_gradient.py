@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import tensorflow as tf
 
 import numpy as np
@@ -20,7 +22,14 @@ import numpy as np
 import piquasso as pq
 
 
-def test_batch_Beamsplitter_mean_position():
+calculators = (
+    pq.TensorflowCalculator(),
+    pq.TensorflowCalculator(no_custom_gradient=True),
+)
+
+
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_Beamsplitter_mean_position(calculator):
     theta = tf.Variable(np.pi / 3)
 
     with pq.Program() as first_preparation:
@@ -38,7 +47,7 @@ def test_batch_Beamsplitter_mean_position():
             pq.Q() | pq.Beamsplitter(theta=theta, phi=np.pi / 3)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -72,7 +81,8 @@ def test_batch_Beamsplitter_mean_position():
     assert np.allclose(batch_gradient[1], second_gradient)
 
 
-def test_batch_Squeezing_mean_position():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_Squeezing_mean_position(calculator):
     r = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -91,7 +101,7 @@ def test_batch_Squeezing_mean_position():
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -127,7 +137,8 @@ def test_batch_Squeezing_mean_position():
     assert np.allclose(batch_gradient[1], second_gradient)
 
 
-def test_batch_Displacement_mean_position():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_Displacement_mean_position(calculator):
     r = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -146,7 +157,7 @@ def test_batch_Displacement_mean_position():
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -182,7 +193,8 @@ def test_batch_Displacement_mean_position():
     assert np.allclose(batch_gradient[1], second_gradient)
 
 
-def test_batch_Kerr_mean_position():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_Kerr_mean_position(calculator):
     xi = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -201,7 +213,7 @@ def test_batch_Kerr_mean_position():
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -237,7 +249,8 @@ def test_batch_Kerr_mean_position():
     assert np.allclose(batch_gradient[1], second_gradient)
 
 
-def test_batch_Phaseshifter_mean_position():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_Phaseshifter_mean_position(calculator):
     phi = tf.Variable(np.pi / 5)
 
     with pq.Program() as first_preparation:
@@ -256,7 +269,7 @@ def test_batch_Phaseshifter_mean_position():
             pq.Q() | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 3)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -292,7 +305,8 @@ def test_batch_Phaseshifter_mean_position():
     assert np.allclose(batch_gradient[1], second_gradient)
 
 
-def test_batch_complex_circuit_mean_position():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_complex_circuit_mean_position(calculator):
     theta1 = tf.Variable(np.pi / 3)
     phi1 = tf.Variable(np.pi / 4)
 
@@ -340,7 +354,7 @@ def test_batch_complex_circuit_mean_position():
             pq.Q(1) | pq.Kerr(xi=xi2)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)
@@ -400,7 +414,8 @@ def test_batch_complex_circuit_mean_position():
     assert np.allclose(batch_gradient[:, 1], second_gradient)
 
 
-def test_batch_complex_circuit_mean_position_with_batch_apply():
+@pytest.mark.parametrize("calculator", calculators)
+def test_batch_complex_circuit_mean_position_with_batch_apply(calculator):
     theta1 = tf.Variable(np.pi / 3)
     phi1 = tf.Variable(np.pi / 4)
 
@@ -459,7 +474,7 @@ def test_batch_complex_circuit_mean_position_with_batch_apply():
             pq.Q(1) | pq.Kerr(xi=xi2)
 
         simulator = pq.PureFockSimulator(
-            d=2, config=pq.Config(cutoff=5), calculator=pq.TensorflowCalculator()
+            d=2, config=pq.Config(cutoff=5), calculator=calculator
         )
 
         batch_mean_positions = simulator.execute(batch_program).state.mean_position(0)

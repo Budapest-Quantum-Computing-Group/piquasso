@@ -168,11 +168,15 @@ class FockSpace(tuple):
     ) -> np.ndarray:
         @self.calculator.custom_gradient
         def _single_mode_squeezing_operator(r, phi):
-            r = self.calculator.maybe_convert_to_numpy(r)
-            phi = self.calculator.maybe_convert_to_numpy(phi)
+            r = self.calculator.preprocess_input_for_custom_gradient(r)
+            phi = self.calculator.preprocess_input_for_custom_gradient(phi)
 
             matrix = create_single_mode_squeezing_matrix(
-                r, phi, self.cutoff, complex_dtype=self.config.complex_dtype
+                r,
+                phi,
+                self.cutoff,
+                complex_dtype=self.config.complex_dtype,
+                calculator=self._calculator,
             )
             grad = create_single_mode_squeezing_gradient(
                 r,
@@ -300,11 +304,15 @@ class FockSpace(tuple):
     def get_single_mode_displacement_operator(self, *, r, phi):
         @self.calculator.custom_gradient
         def _single_mode_displacement_operator(r, phi):
-            r = self.calculator.maybe_convert_to_numpy(r)
-            phi = self.calculator.maybe_convert_to_numpy(phi)
+            r = self.calculator.preprocess_input_for_custom_gradient(r)
+            phi = self.calculator.preprocess_input_for_custom_gradient(phi)
 
             matrix = create_single_mode_displacement_matrix(
-                r, phi, self.cutoff, complex_dtype=self.config.complex_dtype
+                r,
+                phi,
+                self.cutoff,
+                complex_dtype=self.config.complex_dtype,
+                calculator=self._calculator,
             )
             grad = create_single_mode_displacement_gradient(
                 r,

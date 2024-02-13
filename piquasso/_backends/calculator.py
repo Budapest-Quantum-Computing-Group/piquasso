@@ -29,6 +29,14 @@ class _BuiltinCalculator(BaseCalculator):
     """Base class for built-in calculators."""
 
 
+def _noop_custom_gradient(func):
+    def noop_grad(*args, **kwargs):
+        result, _ = func(*args, **kwargs)
+        return result
+
+    return noop_grad
+
+
 class NumpyCalculator(_BuiltinCalculator):
     """The calculations for a simulation using NumPy (and SciPy).
 
@@ -38,6 +46,7 @@ class NumpyCalculator(_BuiltinCalculator):
     def __init__(self):
         self.np = np
         self.fallback_np = np
+        self.forward_pass_np = np
         self.block_diag = scipy.linalg.block_diag
         self.block = np.block
         self.logm = scipy.linalg.logm
@@ -51,7 +60,9 @@ class NumpyCalculator(_BuiltinCalculator):
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
 
-    def maybe_convert_to_numpy(self, value):
+        self.custom_gradient = _noop_custom_gradient
+
+    def preprocess_input_for_custom_gradient(self, value):
         return value
 
     def assign(self, array, index, value):
@@ -112,7 +123,19 @@ class TensorflowCalculator(_BuiltinCalculator):
         gradient = tape.gradient(mean, [r])
     """
 
-    def __init__(self):
+    def __init__(self, no_custom_gradient=False):
+        """
+        Args:
+            no_custom_gradient (bool, optional): Executes the forward pass
+                using Tensorflow, instead of NumPy. This is sometimes necessary, e.g.,
+                when one wants to decorate Piquasso code with
+                `tf.function(jit_compile=True)`. In fact, when eager execution is
+                disabled in Tensorflow, this argument is automatically set to `True`.
+                Otherwise, it defaults to False.
+
+        Raises:
+            ImportError: When TensorFlow is not available.
+        """
         try:
             import tensorflow as tf
         except ImportError:
@@ -131,9 +154,20 @@ class TensorflowCalculator(_BuiltinCalculator):
         self._tf = tf
         self.np = tnp
         self.fallback_np = np
+
+        no_custom_gradient = no_custom_gradient or not tf.executing_eagerly()
+        self.no_custom_gradient = no_custom_gradient
+        self.forward_pass_np = tnp if no_custom_gradient else np
+        self.custom_gradient = (
+            _noop_custom_gradient if no_custom_gradient else tf.custom_gradient
+        )
+
         self.sqrtm = tf.linalg.sqrtm
 
-    def maybe_convert_to_numpy(self, value):
+    def preprocess_input_for_custom_gradient(self, value):
+        if self.no_custom_gradient:
+            return value
+
         return value.numpy() if self._tf.is_tensor(value) else value
 
     def block_diag(self, *arrs):
@@ -147,9 +181,57 @@ class TensorflowCalculator(_BuiltinCalculator):
         return glynn_gray_permanent(matrix, rows, columns, np=self.np)
 
     def assign(self, array, index, value):
-        # NOTE: This is not as advanced as Numpy's indexing, only supports 1D arrays.
+        """
+        NOTE: This method is very limited, and is a bit hacky, since TF does not support
+        item assignment through its NumPy API.
+        """
 
-        return self._tf.tensor_scatter_nd_update(array, [[index]], [value])
+        if isinstance(array, self.fallback_np.ndarray):
+            array[index] = value
+
+            return array
+
+        if isinstance(index, int):
+            return self._tf.tensor_scatter_nd_update(array, [[index]], [value])
+
+        # NOTE: When using `tf.function`, TensorFlow threw the following error:
+        #
+        # TypeError: Tensors in list passed to 'values' of 'ConcatV2' Op have types [int32, int64] that don't all match.  # noqa: E501
+        #
+        # To make it disappear, I had to convert all the indices to `int32`.
+        index = index.astype(self.fallback_np.int32)
+
+        if len(array.shape) == 1:
+            return self._tf.tensor_scatter_nd_update(
+                array, index.reshape(-1, 1), value.reshape(-1)
+            )
+
+        number_of_batches = array.shape[1]
+        int_dtype = index.dtype
+
+        flattened_index = index.reshape(-1)
+
+        indices = self.fallback_np.column_stack(
+            [
+                self.fallback_np.tile(flattened_index, number_of_batches),
+                self.fallback_np.concatenate(
+                    [
+                        self.fallback_np.full(len(flattened_index), i, dtype=int_dtype)
+                        for i in range(number_of_batches)
+                    ]
+                ),
+            ]
+        )
+
+        values = self.np.concatenate(
+            [value[:, :, i].reshape(-1) for i in range(number_of_batches)]
+        )
+
+        return self._tf.tensor_scatter_nd_update(
+            array,
+            indices,
+            values,
+        )
 
     def block(self, arrays):
         # NOTE: This is not as advanced as `numpy.block`, this function only supports

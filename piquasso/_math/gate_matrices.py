@@ -15,12 +15,15 @@
 
 import numpy as np
 
+from piquasso.api.calculator import BaseCalculator
+
 
 def create_single_mode_displacement_matrix(
     r: float,
     phi: float,
     cutoff: int,
     complex_dtype: np.dtype,
+    calculator: BaseCalculator,
 ) -> np.ndarray:
     r"""
     This method generates the Displacement operator following a recursion rule.
@@ -37,25 +40,32 @@ def create_single_mode_displacement_matrix(
         np.ndarray: The constructed Displacement matrix representing the Fock
         operator.
     """
+    np = calculator.forward_pass_np
+
+    transformation = []
+
+    for _ in range(cutoff):
+        transformation.append([0.0] * cutoff)
+
     fock_indices = np.sqrt(np.arange(cutoff, dtype=complex_dtype))
     displacement = r * np.exp(1j * phi)
-    transformation = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-    transformation[0, 0] = np.exp(-0.5 * r**2)
+    transformation[0][0] = np.exp(-0.5 * r**2)
+
     for row in range(1, cutoff):
-        transformation[row, 0] = (
-            displacement / fock_indices[row] * transformation[row - 1, 0]
+        transformation[row][0] = (
+            displacement / fock_indices[row] * transformation[row - 1][0]
         )
     for row in range(cutoff):
         for col in range(1, cutoff):
-            transformation[row, col] = (
+            transformation[row][col] = (
                 -np.conj(displacement)
                 / fock_indices[col]
-                * transformation[row, col - 1]
+                * transformation[row][col - 1]
             ) + (
-                fock_indices[row] / fock_indices[col] * transformation[row - 1, col - 1]
+                fock_indices[row] / fock_indices[col] * transformation[row - 1][col - 1]
             )
 
-    return transformation
+    return np.array(transformation, dtype=complex_dtype)
 
 
 def create_single_mode_squeezing_matrix(
@@ -63,6 +73,7 @@ def create_single_mode_squeezing_matrix(
     phi: float,
     cutoff: int,
     complex_dtype: np.dtype,
+    calculator: BaseCalculator,
 ) -> np.ndarray:
     """
     This method generates the Squeezing operator following a recursion rule.
@@ -81,35 +92,41 @@ def create_single_mode_squeezing_matrix(
         np.ndarray: The constructed Squeezing matrix representing the Fock operator.
     """
 
+    np = calculator.forward_pass_np
+
     sechr = 1.0 / np.cosh(r)
     A = np.exp(1j * phi) * np.tanh(r)
 
-    transformation = np.zeros((cutoff,) * 2, dtype=complex_dtype)
-    transformation[0, 0] = np.sqrt(sechr)
+    transformation = []
+
+    for _ in range(cutoff):
+        transformation.append([0.0] * cutoff)
+
+    transformation[0][0] = np.sqrt(sechr)
 
     fock_indices = np.sqrt(np.arange(cutoff, dtype=complex_dtype))
 
     for index in range(2, cutoff, 2):
-        transformation[index, 0] = (
+        transformation[index][0] = (
             -fock_indices[index - 1]
             / fock_indices[index]
-            * (transformation[index - 2, 0] * A)
+            * (transformation[index - 2][0] * A)
         )
 
     for row in range(0, cutoff):
         for col in range(1, cutoff):
             if (row + col) % 2 == 0:
-                transformation[row, col] = (
+                transformation[row][col] = (
                     1
                     / fock_indices[col]
                     * (
-                        (fock_indices[row] * transformation[row - 1, col - 1] * sechr)
+                        (fock_indices[row] * transformation[row - 1][col - 1] * sechr)
                         + (
                             fock_indices[col - 1]
-                            * A.conj()
-                            * transformation[row, col - 2]
+                            * np.conj(A)
+                            * transformation[row][col - 2]
                         )
                     )
                 )
 
-    return transformation
+    return np.array(transformation, dtype=complex_dtype)
