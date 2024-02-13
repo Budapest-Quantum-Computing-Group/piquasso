@@ -38,6 +38,7 @@ setup(
     ],
     extras_require={
         "tensorflow": "tensorflow",
+        "jax": "jax[cpu]",
     },
     classifiers=[
         "Intended Audience :: Developers",

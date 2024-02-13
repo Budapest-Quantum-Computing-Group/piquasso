@@ -44,7 +44,11 @@ from piquasso._backends.fock import (
     FockSimulator,
     PureFockSimulator,
 )
-from piquasso._backends.calculator import NumpyCalculator, TensorflowCalculator
+from piquasso._backends.calculator import (
+    NumpyCalculator,
+    TensorflowCalculator,
+    JaxCalculator,
+)
 
 from .instructions.preparations import (
     Vacuum,
@@ -120,6 +124,7 @@ __all__ = [
     # Calculators
     "NumpyCalculator",
     "TensorflowCalculator",
+    "JaxCalculator",
     # States
     "GaussianState",
     "SamplingState",

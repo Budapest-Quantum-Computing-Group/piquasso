@@ -33,12 +33,20 @@ tf_purefock_simulators = (
     ),
 )
 
+jax_purefock_simulator = [
+    partial(
+        pq.PureFockSimulator,
+        calculator=pq.JaxCalculator(),
+    ),
+]
+
 
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )
@@ -67,6 +75,7 @@ def test_squeezing_probabilities(SimulatorClass):
     (
         pq.PureFockSimulator,
         *tf_purefock_simulators,
+        *jax_purefock_simulator,
         pq.FockSimulator,
     ),
 )

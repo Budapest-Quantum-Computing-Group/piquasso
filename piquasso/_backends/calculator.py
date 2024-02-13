@@ -28,6 +28,15 @@ from piquasso.api.calculator import BaseCalculator
 class _BuiltinCalculator(BaseCalculator):
     """Base class for built-in calculators."""
 
+    range = range
+
+    def custom_gradient(self, func):
+        def noop_grad(*args, **kwargs):
+            result, _ = func(*args, **kwargs)
+            return result
+
+        return noop_grad
+
     def accumulator(self, dtype, size, **kwargs):
         return []
 
@@ -42,13 +51,11 @@ class _BuiltinCalculator(BaseCalculator):
     def decorator(self, func):
         return func
 
+    def gather_along_axis_1(self, array, indices):
+        return array[:, indices]
 
-def _noop_custom_gradient(func):
-    def noop_grad(*args, **kwargs):
-        result, _ = func(*args, **kwargs)
-        return result
-
-    return noop_grad
+    def transpose(self, matrix):
+        return self.np.transpose(matrix)
 
 
 class NumpyCalculator(_BuiltinCalculator):
@@ -74,10 +81,6 @@ class NumpyCalculator(_BuiltinCalculator):
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
 
-        self.custom_gradient = _noop_custom_gradient
-
-        self.range = range
-
     def preprocess_input_for_custom_gradient(self, value):
         return value
 
@@ -94,12 +97,6 @@ class NumpyCalculator(_BuiltinCalculator):
         embedded_matrix[composite_index] = np.array(updates)
 
         return embedded_matrix
-
-    def gather_along_axis_1(self, array, indices):
-        return array[:, indices]
-
-    def transpose(self, matrix):
-        return self.np.transpose(matrix)
 
 
 class TensorflowCalculator(_BuiltinCalculator):
@@ -201,7 +198,7 @@ class TensorflowCalculator(_BuiltinCalculator):
         return (
             self._tf.custom_gradient
             if self._custom_gradient_enabled
-            else _noop_custom_gradient
+            else super().custom_gradient
         )
 
     def _decorator(self, func):
@@ -425,3 +422,101 @@ class TensorflowCalculator(_BuiltinCalculator):
                 return 1
 
         return _TrivialTraceType(self)
+
+
+class JaxCalculator(_BuiltinCalculator):
+    """The calculations for a simulation using JAX.
+
+    Example usage::
+
+        import numpy as np
+        import piquasso as pq
+        from jax import jit, grad
+
+        def example_func(r, theta):
+            jax_calculator = pq.JaxCalculator()
+
+            simulator = pq.PureFockSimulator(
+                d=2,
+                config=pq.Config(cutoff=5, dtype=np.float32, normalize=False),
+                calculator=jax_calculator,
+            )
+
+            with pq.Program() as program:
+                pq.Q() | pq.Vacuum()
+
+                pq.Q(0) | pq.Displacement(r=r)
+
+                pq.Q(0, 1) | pq.Beamsplitter(theta)
+
+            state = simulator.execute(program).state
+
+            return state.fock_probabilities[0]
+
+        compiled_func = jit(example_func)
+
+        vacuum_probability = compiled_func(0.1, np.pi / 7)
+
+        compiled_grad_func = jit(grad(compiled_func))
+
+        vacuum_probability_grad = compiled_grad_func(0.2, np.pi / 11)
+
+    Note:
+        This feature is still experimental.
+
+    Note:
+        Currently JIT compilation only works with the config variable `normalize=False`.
+
+    Note:
+        Only CPU calculations are supported currently.
+    """
+
+    def __init__(self):
+        try:
+            import jax.numpy as jnp
+            import jax
+        except ImportError:
+            raise ImportError(
+                "You have invoked a feature which requires 'jax'.\n"
+                "You can install JAX via:\n"
+                "\n"
+                "pip install piquasso[jax]"
+            )
+
+        # NOTE: Because lots of calculations are still done using NumPy, and NumPy
+        # prefers double precision, Piquasso uses double precision too, therefore it is
+        # better to enable this config variable. Theoretically, one could set
+        # `pq.Config(dtype=np.float32)`, but this might not always work.
+        from jax import config
+
+        config.update("jax_enable_x64", True)
+
+        self.np = jnp
+        self._scipy = jax.scipy
+        self.fallback_np = np
+        self.forward_pass_np = jnp
+        self.block_diag = jax.scipy.linalg.block_diag
+        self.block = jnp.block
+        self.logm = partial(jax.scipy.linalg.funm, func=jnp.log)
+        self.expm = jax.scipy.linalg.expm
+        self.powm = jnp.linalg.matrix_power
+        self.sqrtm = jax.scipy.linalg.sqrtm
+        self.svd = jnp.linalg.svd
+
+    def preprocess_input_for_custom_gradient(self, value):
+        return value
+
+    def assign(self, array, index, value):
+        return array.at[index].set(value)
+
+    def scatter(self, indices, updates, shape):
+        embedded_matrix = self.np.zeros(shape, dtype=updates[0].dtype)
+        indices_array = self.np.array(indices)
+        composite_index = tuple([indices_array[:, i] for i in range(len(shape))])
+
+        return embedded_matrix.at[composite_index].set(self.np.array(updates))
+
+    def polar(self, a, side):
+        # NOTE: The default QDWH algorithm does not support left polar decomposition
+        # in `jax.scipy.linalg.polar`, so we have to switch to SVD.
+        return self._scipy.linalg.polar(a, side, method="svd")

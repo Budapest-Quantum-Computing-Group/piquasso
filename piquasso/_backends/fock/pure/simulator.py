@@ -37,7 +37,11 @@ from ..calculations import attenuator
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels, batch
 
-from piquasso._backends.calculator import NumpyCalculator, TensorflowCalculator
+from piquasso._backends.calculator import (
+    NumpyCalculator,
+    TensorflowCalculator,
+    JaxCalculator,
+)
 
 
 class PureFockSimulator(BuiltinSimulator):
@@ -116,4 +120,4 @@ class PureFockSimulator(BuiltinSimulator):
 
     _default_calculator_class = NumpyCalculator
 
-    _extra_builtin_calculators = [TensorflowCalculator]
+    _extra_builtin_calculators = [TensorflowCalculator, JaxCalculator]
