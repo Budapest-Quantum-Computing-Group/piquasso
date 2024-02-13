@@ -128,6 +128,43 @@ def test_BaseCalculator_raises_NotImplementedCalculation_for_powm(
         empty_calculator.powm(dummy_matrix, 42)
 
 
+def test_BaseCalculator_raises_NotImplementedCalculation_for_accumulator(
+    empty_calculator,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.accumulator(dtype=complex, size=5)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_write_to_accumulator(
+    empty_calculator,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.write_to_accumulator(accumulator=[], index=0, value=1)
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_for_stack_accumulator(
+    empty_calculator,
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.stack_accumulator(accumulator=[])
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_gather_along_axis_1(
+    empty_calculator, dummy_matrix
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.gather_along_axis_1(
+            array=dummy_matrix, indices=[[1, 2], [3, 4]]
+        )
+
+
+def test_BaseCalculator_raises_NotImplementedCalculation_transpose(
+    empty_calculator, dummy_matrix
+):
+    with pytest.raises(NotImplementedCalculation):
+        empty_calculator.transpose(matrix=dummy_matrix)
+
+
 def test_BaseCalculator_with_overriding_defaults():
     """
     NOTE: This test basically tests Python itself, but it is left here for us to

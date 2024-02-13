@@ -18,8 +18,6 @@ Some of the code has been copyied from
 `https://strawberryfields.ai/photonics/demos/run_gate_synthesis.html`.
 """
 
-import pytest
-
 import numpy as np
 
 import tensorflow as tf
@@ -28,72 +26,23 @@ import strawberryfields as sf
 import piquasso as pq
 from piquasso import cvqnn
 
+import time
 
+
+tf.get_logger().setLevel("ERROR")
 np.set_printoptions(suppress=True, linewidth=200)
 
 
-@pytest.fixture
-def cutoff():
-    return 20
+def measure_graph_size(f, *args):
+    if not hasattr(f, "get_concrete_function"):
+        return 0
+
+    g = f.get_concrete_function(*args).graph
+
+    return len(g.as_graph_def().node)
 
 
-@pytest.fixture
-def layer_count():
-    return 3
-
-
-@pytest.fixture
-def d():
-    return 2
-
-
-@pytest.fixture
-def weights(layer_count, d):
-    active_sd = 0.01
-    passive_sd = 0.1
-
-    M = int(d * (d - 1)) + max(1, d - 1)
-
-    int1_weights = tf.random.normal(shape=[layer_count, M], stddev=passive_sd)
-    s_weights = tf.random.normal(shape=[layer_count, d], stddev=active_sd)
-    int2_weights = tf.random.normal(shape=[layer_count, M], stddev=passive_sd)
-    dr_weights = tf.random.normal(shape=[layer_count, d], stddev=active_sd)
-    dp_weights = tf.random.normal(shape=[layer_count, d], stddev=passive_sd)
-    k_weights = tf.random.normal(shape=[layer_count, d], stddev=active_sd)
-
-    weights = tf.cast(
-        tf.concat(
-            [int1_weights, s_weights, int2_weights, dr_weights, dp_weights, k_weights],
-            axis=1,
-        ),
-        dtype=tf.float64,
-    )
-
-    weights = tf.Variable(weights)
-
-    return weights
-
-
-def piquasso_benchmark(benchmark, weights, cutoff):
-    calculator = pq.TensorflowCalculator(decorate_with=tf.function)
-    benchmark(lambda: _calculate_piquasso_results(weights, cutoff, calculator))
-
-
-def strawberryfields_benchmark(benchmark, weights, cutoff):
-    benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff))
-
-
-def test_state_vector_and_jacobian(weights, cutoff):
-    pq_state_vector, pq_jacobian = _calculate_piquasso_results(
-        weights, cutoff, pq.TensorflowCalculator(decorate_with=tf.function)
-    )
-    sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(weights, cutoff)
-
-    assert np.sum(np.abs(pq_state_vector - sf_state_vector) ** 2) < 1e-10
-    assert np.sum(np.abs(pq_jacobian - sf_jacobian) ** 2) < 1e-10
-
-
-def _pq_state_vector(weights, cutoff, calculator):
+def _pq_loss(weights, cutoff, calculator):
     d = cvqnn.get_number_of_modes(weights.shape[1])
 
     simulator = pq.PureFockSimulator(
@@ -104,17 +53,23 @@ def _pq_state_vector(weights, cutoff, calculator):
 
     program = cvqnn.create_program(weights)
 
-    state = simulator.execute(program).state
+    state_vector = simulator.execute(program).state._state_vector
 
-    return state.get_tensor_representation()
+    return tf.math.reduce_mean(
+        (
+            tf.ones_like(state_vector) / np.sqrt(len(state_vector))
+            - tf.math.real(state_vector)
+        )
+        ** 2
+    )
 
 
-@tf.function
+@tf.function(jit_compile=True)
 def _calculate_piquasso_results(weights, cutoff, calculator):
     with tf.GradientTape() as tape:
-        state_vector = _pq_state_vector(weights, cutoff, calculator)
+        loss = _pq_loss(weights, cutoff, calculator)
 
-    return state_vector, tape.jacobian(state_vector, weights)
+    return loss, tape.gradient(loss, weights)
 
 
 def _calculate_strawberryfields_results(weights, cutoff):
@@ -140,8 +95,15 @@ def _calculate_strawberryfields_results(weights, cutoff):
 
         state = eng.run(qnn, args=mapping).state
         state_vector = state.ket()
+        loss = tf.math.reduce_mean(
+            (
+                tf.ones_like(state_vector) / np.sqrt(len(state_vector))
+                - tf.math.real(state_vector)
+            )
+            ** 2
+        )
 
-    return state_vector, tape.jacobian(state_vector, weights)
+    return loss, tape.gradient(loss, weights)
 
 
 def _sf_interferometer(params, q):
@@ -187,3 +149,60 @@ def _sf_layer(params, q):
     for i in range(N):
         sf.ops.Dgate(dr[i], dp[i]) | q[i]
         sf.ops.Kgate(k[i]) | q[i]
+
+
+if __name__ == "__main__":
+    d = 2
+    layer_count = 5
+    cutoff = 10
+
+    NUMBER_OF_ITERATIONS = 10
+
+    weights = tf.Variable(
+        pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
+    )
+
+    calculator = pq.TensorflowCalculator(decorate_with=tf.function(jit_compile=True))
+
+    start_time = time.time()
+    _calculate_piquasso_results(
+        weights,
+        cutoff,
+        calculator,
+    )
+    print("PQ COMPILE TIME:", time.time() - start_time)
+    print(
+        "GRAPH SIZE:",
+        measure_graph_size(
+            _calculate_piquasso_results,
+            weights,
+            cutoff,
+            calculator,
+        ),
+    )
+
+    for i in range(NUMBER_OF_ITERATIONS):
+        weights = tf.Variable(
+            pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
+        )
+        start_time = time.time()
+        print(f"{i:} ", end="")
+        _calculate_piquasso_results(weights, cutoff, calculator)
+        print("PQ RUNTIME:", time.time() - start_time)
+
+    weights = tf.Variable(
+        pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
+    )
+
+    start_time = time.time()
+    _calculate_strawberryfields_results(weights, cutoff)
+    print("SF COMPILE TIME:", time.time() - start_time)
+
+    for i in range(10):
+        weights = tf.Variable(
+            pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
+        )
+        print(f"{i:} ", end="")
+        start_time = time.time()
+        _calculate_strawberryfields_results(weights, cutoff)
+        print("SF RUNTIME:", time.time() - start_time)
