@@ -67,7 +67,7 @@ def passive_linear(
 
 def _apply_passive_linear(state, interferometer, modes):
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, state._config.cutoff
+        interferometer, state._config.cutoff, state._calculator
     )
 
     _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
@@ -116,13 +116,15 @@ def _calculate_density_matrix_after_interferometer(
     return new_density_matrix
 
 
-def _get_interferometer_on_fock_space(interferometer, cutoff):
+def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
     index_dict = calculate_interferometer_helper_indices(
         d=len(interferometer),
         cutoff=cutoff,
     )
 
-    return calculate_interferometer_on_fock_space(interferometer, index_dict)
+    return calculate_interferometer_on_fock_space(
+        interferometer, index_dict, calculator
+    )
 
 
 def particle_number_measurement(
@@ -241,7 +243,10 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
     gamma = instruction._all_params["gamma"]
 
     matrix = get_single_mode_cubic_phase_operator(
-        gamma=gamma, config=state._config, calculator=state._calculator
+        gamma=gamma,
+        cutoff=state._config.cutoff,
+        hbar=state._config.hbar,
+        calculator=state._calculator,
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
@@ -343,7 +348,11 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
     mode = instruction.modes[0]
 
     matrix = get_single_mode_displacement_operator(
-        r=r, phi=phi, calculator=state._calculator, config=state._config
+        r=r,
+        phi=phi,
+        calculator=state._calculator,
+        cutoff=state._config.cutoff,
+        complex_dtype=state._config.complex_dtype,
     )
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
@@ -362,7 +371,8 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
         r=r,
         phi=phi,
         calculator=state._calculator,
-        config=state._config,
+        cutoff=state._config.cutoff,
+        complex_dtype=state._config.complex_dtype,
     )
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
@@ -396,7 +406,11 @@ def linear(
 
     for mode, r in zip(instruction.modes, squeezings):
         matrix = get_single_mode_squeezing_operator(
-            r=r, phi=0.0, calculator=state._calculator, config=state._config
+            r=r,
+            phi=0.0,
+            calculator=state._calculator,
+            cutoff=state._config.cutoff,
+            complex_dtype=state._config.complex_dtype,
         )
         _apply_active_gate_matrix_to_state(state, matrix, mode)
 

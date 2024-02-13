@@ -64,21 +64,26 @@ def get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
 def get_single_mode_squeezing_operator(
     r: float,
     phi: float,
+    cutoff: int,
+    complex_dtype: np.dtype,
     calculator: BaseCalculator,
-    config: Config,
 ) -> np.ndarray:
     @calculator.custom_gradient
     def _single_mode_squeezing_operator(r, phi):
-        r = calculator.maybe_convert_to_numpy(r)
-        phi = calculator.maybe_convert_to_numpy(phi)
+        r = calculator.preprocess_input_for_custom_gradient(r)
+        phi = calculator.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_squeezing_matrix(
-            r, phi, config.cutoff, config.complex_dtype
+            r,
+            phi,
+            cutoff,
+            complex_dtype=complex_dtype,
+            calculator=calculator,
         )
         grad = create_single_mode_squeezing_gradient(
             r,
             phi,
-            config.cutoff,
+            cutoff,
             matrix,
             calculator,
         )
@@ -88,7 +93,7 @@ def get_single_mode_squeezing_operator(
 
 
 def get_single_mode_cubic_phase_operator(
-    gamma: float, config: Config, calculator: BaseCalculator
+    gamma: float, cutoff: int, hbar: float, calculator: BaseCalculator
 ) -> np.ndarray:
     r"""Cubic Phase gate.
 
@@ -119,11 +124,9 @@ def get_single_mode_cubic_phase_operator(
 
     np = calculator.np
 
-    annih = np.diag(np.sqrt(np.arange(1, config.cutoff)), 1)
-    position = (annih.T + annih) * np.sqrt(config.hbar / 2)
-    return calculator.expm(
-        1j * calculator.powm(position, 3) * (gamma / (3 * config.hbar))
-    )
+    annih = np.diag(np.sqrt(np.arange(1, cutoff)), 1)
+    position = (annih.T + annih) * np.sqrt(hbar / 2)
+    return calculator.expm(1j * calculator.powm(position, 3) * (gamma / (3 * hbar)))
 
 
 def operator_basis(space):
@@ -156,21 +159,23 @@ def get_annihilation_operator(
     return get_creation_operator(modes, space, config).transpose()
 
 
-def get_single_mode_displacement_operator(r, phi, calculator, config):
+def get_single_mode_displacement_operator(r, phi, cutoff, complex_dtype, calculator):
     @calculator.custom_gradient
     def _single_mode_displacement_operator(r, phi):
-        r = calculator.maybe_convert_to_numpy(r)
-        phi = calculator.maybe_convert_to_numpy(phi)
+        r = calculator.preprocess_input_for_custom_gradient(r)
+        phi = calculator.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_displacement_matrix(
             r,
             phi,
-            config.cutoff,
+            cutoff,
+            complex_dtype,
+            calculator=calculator,
         )
         grad = create_single_mode_displacement_gradient(
             r,
             phi,
-            config.cutoff,
+            cutoff,
             matrix,
             calculator,
         )

@@ -197,7 +197,7 @@ def calculate_interferometer_helper_indices(d, cutoff):
     }
 
 
-def calculate_interferometer_on_fock_space(interferometer, index_dict):
+def calculate_interferometer_on_fock_space(interferometer, index_dict, calculator):
     """Calculates finite representation of interferometer in the Fock space.
     The function assumes the knowledge of the 1-particle unitary.
 
@@ -212,6 +212,8 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
     Returns:
         numpy.ndarray: Finite representation of interferometer in the Fock space
     """
+
+    np = calculator.forward_pass_np
 
     subspace_representations = []
 
@@ -231,21 +233,20 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
             "sqrt_first_occupation_numbers_tensor"
         ][n - 2]
 
-        first_part_partially_indexed = interferometer[first_nonzero_indices, :]
-        second = subspace_representations[n - 1][first_subspace_indices][
-            :, subspace_indices
-        ]
+        first_part_partially_indexed = interferometer[first_nonzero_indices]
+        second = calculator.gather_along_axis_1(
+            subspace_representations[n - 1][first_subspace_indices],
+            indices=subspace_indices,
+        )
 
         matrix = np.einsum(
-            "ij,kj,kij->ik",
+            "ij,kj,kij->ki",
             sqrt_occupation_numbers,
             first_part_partially_indexed,
             second,
         )
 
-        new_subspace_representation = np.transpose(
-            matrix / sqrt_first_occupation_numbers
-        )
+        new_subspace_representation = matrix / sqrt_first_occupation_numbers[:, None]
 
         subspace_representations.append(
             new_subspace_representation.astype(interferometer.dtype)
