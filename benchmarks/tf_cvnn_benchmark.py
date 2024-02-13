@@ -106,6 +106,7 @@ def _pq_state_vector(weights, cutoff):
     return state.get_tensor_representation()
 
 
+@tf.function(jit_compile=True)
 def _calculate_piquasso_results(weights, cutoff):
     with tf.GradientTape() as tape:
         state_vector = _pq_state_vector(weights, cutoff)

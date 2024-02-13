@@ -55,13 +55,13 @@ def _apply_passive_linear(state, interferometer, modes, calculator):
 
 def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
     def _get_interferometer_with_gradient_callback(interferometer):
-        interferometer = calculator.maybe_convert_to_numpy(interferometer)
+        interferometer = calculator.preprocess_input_for_custom_gradient(interferometer)
         index_dict = calculate_interferometer_helper_indices(
             d=len(interferometer), cutoff=cutoff
         )
 
         subspace_representations = calculate_interferometer_on_fock_space(
-            interferometer, index_dict
+            interferometer, index_dict, calculator
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
             interferometer,
@@ -193,10 +193,10 @@ def _apply_passive_gate_matrix_to_state(
     state_vector = state._state_vector
 
     def _apply_interferometer_matrix(state_vector, subspace_transformations):
-        state_vector = calculator.maybe_convert_to_numpy(state_vector)
+        state_vector = calculator.preprocess_input_for_custom_gradient(state_vector)
 
         subspace_transformations = [
-            calculator.maybe_convert_to_numpy(matrix)
+            calculator.preprocess_input_for_custom_gradient(matrix)
             for matrix in subspace_transformations
         ]
 
@@ -210,6 +210,7 @@ def _apply_passive_gate_matrix_to_state(
             state_vector,
             subspace_transformations,
             index_list,
+            calculator,
         )
 
         grad = _create_linear_passive_gate_gradient_function(
@@ -229,7 +230,10 @@ def _calculate_state_vector_after_interferometer(
     state_vector: np.ndarray,
     subspace_transformations: List[np.ndarray],
     index_list: List[np.ndarray],
+    calculator: BaseCalculator,
 ) -> np.ndarray:
+    np = calculator.forward_pass_np
+
     new_state_vector = np.empty_like(state_vector)
 
     is_batch = len(state_vector.shape) == 2
@@ -237,8 +241,12 @@ def _calculate_state_vector_after_interferometer(
     einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
 
     for n, indices in enumerate(index_list):
-        new_state_vector[indices] = np.einsum(
-            einsum_string, subspace_transformations[n], state_vector[indices]
+        new_state_vector = calculator.assign(
+            new_state_vector,
+            indices,
+            np.einsum(
+                einsum_string, subspace_transformations[n], state_vector[indices]
+            ),
         )
 
     return new_state_vector

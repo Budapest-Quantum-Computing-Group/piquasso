@@ -130,14 +130,14 @@ def _apply_active_gate_matrix_to_state(
 
     @calculator.custom_gradient
     def _apply_active_gate_matrix(state_vector, matrix):
-        state_vector = calculator.maybe_convert_to_numpy(state_vector)
-        matrix = calculator.maybe_convert_to_numpy(matrix)
+        state_vector = calculator.preprocess_input_for_custom_gradient(state_vector)
+        matrix = calculator.preprocess_input_for_custom_gradient(matrix)
 
         state_index_matrix_list = calculate_state_index_matrix_list(
             state.d, state._config.cutoff, mode
         )
         new_state_vector = _calculate_state_vector_after_apply_active_gate(
-            state_vector, matrix, state_index_matrix_list
+            state_vector, matrix, state_index_matrix_list, calculator
         )
         grad = _create_linear_active_gate_gradient_function(
             state_vector, matrix, state_index_matrix_list, calculator
@@ -148,8 +148,13 @@ def _apply_active_gate_matrix_to_state(
 
 
 def _calculate_state_vector_after_apply_active_gate(
-    state_vector, matrix, state_index_matrix_list
+    state_vector,
+    matrix,
+    state_index_matrix_list,
+    calculator,
 ):
+    np = calculator.forward_pass_np
+
     new_state_vector = np.empty_like(state_vector, dtype=state_vector.dtype)
 
     is_batch = len(state_vector.shape) == 2
@@ -158,8 +163,12 @@ def _calculate_state_vector_after_apply_active_gate(
 
     for state_index_matrix in state_index_matrix_list:
         limit = state_index_matrix.shape[0]
-        new_state_vector[state_index_matrix] = np.einsum(
-            einsum_string, matrix[:limit, :limit], state_vector[state_index_matrix]
+        new_state_vector = calculator.assign(
+            new_state_vector,
+            state_index_matrix,
+            np.einsum(
+                einsum_string, matrix[:limit, :limit], state_vector[state_index_matrix]
+            ),
         )
 
     return new_state_vector

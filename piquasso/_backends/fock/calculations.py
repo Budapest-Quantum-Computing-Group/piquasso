@@ -194,7 +194,7 @@ def calculate_interferometer_helper_indices(d, cutoff):
     }
 
 
-def calculate_interferometer_on_fock_space(interferometer, index_dict):
+def calculate_interferometer_on_fock_space(interferometer, index_dict, calculator):
     """Calculates finite representation of interferometer in the Fock space.
     The function assumes the knowledge of the 1-particle unitary.
 
@@ -209,6 +209,8 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
     Returns:
         numpy.ndarray: Finite representation of interferometer in the Fock space
     """
+
+    np = calculator.forward_pass_np
 
     subspace_representations = []
 

@@ -209,8 +209,8 @@ class PureFockState(BaseFockState):
         state_vector = self._state_vector
 
         accumulator = np.dot(
-            (multipliers * np.take(state_vector, left_indices)),
-            np.take(state_vector, right_indices),
+            (multipliers * np.take(state_vector, np.array(left_indices))),
+            np.take(state_vector, np.array(right_indices)),
         )
 
         return np.real(accumulator) * fallback_np.sqrt(self._config.hbar / 2)

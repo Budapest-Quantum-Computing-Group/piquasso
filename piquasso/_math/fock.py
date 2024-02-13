@@ -66,11 +66,15 @@ def get_single_mode_squeezing_operator(
 ) -> np.ndarray:
     @calculator.custom_gradient
     def _single_mode_squeezing_operator(r, phi):
-        r = calculator.maybe_convert_to_numpy(r)
-        phi = calculator.maybe_convert_to_numpy(phi)
+        r = calculator.preprocess_input_for_custom_gradient(r)
+        phi = calculator.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_squeezing_matrix(
-            r, phi, config.cutoff, config.complex_dtype
+            r,
+            phi,
+            config.cutoff,
+            complex_dtype=config.complex_dtype,
+            calculator=calculator,
         )
         grad = create_single_mode_squeezing_gradient(
             r,
@@ -156,13 +160,15 @@ def get_annihilation_operator(
 def get_single_mode_displacement_operator(r, phi, calculator, config):
     @calculator.custom_gradient
     def _single_mode_displacement_operator(r, phi):
-        r = calculator.maybe_convert_to_numpy(r)
-        phi = calculator.maybe_convert_to_numpy(phi)
+        r = calculator.preprocess_input_for_custom_gradient(r)
+        phi = calculator.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_displacement_matrix(
             r,
             phi,
             config.cutoff,
+            complex_dtype=config.complex_dtype,
+            calculator=calculator,
         )
         grad = create_single_mode_displacement_gradient(
             r,
