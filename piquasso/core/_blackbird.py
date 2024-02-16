@@ -19,7 +19,7 @@ from typing import List, Mapping, Optional, Type
 
 import blackbird as bb
 
-from .. import Instruction
+from ..api.instruction import Instruction
 from ..api.exceptions import PiquassoException
 
 
