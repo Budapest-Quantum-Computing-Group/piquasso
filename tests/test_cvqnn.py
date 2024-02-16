@@ -32,6 +32,26 @@ def test_generate_random_cvqnn_weights(layer_count, d):
     assert weights.shape[1] == 4 * d + 2 * (d * (d - 1) + max(1, d - 1))
 
 
+def test_create_layers_yields_valid_program():
+    d = 3
+
+    weights = cvqnn.generate_random_cvqnn_weights(layer_count=10, d=d)
+    layers = cvqnn.create_layers(weights)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+
+        pq.Q() | layers
+
+    simulator = pq.PureFockSimulator(d)
+
+    state = simulator.execute(program).state
+
+    state.validate()
+
+
 def test_create_program_yields_valid_program():
     d = 3
 
