@@ -43,11 +43,27 @@ class GaussianSimulator(BuiltinSimulator):
 
     Example usage::
 
+        import numpy as np
+        import piquasso as pq
+
+        from scipy.stats import unitary_group
+
+        d = 5
+
+        U = unitary_group.rvs(d)
+
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
+            for i in range(5):
+                pq.Q(i) | pq.Squeezing(r=i*0.1)
+
+            pq.Q(all) | pq.Interferometer(U)
+
+            pq.Q(all) | pq.ParticleNumberMeasurement()
+
         simulator = pq.GaussianSimulator(d=5)
-        result = simulator.execute(program)
+        result = simulator.execute(program, shots=100)
 
     Supported preparations:
         :class:`~piquasso.instructions.preparations.Vacuum`,

@@ -106,14 +106,9 @@ class TensorflowCalculator(_BuiltinCalculator):
     :class:`~piquasso._backends.calculator.NumpyCalculator`, but it enables the
     simulator to use Tensorflow to be able to compute gradients.
 
-    Note:
-        Non-deterministic operations like
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement` are
-        non-differentiable, please use a deterministic attribute of the resulting state
-        instead.
-
     Example usage::
 
+        import piquasso as pq
         import tensorflow as tf
 
         r = tf.Variable(0.43)
@@ -133,15 +128,24 @@ class TensorflowCalculator(_BuiltinCalculator):
             mean = state.mean_photon_number()
 
         gradient = tape.gradient(mean, [r])
+
+    Note:
+        Non-deterministic operations like
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement` are
+        non-differentiable, please use a deterministic attribute of the resulting state
+        instead.
+
+    Note:
+        Currently JIT compilation only works with the config variable `normalize=False`.
     """
 
     def __init__(self, decorate_with=None):
         """
         Args:
             decorate_with (function, optional): A function to decorate calculations
-            with. Currently, only `tf.function` is supported. Specifying this may
-            reduce runtime after the tracing step. See
-            `Better performance with tf.function https://www.tensorflow.org/guide/function`_.
+                with. Currently, only `tf.function` is supported. Specifying this may
+                reduce runtime after the tracing step. See
+                `Better performance with tf.function <https://www.tensorflow.org/guide/function>`_.
 
         Raises:
             ImportError: When TensorFlow is not available.
@@ -228,10 +232,8 @@ class TensorflowCalculator(_BuiltinCalculator):
         return glynn_gray_permanent(matrix, rows, columns, np=self.np)
 
     def assign(self, array, index, value):
-        """
-        NOTE: This method is very limited, and is a bit hacky, since TF does not support
-        item assignment through its NumPy API.
-        """
+        # NOTE: This method is very limited, and is a bit hacky, since TF does not
+        # support item assignment through its NumPy API.
 
         if isinstance(array, self.fallback_np.ndarray):
             array[index] = value
@@ -351,10 +353,8 @@ class TensorflowCalculator(_BuiltinCalculator):
         return V, S, self.np.conj(W).T
 
     def gather_along_axis_1(self, array, indices):
-        """
-        NOTE: Gather along axis 1 was terribly slow in Tensorflow, see
-        https://github.com/tensorflow/ranking/issues/160.
-        """
+        # NOTE: Gather along axis 1 was terribly slow in Tensorflow, see
+        # https://github.com/tensorflow/ranking/issues/160.
 
         np = self.fallback_np
 
@@ -372,10 +372,9 @@ class TensorflowCalculator(_BuiltinCalculator):
         return self._tf.gather_nd(array, np.array(reshaped_indices))
 
     def transpose(self, matrix):
-        """
-        NOTE: Similarly to `tf.gather(..., axis=1)`, `tf.transpose` is also pretty slow
-        when JIT compiled, and its einsum implementation is somehow faster.
-        """
+        # NOTE: Similarly to `tf.gather(..., axis=1)`, `tf.transpose` is also pretty
+        # slow when JIT compiled, and its einsum implementation is somehow faster.
+
         return self.np.einsum("ij->ji", matrix)
 
     def accumulator(self, dtype, size, **kwargs):

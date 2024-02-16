@@ -24,19 +24,41 @@ from piquasso.core import _mixins
 
 
 class Config(_mixins.CodeMixin):
-    """The configuration for the simulation."""
+    """The configuration for the simulation.
+
+    :ivar cutoff: The Fock space cutoff. Defaults to `4`.
+    :ivar normalize:
+        If `True`, the state is normalized for active gates in Fock-space based
+        simulations. Defaults to `True`.
+    :ivar dtype:
+        The underlying datatype of the simulation. Possible values: `np.float32` and
+        `np.float64`. Defaults to `np.float64`.
+    :ivar measurement_cutoff:
+        The maximum number of particles to be allowed for
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`
+        using :class:`~piquasso._backends.gaussian.simulator.GaussianSimulator`.
+        Defaults to `5`.
+    :ivar hbar: The value of the Planck constant. Defaults to `2.0`.
+    :ivar seed_sequence: The seed for reproducability of sampling algorithms.
+    :ivar use_torontonian:
+        Uses torontonian for
+        :class:`~piquasso.instructions.measurements.ThresholdMeasurement`. Defaults to
+        `False`.
+    :ivar cache_size:
+        The maximum size of the cache for certain algorithms. Defaults to `2.0`.
+    """
 
     def __init__(
         self,
         *,
-        seed_sequence: Optional[Any] = None,
-        cache_size: int = 32,
-        hbar: float = 2.0,
-        use_torontonian: bool = False,
         cutoff: int = 4,
-        measurement_cutoff: int = 5,
-        dtype: type = np.float64,
         normalize: bool = True,
+        dtype: type = np.float64,
+        measurement_cutoff: int = 5,
+        hbar: float = 2.0,
+        seed_sequence: Optional[Any] = None,
+        use_torontonian: bool = False,
+        cache_size: int = 32,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(

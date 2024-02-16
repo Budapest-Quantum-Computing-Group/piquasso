@@ -16,6 +16,23 @@ One could easily install Piquasso with the following command:
 
    pip install piquasso
 
+For a basic example, check out :doc:`tutorials/getting-started`.
+
+One can also use Piquasso along with TensorFlow, see, e.g.,
+:doc:`tutorials/cvqnn-with-tensorflow`. To install Piquasso with TensorFlow, just enter
+
+.. code-block:: bash
+
+   pip install piquasso[tensorflow]
+
+
+Similarly, Piquasso admits a JAX support, as described in :doc:`tutorials/jax-example`
+To install Piquasso with JAX is done by
+
+.. code-block:: bash
+
+   pip install piquasso[jax]
+
 
 .. toctree::
    :maxdepth: 3
@@ -26,7 +43,8 @@ One could easily install Piquasso with the following command:
    tutorials/separating-programs
    tutorials/boson-sampling
    tutorials/gaussian-boson-sampling
-   tutorials/pure-fock-tensorflow
+   tutorials/cvqnn-with-tensorflow
+   tutorials/jax-example
 
 .. toctree::
    :maxdepth: 3
@@ -36,7 +54,6 @@ One could easily install Piquasso with the following command:
    simulators/gaussian
    simulators/fock
    simulators/sampling
-   simulators/tensorflow
 
 .. toctree::
    :maxdepth: 3
@@ -64,16 +81,19 @@ One could easily install Piquasso with the following command:
 
    api/program
    api/simulator
-   api/computer
+   api/config
    api/mode
    api/state
    api/instruction
    api/result
    api/exceptions
+   api/computer
+   api/calculator
 
 .. toctree::
    :maxdepth: 3
-   :caption: Miscellaneous:
+   :caption: Advanced:
    :hidden:
 
-   misc/cvqnn
+   advanced/cvqnn
+   advanced/calculators

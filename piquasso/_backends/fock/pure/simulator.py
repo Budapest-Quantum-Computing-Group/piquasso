@@ -52,10 +52,21 @@ class PureFockSimulator(BuiltinSimulator):
 
     Example usage::
 
-        with pq.Program() as program:
-            pq.Q() | pq.Vacuum()
+        import numpy as np
+        import piquasso as pq
 
-        simulator = pq.PureFockSimulator(d=5)
+
+        with pq.Program() as program:
+            pq.Q(all) | pq.Vacuum()
+
+            pq.Q(0)   | pq.Squeezing(r=0.1)
+            pq.Q(1)   | pq.Squeezing(r=0.2)
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3)
+
+            pq.Q(0) | pq.Kerr(xi=0.05)
+
+        simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7))
         result = simulator.execute(program)
 
     Supported preparations:
