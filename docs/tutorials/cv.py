@@ -1,0 +1,60 @@
+import piquasso as pq
+import tensorflow as tf
+
+import numpy as np
+
+
+d = 2
+cutoff = 10
+
+def calculate_mean_position(weights):
+    d = pq.cvqnn.get_number_of_modes(weights.shape[1])
+
+    simulator = pq.PureFockSimulator(
+        d,
+        pq.Config(cutoff=cutoff, normalize=False),
+        calculator=pq.TensorflowCalculator(),
+    )
+
+    with tf.GradientTape() as tape:
+        cvqnn_layers = pq.cvqnn.create_layers(weights)
+
+        preparation = [pq.Vacuum()] + [
+            pq.Displacement(r=0.1).on_modes(i) for i in range(d)
+        ]
+
+        program = pq.Program(instructions=preparation + cvqnn_layers.instructions)
+
+        simulator.execute(program)
+
+        final_state = simulator.execute(program).state
+
+        mean_position = final_state.mean_position(0)
+
+    return mean_position, tape.gradient(mean_position, weights)
+
+weigths = tf.Variable(pq.cvqnn.generate_random_cvqnn_weights(layer_count=1, d=d))
+
+decorator = tf.function(jit_compile=True, reduce_retracing=True)
+
+enhanced_calculate_mean_position = decorator(calculate_mean_position)
+
+import time
+
+start_time = time.time()
+
+enhanced_calculate_mean_position(weigths)
+
+print("COMPILATION TIME:", time.time() - start_time)
+
+
+start_time = time.time()
+
+enhanced_calculate_mean_position(weigths)
+
+print("SECOND RUNTIME:", time.time() - start_time)
+
+#graph = enhanced_calculate_mean_position.get_concrete_function(weigths).graph
+#for node in graph.as_graph_def().node:
+#    print(f'{node.input} -> {node.name}')
+
