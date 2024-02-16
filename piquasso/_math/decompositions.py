@@ -268,17 +268,9 @@ def euler(symplectic, calculator):
     np = calculator.np
     d = len(symplectic) // 2
 
-    identity = np.identity(d)
-    zeros = np.zeros(shape=(d, d), dtype=complex)
-
     U_orig, R = calculator.polar(symplectic, side="left")
 
-    K = calculator.block(
-        [
-            [identity, zeros],
-            [zeros, -identity],
-        ],
-    )
+    K = np.diag([1.0] * d + [-1.0] * d)
 
     H_active = 1j * K @ calculator.logm(R)
 

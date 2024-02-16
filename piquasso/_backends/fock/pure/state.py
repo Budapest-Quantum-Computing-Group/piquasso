@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Generator, Any, Dict
+from typing import Optional, Tuple, Dict
 
 import numpy as np
 
@@ -21,9 +21,12 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from piquasso._math.fock import cutoff_cardinality, FockBasis
+from piquasso._math.fock import cutoff_cardinality
 from piquasso._math.linalg import vector_absolute_square
-from piquasso._math.indices import get_index_in_fock_space
+from piquasso._math.indices import (
+    get_index_in_fock_space,
+    get_index_in_fock_space_array,
+)
 
 from ..state import BaseFockState
 from ..general.state import FockState
@@ -57,11 +60,14 @@ class PureFockState(BaseFockState):
         self._state_vector = self._get_empty()
 
     def _get_empty_list(self) -> list:
-        return [0.0] * self._space.cardinality
+        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+        return [0.0] * state_vector_size
 
     def _get_empty(self) -> np.ndarray:
+        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+
         return self._np.zeros(
-            shape=(self._space.cardinality,), dtype=self._config.complex_dtype
+            shape=(state_vector_size,), dtype=self._config.complex_dtype
         )
 
     def reset(self) -> None:
@@ -72,16 +78,14 @@ class PureFockState(BaseFockState):
             state_vector_list, dtype=self._config.complex_dtype
         )
 
-    def _nonzero_elements_for_single_state_vector(
-        self, state_vector: np.ndarray
-    ) -> Generator[Tuple[complex, FockBasis], Any, None]:
-        for index, basis in self._space.basis:
+    def _nonzero_elements_for_single_state_vector(self, state_vector):
+        for index, basis in enumerate(self._space):
             coefficient: complex = state_vector[index]
             if not np.isclose(coefficient, 0.0):
-                yield coefficient, basis
+                yield coefficient, tuple(basis)
 
     @property
-    def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
+    def nonzero_elements(self):
         return self._nonzero_elements_for_single_state_vector(self._state_vector)
 
     def _get_repr_for_single_state_vector(self, nonzero_elements):
@@ -112,7 +116,7 @@ class PureFockState(BaseFockState):
         return self._as_mixed().reduced(modes)
 
     def get_particle_detection_probability(
-        self, occupation_number: Tuple[int, ...]
+        self, occupation_number: np.ndarray
     ) -> float:
         if len(occupation_number) != self.d:
             raise PiquassoException(
@@ -120,7 +124,7 @@ class PureFockState(BaseFockState):
                 f"occupation_number='{occupation_number}'."
             )
 
-        index = self._space.index(occupation_number)
+        index = get_index_in_fock_space(occupation_number)
 
         return self._np.real(
             self._state_vector[index].conjugate() * self._state_vector[index]
@@ -134,7 +138,7 @@ class PureFockState(BaseFockState):
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
 
-        for index, basis in self._space.basis:
+        for index, basis in enumerate(self._space):
             probability_map[tuple(basis)] = self._np.abs(self._state_vector[index]) ** 2
 
         return probability_map
@@ -169,31 +173,31 @@ class PureFockState(BaseFockState):
     def _get_mean_position_indices(self, mode):
         fallback_np = self._calculator.fallback_np
 
-        left_indices = []
-        multipliers = []
-        right_indices = []
+        self._space[:, mode] -= 1
+        lowered_indices = get_index_in_fock_space_array(self._space)
+        self._space[:, mode] += 2
+        raised_indices = get_index_in_fock_space_array(self._space)
+        self._space[:, mode] -= 1
 
-        for index, basis in enumerate(self._space):
-            i = basis[mode]
-            basis_array = fallback_np.array(basis)
+        relevant_column = self._space[:, mode]
 
-            if i > 0:
-                basis_array[mode] = i - 1
-                lower_index = get_index_in_fock_space(tuple(basis_array))
+        nonzero_indices_on_mode = (relevant_column > 0).nonzero()[0]
+        upper_index = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff - 1)
 
-                left_indices.append(lower_index)
-                multipliers.append(fallback_np.sqrt(i))
-                right_indices.append(index)
-
-            if sum(basis) + 1 < self._config.cutoff:
-                basis_array[mode] = i + 1
-                upper_index = get_index_in_fock_space(tuple(basis_array))
-
-                left_indices.append(upper_index)
-                multipliers.append(fallback_np.sqrt(i + 1))
-                right_indices.append(index)
-
-        multipliers = fallback_np.array(multipliers)
+        multipliers = fallback_np.sqrt(
+            fallback_np.concatenate(
+                [
+                    relevant_column[nonzero_indices_on_mode],
+                    relevant_column[:upper_index] + 1,
+                ]
+            )
+        )
+        left_indices = fallback_np.concatenate(
+            [lowered_indices[nonzero_indices_on_mode], raised_indices[:upper_index]]
+        )
+        right_indices = fallback_np.concatenate(
+            [nonzero_indices_on_mode, fallback_np.arange(upper_index)]
+        )
 
         return multipliers, left_indices, right_indices
 
@@ -205,8 +209,8 @@ class PureFockState(BaseFockState):
         state_vector = self._state_vector
 
         accumulator = np.dot(
-            (multipliers * np.take(state_vector, left_indices)),
-            np.take(state_vector, right_indices),
+            (multipliers * state_vector[left_indices]),
+            state_vector[right_indices],
         )
 
         return np.real(accumulator) * fallback_np.sqrt(self._config.hbar / 2)
@@ -277,29 +281,16 @@ class PureFockState(BaseFockState):
         return expectation, variance
 
     def mean_photon_number(self):
-        accumulator = 0.0
+        numbers = np.sum(self._space, axis=1)
 
-        for index, basis in enumerate(self._space):
-            number = sum(basis)
-
-            accumulator += number * self._np.abs(self._state_vector[index]) ** 2
-
-        return accumulator
+        return numbers @ (self._np.abs(self._state_vector) ** 2)
 
     def get_tensor_representation(self):
-        calculator = self._calculator
         cutoff = self._config.cutoff
         d = self.d
 
-        indices = []
-        updates = []
-
-        for index, number in enumerate(self._space):
-            indices.append(list(number))
-            updates.append(self._state_vector[index])
-
-        return calculator.scatter(
-            indices,
-            updates,
+        return self._calculator.scatter(
+            self._space,
+            self._state_vector,
             [cutoff] * d,
         )

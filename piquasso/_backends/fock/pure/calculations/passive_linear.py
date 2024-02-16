@@ -25,7 +25,6 @@ from ...calculations import (
     calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
 )
-
 from piquasso.instructions import gates
 
 from piquasso.api.result import Result
@@ -46,25 +45,28 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, interferometer, modes, calculator):
-    subspace = state._get_subspace(dim=len(interferometer))
-
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, subspace, calculator
+        interferometer, state._config.cutoff, calculator
     )
 
     _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
 
 
-def _get_interferometer_on_fock_space(interferometer, space, calculator):
+def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
     def _get_interferometer_with_gradient_callback(interferometer):
         interferometer = calculator.maybe_convert_to_numpy(interferometer)
-        index_dict = calculate_interferometer_helper_indices(space)
+        index_dict = calculate_interferometer_helper_indices(
+            d=len(interferometer), cutoff=cutoff
+        )
 
         subspace_representations = calculate_interferometer_on_fock_space(
             interferometer, index_dict
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
-            interferometer, calculator, subspace_representations, index_dict
+            interferometer,
+            calculator,
+            subspace_representations,
+            index_dict,
         )
 
         return subspace_representations, grad
@@ -89,16 +91,16 @@ def _calculate_interferometer_gradient_on_fock_space(
         else:
             np = calculator.np
 
-        indices = index_dict["indices"]
         subspace_index_tensor = index_dict["subspace_index_tensor"]
         first_subspace_index_tensor = index_dict["first_subspace_index_tensor"]
-        nonzero_index_tensor = index_dict["nonzero_index_tensor"]
         first_nonzero_index_tensor = index_dict["first_nonzero_index_tensor"]
+        sqrt_first_occupation_numbers_tensor = index_dict[
+            "sqrt_first_occupation_numbers_tensor"
+        ]
         sqrt_occupation_numbers_tensor = index_dict["sqrt_occupation_numbers_tensor"]
-        first_occupation_numbers_tensor = index_dict["first_occupation_numbers_tensor"]
 
         d = len(interferometer)
-        cutoff = len(indices)
+        cutoff = len(subspace_index_tensor) + 2
 
         full_kl_grad = []
         for row_index in range(d):
@@ -115,69 +117,59 @@ def _calculate_interferometer_gradient_on_fock_space(
                 subspace_grad.append(second_subspace)
 
                 for p in range(2, cutoff):
-                    size = indices[p] - indices[p - 1]
                     previous_subspace_grad = subspace_grad[p - 1]
-                    matrix = fallback_np.zeros(
-                        shape=(size, size), dtype=interferometer.dtype
-                    )
 
-                    subspace_indices = subspace_index_tensor[p - 2]
                     first_subspace_indices = fallback_np.asarray(
                         first_subspace_index_tensor[p - 2]
                     )
-                    nonzero_indices = nonzero_index_tensor[p - 2]
                     first_nonzero_indices = first_nonzero_index_tensor[p - 2]
-                    sqrt_occupation_numbers = sqrt_occupation_numbers_tensor[p - 2]
-                    first_occupation_numbers = first_occupation_numbers_tensor[p - 2]
+                    sqrt_first_occupation_numbers = (
+                        sqrt_first_occupation_numbers_tensor[p - 2]
+                    )
 
-                    partial_interferometer = interferometer[first_nonzero_indices, :]
                     partial_previous_subspace_grad = previous_subspace_grad[
                         first_subspace_indices, :
                     ]
 
-                    for n_index in range(size):
-                        first_part = (
-                            sqrt_occupation_numbers[n_index]
-                            * partial_interferometer[:, nonzero_indices[n_index]]
-                        )
-                        second_part = partial_previous_subspace_grad[
-                            :, subspace_indices[n_index]
-                        ]
-                        full = fallback_np.einsum("ij,ij->i", first_part, second_part)
-                        matrix[:, n_index] = full
+                    sqrt_occupation_numbers = sqrt_occupation_numbers_tensor[p - 2]
 
-                    matrix = (matrix.T / fallback_np.sqrt(first_occupation_numbers)).T
+                    subspace_indices = subspace_index_tensor[p - 2]
+
+                    first_part_partially_indexed = interferometer[
+                        first_nonzero_indices, :
+                    ]
+                    second_part = partial_previous_subspace_grad[:, subspace_indices]
+
+                    matrix = fallback_np.einsum(
+                        "ij,kj,kij->ik",
+                        sqrt_occupation_numbers,
+                        first_part_partially_indexed,
+                        second_part,
+                    )
+
+                    matrix = (matrix / sqrt_first_occupation_numbers).T
 
                     mp1i_indices = fallback_np.where(
                         fallback_np.asarray(first_nonzero_indices) == row_index
                     )[0]
 
-                    occupation_number_sqrts = fallback_np.sqrt(
-                        first_occupation_numbers[mp1i_indices]
+                    occupation_number_sqrts = sqrt_first_occupation_numbers[
+                        mp1i_indices
+                    ]
+
+                    nm1l_indices = subspace_indices[:, col_index]
+
+                    correction_first_part = subspace_representations[p - 1][
+                        first_subspace_indices[mp1i_indices]
+                    ][:, nm1l_indices]
+                    correction_second_part = (
+                        sqrt_occupation_numbers[:, col_index, None]
+                        / occupation_number_sqrts
                     )
 
-                    col_nonzero_indices_index = []
-                    col_nonzero_indices = []
-                    for index in range(size):
-                        if col_index in nonzero_indices[index]:
-                            col_nonzero_indices_index.append(
-                                nonzero_indices[index].tolist().index(col_index)
-                            )
-                            col_nonzero_indices.append(index)
+                    correction_matrix = correction_first_part * correction_second_part.T
 
-                    for index in range(len(col_nonzero_indices_index)):
-                        nm1l_index = subspace_indices[col_nonzero_indices[index]][
-                            col_nonzero_indices_index[index]
-                        ]
-                        matrix[mp1i_indices, col_nonzero_indices[index]] += (
-                            sqrt_occupation_numbers[col_nonzero_indices[index]][
-                                col_nonzero_indices_index[index]
-                            ]
-                            / occupation_number_sqrts
-                            * subspace_representations[p - 1][
-                                first_subspace_indices[mp1i_indices], nm1l_index
-                            ]
-                        )
+                    matrix[mp1i_indices, :] += correction_matrix
 
                     subspace_grad.append(matrix)
 
@@ -198,7 +190,6 @@ def _apply_passive_gate_matrix_to_state(
 ) -> None:
     calculator = state._calculator
     state_vector = state._state_vector
-    space = state._space
 
     def _apply_interferometer_matrix(state_vector, subspace_transformations):
         state_vector = calculator.maybe_convert_to_numpy(state_vector)
@@ -210,7 +201,8 @@ def _apply_passive_gate_matrix_to_state(
 
         index_list = calculate_index_list_for_appling_interferometer(
             modes,
-            space,
+            state.d,
+            state._config.cutoff,
         )
 
         new_state_vector = _calculate_state_vector_after_interferometer(

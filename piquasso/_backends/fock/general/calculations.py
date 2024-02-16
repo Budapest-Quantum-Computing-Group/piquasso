@@ -27,11 +27,23 @@ from piquasso._math.decompositions import euler
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 
+from piquasso._math.indices import get_index_in_fock_space
+from piquasso._math.fock import (
+    get_single_mode_displacement_operator,
+    get_creation_operator,
+    get_annihilation_operator,
+    operator_basis,
+    get_single_mode_squeezing_operator,
+    get_single_mode_cubic_phase_operator,
+    get_fock_space_basis,
+)
+
 from ..calculations import (
     calculate_state_index_matrix_list,
     calculate_interferometer_helper_indices,
     calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
+    get_projection_operator_indices,
 )
 
 
@@ -54,10 +66,8 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, interferometer, modes):
-    subspace = state._get_subspace(dim=len(interferometer))
-
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, subspace
+        interferometer, state._config.cutoff
     )
 
     _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
@@ -68,11 +78,10 @@ def _apply_passive_gate_matrix_to_state(
     subspace_transformations: List[np.ndarray],
     modes: Tuple[int, ...],
 ) -> None:
-    space = state._space
-
     index_list = calculate_index_list_for_appling_interferometer(
         modes,
-        space,
+        state.d,
+        state._config.cutoff,
     )
 
     state._density_matrix = _calculate_density_matrix_after_interferometer(
@@ -107,8 +116,11 @@ def _calculate_density_matrix_after_interferometer(
     return new_density_matrix
 
 
-def _get_interferometer_on_fock_space(interferometer, space):
-    index_dict = calculate_interferometer_helper_indices(space)
+def _get_interferometer_on_fock_space(interferometer, cutoff):
+    index_dict = calculate_interferometer_helper_indices(
+        d=len(interferometer),
+        cutoff=cutoff,
+    )
 
     return calculate_interferometer_on_fock_space(interferometer, index_dict)
 
@@ -168,18 +180,23 @@ def _get_projected_density_matrix(
 ) -> np.ndarray:
     new_density_matrix = state._get_empty()
 
-    index = state._space.get_projection_operator_indices(
-        subspace_basis=subspace_basis,
-        modes=modes,
+    index = get_projection_operator_indices(
+        state.d, state._config.cutoff, modes, subspace_basis
     )
 
-    new_density_matrix[index] = state._density_matrix[index]
+    operator_index = np.ix_(index, index)
+
+    new_density_matrix[operator_index] = state._density_matrix[operator_index]
 
     return new_density_matrix
 
 
 def create(state: FockState, instruction: Instruction, shots: int) -> Result:
-    operator = state._space.get_creation_operator(instruction.modes)
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
+    operator = get_creation_operator(
+        instruction.modes, space=space, config=state._config
+    )
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
 
@@ -189,7 +206,11 @@ def create(state: FockState, instruction: Instruction, shots: int) -> Result:
 
 
 def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result:
-    operator = state._space.get_annihilation_operator(instruction.modes)
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
+    operator = get_annihilation_operator(
+        instruction.modes, space=space, config=state._config
+    )
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
 
@@ -199,11 +220,13 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
 
 
 def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
     xi = instruction._all_params["xi"]
 
     mode = instruction.modes[0]
 
-    for index, (basis, dual_basis) in state._space.operator_basis:
+    for index, (basis, dual_basis) in operator_basis(space):
         number = basis[mode]
         dual_number = dual_basis[mode]
 
@@ -216,10 +239,9 @@ def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
 
 def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Result:
     gamma = instruction._all_params["gamma"]
-    hbar = state._config.hbar
 
-    matrix = state._space.get_single_mode_cubic_phase_operator(
-        gamma=gamma, hbar=hbar, calculator=state._calculator
+    matrix = get_single_mode_cubic_phase_operator(
+        gamma=gamma, config=state._config, calculator=state._calculator
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
@@ -234,11 +256,9 @@ def _apply_active_gate_matrix_to_state(
     mode: int,
 ) -> None:
     density_matrix = state._density_matrix
-    space = state._space
-    auxiliary_subspace = state._get_subspace(state.d - 1)
 
     state_index_matrix_list = calculate_state_index_matrix_list(
-        space, auxiliary_subspace, mode
+        state.d, state._config.cutoff, mode
     )
     density_matrix = _calculate_density_matrix_after_apply_active_gate(
         density_matrix, matrix, state_index_matrix_list
@@ -297,10 +317,12 @@ def _calculate_density_matrix_after_apply_active_gate(
 
 
 def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
     modes = instruction.modes
     xi = instruction._all_params["xi"]
 
-    for index, (basis, dual_basis) in state._space.operator_basis:
+    for index, (basis, dual_basis) in operator_basis(space):
         coefficient = np.exp(
             1j
             * xi
@@ -320,7 +342,9 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
     phi = instruction._all_params["phi"]
     mode = instruction.modes[0]
 
-    matrix = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
+    matrix = get_single_mode_displacement_operator(
+        r=r, phi=phi, calculator=state._calculator, config=state._config
+    )
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
@@ -334,9 +358,11 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
     phi = instruction._all_params["phi"]
     mode = instruction.modes[0]
 
-    matrix = state._space.get_single_mode_squeezing_operator(
+    matrix = get_single_mode_squeezing_operator(
         r=r,
         phi=phi,
+        calculator=state._calculator,
+        config=state._config,
     )
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
@@ -369,7 +395,9 @@ def linear(
     _apply_passive_linear(state, unitary_first, modes)
 
     for mode, r in zip(instruction.modes, squeezings):
-        matrix = state._space.get_single_mode_squeezing_operator(r=r, phi=0.0)
+        matrix = get_single_mode_squeezing_operator(
+            r=r, phi=0.0, calculator=state._calculator, config=state._config
+        )
         _apply_active_gate_matrix_to_state(state, matrix, mode)
 
     _apply_passive_linear(state, unitary_last, modes)
@@ -394,7 +422,7 @@ def _add_occupation_number_basis(
     bra: Tuple[int, ...],
     coefficient: complex
 ) -> None:
-    index = state._space.index(ket)
-    dual_index = state._space.index(bra)
+    index = get_index_in_fock_space(ket)
+    dual_index = get_index_in_fock_space(bra)
 
     state._density_matrix[index, dual_index] = coefficient

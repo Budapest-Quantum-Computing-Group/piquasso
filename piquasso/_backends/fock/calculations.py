@@ -27,11 +27,17 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
 from piquasso.api.exceptions import InvalidInstruction, InvalidParameter
 
-from piquasso._math.fock import cutoff_cardinality, FockSpace
+from piquasso._math.fock import (
+    cutoff_cardinality,
+    cutoff_cardinality_array,
+    operator_basis,
+    get_fock_space_basis,
+)
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_auxiliary_modes,
-    get_index_in_fock_subspace,
+    get_index_in_fock_space_array,
+    get_index_in_fock_subspace_array,
 )
 
 
@@ -64,17 +70,17 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
 
     theta = instruction._all_params["theta"]
 
-    space = state._space
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     new_state = state._as_mixed()
 
     new_density_matrix = new_state._get_empty()
 
-    for index, basis in space.operator_basis:
+    for index, basis in operator_basis(space):
         coefficient = new_state._density_matrix[index]
 
-        ket = np.asarray(basis.ket)
-        bra = np.asarray(basis.bra)
+        ket = np.copy(basis[0])
+        bra = np.copy(basis[1])
 
         n = ket[modes]
         m = bra[modes]
@@ -82,14 +88,14 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
         common_term = coefficient * np.cos(theta) ** (n + m)
 
         for k in range(min(n, m) + 1):
-            current_ket = np.copy(ket)
-            current_ket[(modes,)] -= k
+            ket[(modes,)] -= k
+            bra[(modes,)] -= k
 
-            current_bra = np.copy(bra)
-            current_bra[(modes,)] -= k
+            current_ket_index = get_index_in_fock_space(ket)
+            current_bra_index = get_index_in_fock_space(bra)
 
-            current_ket_index = space.index(tuple(current_ket))
-            current_bra_index = space.index(tuple(current_bra))
+            ket[(modes,)] += k
+            bra[(modes,)] += k
 
             current_index = (current_ket_index, current_bra_index)
 
@@ -103,103 +109,91 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
 
 
 @lru_cache(maxsize=None)
-def calculate_state_index_matrix_list(space, auxiliary_subspace, mode):
-    d = space.d
-    cutoff = space.cutoff
+def calculate_state_index_matrix_list(d, cutoff, mode):
+    auxiliary_subspace = get_fock_space_basis(d=d - 1, cutoff=cutoff)
 
     state_index_matrix_list = []
-    auxiliary_modes = get_auxiliary_modes(d, (mode,))
-    all_occupation_numbers = np.zeros(d, dtype=int)
 
-    indices = [cutoff_cardinality(cutoff=n - 1, d=d - 1) for n in range(1, cutoff + 2)]
+    indices = cutoff_cardinality_array(cutoff=np.arange(cutoff + 1), d=d - 1)
 
     for n in range(cutoff):
-        limit = space.cutoff - n
+        limit = cutoff - n
+        limit_range = np.arange(limit)
         subspace_size = indices[n + 1] - indices[n]
+        subspace_to_insert = auxiliary_subspace[indices[n] : indices[n + 1]]
 
-        state_index_matrix = np.empty(shape=(limit, subspace_size), dtype=int)
+        update_on_modes = np.repeat(limit_range[:, None, None], subspace_size, axis=1)
 
-        for i, auxiliary_occupation_numbers in enumerate(
-            auxiliary_subspace[indices[n] : indices[n + 1]]
-        ):
-            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
+        update_on_aux_modes = np.repeat(subspace_to_insert[None, :, :], limit, axis=0)
 
-            for j in range(limit):
-                all_occupation_numbers[mode] = j
-                state_index_matrix[j, i] = get_index_in_fock_space(
-                    tuple(all_occupation_numbers)
-                )
+        unordered_basis_tensor = np.concatenate(
+            [update_on_modes, update_on_aux_modes],
+            axis=2,
+        )
 
-        state_index_matrix_list.append(state_index_matrix)
+        reorder_index = np.concatenate(
+            [np.arange(1, mode + 1), np.array([0]), np.arange(mode + 1, d)]
+        )
+
+        basis_tensor = unordered_basis_tensor[:, :, reorder_index]
+
+        state_index_matrix_list.append(get_index_in_fock_space_array(basis_tensor))
 
     return state_index_matrix_list
 
 
 @lru_cache(maxsize=None)
-def calculate_interferometer_helper_indices(space):
-    d = space.d
-    cutoff = space.cutoff
-    space = [np.array(element, dtype=int) for element in space]
-    indices = [cutoff_cardinality(cutoff=n - 1, d=d) for n in range(2, cutoff + 2)]
+def calculate_interferometer_helper_indices(d, cutoff):
+    space = get_fock_space_basis(d=d, cutoff=cutoff)
+
+    indices = cutoff_cardinality_array(cutoff=np.arange(1, cutoff + 1), d=d)
 
     subspace_index_tensor = []
-    first_subspace_index_tensor = []
 
-    nonzero_index_tensor = []
+    first_subspace_index_tensor = []
     first_nonzero_index_tensor = []
 
     sqrt_occupation_numbers_tensor = []
-    first_occupation_numbers_tensor = []
+    sqrt_first_occupation_numbers_tensor = []
+
+    identity = np.identity(d, dtype=int)
+
+    repeated = get_index_in_fock_subspace_array(
+        np.repeat(space[:, None, :], d, axis=1)
+        - np.repeat(identity[None, :, :], len(space), axis=0)
+    )
+
+    sqrt_space = np.sqrt(space)
+    first_nonzero_space_index = (space != 0).argmax(axis=1)
+
+    space[np.arange(len(space)), first_nonzero_space_index] -= 1
+    first_subpace_indices_space = get_index_in_fock_subspace_array(space)
+    space[np.arange(len(space)), first_nonzero_space_index] += 1
+
+    sqrt_first_occupation_numbers = np.sqrt(
+        space[np.arange(len(space)), first_nonzero_space_index]
+    )
 
     for n in range(2, cutoff):
-        size = indices[n] - indices[n - 1]
-        subspace = space[indices[n - 1] : indices[n]]
+        subspace_range = np.arange(indices[n - 1], indices[n])
+        subspace_index_tensor.append(
+            np.mod(repeated[subspace_range], indices[n - 1] - indices[n - 2])
+        )
 
-        subspace_indices = []
-        first_subspace_indices = []
+        first_nonzero_index_tensor.append(first_nonzero_space_index[subspace_range])
+        first_subspace_index_tensor.append(first_subpace_indices_space[subspace_range])
 
-        nonzero_indices = []
-        first_nonzero_indices = []
-
-        sqrt_occupation_numbers = []
-        first_occupation_numbers = np.empty(size)
-
-        for index, vector in enumerate(subspace):
-            nonzero_multiindex = np.nonzero(vector)[0]
-            first_nonzero_multiindex = nonzero_multiindex[0]
-
-            subspace_multiindex = []
-            for nonzero_index in nonzero_multiindex:
-                vector[nonzero_index] -= 1
-                subspace_multiindex.append(get_index_in_fock_subspace(tuple(vector)))
-                vector[nonzero_index] += 1
-
-            subspace_indices.append(subspace_multiindex)
-            first_subspace_indices.append(subspace_multiindex[0])
-
-            nonzero_indices.append(nonzero_multiindex)
-            first_nonzero_indices.append(first_nonzero_multiindex)
-
-            sqrt_occupation_numbers.append(np.sqrt(vector[nonzero_multiindex]))
-            first_occupation_numbers[index] = vector[first_nonzero_multiindex]
-
-        subspace_index_tensor.append(subspace_indices)
-        first_nonzero_index_tensor.append(first_nonzero_indices)
-
-        nonzero_index_tensor.append(nonzero_indices)
-        first_subspace_index_tensor.append(first_subspace_indices)
-
-        sqrt_occupation_numbers_tensor.append(sqrt_occupation_numbers)
-        first_occupation_numbers_tensor.append(first_occupation_numbers)
+        sqrt_occupation_numbers_tensor.append(sqrt_space[subspace_range])
+        sqrt_first_occupation_numbers_tensor.append(
+            sqrt_first_occupation_numbers[subspace_range]
+        )
 
     return {
         "subspace_index_tensor": subspace_index_tensor,
         "first_nonzero_index_tensor": first_nonzero_index_tensor,
-        "nonzero_index_tensor": nonzero_index_tensor,
         "first_subspace_index_tensor": first_subspace_index_tensor,
         "sqrt_occupation_numbers_tensor": sqrt_occupation_numbers_tensor,
-        "first_occupation_numbers_tensor": first_occupation_numbers_tensor,
-        "indices": indices,
+        "sqrt_first_occupation_numbers_tensor": sqrt_first_occupation_numbers_tensor,
     }
 
 
@@ -213,7 +207,7 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
 
     Args:
         interferometer (numpy.ndarray): The 1-particle unitary
-        space (FockSpace): List of basis elements on the Fock space.
+        space (np.ndarray): Array of basis elements on the Fock space.
 
     Returns:
         numpy.ndarray: Finite representation of interferometer in the Fock space
@@ -224,38 +218,33 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
     subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
     subspace_representations.append(interferometer)
 
-    indices = index_dict["indices"]
-    cutoff = len(indices)
+    cutoff = len(index_dict["subspace_index_tensor"]) + 2
 
     for n in range(2, cutoff):
-        size = indices[n] - indices[n - 1]
-
         subspace_indices = index_dict["subspace_index_tensor"][n - 2]
         first_subspace_indices = index_dict["first_subspace_index_tensor"][n - 2]
 
-        nonzero_indices = index_dict["nonzero_index_tensor"][n - 2]
         first_nonzero_indices = index_dict["first_nonzero_index_tensor"][n - 2]
 
         sqrt_occupation_numbers = index_dict["sqrt_occupation_numbers_tensor"][n - 2]
-        first_occupation_numbers = index_dict["first_occupation_numbers_tensor"][n - 2]
+        sqrt_first_occupation_numbers = index_dict[
+            "sqrt_first_occupation_numbers_tensor"
+        ][n - 2]
 
         first_part_partially_indexed = interferometer[first_nonzero_indices, :]
-        second_part_partially_indexed = subspace_representations[n - 1][
-            first_subspace_indices, :
+        second = subspace_representations[n - 1][first_subspace_indices][
+            :, subspace_indices
         ]
 
-        matrix = []
-
-        for index in range(size):
-            first_part = (
-                sqrt_occupation_numbers[index]
-                * first_part_partially_indexed[:, nonzero_indices[index]]
-            )
-            second_part = second_part_partially_indexed[:, subspace_indices[index]]
-            matrix.append(np.einsum("ij,ij->i", first_part, second_part))
+        matrix = np.einsum(
+            "ij,kj,kij->ik",
+            sqrt_occupation_numbers,
+            first_part_partially_indexed,
+            second,
+        )
 
         new_subspace_representation = np.transpose(
-            np.array(matrix) / np.sqrt(first_occupation_numbers)
+            matrix / sqrt_first_occupation_numbers
         )
 
         subspace_representations.append(
@@ -268,29 +257,17 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict):
 @lru_cache(maxsize=None)
 def calculate_index_list_for_appling_interferometer(
     modes: Tuple[int, ...],
-    space: FockSpace,
+    d: int,
+    cutoff: int,
 ) -> List[np.ndarray]:
-    cutoff = space.cutoff
-    d = space.d
-    calculator = space._calculator
+    subspace = get_fock_space_basis(d=len(modes), cutoff=cutoff)
+    auxiliary_subspace = get_fock_space_basis(d=d - len(modes), cutoff=cutoff)
 
-    subspace = FockSpace(
-        d=len(modes), cutoff=space.cutoff, calculator=calculator, config=space.config
+    indices = cutoff_cardinality_array(cutoff=np.arange(cutoff + 1), d=len(modes))
+    auxiliary_indices = cutoff_cardinality_array(
+        cutoff=np.arange(cutoff + 1), d=d - len(modes)
     )
-    auxiliary_subspace = FockSpace(
-        d=d - len(modes),
-        cutoff=space.cutoff,
-        calculator=calculator,
-        config=space.config,
-    )
-
-    indices = [cutoff_cardinality(cutoff=n, d=len(modes)) for n in range(cutoff + 1)]
-    auxiliary_indices = [
-        cutoff_cardinality(cutoff=n, d=d - len(modes)) for n in range(cutoff + 1)
-    ]
-
     auxiliary_modes = get_auxiliary_modes(d, modes)
-    all_occupation_numbers = np.zeros(d, dtype=int)
 
     index_list = []
 
@@ -298,16 +275,36 @@ def calculate_index_list_for_appling_interferometer(
         size = indices[n + 1] - indices[n]
         n_particle_subspace = subspace[indices[n] : indices[n + 1]]
         auxiliary_size = auxiliary_indices[cutoff - n]
-        state_index_matrix = np.empty(shape=(size, auxiliary_size), dtype=int)
-        for idx1, auxiliary_occupation_numbers in enumerate(
-            auxiliary_subspace[:auxiliary_size]
-        ):
-            all_occupation_numbers[(auxiliary_modes,)] = auxiliary_occupation_numbers
-            for idx2, column_vector_on_subspace in enumerate(n_particle_subspace):
-                all_occupation_numbers[(modes,)] = column_vector_on_subspace
-                column_index = get_index_in_fock_space(tuple(all_occupation_numbers))
-                state_index_matrix[idx2, idx1] = column_index
 
-        index_list.append(state_index_matrix)
+        basis_tensor = np.empty(shape=(size, auxiliary_size, d), dtype=int)
+
+        basis_tensor[:, :, auxiliary_modes] = auxiliary_subspace[:auxiliary_size]
+
+        basis_tensor[:, :, modes] = np.repeat(
+            n_particle_subspace[:, None, :], auxiliary_size, axis=1
+        )
+
+        index_list.append(get_index_in_fock_space_array(basis_tensor))
 
     return index_list
+
+
+def get_projection_operator_indices(d, cutoff, modes, basis_vector):
+    new_cutoff = cutoff - np.sum(basis_vector)
+
+    boxes = d - len(modes)
+
+    card = cutoff_cardinality(cutoff=new_cutoff, d=boxes)
+
+    basis = np.empty(shape=(card, d), dtype=int)
+
+    basis[:, modes] = basis_vector
+
+    if len(modes) < d:
+        auxiliary_modes = get_auxiliary_modes(d, modes)
+
+        auxiliary_subspace = get_fock_space_basis(d=boxes, cutoff=new_cutoff)
+
+        basis[:, auxiliary_modes] = auxiliary_subspace
+
+    return get_index_in_fock_space_array(basis)
