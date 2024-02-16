@@ -18,6 +18,8 @@
 One can access all the instructions and states from here as attributes.
 """
 
+from piquasso import cvqnn
+
 from piquasso.api.mode import Q
 from piquasso.api.config import Config
 from piquasso.api.instruction import (
@@ -101,6 +103,7 @@ from .instructions.batch import (
 )
 
 
+
 __all__ = [
     # API
     "Program",
@@ -170,6 +173,8 @@ __all__ = [
     # Batch
     "BatchPrepare",
     "BatchApply",
+    # Modules
+    "cvqnn",
 ]
 
 __version__ = "3.0.0"

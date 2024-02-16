@@ -19,18 +19,11 @@ import numpy as np
 
 from dataclasses import dataclass
 
-from piquasso import (
-    Program,
-    Instruction,
-    Vacuum,
-    Phaseshifter,
-    Beamsplitter,
-    Squeezing,
-    Displacement,
-    Kerr,
-)
-
+from piquasso.api.program import Program
+from piquasso.api.instruction import Instruction
 from piquasso.api.exceptions import CVQNNException
+from piquasso.instructions.preparations import Vacuum
+from piquasso.instructions.gates import Phaseshifter, Beamsplitter, Squeezing, Displacement, Kerr
 
 
 @dataclass
@@ -86,8 +79,22 @@ def generate_random_cvqnn_weights(
     )
 
 
-def create_program(weights: np.ndarray) -> Program:
-    """Creates a `Program` from the specified weights.
+def create_layers(weights: np.ndarray) -> Program:
+    """Creates a subprogram from the specified weights.
+
+    Example usage::
+
+        import piquasso as pq
+
+        weights = pq.cvqnn.generate_random_cvqnn_weights(layer_count=10, d=5)
+
+        cvnn_layers = pq.cvqnn.create_program(weights)
+
+        with pq.Program() as program:
+            for i in range(d):
+                pq.Q(i) | pq.Displacement(r=0.1)
+
+            pq.Q() | cvnn_layers
 
     Args:
         weights (np.ndarray): The CVQNN circuit weights.
@@ -95,6 +102,7 @@ def create_program(weights: np.ndarray) -> Program:
     Returns:
         Program: The program of the CVQNN circuit, ready to be executed.
     """
+
     d = get_number_of_modes(weights.shape[1])
     layer_count = weights.shape[0]
 
@@ -104,7 +112,24 @@ def create_program(weights: np.ndarray) -> Program:
         layer_parameters = _parse_layer(weights[k], d)
         instructions.extend(_instructions_from_layer(layer_parameters, d))
 
-    return Program([Vacuum()] + instructions)
+    return Program(instructions)
+
+
+def create_program(weights: np.ndarray) -> Program:
+    """Creates a `Program` from the specified weights, with vacuum initial state.
+
+    Args:
+        weights (np.ndarray): The CVQNN circuit weights.
+
+    Returns:
+        Program: The program of the CVQNN circuit, ready to be executed.
+    """
+
+    cvqnn_layers = create_layers(weights)
+
+    program = Program(instructions=[Vacuum()] + cvqnn_layers.instructions)
+
+    return program
 
 
 def get_number_of_modes(number_of_parameters: int) -> int:
