@@ -21,7 +21,7 @@ from piquasso.api.config import Config
 from piquasso.api.state import State
 from piquasso.api.calculator import BaseCalculator
 
-from piquasso._math import fock
+from piquasso._math.fock import get_fock_space_basis
 from piquasso.api.exceptions import InvalidModes
 
 
@@ -30,44 +30,12 @@ class BaseFockState(State, abc.ABC):
         self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
     ) -> None:
         super().__init__(calculator=calculator, config=config)
-
-        self._initialize_subspaces(d)
-
-    def _initialize_subspaces(self, d):
-        """
-        NOTE: Calculating the subspaces (the indices, essentially) is a costly
-        calculation, and it is beneficial to have them stored for later purposes
-        """
-        self._space = self._init_subspace(d)
-
-        self._subspace_cache = {
-            1: self._init_subspace(1),
-            2: self._init_subspace(2),
-            d - 1: self._init_subspace(d - 1),
-            d: self._space,
-        }
-
-    def _init_subspace(self, dim):
-        return fock.FockSpace(
-            d=dim,
-            cutoff=self._config.cutoff,
-            calculator=self._calculator,
-            config=self._config,
-        )
-
-    def _get_subspace(self, dim):
-        if dim in self._subspace_cache.keys():
-            return self._subspace_cache[dim]
-
-        subspace = self._init_subspace(dim)
-
-        self._subspace_cache[dim] = subspace
-
-        return subspace
+        self._d = d
+        self._space = get_fock_space_basis(d=d, cutoff=config.cutoff)  # type: ignore
 
     @property
     def d(self) -> int:
-        return self._space.d
+        return self._d
 
     @property
     def norm(self) -> int:

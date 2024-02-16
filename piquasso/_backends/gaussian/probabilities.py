@@ -15,7 +15,7 @@
 
 import abc
 
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -33,13 +33,11 @@ class DensityMatrixCalculation(abc.ABC):
         self.calculator = calculator
 
     @abc.abstractmethod
-    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+    def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         """Calculates the hafnian given a reduction."""
 
-    def get_density_matrix_element(
-        self, bra: Tuple[int, ...], ket: Tuple[int, ...]
-    ) -> float:
-        reduce_on = ket + bra
+    def get_density_matrix_element(self, bra: np.ndarray, ket: np.ndarray) -> float:
+        reduce_on = np.concatenate([ket, bra])
 
         return (
             self._normalization
@@ -47,10 +45,8 @@ class DensityMatrixCalculation(abc.ABC):
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
-    def get_density_matrix(
-        self, occupation_numbers: List[Tuple[int, ...]]
-    ) -> np.ndarray:
-        n = len(occupation_numbers)
+    def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
+        n = occupation_numbers.shape[0]
 
         density_matrix = np.empty(shape=(n, n), dtype=complex)
 
@@ -61,7 +57,7 @@ class DensityMatrixCalculation(abc.ABC):
         return density_matrix
 
     def get_particle_number_detection_probabilities(
-        self, occupation_numbers: List[Tuple[int, ...]]
+        self, occupation_numbers: np.ndarray
     ) -> np.ndarray:
         ret_list = []
 
@@ -107,7 +103,7 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
 
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
 
-    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+    def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.calculator.hafnian(self._A, reduce_on)
 
 
@@ -142,7 +138,7 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
             -0.5 * self._gamma @ complex_displacement
         ) / np.sqrt(np.linalg.det(Q))
 
-    def calculate_hafnian(self, reduce_on: Tuple[int, ...]) -> float:
+    def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.calculator.loop_hafnian(self._A, self._gamma, reduce_on)
 
 

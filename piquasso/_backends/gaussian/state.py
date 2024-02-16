@@ -30,7 +30,7 @@ from piquasso._math.linalg import (
     is_positive_semidefinite,
 )
 from piquasso._math.symplectic import symplectic_form
-from piquasso._math.combinatorics import get_occupation_numbers
+from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
 from piquasso._math.decompositions import williamson
@@ -791,7 +791,7 @@ class GaussianState(State):
         calculation = self._get_density_matrix_calculation()
 
         return calculation.get_density_matrix(
-            get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
+            get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
 
     def wigner_function(
@@ -843,7 +843,7 @@ class GaussianState(State):
         )
 
     def get_particle_detection_probability(
-        self, occupation_number: Tuple[int, ...]
+        self, occupation_number: np.ndarray
     ) -> float:
         if len(occupation_number) != self.d:
             raise PiquassoException(
@@ -863,7 +863,7 @@ class GaussianState(State):
         calculation = self._get_density_matrix_calculation()
 
         return calculation.get_particle_number_detection_probabilities(
-            get_occupation_numbers(d=self.d, cutoff=self._config.cutoff)
+            get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
 
     def is_pure(self) -> bool:

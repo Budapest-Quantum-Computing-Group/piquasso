@@ -51,11 +51,11 @@ class BaseCalculator(abc.ABC):
     ) -> float:
         raise NotImplementedCalculation()
 
-    def hafnian(self, matrix: numpy.ndarray, reduce_on: Tuple[int, ...]) -> float:
+    def hafnian(self, matrix: numpy.ndarray, reduce_on: numpy.ndarray) -> float:
         raise NotImplementedCalculation()
 
     def loop_hafnian(
-        self, matrix: numpy.ndarray, diagonal: numpy.ndarray, reduce_on: Tuple[int, ...]
+        self, matrix: numpy.ndarray, diagonal: numpy.ndarray, reduce_on: numpy.ndarray
     ) -> float:
         raise NotImplementedCalculation()
 

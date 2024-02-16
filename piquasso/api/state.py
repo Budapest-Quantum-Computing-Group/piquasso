@@ -84,7 +84,7 @@ class State(abc.ABC):
 
     @abc.abstractmethod
     def get_particle_detection_probability(
-        self, occupation_number: Tuple[int, ...]
+        self, occupation_number: np.ndarray
     ) -> float:
         """
         Returns the particle number detection probability using the occupation number

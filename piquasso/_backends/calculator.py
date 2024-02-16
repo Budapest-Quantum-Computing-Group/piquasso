@@ -155,17 +155,9 @@ class TensorflowCalculator(_BuiltinCalculator):
         # NOTE: This is not as advanced as `numpy.block`, this function only supports
         # 4 same-length blocks.
 
-        d = len(arrays[0][0])
-
-        output = []
-
-        for i in range(d):
-            output.append(self.np.concatenate([arrays[0][0][i], arrays[0][1][i]]))
-
-        for i in range(d):
-            output.append(self.np.concatenate([arrays[1][0][i], arrays[1][1][i]]))
-
-        return self.np.stack(output)
+        return self._tf.concat(
+            [self._tf.concat(arrays[0], 1), self._tf.concat(arrays[1], 1)], 0
+        )
 
     def scatter(self, indices, updates, shape):
         return self._tf.scatter_nd(indices, updates, shape)
