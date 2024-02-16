@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, List
+from typing import Optional, List
 import numpy as np
 
-from piquasso._math.combinatorics import partitions
+from piquasso._math.indices import get_index_in_fock_subspace
 from piquasso._math.fock import symmetric_subspace_cardinality
 from piquasso._math.linalg import is_unitary
 from piquasso._math.validations import all_natural
@@ -82,7 +82,7 @@ class SamplingState(State):
         return sum(self.initial_state)
 
     def get_particle_detection_probability(
-        self, occupation_number: Tuple[int, ...]
+        self, occupation_number: np.ndarray
     ) -> float:
         if len(occupation_number) != self.d:
             raise PiquassoException(
@@ -90,14 +90,12 @@ class SamplingState(State):
                 f"occupation_number='{occupation_number}'."
             )
 
-        number_of_particles = sum(occupation_number)
+        number_of_particles = np.sum(occupation_number)
 
         if number_of_particles != self.particle_number:
             return 0.0
 
-        basis = partitions(self.d, number_of_particles)
-
-        index = basis.index(occupation_number)
+        index = get_index_in_fock_subspace(occupation_number)
 
         subspace_probabilities = self._get_fock_probabilities_on_subspace()
 

@@ -15,6 +15,8 @@
 
 import pytest
 
+import numpy as np
+
 import piquasso as pq
 from piquasso.api.calculator import BaseCalculator
 
@@ -54,7 +56,9 @@ def FakeState():
 
             self._d = d
 
-        def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+        def get_particle_detection_probability(
+            self, occupation_number: np.ndarray
+        ) -> float:
             """
             NOTE: This needs to be here to be able to instantiate this class.
             """

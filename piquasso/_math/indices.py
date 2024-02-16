@@ -15,8 +15,6 @@
 
 from typing import Tuple
 
-import functools
-
 import numpy as np
 
 from scipy.special import comb
@@ -43,8 +41,7 @@ def get_auxiliary_operator_index(
     return auxiliary_rows, auxiliary_modes
 
 
-@functools.lru_cache(maxsize=None)
-def get_index_in_fock_space(element: Tuple[int, ...]) -> int:
+def get_index_in_fock_space(element):
     sum_ = 0
     accumulator = 0
     for i in range(len(element)):
@@ -54,13 +51,34 @@ def get_index_in_fock_space(element: Tuple[int, ...]) -> int:
     return accumulator
 
 
-@functools.lru_cache(maxsize=None)
-def get_index_in_fock_subspace(element: Tuple[int, ...]) -> int:
+def get_index_in_fock_space_array(basis: np.ndarray) -> np.ndarray:
+    sum_ = np.zeros(shape=basis.shape[:-1], dtype=int)
+    accumulator = np.zeros(shape=basis.shape[:-1], dtype=int)
+
+    for i in range(basis.shape[-1]):
+        sum_ += basis[..., -1 - i]
+        accumulator += np.round(comb(sum_ + i, i + 1)).astype(int)
+
+    return accumulator
+
+
+def get_index_in_fock_subspace(element: np.ndarray) -> int:
     sum_ = 0
     accumulator = 0
     for i in range(len(element) - 1):
         sum_ += element[-1 - i]
         accumulator += comb(sum_ + i, i + 1, exact=True)
+
+    return accumulator
+
+
+def get_index_in_fock_subspace_array(basis: np.ndarray) -> np.ndarray:
+    sum_ = np.zeros(shape=basis.shape[:-1], dtype=int)
+    accumulator = np.zeros(shape=basis.shape[:-1], dtype=int)
+
+    for i in range(basis.shape[-1] - 1):
+        sum_ += basis[..., -1 - i]
+        accumulator += np.round(comb(sum_ + i, i + 1)).astype(int)
 
     return accumulator
 

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Generator, Any, Dict
+from typing import Optional, Tuple, Dict
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from piquasso._math.fock import cutoff_cardinality, FockBasis
+from piquasso._math.fock import cutoff_cardinality
 from piquasso._math.linalg import vector_absolute_square
 from piquasso._math.indices import get_index_in_fock_space
 
@@ -57,11 +57,14 @@ class PureFockState(BaseFockState):
         self._state_vector = self._get_empty()
 
     def _get_empty_list(self) -> list:
-        return [0.0] * self._space.cardinality
+        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+        return [0.0] * state_vector_size
 
     def _get_empty(self) -> np.ndarray:
+        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+
         return self._np.zeros(
-            shape=(self._space.cardinality,), dtype=self._config.complex_dtype
+            shape=(state_vector_size,), dtype=self._config.complex_dtype
         )
 
     def reset(self) -> None:
@@ -72,16 +75,14 @@ class PureFockState(BaseFockState):
             state_vector_list, dtype=self._config.complex_dtype
         )
 
-    def _nonzero_elements_for_single_state_vector(
-        self, state_vector: np.ndarray
-    ) -> Generator[Tuple[complex, FockBasis], Any, None]:
-        for index, basis in self._space.basis:
+    def _nonzero_elements_for_single_state_vector(self, state_vector):
+        for index, basis in enumerate(self._space):
             coefficient: complex = state_vector[index]
             if not np.isclose(coefficient, 0.0):
-                yield coefficient, basis
+                yield coefficient, tuple(basis)
 
     @property
-    def nonzero_elements(self) -> Generator[Tuple[complex, FockBasis], Any, None]:
+    def nonzero_elements(self):
         return self._nonzero_elements_for_single_state_vector(self._state_vector)
 
     def _get_repr_for_single_state_vector(self, nonzero_elements):
@@ -112,7 +113,7 @@ class PureFockState(BaseFockState):
         return self._as_mixed().reduced(modes)
 
     def get_particle_detection_probability(
-        self, occupation_number: Tuple[int, ...]
+        self, occupation_number: np.ndarray
     ) -> float:
         if len(occupation_number) != self.d:
             raise PiquassoException(
@@ -120,7 +121,7 @@ class PureFockState(BaseFockState):
                 f"occupation_number='{occupation_number}'."
             )
 
-        index = self._space.index(occupation_number)
+        index = get_index_in_fock_space(occupation_number)
 
         return self._np.real(
             self._state_vector[index].conjugate() * self._state_vector[index]
@@ -134,7 +135,7 @@ class PureFockState(BaseFockState):
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
 
-        for index, basis in self._space.basis:
+        for index, basis in enumerate(self._space):
             probability_map[tuple(basis)] = self._np.abs(self._state_vector[index]) ** 2
 
         return probability_map
@@ -175,19 +176,22 @@ class PureFockState(BaseFockState):
 
         for index, basis in enumerate(self._space):
             i = basis[mode]
-            basis_array = fallback_np.array(basis)
+
+            basis = np.copy(basis)
 
             if i > 0:
-                basis_array[mode] = i - 1
-                lower_index = get_index_in_fock_space(tuple(basis_array))
+                basis[mode] -= 1
+                lower_index = get_index_in_fock_space(basis)
+                basis[mode] += 1
 
                 left_indices.append(lower_index)
                 multipliers.append(fallback_np.sqrt(i))
                 right_indices.append(index)
 
             if sum(basis) + 1 < self._config.cutoff:
-                basis_array[mode] = i + 1
-                upper_index = get_index_in_fock_space(tuple(basis_array))
+                basis[mode] += 1
+                upper_index = get_index_in_fock_space(basis)
+                basis[mode] -= 1
 
                 left_indices.append(upper_index)
                 multipliers.append(fallback_np.sqrt(i + 1))

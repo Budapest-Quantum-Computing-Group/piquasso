@@ -22,12 +22,24 @@ import numpy as np
 
 from .passive_linear import _apply_passive_linear
 
-from ...calculations import calculate_state_index_matrix_list
+from ...calculations import (
+    calculate_state_index_matrix_list,
+    get_projection_operator_indices,
+)
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState
 
 from piquasso._math.decompositions import euler
+from piquasso._math.indices import get_index_in_fock_space
+from piquasso._math.fock import (
+    get_single_mode_displacement_operator,
+    get_creation_operator,
+    get_annihilation_operator,
+    get_single_mode_squeezing_operator,
+    get_single_mode_cubic_phase_operator,
+    get_fock_space_basis,
+)
 
 from piquasso.instructions import gates
 
@@ -96,9 +108,11 @@ def _get_projected_state_vector(
 ) -> np.ndarray:
     new_state_vector = state._get_empty()
 
-    index = state._space.get_projection_operator_indices_for_pure(
-        subspace_basis=subspace_basis,
-        modes=modes,
+    index = get_projection_operator_indices(
+        state.d,
+        state._config.cutoff,
+        modes,
+        subspace_basis,
     )
 
     new_state_vector[index] = state._state_vector[index]
@@ -113,8 +127,6 @@ def _apply_active_gate_matrix_to_state(
 ) -> None:
     calculator = state._calculator
     state_vector = state._state_vector
-    space = state._space
-    auxiliary_subspace = state._get_subspace(state.d - 1)
 
     @calculator.custom_gradient
     def _apply_active_gate_matrix(state_vector, matrix):
@@ -122,7 +134,7 @@ def _apply_active_gate_matrix_to_state(
         matrix = calculator.maybe_convert_to_numpy(matrix)
 
         state_index_matrix_list = calculate_state_index_matrix_list(
-            space, auxiliary_subspace, mode
+            state.d, state._config.cutoff, mode
         )
         new_state_vector = _calculate_state_vector_after_apply_active_gate(
             state_vector, matrix, state_index_matrix_list
@@ -230,7 +242,11 @@ def _create_linear_active_gate_gradient_function(
 
 
 def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    operator = state._space.get_creation_operator(instruction.modes)
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
+    operator = get_creation_operator(
+        instruction.modes, space=space, config=state._config
+    )
 
     state._state_vector = operator @ state._state_vector
 
@@ -240,7 +256,11 @@ def create(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
 
 def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    operator = state._space.get_annihilation_operator(instruction.modes)
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
+    operator = get_annihilation_operator(
+        instruction.modes, space=space, config=state._config
+    )
 
     state._state_vector = operator @ state._state_vector
 
@@ -250,14 +270,14 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
     xi = instruction._all_params["xi"]
     np = state._np
 
     mode = instruction.modes[0]
 
-    coefficients = np.exp(
-        1j * xi * np.array([basis[mode] ** 2 for basis in state._space])
-    )
+    coefficients = np.exp(1j * xi * np.array([basis[mode] ** 2 for basis in space]))
 
     # NOTE: Transposition is done here in order to work with batch processing.
     state._state_vector = (coefficients * state._state_vector.T).T
@@ -266,11 +286,13 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
 
 
 def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
+
     np = state._calculator.np
 
     modes = instruction.modes
     xi = instruction._all_params["xi"]
-    for index, basis in state._space.basis:
+    for index, basis in enumerate(space):
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
         state._state_vector = state._calculator.assign(
             state._state_vector, index, state._state_vector[index] * coefficient
@@ -283,7 +305,9 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
 
-    matrix = state._space.get_single_mode_displacement_operator(r=r, phi=phi)
+    matrix = get_single_mode_displacement_operator(
+        r=r, phi=phi, calculator=state._calculator, config=state._config
+    )
 
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
@@ -293,9 +317,11 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
 
 
 def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    matrix = state._space.get_single_mode_squeezing_operator(
+    matrix = get_single_mode_squeezing_operator(
         r=instruction._all_params["r"],
         phi=instruction._all_params["phi"],
+        calculator=state._calculator,
+        config=state._config,
     )
 
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
@@ -307,10 +333,9 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     gamma = instruction._all_params["gamma"]
-    hbar = state._config.hbar
 
-    matrix = state._space.get_single_mode_cubic_phase_operator(
-        gamma=gamma, hbar=hbar, calculator=state._calculator
+    matrix = get_single_mode_cubic_phase_operator(
+        gamma=gamma, config=state._config, calculator=state._calculator
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
@@ -342,7 +367,9 @@ def linear(
     _apply_passive_linear(state, unitary_first, modes, calculator)
 
     for mode, r in zip(instruction.modes, squeezings):
-        matrix = state._space.get_single_mode_squeezing_operator(r=r, phi=0.0)
+        matrix = get_single_mode_squeezing_operator(
+            r=r, phi=0.0, calculator=state._calculator, config=state._config
+        )
         _apply_active_gate_matrix_to_state(state, matrix, mode)
 
     _apply_passive_linear(state, unitary_last, modes, calculator)
@@ -367,15 +394,17 @@ def state_vector_instruction(
 def _add_occupation_number_basis(  # type: ignore
     state: PureFockState,
     coefficient: complex,
-    occupation_numbers: Tuple[int, ...],
+    occupation_numbers: np.ndarray,
     modes: Optional[Tuple[int, ...]] = None,
 ) -> None:
     if modes:
-        occupation_numbers = state._space.get_occupied_basis(
-            modes=modes, occupation_numbers=occupation_numbers
-        )
+        new_occupation_numbers = np.zeros(shape=state.d, dtype=int)
 
-    index = state._space.index(occupation_numbers)
+        new_occupation_numbers[modes,] = np.array(occupation_numbers)
+
+        occupation_numbers = new_occupation_numbers
+
+    index = get_index_in_fock_space(occupation_numbers)
 
     state._state_vector = state._calculator.assign(
         state._state_vector, index, coefficient

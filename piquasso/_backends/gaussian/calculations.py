@@ -427,7 +427,7 @@ def _get_particle_number_choice(
     possible_choices = tuple(range(state._config.measurement_cutoff))
 
     for n in possible_choices:
-        occupation_numbers = previous_sample + (n,)
+        occupation_numbers = np.array(previous_sample + (n,))
 
         hafnian_value = (
             state._calculator.loop_hafnian(B, gamma, occupation_numbers)

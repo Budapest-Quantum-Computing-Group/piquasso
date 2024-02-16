@@ -21,7 +21,11 @@ from piquasso.api.calculator import BaseCalculator
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso._math.linalg import is_selfadjoint
-from piquasso._math.fock import cutoff_cardinality, FockOperatorBasis
+from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis, operator_basis
+from piquasso._math.indices import (
+    get_index_in_fock_space,
+    get_index_in_fock_space_array,
+)
 
 from ..state import BaseFockState
 
@@ -49,8 +53,9 @@ class FockState(BaseFockState):
         self._density_matrix = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
+        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
         return np.zeros(
-            shape=(self._space.cardinality,) * 2, dtype=self._config.complex_dtype
+            shape=(state_vector_size,) * 2, dtype=self._config.complex_dtype
         )
 
     def reset(self) -> None:
@@ -80,11 +85,11 @@ class FockState(BaseFockState):
     @property
     def nonzero_elements(
         self,
-    ) -> Generator[Tuple[complex, FockOperatorBasis], Any, None]:
-        for index, basis in self._space.operator_basis:
+    ) -> Generator[Tuple[complex, Tuple], Any, None]:
+        for index, basis in operator_basis(self._space):
             coefficient = self._density_matrix[index]
             if coefficient != 0:
-                yield coefficient, basis
+                yield coefficient, (tuple(basis[0]), tuple(basis[1]))
 
     def __repr__(self) -> str:
         return " + ".join(
@@ -105,14 +110,16 @@ class FockState(BaseFockState):
 
         return self._density_matrix[:cardinality, :cardinality]
 
-    def get_particle_detection_probability(self, occupation_number: tuple) -> float:
+    def get_particle_detection_probability(
+        self, occupation_number: np.ndarray
+    ) -> float:
         if len(occupation_number) != self.d:
             raise PiquassoException(
                 f"The specified occupation number should have length '{self.d}': "
                 f"occupation_number='{occupation_number}'."
             )
 
-        index = self._space.index(occupation_number)
+        index = get_index_in_fock_space(occupation_number)
         return np.diag(self._density_matrix)[index].real
 
     @property
@@ -125,18 +132,23 @@ class FockState(BaseFockState):
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
 
-        for index, basis in self._space.basis:
+        for index, basis in enumerate(self._space):
             probability_map[tuple(basis)] = np.abs(self._density_matrix[index, index])
 
         return probability_map
 
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
         np = self._calculator.np
+        fallback_np = self._calculator.fallback_np
+        d = self.d
 
-        modes_to_eliminate = self._get_auxiliary_modes(modes)
+        outer_modes = self._get_auxiliary_modes(modes)
+
+        inner_size = len(modes)
+        outer_size = d - inner_size
 
         reduced_state = FockState(
-            d=len(modes), calculator=self._calculator, config=self._config
+            d=inner_size, calculator=self._calculator, config=self._config
         )
 
         density_list = [
@@ -144,17 +156,35 @@ class FockState(BaseFockState):
             for _ in range(reduced_state._density_matrix.shape[0])
         ]
 
-        for index, (basis, dual_basis) in self._space.operator_basis_diagonal_on_modes(
-            modes=modes_to_eliminate
-        ):
-            reduced_basis = basis.on_modes(modes=modes)
-            reduced_dual_basis = dual_basis.on_modes(modes=modes)
+        cutoff = self._config.cutoff
+        inner_space = get_fock_space_basis(d=inner_size, cutoff=cutoff)
+        outer_space = get_fock_space_basis(d=outer_size, cutoff=cutoff)
 
-            reduced_index = reduced_state._space.index(reduced_basis)
-            reduced_dual_index = reduced_state._space.index(reduced_dual_basis)
-            density_list[reduced_index][reduced_dual_index] += self._density_matrix[
-                index
-            ]
+        index_list = []
+
+        basis_matrix = fallback_np.empty(
+            shape=(outer_space.shape[0], self.d), dtype=int
+        )
+
+        for inner_basis in inner_space:
+            size = cutoff_cardinality(
+                cutoff=cutoff - fallback_np.sum(inner_basis), d=outer_size
+            )
+
+            basis_matrix[:size, modes] = inner_basis
+
+            basis_matrix[:size, outer_modes] = outer_space[:size]
+
+            partial_index_list = get_index_in_fock_space_array(basis_matrix[:size])
+
+            index_list.append(partial_index_list)
+
+        for i, ix1 in enumerate(index_list):
+            for j, ix2 in enumerate(index_list):
+                minlen = min(len(ix1), len(ix2))
+                density_list[i][j] = np.sum(
+                    self._density_matrix[ix1[:minlen], ix2[:minlen]]
+                )
 
         reduced_state._density_matrix = np.array(density_list)
 

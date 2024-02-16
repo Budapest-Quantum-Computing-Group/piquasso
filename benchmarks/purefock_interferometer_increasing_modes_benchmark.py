@@ -38,7 +38,7 @@ def cutoff():
     return 4
 
 
-parameters = [(d, unitary_group.rvs(d)) for d in range(3, 6)]
+parameters = [(d, unitary_group.rvs(d)) for d in range(3, 18)]
 
 
 @pytest.mark.parametrize("d, interferometer", parameters)
@@ -55,7 +55,7 @@ def piquasso_benchmark(benchmark, d, interferometer, cutoff, theta):
         simulator_fock.execute(program)
 
 
-@pytest.mark.parametrize("d, interferometer", parameters)
+@pytest.mark.parametrize("d, interferometer", parameters[:2])
 def strawberryfields_benchmark(benchmark, d, interferometer, cutoff, theta):
     @benchmark
     def func():
