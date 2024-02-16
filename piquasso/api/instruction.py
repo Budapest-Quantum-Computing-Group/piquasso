@@ -166,7 +166,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         else:
             modes = ""
 
-        if getattr(self, "params") != {}:
+        if getattr(self, "params", {}) != {}:
             params = "{}, ".format(
                 ", ".join([f"{key}={value}" for key, value in self.params.items()])
             )
