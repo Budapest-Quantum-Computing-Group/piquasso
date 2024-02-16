@@ -44,6 +44,11 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "blackbird": ("https://quantum-blackbird.readthedocs.io/en/latest/", None),
+    "scipy": ("http://docs.scipy.org/doc/scipy/reference/", None),
+    "tensorflow": (
+        "https://www.tensorflow.org/api_docs/python",
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tf2_py_objects.inv",  # noqa: E501
+    ),
 }
 
 

@@ -36,11 +36,24 @@ class SamplingSimulator(BuiltinSimulator):
 
     Example usage::
 
+        import numpy as np
+        import piquasso as pq
+
+        from scipy.stats import unitary_group
+
+        d = 5
+
+        U = unitary_group.rvs(d)
+
         with pq.Program() as program:
-            pq.Q() | pq.Vacuum()
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+
+            pq.Q() | pq.Interferometer(U)
+
+            pq.Q(all) | pq.ParticleNumberMeasurement()
 
         simulator = pq.SamplingSimulator(d=5)
-        result = simulator.execute(program)
+        result = simulator.execute(program, shots=100)
 
     Supported preparations:
         :class:`~piquasso.instructions.preparations.StateVector`.
