@@ -150,9 +150,12 @@ class Loss(Gate):
     particle.
 
     Note:
-        - Currently, this instruction can only be used along with
+        Currently, this instruction can only be used along with
         :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
-        - The parameter `transmissivity` is usually called `transmittance`.
+
+    Note:
+        The parameter `transmissivity` is usually called `transmittance`.
+
     """
 
     NUMBER_OF_MODES = 1

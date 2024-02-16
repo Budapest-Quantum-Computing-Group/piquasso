@@ -48,6 +48,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     @property
     def params(self) -> dict:
+        """The parameters of the instruction as a `dict`."""
         return self._params
 
     @property
@@ -56,6 +57,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     @property
     def modes(self) -> Tuple[int, ...]:
+        """The qumodes on which the instruction is applied."""
         return getattr(self, "_modes", tuple())
 
     @modes.setter
@@ -91,6 +93,11 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         return value
 
     def on_modes(self, *modes: int) -> "Instruction":
+        """Specifies the modes on which the state should be executed.
+
+        Returns:
+            Instruction: The same instruction with the modes specified.
+        """
         if modes is not tuple():
             self.modes: Tuple[int, ...] = modes
 

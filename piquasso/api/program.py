@@ -36,10 +36,28 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
 
-            pq.Q(0, 1) | pq.Squeezing(r=0.5)
+            pq.Q(0) | pq.Squeezing(r=0.5)
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
         simulator = pq.GaussianSimulator(d=5)
         result = simulator.execute(program)
+
+    One may also create a Piquasso program by directly providing the set of instructions
+    as constructor argument::
+
+        program = pq.Program(
+            instructions=[
+                pq.Vacuum(),
+                pq.Squeezing(r=0.5).on_modes(0),
+                pq.Beamsplitter(theta=np.pi / 4).on_modes(0, 1),
+            ]
+        )
+        simulator = pq.GaussianSimulator(d=5)
+        result = simulator.execute(program)
+
+    :ivar instructions: The instructions in the program.
+
     """
 
     instructions: list
