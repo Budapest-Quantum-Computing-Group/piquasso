@@ -5,11 +5,10 @@ import numpy as np
 
 
 d = 2
-cutoff = 10
+cutoff = 5
+
 
 def calculate_mean_position(weights):
-    d = pq.cvqnn.get_number_of_modes(weights.shape[1])
-
     simulator = pq.PureFockSimulator(
         d,
         pq.Config(cutoff=cutoff, normalize=False),
@@ -31,9 +30,18 @@ def calculate_mean_position(weights):
 
         mean_position = final_state.mean_position(0)
 
-    return mean_position, tape.gradient(mean_position, weights)
+    print("FORWARD FINISH:", time.time() - start_time)
 
-weigths = tf.Variable(pq.cvqnn.generate_random_cvqnn_weights(layer_count=1, d=d))
+    mean_position_grad = tape.gradient(mean_position, weights)
+
+    print("BACK FINISH:", time.time() - start_time)
+
+    return mean_position, mean_position_grad
+
+
+weigths = tf.Variable(
+    pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d)
+)
 
 decorator = tf.function(jit_compile=True, reduce_retracing=True)
 
@@ -41,12 +49,16 @@ enhanced_calculate_mean_position = decorator(calculate_mean_position)
 
 import time
 
+print("START")
 start_time = time.time()
 
 enhanced_calculate_mean_position(weigths)
 
 print("COMPILATION TIME:", time.time() - start_time)
 
+weigths = tf.Variable(
+    pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d)
+)
 
 start_time = time.time()
 
@@ -54,7 +66,7 @@ enhanced_calculate_mean_position(weigths)
 
 print("SECOND RUNTIME:", time.time() - start_time)
 
-#graph = enhanced_calculate_mean_position.get_concrete_function(weigths).graph
-#for node in graph.as_graph_def().node:
-#    print(f'{node.input} -> {node.name}')
 
+# graph = enhanced_calculate_mean_position.get_concrete_function(weigths).graph
+# for node in graph.as_graph_def().node:
+#    print(f'{node.input} -> {node.name}')
