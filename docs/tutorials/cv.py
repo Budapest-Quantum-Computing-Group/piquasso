@@ -4,11 +4,13 @@ import tensorflow as tf
 import numpy as np
 
 
-d = 2
-cutoff = 5
+def measure_graph_size(f, *args):
+    g = f.get_concrete_function(*args).graph
+
+    return len(g.as_graph_def().node)
 
 
-def calculate_mean_position(weights):
+def calculate_mean_position(input_, weights, cutoff, d):
     simulator = pq.PureFockSimulator(
         d,
         pq.Config(cutoff=cutoff, normalize=False),
@@ -19,7 +21,7 @@ def calculate_mean_position(weights):
         cvqnn_layers = pq.cvqnn.create_layers(weights)
 
         preparation = [pq.Vacuum()] + [
-            pq.Displacement(r=0.1).on_modes(i) for i in range(d)
+            pq.Displacement(r=input_).on_modes(i) for i in range(d)
         ]
 
         program = pq.Program(instructions=preparation + cvqnn_layers.instructions)
@@ -39,34 +41,40 @@ def calculate_mean_position(weights):
     return mean_position, mean_position_grad
 
 
-weigths = tf.Variable(
-    pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d)
-)
+if __name__ == "__main__":
+    d = 2
+    cutoff = 4
 
-decorator = tf.function(jit_compile=True, reduce_retracing=True)
+    weigths = tf.Variable(pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d))
 
-enhanced_calculate_mean_position = decorator(calculate_mean_position)
+    decorator = tf.function(jit_compile=True, reduce_retracing=True)
 
-import time
+    enhanced_calculate_mean_position = decorator(calculate_mean_position)
 
-print("START")
-start_time = time.time()
+    input_ = tf.Variable(0.1)
 
-enhanced_calculate_mean_position(weigths)
+    import time
 
-print("COMPILATION TIME:", time.time() - start_time)
+    print("START")
+    start_time = time.time()
 
-weigths = tf.Variable(
-    pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d)
-)
+    enhanced_calculate_mean_position(input_, weigths, cutoff, d)
 
-start_time = time.time()
+    print("COMPILATION TIME:", time.time() - start_time)
 
-enhanced_calculate_mean_position(weigths)
+    weigths = tf.Variable(
+        pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d)
+    )
+    input_ = tf.Variable(0.2)
 
-print("SECOND RUNTIME:", time.time() - start_time)
+    start_time = time.time()
 
+    enhanced_calculate_mean_position(input_, weigths, cutoff, d)
 
-# graph = enhanced_calculate_mean_position.get_concrete_function(weigths).graph
-# for node in graph.as_graph_def().node:
-#    print(f'{node.input} -> {node.name}')
+    print("SECOND RUNTIME:", time.time() - start_time)
+
+    print("NUMBER OF NODES:", measure_graph_size(enhanced_calculate_mean_position, input_, weigths, cutoff, d))
+
+    # graph = enhanced_calculate_mean_position.get_concrete_function(weigths).graph
+    # for node in graph.as_graph_def().node:
+    #    print(f'{node.input} -> {node.name}')
