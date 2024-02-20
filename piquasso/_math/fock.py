@@ -70,10 +70,7 @@ def get_single_mode_squeezing_operator(
         phi = calculator.maybe_convert_to_numpy(phi)
 
         matrix = create_single_mode_squeezing_matrix(
-            r,
-            phi,
-            config.cutoff,
-            complex_dtype=config.complex_dtype,
+            r, phi, config.cutoff, config.complex_dtype
         )
         grad = create_single_mode_squeezing_gradient(
             r,
@@ -166,7 +163,6 @@ def get_single_mode_displacement_operator(r, phi, calculator, config):
             r,
             phi,
             config.cutoff,
-            complex_dtype=config.complex_dtype,
         )
         grad = create_single_mode_displacement_gradient(
             r,
