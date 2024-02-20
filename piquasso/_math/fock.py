@@ -167,7 +167,7 @@ def get_single_mode_displacement_operator(r, phi, calculator, config):
             r,
             phi,
             config.cutoff,
-            complex_dtype=config.complex_dtype,
+            config=config,
             calculator=calculator,
         )
         grad = create_single_mode_displacement_gradient(

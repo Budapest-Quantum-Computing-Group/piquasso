@@ -62,6 +62,8 @@ class NumpyCalculator(_BuiltinCalculator):
 
         self.custom_gradient = _noop_custom_gradient
 
+        self.range = range
+
     def preprocess_input_for_custom_gradient(self, value):
         return value
 
@@ -78,6 +80,18 @@ class NumpyCalculator(_BuiltinCalculator):
         embedded_matrix[composite_index] = np.array(updates)
 
         return embedded_matrix
+
+    def accumulator(self, dtype, size):
+        return []
+
+    def write(self, accumulator, index, value):
+        accumulator.append(value)
+
+        return accumulator
+
+    def stack_accumulator(self, accumulator):
+        return self.np.stack(accumulator)
+
 
 
 class TensorflowCalculator(_BuiltinCalculator):
@@ -156,6 +170,8 @@ class TensorflowCalculator(_BuiltinCalculator):
         )
 
         self.sqrtm = tf.linalg.sqrtm
+
+        self.range = tf.range
 
     def preprocess_input_for_custom_gradient(self, value):
         if self.no_custom_gradient:
@@ -295,6 +311,15 @@ class TensorflowCalculator(_BuiltinCalculator):
         S, V, W = self._tf.linalg.svd(matrix)
 
         return V, S, self.np.conj(W).T
+
+    def accumulator(self, dtype, size):
+        return self._tf.TensorArray(dtype=dtype, size=size)
+
+    def write(self, accumulator, index, value):
+        return accumulator.write(index, value)
+
+    def stack_accumulator(self, accumulator):
+        return accumulator.stack()
 
 
 class JaxCalculator(_BuiltinCalculator):

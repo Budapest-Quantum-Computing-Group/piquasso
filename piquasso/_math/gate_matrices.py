@@ -18,6 +18,8 @@ import numpy as np
 from functools import lru_cache
 
 from scipy.special import factorial
+
+from piquasso.api.config import Config
 from piquasso.api.calculator import BaseCalculator
 
 
@@ -25,7 +27,7 @@ def create_single_mode_displacement_matrix(
     r: float,
     phi: float,
     cutoff: int,
-    complex_dtype: np.dtype,
+    config: Config,
     calculator: BaseCalculator,
 ) -> np.ndarray:
     r"""
@@ -46,12 +48,12 @@ def create_single_mode_displacement_matrix(
     np = calculator.forward_pass_np
     fallback_np = calculator.fallback_np
 
-    if np.isclose(r, 0.0):
-        # NOTE: Tensorflow does not implement the NumPy API correctly, since in
-        # tensorflow `np.power(0.0j, 0.0)` results in `nan+nanj`, whereas in NumPy it
-        # is just 1. Instead of redefining `power` we just return when the squeezing
-        # parameter is 0.
-        return np.identity(cutoff, dtype=complex_dtype)
+    # if np.isclose(r, 0.0):
+    #    # NOTE: Tensorflow does not implement the NumPy API correctly, since in
+    #    # tensorflow `np.power(0.0j, 0.0)` results in `nan+nanj`, whereas in NumPy it
+    #    # is just 1. Instead of redefining `power` we just return when the squeezing
+    #    # parameter is 0.
+    #    return np.identity(cutoff, dtype=config.complex_dtype)
 
     cutoff_range = fallback_np.arange(cutoff)
     sqrt_indices = fallback_np.sqrt(cutoff_range)
@@ -59,18 +61,24 @@ def create_single_mode_displacement_matrix(
 
     displacement = r * np.exp(1j * phi)
     displacement_conj = np.conj(displacement)
-    columns = []
 
-    columns.append(np.power(displacement, cutoff_range) * denominator)
+    matrix = calculator.accumulator(dtype=config.complex_dtype, size=cutoff)
+
+    previous_element = np.power(displacement, cutoff_range) * denominator
+
+    matrix = calculator.write(matrix, 0, previous_element)
 
     roll_index = fallback_np.arange(-1, cutoff - 1)
 
-    for _ in range(cutoff - 1):
-        columns.append(
-            sqrt_indices * columns[-1][roll_index] - displacement_conj * columns[-1]
+    for i in calculator.range(1, cutoff):
+        previous_element = (
+            sqrt_indices * previous_element[roll_index]
+            - displacement_conj * previous_element
         )
 
-    return np.exp(-0.5 * r**2) * np.array(columns).T * denominator
+        matrix = calculator.write(matrix, i, previous_element)
+
+    return np.exp(-0.5 * r**2) * calculator.stack_accumulator(matrix).T * denominator
 
 
 @lru_cache
@@ -116,17 +124,17 @@ def create_single_mode_squeezing_matrix(
     np = calculator.forward_pass_np
     fallback_np = calculator.fallback_np
 
-    if np.isclose(r, 0.0):
-        # NOTE: Tensorflow does not implement the NumPy API correctly, since in
-        # tensorflow `np.power(0.0j, 0.0)` results in `nan+nanj`, whereas in NumPy it
-        # is just 1. Instead of redefining `power` we just return when the squeezing
-        # parameter is 0.
-        return np.identity(cutoff, dtype=complex_dtype)
+    # if np.isclose(r, 0.0):
+    #     # NOTE: Tensorflow does not implement the NumPy API correctly, since in
+    #     # tensorflow `np.power(0.0j, 0.0)` results in `nan+nanj`, whereas in NumPy it
+    #     # is just 1. Instead of redefining `power` we just return when the squeezing
+    #     # parameter is 0.
+    #     return np.identity(cutoff, dtype=complex_dtype)
 
     sechr = 1.0 / np.cosh(r)
     A = np.exp(1j * phi) * np.tanh(r)
     Aconj = np.conj(A)
-    sqrt_indices = fallback_np.sqrt(fallback_np.arange(cutoff))
+    sqrt_indices = np.sqrt(fallback_np.arange(cutoff))
     sechr_sqrt_indices = sechr * sqrt_indices
     A_conj_sqrt_indices = Aconj * sqrt_indices
 
@@ -142,15 +150,22 @@ def create_single_mode_squeezing_matrix(
     roll_index = fallback_np.arange(-1, cutoff - 1)
     second_row = sechr_sqrt_indices * first_row[roll_index]
 
-    columns = [first_row, second_row]
+    matrix = calculator.accumulator(dtype=complex_dtype, size=cutoff)
 
-    for col in range(2, cutoff):
-        columns.append(
-            (
-                sechr_sqrt_indices * columns[-1][roll_index]
-                + A_conj_sqrt_indices[col - 1] * columns[-2]
-            )
-            / sqrt_indices[col]
-        )
+    matrix = calculator.write(matrix, 0, first_row)
+    matrix = calculator.write(matrix, 1, second_row)
 
-    return np.sqrt(sechr) * np.transpose(np.array(columns))
+    previous_previous = first_row
+    previous = second_row
+
+    for col in calculator.range(2, cutoff):
+        current = (
+            sechr_sqrt_indices * previous[roll_index]
+            + A_conj_sqrt_indices[col - 1] * previous_previous
+        ) / sqrt_indices[col]
+
+        matrix = calculator.write(matrix, col, current)
+        previous_previous = previous
+        previous = current
+
+    return np.sqrt(sechr) * np.transpose(calculator.stack_accumulator(matrix))
