@@ -195,10 +195,9 @@ def _apply_passive_gate_matrix_to_state(
     def _apply_interferometer_matrix(state_vector, subspace_transformations):
         state_vector = calculator.preprocess_input_for_custom_gradient(state_vector)
 
-        subspace_transformations = [
-            calculator.preprocess_input_for_custom_gradient(matrix)
-            for matrix in subspace_transformations
-        ]
+        subspace_transformations = calculator.preprocess_input_for_custom_gradient(
+            subspace_transformations
+        )
 
         index_list = calculate_index_list_for_appling_interferometer(
             modes,
@@ -241,11 +240,13 @@ def _calculate_state_vector_after_interferometer(
     einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
 
     for n, indices in enumerate(index_list):
+        matrix = calculator.read(subspace_transformations, n)
+
         new_state_vector = calculator.assign(
             new_state_vector,
             indices,
             np.einsum(
-                einsum_string, subspace_transformations[n], state_vector[indices]
+                einsum_string, matrix, state_vector[indices]
             ),
         )
 

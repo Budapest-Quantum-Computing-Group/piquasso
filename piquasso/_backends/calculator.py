@@ -28,6 +28,23 @@ from piquasso.api.calculator import BaseCalculator
 class _BuiltinCalculator(BaseCalculator):
     """Base class for built-in calculators."""
 
+    def accumulator(self, dtype, size, **kwargs):
+        return []
+
+    def write(self, accumulator, index, value):
+        accumulator.append(value)
+
+        return accumulator
+
+    def stack_accumulator(self, accumulator):
+        return self.forward_pass_np.stack(accumulator)
+
+    def read(self, accumulator, index):
+        return accumulator[index]
+
+    def size(self, accumulator):
+        return len(accumulator)
+
 
 def _noop_custom_gradient(func):
     def noop_grad(*args, **kwargs):
@@ -80,18 +97,6 @@ class NumpyCalculator(_BuiltinCalculator):
         embedded_matrix[composite_index] = np.array(updates)
 
         return embedded_matrix
-
-    def accumulator(self, dtype, size):
-        return []
-
-    def write(self, accumulator, index, value):
-        accumulator.append(value)
-
-        return accumulator
-
-    def stack_accumulator(self, accumulator):
-        return self.np.stack(accumulator)
-
 
 
 class TensorflowCalculator(_BuiltinCalculator):
@@ -173,11 +178,20 @@ class TensorflowCalculator(_BuiltinCalculator):
 
         self.range = tf.range
 
+    def _preprocess_input_for_custom_gradient_single(self, value):
+        return value.numpy() if self._tf.is_tensor(value) else value
+
     def preprocess_input_for_custom_gradient(self, value):
         if self.no_custom_gradient:
             return value
 
-        return value.numpy() if self._tf.is_tensor(value) else value
+        if isinstance(value, list):
+            return [
+                self._preprocess_input_for_custom_gradient_single(element)
+                for element in value
+            ]
+
+        return self._preprocess_input_for_custom_gradient_single(value)
 
     def block_diag(self, *arrs):
         block_diagonalized = self._tf.linalg.LinearOperatorBlockDiag(
@@ -312,14 +326,35 @@ class TensorflowCalculator(_BuiltinCalculator):
 
         return V, S, self.np.conj(W).T
 
-    def accumulator(self, dtype, size):
-        return self._tf.TensorArray(dtype=dtype, size=size)
+    def accumulator(self, dtype, size, **kwargs):
+        if not self.no_custom_gradient:
+            return super().accumulator(dtype, size, **kwargs)
+
+        return self._tf.TensorArray(dtype=dtype, size=size, **kwargs)
 
     def write(self, accumulator, index, value):
+        if not self.no_custom_gradient:
+            return super().write(accumulator, index, value)
+
         return accumulator.write(index, value)
 
     def stack_accumulator(self, accumulator):
+        if not self.no_custom_gradient:
+            return super().stack_accumulator(accumulator)
+
         return accumulator.stack()
+
+    def read(self, accumulator, index):
+        if not self.no_custom_gradient:
+            return super().read(accumulator, index)
+
+        return accumulator.read(index)
+
+    def size(self, accumulator):
+        if not self.no_custom_gradient:
+            return super().size(accumulator)
+
+        return accumulator.size()
 
 
 class JaxCalculator(_BuiltinCalculator):

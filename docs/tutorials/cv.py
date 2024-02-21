@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     weigths = tf.Variable(pq.cvqnn.generate_random_cvqnn_weights(layer_count=3, d=d))
 
-    decorator = tf.function(jit_compile=True, reduce_retracing=True)
+    decorator = tf.function(jit_compile=True)
 
     enhanced_calculate_mean_position = decorator(calculate_mean_position)
 

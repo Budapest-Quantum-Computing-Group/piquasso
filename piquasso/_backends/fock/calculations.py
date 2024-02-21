@@ -132,9 +132,7 @@ def calculate_state_index_matrix_list(d, cutoff, mode):
 
         basis_tensor = unordered_basis_tensor[:, :, reorder_index]
 
-        state_index_matrix_list.append(
-            get_index_in_fock_space_array(basis_tensor)
-        )
+        state_index_matrix_list.append(get_index_in_fock_space_array(basis_tensor))
 
     return state_index_matrix_list
 
@@ -212,28 +210,78 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict, calculato
 
     np = calculator.forward_pass_np
 
-    subspace_representations = []
-
-    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
-    subspace_representations.append(interferometer)
-
     cutoff = len(index_dict["subspace_index_tensor"]) + 2
 
-    for n in range(2, cutoff):
-        subspace_indices = index_dict["subspace_index_tensor"][n - 2]
-        first_subspace_indices = index_dict["first_subspace_index_tensor"][n - 2]
+    int_dtype = index_dict["subspace_index_tensor"][0].dtype
 
-        first_nonzero_indices = index_dict["first_nonzero_index_tensor"][n - 2]
+    subspace_index_tensor = calculator.accumulator(
+        int_dtype, size=cutoff, infer_shape=False
+    )
+    first_subspace_index_tensor = calculator.accumulator(
+        int_dtype, size=cutoff, infer_shape=False
+    )
+    first_nonzero_index_tensor = calculator.accumulator(
+        int_dtype, size=cutoff, infer_shape=False
+    )
+    sqrt_occupation_numbers_tensor = calculator.accumulator(
+        interferometer.dtype, size=cutoff, infer_shape=False
+    )
+    sqrt_first_occupation_numbers_tensor = calculator.accumulator(
+        interferometer.dtype, size=cutoff, infer_shape=False
+    )
 
-        sqrt_occupation_numbers = index_dict["sqrt_occupation_numbers_tensor"][n - 2]
-        sqrt_first_occupation_numbers = index_dict[
-            "sqrt_first_occupation_numbers_tensor"
-        ][n - 2]
+    for n in range(cutoff-2):
+        subspace_index_tensor = calculator.write(
+            subspace_index_tensor, n, index_dict["subspace_index_tensor"][n]
+        )
+        first_subspace_index_tensor = calculator.write(
+            first_subspace_index_tensor, n, index_dict["first_subspace_index_tensor"][n]
+        )
+        first_nonzero_index_tensor = calculator.write(
+            first_nonzero_index_tensor, n, index_dict["first_nonzero_index_tensor"][n]
+        )
+        sqrt_occupation_numbers_tensor = calculator.write(
+            sqrt_occupation_numbers_tensor,
+            n,
+            index_dict["sqrt_occupation_numbers_tensor"][n],
+        )
+        sqrt_first_occupation_numbers_tensor = calculator.write(
+            sqrt_first_occupation_numbers_tensor,
+            n,
+            index_dict["sqrt_first_occupation_numbers_tensor"][n],
+        )
+
+    subspace_representations = calculator.accumulator(
+        dtype=interferometer.dtype,
+        size=cutoff,
+        infer_shape=False,
+        clear_after_read=False,
+    )
+
+    subspace_representations = calculator.write(
+        subspace_representations, 0, np.identity(1, interferometer.dtype)
+    )
+
+    subspace_representations = calculator.write(
+        subspace_representations, 1, interferometer
+    )
+
+
+    for n in calculator.range(2, cutoff):
+        subspace_indices = calculator.read(subspace_index_tensor, n - 2)
+        first_subspace_indices = calculator.read(first_subspace_index_tensor, n - 2)
+
+        first_nonzero_indices = calculator.read(first_nonzero_index_tensor, n - 2)
+
+        sqrt_occupation_numbers = calculator.read(sqrt_occupation_numbers_tensor, n - 2)
+        sqrt_first_occupation_numbers = calculator.read(
+            sqrt_first_occupation_numbers_tensor, n - 2
+        )
 
         first_part_partially_indexed = interferometer[first_nonzero_indices, :]
-        second = subspace_representations[n - 1][first_subspace_indices][
-            :, subspace_indices
-        ]
+        second = calculator.read(subspace_representations, n - 1)[
+            first_subspace_indices
+        ][:, subspace_indices]
 
         matrix = np.einsum(
             "ij,kj,kij->ik",
@@ -242,12 +290,12 @@ def calculate_interferometer_on_fock_space(interferometer, index_dict, calculato
             second,
         )
 
-        new_subspace_representation = np.transpose(
-            matrix / sqrt_first_occupation_numbers
-        )
-
-        subspace_representations.append(
-            new_subspace_representation.astype(interferometer.dtype)
+        subspace_representations = calculator.write(
+            subspace_representations,
+            n,
+            np.transpose(matrix / sqrt_first_occupation_numbers).astype(
+                interferometer.dtype
+            ),
         )
 
     return subspace_representations
