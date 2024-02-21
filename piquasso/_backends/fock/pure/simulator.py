@@ -30,6 +30,7 @@ from .calculations import (
     annihilate,
     batch_prepare,
     batch_apply,
+    ns,
 )
 
 from ..calculations import attenuator
@@ -108,6 +109,7 @@ class PureFockSimulator(BuiltinSimulator):
         gates.MomentumDisplacement: displacement,
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
+        gates.NS: ns,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
         channels.Attenuator: attenuator,
         batch.BatchPrepare: batch_prepare,

@@ -805,3 +805,10 @@ class Graph(Gate):
                 mean_photon_number=mean_photon_number,
             ),
         )
+
+
+class NS(Gate):
+    NUMBER_OF_MODES = 1
+
+    def __init__(self, phase: float) -> None:
+        super().__init__(params=dict(phase=phase))

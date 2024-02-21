@@ -423,3 +423,57 @@ def batch_apply(
     state._apply_separate_state_vectors(resulting_state_vectors)
 
     return Result(state=state)
+
+
+def _get_NS_unitary(phase: float, dtype: np.dtype) -> np.ndarray:
+    U = np.zeros(shape=(3, 3), dtype=dtype)
+    U[0, 0] = 1 - np.sqrt(1 - phase)
+
+    # for now restrict U[01] and U[02] to be real
+    # TODO choose U_01 so that P is optimal
+    eps = np.finfo(float).eps
+    top = np.sqrt(1 - np.abs(U[0, 0]) ** 2)
+    U[0, 1] = np.random.uniform(top / 2, top - eps)
+    U[0, 2] = np.sqrt(1 - np.abs(U[0, 0]) ** 2 - np.abs(U[0, 1]) ** 2)
+
+    U00_abs2 = np.abs(U[0, 0]) ** 2
+    U01_abs2 = np.abs(U[0, 1]) ** 2
+
+    a = np.abs(U00_abs2 - U01_abs2 - np.conjugate(U[0, 0])) ** 2
+    b = U01_abs2 * (1 - U00_abs2 - U01_abs2)
+    frac1 = a / b
+
+    frac2 = np.abs(1 - U[0, 0]) ** 2 / U01_abs2
+    sqrt_P = np.sqrt(1 / (frac1 + frac2 + 1))
+
+    U[1, 0] = sqrt_P * (1 - U[0, 0]) / U[0, 1]
+    U[1, 1] = sqrt_P
+    U[1, 2] = (
+        sqrt_P
+        * (U00_abs2 - U01_abs2 - np.conjugate(U[0, 0]))
+        / (U[0, 1] * np.conjugate(U[0, 2]))
+    )
+
+    U[2, :] = np.cross(U[0, :].conj(), U[1, :].conj())
+
+    return U
+
+
+def ns(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+    phase = instruction.params["phase"]
+    U = _get_NS_unitary(phase, state._config.complex_dtype)
+
+    cutoff = state._config.cutoff
+    coeffs = np.empty(shape=cutoff, dtype=state._config.complex_dtype)
+
+    mode = instruction.modes[0]
+
+    for i in range(cutoff):
+        coeffs[i] = U[1, 1] * U[0, 0] ** i + i * U[1, 0] * U[0, 1] * U[0, 0] ** (i - 1)
+
+    state._state_vector = (
+        coeffs[[basis[mode] for basis in state._space]] * state._state_vector
+    )
+    state.normalize()
+
+    return Result(state=state)

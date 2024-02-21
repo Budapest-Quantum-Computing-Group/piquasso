@@ -74,6 +74,7 @@ from .instructions.gates import (
     Interferometer,
     Graph,
     CubicPhase,
+    NS,
 )
 
 from .instructions.measurements import (
@@ -152,6 +153,7 @@ __all__ = [
     "ControlledZ",
     "Interferometer",
     "Graph",
+    "NS",
     # Measurements
     "ParticleNumberMeasurement",
     "ThresholdMeasurement",

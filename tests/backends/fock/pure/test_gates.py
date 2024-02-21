@@ -306,3 +306,78 @@ def test_cubic_phase():
     nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 5.0
+
+
+def test_NS_gate_on_one_mode_with_trivial_state():
+    with pq.Program() as program:
+        pq.Q(0) | pq.StateVector([2])
+
+        pq.Q(0) | pq.NS(phase=-1)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=3))
+
+    state = simulator.execute(program).state
+    assert np.allclose(
+        state._state_vector,
+        [0, 0, -1],
+    )
+
+
+def test_NS_gate_on_one_mode():
+    state_vector = np.array([1 / np.sqrt(3), 1 / np.sqrt(2), 1j / np.sqrt(6)])
+
+    with pq.Program() as program:
+        for n in range(3):
+            pq.Q(0) | pq.StateVector([n]) * state_vector[n]
+
+        pq.Q(0) | pq.NS(phase=-1)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=3))
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(
+        state._state_vector, [1 / np.sqrt(3), 1 / np.sqrt(2), -1j / np.sqrt(6)]
+    )
+
+
+def test_NS_gate_on_multiple_modes_trivial():
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([2, 0])
+
+        pq.Q(0) | pq.NS(phase=-1)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    state = simulator.execute(program).state
+    nonzero_elements = list(state.nonzero_elements)
+
+    assert len(nonzero_elements) == 1
+
+    coeff, base = nonzero_elements[0]
+    assert np.isclose(coeff, -1) and base == (2, 0)
+
+
+def test_NS_gate_on_multiple_modes():
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([1, 1]) * 1 / np.sqrt(3)
+        pq.Q(0, 1) | pq.StateVector([2, 2]) * 1 / np.sqrt(2)
+        pq.Q(0, 1) | pq.StateVector([2, 3]) * 1j / np.sqrt(6)
+
+        pq.Q(0) | pq.NS(phase=-1)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=6))
+
+    state = simulator.execute(program).state
+    nonzero_elements = list(state.nonzero_elements)
+
+    assert len(nonzero_elements) == 3
+
+    expected = {
+        (1, 1): 1 / np.sqrt(3),
+        (2, 2): -1 / np.sqrt(2),
+        (2, 3): -1j / np.sqrt(6),
+    }
+
+    for coeff, base in nonzero_elements:
+        assert np.isclose(coeff, expected[base])
