@@ -872,9 +872,7 @@ def test_Displacement_state_vector_gradient():
 
     jacobian = tape.jacobian(state_vector, [r])
 
-    expected_state_vector = np.exp(-(r**2) / 2) * np.array(
-        [1, r, r**2 / np.sqrt(2)]
-    )
+    expected_state_vector = np.exp(-(r**2) / 2) * np.array([1, r, r**2 / np.sqrt(2)])
     expected_jacobian = np.array(
         [
             -r * np.exp(-(r**2) / 2),

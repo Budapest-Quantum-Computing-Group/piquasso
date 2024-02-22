@@ -125,7 +125,7 @@ num_params = np.prod(weights.shape)  # total number of parameters in our model
 
 # Create array of Strawberry Fields symbolic gate arguments, matching
 # the size of the weights Variable.
-sf_params = np.arange(num_params).reshape(weights.shape).astype(np.str)
+sf_params = np.arange(num_params).reshape(weights.shape).astype(str)
 sf_params = np.array([qnn.params(*i) for i in sf_params])
 
 
