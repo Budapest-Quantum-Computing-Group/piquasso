@@ -25,7 +25,7 @@ from ...calculations import (
     calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
 )
-
+from piquasso._math.fock import cutoff_cardinality
 from piquasso.instructions import gates
 
 from piquasso.api.result import Result
@@ -56,18 +56,14 @@ def _apply_passive_linear(state, interferometer, modes, calculator):
 def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
     def _get_interferometer_with_gradient_callback(interferometer):
         interferometer = calculator.preprocess_input_for_custom_gradient(interferometer)
-        index_dict = calculate_interferometer_helper_indices(
-            d=len(interferometer), cutoff=cutoff
-        )
 
         subspace_representations = calculate_interferometer_on_fock_space(
-            interferometer, index_dict, calculator
+            interferometer, cutoff, calculator
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
             interferometer,
             calculator,
             subspace_representations,
-            index_dict,
         )
 
         return subspace_representations, grad
@@ -78,9 +74,14 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
 
 
 def _calculate_interferometer_gradient_on_fock_space(
-    interferometer, calculator, subspace_representations, index_dict
+    interferometer, calculator, subspace_representations
 ):
     def interferometer_gradient(*upstream):
+        cutoff = len(subspace_representations)
+        index_dict = calculate_interferometer_helper_indices(
+            d=len(interferometer), cutoff=cutoff
+        )
+
         tf = calculator._tf
         fallback_np = calculator.fallback_np
 
@@ -208,6 +209,7 @@ def _apply_passive_gate_matrix_to_state(
         new_state_vector = _calculate_state_vector_after_interferometer(
             state_vector,
             subspace_transformations,
+            modes,
             index_list,
             calculator,
         )
@@ -228,6 +230,7 @@ def _apply_passive_gate_matrix_to_state(
 def _calculate_state_vector_after_interferometer(
     state_vector: np.ndarray,
     subspace_transformations: List[np.ndarray],
+    modes,
     index_list: List[np.ndarray],
     calculator: BaseCalculator,
 ) -> np.ndarray:
@@ -239,15 +242,27 @@ def _calculate_state_vector_after_interferometer(
 
     einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
 
-    for n, indices in enumerate(index_list):
-        matrix = calculator.read(subspace_transformations, n)
+    cutoff = len(index_list)
+
+    sizes = np.array(
+        [
+            cutoff_cardinality(cutoff=n, d=len(modes))
+            - cutoff_cardinality(cutoff=n - 1, d=len(modes))
+            for n in range(1, cutoff + 1)
+        ]
+    )
+
+    for n in range(cutoff):
+        indices = index_list[n]
+
+        flat_matrix = calculator.read(subspace_transformations, n)
+
+        matrix = np.reshape(flat_matrix, [sizes[n], sizes[n]])
 
         new_state_vector = calculator.assign(
             new_state_vector,
             indices,
-            np.einsum(
-                einsum_string, matrix, state_vector[indices]
-            ),
+            np.einsum(einsum_string, matrix, state_vector[indices]),
         )
 
     return new_state_vector

@@ -15,8 +15,8 @@
 
 from typing import List, Tuple, Any, Optional
 
-#import blackbird
-from piquasso.core import _context #_blackbird
+import blackbird
+from piquasso.core import _context, _blackbird
 from piquasso.core import _mixins
 from .instruction import Instruction
 from .mode import Q

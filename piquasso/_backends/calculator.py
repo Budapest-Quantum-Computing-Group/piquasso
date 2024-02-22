@@ -135,7 +135,7 @@ class TensorflowCalculator(_BuiltinCalculator):
         gradient = tape.gradient(mean, [r])
     """
 
-    def __init__(self, no_custom_gradient=False):
+    def __init__(self, no_custom_gradient=False, filter_cast_warnings=True):
         """
         Args:
             no_custom_gradient (bool, optional): Executes the forward pass

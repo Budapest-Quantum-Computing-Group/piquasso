@@ -70,13 +70,13 @@ def create_single_mode_displacement_matrix(
 
     roll_index = fallback_np.arange(-1, cutoff - 1)
 
-    for i in calculator.range(1, cutoff):
+    for col in calculator.range(1, cutoff):
         previous_element = (
             sqrt_indices * previous_element[roll_index]
             - displacement_conj * previous_element
         )
 
-        matrix = calculator.write(matrix, i, previous_element)
+        matrix = calculator.write(matrix, col, previous_element)
 
     return np.exp(-0.5 * r**2) * calculator.stack_accumulator(matrix).T * denominator
 

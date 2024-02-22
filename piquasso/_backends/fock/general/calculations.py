@@ -40,7 +40,6 @@ from piquasso._math.fock import (
 
 from ..calculations import (
     calculate_state_index_matrix_list,
-    calculate_interferometer_helper_indices,
     calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
     get_projection_operator_indices,
@@ -66,7 +65,7 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, interferometer, modes):
-    subspace_transformations = _get_interferometer_on_fock_space(
+    subspace_transformations = calculate_interferometer_on_fock_space(
         interferometer, state._config.cutoff, state._calculator
     )
 
@@ -114,17 +113,6 @@ def _calculate_density_matrix_after_interferometer(
                     )
 
     return new_density_matrix
-
-
-def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
-    index_dict = calculate_interferometer_helper_indices(
-        d=len(interferometer),
-        cutoff=cutoff,
-    )
-
-    return calculate_interferometer_on_fock_space(
-        interferometer, index_dict, calculator
-    )
 
 
 def particle_number_measurement(

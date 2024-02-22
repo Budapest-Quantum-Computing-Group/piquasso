@@ -39,6 +39,7 @@ from piquasso._math.fock import (
     get_single_mode_squeezing_operator,
     get_single_mode_cubic_phase_operator,
     get_fock_space_basis,
+    cutoff_cardinality,
 )
 
 from piquasso.instructions import gates
@@ -161,8 +162,11 @@ def _calculate_state_vector_after_apply_active_gate(
 
     einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
 
-    for state_index_matrix in state_index_matrix_list:
-        limit = state_index_matrix.shape[0]
+    cutoff = len(state_index_matrix_list)
+
+    for n in range(cutoff):
+        state_index_matrix = state_index_matrix_list[n]
+        limit = cutoff - n
         new_state_vector = calculator.assign(
             new_state_vector,
             state_index_matrix,
