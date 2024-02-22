@@ -122,7 +122,7 @@ def _calculate_strawberryfields_results(weights, cutoff):
 
     num_params = np.prod(weights.shape)
 
-    sf_params = np.arange(num_params).reshape(weights.shape).astype(np.str)
+    sf_params = np.arange(num_params).reshape(weights.shape).astype(str)
     sf_params = np.array([qnn.params(*i) for i in sf_params])
 
     with qnn.context as q:

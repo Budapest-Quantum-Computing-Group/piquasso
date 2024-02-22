@@ -154,6 +154,7 @@ class Loss(Gate):
         :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
         - The parameter `transmissivity` is usually called `transmittance`.
     """
+
     NUMBER_OF_MODES = 1
 
     def __init__(self, transmissivity: np.ndarray) -> None:

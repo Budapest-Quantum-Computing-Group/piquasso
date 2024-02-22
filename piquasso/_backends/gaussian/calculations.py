@@ -206,9 +206,9 @@ def generaldyne_measurement(
     evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
 
     evolved_cov = np.identity(2 * d) * state._config.hbar
-    evolved_cov[
-        np.ix_(outer_indices, outer_indices)
-    ] = evolved_state.xpxp_covariance_matrix
+    evolved_cov[np.ix_(outer_indices, outer_indices)] = (
+        evolved_state.xpxp_covariance_matrix
+    )
 
     state.xpxp_mean_vector = evolved_mean
     state.xpxp_covariance_matrix = evolved_cov
