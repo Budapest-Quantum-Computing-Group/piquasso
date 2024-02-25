@@ -101,7 +101,7 @@ def _project_to_subspace(
         modes=modes,
     )
 
-    state._state_vector = projected_state_vector * normalization
+    state.state_vector = projected_state_vector * normalization
 
 
 def _get_projected_state_vector(
@@ -116,7 +116,7 @@ def _get_projected_state_vector(
         subspace_basis,
     )
 
-    new_state_vector[index] = state._state_vector[index]
+    new_state_vector[index] = state.state_vector[index]
 
     return new_state_vector
 
@@ -256,7 +256,7 @@ def create(state: PureFockState, instruction: Instruction, shots: int) -> Result
         instruction.modes, space=space, config=state._config
     )
 
-    state._state_vector = operator @ state._state_vector
+    state.state_vector = operator @ state.state_vector
 
     state.normalize()
 
@@ -270,7 +270,7 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
         instruction.modes, space=space, config=state._config
     )
 
-    state._state_vector = operator @ state._state_vector
+    state.state_vector = operator @ state.state_vector
 
     state.normalize()
 
@@ -288,7 +288,7 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     coefficients = np.exp(1j * xi * np.array([basis[mode] ** 2 for basis in space]))
 
     # NOTE: Transposition is done here in order to work with batch processing.
-    state._state_vector = (coefficients * state._state_vector.T).T
+    state.state_vector = (coefficients * state.state_vector.T).T
 
     return Result(state=state)
 
@@ -302,8 +302,8 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
     xi = instruction._all_params["xi"]
     for index, basis in enumerate(space):
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
-        state._state_vector = state._calculator.assign(
-            state._state_vector, index, state._state_vector[index] * coefficient
+        state.state_vector = state._calculator.assign(
+            state.state_vector, index, state.state_vector[index] * coefficient
         )
 
     return Result(state=state)
@@ -327,8 +327,8 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
 
     wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
 
-    state._state_vector = wrapped_apply(
-        state._state_vector,
+    state.state_vector = wrapped_apply(
+        state.state_vector,
         matrix,
         state.d,
         state._config.cutoff,
@@ -356,8 +356,8 @@ def _apply_squeezing(state, r, phi, mode):
 
     wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
 
-    state._state_vector = wrapped_apply(
-        state._state_vector,
+    state.state_vector = wrapped_apply(
+        state.state_vector,
         matrix,
         state.d,
         state._config.cutoff,
@@ -395,8 +395,8 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
 
     wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
 
-    state._state_vector = wrapped_apply(
-        state._state_vector,
+    state.state_vector = wrapped_apply(
+        state.state_vector,
         matrix,
         state.d,
         state._config.cutoff,
@@ -468,8 +468,8 @@ def _add_occupation_number_basis(  # type: ignore
 
     index = get_index_in_fock_space(occupation_numbers)
 
-    state._state_vector = state._calculator.assign(
-        state._state_vector, index, coefficient
+    state.state_vector = state._calculator.assign(
+        state.state_vector, index, coefficient
     )
 
 
@@ -478,7 +478,7 @@ def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) ->
     execute = instruction._all_params["execute"]
 
     state_vectors = [
-        execute(subprogram, shots).state._state_vector for subprogram in subprograms
+        execute(subprogram, shots).state.state_vector for subprogram in subprograms
     ]
 
     batch_state = BatchPureFockState(
@@ -505,10 +505,10 @@ def batch_apply(
     for state_vector, subprogram in zip(state._batch_state_vectors, subprograms):
         small_state = PureFockState(d=d, calculator=calculator, config=config)
 
-        small_state._state_vector = state_vector
+        small_state.state_vector = state_vector
 
         resulting_state_vectors.append(
-            execute(subprogram, initial_state=small_state).state._state_vector
+            execute(subprogram, initial_state=small_state).state.state_vector
         )
 
     state._apply_separate_state_vectors(resulting_state_vectors)

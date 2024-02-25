@@ -128,7 +128,7 @@ with tf.GradientTape() as tape:
     state = simulator.execute(program).state
     print("EXECUTION TIME: ", time.time() - start_time)
 
-    state_vector = state._state_vector
+    state_vector = state.state_vector
 
     cost = tf.reduce_sum(tf.abs(target_state_vector - state_vector))
 

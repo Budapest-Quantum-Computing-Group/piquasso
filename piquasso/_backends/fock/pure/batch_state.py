@@ -42,18 +42,18 @@ class BatchPureFockState(PureFockState):
         super().__init__(d=d, calculator=calculator, config=config)
 
     def _apply_separate_state_vectors(self, state_vectors):
-        self._state_vector = self._np.array(
+        self.state_vector = self._np.array(
             state_vectors, dtype=self._config.complex_dtype
         ).T
 
     @property
     def _batch_size(self):
-        return self._state_vector.shape[1]
+        return self.state_vector.shape[1]
 
     @property
     def _batch_state_vectors(self):
         for index in range(self._batch_size):
-            yield self._state_vector[:, index]
+            yield self.state_vector[:, index]
 
     @property
     def nonzero_elements(self):
@@ -74,7 +74,7 @@ class BatchPureFockState(PureFockState):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BatchPureFockState):
             return False
-        return self._np.allclose(self._state_vector, other._state_vector)
+        return self._np.allclose(self.state_vector, other.state_vector)
 
     @property
     def fock_probabilities(self):
@@ -99,7 +99,7 @@ class BatchPureFockState(PureFockState):
         if any(np.isclose(norm, 0) for norm in norms):
             raise InvalidState("The norm of a state in the batch is 0.")
 
-        self._state_vector = self._state_vector / self._np.sqrt(norms)
+        self.state_vector = self.state_vector / self._np.sqrt(norms)
 
     def validate(self) -> None:
         if not all(np.isclose(norm, 1.0) for norm in self.norm):
@@ -113,8 +113,8 @@ class BatchPureFockState(PureFockState):
         fallback_np = self._calculator.fallback_np
         multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
 
-        lhs = (multipliers * self._state_vector[left_indices].T).T
-        rhs = self._state_vector[right_indices]
+        lhs = (multipliers * self.state_vector[left_indices].T).T
+        rhs = self.state_vector[right_indices]
 
         return np.real(
             np.einsum("ij,ij->j", lhs, rhs) * fallback_np.sqrt(self._config.hbar / 2)

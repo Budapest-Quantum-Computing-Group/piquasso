@@ -100,7 +100,7 @@ def _calculate_piquasso_results(weights, cutoff, layer_count):
                 pq.Q(0) | pq.Kerr(weights[i, 6])
 
         state = simulator.execute(program).state
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     return state_vector, tape.jacobian(state_vector, weights)
 

@@ -308,7 +308,7 @@ def test_decomposed_Beamsplitter_state_vector_gradient_1_particle():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [theta])
 
@@ -388,7 +388,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [theta])
 
@@ -451,7 +451,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [theta])
 
@@ -519,7 +519,7 @@ def test_jacobian_of_state_after_mixing_with_fix_Interferometer():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [c1, c2, c3])
 
@@ -868,7 +868,7 @@ def test_Displacement_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [r])
 
@@ -904,7 +904,7 @@ def test_complex_Displacement_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [r, phi])
 
@@ -952,7 +952,7 @@ def test_Squeezing_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [r])
 
@@ -989,7 +989,7 @@ def test_complex_Squeezing_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [r, phi])
 
@@ -1045,7 +1045,7 @@ def test_displaced_state_Squeezing_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [r, phi])
 
@@ -1089,7 +1089,7 @@ def test_displaced_state_Beamsplitter_state_vector_gradient():
 
         state = simulator.execute(program).state
 
-        state_vector = state._state_vector
+        state_vector = state.state_vector
 
     jacobian = tape.jacobian(state_vector, [theta, phi])
     correct_state_vector = [

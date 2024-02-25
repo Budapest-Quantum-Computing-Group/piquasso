@@ -47,8 +47,8 @@ def passive_linear(
 def _apply_passive_linear(state, interferometer, modes, calculator):
     wrapped = calculator.decorator(_do_apply_passive_linear)
 
-    state._state_vector = wrapped(
-        state._state_vector,
+    state.state_vector = wrapped(
+        state.state_vector,
         interferometer,
         state.d,
         state._config.cutoff,

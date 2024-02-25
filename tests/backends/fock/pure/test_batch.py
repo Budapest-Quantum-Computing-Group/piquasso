@@ -120,10 +120,10 @@ def test_batch_Beamsplitter_state_vector():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
@@ -161,10 +161,10 @@ def test_batch_Squeezing_and_Displacement_state_vector():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
@@ -200,10 +200,10 @@ def test_batch_Kerr_state_vector():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
@@ -239,10 +239,10 @@ def test_batch_Phaseshifter_state_vector():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
@@ -294,10 +294,10 @@ def test_batch_multiple_gates_state_vector():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
@@ -457,10 +457,10 @@ def test_Batch_with_OneByOne():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
-    batch_state_vector = simulator.execute(batch_program).state._state_vector
+    batch_state_vector = simulator.execute(batch_program).state.state_vector
 
-    first_state_vector = simulator.execute(first_program).state._state_vector
-    second_state_vector = simulator.execute(second_program).state._state_vector
+    first_state_vector = simulator.execute(first_program).state.state_vector
+    second_state_vector = simulator.execute(second_program).state.state_vector
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
