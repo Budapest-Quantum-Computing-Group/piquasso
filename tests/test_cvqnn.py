@@ -141,7 +141,7 @@ def test_create_program_state_vector():
     state = simulator.execute(program).state
 
     assert np.allclose(
-        state._state_vector,
+        state.state_vector,
         [
             0.99927124 - 0.00000994j,
             -0.02215289 - 0.00339542j,

@@ -43,6 +43,8 @@ class PureFockState(BaseFockState):
         {d + c - 1 \choose c - 1},
 
     where :math:`c \in \mathbb{N}` is the Fock space cutoff.
+
+    :ivar state_vector: The state vector of the quantum state.
     """
 
     def __init__(
@@ -57,7 +59,7 @@ class PureFockState(BaseFockState):
 
         super().__init__(d=d, calculator=calculator, config=config)
 
-        self._state_vector = self._get_empty()
+        self.state_vector = self._get_empty()
 
     def _get_empty_list(self) -> list:
         state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
@@ -74,7 +76,7 @@ class PureFockState(BaseFockState):
         state_vector_list = self._get_empty_list()
         state_vector_list[0] = 1.0
 
-        self._state_vector = self._np.array(
+        self.state_vector = self._np.array(
             state_vector_list, dtype=self._config.complex_dtype
         )
 
@@ -86,7 +88,7 @@ class PureFockState(BaseFockState):
 
     @property
     def nonzero_elements(self):
-        return self._nonzero_elements_for_single_state_vector(self._state_vector)
+        return self._nonzero_elements_for_single_state_vector(self.state_vector)
 
     def _get_repr_for_single_state_vector(self, nonzero_elements):
         return " + ".join(
@@ -99,13 +101,13 @@ class PureFockState(BaseFockState):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PureFockState):
             return False
-        return self._np.allclose(self._state_vector, other._state_vector)
+        return self._np.allclose(self.state_vector, other.state_vector)
 
     @property
     def density_matrix(self) -> np.ndarray:
         cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
 
-        state_vector = self._state_vector[:cardinality]
+        state_vector = self.state_vector[:cardinality]
 
         return self._np.outer(state_vector, self._np.conj(state_vector))
 
@@ -127,19 +129,19 @@ class PureFockState(BaseFockState):
         index = get_index_in_fock_space(occupation_number)
 
         return self._np.real(
-            self._state_vector[index].conjugate() * self._state_vector[index]
+            self.state_vector[index].conjugate() * self.state_vector[index]
         )
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return vector_absolute_square(self._state_vector, self._calculator)
+        return vector_absolute_square(self.state_vector, self._calculator)
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
 
         for index, basis in enumerate(self._space):
-            probability_map[tuple(basis)] = self._np.abs(self._state_vector[index]) ** 2
+            probability_map[tuple(basis)] = self._np.abs(self.state_vector[index]) ** 2
 
         return probability_map
 
@@ -152,7 +154,7 @@ class PureFockState(BaseFockState):
         if np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
-        self._state_vector = self._state_vector / self._np.sqrt(norm)
+        self.state_vector = self.state_vector / self._np.sqrt(norm)
 
     def validate(self) -> None:
         """Validates the represented state.
@@ -206,7 +208,7 @@ class PureFockState(BaseFockState):
         fallback_np = self._calculator.fallback_np
         multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
 
-        state_vector = self._state_vector
+        state_vector = self.state_vector
 
         accumulator = np.dot(
             (multipliers * state_vector[left_indices]),
@@ -283,7 +285,7 @@ class PureFockState(BaseFockState):
     def mean_photon_number(self):
         numbers = np.sum(self._space, axis=1)
 
-        return numbers @ (self._np.abs(self._state_vector) ** 2)
+        return numbers @ (self._np.abs(self.state_vector) ** 2)
 
     def get_tensor_representation(self):
         cutoff = self._config.cutoff
@@ -291,6 +293,6 @@ class PureFockState(BaseFockState):
 
         return self._calculator.scatter(
             self._space,
-            self._state_vector,
+            self.state_vector,
             [cutoff] * d,
         )

@@ -53,7 +53,7 @@ def _pq_loss(weights, cutoff, calculator):
 
     program = cvqnn.create_program(weights)
 
-    state_vector = simulator.execute(program).state._state_vector
+    state_vector = simulator.execute(program).state.state_vector
 
     return tf.math.reduce_mean(
         (

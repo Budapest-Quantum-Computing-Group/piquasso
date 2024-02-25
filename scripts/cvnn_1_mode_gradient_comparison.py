@@ -38,7 +38,7 @@ def pq_cvnn_gradient(weights, d, cutoff, layer_count):
                 pq.Q(0) | pq.Kerr(weights[i, 6])
 
         state = simulator.execute(program).state
-        ket = state._state_vector
+        ket = state.state_vector
 
     return state, ket, tape.gradient(ket, weights)
 
