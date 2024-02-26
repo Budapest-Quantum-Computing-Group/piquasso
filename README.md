@@ -1,4 +1,6 @@
-# Piquasso
+<p align="center">
+    <img src="piquasso_logo.svg" alt="Piquasso logo"/>
+</p>
 
 ![Codecov](https://img.shields.io/codecov/c/github/Budapest-Quantum-Computing-Group/piquasso)
 ![GitHub](https://img.shields.io/github/license/Budapest-Quantum-Computing-Group/piquasso)
