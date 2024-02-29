@@ -1,5 +1,31 @@
 # Changelog
 
+## [4.0.0] - 2024-02-29
+
+### Added
+
+- Python 3.11 support.
+- Purification of Gaussian states.
+- `PureFockState.get_tensor_representation` for embeddng the state vector into
+  a tensor with rank equal to the number of modes.
+- Batch processing of pure Fock states.
+- CVQNN module.
+- Support for `tf.function` in `PureFockSimulator`.
+- Supporting JAX in `PureFockSimulator`.
+
+### Fixed
+
+- Error in custom gradient of passive linear gates in `PureFockSimulator`.
+
+### Breaking changes
+
+- Python 3.7 support dropped.
+- `TensorflowPureFockSimulator` has been deleted. Instead, one can use
+  `PureFockSimulator` with `TensorflowCalculator` specified.
+- Printing format of Fock states have been changed.
+- Renamed `_state_vector` to `state_vector`.
+
+
 ## [3.0.0] - 2023-10-23
 
 ### Added
