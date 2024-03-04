@@ -227,7 +227,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         if initial_state is not None:
             self._validate_state(initial_state)
-            state = initial_state.copy()
+            state = initial_state
         else:
             state = self.create_initial_state()
 

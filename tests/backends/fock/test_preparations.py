@@ -28,6 +28,9 @@ def test_from_fock_state_preserves_fock_probabilities():
         pure_state_preparation_program
     ).state
 
+    pure_state_preparation_state_copy = pure_state_preparation_state.copy()
+    pure_state_preparation_state_copy2 = pure_state_preparation_state.copy()
+
     beamsplitter = pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 3)
 
     with pq.Program() as pure_state_program:
@@ -38,12 +41,12 @@ def test_from_fock_state_preserves_fock_probabilities():
 
     pure_state = pure_simulator.execute(
         pure_state_program,
-        initial_state=pure_state_preparation_state,
+        initial_state=pure_state_preparation_state_copy,
     ).state
 
     mixed_state = mixed_simulator.execute(
         mixed_state_program,
-        initial_state=pq.FockState.from_fock_state(pure_state_preparation_state),
+        initial_state=pq.FockState.from_fock_state(pure_state_preparation_state_copy2),
     ).state
 
     pure_state_fock_probabilities = pure_state.fock_probabilities
