@@ -296,3 +296,14 @@ class PureFockState(BaseFockState):
             self.state_vector,
             [cutoff] * d,
         )
+
+    def copy(self) -> "PureFockState":
+        # NOTE: `__deepcopy__` is not allowed for tensorflow variables, so we have to
+        # do it explicitely here.
+        state = self.__class__(
+            d=self.d, calculator=self._calculator, config=self._config.copy()
+        )
+
+        state.state_vector = self._calculator.np.copy(self.state_vector)
+
+        return state
