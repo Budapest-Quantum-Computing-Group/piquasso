@@ -13,9 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
 import piquasso as pq
 import tensorflow as tf
+
+
+def noop_decorator(func):
+    return func
 
 
 def test_tf_function_cvnn_layer_1_mode_1_layers():
@@ -433,4 +439,53 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
                 -0.00000682,
             ],
         ],
+    )
+
+
+@pytest.mark.parametrize(
+    "decorator", (noop_decorator, tf.function, tf.function(jit_compile=True))
+)
+def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator):
+    d = 1
+    cutoff = 3
+
+    weights = tf.Variable(
+        [[0.20961794, -0.00454663, 0.17257116, -0.00007423, -0.12339027, -0.01005965]],
+        dtype=np.float64,
+    )
+
+    initial_state_vector = tf.Variable([0.1, 0.3, 0.6], dtype=np.complex128)
+
+    @decorator
+    def func(initial_state_vector, weights):
+        calculator = pq.TensorflowCalculator()
+        config = pq.Config(cutoff=cutoff, normalize=False)
+
+        initial_state = pq.PureFockState(d=1, calculator=calculator, config=config)
+
+        initial_state.state_vector = initial_state_vector
+
+        simulator = pq.PureFockSimulator(
+            d=d,
+            config=config,
+            calculator=calculator,
+        )
+
+        with tf.GradientTape() as tape:
+            program = pq.cvqnn.create_layers(weights)
+
+            state = simulator.execute(program, initial_state=initial_state).state
+            mean_position = state.mean_position(0)
+
+        return mean_position, tape.gradient(mean_position, weights)
+
+    mean_position, mean_position_grad = func(initial_state_vector, weights)
+
+    assert np.allclose(
+        mean_position,
+        0.28788324741568105,
+    )
+    assert np.allclose(
+        mean_position_grad,
+        [[-1.37846195, 0.13790631, -1.38045047, 0.27905517, 0.00014816, -2.28649567]],
     )
