@@ -440,7 +440,7 @@ def _get_particle_number_choice(
 
     weights /= np.sum(weights)
 
-    return np.random.choice(possible_choices, p=weights)
+    return state._config.rng.choice(possible_choices, p=weights)
 
 
 def threshold_measurement(

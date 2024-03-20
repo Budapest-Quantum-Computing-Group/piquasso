@@ -288,3 +288,36 @@ def test_measure_threshold_on_all_modes(nondisplaced_state):
     result = simulator.execute(program, initial_state=nondisplaced_state)
 
     assert result
+
+
+@pytest.mark.monkey
+def test_seeded_gaussian_boson_sampling():
+    d = 5
+    shots = 10
+
+    A = np.array(
+        [
+            [0, 1, 0, 1, 1],
+            [1, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0],
+            [1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 0],
+        ]
+    )
+
+    with pq.Program() as gaussian_boson_sampling:
+        pq.Q(all) | pq.Graph(A)
+
+        pq.Q(all) | pq.ParticleNumberMeasurement()
+
+    simulator1 = pq.GaussianSimulator(
+        d=d, calculator=pq.NumpyCalculator(), config=pq.Config(seed_sequence=123)
+    )
+    result1 = simulator1.execute(gaussian_boson_sampling, shots=shots)
+
+    simulator2 = pq.GaussianSimulator(
+        d=d, calculator=pq.NumpyCalculator(), config=pq.Config(seed_sequence=123)
+    )
+    result2 = simulator2.execute(gaussian_boson_sampling, shots=shots)
+
+    assert result1.samples == result2.samples
