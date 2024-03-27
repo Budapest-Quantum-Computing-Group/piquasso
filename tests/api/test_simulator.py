@@ -98,11 +98,21 @@ def test_program_execution_with_unregistered_instruction_raises_InvalidSimulatio
 
     simulator = FakeSimulator(d=1)
 
-    with pytest.raises(pq.api.exceptions.InvalidSimulation):
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
         simulator.validate(program)
 
-    with pytest.raises(pq.api.exceptions.InvalidSimulation):
+    error_message = error.value.args[0]
+
+    assert "No such instruction implemented for this simulator." in error_message
+    assert "instruction=<pq.ImproperInstruction(modes=())>" in error_message
+
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
         simulator.execute(program)
+
+    error_message = error.value.args[0]
+
+    assert "No such instruction implemented for this simulator." in error_message
+    assert "instruction=<pq.ImproperInstruction(modes=())>" in error_message
 
 
 def test_program_execution_with_wrong_instruction_order_raises_InvalidSimulation(
