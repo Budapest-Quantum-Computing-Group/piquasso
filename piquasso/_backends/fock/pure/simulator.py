@@ -30,12 +30,20 @@ from .calculations import (
     annihilate,
     batch_prepare,
     batch_apply,
+    post_select_photons,
 )
 
 from ..calculations import attenuator
 
 from ...simulator import BuiltinSimulator
-from piquasso.instructions import preparations, gates, measurements, channels, batch
+from piquasso.instructions import (
+    preparations,
+    gates,
+    measurements,
+    channels,
+    batch,
+    misc,
+)
 
 from piquasso._backends.calculator import (
     NumpyCalculator,
@@ -127,6 +135,7 @@ class PureFockSimulator(BuiltinSimulator):
         channels.Attenuator: attenuator,
         batch.BatchPrepare: batch_prepare,
         batch.BatchApply: batch_apply,
+        misc.PostSelectPhotons: post_select_photons,
     }
 
     _default_calculator_class = NumpyCalculator
