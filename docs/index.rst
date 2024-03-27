@@ -73,6 +73,7 @@ To install Piquasso with JAX is done by
    instructions/gates
    instructions/measurements
    instructions/channels
+   instructions/misc
 
 .. toctree::
    :maxdepth: 3
