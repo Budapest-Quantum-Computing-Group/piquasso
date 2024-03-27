@@ -16,8 +16,9 @@
 from piquasso.instructions.measurements import PostSelectPhotons
 from piquasso.api.result import Result
 
-
-from ...calculations import get_projection_operator_indices
+from piquasso._math.fock import get_fock_space_basis
+from piquasso._backends.fock.calculations import get_projection_operator_indices
+from piquasso._backends.fock.general.state import FockState
 
 from ..state import PureFockState
 
@@ -48,5 +49,53 @@ def post_select_photons(
     new_state.state_vector = calculator.assign(
         new_state.state_vector, small_index, state.state_vector[index]
     )
+
+    return Result(state=new_state)
+
+
+def imperfect_post_select_photons(
+    state: PureFockState, instruction: PostSelectPhotons, shots: int
+) -> Result:
+    np = state._calculator.np
+
+    postselect_modes = instruction.params["postselect_modes"]
+
+    photon_counts = instruction.params["photon_counts"]
+
+    detector_efficiency_matrix = instruction.params["detector_efficiency_matrix"]
+
+    postselect_basis = get_fock_space_basis(
+        d=len(postselect_modes), cutoff=len(detector_efficiency_matrix)
+    )
+
+    new_state = FockState(
+        d=state.d - len(postselect_modes),
+        calculator=state._calculator,
+        config=state._config,
+    )
+
+    for occupation_numbers in postselect_basis:
+        detector_probability = np.prod(
+            detector_efficiency_matrix[(photon_counts, occupation_numbers)]
+        )
+
+        index = get_projection_operator_indices(
+            state.d, state._config.cutoff, postselect_modes, occupation_numbers
+        )
+
+        small_index = np.arange(index.shape[0])
+
+        state_vector = np.zeros(
+            shape=new_state.density_matrix.shape[0],
+            dtype=new_state.density_matrix.dtype,
+        )
+
+        state_vector = state._calculator.assign(
+            state_vector, small_index, state.state_vector[index]
+        )
+
+        new_state._density_matrix += detector_probability * np.outer(
+            np.conj(state_vector), state_vector
+        )
 
     return Result(state=new_state)
