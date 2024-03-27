@@ -222,3 +222,39 @@ def test_PureFockState_get_purity():
     purity = state.get_purity()
 
     assert np.isclose(purity, 1.0)
+
+
+@pytest.mark.monkey
+def test_PureFockState_get_particle_detection_probability_on_modes():
+    d = 2
+    cutoff = 3
+
+    state_vector_length = 6
+
+    coeffs = np.random.uniform(size=state_vector_length) + 1j * np.random.uniform(
+        size=state_vector_length
+    )
+
+    coeffs /= np.linalg.norm(coeffs)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 0]) * coeffs[0]
+        pq.Q() | pq.StateVector([0, 1]) * coeffs[1]
+        pq.Q() | pq.StateVector([1, 0]) * coeffs[2]
+        pq.Q() | pq.StateVector([0, 2]) * coeffs[3]
+        pq.Q() | pq.StateVector([1, 1]) * coeffs[4]
+        pq.Q() | pq.StateVector([2, 0]) * coeffs[5]
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    state = simulator.execute(program).state
+
+    state.validate()
+
+    probability_of_0_on_mode_1 = state.get_particle_detection_probability_on_modes(
+        occupation_numbers=(0,), modes=(1,)
+    )
+
+    assert np.isclose(
+        probability_of_0_on_mode_1,
+        np.abs(coeffs[0]) ** 2 + np.abs(coeffs[2]) ** 2 + np.abs(coeffs[5]) ** 2,
+    )
