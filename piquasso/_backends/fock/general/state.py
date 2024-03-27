@@ -88,7 +88,7 @@ class FockState(BaseFockState):
     ) -> Generator[Tuple[complex, Tuple], Any, None]:
         for index, basis in operator_basis(self._space):
             coefficient = self._density_matrix[index]
-            if coefficient != 0:
+            if not np.isclose(coefficient, 0.0):
                 yield coefficient, (tuple(basis[0]), tuple(basis[1]))
 
     def __repr__(self) -> str:

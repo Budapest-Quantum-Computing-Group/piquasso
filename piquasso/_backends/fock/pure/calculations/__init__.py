@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .passive_linear import passive_linear  # noqa: F401
+from .passive_linear import passive_linear
+from .misc import post_select_photons
+
+__all__ = ["passive_linear", "post_select_photons"]
 
 from typing import Optional, Tuple, Mapping
 
@@ -21,11 +24,9 @@ import random
 import numpy as np
 
 from .passive_linear import _apply_passive_linear
+from .utils import project_to_subspace
 
-from ...calculations import (
-    calculate_state_index_matrix_list,
-    get_projection_operator_indices,
-)
+from ...calculations import calculate_state_index_matrix_list
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState
@@ -66,7 +67,7 @@ def particle_number_measurement(
 
     normalization = _get_normalization(probability_map, sample)
 
-    _project_to_subspace(
+    project_to_subspace(
         state=state,
         subspace_basis=sample,
         modes=instruction.modes,
@@ -86,39 +87,6 @@ def _get_normalization(
     probability_map: Mapping[Tuple[int, ...], float], sample: Tuple[int, ...]
 ) -> float:
     return np.sqrt(1 / probability_map[sample])
-
-
-def _project_to_subspace(
-    state: PureFockState,
-    *,
-    subspace_basis: Tuple[int, ...],
-    modes: Tuple[int, ...],
-    normalization: float
-) -> None:
-    projected_state_vector = _get_projected_state_vector(
-        state=state,
-        subspace_basis=subspace_basis,
-        modes=modes,
-    )
-
-    state.state_vector = projected_state_vector * normalization
-
-
-def _get_projected_state_vector(
-    state: PureFockState, *, subspace_basis: Tuple[int, ...], modes: Tuple[int, ...]
-) -> np.ndarray:
-    new_state_vector = state._get_empty()
-
-    index = get_projection_operator_indices(
-        state.d,
-        state._config.cutoff,
-        modes,
-        subspace_basis,
-    )
-
-    new_state_vector[index] = state.state_vector[index]
-
-    return new_state_vector
 
 
 def _apply_active_gate_matrix_to_state(
