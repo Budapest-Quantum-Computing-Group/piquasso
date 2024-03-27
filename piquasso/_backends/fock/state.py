@@ -223,3 +223,7 @@ class BaseFockState(State, abc.ABC):
             np.linalg.eigvals(self.density_matrix @ state.density_matrix)
         )
         return np.abs(np.sum(geometric_mean)) ** 2
+
+    @abc.abstractmethod
+    def get_purity(self):
+        """The purity of the Fock state."""
