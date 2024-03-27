@@ -118,12 +118,12 @@ class Simulator(Computer, _mixins.CodeMixin):
                     return instruction_category
 
             raise InvalidInstruction(
-                "\n"
-                "The instruction is not a subclass of the following classes:\n"
-                "{all_instruction_classes}.\n"
-                "Make sure that all your instructions are subclassed properly from the "
-                "above classes.\n"
-                "instruction={instruction}."
+                f"\n"
+                f"The instruction is not a subclass of the following classes:\n"
+                f"{all_instruction_categories}.\n"
+                f"Make sure that all your instructions are subclassed properly from "
+                f"the above classes.\n"
+                f"instruction={instruction}."
             )
 
         instruction_category_projection = list(
