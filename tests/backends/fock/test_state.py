@@ -147,3 +147,23 @@ def test_FockState_fidelity(
     assert np.isclose(fid, 0.92507584)
     assert np.isclose(state_2.fidelity(state), fid)
     assert np.isclose(state_2.fidelity(state_2), 1.0)
+
+
+def test_FockState_get_purity():
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 1, 1)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 2)) * np.sqrt(1 / 8)
+
+    simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=3))
+
+    state = simulator.execute(program).state
+
+    state.validate()
+
+    purity = state.get_purity()
+
+    assert np.isclose(purity, 0.625)

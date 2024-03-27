@@ -204,3 +204,21 @@ def test_PureFockState_get_tensor_representation(calculator):
             ]
         ),
     )
+
+
+def test_PureFockState_get_purity():
+    d = 2
+    cutoff = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) / 2
+
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    state = simulator.execute(program).state
+
+    purity = state.get_purity()
+
+    assert np.isclose(purity, 1.0)

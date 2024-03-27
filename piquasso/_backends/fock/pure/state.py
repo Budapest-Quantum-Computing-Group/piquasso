@@ -307,3 +307,6 @@ class PureFockState(BaseFockState):
         state.state_vector = self._calculator.np.copy(self.state_vector)
 
         return state
+
+    def get_purity(self):
+        return 1.0
