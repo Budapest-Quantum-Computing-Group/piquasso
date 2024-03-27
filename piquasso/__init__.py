@@ -89,6 +89,7 @@ from .instructions.measurements import (
     HeterodyneMeasurement,
     GeneraldyneMeasurement,
     PostSelectPhotons,
+    ImperfectPostSelectPhotons,
 )
 
 from .instructions.channels import (
@@ -167,6 +168,7 @@ __all__ = [
     "HeterodyneMeasurement",
     "GeneraldyneMeasurement",
     "PostSelectPhotons",
+    "ImperfectPostSelectPhotons",
     # Channels
     "DeterministicGaussianChannel",
     "Attenuator",

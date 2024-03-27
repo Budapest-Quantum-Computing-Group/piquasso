@@ -14,9 +14,9 @@
 # limitations under the License.
 
 from .passive_linear import passive_linear
-from .measurements import post_select_photons
+from .measurements import post_select_photons, imperfect_post_select_photons
 
-__all__ = ["passive_linear", "post_select_photons"]
+__all__ = ["passive_linear", "post_select_photons", "imperfect_post_select_photons"]
 
 from typing import Optional, Tuple, Mapping
 
