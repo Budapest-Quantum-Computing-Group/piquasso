@@ -1,2 +1,3 @@
 ignore:
   - tests/**/*
+  - piquasso/_math/hafnian/*

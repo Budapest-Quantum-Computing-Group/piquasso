@@ -34,6 +34,7 @@ setup(
         'theboss==2.0.3; python_version >= "3.8"',
         'numpy>=1.19.5; python_version >= "3.8"',
         'scipy>=1.5.4; python_version >= "3.8"',
+        'numba>=0.57.1; python_version >= "3.8"',
         "quantum-blackbird==0.5.0",
     ],
     extras_require={
