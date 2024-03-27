@@ -905,6 +905,31 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     )
 
 
+def test_sampling_backend_equivalence_for_two_mode_Beamsplitter5050():
+    initial_occupation_numbers = (1, 1)
+    d = len(initial_occupation_numbers)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    config = pq.Config(cutoff=sum(initial_occupation_numbers) + 1)
+
+    fock_simulator = pq.PureFockSimulator(d=d, config=config)
+    fock_state = fock_simulator.execute(program).state
+    fock_state.validate()
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(
+        fock_state.fock_probabilities,
+        sampling_state.fock_probabilities,
+    )
+
+
 def test_sampling_backend_equivalence_complex_scenario():
     initial_occupation_numbers = (1, 1, 0, 1)
     d = len(initial_occupation_numbers)
@@ -916,7 +941,7 @@ def test_sampling_backend_equivalence_complex_scenario():
 
         pq.Q(1) | pq.Phaseshifter(np.pi / 3)
 
-        pq.Q(1, 2) | pq.Beamsplitter(np.pi / 4)
+        pq.Q(1, 2) | pq.Beamsplitter5050()
 
     config = pq.Config(cutoff=sum(initial_occupation_numbers) + 1)
 
@@ -1614,4 +1639,51 @@ def test_Displacement_with_zero_parameter(SimulatorClass):
     assert is_proportional(
         state.fock_probabilities,
         [0.99005, 0.0, 0.0099005, 0.0, 0.0, 0.0000495],
+    )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.FockSimulator,
+        pq.GaussianSimulator,
+        *tf_purefock_simulators,
+    ),
+)
+def test_beamsplitter5050_equivalence(SimulatorClass):
+    with pq.Program() as preparation:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7, phi=np.pi / 11)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    assert np.allclose(
+        state.fock_probabilities,
+        [
+            0.98512079,
+            0.0086206,
+            0.0012306,
+            0.00001217,
+            0.00128432,
+            0.00364572,
+            0.00000122,
+            0.00001785,
+            0.00001611,
+            0.00001391,
+            0.0,
+            0.00000005,
+            0.00000213,
+            0.00001428,
+            0.00002023,
+        ],
     )

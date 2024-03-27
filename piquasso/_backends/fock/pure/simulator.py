@@ -18,6 +18,7 @@ from .state import PureFockState
 from .calculations import (
     state_vector_instruction,
     passive_linear,
+    beamsplitter5050,
     kerr,
     cross_kerr,
     cubic_phase,
@@ -118,6 +119,7 @@ class PureFockSimulator(BuiltinSimulator):
         preparations.StateVector: state_vector_instruction,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,
+        gates.Beamsplitter5050: beamsplitter5050,
         gates.Phaseshifter: passive_linear,
         gates.MachZehnder: passive_linear,
         gates.Fourier: passive_linear,

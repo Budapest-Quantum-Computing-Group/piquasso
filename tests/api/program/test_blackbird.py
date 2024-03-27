@@ -54,7 +54,7 @@ def test_loads_blackbird_parses_operations_with_default_arguments():
     assert len(program.instructions) == 2
 
     assert program.instructions[0] == pq.Beamsplitter(
-        theta=0.0, phi=np.pi / 4
+        theta=np.pi / 4, phi=0.0
     ).on_modes(1, 2)
     assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
 
