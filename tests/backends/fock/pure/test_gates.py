@@ -18,7 +18,7 @@ import numpy as np
 import piquasso as pq
 
 
-def test_5050_beamsplitter():
+def test_beamsplitter_with_theta_pi_over_4():
     with pq.Program() as program:
         pq.Q(1) | pq.StateVector([1])
 
@@ -32,6 +32,37 @@ def test_5050_beamsplitter():
         state.fock_probabilities,
         [0, 0.5, 0.5, 0, 0, 0],
     )
+
+
+def test_beamsplitter5050_equivalence():
+    with pq.Program() as preparation:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7, phi=np.pi / 11)
+
+    with pq.Program() as program_with_parametrized_beamsplitter:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
+
+    with pq.Program() as program_with_50_50_beamsplitter:
+        pq.Q() | preparation
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
+
+    state_with_parametrized_beamsplitter = simulator.execute(
+        program_with_parametrized_beamsplitter
+    ).state
+
+    state_with_50_50_beamsplitter = simulator.execute(
+        program_with_50_50_beamsplitter
+    ).state
+
+    assert state_with_50_50_beamsplitter == state_with_parametrized_beamsplitter
 
 
 def test_beamsplitter():
