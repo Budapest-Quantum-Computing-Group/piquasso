@@ -21,11 +21,12 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis
 from piquasso._math.linalg import vector_absolute_square
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_index_in_fock_space_array,
+    get_auxiliary_modes,
 )
 
 from ..state import BaseFockState
@@ -136,6 +137,41 @@ class PureFockState(BaseFockState):
         return self._np.real(
             self.state_vector[index].conjugate() * self.state_vector[index]
         )
+
+    def get_particle_detection_probability_on_modes(
+        self,
+        occupation_numbers: np.ndarray,
+        modes: Tuple[int, ...],
+    ) -> float:
+        np = self._calculator.np
+        fallback_np = self._calculator.fallback_np
+
+        occupation_numbers = fallback_np.array(occupation_numbers)
+
+        auxiliary_d = self.d - len(modes)
+        auxiliary_cutoff = self._config.cutoff - sum(occupation_numbers)
+        auxiliary_modes = get_auxiliary_modes(self.d, modes)
+
+        unordered_modes = fallback_np.concatenate([modes, auxiliary_modes])
+
+        card = cutoff_cardinality(d=auxiliary_d, cutoff=auxiliary_cutoff)
+        auxiliary_basis = get_fock_space_basis(d=auxiliary_d, cutoff=auxiliary_cutoff)
+
+        repeated_occupation_numbers = fallback_np.repeat(
+            occupation_numbers[None, :], card, axis=0
+        )
+
+        unordered_occupation_numbers = fallback_np.concatenate(
+            [repeated_occupation_numbers, auxiliary_basis], axis=1
+        )
+
+        sorter = fallback_np.argsort(unordered_modes)
+
+        ordered_occupation_numbers = unordered_occupation_numbers[:, sorter]
+
+        indices = get_index_in_fock_space_array(ordered_occupation_numbers)
+
+        return np.sum(np.abs(self.state_vector[indices]) ** 2)
 
     @property
     def fock_probabilities(self) -> np.ndarray:
