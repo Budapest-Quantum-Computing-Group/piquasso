@@ -76,6 +76,7 @@ class SamplingSimulator(BuiltinSimulator):
     _instruction_map = {
         preparations.StateVector: state_vector,
         gates.Beamsplitter: passive_linear,
+        gates.Beamsplitter5050: passive_linear,
         gates.Phaseshifter: passive_linear,
         gates.MachZehnder: passive_linear,
         gates.Fourier: passive_linear,

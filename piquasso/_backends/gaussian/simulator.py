@@ -107,6 +107,7 @@ class GaussianSimulator(BuiltinSimulator):
         preparations.Thermal: covariance,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,
+        gates.Beamsplitter5050: passive_linear,
         gates.Phaseshifter: passive_linear,
         gates.MachZehnder: passive_linear,
         gates.Fourier: passive_linear,

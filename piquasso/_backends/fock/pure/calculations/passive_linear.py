@@ -15,7 +15,11 @@
 
 from typing import Tuple, List, Callable
 
+from functools import lru_cache
+
 import numpy as np
+
+from scipy.special import factorial, comb
 
 from piquasso.api.calculator import BaseCalculator
 
@@ -324,3 +328,60 @@ def _create_linear_passive_gate_gradient_function(
         return gradient_by_initial_state, gradient_by_matrix
 
     return applying_interferometer_gradient
+
+
+@lru_cache(maxsize=None)
+def _beamsplitter5050_coeff(n, m, N):
+    return (
+        2 ** (-(n + m) / 2)
+        * np.sqrt(factorial(N) * factorial(n + m - N) / (factorial(n) * factorial(m)))
+        * (-1) ** n
+        * np.sum([comb(n, j) * comb(m, N - j) * (-1) ** j for j in range(N + 1)])
+    )
+
+
+@lru_cache(maxsize=None)
+def _calculate_beamsplitter5050_for_symmetric_subspace(number_of_particles):
+    """
+    NOTE: Further optimizations may be done here.
+    """
+    dimension = number_of_particles + 1
+
+    matrix = np.empty(shape=(dimension, dimension))
+
+    for row_index, n in enumerate(range(number_of_particles, -1, -1)):
+        m = number_of_particles - n
+        for col_index, N in enumerate(range(number_of_particles, -1, -1)):
+            matrix[row_index, col_index] = _beamsplitter5050_coeff(n, m, N)
+
+    return matrix
+
+
+@lru_cache(maxsize=None)
+def _calculate_beamsplitter5050_on_fock_space(cutoff):
+    return [
+        _calculate_beamsplitter5050_for_symmetric_subspace(number_of_particles)
+        for number_of_particles in range(cutoff)
+    ]
+
+
+def beamsplitter5050(
+    state: PureFockState, instruction: gates._PassiveLinearGate, shots: int
+) -> Result:
+    _apply_beamsplitter5050(state, instruction.modes)
+
+    return Result(state=state)
+
+
+def _apply_beamsplitter5050(state, modes):
+    cutoff = state._config.cutoff
+    subspace_transformations = _calculate_beamsplitter5050_on_fock_space(cutoff)
+
+    state.state_vector = _apply_passive_gate_matrix_to_state(
+        state_vector=state.state_vector,
+        subspace_transformations=subspace_transformations,
+        d=state.d,
+        cutoff=cutoff,
+        modes=modes,
+        calculator=state._calculator,
+    )

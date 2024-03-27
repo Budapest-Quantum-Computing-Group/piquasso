@@ -122,30 +122,36 @@ class Beamsplitter(_PassiveLinearGate):
             - \theta e^{- i \phi} a^\dagger_j a_i
         \right ).
 
-    The symplectic representation of the beamsplitter gate is
+    The beamsplitter transfer matrix is given by
 
     .. math::
-        S_{(c)} = \begin{bmatrix}
+        U = \begin{bmatrix}
+            t & -r^* \\
+            r & t
+        \end{bmatrix},
+
+    where :math:`t = \cos(\theta)` and :math:`r = e^{i \phi} \sin(\theta)`.
+    Moreover, the symplectic representation of the beamsplitter gate is
+
+    .. math::
+        S_{(c)} = U \oplos U^* = \begin{bmatrix}
             t  & -r^* &    & \\
             r & t   &    & \\
                &     & t  & -r \\
                &     & r^* & t
-        \end{bmatrix},
-
-    where :math:`t = \cos(\theta)` and :math:`r = e^{i \phi} \sin(\theta)`.
+        \end{bmatrix}.
     """
 
     NUMBER_OF_MODES = 2
 
-    def __init__(self, theta: float = 0.0, phi: float = np.pi / 4) -> None:
+    def __init__(self, theta: float = np.pi / 4, phi: float = 0.0) -> None:
         r"""
         Args:
-            phi (float):
-                Phase angle of the beamsplitter.
-                (defaults to :math:`\phi = \pi/2` that gives a symmetric beamsplitter)
             theta (float):
                 The transmissivity angle of the beamsplitter.
-                (defaults to :math:`\theta=\pi/4` that gives a 50-50 beamsplitter)
+                Defaults to :math:`\theta=\pi/4`, which yields a 50:50 beamsplitter.
+            phi (float):
+                Phase angle of the beamsplitter. Defaults to :math:`\phi = 0`.
         """
 
         super().__init__(
@@ -171,6 +177,38 @@ class Beamsplitter(_PassiveLinearGate):
             ],
             dtype=config.complex_dtype,
         )
+
+
+class Beamsplitter5050(_PassiveLinearGate):
+    r"""Applies a 50:50 beamsplitter gate.
+
+    This gate corresponds to a regular beamsplitter gate :class:`Beamsplitter` with
+    parameters :math:`\theta = \frac{\pi}{4}` and :math:`\phi = 0`.
+
+    The beamsplitter transfer matrix is given by
+
+    .. math::
+        U = \frac{1}{\sqrt{2}} \begin{bmatrix}
+            1 & -1 \\
+            1 & 1
+        \end{bmatrix}.
+    """
+
+    NUMBER_OF_MODES = 2
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def _get_passive_block(self, calculator, config):
+        np = calculator.np
+
+        return np.array(
+            [
+                [1, -1],
+                [1, 1],
+            ],
+            dtype=config.dtype,
+        ) / np.sqrt(2)
 
 
 class Phaseshifter(_PassiveLinearGate):
