@@ -295,3 +295,8 @@ class FockState(BaseFockState):
             - expectation**2
         )
         return expectation, variance
+
+    def get_purity(self):
+        np = self._calculator.np
+        density_matrix = self.density_matrix
+        return np.real(np.einsum("ij,ji", density_matrix, density_matrix))
