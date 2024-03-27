@@ -18,7 +18,7 @@ import pytest
 import numpy as np
 
 from scipy.linalg import block_diag
-from piquasso._math.hafnian import (
+from piquasso._math.hafnian.utils import (
     hafnian,
     loop_hafnian,
     hafnian_with_reduction,
@@ -243,11 +243,11 @@ def test_loop_hafnian_of_complex_symmetric_block_diagonal_matrix(
     submatrix = generate_complex_symmetric_matrix(5)
     submatrix_loop_hafnian = loop_hafnian(submatrix)
 
-    matrix = block_diag(submatrix, submatrix.conj())
+    matrix = block_diag(submatrix, np.conj(submatrix))
     matrix_loop_hafnian = loop_hafnian(matrix)
 
     assert np.isclose(
-        submatrix_loop_hafnian.conj() * submatrix_loop_hafnian,
+        np.conj(submatrix_loop_hafnian) * submatrix_loop_hafnian,
         matrix_loop_hafnian,
     )
 
