@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from .passive_linear import passive_linear, beamsplitter5050
-from .misc import post_select_photons
+from .misc import post_select_photons, imperfect_post_select_photons
 
 __all__ = ["passive_linear", "beamsplitter5050", "post_select_photons"]
 

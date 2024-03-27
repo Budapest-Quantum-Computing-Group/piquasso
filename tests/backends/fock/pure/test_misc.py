@@ -148,3 +148,97 @@ def test_conditional_sign_flip_implementation():
     expected_state = expectation_simulator.execute(expectation_program).state
 
     assert np.allclose(expected_state.density_matrix, final_state.density_matrix)
+
+
+def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case():
+    d = 3
+
+    first_mode_state_vector = np.sqrt([0.2, 0.3, 0.5])
+
+    ns_gate_interferometer = np.array(
+        [
+            [1 - 2 ** (1 / 2), 2 ** (-1 / 4), np.sqrt(3 / 2 ** (1 / 2) - 2)],
+            [2 ** (-1 / 4), 1 / 2, 1 / 2 - np.sqrt(1 / 2)],
+            [np.sqrt(3 / 2 ** (1 / 2) - 2), 1 / 2 - np.sqrt(1 / 2), np.sqrt(2) - 1 / 2],
+        ]
+    )
+
+    trivial_detector_efficiency_matrix = np.identity(d)
+
+    with pq.Program() as preparation:
+        pq.Q(all) | pq.StateVector([0, 1, 0]) * first_mode_state_vector[0]
+        pq.Q(all) | pq.StateVector([1, 1, 0]) * first_mode_state_vector[1]
+        pq.Q(all) | pq.StateVector([2, 1, 0]) * first_mode_state_vector[2]
+
+        pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
+
+    with pq.Program() as imperfect_photon_detection_program:
+        pq.Q(all) | preparation
+
+        pq.Q(all) | pq.ImperfectPostSelectPhotons(
+            postselect_modes=(1, 2),
+            photon_counts=(1, 0),
+            detector_efficiency_matrix=trivial_detector_efficiency_matrix,
+        )
+
+    with pq.Program() as perfect_photon_detection_program:
+        pq.Q(all) | preparation
+
+        pq.Q(all) | pq.PostSelectPhotons(postselect_modes=(1, 2), photon_counts=(1, 0))
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=4))
+
+    imperfect_state = simulator.execute(imperfect_photon_detection_program).state
+    perfect_state = simulator.execute(perfect_photon_detection_program).state
+
+    imperfect_state.validate()
+    perfect_state.validate()
+
+    assert np.isclose(imperfect_state.get_purity(), 1.0)
+
+    assert np.allclose(imperfect_state.density_matrix, perfect_state.density_matrix)
+
+
+def test_NS_gate_with_ImperfectPostSelectPhotons():
+    d = 3
+
+    first_mode_state_vector = np.sqrt([0.2, 0.3, 0.5])
+
+    ns_gate_interferometer = np.array(
+        [
+            [1 - 2 ** (1 / 2), 2 ** (-1 / 4), np.sqrt(3 / 2 ** (1 / 2) - 2)],
+            [2 ** (-1 / 4), 1 / 2, 1 / 2 - np.sqrt(1 / 2)],
+            [np.sqrt(3 / 2 ** (1 / 2) - 2), 1 / 2 - np.sqrt(1 / 2), np.sqrt(2) - 1 / 2],
+        ]
+    )
+
+    detector_efficiency_matrix = np.array(
+        [[1.0, 0.1, 0.2], [0.0, 0.9, 0.2], [0.0, 0.0, 0.6]]
+    )
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0, 1, 0]) * first_mode_state_vector[0]
+        pq.Q(all) | pq.StateVector([1, 1, 0]) * first_mode_state_vector[1]
+        pq.Q(all) | pq.StateVector([2, 1, 0]) * first_mode_state_vector[2]
+
+        pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
+
+        pq.Q(all) | pq.ImperfectPostSelectPhotons(
+            postselect_modes=(1, 2),
+            photon_counts=(1, 0),
+            detector_efficiency_matrix=detector_efficiency_matrix,
+        )
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=4))
+
+    state = simulator.execute(program).state
+
+    state.validate()
+
+    reduced_state = state.reduced(modes=(0,))
+
+    reduced_state.validate()
+
+    assert np.allclose(
+        reduced_state.fock_probabilities, [0.23454297, 0.29905419, 0.46640284, 0.0]
+    )

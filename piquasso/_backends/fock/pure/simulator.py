@@ -32,6 +32,7 @@ from .calculations import (
     batch_prepare,
     batch_apply,
     post_select_photons,
+    imperfect_post_select_photons,
 )
 
 from ..calculations import attenuator
@@ -138,6 +139,7 @@ class PureFockSimulator(BuiltinSimulator):
         batch.BatchPrepare: batch_prepare,
         batch.BatchApply: batch_apply,
         misc.PostSelectPhotons: post_select_photons,
+        misc.ImperfectPostSelectPhotons: imperfect_post_select_photons,
     }
 
     _default_calculator_class = NumpyCalculator

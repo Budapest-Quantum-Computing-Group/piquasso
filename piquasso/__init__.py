@@ -103,7 +103,7 @@ from .instructions.batch import (
     BatchApply,
 )
 
-from .instructions.misc import PostSelectPhotons
+from .instructions.misc import PostSelectPhotons, ImperfectPostSelectPhotons
 
 __all__ = [
     # API
@@ -178,6 +178,7 @@ __all__ = [
     "BatchApply",
     # Misc
     "PostSelectPhotons",
+    "ImperfectPostSelectPhotons",
     # Modules
     "cvqnn",
 ]
