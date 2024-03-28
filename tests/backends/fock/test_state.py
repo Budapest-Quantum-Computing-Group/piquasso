@@ -31,6 +31,7 @@ def test_FockState_get_particle_detection_probability(SimulatorClass):
 
     simulator = SimulatorClass(d=2, config=pq.Config(cutoff=4))
     state = simulator.execute(program).state
+    state.normalize()
 
     probability = state.get_particle_detection_probability(occupation_number=(0, 2))
 
@@ -49,6 +50,7 @@ def test_FockState_quadratures_mean_variance(SimulatorClass):
 
     simulator = SimulatorClass(d=1, config=pq.Config(cutoff=6))
     state = simulator.execute(program).state
+    state.normalize()
 
     mean, var = state.quadratures_mean_variance(modes=(0,))
 
@@ -68,6 +70,7 @@ def test_FockState_wigner_function(SimulatorClass):
 
     simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
     state = simulator.execute(program).state
+    state.normalize()
 
     wigner_function_values = state.wigner_function(
         positions=[1, 1.1],
@@ -135,6 +138,7 @@ def test_FockState_fidelity(
 
     simulator = SimulatorClass(d=1, config=pq.Config(cutoff=6))
     state = simulator.execute(program).state
+    state.normalize()
 
     with pq.Program() as program_2:
         pq.Q() | pq.Vacuum()
@@ -142,6 +146,7 @@ def test_FockState_fidelity(
         pq.Q(0) | pq.Squeezing(r=0.2, phi=-np.pi / 2)
 
     state_2 = simulator.execute(program_2).state
+    state_2.normalize()
     fid = state.fidelity(state_2)
 
     assert np.isclose(fid, 0.92507584)

@@ -34,7 +34,7 @@ def measure_graph_size(f, *args):
 def calculate_mean_position(weights, cutoff, d, calculator):
     simulator = pq.PureFockSimulator(
         d,
-        pq.Config(cutoff=cutoff, normalize=False),
+        pq.Config(cutoff=cutoff),
         calculator=calculator,
     )
 

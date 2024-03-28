@@ -670,6 +670,8 @@ def test_Squeezing2_mean_photon_number():
 
         state = simulator.execute(program).state
 
+        state.normalize()
+
         fock_probabilities = state.fock_probabilities
 
     jacobian = tape.jacobian(fock_probabilities, [r])
@@ -856,7 +858,7 @@ def test_Displacement_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=3, normalize=False),
+        config=pq.Config(cutoff=3),
         calculator=pq.TensorflowCalculator(),
     )
 
@@ -892,7 +894,7 @@ def test_complex_Displacement_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=3, normalize=False),
+        config=pq.Config(cutoff=3),
         calculator=pq.TensorflowCalculator(),
     )
 
@@ -940,7 +942,7 @@ def test_Squeezing_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=3, normalize=False),
+        config=pq.Config(cutoff=3),
         calculator=pq.TensorflowCalculator(),
     )
 
@@ -977,7 +979,7 @@ def test_complex_Squeezing_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=3, normalize=False),
+        config=pq.Config(cutoff=3),
         calculator=pq.TensorflowCalculator(),
     )
 
@@ -1031,7 +1033,7 @@ def test_displaced_state_Squeezing_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=5, normalize=False),
+        config=pq.Config(cutoff=5),
         calculator=pq.TensorflowCalculator(),
     )
 
@@ -1074,7 +1076,7 @@ def test_displaced_state_Beamsplitter_state_vector_gradient():
 
     simulator = pq.PureFockSimulator(
         d=2,
-        config=pq.Config(cutoff=6, normalize=False),
+        config=pq.Config(cutoff=6),
         calculator=pq.TensorflowCalculator(),
     )
 

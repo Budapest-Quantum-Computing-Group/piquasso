@@ -47,7 +47,7 @@ def _pq_loss(weights, cutoff, calculator):
 
     simulator = pq.PureFockSimulator(
         d=d,
-        config=pq.Config(cutoff=cutoff, normalize=False),
+        config=pq.Config(cutoff=cutoff),
         calculator=calculator,
     )
 

@@ -144,8 +144,6 @@ def test_density_matrix_with_squeezed_state():
 
     gaussian_density_matrix = gaussian_state.density_matrix
 
-    normalization = 1 / sum(np.diag(gaussian_density_matrix))
-
     with pq.Program() as fock_program:
         pq.Q() | pq.Vacuum()
 
@@ -156,7 +154,7 @@ def test_density_matrix_with_squeezed_state():
 
     fock_density_matrix = fock_state.density_matrix
 
-    assert np.allclose(normalization * gaussian_density_matrix, fock_density_matrix)
+    assert np.allclose(gaussian_density_matrix, fock_density_matrix)
 
 
 @pytest.mark.parametrize(
@@ -832,11 +830,9 @@ def test_monkey_fock_probabilities_with_general_gaussian_transform(
 
     gaussian_representation_probabilities = gaussian_state.fock_probabilities
 
-    normalization = 1 / sum(gaussian_representation_probabilities)
-
     assert np.allclose(
         fock_representation_probabilities,
-        normalization * gaussian_representation_probabilities,
+        gaussian_representation_probabilities,
     )
 
 
@@ -873,11 +869,9 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
 
     gaussian_representation_probabilities = gaussian_state.fock_probabilities
 
-    normalization = 1 / sum(gaussian_representation_probabilities)
-
     assert np.allclose(
         fock_representation_probabilities,
-        normalization * gaussian_representation_probabilities,
+        gaussian_representation_probabilities,
     )
 
 

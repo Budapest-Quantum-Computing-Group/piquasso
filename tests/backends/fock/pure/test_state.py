@@ -164,7 +164,7 @@ def test_normalize_if_disabled_in_Config():
 
         pq.Q(all) | pq.Displacement(r=alpha_)
 
-    config = pq.Config(cutoff=cutoff, normalize=False)
+    config = pq.Config(cutoff=cutoff)
 
     simulator = pq.PureFockSimulator(d=d, config=config)
 
@@ -289,12 +289,12 @@ def test_PureFockState_displaced_state_variance_photon_number():
     d = 2
     cutoff = 10
 
-    alpha = 0.3 * np.exp(1j * np.pi / 5)
+    r = 0.3
 
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        pq.Q(0) | pq.Displacement(alpha)
+        pq.Q(0) | pq.Displacement(r, np.pi / 5)
 
         pq.Q(0, 1) | pq.Beamsplitter()
 
@@ -303,4 +303,4 @@ def test_PureFockState_displaced_state_variance_photon_number():
 
     variance = state.variance_photon_number()
 
-    assert np.isclose(variance, np.abs(alpha) ** 2)
+    assert np.isclose(variance, r**2)

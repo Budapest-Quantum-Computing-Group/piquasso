@@ -55,7 +55,7 @@ def test_BatchPureFockState_without_normalization():
 
         pq.Q() | pq.Beamsplitter(theta=np.pi / 6, phi=np.pi / 3)
 
-    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5, normalize=False))
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
 
     batch_state = simulator.execute(batch_program).state
 

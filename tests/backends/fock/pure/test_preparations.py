@@ -78,7 +78,7 @@ def test_create_annihilate_and_create():
     )
 
 
-def test_overflow_with_zero_norm_raises_InvalidState():
+def test_overflow_with_zero_norm_raises_InvalidState_when_normalized():
     with pq.Program() as program:
         pq.Q(2) | pq.StateVector([1]) * np.sqrt(2 / 5)
         pq.Q(1) | pq.StateVector([1]) * np.sqrt(3 / 5)
@@ -87,8 +87,10 @@ def test_overflow_with_zero_norm_raises_InvalidState():
 
     simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=3))
 
+    state = simulator.execute(program).state
+
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
-        simulator.execute(program).state
+        state.normalize()
 
     assert error.value.args[0] == "The norm of the state is 0."
 
@@ -133,7 +135,7 @@ def test_creation_on_multiple_modes():
     )
 
 
-def test_state_is_renormalized_after_overflow():
+def test_state_normalize_after_overflow():
     with pq.Program() as program:
         pq.Q(2) | pq.StateVector([1]) * np.sqrt(2 / 6)
         pq.Q(1) | pq.StateVector([1]) * np.sqrt(3 / 6)
@@ -144,6 +146,8 @@ def test_state_is_renormalized_after_overflow():
     simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=3))
 
     state = simulator.execute(program).state
+
+    state.normalize()
 
     assert np.isclose(state.norm, 1)
 

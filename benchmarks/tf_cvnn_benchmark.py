@@ -98,7 +98,7 @@ def _pq_state_vector(weights, cutoff, calculator):
 
     simulator = pq.PureFockSimulator(
         d=d,
-        config=pq.Config(cutoff=cutoff, normalize=False),
+        config=pq.Config(cutoff=cutoff),
         calculator=calculator,
     )
 

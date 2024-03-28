@@ -34,7 +34,7 @@ def _calculate_loss(target_state_vector, weights, cutoff):
 
     simulator = pq.PureFockSimulator(
         d=d,
-        config=pq.Config(cutoff=cutoff, normalize=False, dtype=np.float32),
+        config=pq.Config(cutoff=cutoff, dtype=np.float32),
         calculator=pq.JaxCalculator(),
     )
 
