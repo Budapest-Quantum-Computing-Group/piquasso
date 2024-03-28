@@ -238,8 +238,6 @@ def create(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
     state.state_vector = operator @ state.state_vector
 
-    state.normalize()
-
     return Result(state=state)
 
 
@@ -251,8 +249,6 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
     )
 
     state.state_vector = operator @ state.state_vector
-
-    state.normalize()
 
     return Result(state=state)
 
@@ -316,8 +312,6 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
         calculator,
     )
 
-    state.normalize()
-
     return Result(state=state)
 
 
@@ -354,8 +348,6 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
         mode=instruction.modes[0],
     )
 
-    state.normalize()
-
     return Result(state=state)
 
 
@@ -383,8 +375,6 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         instruction.modes[0],
         calculator,
     )
-
-    state.normalize()
 
     return Result(state=state)
 
@@ -415,8 +405,6 @@ def linear(
         _apply_squeezing(state, r=r, phi=0.0, mode=mode)
 
     _apply_passive_linear(state, unitary_last, modes, calculator)
-
-    state.normalize()
 
     return Result(state=state)
 

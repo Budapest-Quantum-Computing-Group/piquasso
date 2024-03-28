@@ -91,9 +91,6 @@ class BatchPureFockState(PureFockState):
         ]
 
     def normalize(self) -> None:
-        if not self._config.normalize:
-            return
-
         norms = self.norm
 
         if any(np.isclose(norm, 0) for norm in norms):

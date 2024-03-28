@@ -56,8 +56,6 @@ class TensorflowCalculator(BuiltinCalculator):
         non-differentiable, please use a deterministic attribute of the resulting state
         instead.
 
-    Note:
-        Currently JIT compilation only works with the config variable `normalize=False`.
     """
 
     def __init__(self, decorate_with=None):

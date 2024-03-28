@@ -85,7 +85,7 @@ def test_state_vector_and_jacobian(weights, cutoff, layer_count):
 def _calculate_piquasso_results(weights, cutoff, layer_count):
     simulator = pq.PureFockSimulator(
         d=1,
-        config=pq.Config(cutoff=cutoff, normalize=False),
+        config=pq.Config(cutoff=cutoff),
         calculator=pq.TensorflowCalculator(),
     )
 

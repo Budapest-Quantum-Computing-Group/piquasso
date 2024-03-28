@@ -59,6 +59,8 @@ def test_squeezing_probabilities(SimulatorClass):
     simulator = SimulatorClass(d=2, config=pq.Config(cutoff=3))
     state = simulator.execute(program).state
 
+    state.normalize()
+
     state.validate()
 
     assert np.isclose(
@@ -89,6 +91,8 @@ def test_displacement_probabilities(SimulatorClass):
 
     state = simulator.execute(program).state
 
+    state.normalize()
+
     state.validate()
 
     assert np.isclose(
@@ -110,6 +114,8 @@ def test_displacement_get_fock_prob(SimulatorClass):
     simulator = SimulatorClass(d=2, config=pq.Config(cutoff=8))
 
     state = simulator.execute(program).state
+
+    state.normalize()
 
     state.validate()
     assert np.isclose(
@@ -171,17 +177,13 @@ def test_PureFockState_squeezing_on_single_mode():
 
     assert len(nonzero_elements) == 2
 
-    normalization = 1 / np.sqrt((1 / np.cosh(r)) * (1 + np.tanh(r) ** 2 / 2))
-
     assert nonzero_elements[0][1] == (0,)
-    assert np.isclose(nonzero_elements[0][0], normalization * 1 / np.sqrt(np.cosh(r)))
+    assert np.isclose(nonzero_elements[0][0], 1 / np.sqrt(np.cosh(r)))
 
     assert nonzero_elements[1][1] == (2,)
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization
-        * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2))
-        / np.sqrt(np.cosh(r)),
+        (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)) / np.sqrt(np.cosh(r)),
     )
 
 
@@ -203,17 +205,13 @@ def test_PureFockState_squeezing():
 
     assert len(nonzero_elements) == 2
 
-    normalization = 1 / np.sqrt((1 / np.cosh(r)) * (1 + np.tanh(r) ** 2 / 2))
-
     assert nonzero_elements[0][1] == (0, 0)
-    assert np.isclose(nonzero_elements[0][0], normalization * 1 / np.sqrt(np.cosh(r)))
+    assert np.isclose(nonzero_elements[0][0], 1 / np.sqrt(np.cosh(r)))
 
     assert nonzero_elements[1][1] == (2, 0)
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization
-        * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2))
-        / np.sqrt(np.cosh(r)),
+        (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)) / np.sqrt(np.cosh(r)),
     )
 
 
@@ -234,25 +232,16 @@ def test_PureFockState_displacement():
 
     assert len(nonzero_elements) == 3
 
-    normalization = 1 / np.sqrt(
-        np.exp(-np.abs(alpha) ** 2)
-        * (1 + np.abs(alpha) ** 2 + np.abs(alpha) ** 4 / np.sqrt(4))
-    )
-
     assert nonzero_elements[0][1] == (0, 0)
-    assert np.isclose(
-        nonzero_elements[0][0], normalization * np.exp(-np.abs(alpha) ** 2 / 2)
-    )
+    assert np.isclose(nonzero_elements[0][0], np.exp(-np.abs(alpha) ** 2 / 2))
 
     assert nonzero_elements[1][1] == (1, 0)
-    assert np.isclose(
-        nonzero_elements[1][0], normalization * np.exp(-np.abs(alpha) ** 2 / 2) * alpha
-    )
+    assert np.isclose(nonzero_elements[1][0], np.exp(-np.abs(alpha) ** 2 / 2) * alpha)
 
     assert nonzero_elements[2][1] == (2, 0)
     assert np.isclose(
         nonzero_elements[2][0],
-        normalization * np.exp(-np.abs(alpha) ** 2 / 2) * (alpha**2) / np.sqrt(2),
+        np.exp(-np.abs(alpha) ** 2 / 2) * (alpha**2) / np.sqrt(2),
     )
 
 
@@ -275,27 +264,25 @@ def test_FockState_squeezing():
 
     two_particle_probability = (1 / np.cosh(r)) * np.tanh(r) ** 2 / 2
 
-    normalization = 1 / (vacuum_probability + two_particle_probability)
-
     assert len(nonzero_elements) == 4
 
     assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-    assert np.isclose(nonzero_elements[0][0], normalization * vacuum_probability)
+    assert np.isclose(nonzero_elements[0][0], vacuum_probability)
 
     assert nonzero_elements[1][1] == ((0, 0), (2, 0))
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization * (-np.exp(-1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
+        (-np.exp(-1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
     )
 
     assert nonzero_elements[2][1] == ((2, 0), (0, 0))
     assert np.isclose(
         nonzero_elements[2][0],
-        normalization * (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
+        (-np.exp(1j * phi) * np.tanh(r) / np.sqrt(2)) / np.cosh(r),
     )
 
     assert nonzero_elements[3][1] == ((2, 0), (2, 0))
-    assert np.isclose(nonzero_elements[3][0], normalization * two_particle_probability)
+    assert np.isclose(nonzero_elements[3][0], two_particle_probability)
 
 
 def test_FockState_displacement():
@@ -318,26 +305,22 @@ def test_FockState_displacement():
 
     one_particle_probability = np.exp(-np.abs(alpha) ** 2) * np.abs(alpha) ** 2
 
-    normalization = 1 / (vacuum_probability + one_particle_probability)
-
     assert nonzero_elements[0][1] == ((0, 0), (0, 0))
-    assert np.isclose(nonzero_elements[0][0], normalization * vacuum_probability)
+    assert np.isclose(nonzero_elements[0][0], vacuum_probability)
 
     assert nonzero_elements[1][1] == ((0, 0), (1, 0))
     assert np.isclose(
         nonzero_elements[1][0],
-        normalization * np.exp(-np.abs(alpha) ** 2) * alpha.conj(),
+        np.exp(-np.abs(alpha) ** 2) * alpha.conj(),
     )
 
     assert nonzero_elements[2][1] == ((1, 0), (0, 0))
-    assert np.isclose(
-        nonzero_elements[2][0], normalization * np.exp(-np.abs(alpha) ** 2) * alpha
-    )
+    assert np.isclose(nonzero_elements[2][0], np.exp(-np.abs(alpha) ** 2) * alpha)
 
     assert nonzero_elements[3][1] == ((1, 0), (1, 0))
     assert np.isclose(
         nonzero_elements[3][0],
-        normalization * one_particle_probability,
+        one_particle_probability,
     )
 
 
@@ -349,6 +332,7 @@ def test_FockState_cubic_phase():
 
     simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=5))
     state = simulator.execute(program).state
+    state.normalize()
 
     x_mean, x_var = state.quadratures_mean_variance(modes=(0,))
     p_mean, p_var = state.quadratures_mean_variance(modes=(0,), phi=np.pi / 2)
@@ -367,6 +351,7 @@ def test_PureFockState_cubic_phase():
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
     state = simulator.execute(program).state
+    state.normalize()
 
     x_mean, x_var = state.quadratures_mean_variance(modes=(0,))
     p_mean, p_var = state.quadratures_mean_variance(modes=(1,), phi=np.pi / 2)

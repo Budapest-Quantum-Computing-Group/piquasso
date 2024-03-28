@@ -202,8 +202,6 @@ def create(state: FockState, instruction: Instruction, shots: int) -> Result:
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
 
-    state.normalize()
-
     return Result(state=state)
 
 
@@ -215,8 +213,6 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
     )
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
-
-    state.normalize()
 
     return Result(state=state)
 
@@ -249,8 +245,6 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
         calculator=state._calculator,
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
-
-    state.normalize()
 
     return Result(state=state)
 
@@ -357,8 +351,6 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
-    state.normalize()
-
     return Result(state=state)
 
 
@@ -376,8 +368,6 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
     )
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
-
-    state.normalize()
 
     return Result(state=state)
 
@@ -415,8 +405,6 @@ def linear(
         _apply_active_gate_matrix_to_state(state, matrix, mode)
 
     _apply_passive_linear(state, unitary_last, modes)
-
-    state.normalize()
 
     return Result(state=state)
 

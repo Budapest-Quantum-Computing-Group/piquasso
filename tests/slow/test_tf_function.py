@@ -36,7 +36,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(),
         )
 
@@ -105,7 +105,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(),
         )
 
@@ -174,7 +174,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(decorate_with=tf.function),
         )
 
@@ -243,7 +243,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(decorate_with=tf.function),
         )
 
@@ -312,7 +312,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(
                 decorate_with=tf.function(jit_compile=True)
             ),
@@ -383,7 +383,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
     def func(weights):
         simulator = pq.PureFockSimulator(
             d=d,
-            config=pq.Config(cutoff=cutoff, normalize=False),
+            config=pq.Config(cutoff=cutoff),
             calculator=pq.TensorflowCalculator(
                 decorate_with=tf.function(jit_compile=True)
             ),
@@ -459,7 +459,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator):
     @decorator
     def func(initial_state_vector, weights):
         calculator = pq.TensorflowCalculator()
-        config = pq.Config(cutoff=cutoff, normalize=False)
+        config = pq.Config(cutoff=cutoff)
 
         initial_state = pq.PureFockState(d=1, calculator=calculator, config=config)
 
