@@ -81,10 +81,15 @@ class PureFockState(BaseFockState):
         )
 
     def _nonzero_elements_for_single_state_vector(self, state_vector):
-        for index, basis in enumerate(self._space):
-            coefficient: complex = state_vector[index]
-            if not np.isclose(coefficient, 0.0):
-                yield coefficient, tuple(basis)
+        np = self._calculator.np
+        nonzero_indices = np.nonzero(state_vector)[0]
+
+        occupation_numbers = self._space[nonzero_indices]
+
+        nonzero_elements = state_vector[nonzero_indices]
+
+        for index, coefficient in enumerate(nonzero_elements):
+            yield coefficient, tuple(occupation_numbers[index])
 
     @property
     def nonzero_elements(self):
