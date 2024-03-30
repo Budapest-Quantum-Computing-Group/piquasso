@@ -38,7 +38,7 @@ class BaseFockState(State, abc.ABC):
         return self._d
 
     @property
-    def norm(self) -> int:
+    def norm(self) -> float:
         return self._calculator.np.sum(self.fock_probabilities)
 
     def _as_code(self) -> str:
