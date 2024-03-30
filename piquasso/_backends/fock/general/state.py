@@ -21,7 +21,7 @@ from piquasso.api.calculator import BaseCalculator
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso._math.linalg import is_selfadjoint
-from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis, operator_basis
+from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_index_in_fock_space_array,
@@ -86,10 +86,22 @@ class FockState(BaseFockState):
     def nonzero_elements(
         self,
     ) -> Generator[Tuple[complex, Tuple], Any, None]:
-        for index, basis in operator_basis(self._space):
-            coefficient = self._density_matrix[index]
-            if coefficient != 0:
-                yield coefficient, (tuple(basis[0]), tuple(basis[1]))
+        np = self._calculator.np
+
+        nonzero_indices = np.nonzero(self._density_matrix)
+
+        row_indices, col_indices = nonzero_indices
+
+        row_occupation_numbers = self._space[row_indices]
+        col_occupation_numbers = self._space[col_indices]
+
+        nonzero_elements = self._density_matrix[nonzero_indices]
+
+        for index, coefficient in enumerate(nonzero_elements):
+            yield coefficient, (
+                tuple(row_occupation_numbers[index]),
+                tuple(col_occupation_numbers[index]),
+            )
 
     def __repr__(self) -> str:
         return " + ".join(
