@@ -200,6 +200,11 @@ class FockState(BaseFockState):
 
         return reduced_state
 
+    @property
+    def norm(self) -> float:
+        np = self._calculator.np
+        return np.real(np.trace(self._density_matrix))
+
     def normalize(self) -> None:
         """Normalizes the density matrix to have a trace of 1.
 
