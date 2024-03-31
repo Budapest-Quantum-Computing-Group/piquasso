@@ -29,6 +29,7 @@ def post_select_photons(
         subspace_basis=instruction.params["photon_counts"],
         modes=instruction.params["postselect_modes"],
         normalization=1.0,
+        calculator=state._calculator,
     )
 
     return Result(state=state)

@@ -72,6 +72,7 @@ def particle_number_measurement(
         subspace_basis=sample,
         modes=instruction.modes,
         normalization=normalization,
+        calculator=state._calculator,
     )
 
     return Result(state=state, samples=samples)
