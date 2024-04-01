@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.instructions.misc import PostSelectPhotons
+from piquasso.instructions.measurements import PostSelectPhotons
 from piquasso.api.result import Result
 
-from .utils import project_to_subspace
+
+from ...calculations import get_projection_operator_indices
 
 from ..state import PureFockState
 
@@ -24,12 +25,28 @@ from ..state import PureFockState
 def post_select_photons(
     state: PureFockState, instruction: PostSelectPhotons, shots: int
 ) -> Result:
-    project_to_subspace(
-        state,
-        subspace_basis=instruction.params["photon_counts"],
-        modes=instruction.params["postselect_modes"],
-        normalization=1.0,
+    calculator = state._calculator
+
+    postselect_modes = instruction.params["postselect_modes"]
+
+    photon_counts = instruction.params["photon_counts"]
+
+    index = get_projection_operator_indices(
+        d=state.d,
+        cutoff=state._config.cutoff,
+        modes=postselect_modes,
+        basis_vector=photon_counts,
+    )
+    small_index = calculator.fallback_np.arange(index.shape[0])
+
+    new_state = PureFockState(
+        d=state.d - len(postselect_modes),
         calculator=state._calculator,
+        config=state._config,
     )
 
-    return Result(state=state)
+    new_state.state_vector = calculator.assign(
+        new_state.state_vector, small_index, state.state_vector[index]
+    )
+
+    return Result(state=new_state)

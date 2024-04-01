@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from .passive_linear import passive_linear
-from .misc import post_select_photons
+from .measurements import post_select_photons
 
 __all__ = ["passive_linear", "post_select_photons"]
 

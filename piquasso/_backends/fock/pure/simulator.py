@@ -42,7 +42,6 @@ from piquasso.instructions import (
     measurements,
     channels,
     batch,
-    misc,
 )
 
 from piquasso._backends.calculator import (
@@ -132,10 +131,10 @@ class PureFockSimulator(BuiltinSimulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.PostSelectPhotons: post_select_photons,
         channels.Attenuator: attenuator,
         batch.BatchPrepare: batch_prepare,
         batch.BatchApply: batch_apply,
-        misc.PostSelectPhotons: post_select_photons,
     }
 
     _default_calculator_class = NumpyCalculator
