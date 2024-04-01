@@ -88,6 +88,7 @@ from .instructions.measurements import (
     HomodyneMeasurement,
     HeterodyneMeasurement,
     GeneraldyneMeasurement,
+    PostSelectPhotons,
 )
 
 from .instructions.channels import (
@@ -102,7 +103,6 @@ from .instructions.batch import (
     BatchApply,
 )
 
-from .instructions.misc import PostSelectPhotons
 
 __all__ = [
     # API
@@ -166,6 +166,7 @@ __all__ = [
     "HomodyneMeasurement",
     "HeterodyneMeasurement",
     "GeneraldyneMeasurement",
+    "PostSelectPhotons",
     # Channels
     "DeterministicGaussianChannel",
     "Attenuator",
@@ -174,8 +175,6 @@ __all__ = [
     # Batch
     "BatchPrepare",
     "BatchApply",
-    # Misc
-    "PostSelectPhotons",
     # Modules
     "cvqnn",
 ]

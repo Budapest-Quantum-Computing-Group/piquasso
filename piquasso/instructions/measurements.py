@@ -22,6 +22,8 @@
 
 """
 
+from typing import Tuple
+
 import numpy as np
 
 from piquasso.api.exceptions import InvalidParameter
@@ -188,4 +190,51 @@ class HeterodyneMeasurement(Measurement):
             extra_params=dict(
                 detection_covariance=np.identity(2),
             ),
+        )
+
+
+class PostSelectPhotons(Measurement):
+    """Post-selection on detected photon numbers.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector([0, 1, 0]) * np.sqrt(0.2)
+            pq.Q(all) | pq.StateVector([1, 1, 0]) * np.sqrt(0.3)
+            pq.Q(all) | pq.StateVector([2, 1, 0]) * np.sqrt(0.5)
+
+            pq.Q(0) | pq.Phaseshifter(np.pi)
+
+            pq.Q(1, 2) | pq.Beamsplitter(np.pi / 8)
+            pq.Q(0, 1) | pq.Beamsplitter(1.1437)
+            pq.Q(1, 2) | pq.Beamsplitter(-np.pi / 8)
+
+            pq.Q(all) | pq.PostSelectPhotons(
+                postselect_modes=(1, 2), photon_counts=(1, 0)
+            )
+
+        simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
+
+        state = simulator.execute(program).state
+
+
+    Note:
+        The resulting state is not normalized. To normalize it, use
+        :meth:`~piquasso._backends.fock.pure.state.PureFockState.normalize`. Moreover,
+        it is a state over the remaining modes, i.e., if the 2 modes are post-selected,
+        then the resulting state will be defined on a system with 2 modes less.
+    """
+
+    def __init__(
+        self, postselect_modes: Tuple[int, ...], photon_counts: Tuple[int, ...]
+    ):
+        """
+        Args:
+            postselect_modes (Tuple[int, ...]): The modes to post-select on.
+            photon_counts (Tuple[int, ...]):
+                The desired photon numbers on the specified modes.
+        """
+
+        super().__init__(
+            params=dict(postselect_modes=postselect_modes, photon_counts=photon_counts)
         )
