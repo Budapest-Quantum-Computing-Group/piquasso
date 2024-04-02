@@ -27,14 +27,7 @@ from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from theboss.distribution_calculators.bs_distribution_calculator_with_fixed_losses import (  # noqa: E501
-    BSDistributionCalculatorWithFixedLosses,
-    BosonSamplingExperimentConfiguration,
-)
-
-from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
-    RyserGuanPermanentCalculator,
-)
+from .utils import calculate_distribution
 
 
 class SamplingState(State):
@@ -119,24 +112,10 @@ class SamplingState(State):
         )
 
     def _get_fock_probabilities_on_subspace(self) -> List[float]:
-        """
-        The order of the returned Fock states is lexicographic, according to
-        `theboss.boson_sampling_utilities.boson_sampling_utilities
-        .generate_possible_outputs`
-        """
-        permanent_calculator = RyserGuanPermanentCalculator(self.interferometer)
-        config = BosonSamplingExperimentConfiguration(
-            interferometer_matrix=self.interferometer,
-            initial_state=np.asarray(self.initial_state),
-            number_of_modes=self.d,
-            initial_number_of_particles=self.particle_number,
-            number_of_particles_lost=0,
-            number_of_particles_left=self.particle_number,
+        # NOTE: The order of the returned Fock states is anti-lexicographic.
+        return calculate_distribution(
+            self.interferometer, self.initial_state, self._config, self._calculator
         )
-        distribution_calculator = BSDistributionCalculatorWithFixedLosses(
-            config, permanent_calculator
-        )
-        return distribution_calculator.calculate_distribution()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SamplingState):

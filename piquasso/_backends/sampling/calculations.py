@@ -15,6 +15,8 @@
 
 from typing import Tuple
 
+from functools import partial
+
 import numpy as np
 from piquasso._backends.sampling.state import SamplingState
 
@@ -26,30 +28,11 @@ from piquasso.api.exceptions import InvalidState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from theboss.boson_sampling_simulator import BosonSamplingSimulator
 
-# The fastest implemented permanent calculator is currently Ryser-Guan
-from theboss.boson_sampling_utilities.permanent_calculators.bs_permanent_calculator_interface import (  # noqa: E501
-    BSPermanentCalculatorInterface,
-)
-from theboss.boson_sampling_utilities.permanent_calculators.ryser_guan_permanent_calculator import (  # noqa: E501
-    RyserGuanPermanentCalculator,
-)
-
-# Fastest boson sampling algorithm generalized for bunched states
-from theboss.simulation_strategies.generalized_cliffords_simulation_strategy import (
-    GeneralizedCliffordsSimulationStrategy,
-)
-from theboss.simulation_strategies.generalized_cliffords_uniform_losses_simulation_strategy import (  # noqa: E501
-    GeneralizedCliffordsUniformLossesSimulationStrategy,
-)
-
-# Fastest BS algorithm generalized for bunched states, but with lossy network
-from theboss.simulation_strategies.lossy_networks_generalized_cliffords_simulation_strategy import (  # noqa: E501
-    LossyNetworksGeneralizedCliffordsSimulationStrategy,
-)
-from theboss.simulation_strategies.simulation_strategy_interface import (
-    SimulationStrategyInterface,
+from .utils import (
+    generate_lossless_samples,
+    generate_uniform_lossy_samples,
+    generate_lossy_samples,
 )
 
 
@@ -137,43 +120,52 @@ def particle_number_measurement(
     from [Brod, Oszmaniec 2020] see
     `this article <https://arxiv.org/pdf/1612.01199.pdf>`_ for more details.
 
+    This is a contribution implementation from `theboss`, see
+    https://github.com/Tomev-CTP/theboss.
+
     This method assumes that initial_state is given in the second quantization
-    description (mode occupation). `theboss` module requires the input states to be
-    numpy arrays, therefore the state is prepared as accordingly.
+    description (mode occupation).
 
     Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
     as it allows effective simulation of broader range of input states than original
     algorithm.
     """
 
-    initial_state = np.array(state.initial_state)
-    permanent_calculator = RyserGuanPermanentCalculator(
-        matrix=state.interferometer, input_state=initial_state
-    )
+    initial_state = state.initial_state
 
-    simulation_strategy = _get_sampling_simulation_strategy(state, permanent_calculator)
+    interferometer_svd = np.linalg.svd(state.interferometer)
 
-    sampling_simulator = BosonSamplingSimulator(simulation_strategy)
+    singular_values = interferometer_svd[1]
 
-    samples = sampling_simulator.get_classical_simulation_results(
-        initial_state, samples_number=shots
-    )
-
-    return Result(state=state, samples=list(map(tuple, samples)))
-
-
-def _get_sampling_simulation_strategy(
-    state: SamplingState, permanent_calculator: BSPermanentCalculatorInterface
-) -> SimulationStrategyInterface:
     if not state.is_lossy:
-        return GeneralizedCliffordsSimulationStrategy(permanent_calculator)
-
-    _, singular_values, _ = np.linalg.svd(state.interferometer)
-
-    if np.all(np.isclose(singular_values, singular_values[0])):
+        calculate_permanent = partial(
+            state._calculator.permanent, matrix=state.interferometer
+        )
+        samples = generate_lossless_samples(
+            initial_state, shots, calculate_permanent, state._config.rng
+        )
+    elif np.all(np.isclose(singular_values, singular_values[0])):
         uniform_transmission_probability = singular_values[0] ** 2
-        return GeneralizedCliffordsUniformLossesSimulationStrategy(
-            permanent_calculator, uniform_transmission_probability
+
+        calculate_permanent = partial(
+            state._calculator.permanent, matrix=state.interferometer
         )
 
-    return LossyNetworksGeneralizedCliffordsSimulationStrategy(permanent_calculator)
+        samples = generate_uniform_lossy_samples(
+            initial_state,
+            shots,
+            calculate_permanent,
+            uniform_transmission_probability,
+            state._config.rng,
+        )
+
+    else:
+        samples = generate_lossy_samples(
+            initial_state,
+            shots,
+            state._calculator.permanent,
+            interferometer_svd,
+            state._config.rng,
+        )
+
+    return Result(state=state, samples=list(map(tuple, samples)))
