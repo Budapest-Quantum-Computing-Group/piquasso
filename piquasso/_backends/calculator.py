@@ -19,7 +19,7 @@ import numpy as np
 
 from functools import partial
 
-from piquasso._math.permanent import np_glynn_gray_permanent, glynn_gray_permanent
+from piquasso._math.permanent import permanent
 from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
 
 from piquasso.api.calculator import BaseCalculator
@@ -77,7 +77,7 @@ class NumpyCalculator(_BuiltinCalculator):
         self.sqrtm = scipy.linalg.sqrtm
         self.svd = np.linalg.svd
 
-        self.permanent = np_glynn_gray_permanent
+        self.permanent = permanent
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
 
@@ -227,9 +227,6 @@ class TensorflowCalculator(_BuiltinCalculator):
         )
 
         return block_diagonalized.to_dense()
-
-    def permanent(self, matrix, rows, columns):
-        return glynn_gray_permanent(matrix, rows, columns, np=self.np)
 
     def assign(self, array, index, value):
         # NOTE: This method is very limited, and is a bit hacky, since TF does not

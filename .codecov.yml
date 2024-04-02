@@ -1,3 +1,4 @@
 ignore:
   - tests/**/*
   - piquasso/_math/hafnian/*
+  - piquasso/_math/permanent.py
