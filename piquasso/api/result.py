@@ -13,31 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TypeVar, List, Tuple, Generic, Optional
+from typing import List, Tuple, Optional
 
 from piquasso.api.state import State
 
-TNum = TypeVar("TNum", int, float)
 
-TState = TypeVar("TState", bound=State)
-
-
-class Result(Generic[TState, TNum]):
+class Result:
     """Class for collecting results."""
 
-    def __init__(
-        self,
-        state: TState,
-        samples: Optional[List[Tuple[TNum, ...]]] = None,
-    ) -> None:
+    def __init__(self, state: State, samples: Optional[List[Tuple]] = None) -> None:
         """
         Args:
             state (State): The resulting simulated state.
             samples (list[tuple[int or float]]): The generated samples.
         """
 
-        self.state: TState = state
-        self.samples: List[Tuple[TNum, ...]] = samples or []
+        self.state: State = state
+        self.samples: List[Tuple] = samples or []
 
     def __repr__(self) -> str:
         return f"<Result samples={self.samples} state={self.state}>"
