@@ -42,10 +42,8 @@ class SamplingState(State):
         """
         super().__init__(calculator=calculator, config=config)
 
-        self.initial_state: np.ndarray = np.zeros((d,), dtype=int)
-        self.interferometer: np.ndarray = np.diag(
-            np.ones(d, dtype=self._config.complex_dtype)
-        )
+        self.initial_state = np.zeros((d,), dtype=int)
+        self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
 
         self.is_lossy = False
 
@@ -96,6 +94,7 @@ class SamplingState(State):
 
     @property
     def state_vector(self):
+        np = self._calculator.np
         state_vector_on_smaller_subspaces = np.zeros(
             shape=cutoff_cardinality(d=self.d, cutoff=self.particle_number),
             dtype=self._config.dtype,

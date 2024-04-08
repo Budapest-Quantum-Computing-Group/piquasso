@@ -226,7 +226,8 @@ def test_LossyInterferometer_raises_InvalidParameter_for_invalid_matrix(
         pq.LossyInterferometer(invalid_matrix)
 
 
-def test_Interferometer_fock_probabilities():
+@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
+def test_Interferometer_fock_probabilities(calculator):
     U = np.array(
         [
             [
@@ -272,7 +273,7 @@ def test_Interferometer_fock_probabilities():
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -534,7 +535,8 @@ def test_Interferometer_fock_probabilities():
     )
 
 
-def test_LossyInterferometer_fock_probabilities():
+@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
+def test_LossyInterferometer_fock_probabilities(calculator):
     U = np.array(
         [
             [
@@ -584,7 +586,7 @@ def test_LossyInterferometer_fock_probabilities():
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -846,7 +848,8 @@ def test_LossyInterferometer_fock_probabilities():
     )
 
 
-def test_Interferometer_state_vector():
+@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
+def test_Interferometer_state_vector(calculator):
     U = np.array(
         [
             [
@@ -892,7 +895,7 @@ def test_Interferometer_state_vector():
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -1154,7 +1157,8 @@ def test_Interferometer_state_vector():
     )
 
 
-def test_LossyInterferometer_state_vector():
+@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
+def test_LossyInterferometer_state_vector(calculator):
     U = np.array(
         [
             [
@@ -1204,7 +1208,7 @@ def test_LossyInterferometer_state_vector():
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
     state = simulator.execute(program).state
 
     assert np.allclose(

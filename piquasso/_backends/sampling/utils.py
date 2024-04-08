@@ -37,8 +37,11 @@ def calculate_state_vector(interferometer, initial_state, config, calculator):
     detection.
     """
 
+    np = calculator.np
+    fallback_np = calculator.fallback_np
+
     possible_outputs = partitions(
-        particles=np.sum(initial_state),
+        particles=calculator.fallback_np.sum(initial_state),
         boxes=len(initial_state),
     )
 
@@ -49,11 +52,13 @@ def calculate_state_vector(interferometer, initial_state, config, calculator):
     for idx, output in enumerate(possible_outputs):
         permanent = calculator.permanent(interferometer, cols=input, rows=output)
 
-        state_vector_coefficient = permanent / np.sqrt(np.prod(factorial(output)))
+        state_vector_coefficient = permanent / fallback_np.sqrt(
+            fallback_np.prod(factorial(output))
+        )
 
-        state_vector[idx] = state_vector_coefficient
+        state_vector = calculator.assign(state_vector, idx, state_vector_coefficient)
 
-    state_vector /= np.sqrt(np.prod(factorial(input)))
+    state_vector /= fallback_np.sqrt(fallback_np.prod(factorial(input)))
 
     return state_vector
 
@@ -64,8 +69,11 @@ def calculate_distribution(interferometer, initial_state, config, calculator):
     detection.
     """
 
+    np = calculator.np
+    fallback_np = calculator.fallback_np
+
     possible_outputs = partitions(
-        particles=np.sum(initial_state),
+        particles=fallback_np.sum(initial_state),
         boxes=len(initial_state),
     )
 
@@ -78,11 +86,13 @@ def calculate_distribution(interferometer, initial_state, config, calculator):
             np.abs(calculator.permanent(interferometer, cols=input, rows=output)) ** 2
         )
 
-        output_probability = permanent_squared / np.prod(factorial(output))
+        output_probability = permanent_squared / fallback_np.prod(factorial(output))
 
-        output_probabilities[idx] = output_probability
+        output_probabilities = calculator.assign(
+            output_probabilities, idx, output_probability
+        )
 
-    output_probabilities /= np.prod(factorial(input))
+    output_probabilities /= fallback_np.prod(factorial(input))
 
     return output_probabilities
 
