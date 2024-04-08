@@ -79,9 +79,13 @@ def passive_linear(
 def _apply_matrix_on_modes(
     state: SamplingState, matrix: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
+    calculator = state._calculator
+    np = calculator.np
+    fallback_np = calculator.fallback_np
+
     embedded = np.identity(len(state.interferometer), dtype=state._config.complex_dtype)
 
-    embedded[np.ix_(modes, modes)] = matrix
+    embedded = calculator.assign(embedded, fallback_np.ix_(modes, modes), matrix)
 
     state.interferometer = embedded @ state.interferometer
 

@@ -81,19 +81,26 @@ def block_reduce(array: np.ndarray, reduce_on: Tuple[int, ...]) -> np.ndarray:
     return reduce_(array, reduce_on=(reduce_on * 2))
 
 
-def assym_reduce(
-    array: np.ndarray, row_reduce_on: Iterable[int], column_reduce_on: Iterable[int]
-) -> np.ndarray:
-    proper_row_index = []
-    proper_column_index = []
+def assym_reduce(array, row_reduce_on, col_reduce_on):
+    particles = np.sum(row_reduce_on)
 
-    for index, multiplier in enumerate(row_reduce_on):
-        proper_row_index.extend([index] * multiplier)
+    proper_row_index = np.zeros(particles, dtype=int)
+    proper_col_index = np.zeros(particles, dtype=int)
 
-    for index, multiplier in enumerate(column_reduce_on):
-        proper_column_index.extend([index] * multiplier)
+    row_stride = 0
+    col_stride = 0
 
-    return array[np.ix_(proper_column_index, proper_row_index)]
+    for index in range(len(row_reduce_on)):
+        row_multiplier = row_reduce_on[index]
+        col_multiplier = col_reduce_on[index]
+
+        proper_row_index[row_stride : row_stride + row_multiplier] = index
+        proper_col_index[col_stride : col_stride + col_multiplier] = index
+
+        row_stride += row_multiplier
+        col_stride += col_multiplier
+
+    return array[np.ix_(proper_row_index, proper_col_index)]
 
 
 def vector_absolute_square(vector, calculator):

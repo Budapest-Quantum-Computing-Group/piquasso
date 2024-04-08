@@ -487,6 +487,8 @@ class JaxCalculator(_BuiltinCalculator):
 
         config.update("jax_enable_x64", True)
 
+        from piquasso._math.jax.permanent import permanent_with_reduction
+
         self.np = jnp
         self._scipy = jax.scipy
         self.fallback_np = np
@@ -498,6 +500,7 @@ class JaxCalculator(_BuiltinCalculator):
         self.powm = jnp.linalg.matrix_power
         self.sqrtm = jax.scipy.linalg.sqrtm
         self.svd = jnp.linalg.svd
+        self.permanent = permanent_with_reduction
 
     def preprocess_input_for_custom_gradient(self, value):
         return value

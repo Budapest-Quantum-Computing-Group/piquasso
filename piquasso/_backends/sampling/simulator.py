@@ -16,7 +16,7 @@
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._backends.calculator import NumpyCalculator
+from piquasso._backends.calculator import NumpyCalculator, JaxCalculator
 
 from .state import SamplingState
 from .calculations import (
@@ -89,3 +89,5 @@ class SamplingSimulator(BuiltinSimulator):
     _state_class = SamplingState
 
     _default_calculator_class = NumpyCalculator
+
+    _extra_builtin_calculators = [JaxCalculator]
