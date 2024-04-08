@@ -136,9 +136,7 @@ class FockState(BaseFockState):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
-
-        return np.diag(self._density_matrix).real[:cardinality]
+        return self._calculator.np.real(self._calculator.np.diag(self._density_matrix))
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
