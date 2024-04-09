@@ -129,6 +129,27 @@ def test_fourier():
     simulator.execute(program, shots=1)
 
 
+def test_multiple_StateVector_with_ParticleNumberMeasurement_raises_error():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
+        pq.Q() | pq.StateVector([1, 1, 0, 1, 0]) * 1 / np.sqrt(2)
+
+        pq.Q(0) | pq.Fourier()
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=5)
+
+    with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as error:
+        simulator.execute(program, shots=1)
+
+    assert error.value.args[0] == (
+        "The instruction <pq.ParticleNumberMeasurement(modes=(0, 1, 2, 3, 4))> is "
+        "not supported for states defined using multiple 'StateVector' instructions.\n"
+        "If you need this feature to be implemented, please create an issue at "
+        "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+    )
+
+
 def test_uniform_loss():
     d = 5
 

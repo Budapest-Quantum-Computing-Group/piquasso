@@ -23,5 +23,10 @@ def test_StateVector_is_valid_specifying_floats_close_to_integers():
 
 
 def test_StateVector_raises_InvalidState_when_nonintegers_specified():
-    with pytest.raises(pq.api.exceptions.InvalidState):
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
         pq.StateVector([1, 1.3, 2.4])
+
+    assert error.value.args[0] == (
+        "Invalid occupation numbers: occupation_numbers=[1, 1.3, 2.4]\n"
+        "Occupation numbers must contain non-negative integers."
+    )

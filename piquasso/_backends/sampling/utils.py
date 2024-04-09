@@ -33,8 +33,7 @@ __author__ = "Tomasz Rybotycki"
 
 def calculate_state_vector(interferometer, initial_state, config, calculator):
     """
-    Calculates the probability distribution corresponding to particle number
-    detection.
+    Calculates the state vector on the particle subspace defined by `initial_state`.
     """
 
     np = calculator.np
@@ -63,48 +62,12 @@ def calculate_state_vector(interferometer, initial_state, config, calculator):
     return state_vector
 
 
-def calculate_distribution(interferometer, initial_state, config, calculator):
-    """
-    Calculates the probability distribution corresponding to particle number
-    detection.
-    """
-
+def calculate_inner_product(interferometer, input, output, calculator):
     np = calculator.np
     fallback_np = calculator.fallback_np
+    permanent = calculator.permanent(interferometer, cols=input, rows=output)
 
-    possible_outputs = partitions(
-        particles=fallback_np.sum(initial_state),
-        boxes=len(initial_state),
-    )
-
-    output_probabilities = np.empty(possible_outputs.shape[0], dtype=config.dtype)
-
-    input = initial_state
-
-    for idx, output in enumerate(possible_outputs):
-        permanent_squared = (
-            np.abs(calculator.permanent(interferometer, cols=input, rows=output)) ** 2
-        )
-
-        output_probability = permanent_squared / fallback_np.prod(factorial(output))
-
-        output_probabilities = calculator.assign(
-            output_probabilities, idx, output_probability
-        )
-
-    output_probabilities /= fallback_np.prod(factorial(input))
-
-    return output_probabilities
-
-
-def calculate_probability(interferometer, input, output, calculator):
-    np = calculator.np
-    fallback_np = calculator.fallback_np
-    permanent_squared = (
-        np.abs(calculator.permanent(interferometer, cols=input, rows=output)) ** 2
-    )
-
-    return permanent_squared / (
+    return permanent / np.sqrt(
         fallback_np.prod(factorial(output)) * fallback_np.prod(factorial(input))
     )
 
