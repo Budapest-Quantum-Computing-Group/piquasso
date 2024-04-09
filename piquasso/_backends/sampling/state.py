@@ -18,7 +18,6 @@ import numpy as np
 
 from piquasso._math.fock import cutoff_cardinality
 from piquasso._math.linalg import is_unitary
-from piquasso._math.validations import all_natural
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState
@@ -26,7 +25,10 @@ from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from .utils import calculate_distribution, calculate_state_vector, calculate_probability
+from .utils import (
+    calculate_state_vector,
+    calculate_inner_product,
+)
 
 
 class SamplingState(State):
@@ -41,30 +43,44 @@ class SamplingState(State):
         """
         super().__init__(calculator=calculator, config=config)
 
-        self._initial_state = np.zeros((d,), dtype=int)
+        self._d = d
+
+        self._occupation_numbers: List = []
+        self._coefficients: List = []
         self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
 
         self.is_lossy = False
 
     def validate(self) -> None:
-        """Validates the currect state.
+        """Validates the current state.
 
         Raises:
-            InvalidState: If the interferometer matrix is non-unitary.
+            InvalidState: If the interferometer matrix is non-unitary, or the input
+                state is invalid.
         """
 
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
 
-        if not all_natural(self._initial_state):
-            raise InvalidState(
-                f"Invalid initial state: initial_state={self._initial_state}"
-            )
+        for occupation_number in self._occupation_numbers:
+            if len(occupation_number) != self.d:
+                raise InvalidState(
+                    f"The occupation number '{occupation_number}' is not well-defined "
+                    f"on '{self.d}' modes."
+                )
+
+        norm = self.norm
+
+        if not np.isclose(norm, 1.0):
+            raise InvalidState(f"The state is not normalized: norm={norm}")
 
     @property
-    def d(self) -> int:
-        r"""The number of modes, on which the state is defined."""
-        return len(self._initial_state)
+    def d(self):
+        return self._d
+
+    @property
+    def norm(self):
+        return np.sum(np.abs(self._coefficients) ** 2)
 
     def get_particle_detection_probability(
         self, occupation_number: np.ndarray
@@ -75,61 +91,85 @@ class SamplingState(State):
                 f"occupation_number='{occupation_number}'."
             )
 
-        number_of_particles = np.sum(occupation_number)
+        output_number_of_particles = np.sum(occupation_number)
 
-        if number_of_particles != sum(self._initial_state):
-            return 0.0
+        sum_ = 0.0
 
-        return calculate_probability(
-            interferometer=self.interferometer,
-            input=self._initial_state,
-            output=np.array(occupation_number),
-            calculator=self._calculator,
-        )
+        for index, input_occupation_number in enumerate(self._occupation_numbers):
+            if output_number_of_particles != np.sum(input_occupation_number):
+                continue
+
+            inner_product = calculate_inner_product(
+                interferometer=self.interferometer,
+                input=input_occupation_number,
+                output=np.array(occupation_number),
+                calculator=self._calculator,
+            )
+            coefficient = self._coefficients[index]
+
+            sum_ += coefficient * inner_product
+
+        return np.abs(sum_) ** 2
 
     @property
     def state_vector(self):
-        np = self._calculator.np
-        state_vector_on_smaller_subspaces = np.zeros(
-            shape=cutoff_cardinality(d=self.d, cutoff=sum(self._initial_state)),
-            dtype=self._config.dtype,
+        calculator = self._calculator
+        np = calculator.np
+        fallback_np = calculator.fallback_np
+
+        particle_numbers = fallback_np.sum(self._occupation_numbers, axis=1)
+
+        state_vector = np.zeros(
+            shape=cutoff_cardinality(d=self.d, cutoff=self._config.cutoff),
+            dtype=self._config.complex_dtype,
         )
 
-        partial_state_vector = calculate_state_vector(
-            self.interferometer, self._initial_state, self._config, self._calculator
-        )
+        for index in range(len(self._occupation_numbers)):
+            particle_number = particle_numbers[index]
 
-        return np.concatenate([state_vector_on_smaller_subspaces, partial_state_vector])
+            starting_index = cutoff_cardinality(d=self.d, cutoff=particle_number)
+
+            ending_index = cutoff_cardinality(d=self.d, cutoff=particle_number + 1)
+
+            coefficient = self._coefficients[index]
+
+            input_state = self._occupation_numbers[index]
+
+            partial_state_vector = calculate_state_vector(
+                self.interferometer, input_state, self._config, self._calculator
+            )
+
+            index = fallback_np.arange(starting_index, ending_index)
+
+            state_vector = calculator.assign(
+                state_vector,
+                index,
+                state_vector[index] + coefficient * partial_state_vector,
+            )
+
+        return state_vector
+
+    @property
+    def density_matrix(self) -> np.ndarray:
+        state_vector = self.state_vector
+
+        return self._np.outer(state_vector, self._np.conj(state_vector))
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        # TODO: All the `fock_probabilities` properties return a list according to the
-        # `cutoff` specified in `config`. However, here it does not make sense to adhere
-        # to that...
+        np = self._calculator.np
 
-        probabilities_on_smaller_subspaces: np.ndarray = np.zeros(
-            shape=cutoff_cardinality(d=self.d, cutoff=sum(self._initial_state)),
-            dtype=self._config.dtype,
-        )
-        return np.concatenate(
-            [
-                probabilities_on_smaller_subspaces,
-                self._get_fock_probabilities_on_subspace(),
-            ]
-        )
+        state_vector = self.state_vector
 
-    def _get_fock_probabilities_on_subspace(self) -> List[float]:
-        # NOTE: The order of the returned Fock states is anti-lexicographic.
-        return calculate_distribution(
-            self.interferometer, self._initial_state, self._config, self._calculator
-        )
+        return np.real(np.conj(state_vector) * state_vector)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SamplingState):
             return False
 
         return (
-            np.allclose(self._initial_state, other._initial_state)
+            np.allclose(self._coefficients, other._coefficients)
+            and np.allclose(self._occupation_numbers, other._occupation_numbers)
             and np.allclose(self.interferometer, other.interferometer)
             and self.is_lossy == other.is_lossy
         )

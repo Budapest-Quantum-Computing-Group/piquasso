@@ -20,25 +20,34 @@ import numpy as np
 import piquasso as pq
 
 
-def test_initial_state_raises_InvalidState_for_noninteger_input_state():
+def test_initial_state_raises_InvalidState_for_nonnormalized_input_state():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
 
     simulator = pq.SamplingSimulator(d=5)
+    state = simulator.execute(program).state
 
-    with pytest.raises(pq.api.exceptions.InvalidState):
-        simulator.execute(program)
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        state.validate()
+
+    assert error.value.args[0] == "The state is not normalized: norm=0.25"
 
 
-def test_initial_state_raises_InvalidState_when_multiple_StateVectors_specified():
+def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_length():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-        pq.Q() | pq.StateVector([1, 2, 0, 3, 0])
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
+        pq.Q() | pq.StateVector([1, 1, 1]) * 1 / np.sqrt(2)
 
     simulator = pq.SamplingSimulator(d=5)
 
-    with pytest.raises(pq.api.exceptions.InvalidState):
-        simulator.execute(program)
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program).state
+
+    assert error.value.args[0] == (
+        "The occupation numbers '(1, 1, 1)' are not well-defined on '5' modes: "
+        "instruction=<pq.StateVector(occupation_numbers=(1, 1, 1), "
+        "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))>"
+    )
 
 
 def test_interferometer_init():
@@ -157,7 +166,7 @@ def test_probability_distribution():
         pq.Q(all) | pq.StateVector([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -243,3 +252,115 @@ def test_get_particle_detection_probability_on_different_subspace():
     )
 
     assert np.allclose(probability, 0.0)
+
+
+def test_multiple_StateVector_instructions_state_vector():
+    initial_occupation_numbers = np.array(
+        [
+            [1, 1, 0, 1],
+            [2, 0, 0, 1],
+            [1, 1, 0, 0],
+            [0, 0, 0, 0],
+        ]
+    )
+    coefficients = np.sqrt([0.1, 0.2, 0.3, 0.4])
+    d = initial_occupation_numbers.shape[1]
+
+    with pq.Program() as program:
+        for idx in range(len(coefficients)):
+            pq.Q() | pq.StateVector(
+                initial_occupation_numbers[idx], coefficient=coefficients[idx]
+            )
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
+
+        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
+
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+        pq.Q(0, 3) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 7)
+
+    config = pq.Config(cutoff=4)
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(
+        sampling_state.state_vector,
+        [
+            0.63245553,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.15523032 + 0.15523032j,
+            -0.07833273 - 0.13567627j,
+            -0.07833273 - 0.13567627j,
+            -0.21290502 + 0.07449869j,
+            -0.16199069 + 0.04340527j,
+            -0.22908942 + 0.06138433j,
+            -0.00850609 - 0.11350585j,
+            -0.16199069 + 0.04340527j,
+            -0.00850609 - 0.11350585j,
+            -0.11515274 - 0.0129746j,
+            -0.02450333 - 0.0894709j,
+            0.03791189 - 0.08560374j,
+            0.03791189 - 0.08560374j,
+            0.00074147 - 0.00404062j,
+            0.14143668 - 0.02975653j,
+            0.20002168 - 0.04208209j,
+            -0.03276254 + 0.02788141j,
+            0.14143668 - 0.02975653j,
+            -0.03276254 + 0.02788141j,
+            -0.04646917 + 0.06369578j,
+            0.0,
+            0.0,
+            -0.19316271 - 0.04756413j,
+            0.0,
+            -0.27317333 - 0.06726584j,
+            -0.09056537 + 0.02373235j,
+            0.0,
+            -0.19316271 - 0.04756413j,
+            -0.09056537 + 0.02373235j,
+            -0.05941314 + 0.0318212j,
+        ],
+    )
+
+
+def test_multiple_StateVector_instructions_get_particle_detection_probability():
+    initial_occupation_numbers = np.array(
+        [
+            [1, 1, 0, 1],
+            [2, 0, 0, 1],
+            [1, 1, 0, 0],
+            [0, 0, 0, 0],
+        ]
+    )
+    coefficients = np.sqrt([0.1, 0.2, 0.3, 0.4])
+    d = initial_occupation_numbers.shape[1]
+
+    with pq.Program() as program:
+        for idx in range(len(coefficients)):
+            pq.Q() | pq.StateVector(
+                initial_occupation_numbers[idx], coefficient=coefficients[idx]
+            )
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
+
+        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
+
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+        pq.Q(0, 3) | pq.Beamsplitter(theta=np.pi / 5, phi=np.pi / 7)
+
+    config = pq.Config(cutoff=4)
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(
+        sampling_state.get_particle_detection_probability((1, 1, 0, 1)),
+        0.0018507569323483858,
+    )

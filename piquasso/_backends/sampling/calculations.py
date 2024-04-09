@@ -20,11 +20,9 @@ from functools import partial
 import numpy as np
 from piquasso._backends.sampling.state import SamplingState
 
-from piquasso._math.validations import all_natural
-
 from piquasso.instructions import gates
 
-from piquasso.api.exceptions import InvalidState
+from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
@@ -42,20 +40,17 @@ from .utils import (
 
 
 def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
-    if not np.all(state._initial_state == 0):
-        raise InvalidState("State vector is already set.")
-
     coefficient = instruction._all_params["coefficient"]
     occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    initial_state = coefficient * np.array(occupation_numbers)
-
-    if not all_natural(initial_state):
+    if len(occupation_numbers) != state.d:
         raise InvalidState(
-            f"Invalid initial state specified: instruction={instruction}"
+            f"The occupation numbers '{occupation_numbers}' are not well-defined "
+            f"on '{state.d}' modes: instruction={instruction}"
         )
 
-    state._initial_state = np.rint(initial_state).astype(int)
+    state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+    state._coefficients.append(coefficient)
 
     return Result(state=state)
 
@@ -140,7 +135,17 @@ def particle_number_measurement(
     algorithm.
     """
 
-    initial_state = state._initial_state
+    if len(state._occupation_numbers) != 1 and not np.isclose(
+        state._coefficients[0], 1.0
+    ):
+        raise NotImplementedCalculation(
+            f"The instruction {instruction} is not supported for states defined using "
+            "multiple 'StateVector' instructions.\n"
+            "If you need this feature to be implemented, please create an issue at "
+            "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+        )
+
+    initial_state = state._occupation_numbers[0]
 
     interferometer_svd = np.linalg.svd(state.interferometer)
 

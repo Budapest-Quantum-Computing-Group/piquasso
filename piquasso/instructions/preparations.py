@@ -192,7 +192,8 @@ class StateVector(Preparation, _mixins.WeightMixin):
 
         if not all_natural(occupation_numbers):
             raise InvalidState(
-                f"Invalid occupation numbers: occupation_numbers={occupation_numbers}"
+                f"Invalid occupation numbers: occupation_numbers={occupation_numbers}\n"
+                "Occupation numbers must contain non-negative integers."
             )
 
         super().__init__(

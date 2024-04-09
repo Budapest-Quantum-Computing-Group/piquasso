@@ -277,7 +277,9 @@ def test_Interferometer_fock_probabilities(calculator):
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
+    simulator = pq.SamplingSimulator(
+        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+    )
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -590,7 +592,9 @@ def test_LossyInterferometer_fock_probabilities(calculator):
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
+    simulator = pq.SamplingSimulator(
+        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+    )
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -899,7 +903,9 @@ def test_Interferometer_state_vector(calculator):
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
+    simulator = pq.SamplingSimulator(
+        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+    )
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -1212,7 +1218,9 @@ def test_LossyInterferometer_state_vector(calculator):
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(d=5, calculator=calculator)
+    simulator = pq.SamplingSimulator(
+        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+    )
     state = simulator.execute(program).state
 
     assert np.allclose(
