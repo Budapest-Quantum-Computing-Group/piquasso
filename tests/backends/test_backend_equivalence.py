@@ -905,7 +905,7 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     )
 
 
-def test_sampling_backend_equivalence_for_two_mode_Beamsplitter5050():
+def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_fock_probabilities():
     initial_occupation_numbers = (1, 1)
     d = len(initial_occupation_numbers)
 
@@ -930,7 +930,32 @@ def test_sampling_backend_equivalence_for_two_mode_Beamsplitter5050():
     )
 
 
-def test_sampling_backend_equivalence_complex_scenario():
+def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_state_vector():
+    initial_occupation_numbers = (1, 1)
+    d = len(initial_occupation_numbers)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    config = pq.Config(cutoff=sum(initial_occupation_numbers) + 1)
+
+    fock_simulator = pq.PureFockSimulator(d=d, config=config)
+    fock_state = fock_simulator.execute(program).state
+    fock_state.validate()
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(
+        fock_state.state_vector,
+        sampling_state.state_vector,
+    )
+
+
+def test_sampling_backend_equivalence_complex_scenario_fock_probabilities():
     initial_occupation_numbers = (1, 1, 0, 1)
     d = len(initial_occupation_numbers)
 
@@ -956,8 +981,34 @@ def test_sampling_backend_equivalence_complex_scenario():
     assert np.allclose(fock_state.fock_probabilities, sampling_state.fock_probabilities)
 
 
+def test_sampling_backend_equivalence_complex_scenario_state_vector():
+    initial_occupation_numbers = (1, 1, 0, 1)
+    d = len(initial_occupation_numbers)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
+
+        pq.Q(1) | pq.Phaseshifter(np.pi / 3)
+
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+    config = pq.Config(cutoff=sum(initial_occupation_numbers) + 1)
+
+    fock_simulator = pq.PureFockSimulator(d=d, config=config)
+    fock_state = fock_simulator.execute(program).state
+    fock_state.validate()
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(fock_state.state_vector, sampling_state.state_vector)
+
+
 @pytest.mark.monkey
-def test_sampling_backend_equivalence_with_random_interferometer(
+def test_sampling_backend_equivalence_with_random_interferometer_fock_probabilities(
     generate_unitary_matrix,
 ):
     initial_occupation_numbers = (1, 1, 0, 1)
@@ -983,6 +1034,36 @@ def test_sampling_backend_equivalence_with_random_interferometer(
     assert np.allclose(
         fock_state.fock_probabilities,
         sampling_state.fock_probabilities,
+    )
+
+
+@pytest.mark.monkey
+def test_sampling_backend_equivalence_with_random_interferometer_state_vector(
+    generate_unitary_matrix,
+):
+    initial_occupation_numbers = (1, 1, 0, 1)
+    d = len(initial_occupation_numbers)
+
+    interferometer_matrix = generate_unitary_matrix(d)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(initial_occupation_numbers)
+
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+
+    config = pq.Config(cutoff=sum(initial_occupation_numbers) + 1)
+
+    fock_simulator = pq.PureFockSimulator(d=d, config=config)
+    fock_state = fock_simulator.execute(program).state
+    fock_state.validate()
+
+    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
+    sampling_state = sampling_simulator.execute(program).state
+    sampling_state.validate()
+
+    assert np.allclose(
+        fock_state.state_vector,
+        sampling_state.state_vector,
     )
 
 

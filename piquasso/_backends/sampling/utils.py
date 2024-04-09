@@ -31,6 +31,33 @@ The original code has been re-implemented and adapted to Piquasso.
 __author__ = "Tomasz Rybotycki"
 
 
+def calculate_state_vector(interferometer, initial_state, config, calculator):
+    """
+    Calculates the probability distribution corresponding to particle number
+    detection.
+    """
+
+    possible_outputs = partitions(
+        particles=np.sum(initial_state),
+        boxes=len(initial_state),
+    )
+
+    state_vector = np.empty(possible_outputs.shape[0], dtype=config.complex_dtype)
+
+    input = initial_state
+
+    for idx, output in enumerate(possible_outputs):
+        permanent = calculator.permanent(interferometer, cols=input, rows=output)
+
+        state_vector_coefficient = permanent / np.sqrt(np.prod(factorial(output)))
+
+        state_vector[idx] = state_vector_coefficient
+
+    state_vector /= np.sqrt(np.prod(factorial(input)))
+
+    return state_vector
+
+
 def calculate_distribution(interferometer, initial_state, config, calculator):
     """
     Calculates the probability distribution corresponding to particle number
