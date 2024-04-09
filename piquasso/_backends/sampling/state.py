@@ -16,7 +16,6 @@
 from typing import Optional, List
 import numpy as np
 
-from piquasso._math.indices import get_index_in_fock_subspace
 from piquasso._math.fock import cutoff_cardinality
 from piquasso._math.linalg import is_unitary
 from piquasso._math.validations import all_natural
@@ -27,7 +26,7 @@ from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from .utils import calculate_distribution, calculate_state_vector
+from .utils import calculate_distribution, calculate_state_vector, calculate_probability
 
 
 class SamplingState(State):
@@ -81,11 +80,12 @@ class SamplingState(State):
         if number_of_particles != sum(self._initial_state):
             return 0.0
 
-        index = get_index_in_fock_subspace(occupation_number)
-
-        subspace_probabilities = self._get_fock_probabilities_on_subspace()
-
-        return subspace_probabilities[index]
+        return calculate_probability(
+            interferometer=self.interferometer,
+            input=self._initial_state,
+            output=np.array(occupation_number),
+            calculator=self._calculator,
+        )
 
     @property
     def state_vector(self):

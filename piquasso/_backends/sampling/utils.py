@@ -97,6 +97,18 @@ def calculate_distribution(interferometer, initial_state, config, calculator):
     return output_probabilities
 
 
+def calculate_probability(interferometer, input, output, calculator):
+    np = calculator.np
+    fallback_np = calculator.fallback_np
+    permanent_squared = (
+        np.abs(calculator.permanent(interferometer, cols=input, rows=output)) ** 2
+    )
+
+    return permanent_squared / (
+        fallback_np.prod(factorial(output)) * fallback_np.prod(factorial(input))
+    )
+
+
 def generate_lossless_samples(input, shots, calculate_permanent, rng):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm
