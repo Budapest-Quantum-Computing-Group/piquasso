@@ -27,7 +27,7 @@ from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
 from piquasso.api.calculator import BaseCalculator
 
-from .utils import calculate_distribution
+from .utils import calculate_distribution, calculate_state_vector
 
 
 class SamplingState(State):
@@ -93,6 +93,19 @@ class SamplingState(State):
         subspace_probabilities = self._get_fock_probabilities_on_subspace()
 
         return subspace_probabilities[index]
+
+    @property
+    def state_vector(self):
+        state_vector_on_smaller_subspaces = np.zeros(
+            shape=cutoff_cardinality(d=self.d, cutoff=self.particle_number),
+            dtype=self._config.dtype,
+        )
+
+        partial_state_vector = calculate_state_vector(
+            self.interferometer, self.initial_state, self._config, self._calculator
+        )
+
+        return np.concatenate([state_vector_on_smaller_subspaces, partial_state_vector])
 
     @property
     def fock_probabilities(self) -> np.ndarray:
