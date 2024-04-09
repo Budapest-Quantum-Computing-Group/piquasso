@@ -25,6 +25,8 @@ from .calculations import (
     particle_number_measurement,
     loss,
     lossy_interferometer,
+    post_select_photons,
+    imperfect_post_select_photons,
 )
 
 
@@ -82,6 +84,8 @@ class SamplingSimulator(BuiltinSimulator):
         gates.Fourier: passive_linear,
         gates.Interferometer: passive_linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.PostSelectPhotons: post_select_photons,
+        measurements.ImperfectPostSelectPhotons: imperfect_post_select_photons,
         channels.Loss: loss,
         channels.LossyInterferometer: lossy_interferometer,
     }

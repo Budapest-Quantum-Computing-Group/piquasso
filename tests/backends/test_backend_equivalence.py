@@ -22,6 +22,7 @@ import collections
 
 from functools import partial
 
+from scipy.stats import unitary_group
 from scipy.linalg import polar, sinhm, coshm, expm
 
 
@@ -1768,3 +1769,31 @@ def test_beamsplitter5050_equivalence(SimulatorClass):
             0.0,
         ],
     )
+
+
+@pytest.mark.monkey
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+def test_post_select_random_unitary(SimulatorClass):
+    d = 3
+
+    interferometer_matrix = unitary_group.rvs(d)
+
+    postselect_modes = (1, 2)
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([2, 1, 0])
+
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+
+        pq.Q(all) | pq.PostSelectPhotons(
+            postselect_modes=postselect_modes, photon_counts=(1, 0)
+        )
+
+    simulator = SimulatorClass(d=d, config=pq.Config(cutoff=4))
+
+    state = simulator.execute(program).state
+
+    state.normalize()
+    state.validate()
+
+    assert state.d == d - len(postselect_modes)
