@@ -28,6 +28,11 @@ from piquasso.api.exceptions import InvalidState
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
+from piquasso._backends.fock.pure.calculations import (
+    post_select_photons as pure_fock_post_select_photons,
+    imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
+)
+
 
 from .utils import (
     generate_lossless_samples,
@@ -173,3 +178,7 @@ def particle_number_measurement(
         )
 
     return Result(state=state, samples=list(map(tuple, samples)))
+
+
+post_select_photons = pure_fock_post_select_photons
+imperfect_post_select_photons = pure_fock_imperfect_post_select_photons
