@@ -42,7 +42,7 @@ class SamplingState(State):
         """
         super().__init__(calculator=calculator, config=config)
 
-        self.initial_state = np.zeros((d,), dtype=int)
+        self._initial_state = np.zeros((d,), dtype=int)
         self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
 
         self.is_lossy = False
@@ -57,20 +57,15 @@ class SamplingState(State):
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
 
-        if not all_natural(self.initial_state):
+        if not all_natural(self._initial_state):
             raise InvalidState(
-                f"Invalid initial state: initial_state={self.initial_state}"
+                f"Invalid initial state: initial_state={self._initial_state}"
             )
 
     @property
     def d(self) -> int:
         r"""The number of modes, on which the state is defined."""
-        return len(self.initial_state)
-
-    @property
-    def particle_number(self) -> int:
-        r"""The number of particles in the system."""
-        return sum(self.initial_state)
+        return len(self._initial_state)
 
     def get_particle_detection_probability(
         self, occupation_number: np.ndarray
@@ -83,7 +78,7 @@ class SamplingState(State):
 
         number_of_particles = np.sum(occupation_number)
 
-        if number_of_particles != self.particle_number:
+        if number_of_particles != sum(self._initial_state):
             return 0.0
 
         index = get_index_in_fock_subspace(occupation_number)
@@ -96,12 +91,12 @@ class SamplingState(State):
     def state_vector(self):
         np = self._calculator.np
         state_vector_on_smaller_subspaces = np.zeros(
-            shape=cutoff_cardinality(d=self.d, cutoff=self.particle_number),
+            shape=cutoff_cardinality(d=self.d, cutoff=sum(self._initial_state)),
             dtype=self._config.dtype,
         )
 
         partial_state_vector = calculate_state_vector(
-            self.interferometer, self.initial_state, self._config, self._calculator
+            self.interferometer, self._initial_state, self._config, self._calculator
         )
 
         return np.concatenate([state_vector_on_smaller_subspaces, partial_state_vector])
@@ -113,7 +108,7 @@ class SamplingState(State):
         # to that...
 
         probabilities_on_smaller_subspaces: np.ndarray = np.zeros(
-            shape=cutoff_cardinality(d=self.d, cutoff=self.particle_number),
+            shape=cutoff_cardinality(d=self.d, cutoff=sum(self._initial_state)),
             dtype=self._config.dtype,
         )
         return np.concatenate(
@@ -126,7 +121,7 @@ class SamplingState(State):
     def _get_fock_probabilities_on_subspace(self) -> List[float]:
         # NOTE: The order of the returned Fock states is anti-lexicographic.
         return calculate_distribution(
-            self.interferometer, self.initial_state, self._config, self._calculator
+            self.interferometer, self._initial_state, self._config, self._calculator
         )
 
     def __eq__(self, other: object) -> bool:
@@ -134,7 +129,7 @@ class SamplingState(State):
             return False
 
         return (
-            np.allclose(self.initial_state, other.initial_state)
+            np.allclose(self._initial_state, other._initial_state)
             and np.allclose(self.interferometer, other.interferometer)
             and self.is_lossy == other.is_lossy
         )

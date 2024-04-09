@@ -37,7 +37,7 @@ from .utils import (
 
 
 def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
-    if not np.all(state.initial_state == 0):
+    if not np.all(state._initial_state == 0):
         raise InvalidState("State vector is already set.")
 
     coefficient = instruction._all_params["coefficient"]
@@ -50,7 +50,7 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
             f"Invalid initial state specified: instruction={instruction}"
         )
 
-    state.initial_state = np.rint(initial_state).astype(int)
+    state._initial_state = np.rint(initial_state).astype(int)
 
     return Result(state=state)
 
@@ -135,7 +135,7 @@ def particle_number_measurement(
     algorithm.
     """
 
-    initial_state = state.initial_state
+    initial_state = state._initial_state
 
     interferometer_svd = np.linalg.svd(state.interferometer)
 

@@ -128,8 +128,10 @@ def test_lossy_program():
     d = 5
     simulator = pq.SamplingSimulator(d=d)
 
+    initial_state = [1, 1, 1, 0, 0]
+
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.StateVector(initial_state)
 
         for i in range(d):
             pq.Q(i) | pq.Loss(losses)
@@ -139,7 +141,7 @@ def test_lossy_program():
 
     result = simulator.execute(program, shots=1)
     sample = result.samples[0]
-    assert sum(sample) < sum(result.state.initial_state)
+    assert sum(sample) < sum(initial_state)
 
 
 @pytest.mark.monkey
@@ -156,15 +158,17 @@ def test_LossyInterferometer_decreases_particle_number(generate_unitary_matrix):
 
     simulator = pq.SamplingSimulator(d=d)
 
+    initial_state = [1, 1, 1, 0, 0]
+
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.StateVector(initial_state)
 
         pq.Q() | pq.LossyInterferometer(lossy_interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
     result = simulator.execute(program, shots=1)
     sample = result.samples[0]
-    assert sum(sample) < sum(result.state.initial_state)
+    assert sum(sample) < sum(initial_state)
 
 
 @pytest.mark.monkey

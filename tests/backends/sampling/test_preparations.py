@@ -20,28 +20,6 @@ import numpy as np
 import piquasso as pq
 
 
-def test_initial_state():
-    with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-
-    simulator = pq.SamplingSimulator(d=5)
-    state = simulator.execute(program).state
-
-    expected_initial_state = [1, 1, 1, 0, 0]
-    assert np.allclose(state.initial_state, expected_initial_state)
-
-
-def test_initial_state_multiplied_with_coefficient():
-    with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 2.0
-
-    simulator = pq.SamplingSimulator(d=5)
-    state = simulator.execute(program).state
-
-    expected_initial_state = [2, 2, 2, 0, 0]
-    assert np.allclose(state.initial_state, expected_initial_state)
-
-
 def test_initial_state_raises_InvalidState_for_noninteger_input_state():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
