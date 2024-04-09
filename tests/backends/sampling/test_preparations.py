@@ -187,6 +187,39 @@ def test_get_particle_detection_probability():
     assert np.allclose(probability, 0.30545762086020883)
 
 
+def test_get_particle_detection_probability_complex_scenario():
+    U = np.array(
+        [
+            [
+                -0.25022099 + 0.32110177j,
+                -0.69426529 - 0.49960543j,
+                -0.28233272 + 0.15153042j,
+            ],
+            [
+                -0.69028768 + 0.23351228j,
+                0.14839865 + 0.49185272j,
+                -0.43153658 - 0.13714903j,
+            ],
+            [
+                0.41073351 + 0.36681879j,
+                -0.06655274 + 0.00442722j,
+                -0.22146243 - 0.80202711j,
+            ],
+        ],
+    )
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.StateVector([0, 1, 2])
+        pq.Q(all) | pq.Interferometer(U)
+
+    simulator = pq.SamplingSimulator(d=3)
+    state = simulator.execute(program).state
+
+    probability = state.get_particle_detection_probability(occupation_number=(2, 1, 0))
+
+    assert np.allclose(probability, 0.038483056956364094)
+
+
 def test_get_particle_detection_probability_on_different_subspace():
     U = np.array(
         [
