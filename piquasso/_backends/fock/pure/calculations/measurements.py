@@ -95,7 +95,7 @@ def imperfect_post_select_photons(
         )
 
         new_state._density_matrix += detector_probability * np.outer(
-            np.conj(state_vector), state_vector
+            state_vector, np.conj(state_vector)
         )
 
     return Result(state=new_state)
