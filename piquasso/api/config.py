@@ -143,4 +143,10 @@ class Config(_mixins.CodeMixin):
             Config: An exact copy of this config object.
         """
 
-        return copy.deepcopy(self)
+        config_copy = copy.deepcopy(self)
+
+        # NOTE: We want to preserve the RNG, otherwise simulations may lead to repeated
+        # samples if the user reuses the simulator.
+        config_copy.rng = self.rng
+
+        return config_copy

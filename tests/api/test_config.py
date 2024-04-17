@@ -78,3 +78,11 @@ def test_complex_dtype():
     assert conf_f32.complex_dtype == np.complex64
     assert conf_f64.complex_dtype == np.complex128
     assert conf_f.complex_dtype == np.complex128
+
+
+def test_Config_rng_is_shallow_copied():
+    config = pq.Config(seed_sequence=123)
+
+    config_copy = config.copy()
+
+    assert config.rng is config_copy.rng
