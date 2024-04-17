@@ -186,3 +186,20 @@ def test_get_number_of_modes_with_invalid_number_of_parameters():
         error.value.args[0]
         == f"Invalid number of parameters specified: '{invalid_number_of_parameters}'."
     )
+
+
+def test_get_cvqnn_weight_indices():
+    weight_indices = cvqnn.get_cvqnn_weight_indices(4)
+
+    expected_weight_indices = [
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]),
+        np.array([15, 16, 17, 18]),
+        np.array([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]),
+        np.array([34, 35, 36, 37]),
+        np.array([38, 39, 40, 41]),
+        np.array([42, 43, 44, 45]),
+    ]
+
+    assert all(
+        np.allclose(a, b) for a, b in zip(weight_indices, expected_weight_indices)
+    )
