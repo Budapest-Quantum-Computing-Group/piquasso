@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -49,8 +49,29 @@ class _LayerParameters:
     kerr_parameters: np.ndarray
 
 
+def get_cvqnn_weight_indices(d):
+    M = _get_number_of_interferometer_parameters(d)
+
+    K = _get_number_of_single_layer_parameters(d)
+
+    index_range = np.arange(K)
+
+    return [
+        index_range[:M],
+        index_range[M : M + d],
+        index_range[M + d : 2 * M + d],
+        index_range[2 * M + d : 2 * M + 2 * d],
+        index_range[2 * M + 2 * d : 2 * M + 3 * d],
+        index_range[2 * M + 3 * d :],
+    ]
+
+
 def generate_random_cvqnn_weights(
-    layer_count: int, d: int, active_var: float = 0.01, passive_var: float = 0.1
+    layer_count: int,
+    d: int,
+    active_var: float = 0.01,
+    passive_var: float = 0.1,
+    rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
     """Generates random CVQNN weights for :func:`create_program`.
 
@@ -63,14 +84,17 @@ def generate_random_cvqnn_weights(
     Returns:
         np.ndarray: An array of weights.
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     M = _get_number_of_interferometer_parameters(d)
 
-    first_interferometer = np.random.normal(size=[layer_count, M], scale=passive_var)
-    squeezing_parameters = np.random.normal(size=[layer_count, d], scale=active_var)
-    second_interferometer = np.random.normal(size=[layer_count, M], scale=passive_var)
-    displacement_amplitudes = np.random.normal(size=[layer_count, d], scale=active_var)
-    displacement_angles = np.random.normal(size=[layer_count, d], scale=passive_var)
-    kerr_parameters = np.random.normal(size=[layer_count, d], scale=active_var)
+    first_interferometer = rng.normal(size=[layer_count, M], scale=passive_var)
+    squeezing_parameters = rng.normal(size=[layer_count, d], scale=active_var)
+    second_interferometer = rng.normal(size=[layer_count, M], scale=passive_var)
+    displacement_amplitudes = rng.normal(size=[layer_count, d], scale=active_var)
+    displacement_angles = rng.normal(size=[layer_count, d], scale=passive_var)
+    kerr_parameters = rng.normal(size=[layer_count, d], scale=active_var)
 
     return np.concatenate(
         [
@@ -138,6 +162,10 @@ def create_program(weights: np.ndarray) -> Program:
     return program
 
 
+def _get_number_of_single_layer_parameters(d):
+    return 2 * (d**2 + 2 * d - 1)
+
+
 def get_number_of_modes(number_of_parameters: int) -> int:
     """Returns the number of modes given the number of parameters in a CVQNN layer.
 
@@ -154,15 +182,12 @@ def get_number_of_modes(number_of_parameters: int) -> int:
     if number_of_parameters == 6:
         return 1
 
-    def func_to_invert(d):
-        return 2 * (d**2 + 2 * d - 1)
-
     d = 2
 
-    while func_to_invert(d) < number_of_parameters:
+    while _get_number_of_single_layer_parameters(d) < number_of_parameters:
         d += 1
 
-    if not func_to_invert(d) == number_of_parameters:
+    if not _get_number_of_single_layer_parameters(d) == number_of_parameters:
         raise CVQNNException(
             f"Invalid number of parameters specified: '{number_of_parameters}'."
         )
