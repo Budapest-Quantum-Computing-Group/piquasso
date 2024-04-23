@@ -48,7 +48,7 @@ def create_single_mode_displacement_matrix(
     fallback_np = calculator.fallback_np
 
     cutoff_range = fallback_np.arange(cutoff)
-    sqrt_indices = fallback_np.sqrt(cutoff_range)
+    sqrt_indices = fallback_np.sqrt(cutoff_range, dtype=complex_dtype)
     denominator = 1 / fallback_np.sqrt(factorial(cutoff_range))
 
     displacement = r * np.exp(1j * phi)
@@ -61,7 +61,9 @@ def create_single_mode_displacement_matrix(
     # is just 1. Instead of redefining `power` we just add a small `epsilon`, which
     # magically yields the correct result.
     epsilon = 10e-100
-    previous_element = np.power(displacement + epsilon, cutoff_range) * denominator
+    previous_element = (
+        np.power(displacement + epsilon, cutoff_range) * denominator
+    ).astype(complex_dtype)
 
     matrix = calculator.write_to_accumulator(matrix, 0, previous_element)
 
@@ -126,9 +128,9 @@ def create_single_mode_squeezing_matrix(
     fallback_np = calculator.fallback_np
 
     sechr = 1.0 / np.cosh(r)
-    A = np.exp(1j * phi) * np.tanh(r)
+    A = np.exp(1j * phi).astype(complex_dtype) * np.tanh(r)
     Aconj = np.conj(A)
-    sqrt_indices = np.sqrt(fallback_np.arange(cutoff))
+    sqrt_indices = np.sqrt(fallback_np.arange(cutoff)).astype(complex_dtype)
     sechr_sqrt_indices = sechr * sqrt_indices
     A_conj_sqrt_indices = Aconj * sqrt_indices
 
@@ -143,7 +145,9 @@ def create_single_mode_squeezing_matrix(
 
     first_row = np.zeros(shape=cutoff, dtype=complex_dtype)
     first_row = calculator.assign(
-        first_row, fallback_np.arange(0, cutoff, 2), first_row_nonzero
+        first_row,
+        fallback_np.arange(0, cutoff, 2),
+        first_row_nonzero.astype(complex_dtype),
     )
 
     roll_index = fallback_np.arange(-1, cutoff - 1)

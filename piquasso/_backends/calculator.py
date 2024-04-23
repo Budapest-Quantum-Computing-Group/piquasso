@@ -256,7 +256,7 @@ class TensorflowCalculator(_BuiltinCalculator):
 
         if len(array.shape) == 1:
             return self._tf.tensor_scatter_nd_update(
-                array, index.reshape(-1, 1), value.reshape(-1)
+                array, index.reshape(-1, 1), value.reshape(-1).astype(array.dtype)
             )
 
         number_of_batches = array.shape[1]
