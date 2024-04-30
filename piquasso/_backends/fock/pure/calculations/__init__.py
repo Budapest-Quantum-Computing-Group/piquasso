@@ -14,13 +14,19 @@
 # limitations under the License.
 
 from .passive_linear import passive_linear, beamsplitter5050
-from .measurements import post_select_photons, imperfect_post_select_photons
+from .measurements import (
+    post_select_photons,
+    imperfect_post_select_photons,
+)
+
+from .homodyne import homodyne_measurement
 
 __all__ = [
     "passive_linear",
     "beamsplitter5050",
     "post_select_photons",
     "imperfect_post_select_photons",
+    "homodyne_measurement",
 ]
 
 from typing import Optional, Tuple, Mapping

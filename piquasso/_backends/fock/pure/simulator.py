@@ -33,6 +33,7 @@ from .calculations import (
     batch_apply,
     post_select_photons,
     imperfect_post_select_photons,
+    homodyne_measurement,
 )
 
 from ..calculations import attenuator
@@ -136,6 +137,7 @@ class PureFockSimulator(BuiltinSimulator):
         measurements.ParticleNumberMeasurement: particle_number_measurement,
         measurements.PostSelectPhotons: post_select_photons,
         measurements.ImperfectPostSelectPhotons: imperfect_post_select_photons,
+        measurements.HomodyneMeasurement: homodyne_measurement,
         channels.Attenuator: attenuator,
         batch.BatchPrepare: batch_prepare,
         batch.BatchApply: batch_apply,
