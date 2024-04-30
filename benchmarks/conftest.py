@@ -18,6 +18,20 @@ import pytest
 import strawberryfields as sf
 import piquasso as pq
 
+import numpy as np
+from scipy.stats import unitary_group
+
+
+@pytest.fixture
+def generate_unitary_matrix():
+    def func(N):
+        if N == 1:
+            return np.array([[np.exp(np.random.rand() * 2 * np.pi * 1j)]])
+
+        return np.array(unitary_group.rvs(N), dtype=complex)
+
+    return func
+
 
 @pytest.fixture
 def d():

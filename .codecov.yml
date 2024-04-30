@@ -2,3 +2,4 @@ ignore:
   - tests/**/*
   - piquasso/_math/hafnian/*
   - piquasso/_math/permanent.py
+  - piquasso/_backends/fock/pure/calculations/homodyne.py

@@ -157,3 +157,92 @@ def test_measure_particle_number_with_multiple_shots():
 
     assert np.isclose(sum(result.state.fock_probabilities), 1)
     assert len(result.samples) == shots
+
+
+def test_HomodyneMeasurement_one_mode():
+    shots = 20
+
+    simulator = pq.PureFockSimulator(
+        d=1, config=pq.Config(cutoff=20, seed_sequence=123)
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=1.0)
+
+        pq.Q(0) | pq.HomodyneMeasurement()
+
+    result = simulator.execute(program, shots)
+
+    assert len(result.samples) == shots
+
+    assert np.allclose(
+        result.samples,
+        [
+            [1.74960435],
+            [0.27660972],
+            [0.86902385],
+            [0.77861923],
+            [0.755815],
+            [2.04047249],
+            [2.42392663],
+            [0.99484774],
+            [2.06082907],
+            [2.28110812],
+            [1.43722324],
+            [0.92598922],
+            [2.07300598],
+            [0.85314593],
+            [1.87234924],
+            [1.64877767],
+            [2.4443],
+            [0.89617885],
+            [2.00713962],
+            [1.44643782],
+        ],
+    )
+
+
+def test_HomodyneMeasurement_two_modes():
+    shots = 20
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7, seed_sequence=123))
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.5)
+        pq.Q(1) | pq.Displacement(r=-0.5)
+
+        pq.Q(0, 1) | pq.HomodyneMeasurement()
+
+    result = simulator.execute(program, shots)
+
+    assert len(result.samples) == shots
+
+    assert np.allclose(
+        result.samples,
+        [
+            [1.04248244, -1.84398138],
+            [0.16191613, -1.34935628],
+            [0.04870163, -0.14112144],
+            [1.7169028, -1.16870184],
+            [1.35378134, 0.15965135],
+            [0.73006562, -1.16096225],
+            [1.36596076, -1.2949428],
+            [1.16525672, -0.45997211],
+            [1.73727326, -1.26577442],
+            [1.30008007, -0.68581022],
+            [0.18825746, -1.39577179],
+            [0.70315301, -0.51975498],
+            [0.0714127, -2.24813514],
+            [0.65586351, -0.24068384],
+            [1.69412448, -0.52716291],
+            [1.68723419, 0.02688775],
+            [0.15661024, 0.02666197],
+            [1.14206796, -1.12222433],
+            [1.29485143, 0.08064955],
+            [0.33514897, -0.65509742],
+        ],
+    )

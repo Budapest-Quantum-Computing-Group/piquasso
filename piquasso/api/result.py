@@ -13,15 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union, TYPE_CHECKING
 
 from piquasso.api.state import State
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class Result:
     """Class for collecting results."""
 
-    def __init__(self, state: State, samples: Optional[List[Tuple]] = None) -> None:
+    def __init__(
+        self, state: State, samples: Optional[Union[List[Tuple], "np.ndarray"]] = None
+    ) -> None:
         """
         Args:
             state (State): The resulting simulated state.
@@ -29,7 +34,9 @@ class Result:
         """
 
         self.state: State = state
-        self.samples: List[Tuple] = samples or []
+        self.samples: Union[List[Tuple], "np.ndarray"] = (
+            samples if samples is not None else []
+        )
 
     def __repr__(self) -> str:
         return f"<Result samples={self.samples} state={self.state}>"
