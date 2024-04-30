@@ -152,6 +152,9 @@ class FockState(BaseFockState):
         fallback_np = self._calculator.fallback_np
         d = self.d
 
+        if modes == tuple(range(d)):
+            return self
+
         outer_modes = self._get_auxiliary_modes(modes)
 
         inner_size = len(modes)
