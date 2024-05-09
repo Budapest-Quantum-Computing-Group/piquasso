@@ -659,6 +659,9 @@ class Displacement(_ActiveLinearGate):
 
     .. math::
         \alpha = r e^{i\phi}
+
+    Note:
+        The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
     """
 
     NUMBER_OF_MODES = 1

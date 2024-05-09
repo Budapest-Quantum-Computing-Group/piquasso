@@ -48,6 +48,9 @@ def homodyne_measurement(
     reduced_state = state.reduced(modes=modes)
 
     cutoff = state._config.cutoff
+    hbar = state._config.hbar
+
+    sqrt_hbar = np.sqrt(hbar)
 
     reduced_state.normalize()
 
@@ -59,7 +62,7 @@ def homodyne_measurement(
     mean_positions = np.empty(shape=small_d)
 
     for idx in range(small_d):
-        mean_positions[idx] = state.mean_position(modes[idx])
+        mean_positions[idx] = state.mean_position(modes[idx]) / sqrt_hbar
 
     uniforms = rng.uniform(size=(shots, small_d))
 
@@ -109,9 +112,11 @@ def homodyne_measurement(
         )
 
         reduced_density_matrices = []
-        for current_d in range(2, state.d + 1):
-            reduced_state = state.reduced(modes=tuple(range(current_d)))
-            reduced_density_matrices.append(reduced_state.density_matrix)
+        for current_d in range(2, reduced_state.d + 1):
+            reduced_state_to_current = reduced_state.reduced(
+                modes=tuple(range(current_d))
+            )
+            reduced_density_matrices.append(reduced_state_to_current.density_matrix)
 
         new_density_matrix = np.empty_like(density_matrix_mode_0)
 
@@ -127,7 +132,7 @@ def homodyne_measurement(
             uniforms,
         )
 
-    return Result(state=state, samples=samples)
+    return Result(state=state, samples=sqrt_hbar * samples)
 
 
 def _do_sample_homodyne_multimodes(

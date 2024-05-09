@@ -163,7 +163,7 @@ def test_HomodyneMeasurement_one_mode():
     shots = 20
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=20, seed_sequence=123)
+        d=1, config=pq.Config(cutoff=20, seed_sequence=123, hbar=1)
     )
 
     with pq.Program() as program:
@@ -207,7 +207,9 @@ def test_HomodyneMeasurement_one_mode():
 def test_HomodyneMeasurement_two_modes():
     shots = 20
 
-    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7, seed_sequence=123))
+    simulator = pq.PureFockSimulator(
+        d=2, config=pq.Config(cutoff=7, seed_sequence=123, hbar=1)
+    )
 
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -246,3 +248,76 @@ def test_HomodyneMeasurement_two_modes():
             [0.33514897, -0.65509742],
         ],
     )
+
+
+def test_HomodyneMeasurement_two_modes_with_1_mode_sampled():
+    shots = 20
+
+    simulator = pq.PureFockSimulator(
+        d=2, config=pq.Config(cutoff=7, seed_sequence=123, hbar=1)
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.5)
+        pq.Q(1) | pq.Displacement(r=-0.5)
+
+        pq.Q(0) | pq.HomodyneMeasurement()
+
+    result = simulator.execute(program, shots)
+
+    assert len(result.samples) == shots
+
+    assert np.allclose(
+        result.samples,
+        [
+            [1.04248244],
+            [-0.43057477],
+            [0.16191613],
+            [0.07150249],
+            [0.04870163],
+            [1.33342043],
+            [1.7169028],
+            [0.28775002],
+            [1.35378134],
+            [1.57409005],
+            [0.73006562],
+            [0.21888906],
+            [1.36596076],
+            [0.14603569],
+            [1.16525672],
+            [0.94163604],
+            [1.73727326],
+            [0.1890752],
+            [1.30008007],
+            [0.73928001],
+        ],
+    )
+
+
+def test_HomodyneMeasurement_different_hbar_values():
+    shots = 20
+
+    simulator_hbar_2 = pq.PureFockSimulator(
+        d=3, config=pq.Config(cutoff=7, seed_sequence=123, hbar=2)
+    )
+    simulator_hbar_3 = pq.PureFockSimulator(
+        d=3, config=pq.Config(cutoff=7, seed_sequence=123, hbar=3)
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.5)
+        pq.Q(1) | pq.Displacement(r=-0.5)
+        pq.Q(2) | pq.Squeezing(r=0.1)
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+        pq.Q(0, 2) | pq.HomodyneMeasurement()
+
+    samples_hbar_2 = simulator_hbar_2.execute(program, shots).samples
+    samples_hbar_3 = simulator_hbar_3.execute(program, shots).samples
+
+    assert np.allclose(samples_hbar_2 / np.sqrt(2), samples_hbar_3 / np.sqrt(3))
