@@ -188,6 +188,23 @@ def test_get_number_of_modes_with_invalid_number_of_parameters():
     )
 
 
+def test_get_cvqnn_weight_indices_1_mode():
+    weight_indices = cvqnn.get_cvqnn_weight_indices(1)
+
+    expected_weight_indices = [
+        np.array([0]),
+        np.array([1]),
+        np.array([2]),
+        np.array([3]),
+        np.array([4]),
+        np.array([5]),
+    ]
+
+    assert all(
+        np.allclose(a, b) for a, b in zip(weight_indices, expected_weight_indices)
+    )
+
+
 def test_get_cvqnn_weight_indices():
     weight_indices = cvqnn.get_cvqnn_weight_indices(4)
 

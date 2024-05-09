@@ -163,7 +163,7 @@ def create_program(weights: np.ndarray) -> Program:
 
 
 def _get_number_of_single_layer_parameters(d):
-    return 2 * (d**2 + 2 * d - 1)
+    return 2 * _get_number_of_interferometer_parameters(d) + 4 * d
 
 
 def get_number_of_modes(number_of_parameters: int) -> int:
