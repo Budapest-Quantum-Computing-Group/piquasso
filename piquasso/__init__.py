@@ -44,7 +44,7 @@ from piquasso._backends.fock import (
     FockSimulator,
     PureFockSimulator,
 )
-from piquasso._backends.calculator import (
+from piquasso._backends.calculators import (
     NumpyCalculator,
     TensorflowCalculator,
     JaxCalculator,

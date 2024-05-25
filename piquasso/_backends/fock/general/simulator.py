@@ -16,7 +16,7 @@
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._backends.calculator import NumpyCalculator
+from piquasso._backends.calculators import NumpyCalculator
 
 from .state import FockState
 from .calculations import (

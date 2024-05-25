@@ -21,7 +21,7 @@ import piquasso as pq
 
 from pathlib import Path
 
-from piquasso._backends.calculator import NumpyCalculator
+from piquasso._backends.calculators import NumpyCalculator
 
 
 @pytest.fixture(autouse=True)
