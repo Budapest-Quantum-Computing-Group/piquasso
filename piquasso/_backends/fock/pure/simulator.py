@@ -47,7 +47,7 @@ from piquasso.instructions import (
     batch,
 )
 
-from piquasso._backends.calculator import (
+from piquasso._backends.calculators import (
     NumpyCalculator,
     TensorflowCalculator,
     JaxCalculator,

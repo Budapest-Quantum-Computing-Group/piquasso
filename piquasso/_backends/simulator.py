@@ -21,7 +21,7 @@ from piquasso.api.calculator import BaseCalculator
 from piquasso.api.simulator import Simulator
 from piquasso.api.exceptions import InvalidSimulation
 
-from .calculator import _BuiltinCalculator
+from .calculators.calculator import BuiltinCalculator
 
 
 class BuiltinSimulator(Simulator):
@@ -40,7 +40,7 @@ class BuiltinSimulator(Simulator):
 
     def _validate_calculator(self, calculator):
         if (
-            isinstance(calculator, _BuiltinCalculator)
+            isinstance(calculator, BuiltinCalculator)
             and not isinstance(calculator, self._default_calculator_class)
             and not any(
                 [isinstance(calculator, cls) for cls in self._extra_builtin_calculators]
