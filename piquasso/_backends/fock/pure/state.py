@@ -324,9 +324,37 @@ class PureFockState(BaseFockState):
         return expectation, variance
 
     def mean_photon_number(self):
+        r"""Returns the mean photon number
+
+        .. math::
+            \mathbb{E}_{\ket{\psi}}(\hat{n}) :=
+                \bra{\psi} \hat{n} \ket{\psi},
+
+        where :math:`\hat{n}` is the total photon number operator.
+        """
+
         numbers = np.sum(self._space, axis=1)
 
         return numbers @ (self._np.abs(self.state_vector) ** 2)
+
+    def variance_photon_number(self):
+        r"""Returns the photon number variance
+
+        .. math::
+            \operatorname{Var}_{\ket{\psi}}(\hat{n}) :=
+                \bra{\psi} (\hat{n} - \bar{n})^2 \ket{\psi},
+
+        where :math:`\hat{n}` is the total photon number operator and :math:`\bar{n}`
+        is its expectation value given by :meth:`mean_photon_number`.
+        """
+
+        numbers = np.sum(self._space, axis=1)
+
+        probabilities = self._np.abs(self.state_vector) ** 2
+
+        mean = numbers @ probabilities
+
+        return (numbers - mean) ** 2 @ probabilities
 
     def get_tensor_representation(self):
         cutoff = self._config.cutoff
