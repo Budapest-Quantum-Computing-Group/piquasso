@@ -258,3 +258,49 @@ def test_PureFockState_get_particle_detection_probability_on_modes():
         probability_of_0_on_mode_1,
         np.abs(coeffs[0]) ** 2 + np.abs(coeffs[2]) ** 2 + np.abs(coeffs[5]) ** 2,
     )
+
+
+def test_PureFockState_displaced_squeezed_state_mean_photon_number():
+    d = 2
+    cutoff = 10
+
+    r_S = 0.2
+    r_D = 0.3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r_S, phi=np.pi / 5)
+        pq.Q(0) | pq.Displacement(r_D, phi=np.pi / 3)
+
+        pq.Q(0, 1) | pq.Beamsplitter()
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    state = simulator.execute(program).state
+
+    mean = state.mean_photon_number()
+
+    expected_mean = np.sinh(r_S) ** 2 + r_D**2
+
+    assert np.isclose(mean, expected_mean)
+
+
+def test_PureFockState_displaced_state_variance_photon_number():
+    d = 2
+    cutoff = 10
+
+    alpha = 0.3 * np.exp(1j * np.pi / 5)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(alpha)
+
+        pq.Q(0, 1) | pq.Beamsplitter()
+
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+    state = simulator.execute(program).state
+
+    variance = state.variance_photon_number()
+
+    assert np.isclose(variance, np.abs(alpha) ** 2)
