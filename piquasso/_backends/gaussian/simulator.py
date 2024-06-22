@@ -16,7 +16,7 @@
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._backends.calculators import NumpyCalculator
+from piquasso._backends.calculators import NumpyCalculator, JaxCalculator
 
 from .state import GaussianState
 from .calculations import (
@@ -133,3 +133,5 @@ class GaussianSimulator(BuiltinSimulator):
     _state_class = GaussianState
 
     _default_calculator_class = NumpyCalculator
+
+    _extra_builtin_calculators = [JaxCalculator]
