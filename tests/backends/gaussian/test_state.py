@@ -475,6 +475,21 @@ def test_variance_photon_number():
     assert np.isclose(state.variance_photon_number((3,)), 0.0)
 
 
+def test_displaced_state_variance_photon_number_multimode():
+    r_1 = 0.2
+    r_2 = 0.3
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Displacement(r=r_1, phi=np.pi / 3)
+        pq.Q(1) | pq.Displacement(r=r_2, phi=np.pi / 7)
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    simulator = pq.GaussianSimulator(d=4)
+    state = simulator.execute(program).state
+
+    assert np.isclose(state.variance_photon_number(), r_1**2 + r_2**2)
+
+
 def test_GaussianState_get_particle_detection_probability():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

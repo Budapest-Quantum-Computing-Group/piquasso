@@ -2167,3 +2167,73 @@ def test_NS_gate_with_ImperfectPostSelectPhotons(SimulatorClass):
             [0.0, 0.0, 0.0, 0.0],
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.GaussianSimulator,
+        *tf_purefock_simulators,
+    ),
+)
+def test_mean_photon_number_equivalence(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+
+        pq.Q(0) | pq.Phaseshifter(np.pi / 9)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7, phi=np.pi / 11)
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.mean_photon_number(), 0.02003337780953792)
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.GaussianSimulator,
+        *tf_purefock_simulators,
+    ),
+)
+def test_variance_photon_number_equivalence_1_mode(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+
+        pq.Q(0) | pq.Phaseshifter(np.pi / 9)
+
+    simulator = SimulatorClass(d=1, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.variance_photon_number(), 0.01)
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.GaussianSimulator,
+        *tf_purefock_simulators,
+    ),
+)
+def test_variance_photon_number_equivalence(SimulatorClass):
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 5)
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 5)
+
+        pq.Q(0) | pq.Phaseshifter(np.pi / 9)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7, phi=np.pi / 11)
+
+    simulator = SimulatorClass(d=2, config=pq.Config(cutoff=10))
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.variance_photon_number(), 0.030268090551006963)

@@ -544,7 +544,7 @@ class GaussianState(State):
             transformed_state.xpxp_covariance_matrix,
         )
 
-    def mean_photon_number(self, modes: Tuple[int, ...]) -> float:
+    def mean_photon_number(self, modes: Optional[Tuple[int, ...]] = None) -> float:
         r"""This method returns the mean photon number of the given modes.
         The mean photon number :math:`\bar{n} = \langle \hat{n}
         \rangle` can be calculated in terms of the ladder operators by the following
@@ -577,22 +577,25 @@ class GaussianState(State):
             float: The expectation value of the photon number.
         """
 
-        state = self.reduced(modes)
-        return (np.trace(state._C) + state._m.conjugate() @ state._m).real
+        if modes is not None:
+            return self.reduced(modes).mean_photon_number()
 
-    def variance_photon_number(self, modes: Tuple[int, ...]) -> float:
+        np = self._calculator.np
+
+        return (np.trace(self._C) + self._m.conjugate() @ self._m).real
+
+    def variance_photon_number(self, modes: Optional[Tuple[int, ...]] = None) -> float:
         r"""
         This method calculates the variance of the photon number operator as follows:
 
         .. math::
-            \operatorname{\textit{Var(n)}} = \frac{1}{2} \operatorname{Tr}(
-                \sigma_{ij}/2\hbar)^2 +  \det (\sigma_{ij}/2\hbar) +
-                \frac{1}{2} \left \langle Q \right \rangle (\sigma_{ij}/2\hbar)
-                \left \langle Q \right \rangle - 0.25
+            \operatorname{Var}(\hat{n}) = \mathbb{E}((\hat{n} - \bar{n})^2),
 
-        where :math:`\sigma_{ij}` is the reduced :attr:`xpxp_covariance_matrix` since
-        :math:`i = j` i.e. the covariance matrix of the reduced Gaussian state and
-        :math:`\left \langle Q \right \rangle` is the :attr:`xpxp_mean_vector`.
+        where :math:`\bar{n}` is the expectation value of the photon number, given by
+        :meth:`mean_photon_number`.
+
+        See, e.g., [Means and covariances of photon numbers in multimode Gaussian states](https://journals.aps.org/pra/abstract/10.1103/PhysRevA.99.023817)
+        for details on how to calculate this for Gaussian states.
 
         Args:
             modes (Tuple[int, ...]): The correspoding modes at which the variance of
@@ -600,19 +603,34 @@ class GaussianState(State):
 
         Returns:
             float: Variance of the photon number operator
-        """
-        reduced_state = self.reduced(modes=modes)
-        mean, covariance = (
-            reduced_state.xpxp_mean_vector,
-            reduced_state.xpxp_covariance_matrix / (2 * self._config.hbar),
+        """  # noqa: E501
+
+        if modes is not None:
+            return self.reduced(modes).variance_photon_number()
+
+        np = self._calculator.np
+
+        d = self._d
+
+        m = self._m
+
+        m_outer = np.outer(m, m)
+
+        G = self._G + m_outer
+        C = self._C + np.outer(np.conj(m), m)
+
+        correlation_term = (
+            np.einsum("kj,jk", np.conj(G), G)
+            + np.einsum("jk,kj", C, np.identity(d) + C)
+            + np.einsum("jj,kk", C, C)
+            - 2 * np.sum(np.abs(m_outer) ** 2)
         )
 
-        return (
-            0.5 * np.trace(covariance) ** 2
-            - np.linalg.det(covariance)
-            - 0.25
-            + (0.5 * mean @ covariance @ mean)
-        )
+        mean = self.mean_photon_number()
+
+        variance = (correlation_term - mean**2).real
+
+        return variance
 
     def fidelity(self, state: "GaussianState") -> float:
         r"""Calculates the state fidelity between two quantum states.
