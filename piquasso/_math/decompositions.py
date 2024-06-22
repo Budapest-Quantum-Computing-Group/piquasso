@@ -17,13 +17,13 @@ from typing import Tuple
 
 import numpy as np
 
-from scipy.linalg import sqrtm, schur, block_diag
 from scipy.optimize import root_scalar
 
 from piquasso._math.symplectic import xp_symplectic_form
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
 from piquasso.api.exceptions import InvalidParameter
+from piquasso.api.calculator import BaseCalculator
 
 
 def takagi(matrix, calculator, atol=1e-12):
@@ -72,7 +72,7 @@ def takagi(matrix, calculator, atol=1e-12):
     return singular_values, V @ np.conj(Q)
 
 
-def _rotation_to_positive_above_diagonals(block_diagonal_matrix):
+def _rotation_to_positive_above_diagonals(block_diagonal_matrix, calculator):
     """
     The block diagonal matrix returned by the Schur decomposition in the Williamson
     decomposition needs to be rotated.
@@ -82,11 +82,13 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix):
     diagonal matrix would have negative values.
     """
 
+    np = calculator.np
+
     d = len(block_diagonal_matrix) // 2
     identity = np.identity(2)
     rotation = np.rot90(identity)
 
-    return block_diag(
+    return calculator.block_diag(
         *[
             (
                 identity
@@ -98,7 +100,7 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix):
     )
 
 
-def williamson(matrix: np.ndarray) -> tuple:
+def williamson(matrix: np.ndarray, calculator: BaseCalculator) -> tuple:
     r"""
     Decomposes a positive definite matrix with Williamson decomposition, i.e. a
     positive definite :math:`M` is decomposed to
@@ -162,25 +164,28 @@ def williamson(matrix: np.ndarray) -> tuple:
     Returns
         tuple: Tuple of the symplectic and diagonal matrices, in this order.
     """
+    np = calculator.np
 
     d = len(matrix) // 2
 
     omega = xp_symplectic_form(d)
 
-    root_matrix = sqrtm(matrix).real
+    root_matrix = calculator.sqrtm(matrix).real
     inverse_root_matrix = np.linalg.inv(root_matrix)
 
-    block_diagonal_part, orthogonal_part = schur(
+    block_diagonal_part, orthogonal_part = calculator.schur(
         inverse_root_matrix @ omega @ inverse_root_matrix,
         output="real",
     )
 
     basis_change = _rotation_to_positive_above_diagonals(
-        block_diagonal_part
+        block_diagonal_part, calculator
     ) @ from_xxpp_to_xpxp_transformation_matrix(d)
     ordered_block_diagonal = basis_change.T @ block_diagonal_part @ basis_change
 
-    inverse_diagonal_matrix = block_diag(*(ordered_block_diagonal[:d, d:],) * 2)
+    inverse_diagonal_matrix = calculator.block_diag(
+        *(ordered_block_diagonal[:d, d:],) * 2
+    )
 
     root_inverse_diagonal_matrix = np.diag(np.sqrt(np.diag(inverse_diagonal_matrix)))
 
@@ -196,8 +201,11 @@ def williamson(matrix: np.ndarray) -> tuple:
 def decompose_to_pure_and_mixed(
     matrix: np.ndarray,
     hbar: float,
+    calculator: BaseCalculator,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    symplectic, diagonal = williamson(matrix)
+    np = calculator.np
+
+    symplectic, diagonal = williamson(matrix, calculator)
     pure_covariance = hbar * symplectic @ symplectic.transpose()
     mixed_contribution = (
         symplectic

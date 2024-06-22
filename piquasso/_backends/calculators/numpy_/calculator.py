@@ -41,6 +41,7 @@ class NumpyCalculator(BuiltinCalculator):
         self.polar = scipy.linalg.polar
         self.sqrtm = scipy.linalg.sqrtm
         self.svd = np.linalg.svd
+        self.schur = scipy.linalg.schur
 
         self.permanent = permanent
         self.hafnian = hafnian_with_reduction

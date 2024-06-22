@@ -100,6 +100,7 @@ class JaxCalculator(BuiltinCalculator):
         self.powm = jnp.linalg.matrix_power
         self.sqrtm = jax.scipy.linalg.sqrtm
         self.svd = jnp.linalg.svd
+        self.schur = jax.scipy.linalg.schur
         self.permanent = permanent_with_reduction
 
     def preprocess_input_for_custom_gradient(self, value):

@@ -44,6 +44,8 @@ class BaseCalculator(abc.ABC):
     fallback_np: Any
     forward_pass_np: Any
     range: Any
+    sqrtm: Any
+    schur: Any
 
     def __deepcopy__(self, memo: Any) -> "BaseCalculator":
         """
