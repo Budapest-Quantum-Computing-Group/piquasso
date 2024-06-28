@@ -18,6 +18,7 @@ import numpy as np
 import numba as nb
 
 
+@nb.njit
 def permanent(matrix, rows, cols):
     """Calculates the permanent of a matrix given row and column repetitions.
 
@@ -25,28 +26,24 @@ def permanent(matrix, rows, cols):
 
     Implements Eq. (8) from https://arxiv.org/pdf/2309.07027.pdf.
     """
-    mtx2 = 2 * matrix
-
     delta_limits, minimal_index = _calculate_delta_limits_and_minimal_index(rows)
 
     if minimal_index == len(rows):
         return 1.0
 
-    col_sum = rows @ matrix
+    col_sum = rows.astype(matrix.dtype) @ matrix
 
     permanent = _iterate_over_deltas(
         col_sum,
         minimal_index,
         cols,
-        mtx2,
+        2 * matrix,
         delta_limits,
     )
 
-    sum_multiplicities = sum(rows)
+    sum_multiplicities = np.sum(rows)
 
-    permanent = permanent / 2 ** (sum_multiplicities - 1)
-
-    return permanent
+    return permanent / (2 ** (sum_multiplicities - 1))
 
 
 @nb.njit(cache=True)
