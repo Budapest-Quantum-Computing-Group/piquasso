@@ -73,7 +73,9 @@ def _permanent_jvp(args, tangents):
     tangent = tangents[0]
     primal_out = _permanent_primitive.bind(matrix, rows, cols)
 
-    return primal_out, tangent  # TODO: Finish it!
+    # TODO: Finish it! the tangent_out should be the same shape as tangent_out,
+    # calculated via the chain rule.
+    return primal_out, primal_out
 
 
 _permanent_primitive = jax.core.Primitive("permanent")
@@ -96,9 +98,12 @@ def jax_permanent(matrix, rows, cols):
     rows_array = np.array(rows)
     cols_array = np.array(cols)
 
-    return _permanent_primitive.bind(
+    permanent_in_array = _permanent_primitive.bind(
         matrix, rows_array, cols_array
     )
+    just_the_permanent = permanent_in_array[0]
+
+    return just_the_permanent
 
 
 if __name__ == "__main__":
@@ -108,7 +113,7 @@ if __name__ == "__main__":
     rows = (1, 2, 1)
     cols = (3, 0, 1)
 
-    print(jax_permanent(z, rows, cols)[0])
+    print(jax_permanent(z, rows, cols))
 
     jitted_jax_permanent = jit(jax_permanent, static_argnums=(1, 2))
 
@@ -116,16 +121,16 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    print(jitted_jax_permanent(z, rows, cols)[0])
+    print(jitted_jax_permanent(z, rows, cols))
     print(time.time() - start_time); start_time = time.time()
 
-    print(jitted_jax_permanent(z, rows, (2, 1, 1))[0])
+    print(jitted_jax_permanent(z, rows, (2, 1, 1)))
     print(time.time() - start_time); start_time = time.time()
 
 
     print("---------------")
-    print(jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0))[0])
-    print(jitted_jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0))[0])
+    print(jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0)))
+    print(jitted_jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0)))
     print(time.time() - start_time); start_time = time.time()
 
     def func(matrix):
