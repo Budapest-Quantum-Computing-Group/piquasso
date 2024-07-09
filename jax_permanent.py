@@ -3,9 +3,6 @@ import numpy as np
 import numba
 from numba.types import void, voidptr, CPointer
 
-from functools import partial
-
-
 import jax
 import jax.numpy as jnp
 from jax import core, jit, grad, jvp
@@ -32,7 +29,7 @@ def _permanent_lowering(ctx, matrix, rows, cols):
             size = numba.carray(input_ptrs[3], 1, dtype=numba.types.int32)[0]
             output = numba.carray(output_ptr, (1,), dtype=matrix_dtype)
 
-            matrix_carr = numba.carray(input_ptrs[0], (size,size), dtype=matrix_dtype)
+            matrix_carr = numba.carray(input_ptrs[0], (size, size), dtype=matrix_dtype)
             rows_carr = numba.carray(input_ptrs[1], size, dtype=occ_num_dtype)
             cols_carr = numba.carray(input_ptrs[2], size, dtype=occ_num_dtype)
 
@@ -68,22 +65,56 @@ def _abstract_eval(matrix, rows, cols):
     return core.ShapedArray((1,), matrix.dtype)
 
 
+def falling_factorial(n, k):
+    res = 1.0
+    for i in range(k):
+        res *= n - i
+
+    return res
+
+
 def _permanent_jvp(args, tangents):
     matrix, rows, cols = args
     tangent = tangents[0]
     primal_out = _permanent_primitive.bind(matrix, rows, cols)
 
-    # TODO: Finish it! the tangent_out should be the same shape as tangent_out,
-    # calculated via the chain rule.
-    return primal_out, primal_out
+    result = 0.0
+
+    # NOTE: anything you do here, you should do it with JAX, otherwise, the result will
+    # be incorrect. If you want to avoid this, maybe you can implement another JAX
+    # primitive for the gradient.
+    rows_copy = jnp.copy(rows)
+    cols_copy = jnp.copy(cols)
+
+    for row in range(matrix.shape[0]):
+        for col in range(matrix.shape[1]):
+            m = cols[col]
+            max_index = min(rows[row], cols[col])
+            permanent_partial_derivative = 0.0
+
+            for k in range(max_index):
+                rows_copy = rows_copy.at[row].set(rows_copy[row] - 1)
+                cols_copy = cols_copy.at[col].set(cols_copy[col] - 1)
+                perm_term = _permanent_primitive.bind(matrix, rows_copy, cols_copy)
+
+                permanent_partial_derivative += (
+                    falling_factorial(m, k + 1) * matrix[row, col] ** k * perm_term
+                )
+
+            rows_copy = rows_copy.at[row].set(rows[row])
+            cols_copy = cols_copy.at[col].set(cols[col])
+
+            result += permanent_partial_derivative * tangent[row, col]
+
+    return primal_out, result
 
 
 _permanent_primitive = jax.core.Primitive("permanent")
 
 _permanent_primitive.def_impl(
-    lambda matrix, rows, cols: np.array([
-        _numba_permanent(matrix, np.array(rows), np.array(cols))
-    ])
+    lambda matrix, rows, cols: np.array(
+        [_numba_permanent(matrix, np.array(rows), np.array(cols))]
+    )
 )
 
 _permanent_primitive.def_abstract_eval(_abstract_eval)
@@ -93,14 +124,11 @@ mlir.register_lowering(_permanent_primitive, _permanent_lowering, platform="cpu"
 ad.primitive_jvps[_permanent_primitive] = _permanent_jvp
 
 
-
 def jax_permanent(matrix, rows, cols):
     rows_array = np.array(rows)
     cols_array = np.array(cols)
 
-    permanent_in_array = _permanent_primitive.bind(
-        matrix, rows_array, cols_array
-    )
+    permanent_in_array = _permanent_primitive.bind(matrix, rows_array, cols_array)
     just_the_permanent = permanent_in_array[0]
 
     return just_the_permanent
@@ -122,18 +150,65 @@ if __name__ == "__main__":
     start_time = time.time()
 
     print(jitted_jax_permanent(z, rows, cols))
-    print(time.time() - start_time); start_time = time.time()
+    print(time.time() - start_time)
+    start_time = time.time()
 
     print(jitted_jax_permanent(z, rows, (2, 1, 1)))
-    print(time.time() - start_time); start_time = time.time()
-
+    print(time.time() - start_time)
+    start_time = time.time()
 
     print("---------------")
     print(jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0)))
     print(jitted_jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0)))
-    print(time.time() - start_time); start_time = time.time()
+    print(time.time() - start_time)
+    start_time = time.time()
+
+    def func2(matrix):
+        return jitted_jax_permanent(matrix, (1, 1), (1, 1))
+
+    E00 = np.zeros((2, 2), dtype=complex)
+    E00[0, 0] = 1.0
+
+    z2 = np.random.rand(2, 2) + 1j * np.random.rand(2, 2)
+
+    assert np.isclose(
+       _permanent_jvp((z2, np.array([1, 1]), np.array([1, 1])), (E00,))[1], z2[1, 1]
+    )
+    jvp_result_2by2 = jvp(func2, (z2,), (E00,))
+
+    assert np.isclose(jvp_result_2by2[0], jax_permanent(z2, (1, 1), (1, 1)))
+    assert np.isclose(
+        jvp_result_2by2[1], jax_permanent(z2, (0, 1), (0, 1))
+    )
+
+    grad_jax_permanent = jit(
+        grad(jitted_jax_permanent, holomorphic=True), static_argnums=(1, 2)
+    )
+
+    A = np.random.rand(2, 2) + np.random.rand(2, 2) * 1j
+
+    assert np.allclose(
+        jitted_jax_permanent(A, (1, 1), (1, 1)), A[0, 0] * A[1, 1] + A[1, 0] * A[0, 1]
+    )
+
+    assert np.allclose(
+        grad_jax_permanent(A, (1, 1), (1, 1)),
+        np.array(
+            [
+                [
+                    A[1, 1],
+                    A[1, 0],
+                ],
+                [A[0, 1], A[0, 0]],
+            ]
+        ),
+    )
 
     def func(matrix):
         return jitted_jax_permanent(matrix, rows, cols)
 
     print(jvp(func, (z,), (z,)))
+
+    print(jit(grad(func, holomorphic=True))(z))
+
+    print(grad_jax_permanent(z4, (0, 2, 1, 3), (3, 1, 2, 0)))
