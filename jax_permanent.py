@@ -82,7 +82,8 @@ def _permanent_jvp(args, tangents):
 
     # NOTE: anything you do here, you should do it with JAX, otherwise, the result will
     # be incorrect. If you want to avoid this, maybe you can implement another JAX
-    # primitive for the gradient.
+    # primitive for the gradient. Or, you can try to implement this with fori_loops and
+    # whatnot.
     rows_copy = jnp.copy(rows)
     cols_copy = jnp.copy(cols)
 
