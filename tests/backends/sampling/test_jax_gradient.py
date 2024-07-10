@@ -57,7 +57,7 @@ def test_Beamsplitter_gradient_at_theta_equal_0():
 
 
 @pytest.mark.monkey
-def test_Beamsplitter_gradient_at_random_angle():
+def test_Beamsplitter_gradient_at_random_angle_single_particle_initial_state():
     calculator = pq.JaxCalculator()
 
     def get_fidelity(theta):
@@ -90,5 +90,51 @@ def test_Beamsplitter_gradient_at_random_angle():
     fidelity_grad = grad_get_fidelity(angle)
 
     expected_fidelity_grad = -2 * np.sin(2 * angle) * np.sign(np.cos(2 * angle))
+
+    assert np.isclose(fidelity_grad, expected_fidelity_grad)
+
+
+@pytest.mark.monkey
+def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
+    calculator = pq.JaxCalculator()
+
+    def get_fidelity(theta):
+        initial_state = [2, 1, 0]
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector(initial_state)
+
+        with pq.Program() as rotated_program:
+            pq.Q() | program
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
+
+        simulator = pq.SamplingSimulator(
+            d=3,
+            calculator=calculator,
+            config=pq.Config(cutoff=np.sum(initial_state) + 1),
+        )
+
+        initial_state_vector = simulator.execute(program).state.state_vector
+        rotated_state_vector = simulator.execute(rotated_program).state.state_vector
+
+        return jnp.abs(jnp.conj(initial_state_vector) @ rotated_state_vector)
+
+    angle = np.random.uniform() * 2 * np.pi
+
+    expected_fidelity = (
+        np.cos(angle) * np.cos(2 * angle) - np.sin(angle) * np.sin(2 * angle) / 2
+    )
+
+    fidelity = get_fidelity(angle)
+
+    assert np.isclose(fidelity, expected_fidelity)
+
+    grad_get_fidelity = grad(get_fidelity)
+    fidelity_grad = grad_get_fidelity(angle)
+
+    expected_fidelity_grad = -2 * np.sin(angle) * np.cos(2 * angle) - 5 / 2 * np.sin(
+        2 * angle
+    ) * np.cos(angle)
 
     assert np.isclose(fidelity_grad, expected_fidelity_grad)
