@@ -92,3 +92,51 @@ def test_Beamsplitter_gradient_at_random_angle():
     expected_fidelity_grad = -2 * np.sin(2 * angle) * np.sign(np.cos(2 * angle))
 
     assert np.isclose(fidelity_grad, expected_fidelity_grad)
+
+
+@pytest.mark.monkey
+def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
+    connector = pq.JaxConnector()
+
+    def get_fidelity(theta):
+        initial_state = [2, 1, 0]
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector(initial_state)
+
+        with pq.Program() as rotated_program:
+            pq.Q() | program
+
+            pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
+
+        simulator = pq.SamplingSimulator(
+            d=3,
+            connector=connector,
+            config=pq.Config(cutoff=np.sum(initial_state) + 1),
+        )
+
+        initial_state_vector = simulator.execute(program).state.state_vector
+        rotated_state_vector = simulator.execute(rotated_program).state.state_vector
+
+        return jnp.abs(jnp.conj(initial_state_vector) @ rotated_state_vector)
+
+    angle = np.random.uniform() * 2 * np.pi
+
+    overlap = np.cos(angle) * np.cos(2 * angle) - np.sin(angle) * np.sin(2 * angle) / 2
+
+    expected_fidelity = np.abs(overlap)
+
+    fidelity = get_fidelity(angle)
+
+    assert np.isclose(fidelity, expected_fidelity)
+
+    grad_get_fidelity = grad(get_fidelity)
+    fidelity_grad = grad_get_fidelity(angle)
+
+    overlap_grad = -2 * np.sin(angle) * np.cos(2 * angle) - 5 / 2 * np.sin(
+        2 * angle
+    ) * np.cos(angle)
+
+    expected_fidelity_grad = overlap_grad * (1 if (overlap > 0) else -1)
+
+    assert np.isclose(fidelity_grad, expected_fidelity_grad)
