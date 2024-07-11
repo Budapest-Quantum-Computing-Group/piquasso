@@ -34,7 +34,7 @@ def arr_comb(n, k):
 
 @nb.njit(cache=True)
 def comb(n, k):
-    if n <= 0 or n < k:
+    if n < 0 or n < k:
         return 0
 
     prod = 1
@@ -46,6 +46,36 @@ def comb(n, k):
     return prod
 
 
+@nb.njit
+def nb_combinations(arr, r):
+    n = arr.shape[0]
+    indices = np.arange(r)
+    result_size = comb(n, r)
+    result = np.empty((result_size, r), dtype=arr.dtype)
+
+    def advance(indices, n, r):
+        for i in range(r - 1, -1, -1):
+            if indices[i] != i + n - r:
+                break
+        else:
+            return False
+
+        indices[i] += 1
+        for j in range(i + 1, r):
+            indices[j] = indices[j - 1] + 1
+
+        return True
+
+    result[0, :] = arr[indices]
+    k = 1
+
+    while advance(indices, n, r):
+        result[k, :] = arr[indices]
+        k += 1
+
+    return result
+
+
 _T = TypeVar("_T")
 
 
@@ -54,30 +84,32 @@ def powerset(iterable: Iterable[_T]) -> Iterator[Tuple[_T, ...]]:
     return chain.from_iterable(combinations(iterable, r) for r in range(len(s) + 1))
 
 
+@nb.njit
 def partitions(boxes, particles):
     size = boxes + particles - 1
 
     if size == -1 or boxes == 0:
-        return np.array([], dtype=int)
+        return np.empty((1, 0), dtype=np.int32)
 
-    index_matrix = np.flip(
-        np.array(list(combinations(range(size), boxes - 1)), dtype=int), 0
+    index_matrix = nb_combinations(
+        np.array(list(range(size)), dtype=np.int32), boxes - 1
     )
+    index_matrix = np.flipud(index_matrix)
 
     starts = np.concatenate(
-        [
-            np.zeros(shape=(index_matrix.shape[0], 1), dtype=int),
+        (
+            np.zeros(shape=(index_matrix.shape[0], 1), dtype=np.int32),
             np.add(index_matrix, 1),
-        ],
+        ),
         axis=1,
     )
 
     stops = np.concatenate(
-        [
+        (
             index_matrix,
-            np.full(shape=(index_matrix.shape[0], 1), fill_value=size, dtype=int),
-        ],
+            np.full(shape=(index_matrix.shape[0], 1), fill_value=size, dtype=np.int32),
+        ),
         axis=1,
     )
 
-    return stops - starts
+    return (stops - starts).astype(np.int32)
