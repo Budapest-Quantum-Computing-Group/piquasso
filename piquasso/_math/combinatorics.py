@@ -17,6 +17,34 @@ from itertools import chain, combinations
 from typing import Tuple, Iterable, Iterator, TypeVar
 
 import numpy as np
+import numba as nb
+
+
+@nb.njit
+def arr_comb(n, k):
+    n = np.where((n < 0) | (n < k), 0, n)
+    prod = np.ones(n.shape, dtype=np.int64)
+
+    for i in range(k):
+        prod *= n - i
+        prod = prod // (i + 1)
+
+    return prod
+
+
+@nb.njit(cache=True)
+def comb(n, k):
+    if n <= 0 or n < k:
+        return 0
+
+    prod = 1
+
+    for i in range(k):
+        prod *= n - i
+        prod = prod // (i + 1)
+
+    return prod
+
 
 _T = TypeVar("_T")
 
