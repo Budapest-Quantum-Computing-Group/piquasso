@@ -17,6 +17,7 @@ import functools
 from typing import Tuple
 
 import numpy as np
+import numba as nb
 
 from scipy.special import comb
 
@@ -54,9 +55,20 @@ def symmetric_subspace_cardinality_array(*, d: int, n: int) -> int:
     return np.round(comb(d + n - 1, n)).astype(int)
 
 
-@functools.lru_cache(maxsize=None)
+@nb.njit(cache=True)
 def get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
-    ret = np.vstack([partitions(boxes=d, particles=n) for n in range(cutoff)])
+    partitions_list = [partitions(boxes=d, particles=n) for n in range(cutoff)]
+
+    total_elements = 0
+    for part in partitions_list:
+        total_elements += part.shape[0]
+
+    ret = np.empty((total_elements, d), dtype=partitions_list[0].dtype)
+    current_row = 0
+    for part in partitions_list:
+        num_rows = part.shape[0]
+        ret[current_row : current_row + num_rows, :] = part
+        current_row += num_rows
 
     return ret
 
