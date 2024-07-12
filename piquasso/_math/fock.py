@@ -20,6 +20,7 @@ import numpy as np
 import numba as nb
 
 from scipy.special import comb
+from piquasso._math.combinatorics import comb as nb_comb
 
 from piquasso.api.config import Config
 from piquasso._math.combinatorics import partitions
@@ -47,8 +48,14 @@ def cutoff_cardinality(*, cutoff: int, d: int) -> int:
     return comb(d + cutoff - 1, cutoff - 1, exact=True)
 
 
-def cutoff_cardinality_array(*, cutoff, d):
-    return np.round(comb(d + cutoff - 1, d)).astype(int)
+@nb.njit
+def cutoff_cardinality_array(cutoff, d):
+    ret = np.empty(cutoff.shape, dtype=np.int32)
+
+    for i in range(len(cutoff)):
+        ret[i] = nb_comb(d + cutoff[i] - 1, d)
+
+    return ret
 
 
 def symmetric_subspace_cardinality_array(*, d: int, n: int) -> int:
