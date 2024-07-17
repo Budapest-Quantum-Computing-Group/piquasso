@@ -76,11 +76,12 @@ def falling_factorial(n, k):
 
 
 def _permanent_jvp(args, tangents):
+    # TODO: THIS IS WRONG
     matrix, rows, cols = args
     tangent = tangents[0]
     primal_out = _permanent_primitive.bind(matrix, rows, cols)
 
-    result = 0.0
+    tangent_out = 0.0
 
     # NOTE: anything you do here you'd normally do with NumPy, you should do it with
     # JAX, otherwise, the result will be incorrect. If you want to avoid this, maybe you
@@ -103,13 +104,14 @@ def _permanent_jvp(args, tangents):
                 permanent_partial_derivative += (
                     falling_factorial(m, k + 1) * matrix[row, col] ** k * perm_term
                 )
+                breakpoint()
 
             rows_copy = rows_copy.at[row].set(rows[row])
             cols_copy = cols_copy.at[col].set(cols[col])
 
-            result += permanent_partial_derivative * tangent[row, col]
+            tangent_out += permanent_partial_derivative * tangent[row, col]
 
-    return primal_out, result
+    return primal_out, tangent_out
 
 
 _permanent_primitive = jax.core.Primitive("permanent")
@@ -133,12 +135,32 @@ def permanent_with_reduction(matrix, rows, cols):
     rows_array = np.array(rows)
     cols_array = np.array(cols)
 
-    permanent_in_array = _permanent_primitive.bind(
-        matrix, rows_array, cols_array
-    )
+    permanent_in_array = _permanent_primitive.bind(matrix, rows_array, cols_array)
     just_the_permanent = permanent_in_array[0]
 
     return just_the_permanent
+
+
+def test_():
+    A = np.random.rand(2, 2) + np.random.rand(2, 2) * 1j
+
+    expected = np.array(
+        [
+            [
+                4 * A[0, 0] * A[1, 1] + 2 * A[0, 1] * A[1, 0] + 2 * A[0, 1] * A[1, 0],
+                4 * A[0, 0] * A[1, 0],
+            ],
+            [4 * A[0, 0] * A[0, 1], 2 * A[0, 0] ** 2],
+        ]
+    )
+
+    assert np.isclose(
+        _permanent_jvp(
+            (A, np.array([2, 1]), np.array([2, 1])),
+            (np.array([[1, 0], [0, 0]]), None, None),
+        ),
+        expected[0, 0],
+    )
 
 
 if __name__ == "__main__":
@@ -207,6 +229,38 @@ if __name__ == "__main__":
                 [A[0, 1], A[0, 0]],
             ]
         ),
+    )
+
+    assert np.allclose(
+        grad_jax_permanent(A, (2, 0), (2, 0)), np.array([[4 * A[0, 0], 0], [0, 0]])
+    )
+
+    assert np.allclose(
+        jitted_jax_permanent(A, (2, 1), (2, 1)),
+        2 * A[0, 0] * (A[0, 0] * A[1, 1] + A[0, 1] * A[1, 0])
+        + 2 * A[0, 1] * A[0, 0] * A[1, 0],
+    )
+
+    expected = np.array(
+        [
+            [
+                4 * A[0, 0] * A[1, 1] + 2 * A[0, 1] * A[1, 0] + 2 * A[0, 1] * A[1, 0],
+                4 * A[0, 0] * A[1, 0],
+            ],
+            [4 * A[0, 0] * A[0, 1], 2 * A[0, 0] ** 2],
+        ]
+    )
+
+    assert np.isclose(
+        _permanent_jvp(
+            (A, np.array([2, 1]), np.array([2, 1])),
+            (np.array([[1, 0], [0, 0]]), None, None),
+        ),
+        expected[0, 0],
+    )
+    assert np.allclose(
+        grad_jax_permanent(A, (2, 1), (2, 1)),
+        expected,
     )
 
     def func(matrix):
