@@ -16,6 +16,7 @@
 from typing import Tuple, List
 
 import numpy as np
+import numba as nb
 
 from scipy.special import comb
 
@@ -142,7 +143,7 @@ def calculate_state_index_matrix_list(d, cutoff, mode):
     return state_index_matrix_list
 
 
-@lru_cache(maxsize=None)
+@nb.njit
 def calculate_interferometer_helper_indices(d, cutoff):
     space = get_fock_space_basis(d=d, cutoff=cutoff)
 
@@ -156,28 +157,47 @@ def calculate_interferometer_helper_indices(d, cutoff):
     sqrt_occupation_numbers_tensor = []
     sqrt_first_occupation_numbers_tensor = []
 
-    identity = np.identity(d, dtype=int)
+    identity = np.identity(d, dtype=space.dtype)
 
-    repeated = get_index_in_fock_subspace_array(
-        np.repeat(space[:, None, :], d, axis=1)
-        - np.repeat(identity[None, :, :], len(space), axis=0)
-    )
+    identity_repeat = np.empty((len(space), d, d), dtype=identity.dtype)
+    space_repeat = np.empty((space.shape[0], d, space.shape[1]), dtype=space.dtype)
+
+    for i in range(d):
+        space_repeat[:, i, :] = space
+
+    for i in range(len(space)):
+        identity_repeat[i, :, :] = identity
+
+    basis = get_index_in_fock_subspace_array(space_repeat - identity_repeat)
 
     sqrt_space = np.sqrt(space)
     first_nonzero_space_index = (space != 0).argmax(axis=1)
 
-    space[np.arange(len(space)), first_nonzero_space_index] -= 1
-    first_subpace_indices_space = get_index_in_fock_subspace_array(space)
-    space[np.arange(len(space)), first_nonzero_space_index] += 1
+    for i in range(len(space)):
+        space[i, first_nonzero_space_index[i]] -= 1
 
-    sqrt_first_occupation_numbers = np.sqrt(
-        space[np.arange(len(space)), first_nonzero_space_index]
+    first_subpace_indices_space = get_index_in_fock_subspace_array(space)
+    for i in range(len(space)):
+        space[i, first_nonzero_space_index[i]] += 1
+
+    sqrt_first_occupation_numbers = np.empty(
+        (
+            len(
+                space,
+            )
+        ),
+        dtype=np.float64,
     )
+
+    for i in range(len(space)):
+        sqrt_first_occupation_numbers[i] = np.sqrt(
+            space[i, first_nonzero_space_index[i]]
+        )
 
     for n in range(2, cutoff):
         subspace_range = np.arange(indices[n - 1], indices[n])
         subspace_index_tensor.append(
-            np.mod(repeated[subspace_range], indices[n - 1] - indices[n - 2])
+            np.mod(basis[subspace_range], indices[n - 1] - indices[n - 2])
         )
 
         first_nonzero_index_tensor.append(first_nonzero_space_index[subspace_range])
@@ -188,13 +208,13 @@ def calculate_interferometer_helper_indices(d, cutoff):
             sqrt_first_occupation_numbers[subspace_range]
         )
 
-    return {
-        "subspace_index_tensor": subspace_index_tensor,
-        "first_nonzero_index_tensor": first_nonzero_index_tensor,
-        "first_subspace_index_tensor": first_subspace_index_tensor,
-        "sqrt_occupation_numbers_tensor": sqrt_occupation_numbers_tensor,
-        "sqrt_first_occupation_numbers_tensor": sqrt_first_occupation_numbers_tensor,
-    }
+    return (
+        subspace_index_tensor,
+        first_nonzero_index_tensor,
+        first_subspace_index_tensor,
+        sqrt_occupation_numbers_tensor,
+        sqrt_first_occupation_numbers_tensor,
+    )
 
 
 def calculate_interferometer_on_fock_space(interferometer, index_dict, calculator):
