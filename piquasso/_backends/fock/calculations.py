@@ -33,6 +33,7 @@ from piquasso._math.fock import (
     cutoff_cardinality_array,
     operator_basis,
     get_fock_space_basis,
+    nb_get_fock_space_basis,
 )
 from piquasso._math.indices import (
     get_index_in_fock_space,
@@ -145,7 +146,7 @@ def calculate_state_index_matrix_list(d, cutoff, mode):
 
 @nb.njit
 def calculate_interferometer_helper_indices(d, cutoff):
-    space = get_fock_space_basis(d=d, cutoff=cutoff)
+    space = nb_get_fock_space_basis(d=d, cutoff=cutoff)
 
     indices = cutoff_cardinality_array(cutoff=np.arange(1, cutoff + 1), d=d)
 

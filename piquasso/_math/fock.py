@@ -63,7 +63,7 @@ def symmetric_subspace_cardinality_array(*, d: int, n: int) -> int:
 
 
 @nb.njit(cache=True)
-def get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
+def nb_get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
     partitions_list = [partitions(boxes=d, particles=n) for n in range(cutoff)]
 
     total_elements = 0
@@ -78,6 +78,9 @@ def get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
         current_row += num_rows
 
     return ret
+
+
+get_fock_space_basis = functools.lru_cache(maxsize=None)(nb_get_fock_space_basis)
 
 
 def get_single_mode_squeezing_operator(
