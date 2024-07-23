@@ -3,3 +3,7 @@ ignore:
   - piquasso/_math/hafnian/*
   - piquasso/_math/permanent.py
   - piquasso/_backends/fock/pure/calculations/homodyne.py
+  - piquasso/_math/combinatorics.py
+  - piquasso/_math/fock.py
+  - piquasso/_math/indices.py
+  - piquasso/_backends/fock/calculations.py

@@ -16,8 +16,10 @@
 from typing import Tuple
 
 import numpy as np
+import numba as nb
 
 from scipy.special import comb
+from piquasso._math.combinatorics import arr_comb
 
 
 def get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
@@ -72,13 +74,14 @@ def get_index_in_fock_subspace(element: np.ndarray) -> int:
     return accumulator
 
 
+@nb.njit
 def get_index_in_fock_subspace_array(basis: np.ndarray) -> np.ndarray:
-    sum_ = np.zeros(shape=basis.shape[:-1], dtype=int)
-    accumulator = np.zeros(shape=basis.shape[:-1], dtype=int)
+    sum_ = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
+    accumulator = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
 
     for i in range(basis.shape[-1] - 1):
         sum_ += basis[..., -1 - i]
-        accumulator += np.round(comb(sum_ + i, i + 1)).astype(int)
+        accumulator += np.round(arr_comb(sum_ + i, i + 1)).astype(np.int32)
 
     return accumulator
 

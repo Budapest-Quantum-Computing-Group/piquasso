@@ -117,10 +117,18 @@ def _calculate_density_matrix_after_interferometer(
 
 
 def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
-    index_dict = calculate_interferometer_helper_indices(
+    index_tuple = calculate_interferometer_helper_indices(
         d=len(interferometer),
         cutoff=cutoff,
     )
+
+    index_dict = {
+        "subspace_index_tensor": index_tuple[0],
+        "first_nonzero_index_tensor": index_tuple[1],
+        "first_subspace_index_tensor": index_tuple[2],
+        "sqrt_occupation_numbers_tensor": index_tuple[3],
+        "sqrt_first_occupation_numbers_tensor": index_tuple[4],
+    }
 
     return calculate_interferometer_on_fock_space(
         interferometer, index_dict, calculator

@@ -17,6 +17,8 @@ import numpy as np
 
 import numba as nb
 
+from piquasso._math.combinatorics import comb
+
 
 def permanent(matrix, rows, cols):
     """Calculates the permanent of a matrix given row and column repetitions.
@@ -103,7 +105,7 @@ def _iterate_over_deltas(
                 index_min=idx + 1,
                 current_multiplicity=(
                     current_multiplicity
-                    * _nb_comb(delta_limits[idx], index_of_multiplicity)
+                    * comb(delta_limits[idx], index_of_multiplicity)
                 ),
                 cols=cols,
                 mtx2=mtx2,
@@ -146,7 +148,7 @@ def _iterate_over_deltas_recursively(
                 index_min=idx + 1,
                 current_multiplicity=(
                     current_multiplicity
-                    * _nb_comb(delta_limits[idx], index_of_multiplicity)
+                    * comb(delta_limits[idx], index_of_multiplicity)
                 ),
                 cols=cols,
                 mtx2=mtx2,
@@ -156,14 +158,3 @@ def _iterate_over_deltas_recursively(
         outer_sum += inner_sum
 
     return outer_sum + current_multiplicity * sign * np.prod(col_sum**cols)
-
-
-@nb.njit(cache=True)
-def _nb_comb(n, k):
-    prod = 1
-
-    for i in range(k):
-        prod *= n - i
-        prod = prod // (i + 1)
-
-    return prod

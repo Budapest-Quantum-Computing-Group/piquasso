@@ -76,9 +76,17 @@ def _do_apply_passive_linear(
 def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
     def _get_interferometer_with_gradient_callback(interferometer):
         interferometer = calculator.preprocess_input_for_custom_gradient(interferometer)
-        index_dict = calculate_interferometer_helper_indices(
+        index_tuple = calculate_interferometer_helper_indices(
             d=len(interferometer), cutoff=cutoff
         )
+
+        index_dict = {
+            "subspace_index_tensor": index_tuple[0],
+            "first_nonzero_index_tensor": index_tuple[1],
+            "first_subspace_index_tensor": index_tuple[2],
+            "sqrt_occupation_numbers_tensor": index_tuple[3],
+            "sqrt_first_occupation_numbers_tensor": index_tuple[4],
+        }
 
         subspace_representations = calculate_interferometer_on_fock_space(
             interferometer, index_dict, calculator

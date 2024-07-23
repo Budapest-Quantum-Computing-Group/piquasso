@@ -17,8 +17,10 @@ import functools
 from typing import Tuple
 
 import numpy as np
+import numba as nb
 
 from scipy.special import comb
+from piquasso._math.combinatorics import comb as nb_comb
 
 from piquasso.api.config import Config
 from piquasso._math.combinatorics import partitions
@@ -46,19 +48,39 @@ def cutoff_cardinality(*, cutoff: int, d: int) -> int:
     return comb(d + cutoff - 1, cutoff - 1, exact=True)
 
 
-def cutoff_cardinality_array(*, cutoff, d):
-    return np.round(comb(d + cutoff - 1, d)).astype(int)
+@nb.njit
+def cutoff_cardinality_array(cutoff, d):
+    ret = np.empty(cutoff.shape, dtype=np.int32)
+
+    for i in range(len(cutoff)):
+        ret[i] = nb_comb(d + cutoff[i] - 1, d)
+
+    return ret
 
 
 def symmetric_subspace_cardinality_array(*, d: int, n: int) -> int:
     return np.round(comb(d + n - 1, n)).astype(int)
 
 
-@functools.lru_cache(maxsize=None)
-def get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
-    ret = np.vstack([partitions(boxes=d, particles=n) for n in range(cutoff)])
+@nb.njit(cache=True)
+def nb_get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
+    partitions_list = [partitions(boxes=d, particles=n) for n in range(cutoff)]
+
+    total_elements = 0
+    for part in partitions_list:
+        total_elements += part.shape[0]
+
+    ret = np.empty((total_elements, d), dtype=partitions_list[0].dtype)
+    current_row = 0
+    for part in partitions_list:
+        num_rows = part.shape[0]
+        ret[current_row : current_row + num_rows, :] = part
+        current_row += num_rows
 
     return ret
+
+
+get_fock_space_basis = functools.lru_cache(maxsize=None)(nb_get_fock_space_basis)
 
 
 def get_single_mode_squeezing_operator(
