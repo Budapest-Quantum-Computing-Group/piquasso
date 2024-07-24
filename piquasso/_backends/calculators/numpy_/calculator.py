@@ -39,13 +39,15 @@ class NumpyCalculator(BuiltinCalculator):
         self.expm = scipy.linalg.expm
         self.powm = np.linalg.matrix_power
         self.polar = scipy.linalg.polar
-        self.sqrtm = scipy.linalg.sqrtm
         self.svd = np.linalg.svd
         self.schur = scipy.linalg.schur
 
         self.permanent = permanent
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
+
+    def sqrtm(self, matrix):
+        return scipy.linalg.sqrtm(matrix).astype(np.complex128)
 
     def preprocess_input_for_custom_gradient(self, value):
         return value
