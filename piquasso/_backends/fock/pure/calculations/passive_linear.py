@@ -26,7 +26,6 @@ from piquasso.api.calculator import BaseCalculator
 from ..state import PureFockState
 from ...calculations import (
     calculate_interferometer_helper_indices,
-    calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
 )
 from piquasso.instructions import gates
@@ -88,8 +87,8 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
             "sqrt_first_occupation_numbers_tensor": index_tuple[4],
         }
 
-        subspace_representations = calculate_interferometer_on_fock_space(
-            interferometer, index_dict, calculator
+        subspace_representations = calculator.calculate_interferometer_on_fock_space(
+            interferometer, index_dict
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
             interferometer,

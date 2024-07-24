@@ -54,3 +54,50 @@ class BuiltinCalculator(BaseCalculator):
         embedded_matrix = self.assign(embedded_matrix, indices, matrix)
 
         return embedded_matrix
+
+    def calculate_interferometer_on_fock_space(self, interferometer, helper_indices):
+        np = self.forward_pass_np
+        subspace_representations = []
+
+        subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
+        subspace_representations.append(interferometer)
+
+        cutoff = len(helper_indices["subspace_index_tensor"]) + 2
+
+        for n in range(2, cutoff):
+            subspace_indices = helper_indices["subspace_index_tensor"][n - 2]
+            first_subspace_indices = helper_indices["first_subspace_index_tensor"][
+                n - 2
+            ]
+
+            first_nonzero_indices = helper_indices["first_nonzero_index_tensor"][n - 2]
+
+            sqrt_occupation_numbers = helper_indices["sqrt_occupation_numbers_tensor"][
+                n - 2
+            ]
+            sqrt_first_occupation_numbers = helper_indices[
+                "sqrt_first_occupation_numbers_tensor"
+            ][n - 2]
+
+            first_part_partially_indexed = interferometer[first_nonzero_indices]
+            second = self.gather_along_axis_1(
+                subspace_representations[n - 1][first_subspace_indices],
+                indices=subspace_indices,
+            )
+
+            matrix = np.einsum(
+                "ij,kj,kij->ki",
+                sqrt_occupation_numbers,
+                first_part_partially_indexed,
+                second,
+            )
+
+            new_subspace_representation = (
+                matrix / sqrt_first_occupation_numbers[:, None]
+            )
+
+            subspace_representations.append(
+                new_subspace_representation.astype(interferometer.dtype)
+            )
+
+        return subspace_representations
