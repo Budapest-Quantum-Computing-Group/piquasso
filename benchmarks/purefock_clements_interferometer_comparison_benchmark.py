@@ -27,10 +27,10 @@ pytestmark = pytest.mark.benchmark(
 
 @pytest.fixture
 def cutoff():
-    return 5
+    return 6
 
 
-d_tuple = (2, 3, 4, 5)
+d_tuple = (5, 6, 7)
 U_tuple = tuple([unitary_group.rvs(d) for d in d_tuple])
 
 

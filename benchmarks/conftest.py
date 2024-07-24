@@ -15,7 +15,6 @@
 
 import pytest
 
-import strawberryfields as sf
 import piquasso as pq
 
 import numpy as np
@@ -116,76 +115,6 @@ def example_pq_purefock_state(pq_purefock_simulator, example_purefock_pq_program
     state = pq_purefock_simulator.execute(example_purefock_pq_program).state
 
     return state
-
-
-@pytest.fixture
-def example_gaussian_sf_program_and_engine(d):
-    """
-    NOTE: the covariance matrix SF is returning is half of ours...
-    It seems that our implementation is OK, however.
-    """
-
-    program = sf.Program(d)
-    engine = sf.Engine(backend="gaussian")
-
-    with program.context as q:
-        sf.ops.Sgate(0.1) | q[0]
-        sf.ops.Sgate(0.1) | q[1]
-        sf.ops.Sgate(0.1) | q[2]
-        sf.ops.Sgate(0.1) | q[3]
-        sf.ops.Sgate(0.1) | q[4]
-
-        sf.ops.Dgate(1) | q[0]
-        sf.ops.Dgate(1) | q[1]
-        sf.ops.Dgate(1) | q[2]
-        sf.ops.Dgate(1) | q[3]
-        sf.ops.Dgate(1) | q[4]
-
-        sf.ops.BSgate(0.0959408065906761, 0.06786053071484363) | (q[0], q[1])
-        sf.ops.BSgate(0.7730047654405018, 1.453770233324797) | (q[2], q[3])
-        sf.ops.BSgate(1.0152680371119776, 1.2863559998816205) | (q[1], q[2])
-        sf.ops.BSgate(1.3205517879465705, 0.5236836466492961) | (q[3], q[4])
-        sf.ops.BSgate(4.394480318177715, 4.481575657714487) | (q[0], q[1])
-        sf.ops.BSgate(2.2300919706807534, 1.5073556513699888) | (q[2], q[3])
-        sf.ops.BSgate(2.2679037068773673, 1.9550229282085838) | (q[1], q[2])
-        sf.ops.BSgate(3.340269832485504, 3.289367083610399) | (q[3], q[4])
-
-    return program, engine
-
-
-@pytest.fixture
-def example_fock_sf_program_and_engine(d, cutoff):
-    """
-    NOTE: the covariance matrix SF is returning is half of ours...
-    It seems that our implementation is OK, however.
-    """
-
-    program = sf.Program(d)
-    engine = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
-
-    with program.context as q:
-        sf.ops.Sgate(0.1) | q[0]
-        sf.ops.Sgate(0.1) | q[1]
-        sf.ops.Sgate(0.1) | q[2]
-        sf.ops.Sgate(0.1) | q[3]
-        sf.ops.Sgate(0.1) | q[4]
-
-        sf.ops.Dgate(1) | q[0]
-        sf.ops.Dgate(1) | q[1]
-        sf.ops.Dgate(1) | q[2]
-        sf.ops.Dgate(1) | q[3]
-        sf.ops.Dgate(1) | q[4]
-
-        sf.ops.BSgate(0.0959408065906761, 0.06786053071484363) | (q[0], q[1])
-        sf.ops.BSgate(0.7730047654405018, 1.453770233324797) | (q[2], q[3])
-        sf.ops.BSgate(1.0152680371119776, 1.2863559998816205) | (q[1], q[2])
-        sf.ops.BSgate(1.3205517879465705, 0.5236836466492961) | (q[3], q[4])
-        sf.ops.BSgate(4.394480318177715, 4.481575657714487) | (q[0], q[1])
-        sf.ops.BSgate(2.2300919706807534, 1.5073556513699888) | (q[2], q[3])
-        sf.ops.BSgate(2.2679037068773673, 1.9550229282085838) | (q[1], q[2])
-        sf.ops.BSgate(3.340269832485504, 3.289367083610399) | (q[3], q[4])
-
-    return program, engine
 
 
 @pytest.fixture
