@@ -41,7 +41,6 @@ from piquasso._math.fock import (
 from ..calculations import (
     calculate_state_index_matrix_list,
     calculate_interferometer_helper_indices,
-    calculate_interferometer_on_fock_space,
     calculate_index_list_for_appling_interferometer,
     get_projection_operator_indices,
 )
@@ -130,9 +129,7 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
         "sqrt_first_occupation_numbers_tensor": index_tuple[4],
     }
 
-    return calculate_interferometer_on_fock_space(
-        interferometer, index_dict, calculator
-    )
+    return calculator.calculate_interferometer_on_fock_space(interferometer, index_dict)
 
 
 def particle_number_measurement(

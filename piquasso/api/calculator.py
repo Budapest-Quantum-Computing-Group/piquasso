@@ -229,3 +229,12 @@ class BaseCalculator(abc.ABC):
             matrix (numpy.ndarray): The input matrix.
         """
         raise NotImplementedCalculation()
+
+    def calculate_interferometer_on_fock_space(self, interferometer, helper_indices):
+        """Calculates interferometer on the Fock space.
+
+        Args:
+            interferometer (numpy.ndarray): Interferometer
+            helper_indices (Union(tuple, dict)): A set of indices used to help calculations easier
+        """
+        raise NotImplementedCalculation()

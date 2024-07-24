@@ -218,64 +218,6 @@ def calculate_interferometer_helper_indices(d, cutoff):
     )
 
 
-def calculate_interferometer_on_fock_space(interferometer, index_dict, calculator):
-    """Calculates finite representation of interferometer in the Fock space.
-    The function assumes the knowledge of the 1-particle unitary.
-
-    Sources:
-    - Fast optimization of parametrized quantum optical circuits
-    (https://quantum-journal.org/papers/q-2020-11-30-366/)
-
-    Args:
-        interferometer (numpy.ndarray): The 1-particle unitary
-        space (np.ndarray): Array of basis elements on the Fock space.
-
-    Returns:
-        numpy.ndarray: Finite representation of interferometer in the Fock space
-    """
-
-    np = calculator.forward_pass_np
-
-    subspace_representations = []
-
-    subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
-    subspace_representations.append(interferometer)
-
-    cutoff = len(index_dict["subspace_index_tensor"]) + 2
-
-    for n in range(2, cutoff):
-        subspace_indices = index_dict["subspace_index_tensor"][n - 2]
-        first_subspace_indices = index_dict["first_subspace_index_tensor"][n - 2]
-
-        first_nonzero_indices = index_dict["first_nonzero_index_tensor"][n - 2]
-
-        sqrt_occupation_numbers = index_dict["sqrt_occupation_numbers_tensor"][n - 2]
-        sqrt_first_occupation_numbers = index_dict[
-            "sqrt_first_occupation_numbers_tensor"
-        ][n - 2]
-
-        first_part_partially_indexed = interferometer[first_nonzero_indices]
-        second = calculator.gather_along_axis_1(
-            subspace_representations[n - 1][first_subspace_indices],
-            indices=subspace_indices,
-        )
-
-        matrix = np.einsum(
-            "ij,kj,kij->ki",
-            sqrt_occupation_numbers,
-            first_part_partially_indexed,
-            second,
-        )
-
-        new_subspace_representation = matrix / sqrt_first_occupation_numbers[:, None]
-
-        subspace_representations.append(
-            new_subspace_representation.astype(interferometer.dtype)
-        )
-
-    return subspace_representations
-
-
 @lru_cache(maxsize=None)
 def calculate_index_list_for_appling_interferometer(
     modes: Tuple[int, ...],
