@@ -229,3 +229,16 @@ class BaseCalculator(abc.ABC):
             matrix (numpy.ndarray): The input matrix.
         """
         raise NotImplementedCalculation()
+
+    def calculate_interferometer_on_fock_space(self, interferometer, helper_indices):
+        """Calculates the interferometer unitary matrix on the Fock space.
+
+        Args:
+            interferometer: One-particle unitary corresponding to the interferometer.
+            helper_indices: Separately calculated helper indices.
+
+        Returns:
+            All the n-particle unitary matrices corresponding to the interferometer up
+            to cutoff.
+        """
+        raise NotImplementedCalculation()
