@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="piquasso_logo.svg" alt="Piquasso logo"/>
+    <img src="https://raw.githubusercontent.com/Budapest-Quantum-Computing-Group/piquasso/main/piquasso_logo.svg" alt="Piquasso logo"/>
 </p>
 
 ![Codecov](https://img.shields.io/codecov/c/github/Budapest-Quantum-Computing-Group/piquasso)
