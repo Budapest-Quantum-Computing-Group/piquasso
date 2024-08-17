@@ -45,7 +45,7 @@ def test_create_layers_yields_valid_program():
 
         pq.Q() | layers
 
-    simulator = pq.PureFockSimulator(d)
+    simulator = pq.PureFockSimulator(d, config=pq.Config(cutoff=7))
 
     state = simulator.execute(program).state
 
