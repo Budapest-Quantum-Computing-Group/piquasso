@@ -49,9 +49,17 @@ sudo apt-get install libeigen3-dev
 ```
 
 Now, to install development dependencies, use:
-
 ```
-pip install -r requirements.txt
+pip install -e ".[dev]"
+```
+
+For document generation one should use
+```
+pip install -e ".[doc]"
+```
+and for running files under `benchmarks/` or `scripts/`, please issue
+```
+pip install -e ".[benchmark]"
 ```
 
 ## Testing
