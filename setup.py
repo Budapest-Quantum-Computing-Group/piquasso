@@ -39,6 +39,26 @@ setup(
     extras_require={
         "tensorflow": "tensorflow",
         "jax": "jax[cpu]",
+        "dev": [
+            "pytest~=8.0.1",
+            "coverage~=6.3.2",
+            "mypy==1.8.0",
+            "flake8~=7.0.0",
+            "nbqa~=1.3.1",
+            "nbmake~=1.3.0",
+            "black~=24.2.0",
+        ],
+        "doc": [
+            "sphinx~=7.1.2",
+            "nbsphinx~=0.8.8",
+            "furo~=2024.1.29",
+        ],
+        "benchmark": [
+            "strawberryfields~=0.23.0",
+            "matplotlib~=3.7.5",
+            "pytest-profiling~=1.7.0",
+            "pytest-benchmark~=4.0.0",
+        ],
     },
     classifiers=[
         "Intended Audience :: Developers",
