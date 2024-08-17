@@ -56,28 +56,26 @@ class BuiltinCalculator(BaseCalculator):
         return embedded_matrix
 
     def calculate_interferometer_on_fock_space(self, interferometer, helper_indices):
+        """
+        This implementation uses Eq. (71) from
+        https://quantum-journal.org/papers/q-2020-11-30-366/pdf/
+        """
+
         np = self.forward_pass_np
         subspace_representations = []
 
         subspace_representations.append(np.array([[1.0]], dtype=interferometer.dtype))
         subspace_representations.append(interferometer)
 
-        cutoff = len(helper_indices["subspace_index_tensor"]) + 2
+        cutoff = len(helper_indices[0]) + 2
 
         for n in range(2, cutoff):
-            subspace_indices = helper_indices["subspace_index_tensor"][n - 2]
-            first_subspace_indices = helper_indices["first_subspace_index_tensor"][
-                n - 2
-            ]
+            subspace_indices = helper_indices[0][n - 2]
+            first_subspace_indices = helper_indices[2][n - 2]
 
-            first_nonzero_indices = helper_indices["first_nonzero_index_tensor"][n - 2]
-
-            sqrt_occupation_numbers = helper_indices["sqrt_occupation_numbers_tensor"][
-                n - 2
-            ]
-            sqrt_first_occupation_numbers = helper_indices[
-                "sqrt_first_occupation_numbers_tensor"
-            ][n - 2]
+            first_nonzero_indices = helper_indices[1][n - 2]
+            sqrt_occupation_numbers = helper_indices[3][n - 2]
+            sqrt_first_occupation_numbers = helper_indices[4][n - 2]
 
             first_part_partially_indexed = interferometer[first_nonzero_indices]
             second = self.gather_along_axis_1(
