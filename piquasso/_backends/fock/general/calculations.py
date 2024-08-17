@@ -121,15 +121,9 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
         cutoff=cutoff,
     )
 
-    index_dict = {
-        "subspace_index_tensor": index_tuple[0],
-        "first_nonzero_index_tensor": index_tuple[1],
-        "first_subspace_index_tensor": index_tuple[2],
-        "sqrt_occupation_numbers_tensor": index_tuple[3],
-        "sqrt_first_occupation_numbers_tensor": index_tuple[4],
-    }
-
-    return calculator.calculate_interferometer_on_fock_space(interferometer, index_dict)
+    return calculator.calculate_interferometer_on_fock_space(
+        interferometer, index_tuple
+    )
 
 
 def particle_number_measurement(

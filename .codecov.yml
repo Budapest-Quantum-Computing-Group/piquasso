@@ -7,3 +7,4 @@ ignore:
   - piquasso/_math/fock.py
   - piquasso/_math/indices.py
   - piquasso/_backends/fock/calculations.py
+  - piquasso/_backends/calculators/numpy_/interferometer.py

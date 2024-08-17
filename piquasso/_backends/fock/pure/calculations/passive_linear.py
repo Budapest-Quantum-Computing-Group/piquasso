@@ -88,7 +88,7 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
         }
 
         subspace_representations = calculator.calculate_interferometer_on_fock_space(
-            interferometer, index_dict
+            interferometer, index_tuple
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
             interferometer,

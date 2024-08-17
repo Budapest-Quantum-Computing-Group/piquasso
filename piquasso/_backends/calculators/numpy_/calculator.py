@@ -22,6 +22,8 @@ from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_red
 
 from ..calculator import BuiltinCalculator
 
+from .interferometer import calculate_interferometer_on_fock_space
+
 
 class NumpyCalculator(BuiltinCalculator):
     """The calculations for a simulation using NumPy (and SciPy).
@@ -45,6 +47,10 @@ class NumpyCalculator(BuiltinCalculator):
         self.permanent = permanent
         self.hafnian = hafnian_with_reduction
         self.loop_hafnian = loop_hafnian_with_reduction
+
+        self.calculate_interferometer_on_fock_space = (
+            calculate_interferometer_on_fock_space
+        )
 
     def sqrtm(self, matrix):
         return scipy.linalg.sqrtm(matrix).astype(np.complex128)
