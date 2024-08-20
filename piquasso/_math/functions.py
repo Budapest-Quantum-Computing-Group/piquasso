@@ -24,7 +24,7 @@ def gaussian_wigner_function(
     *,
     d: int,
     mean: np.ndarray,
-    cov: np.ndarray
+    cov: np.ndarray,
 ) -> np.ndarray:
     return np.array(
         [

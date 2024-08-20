@@ -30,7 +30,7 @@ def project_to_subspace(
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
     normalization: float,
-    calculator: BaseCalculator
+    calculator: BaseCalculator,
 ) -> None:
     projected_state_vector = _get_projected_state_vector(
         state=state, subspace_basis=subspace_basis, modes=modes, calculator=calculator
@@ -44,7 +44,7 @@ def _get_projected_state_vector(
     *,
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
-    calculator: BaseCalculator
+    calculator: BaseCalculator,
 ) -> np.ndarray:
     new_state_vector = state._get_empty()
 

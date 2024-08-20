@@ -1,6 +1,61 @@
 [build-system]
-requires = [
-  "setuptools >= 40.9.0",
-  "wheel",
-]
+requires = ["setuptools >= 40.9.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "piquasso"
+dynamic = ["version"]
+description = "A simulator for photonic quantum computations."
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+keywords = ["piquasso", "quantum", "photonic"]
+maintainers = [
+  { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" },
+]
+requires-python = ">=3.8"
+dependencies = [
+  "numpy>=1.19.5",
+  "scipy>=1.5.4",
+  "numba>=0.57.1",
+  "quantum-blackbird==0.5.0",
+]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+]
+
+
+[project.urls]
+Homepage = "https://piquasso.com"
+Documentation = "https://docs.piquasso.com"
+Repository = "https://github.com/Budapest-Quantum-Computing-Group/piquasso"
+
+[project.optional-dependencies]
+tensorflow = ["tensorflow"]
+jax = ["jax[cpu]"]
+dev = [
+  "pytest~=8.0.1",
+  "coverage~=6.3.2",
+  "mypy==1.8.0",
+  "flake8~=7.0.0",
+  "nbqa~=1.3.1",
+  "nbmake~=1.3.0",
+  "black~=24.2.0",
+]
+doc = ["sphinx~=7.1.2", "nbsphinx~=0.8.8", "furo~=2024.1.29"]
+benchmark = [
+  "strawberryfields~=0.23.0",
+  "matplotlib~=3.7.5",
+  "pytest-profiling~=1.7.0",
+  "pytest-benchmark~=4.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include =  ["piquasso*"]
+exclude = ["tests*", "docs*", "scripts*", "benchmarks*", "prof*"]
+
+
+[tool.setuptools.dynamic]
+version = { attr = "piquasso.__version__" }
