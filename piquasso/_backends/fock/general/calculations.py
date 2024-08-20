@@ -165,7 +165,7 @@ def _project_to_subspace(
     *,
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
-    normalization: float
+    normalization: float,
 ) -> None:
     projected_density_matrix = _get_projected_density_matrix(
         state=state,
@@ -421,7 +421,7 @@ def _add_occupation_number_basis(
     *,
     ket: Tuple[int, ...],
     bra: Tuple[int, ...],
-    coefficient: complex
+    coefficient: complex,
 ) -> None:
     index = get_index_in_fock_space(ket)
     dual_index = get_index_in_fock_space(bra)
