@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 from scipy.linalg import block_diag
 
@@ -39,6 +39,7 @@ from .probabilities import (
     DensityMatrixCalculation,
     DisplacedDensityMatrixCalculation,
     NondisplacedDensityMatrixCalculation,
+    calculate_click_probability,
 )
 
 
@@ -893,6 +894,45 @@ class GaussianState(State):
         return calculation.get_density_matrix_element(
             bra=occupation_number,
             ket=occupation_number,
+        )
+
+    def get_threshold_detection_probability(
+        self, occupation_number: Union[np.ndarray, Tuple[int, ...]]
+    ) -> float:
+        """Calculates the probability of threshold particle number detection events.
+
+        The occupation number needs to be specified as consecutive 0s and 1s, where 0
+        corresponds to no particle detection and 1 to detecting some (>0) particles.
+
+        Args:
+            occupation_number (Union[np.ndarray, Tuple[int, ...]]):
+                Array of 0s and 1s corresponding to particle detection events per mode.
+
+        Raises:
+            PiquassoException: When an invalid input 'occupation_number' is specified.
+
+        Returns:
+            float: The threshold particle number detection probability.
+        """
+
+        if len(occupation_number) != self.d:
+            raise PiquassoException(
+                f"The specified occupation number should have length '{self.d}': "
+                f"occupation_number='{occupation_number}'."
+            )
+
+        occupation_number_np = np.array(occupation_number)
+
+        if not np.array_equal(occupation_number_np, occupation_number_np.astype(bool)):
+            raise PiquassoException(
+                f"The specified occupation numbers must only contain '0' or '1': "
+                f"occupation_number='{occupation_number}'."
+            )
+
+        return calculate_click_probability(
+            self.xxpp_covariance_matrix,
+            tuple(occupation_number),
+            self._config.hbar,
         )
 
     @property
