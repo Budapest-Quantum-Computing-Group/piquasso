@@ -17,7 +17,6 @@ from typing import Tuple, List
 
 import itertools
 import scipy
-import random
 import numpy as np
 
 from itertools import repeat
@@ -524,6 +523,8 @@ def _generate_threshold_samples_using_torontonian(
             f"xpxp_mean_vector={state.xpxp_mean_vector}"
         )
 
+    rng = state._config.rng
+
     modes = instruction.modes
 
     @lru_cache(state._config.cache_size)
@@ -556,7 +557,7 @@ def _generate_threshold_samples_using_torontonian(
             conditional_probability = probability / previous_probability
 
             choice: int
-            guess = random.uniform(0.0, 1.0)
+            guess = rng.uniform()
 
             if guess < conditional_probability:
                 choice = 0
