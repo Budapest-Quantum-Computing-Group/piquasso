@@ -321,3 +321,45 @@ def test_seeded_gaussian_boson_sampling():
     result2 = simulator2.execute(gaussian_boson_sampling, shots=shots)
 
     assert result1.samples == result2.samples
+
+
+def test_ThresholdMeasurement_use_torontonian_seeding():
+    d = 5
+    shots = 10
+
+    seed_sequence = 123
+
+    A = np.array(
+        [
+            [0, 1, 0, 1, 1],
+            [1, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0],
+            [1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 0],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Graph(A)
+
+        pq.Q(all) | pq.ThresholdMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=d,
+        calculator=pq.NumpyCalculator(),
+        config=pq.Config(seed_sequence=seed_sequence, use_torontonian=True),
+    )
+    result = simulator.execute(program, shots=shots)
+
+    assert result.samples == [
+        (1, 0, 0, 0, 1),
+        (1, 1, 0, 1, 1),
+        (1, 0, 1, 1, 1),
+        (1, 1, 0, 1, 1),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 1, 1),
+        (1, 1, 0, 1, 1),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0),
+    ]
