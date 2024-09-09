@@ -22,3 +22,7 @@ docs/_build
 
 # Tensorboard
 logdir/
+
+# Shared libraries
+*.so
+lib

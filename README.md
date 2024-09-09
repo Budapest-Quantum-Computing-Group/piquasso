@@ -53,6 +53,15 @@ and for running files under `benchmarks/` or `scripts/`, please issue
 pip install -e ".[benchmark]"
 ```
 
+To install Piquasso for local development, run
+```
+cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
+cmake --build build
+cmake --install build
+```
+Here, the `-DCMAKE_INSTALL_PREFIX=$(pwd)` flag is needed to copy shared libraries into
+the source tree for development.
+
 ## Testing
 
 Tests and additional checks can be run using `tox`. After installation, run the

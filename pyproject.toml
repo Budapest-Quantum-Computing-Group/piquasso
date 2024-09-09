@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools >= 40.9.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "piquasso"
-dynamic = ["version"]
+version = "4.0.0"
 description = "A simulator for photonic quantum computations."
 readme = "README.md"
 license = { file = "LICENSE.txt" }
@@ -12,7 +12,7 @@ keywords = ["piquasso", "quantum", "photonic"]
 maintainers = [
   { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" },
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.13"
 dependencies = [
   "numpy>=1.19.5",
   "scipy>=1.5.4",
@@ -49,12 +49,3 @@ benchmark = [
   "pytest-profiling~=1.7.0",
   "pytest-benchmark~=4.0.0",
 ]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include =  ["piquasso*"]
-exclude = ["tests*", "docs*", "scripts*", "benchmarks*", "prof*"]
-
-
-[tool.setuptools.dynamic]
-version = { attr = "piquasso.__version__" }

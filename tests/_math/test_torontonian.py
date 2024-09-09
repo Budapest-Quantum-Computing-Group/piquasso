@@ -13,73 +13,106 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
+
 from piquasso._math.torontonian import torontonian
+from piquasso._math.combinatorics import powerset
 
 
-def test_torontonian_on_2_by_2_real_matrix():
+def torontonian_naive(A: np.ndarray) -> complex:
+    d = A.shape[0] // 2
+
+    if d == 0:
+        return 1.0 + 0j
+
+    ret = 0.0 + 0j
+
+    for subset in powerset(range(0, d)):
+        index = np.ix_(subset, subset)
+
+        A_reduced = np.block(
+            [
+                [A[:d, :d][index], A[:d, d:][index]],
+                [A[d:, :d][index], A[d:, d:][index]],
+            ]
+        )
+
+        factor = 1.0 if ((d - len(subset)) % 2 == 0) else -1.0
+
+        inner_mat = np.identity(len(A_reduced)) - A_reduced
+
+        determinant = np.linalg.det(inner_mat)
+
+        summand = factor / np.sqrt(
+           determinant.real + 0.0j
+        )
+
+        ret += summand
+
+    return ret
+
+
+def test_torontonian_empty():
+    matrix = np.array([[]], dtype=float)
+
+    assert np.isclose(torontonian(matrix), 1.0)
+
+
+def test_torontonian_2_by_2_float64():
     matrix = np.array(
         [
-            [1, 500],
-            [-500, 6],
+            [0.6, 0.4],
+            [0.4, 0.5],
         ],
-        dtype=float,
+        dtype=np.float32,
     )
 
-    assert np.isclose(torontonian(matrix), -0.998)
+    output = torontonian(matrix)
+
+    assert output.dtype == np.float32
+
+    assert np.isclose(output, torontonian_naive(matrix))
+    assert np.isclose(output, 4.000001430511475)
 
 
-def test_torontonian_on_2_by_2_complex_matrix():
+def test_torontonian_2_by_2_float128():
     matrix = np.array(
         [
-            [1, 500j],
-            [500j, 6],
+            [0.6, 0.4],
+            [0.4, 0.5],
         ],
-        dtype=complex,
+        dtype=np.float64,
     )
 
-    assert np.isclose(torontonian(matrix), -0.998)
+    output = torontonian(matrix)
+
+    assert output.dtype == np.float64
+
+    assert np.isclose(output, torontonian_naive(matrix))
+    assert np.isclose(output, 4.000001430511475)
 
 
-def test_torontonian_on_4_by_4_real_matrix():
-    matrix = np.array(
-        [
-            [1, 2, 3, 4],
-            [2, 6, 7, 8],
-            [-3, 7, 3, 4],
-            [4, -8, -4, 8],
-        ],
-        dtype=complex,
-    )
+@pytest.mark.monkey
+def test_torontonian_4_by_4_random():
+    A = np.random.rand(4, 4)
+    matrix = A @ A.T
 
-    assert np.isclose(torontonian(matrix), 0.6095591888010201)
+    matrix /= max(np.linalg.eigvals(matrix)) + 1.0
+
+    torontonian(matrix)
+
+    assert np.isclose(torontonian(matrix), torontonian_naive(matrix))
 
 
-def test_torontonian_on_4_by_4_complex_matrix():
-    matrix = np.array(
-        [
-            [1j, 2, 3j, 4],
-            [2, 6, 7, 8j],
-            [3j, 7, 3, 4],
-            [4, 8j, 4, 8j],
-        ],
-        dtype=complex,
-    )
+@pytest.mark.monkey
+def test_torontonian_6_by_6_random():
+    A = np.random.rand(6, 6)
+    matrix = A @ A.T
 
-    assert np.isclose(torontonian(matrix), 0.5167533900792849)
+    matrix /= max(np.linalg.eigvals(matrix)) + 1.0
 
+    torontonian(matrix)
 
-def test_torontonian_on_6_by_6_complex_matrix():
-    matrix = np.array(
-        [
-            [1, 2, 3, 4j, 5, 6j],
-            [2, 6, 7j, 8, 9, 5],
-            [3, 7j, 3, 4, 3, 7],
-            [4j, 8, 4, 8, 2, 1],
-            [5, 9, 3, 2, 2j, 0],
-            [6j, 5, 7, 1, 0, 1],
-        ],
-        dtype=complex,
-    )
-
-    assert np.isclose(torontonian(matrix), -0.9387510649770083 - 0.25289835806458744j)
+    assert np.isclose(torontonian(matrix), torontonian_naive(matrix))
