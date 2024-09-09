@@ -363,3 +363,47 @@ def test_ThresholdMeasurement_use_torontonian_seeding():
         (0, 0, 0, 0, 0),
         (0, 0, 0, 0, 0),
     ]
+
+
+def test_ThresholdMeasurement_use_torontonian_seeding_float32():
+    d = 5
+    shots = 10
+
+    seed_sequence = 123
+
+    A = np.array(
+        [
+            [0, 1, 0, 1, 1],
+            [1, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0],
+            [1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 0],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Graph(A)
+
+        pq.Q(all) | pq.ThresholdMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=d,
+        calculator=pq.NumpyCalculator(),
+        config=pq.Config(
+            seed_sequence=seed_sequence, use_torontonian=True, dtype=np.float32
+        ),
+    )
+    result = simulator.execute(program, shots=shots)
+
+    assert result.samples == [
+        (1, 0, 0, 0, 1),
+        (1, 1, 0, 1, 1),
+        (1, 0, 1, 1, 1),
+        (1, 1, 0, 1, 1),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 1, 1),
+        (1, 1, 0, 1, 1),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0),
+    ]

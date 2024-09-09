@@ -99,6 +99,15 @@ Piquasso and its dependencies can be installed via pip:
 pip install piquasso
 ```
 
+If you have problems installing Piquasso as above, try installing from source with
+
+```
+pip install --no-binary piquasso
+```
+
+When installing from source does not work on your machine, please open an issue in the
+[Issues page](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues).
+
 If you wish to, you can also install
 [piquassoboost](https://github.com/Budapest-Quantum-Computing-Group/piquassoboost) for performance improvement.
 
@@ -152,6 +161,20 @@ and for running files under `benchmarks/` or `scripts/`, please issue
 ```
 pip install -e ".[benchmark]"
 ```
+
+For building Piquasso, one also needs to install build dependencies:
+```
+pip install 'pybind11[global]' scikit-build-core cmake
+```
+
+To build Piquasso for local development, run
+```
+cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
+cmake --build build
+cmake --install build
+```
+Here, the `-DCMAKE_INSTALL_PREFIX=$(pwd)` flag is needed to copy shared libraries into
+the source tree for development.
 
 ## Testing
 
