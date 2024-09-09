@@ -16,7 +16,6 @@
 import pytest
 
 import piquasso as pq
-import strawberryfields as sf
 import numpy as np
 
 
@@ -49,7 +48,7 @@ def piquasso_benchmark(benchmark, pq_gaussian_simulator):
         pq_gaussian_simulator.execute(program, shots=20)
 
 
-def strawberryfields_benchmark(benchmark, d):
+def strawberryfields_benchmark(benchmark, d, sf):
     @benchmark
     def func():
         program = sf.Program(d)

@@ -23,7 +23,6 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-import strawberryfields as sf
 
 import piquasso as pq
 from piquasso import cvqnn
@@ -79,15 +78,17 @@ def piquasso_benchmark(benchmark, weights, cutoff):
     benchmark(lambda: _calculate_piquasso_results(weights, cutoff, calculator))
 
 
-def strawberryfields_benchmark(benchmark, weights, cutoff):
-    benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff))
+def strawberryfields_benchmark(benchmark, weights, cutoff, sf):
+    benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff, sf))
 
 
-def test_state_vector_and_jacobian(weights, cutoff):
+def test_state_vector_and_jacobian(weights, cutoff, sf):
     pq_state_vector, pq_jacobian = _calculate_piquasso_results(
         weights, cutoff, pq.TensorflowCalculator(decorate_with=tf.function)
     )
-    sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(weights, cutoff)
+    sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(
+        weights, cutoff, sf
+    )
 
     assert np.sum(np.abs(pq_state_vector - sf_state_vector) ** 2) < 1e-10
     assert np.sum(np.abs(pq_jacobian - sf_jacobian) ** 2) < 1e-10
@@ -117,7 +118,7 @@ def _calculate_piquasso_results(weights, cutoff, calculator):
     return state_vector, tape.jacobian(state_vector, weights)
 
 
-def _calculate_strawberryfields_results(weights, cutoff):
+def _calculate_strawberryfields_results(weights, cutoff, sf):
     layer_count = weights.shape[0]
     d = cvqnn.get_number_of_modes(weights.shape[1])
 
@@ -131,7 +132,7 @@ def _calculate_strawberryfields_results(weights, cutoff):
 
     with qnn.context as q:
         for k in range(layer_count):
-            _sf_layer(sf_params[k], q)
+            _sf_layer(sf_params[k], q, sf)
 
     with tf.GradientTape() as tape:
         mapping = {
@@ -144,7 +145,7 @@ def _calculate_strawberryfields_results(weights, cutoff):
     return state_vector, tape.jacobian(state_vector, weights)
 
 
-def _sf_interferometer(params, q):
+def _sf_interferometer(params, q, sf):
     N = len(q)
     theta = params[: N * (N - 1) // 2]
     phi = params[N * (N - 1) // 2 : N * (N - 1)]
@@ -166,7 +167,7 @@ def _sf_interferometer(params, q):
         sf.ops.Rgate(rphi[i]) | q[i]
 
 
-def _sf_layer(params, q):
+def _sf_layer(params, q, sf):
     N = len(q)
     M = int(N * (N - 1)) + max(1, N - 1)
 
@@ -177,12 +178,12 @@ def _sf_layer(params, q):
     dp = params[2 * M + 2 * N : 2 * M + 3 * N]
     k = params[2 * M + 3 * N : 2 * M + 4 * N]
 
-    _sf_interferometer(int1, q)
+    _sf_interferometer(int1, q, sf)
 
     for i in range(N):
         sf.ops.Sgate(s[i]) | q[i]
 
-    _sf_interferometer(int2, q)
+    _sf_interferometer(int2, q, sf)
 
     for i in range(N):
         sf.ops.Dgate(dr[i], dp[i]) | q[i]

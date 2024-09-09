@@ -18,7 +18,6 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-import strawberryfields as sf
 
 
 pytestmark = pytest.mark.benchmark(
@@ -54,7 +53,7 @@ def piquasso_benchmark(benchmark, d, cutoff, theta):
 
 
 @pytest.mark.parametrize("cutoff", (3, 4, 5))
-def strawberryfields_benchmark(benchmark, d, cutoff, theta):
+def strawberryfields_benchmark(benchmark, d, cutoff, theta, sf):
     @benchmark
     def func():
         eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})

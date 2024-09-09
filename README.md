@@ -39,16 +39,7 @@ We also appreciate bug reports, suggestions, or any kind of idea regarding Piqua
 
 ## Development guide
 
-The `eigen3` C++ library needs to be installed for the `thewalrus` (dependency of
-`strawberryfields`).
-
-On Ubuntu/Debian you can install it with
-
-```
-sudo apt-get install libeigen3-dev
-```
-
-Now, to install development dependencies, use:
+To install development dependencies, use:
 ```
 pip install -e ".[dev]"
 ```

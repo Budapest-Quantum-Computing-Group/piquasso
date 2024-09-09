@@ -18,7 +18,6 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-import strawberryfields as sf
 
 from scipy.stats import unitary_group
 
@@ -56,7 +55,7 @@ def piquasso_benchmark(benchmark, d, interferometer, cutoff, theta):
 
 
 @pytest.mark.parametrize("d, interferometer", parameters[:2])
-def strawberryfields_benchmark(benchmark, d, interferometer, cutoff, theta):
+def strawberryfields_benchmark(benchmark, d, interferometer, cutoff, theta, sf):
     @benchmark
     def func():
         eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
