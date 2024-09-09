@@ -1,0 +1,81 @@
+name: Build SDist and wheels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.cpp'
+      - '**.hpp'
+      - '**/CMakeLists.txt'
+
+  pull_request:
+    paths:
+      - '**.cpp'
+      - '**.hpp'
+      - '**/CMakeLists.txt'
+
+jobs:
+  build_sdist:
+    name: Build SDist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build SDist
+      run: pipx run build --sdist
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-sdist
+        path: dist/*.tar.gz
+
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+        # NOTE: Although all wheels can be built, they are not tested currently.
+        # However, a comment is left for someone in the future trying to solve this.
+        #
+        # Problem:
+        # Scipy is distributed as sdist sometimes, because it is not built for every
+        # architecture cibuildwheel is able to run tests on. The wheel would contain
+        # every library, but an sdist needs to be built on the machine, and it
+        # requires openblas for building:
+        # https://docs.scipy.org/doc/scipy-1.7.1/reference/building/windows.html#installing-openblas
+        # However, yum openblas library is sometimes not registered in pkgconfig on
+        # install.
+        # Therefore, we would need to create an `openblas.pc` file manually, see
+        # https://github.com/scipy/scipy/issues/16308#issuecomment-1339714289
+        # But then, there are architectures where openblas is not even distributed.
+        # This makes installing scipy for testing a nontrivial task.
+        #
+        # Undeterred, one could just skip testing these cases. But it would require us
+        # going through all the architectures and determine which is easy to test.
+        # Since the build identifiers are only parsed with `fnmatch`
+        # (see: https://cibuildwheel.pypa.io/en/stable/options/#build-skip),
+        # it is also tricky to enable testing only on certain architectures.
+        #
+        # To make it simple, we build every wheel and skip the tests altogether, and
+        # pray that it works. If the wheel does not work, we instruct the user to try
+        # installing it from sdist.
+        #
+        # env:
+          # CIBW_TEST_EXTRAS: "tensorflow,jax"
+          # CIBW_TEST_REQUIRES: pytest
+          ## NOTE: --import-mode=importlib prevents pytest to import piquasso from
+          ## directory
+          # CIBW_TEST_COMMAND: "pytest -v --import-mode=importlib {project}/tests"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl

@@ -38,6 +38,30 @@ COPYRIGHT = f"""\
 # limitations under the License.
 """
 
+COPYRIGHT_CPP = f"""\
+/*
+ * Copyright 2021-{date.today().year} Budapest Quantum Computing Group
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"""
+
+COPYRIGHT_MAP = {
+    "*.py": COPYRIGHT,
+    "*.cpp": COPYRIGHT_CPP,
+    "*.hpp": COPYRIGHT_CPP,
+}
+
 
 def test_copyrights():
     root = Path(__file__).parents[1]
@@ -49,9 +73,10 @@ def test_copyrights():
         root / "build",
     ]
 
-    extensions = ["*.py"]
+    extensions = COPYRIGHT_MAP.keys()
 
     for extension in extensions:
+        copyright_text = COPYRIGHT_MAP[extension]
         for filename in glob.iglob(str(root / "**" / extension), recursive=True):
             if (
                 _is_current_file(filename)
@@ -62,11 +87,11 @@ def test_copyrights():
 
             with open(filename, "r+") as file:
                 first_few_lines = "".join(
-                    islice(file.readlines(), COPYRIGHT.count("\n"))
+                    islice(file.readlines(), copyright_text.count("\n"))
                 )
 
             assert (
-                COPYRIGHT in first_few_lines
+                copyright_text in first_few_lines
             ), f"Invalid or no copyright found in {filename}"
 
 
