@@ -45,7 +45,6 @@ dev = [
 ]
 doc = ["sphinx~=7.1.2", "nbsphinx~=0.8.8", "furo~=2024.1.29"]
 benchmark = [
-  "strawberryfields~=0.23.0",
   "matplotlib~=3.7.5",
   "pytest-profiling~=1.7.0",
   "pytest-benchmark~=4.0.0",

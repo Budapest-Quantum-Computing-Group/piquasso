@@ -16,7 +16,6 @@
 import pytest
 
 import piquasso as pq
-import strawberryfields as sf
 import tensorflow as tf
 
 from scipy.stats import unitary_group
@@ -74,7 +73,7 @@ def piquasso_benchmark(benchmark, d, interferometer, alpha, r, xi):
 
 
 @pytest.mark.parametrize("d, interferometer", parameters)
-def strawberryfields_benchmark(benchmark, d, interferometer, alpha, r, xi):
+def strawberryfields_benchmark(benchmark, d, interferometer, alpha, r, xi, sf):
     @benchmark
     def func():
         program = sf.Program(d)

@@ -15,7 +15,6 @@
 
 import pytest
 
-import strawberryfields as sf
 import piquasso as pq
 
 import numpy as np
@@ -119,7 +118,25 @@ def example_pq_purefock_state(pq_purefock_simulator, example_purefock_pq_program
 
 
 @pytest.fixture
-def example_gaussian_sf_program_and_engine(d):
+def sf():
+    try:
+        import strawberryfields
+    except ImportError as error:
+        known_error_message = "cannot import name 'simps' from 'scipy.integrate'"
+
+        if known_error_message in error.msg:
+            raise ImportError(
+                "Install a previous version of 'scipy', since 'strawberryfields' is "
+                "incompatible with newer versions of scipy."
+            )
+        else:
+            raise error
+
+    return strawberryfields
+
+
+@pytest.fixture
+def example_gaussian_sf_program_and_engine(d, sf):
     """
     NOTE: the covariance matrix SF is returning is half of ours...
     It seems that our implementation is OK, however.
@@ -154,7 +171,7 @@ def example_gaussian_sf_program_and_engine(d):
 
 
 @pytest.fixture
-def example_fock_sf_program_and_engine(d, cutoff):
+def example_fock_sf_program_and_engine(d, cutoff, sf):
     """
     NOTE: the covariance matrix SF is returning is half of ours...
     It seems that our implementation is OK, however.

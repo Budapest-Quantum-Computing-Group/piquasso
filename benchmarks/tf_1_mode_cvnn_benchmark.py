@@ -24,7 +24,6 @@ import pytest
 import numpy as np
 import tensorflow as tf
 
-import strawberryfields as sf
 import piquasso as pq
 
 
@@ -105,7 +104,7 @@ def _calculate_piquasso_results(weights, cutoff, layer_count):
     return state_vector, tape.jacobian(state_vector, weights)
 
 
-def _calculate_strawberryfields_results(weights, cutoff, layer_count):
+def _calculate_strawberryfields_results(weights, cutoff, layer_count, sf):
     eng = sf.Engine(backend="tf", backend_options={"cutoff_dim": cutoff})
     prog = sf.Program(1)
 

@@ -18,7 +18,6 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-import strawberryfields as sf
 
 
 pytestmark = pytest.mark.benchmark(
@@ -79,7 +78,7 @@ def piquasso_benchmark(benchmark, pq_purefock_simulator, interferometer):
         pq_purefock_simulator.execute(new_program)
 
 
-def strawberryfields_benchmark(benchmark, d, cutoff, interferometer):
+def strawberryfields_benchmark(benchmark, d, cutoff, interferometer, sf):
     @benchmark
     def func():
         new_program = sf.Program(d)

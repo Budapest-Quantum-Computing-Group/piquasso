@@ -16,7 +16,6 @@
 import pytest
 
 import piquasso as pq
-import strawberryfields as sf
 
 from scipy.stats import unitary_group
 
@@ -70,7 +69,7 @@ def piquasso_benchmark(benchmark, cutoff, r, alpha, xi, d):
         simulator_fock.execute(program)
 
 
-def strawberryfields_benchmark(benchmark, cutoff, r, alpha, xi, d):
+def strawberryfields_benchmark(benchmark, cutoff, r, alpha, xi, d, sf):
     @benchmark
     def func():
         eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})

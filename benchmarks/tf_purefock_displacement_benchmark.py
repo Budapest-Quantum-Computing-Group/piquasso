@@ -17,7 +17,6 @@ import pytest
 
 import piquasso as pq
 import tensorflow as tf
-import strawberryfields as sf
 
 
 pytestmark = pytest.mark.benchmark(
@@ -50,7 +49,7 @@ def piquasso_benchmark(benchmark, cutoff, d):
 
 
 @pytest.mark.parametrize("d, cutoff", zip(d_tuple, d_tuple))
-def strawberryfields_benchmark(benchmark, cutoff, d):
+def strawberryfields_benchmark(benchmark, cutoff, d, sf):
     @benchmark
     def func():
         new_program = sf.Program(d)

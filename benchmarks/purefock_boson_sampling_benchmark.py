@@ -16,7 +16,6 @@
 import pytest
 
 import piquasso as pq
-import strawberryfields as sf
 
 
 pytestmark = pytest.mark.benchmark(
@@ -45,7 +44,7 @@ def piquasso_benchmark(
         )
 
 
-def strawberryfields_benchmark(benchmark, example_sf_fock_state, d, cutoff, shots):
+def strawberryfields_benchmark(benchmark, example_sf_fock_state, d, cutoff, shots, sf):
     @benchmark
     def func():
         new_program = sf.Program(d)
