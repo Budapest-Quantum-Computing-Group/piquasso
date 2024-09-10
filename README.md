@@ -1,20 +1,97 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Budapest-Quantum-Computing-Group/piquasso/main/piquasso_logo.svg" alt="Piquasso logo"/>
+    <img width="70%" height="auto" src="https://raw.githubusercontent.com/Budapest-Quantum-Computing-Group/piquasso/main/piquasso_logo.svg" alt="Piquasso logo"/>
 </p>
 
-![Codecov](https://img.shields.io/codecov/c/github/Budapest-Quantum-Computing-Group/piquasso)
-![GitHub](https://img.shields.io/github/license/Budapest-Quantum-Computing-Group/piquasso)
-![GitHub](https://img.shields.io/github/issues/Budapest-Quantum-Computing-Group/piquasso)
-![GitHub](https://img.shields.io/github/issues-pr/Budapest-Quantum-Computing-Group/piquasso)
+<p align="center">
+  <a
+    href="https://app.codecov.io/gh/Budapest-Quantum-Computing-Group/piquasso"
+    style="text-decoration: none;"
+  >
+    <img
+      alt="Coverage"
+      src="https://img.shields.io/codecov/c/github/Budapest-Quantum-Computing-Group/piquasso"
+    />
+  </a>
+  <a
+    href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/main/LICENSE.txt"
+    style="text-decoration: none;"
+  >
+    <img
+      alt="License"
+      src="https://img.shields.io/github/license/Budapest-Quantum-Computing-Group/piquasso"
+    />
+  </a>
+  <a
+    href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+    style="text-decoration: none;"
+  >
+    <img
+      alt="Issues"
+      src="https://img.shields.io/github/issues/Budapest-Quantum-Computing-Group/piquasso"
+    />
+  </a>
+  <a
+    href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/pulls"
+    style="text-decoration: none;"
+  >
+    <img
+      alt="Pull requests"
+      src="https://img.shields.io/github/issues-pr/Budapest-Quantum-Computing-Group/piquasso"
+    />
+  </a>
+  <a
+    href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/actions"
+    style="text-decoration: none;"
+  >
+    <img
+      alt="Tests"
+      src="https://github.com/Budapest-Quantum-Computing-Group/piquasso/actions/workflows/tests.yml/badge.svg"
+    >
+  </a>
+</p>
 
-## A Python library for designing and simulating photonic quantum computers
-
-Piquasso is a simulator for photonic quantum computations.
+<p align="center">
+Piquasso is an open-source Python library for simulating photonic quantum computers.
+</p>
 
 > This is a research project, bugs can be expected. If you encounter any, please report
 > it in the [Issues page](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues).
 
-## Installation
+## Basic example
+
+```python
+import numpy as np
+import piquasso as pq
+
+with pq.Program() as program:
+    pq.Q(0) | pq.Displacement(
+        r=np.sqrt(2), phi=np.pi / 4
+    )  # Displace the state on mode 0.
+    pq.Q(0, 1) | pq.Beamsplitter(
+        theta=0, phi=np.pi / 2
+    )  # Use a beamsplitter gate on modes 0, 1.
+
+    pq.Q(0) | pq.ParticleNumberMeasurement()  # Measurement on mode 0.
+
+simulator = pq.GaussianSimulator(
+    d=3, config=pq.Config(hbar=2)
+)  # Prepare a Gaussian vacuum state
+
+result = simulator.execute(program, shots=10)  # Apply the program with 10 shots.
+
+print("Resulting state:", result.state)
+print("Detected samples:", result.samples)
+```
+
+This code outputs:
+```
+Resulting state: <piquasso._backends.gaussian.state.GaussianState object at 0x7f3ef3604ac0>
+Detected samples: [(0,), (2,), (1,), (2,), (2,), (4,), (1,), (1,), (4,), (1,)]
+```
+
+For more details, please refer to [docs.piquasso.com](https://docs.piquasso.com/).
+
+## Install
 
 Piquasso and its dependencies can be installed via pip:
 
@@ -23,8 +100,32 @@ pip install piquasso
 ```
 
 If you wish to, you can also install
-[piquassoboost](https://github.com/Budapest-Quantum-Computing-Group/piquassoboost) for
-performance improvement.
+[piquassoboost](https://github.com/Budapest-Quantum-Computing-Group/piquassoboost) for performance improvement.
+
+If you are doing research using Piquasso, please cite us as follows:
+```
+@misc{piquasso2024,
+  title         = {Piquasso: A Photonic Quantum Computer Simulation Software Platform},
+  author        = {Z. Kolarovszki and
+                   T. Rybotycki and
+                   P. Rakyta and
+                   Á. Kaposi and
+                   B. Poór and
+                   Sz. Jóczik and
+                   D. T. R. Nagy and
+                   H. Varga and
+                   K. H. El-Safty and
+                   G. Morse and
+                   M. Oszmaniec and
+                   T. Kozsik and
+                   Z. Zimborás
+                   },
+  year          = {2024},
+  eprint        = {2403.04006},
+  archiveprefix = {arXiv},
+  primaryclass  = {quant-ph}
+}
+```
 
 ## Documentation
 
@@ -32,8 +133,7 @@ The documentation is avaliable at [docs.piquasso.com](https://docs.piquasso.com/
 
 ## How to contribute?
 
-We welcome people who want to make contributions to Piquasso, be it big or small! If you
-are considering larger contributions to the source code, please contact us first.
+We welcome people who want to make contributions to Piquasso, be it big or small! If you are considering larger contributions to the source code, please contact us first.
 
 We also appreciate bug reports, suggestions, or any kind of idea regarding Piquasso.
 
