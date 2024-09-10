@@ -68,7 +68,7 @@ class BaseCalculator(abc.ABC):
         raise NotImplementedCalculation()
 
     def hafnian(self, matrix: numpy.ndarray, reduce_on: numpy.ndarray) -> float:
-        """Calculates the hafnian of a matrix with prescribed reduction array.
+        r"""Calculates the hafnian of a matrix with prescribed reduction array.
 
         This function first performs a reduction by a reduction array :math:`S`, and
         then calculates the hafnian. Succintly, this function should implement
@@ -86,7 +86,7 @@ class BaseCalculator(abc.ABC):
     def loop_hafnian(
         self, matrix: numpy.ndarray, diagonal: numpy.ndarray, reduce_on: numpy.ndarray
     ) -> float:
-        """Calculates the hafnian of a matrix with prescribed reduction array.
+        r"""Calculates the hafnian of a matrix with prescribed reduction array.
 
         This function first fills the diagonals with :math:`D`, then performs a
         reduction by a reduction array :math:`S` and then calculates the hafnian.

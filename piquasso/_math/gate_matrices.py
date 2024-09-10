@@ -105,7 +105,7 @@ def create_single_mode_squeezing_matrix(
     complex_dtype: np.dtype,
     calculator: BaseCalculator,
 ) -> np.ndarray:
-    """
+    r"""
     This method generates the Squeezing operator following a recursion rule.
     Reference: https://quantum-journal.org/papers/q-2020-11-30-366/.
 

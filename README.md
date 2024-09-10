@@ -59,7 +59,7 @@ Tests and additional checks can be run using `tox`. After installation, run the
 following command:
 
 ```
-tox -e py311
+tox -e py312
 ```
 
 Alternatively, you can run only the tests using `pytest`. After installation, run the
