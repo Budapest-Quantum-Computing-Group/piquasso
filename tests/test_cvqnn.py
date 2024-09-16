@@ -58,7 +58,7 @@ def test_create_program_yields_valid_program():
     weights = cvqnn.generate_random_cvqnn_weights(layer_count=10, d=d)
     program = cvqnn.create_program(weights)
 
-    simulator = pq.PureFockSimulator(d)
+    simulator = pq.PureFockSimulator(d, config=pq.Config(cutoff=7))
 
     state = simulator.execute(program).state
 
@@ -71,7 +71,7 @@ def test_create_program_yields_valid_program_for_1_mode():
     weights = cvqnn.generate_random_cvqnn_weights(layer_count=10, d=d)
     program = cvqnn.create_program(weights)
 
-    simulator = pq.PureFockSimulator(d)
+    simulator = pq.PureFockSimulator(d, config=pq.Config(cutoff=7))
 
     state = simulator.execute(program).state
 
