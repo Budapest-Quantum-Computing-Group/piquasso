@@ -18,9 +18,15 @@ Package containing hafnian and loop hafnian calculations.
 
 Most of the code in this package are translated versions of the PiquassoBoost C++ code
 from https://github.com/Budapest-Quantum-Computing-Group/piquassoboost.
+
+Moreover, the algorithms are enhanced by factoring in repetitions according to
+https://arxiv.org/abs/2108.01622.
 """
 
-from .utils import hafnian_with_reduction, loop_hafnian_with_reduction
+from .plain_hafnian import hafnian_with_reduction
+
+from .loop_hafnian import loop_hafnian_with_reduction
+
 
 __all__ = [
     "hafnian_with_reduction",

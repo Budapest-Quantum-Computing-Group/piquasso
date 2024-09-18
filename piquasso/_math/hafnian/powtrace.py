@@ -22,7 +22,6 @@ from .hessenberg import (
     transform_matrix_to_hessenberg,
     transform_matrix_to_hessenberg_loop,
 )
-from .loop_corrections import calculate_loop_correction
 
 
 @nb.njit(cache=True)
@@ -81,7 +80,7 @@ def calc_power_traces(A, pow_max):
 
 
 @nb.njit(cache=True)
-def calculate_power_traces_and_loop_corrections(
+def calculate_power_traces_loop(
     cx_diag_elements,
     diag_elements,
     AZ,
@@ -89,18 +88,11 @@ def calculate_power_traces_and_loop_corrections(
 ):
     r"""
     Call to calculate the power traces $Tr(mtx^j)~\forall~1\leq j\leq l$ for a squared
-    complex matrix $mtx$ of dimensions $n\times n$ and a loop corrections in Eq (3.26)
-    of [arxiv:1805.12498](https://arxiv.org/pdf/1104.3769v1.pdf).
+    complex matrix $mtx$ of dimensions $n\times n$ according to Eq. (3.26) of
+    [arxiv:1805.12498](https://arxiv.org/pdf/1104.3769v1.pdf).
     """
-
     transform_matrix_to_hessenberg_loop(AZ, diag_elements, cx_diag_elements)
 
     coeffs_labudde = labudde(AZ)
 
-    loop_corrections = calculate_loop_correction(
-        cx_diag_elements, diag_elements, AZ, pow_max
-    )
-
-    traces = _powtrace_from_charpoly(coeffs_labudde, pow_max)
-
-    return traces, loop_corrections
+    return _powtrace_from_charpoly(coeffs_labudde, pow_max)

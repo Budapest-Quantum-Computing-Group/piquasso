@@ -15,29 +15,66 @@
 
 import numpy as np
 
-from .plain_hafnian import hafnian
-
-from ..linalg import reduce_
-
-from .loop_hafnian import loop_hafnian
+import numba as nb
 
 
-def hafnian_with_reduction(matrix, reduce_on):
-    reduced_matrix = reduce_(matrix, reduce_on)
+@nb.njit(cache=True)
+def _get_inverse_permutation(p):
+    s = np.empty(p.size, dtype=np.int32)
+    for i in np.arange(p.size):
+        s[p[i]] = i
 
-    return hafnian(reduced_matrix)
-
-
-def _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on):
-    reduced_diagonal = reduce_(diagonal, reduce_on=reduce_on)
-    reduced_matrix = reduce_(matrix, reduce_on=reduce_on)
-
-    np.fill_diagonal(reduced_matrix, reduced_diagonal)
-
-    return reduced_matrix
+    return s
 
 
-def loop_hafnian_with_reduction(matrix, diagonal, reduce_on):
-    reduced_matrix = _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on)
+@nb.njit(cache=True)
+def match_occupation_numbers(nvec_orig):
+    nvec = np.copy(nvec_orig)
+    edge_reps = []
+    edge_indices = []
 
-    return loop_hafnian(reduced_matrix)
+    if len(nvec_orig) == 1:
+        # NOTE: This function only executed when `sum(nvec_orig) % 2 == 0`.
+        return np.array([nvec_orig[0] // 2]), np.array([0, 0])
+
+    while sum(nvec) > 1:
+        sorter = np.argsort(nvec)
+        nvec_sorted = nvec[sorter]
+
+        n0_over_2 = nvec_sorted[-1] // 2
+        n1 = nvec_sorted[-2]
+
+        if n0_over_2 > nvec_sorted[-2]:
+            nvec_sorted[-1] -= 2 * n0_over_2
+            edge_reps.append(n0_over_2)
+            edge_indices.extend([sorter[-1], sorter[-1]])
+
+        else:
+            nvec_sorted[-1] -= n1
+            nvec_sorted[-2] = 0
+            edge_reps.append(n1)
+            edge_indices.extend([sorter[-1], sorter[-2]])
+
+        sorterinv = _get_inverse_permutation(sorter)
+        nvec = nvec_sorted[sorterinv]
+
+    return np.array(edge_reps), np.array(edge_indices)
+
+
+@nb.njit(cache=True)
+def ix_(arr, rows, cols):
+    return arr[rows][:, cols]
+
+
+@nb.njit(cache=True)
+def get_kept_edges(edge_reps, index):
+    ret = np.empty_like(edge_reps)
+    i = 0
+    edge_reps_p_1 = edge_reps + 1
+
+    for n in edge_reps_p_1:
+        ret[i] = index % n
+        index //= n
+        i += 1
+
+    return ret
