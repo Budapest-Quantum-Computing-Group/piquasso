@@ -18,7 +18,10 @@ import numpy as np
 
 
 @nb.njit(cache=True)
-def calculate_loop_correction(cx_diag_elements, diag_elements, AZ, num_of_modes):
+def calculate_loop_corrections(cx_diag_elements, diag_elements, AZ, num_of_modes):
+    """
+    Calculates loop corrections.
+    """
     loop_correction = np.zeros(num_of_modes, dtype=AZ.dtype)
 
     max_idx = len(cx_diag_elements)

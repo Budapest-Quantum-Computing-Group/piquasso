@@ -18,125 +18,194 @@ import numba as nb
 
 from .powtrace import calc_power_traces
 
+from piquasso._math.combinatorics import comb
+
+from .utils import match_occupation_numbers, ix_, get_kept_edges
+
 
 @nb.njit(cache=True)
-def _scale_matrix(AZ):
-    dim = AZ.shape[0]
+def _scale_matrix(matrix):
+    r"""
+    Scales the matrix for better accuracy.
+    """
 
-    flattened_AZ = AZ.flatten()
-    scale_factor_AZ = 0.0
-    size_AZ = dim * dim
-    for idx in range(0, size_AZ):
-        scale_factor_AZ += np.abs(flattened_AZ[idx]) ** 2
+    dim = matrix.shape[0]
+    scale_factor = np.sum(np.abs(matrix) ** 2)
 
-    if scale_factor_AZ < 1e-8:
-        scale_factor_AZ = 1.0
-    else:
-        scale_factor_AZ = np.sqrt(scale_factor_AZ / 2) / size_AZ
-        for idx in range(0, size_AZ):
-            flattened_AZ[idx] *= scale_factor_AZ
+    if scale_factor < 1e-8:
+        return matrix, 1.0
 
-    return flattened_AZ.reshape(dim, dim), scale_factor_AZ
+    scale_factor = np.sqrt(scale_factor / 2) / (dim**2)
+
+    matrix *= scale_factor
+
+    return matrix, scale_factor
+
+
+@nb.njit(cache=True)
+def _calc_reduced_matrix(matrix: np.ndarray, delta: np.ndarray) -> np.ndarray:
+    r"""
+    Creates the input data required to calculate power traces according to `delta`.
+
+    Args:
+        matrix (np.ndarray): The input matrix.
+        delta (np.ndarray): Elements required in $X_{\delta}$ from Eq. (B11) from
+            https://arxiv.org/abs/2108.01622.
+
+    Returns:
+        Tuple: The input data required to calculate power traces.
+    """
+    nonzero_indices = np.nonzero(delta)[0]
+    nonzero_dim_over_2 = len(nonzero_indices)
+
+    nonzero_dim = 2 * nonzero_dim_over_2
+
+    reduced_matrix = np.empty((nonzero_dim, nonzero_dim), dtype=matrix.dtype)
+
+    for i in range(nonzero_dim_over_2):
+        even = 2 * i
+        odd = 2 * i + 1
+
+        delta_i = delta[nonzero_indices[i]]
+
+        source_col_even = 2 * nonzero_indices[i] + 1
+        source_col_odd = 2 * nonzero_indices[i]
+
+        for row_idx in range(nonzero_dim):
+            source_row = 2 * nonzero_indices[row_idx // 2] + row_idx % 2
+
+            reduced_matrix[row_idx, even] = (
+                delta_i * matrix[source_row, source_col_even]
+            )
+            reduced_matrix[row_idx, odd] = delta_i * matrix[source_row, source_col_odd]
+
+    return reduced_matrix
+
+
+@nb.njit(cache=True)
+def _calc_f(traces, scale_factor):
+    r"""Calcualates `f` from Appendix B.1 from https://arxiv.org/abs/2108.01622.
+
+    This function uses the previously calculated power traces.
+
+    Args:
+        traces (numpy.ndarray): The power traces.
+        scale_factor (float): The scale factor of the input matrix for the power traces.
+    """
+
+    dim_over_2 = len(traces)
+    dim = 2 * dim_over_2
+
+    aux0 = np.zeros(dim_over_2 + 1, dtype=traces.dtype)
+    aux1 = np.zeros(dim_over_2 + 1, dtype=traces.dtype)
+
+    aux0[0] = 1.0
+
+    data = [aux0, aux1]
+
+    p_aux0 = 0
+    p_aux1 = 1
+
+    inverse_scale_factor = 1 / scale_factor
+    for idx in range(1, dim_over_2 + 1):
+        factor = traces[idx - 1] * inverse_scale_factor / (2.0 * idx)
+
+        powfactor = 1.0
+
+        if idx % 2 == 1:
+            p_aux0 = 0
+            p_aux1 = 1
+        else:
+            p_aux0 = 1
+            p_aux1 = 0
+
+        data[p_aux1] = np.copy(data[p_aux0])
+
+        for jdx in range(1, dim // (2 * idx) + 1):
+            powfactor = powfactor * factor / jdx
+            start_idx = idx * jdx
+
+            for kdx in range(start_idx, dim_over_2 + 1):
+                data[p_aux1][kdx] += data[p_aux0][kdx - start_idx] * powfactor
+
+        inverse_scale_factor = inverse_scale_factor / scale_factor
+
+    return data[p_aux1][dim_over_2]
 
 
 @nb.njit(cache=True, parallel=True)
-def hafnian(mtx_orig):
-    """
+def hafnian_with_reduction(matrix_orig, occupation_numbers):
+    r"""
     Calculates the hafnian of the input matrix using the power trace algorithm with
     Glynn-type iterations.
-    """
-    if mtx_orig.shape[0] == 0:
-        return 1.0
 
-    elif mtx_orig.shape[0] % 2 != 0:
+    The algorithm is enhanced by factoring in repetitions according to
+    https://arxiv.org/abs/2108.01622.
+    """
+    n = sum(occupation_numbers)
+
+    if n == 0:
+        return 1.0
+    elif n % 2 != 0:
         return 0.0
 
-    if mtx_orig.shape[0] <= 10:
-        mtx = mtx_orig
+    all_edges, edge_indices = match_occupation_numbers(occupation_numbers)
+
+    matrix_reduced = ix_(matrix_orig, edge_indices, edge_indices)
+
+    if matrix_reduced.shape[0] <= 10:
         scale_factor = 1.0
+        matrix = matrix_reduced
     else:
-        scale_factor = np.sum(np.abs(mtx_orig))
+        scale_factor = (
+            np.sum(np.abs(matrix_reduced)) / matrix_reduced.shape[0] ** 2 / np.sqrt(2.0)
+        )
+        matrix = matrix_reduced / scale_factor
 
-        scale_factor = scale_factor / mtx_orig.shape[0] ** 2 / np.sqrt(2.0)
+    dim_over_2 = np.sum(all_edges)
+    number_of_reps = len(all_edges)
 
-        mtx = mtx_orig / scale_factor
+    result = 0.0
 
-    start_idx = 0
-    step_idx = 1
+    size = np.prod(all_edges + 1) // 2
 
-    dim = mtx.shape[0]
-    dim_over_2 = dim // 2
-    max_idx = 2 ** (dim_over_2 - 1)
+    comb_cache = {}
 
-    res = 0.0
+    for n in range(max(all_edges) + 1):
+        for k in range(n + 1):
+            comb_cache[(n, k)] = comb(n, k)
 
-    for permutation_idx in nb.prange(start_idx, max_idx, step_idx):
-        summand = 0.0
-
-        B = np.empty((dim, dim), dtype=mtx.dtype)
-
+    for permutation_idx in nb.prange(size):
+        kept_edges = get_kept_edges(all_edges, permutation_idx)
         fact = False
-        for idx in range(0, dim):
-            row_offset = idx ^ 1
-            for jdx in range(0, dim_over_2):
-                neg = (permutation_idx & (1 << jdx)) != 0
-                if idx == jdx:
-                    fact ^= neg
+        combinatorial_factor = 1.0
 
-                if neg:
-                    B[idx, 2 * jdx] = -mtx[row_offset, jdx * 2]
-                    B[idx, 2 * jdx + 1] = -mtx[row_offset, jdx * 2 + 1]
-                else:
-                    B[idx, 2 * jdx] = mtx[row_offset, jdx * 2]
-                    B[idx, 2 * jdx + 1] = mtx[row_offset, jdx * 2 + 1]
+        delta = np.empty_like(all_edges)
 
-        B, scale_factor_B = _scale_matrix(B)
+        for i in range(number_of_reps):
+            no_of_edges = all_edges[i]
+            no_of_kept_edges = kept_edges[i]
 
-        traces = calc_power_traces(B, dim_over_2)
+            fact ^= (no_of_edges - no_of_kept_edges) % 2
 
-        aux0 = np.zeros(dim_over_2 + 1, dtype=B.dtype)
-        aux1 = np.zeros(dim_over_2 + 1, dtype=B.dtype)
+            comb_input = (no_of_edges, no_of_kept_edges)
+            combinatorial_factor *= comb_cache[comb_input]
 
-        aux0[0] = 1.0
+            delta[i] = 2 * no_of_kept_edges - no_of_edges
 
-        data = [aux0, aux1]
+        prefactor = (-1 if fact else 1) * combinatorial_factor
 
-        p_aux0 = 0
-        p_aux1 = 1
+        reduced_matrix = _calc_reduced_matrix(matrix, delta)
 
-        inverse_scale_factor = 1 / scale_factor_B
-        for idx in range(1, dim_over_2 + 1):
-            factor = traces[idx - 1] * inverse_scale_factor / (2.0 * idx)
+        reduced_matrix, second_scale_factor = _scale_matrix(reduced_matrix)
 
-            inverse_scale_factor = inverse_scale_factor / scale_factor_B
+        traces = calc_power_traces(reduced_matrix, dim_over_2)
 
-            powfactor = 1.0
+        summand = prefactor * _calc_f(traces, second_scale_factor)
 
-            if idx % 2 == 1:
-                p_aux0 = 0
-                p_aux1 = 1
-            else:
-                p_aux0 = 1
-                p_aux1 = 0
+        result += summand
 
-            data[p_aux1] = np.copy(data[p_aux0])
+    result *= np.power(scale_factor, dim_over_2)
+    result /= 1 << (dim_over_2 - 1)
 
-            for jdx in range(1, dim // (2 * idx) + 1):
-                powfactor = powfactor * factor / jdx
-
-                for kdx in range(idx * jdx + 1, dim_over_2 + 2):
-                    data[p_aux1][kdx - 1] += (
-                        data[p_aux0][kdx - idx * jdx - 1] * powfactor
-                    )
-
-        if fact:
-            summand -= data[p_aux1][dim_over_2]
-        else:
-            summand += data[p_aux1][dim_over_2]
-
-        res += summand
-
-    res *= np.power(scale_factor, dim_over_2)
-    res /= 1 << (dim_over_2 - 1)
-
-    return res
+    return result
