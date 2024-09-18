@@ -1,5 +1,5 @@
 Gaussian State
 ==============
 
-.. automodule:: piquasso._backends.gaussian.state
+.. automodule:: piquasso._simulators.gaussian.state
    :members:

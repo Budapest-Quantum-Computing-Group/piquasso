@@ -1,5 +1,5 @@
 Boson Sampling State
 ====================
 
-.. automodule:: piquasso._backends.sampling.state
+.. automodule:: piquasso._simulators.sampling.state
    :members:

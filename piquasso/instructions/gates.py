@@ -736,7 +736,7 @@ class CubicPhase(Gate):
 
     Note:
         This is a non-linear gate, therefore it couldn't be used with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
         Using this gate requires a high cutoff to make the more accurate simulation.
     """
 
@@ -767,7 +767,7 @@ class Kerr(Gate):
 
     Note:
         This is a non-linear gate, therefore it couldn't be used with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
     NUMBER_OF_MODES = 1
@@ -799,7 +799,7 @@ class CrossKerr(Gate):
 
     Note:
         This is a non-linear gate, therefore it couldn't be used with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
     NUMBER_OF_MODES = 2

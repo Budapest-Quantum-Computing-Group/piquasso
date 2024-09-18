@@ -54,7 +54,7 @@ class Mean(Preparation):
             ...
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    :class:`~piquasso._simulators.gaussian.state.GaussianState`.
 
     Note:
         The mean vector is dependent on :math:`\hbar`, but the value of :math:`\hbar`
@@ -84,7 +84,7 @@ class Covariance(Preparation):
             ...
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    :class:`~piquasso._simulators.gaussian.state.GaussianState`.
 
     Note:
         The covariance matrix is dependent on :math:`\hbar`, but the value of
@@ -134,7 +134,7 @@ class Thermal(Preparation):
         ).
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
     def __init__(self, mean_photon_numbers: Iterable[float]) -> None:
@@ -173,7 +173,7 @@ class StateVector(Preparation, _mixins.WeightMixin):
             ...
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState`.
     """
 
     def __init__(
@@ -221,7 +221,7 @@ class DensityMatrix(Preparation, _mixins.WeightMixin):
         This only creates one matrix element.
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.fock.general.state.FockState`.
+    :class:`~piquasso._simulators.fock.general.state.FockState`.
     """
 
     def __init__(
@@ -272,8 +272,8 @@ class Create(Preparation):
             ...
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.fock.general.state.FockState`,
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
+    :class:`~piquasso._simulators.fock.general.state.FockState`,
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState`.
     """
 
     def __init__(self) -> None:
@@ -294,8 +294,8 @@ class Annihilate(Preparation):
             ...
 
     Can only be applied to the following states:
-    :class:`~piquasso._backends.fock.general.state.FockState`,
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
+    :class:`~piquasso._simulators.fock.general.state.FockState`,
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState`.
     """
 
     def __init__(self) -> None:

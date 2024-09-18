@@ -31,7 +31,7 @@ from piquasso.api.calculator import BaseCalculator
 
 from piquasso._math.indices import get_operator_index
 
-from piquasso._backends.calculators import NumpyCalculator
+from piquasso._simulators.calculators import NumpyCalculator
 
 if TYPE_CHECKING:
     import numpy as np

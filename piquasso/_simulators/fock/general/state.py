@@ -35,7 +35,7 @@ class FockState(BaseFockState):
 
     Note:
         If you only work with pure states, it is advised to use
-        :class:`~piquasso._backends.fock.pure.state.PureFockState` instead.
+        :class:`~piquasso._simulators.fock.pure.state.PureFockState` instead.
     """
 
     def __init__(

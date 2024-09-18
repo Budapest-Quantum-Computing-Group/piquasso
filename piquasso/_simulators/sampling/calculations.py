@@ -18,7 +18,7 @@ from typing import Tuple
 from functools import partial
 
 import numpy as np
-from piquasso._backends.sampling.state import SamplingState
+from piquasso._simulators.sampling.state import SamplingState
 
 from piquasso.instructions import gates
 
@@ -26,7 +26,7 @@ from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 
-from piquasso._backends.fock.pure.calculations import (
+from piquasso._simulators.fock.pure.calculations import (
     post_select_photons as pure_fock_post_select_photons,
     imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
 )

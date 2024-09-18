@@ -35,7 +35,7 @@ def from_xxpp_to_xpxp_transformation_matrix(d: int) -> np.ndarray:
         T Y = T (x_1, \dots, x_d, p_1, \dots, p_d)^T
             = (x_1, p_1, \dots, x_d, p_d)^T,
 
-    which is very helpful in :mod:`piquasso._backends.gaussian.state`.
+    which is very helpful in :mod:`piquasso._simulators.gaussian.state`.
 
     Args:
         d (int): The number of modes.

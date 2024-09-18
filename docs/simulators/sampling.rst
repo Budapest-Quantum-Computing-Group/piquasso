@@ -1,5 +1,5 @@
 Boson Sampling Simulator
 ========================
 
-.. automodule:: piquasso._backends.sampling.simulator
+.. automodule:: piquasso._simulators.sampling.simulator
    :members:

@@ -17,12 +17,12 @@ Fock States
 General Fock State
 ------------------
 
-.. automodule:: piquasso._backends.fock.general.state
+.. automodule:: piquasso._simulators.fock.general.state
    :members:
 
 
 Pure Fock State
 ---------------
 
-.. automodule:: piquasso._backends.fock.pure.state
+.. automodule:: piquasso._simulators.fock.pure.state
    :members:

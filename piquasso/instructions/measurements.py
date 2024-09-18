@@ -46,7 +46,7 @@ class ParticleNumberMeasurement(Measurement):
 
     .. note::
 
-        When used with :class:`~piquasso._backends.gaussian.state.GaussianState`, the
+        When used with :class:`~piquasso._simulators.gaussian.state.GaussianState`, the
         state is not evolved, since that would be non-Gaussian.
 
     """
@@ -220,7 +220,7 @@ class PostSelectPhotons(Measurement):
 
     Note:
         The resulting state is not normalized. To normalize it, use
-        :meth:`~piquasso._backends.fock.pure.state.PureFockState.normalize`. Moreover,
+        :meth:`~piquasso._simulators.fock.pure.state.PureFockState.normalize`. Moreover,
         it is a state over the remaining modes, i.e., if `k` modes are post-selected,
         then the resulting state will be defined on a system with `k` modes less.
     """
@@ -282,7 +282,7 @@ class ImperfectPostSelectPhotons(Measurement):
 
     Note:
         The resulting state is not normalized. To normalize it, use
-        :meth:`~piquasso._backends.fock.pure.state.PureFockState.normalize`. Moreover,
+        :meth:`~piquasso._simulators.fock.pure.state.PureFockState.normalize`. Moreover,
         it is a state over the remaining modes, i.e., if `k` modes are post-selected,
         then the resulting state will be defined on a system with `k` modes less.
     """

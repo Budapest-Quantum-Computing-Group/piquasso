@@ -34,17 +34,17 @@ from piquasso.api.computer import Computer
 from piquasso.api.simulator import Simulator
 from piquasso.api.utils import as_code
 
-from piquasso._backends.sampling import SamplingState, SamplingSimulator
+from piquasso._simulators.sampling import SamplingState, SamplingSimulator
 
-from piquasso._backends.gaussian import GaussianState, GaussianSimulator
-from piquasso._backends.fock import (
+from piquasso._simulators.gaussian import GaussianState, GaussianSimulator
+from piquasso._simulators.fock import (
     FockState,
     PureFockState,
     BatchPureFockState,
     FockSimulator,
     PureFockSimulator,
 )
-from piquasso._backends.calculators import (
+from piquasso._simulators.calculators import (
     NumpyCalculator,
     TensorflowCalculator,
     JaxCalculator,

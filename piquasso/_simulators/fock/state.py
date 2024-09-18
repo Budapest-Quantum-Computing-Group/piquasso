@@ -212,8 +212,8 @@ class BaseFockState(State, abc.ABC):
                 \rho_2\sqrt{\rho_1}})^2 = \operatorname{Tr}(\sqrt{\rho_1 \rho_2})^2
 
         Args:
-            state: Either a :class:`~piquasso._backends.fock.pure.state.PureFockState`
-            or a :class:`~piquasso._backends.fock.general.state.FockState` that can be
+            state: Either a :class:`~piquasso._simulators.fock.pure.state.PureFockState`
+            or a :class:`~piquasso._simulators.fock.general.state.FockState` that can be
             used to calculate the fidelity aganist it.
 
         Returns:
