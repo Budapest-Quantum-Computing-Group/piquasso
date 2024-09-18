@@ -85,7 +85,7 @@ print("Detected samples:", result.samples)
 
 This code outputs:
 ```
-Resulting state: <piquasso._backends.gaussian.state.GaussianState object at 0x7f3ef3604ac0>
+Resulting state: <piquasso._simulators.gaussian.state.GaussianState object at 0x7f3ef3604ac0>
 Detected samples: [(0,), (2,), (1,), (2,), (2,), (4,), (1,), (1,), (4,), (1,)]
 ```
 

@@ -17,12 +17,12 @@ Fock Simulators
 General Fock Simulator
 ----------------------
 
-.. automodule:: piquasso._backends.fock.general.simulator
+.. automodule:: piquasso._simulators.fock.general.simulator
    :members:
 
 
 Pure Fock Simulator
 -------------------
 
-.. automodule:: piquasso._backends.fock.pure.simulator
+.. automodule:: piquasso._simulators.fock.pure.simulator
    :members:

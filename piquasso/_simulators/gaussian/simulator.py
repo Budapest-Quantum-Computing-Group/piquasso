@@ -16,7 +16,7 @@
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._backends.calculators import NumpyCalculator, JaxCalculator
+from piquasso._simulators.calculators import NumpyCalculator, JaxCalculator
 
 from .state import GaussianState
 from .calculations import (
@@ -39,7 +39,7 @@ class GaussianSimulator(BuiltinSimulator):
     """Performs photonic simulations using Gaussian representation.
 
     The simulation (when executed) results in an instance of
-    :class:`~piquasso._backends.gaussian.state.GaussianState`.
+    :class:`~piquasso._simulators.gaussian.state.GaussianState`.
 
     Example usage::
 

@@ -24,7 +24,7 @@ class TensorflowCalculator(BuiltinCalculator):
     """Calculator enabling calculating the gradients of certain instructions.
 
     This calculator is similar to
-    :class:`~piquasso._backends.calculator.NumpyCalculator`, but it enables the
+    :class:`~piquasso._simulators.calculator.NumpyCalculator`, but it enables the
     simulator to use Tensorflow to be able to compute gradients.
 
     Example usage::

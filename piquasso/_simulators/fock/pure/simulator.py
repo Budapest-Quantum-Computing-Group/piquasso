@@ -47,7 +47,7 @@ from piquasso.instructions import (
     batch,
 )
 
-from piquasso._backends.calculators import (
+from piquasso._simulators.calculators import (
     NumpyCalculator,
     TensorflowCalculator,
     JaxCalculator,
@@ -58,7 +58,7 @@ class PureFockSimulator(BuiltinSimulator):
     """Performs photonic simulations using Fock representation with pure states.
 
     The simulation (when executed) results in an instance of
-    :class:`~piquasso._backends.fock.pure.state.PureFockState`.
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState`.
 
     Example usage::
 

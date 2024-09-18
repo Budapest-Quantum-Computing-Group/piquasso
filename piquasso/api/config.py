@@ -33,7 +33,7 @@ class Config(_mixins.CodeMixin):
     :ivar measurement_cutoff:
         The maximum number of particles to be allowed for
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`
-        using :class:`~piquasso._backends.gaussian.simulator.GaussianSimulator`.
+        using :class:`~piquasso._simulators.gaussian.simulator.GaussianSimulator`.
         Defaults to `5`.
     :ivar hbar: The value of the Planck constant. Defaults to `2.0`.
     :ivar seed_sequence: The seed for reproducability of sampling algorithms.

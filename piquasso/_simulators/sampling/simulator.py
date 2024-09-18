@@ -16,7 +16,7 @@
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._backends.calculators import NumpyCalculator, JaxCalculator
+from piquasso._simulators.calculators import NumpyCalculator, JaxCalculator
 
 from .state import SamplingState
 from .calculations import (
@@ -34,7 +34,7 @@ class SamplingSimulator(BuiltinSimulator):
     """Performs photonic simulations using Fock representation with pure states.
 
     The simulation (when executed) results in an instance of
-    :class:`~piquasso._backends.sampling.state.SamplingState`.
+    :class:`~piquasso._simulators.sampling.state.SamplingState`.
 
     Example usage::
 

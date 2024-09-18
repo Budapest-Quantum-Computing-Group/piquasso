@@ -47,7 +47,7 @@ class DeterministicGaussianChannel(Gate):
 
     Note:
         Currently, this instruction can only be used along with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray) -> None:
@@ -110,7 +110,7 @@ class Attenuator(Gate):
 
     Note:
         Currently, this instruction can only be used along with
-        :class:`~piquasso._backends.gaussian.state.GaussianState`.
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
     def __init__(self, theta: float, mean_thermal_excitation: float = 0) -> None:
@@ -151,7 +151,7 @@ class Loss(Gate):
 
     Note:
         Currently, this instruction can only be used along with
-        :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
+        :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`.
 
     Note:
         The parameter `transmissivity` is usually called `transmittance`.
@@ -188,7 +188,7 @@ class LossyInterferometer(Gate):
 
     Note:
         Currently, this instruction can only be used along with
-        :class:`~piquasso._backends.sampling.simulator.SamplingSimulator`.
+        :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`.
 
     Raises:
         InvalidParameter:

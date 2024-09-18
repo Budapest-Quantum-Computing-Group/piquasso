@@ -26,7 +26,7 @@ from piquasso._math.decompositions import (
     decompose_to_pure_and_mixed,
 )
 
-from piquasso._backends.calculators import (
+from piquasso._simulators.calculators import (
     NumpyCalculator,
     TensorflowCalculator,
     JaxCalculator,

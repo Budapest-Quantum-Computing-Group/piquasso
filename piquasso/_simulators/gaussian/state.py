@@ -710,7 +710,7 @@ class GaussianState(State):
             :attr:`xpxp_covariance_matrix`.
 
         Args:
-            state: Another :class:`~piquasso._backends.gaussian.state.GaussianState`
+            state: Another :class:`~piquasso._simulators.gaussian.state.GaussianState`
                 instance.
 
         Returns:

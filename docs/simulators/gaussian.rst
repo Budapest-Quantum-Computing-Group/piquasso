@@ -1,5 +1,5 @@
 Gaussian Simulator
 ==================
 
-.. automodule:: piquasso._backends.gaussian.simulator
+.. automodule:: piquasso._simulators.gaussian.simulator
    :members:
