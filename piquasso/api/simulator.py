@@ -79,7 +79,8 @@ class Simulator(Computer, _mixins.CodeMixin):
     def create_initial_state(self):
         """Creates an initial state with no instructions executed.
 
-        Note: This not necessarily needs to be a vacuum state.
+        Note:
+            This is not necessarily a vacuum state.
 
         Returns:
             State: The initial state of the simulation.
