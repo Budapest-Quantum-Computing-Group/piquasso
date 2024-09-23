@@ -30,11 +30,13 @@ class BaseCalculator(abc.ABC):
     JAX) using the framework's implementation of the NumPy API.
 
     :ivar np: The implemented NumPy API.
-    :ivar fallback_np: Regular NumPy, usually.
-    :ivar forward_pass_np: NumPy API used in forward pass.
+    :ivar fallback_np:
+        Usually the original NumPy API for calculations that are not required to be
+        present on the computation graph.
+    :ivar forward_pass_np: NumPy API used in the forward pass.
 
     See:
-        - [Interoperability with NumPy](https://numpy.org/devdocs/user/basics.interoperability.html)
+        - `Interoperability with NumPy <https://numpy.org/devdocs/user/basics.interoperability.html>`_
 
     Note:
         Every attribute of this class should be stateless!

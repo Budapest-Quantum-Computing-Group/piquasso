@@ -107,7 +107,7 @@ class BaseFockState(State, abc.ABC):
 
         Note:
             The implementation is copied from
-            [QuTiP](https://qutip.org/docs/latest/modules/qutip/wigner.html#wigner).
+            `QuTiP <https://qutip.org/docs/latest/modules/qutip/wigner.html#wigner>`_.
 
         Note:
             Only single modes are supported.
@@ -212,9 +212,10 @@ class BaseFockState(State, abc.ABC):
                 \rho_2\sqrt{\rho_1}})^2 = \operatorname{Tr}(\sqrt{\rho_1 \rho_2})^2
 
         Args:
-            state: Either a :class:`~piquasso._simulators.fock.pure.state.PureFockState`
-            or a :class:`~piquasso._simulators.fock.general.state.FockState` that can be
-            used to calculate the fidelity aganist it.
+            state:
+                Either a :class:`~piquasso._simulators.fock.pure.state.PureFockState`
+                or a :class:`~piquasso._simulators.fock.general.state.FockState` that
+                can be used to calculate the fidelity aganist it.
 
         Returns:
             float: The calculated fidelity.

@@ -19,6 +19,7 @@ General Fock Simulator
 
 .. automodule:: piquasso._simulators.fock.general.simulator
    :members:
+   :inherited-members:
 
 
 Pure Fock Simulator
@@ -26,3 +27,4 @@ Pure Fock Simulator
 
 .. automodule:: piquasso._simulators.fock.pure.simulator
    :members:
+   :inherited-members:

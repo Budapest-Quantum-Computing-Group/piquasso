@@ -19,6 +19,7 @@ General Fock State
 
 .. automodule:: piquasso._simulators.fock.general.state
    :members:
+   :inherited-members:
 
 
 Pure Fock State
@@ -26,3 +27,4 @@ Pure Fock State
 
 .. automodule:: piquasso._simulators.fock.pure.state
    :members:
+   :inherited-members:
