@@ -49,3 +49,7 @@ benchmark = [
   "pytest-profiling~=1.7.0",
   "pytest-benchmark~=4.0.0",
 ]
+
+[tool.scikit-build]
+cmake.verbose = true
+logging.level = "INFO"

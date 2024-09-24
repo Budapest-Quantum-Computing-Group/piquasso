@@ -31,6 +31,11 @@
 #include <cstring>
 #include <iostream>
 
+// See: https://stackoverflow.com/a/8447025
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
 template <typename TScalar>
 void calc_cholesky_decomposition(
     Matrix<TScalar> &matrix,
@@ -160,8 +165,8 @@ TScalar calculate_partial_torontonian(
     TScalar factor =
         static_cast<TScalar>(
             (number_selected_modes + num_of_modes) % 2
-            ? -1.0
-        : 1.0);
+                ? -1.0
+                : 1.0);
 
     // calculating -1^(number of ones) / sqrt(det(1-A^(Z)))
     TScalar sqrt_determinant = std::sqrt(determinant);
@@ -202,11 +207,18 @@ void iterate_over_selected_modes(
     // add new index hole to the iterations
     size_t new_hole_to_iterate = hole_to_iterate + 1;
 
+#if defined(_OPENMP)
+    #pragma omp parallel for
+    // NOTE: OMP indices on windows must be signed
+#endif
     // now do the rest of the iterations
-    for (size_t idx = index_min + 1; idx != index_max; idx++)
-    {
+    for (
+        int idx = static_cast<int>(index_min) + 1;
+        idx < static_cast<int>(index_max);
+        idx++
+    ) {
         std::vector<size_t> selected_index_holes_new = selected_index_holes;
-        selected_index_holes_new[hole_to_iterate] = idx - 1;
+        selected_index_holes_new[hole_to_iterate] = static_cast<size_t>(idx) - 1;
 
         size_t reuse_index_new = std::min(idx - 1 - hole_to_iterate, reuse_index);
 
