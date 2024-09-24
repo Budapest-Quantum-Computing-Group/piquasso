@@ -530,6 +530,31 @@ def test_GaussianState_threshold_and_particle_resolved_vacuum_detection_equivale
     assert np.isclose(vacuum_probability_1, vacuum_probability_2)
 
 
+def test_displaced_GaussianState_threshold_and_particle_resolved_vacuum_detection_equivalence():  # noqa: E501
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 7)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=-np.pi / 11)
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+        pq.Q(1) | pq.Squeezing(r=0.05)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7)
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    vacuum_probability_1 = state.get_threshold_detection_probability(
+        occupation_number=(0, 0)
+    )
+    vacuum_probability_2 = state.get_particle_detection_probability(
+        occupation_number=(0, 0)
+    )
+
+    assert np.isclose(vacuum_probability_1, vacuum_probability_2)
+
+
 def test_GaussianState_get_threshold_detection_probability_short_occupation_number():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -593,6 +618,26 @@ def test_GaussianState_get_threshold_detection_probability_2_mode():
     assert np.isclose(probability, 0.0021696454384600313)
 
 
+def test_displaced_GaussianState_get_threshold_detection_probability_2_mode():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 7)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=-np.pi / 11)
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+        pq.Q(1) | pq.Squeezing(r=0.05)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    probability = state.get_threshold_detection_probability(occupation_number=(1, 0))
+
+    assert np.isclose(probability, 0.012210371851308395)
+
+
 def test_GaussianState_get_threshold_detection_probability_3_mode():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -611,9 +656,54 @@ def test_GaussianState_get_threshold_detection_probability_3_mode():
     assert np.isclose(probability, 0.00093484938797056)
 
 
+def test_displaced_GaussianState_get_threshold_detection_probability_3_mode():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 7)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=-np.pi / 11)
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+        pq.Q(1) | pq.Squeezing(r=0.05)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 4)
+
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
+
+    probability = state.get_threshold_detection_probability(occupation_number=(1, 0, 1))
+
+    assert np.isclose(probability, 0.0005136255432135231)
+
+
 def test_GaussianState_get_threshold_detection_probability_sums_to_one_on_2_mode():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    probability00 = state.get_threshold_detection_probability(occupation_number=(0, 0))
+    probability01 = state.get_threshold_detection_probability(occupation_number=(0, 1))
+    probability10 = state.get_threshold_detection_probability(occupation_number=(1, 0))
+    probability11 = state.get_threshold_detection_probability(occupation_number=(1, 1))
+
+    assert np.isclose(
+        probability00 + probability01 + probability10 + probability11, 1.0
+    )
+
+
+def test_displaced_GaussianState_get_threshold_detection_probability_sums_to_one_on_2_mode():  # noqa: E501
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.1, phi=np.pi / 7)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=-np.pi / 11)
 
         pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
 
@@ -646,6 +736,46 @@ def test_GaussianState_get_threshold_detection_probability_sums_to_one_random(
 
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
+
+        pq.Q() | pq.GaussianTransform(passive=passive, active=active)
+
+    simulator = pq.GaussianSimulator(d=d)
+    state = simulator.execute(program).state
+
+    binary_strings = []
+
+    for i in range(2**d, 2 ** (d + 1)):
+        binary_strings.append(tuple(int(x) for x in list(bin(i)[3:])))
+
+    probabilities = []
+
+    for binary_string in binary_strings:
+        probabilities.append(
+            state.get_threshold_detection_probability(occupation_number=binary_string)
+        )
+
+    assert np.isclose(sum(probabilities), 1.0)
+
+
+@pytest.mark.monkey
+def test_displaced_GaussianState_get_threshold_detection_probability_sums_to_one_random(
+    generate_complex_symmetric_matrix, generate_unitary_matrix
+):
+    d = 3
+    squeezing_matrix = generate_complex_symmetric_matrix(d)
+    U, r = polar(squeezing_matrix)
+
+    global_phase = generate_unitary_matrix(d)
+    passive = global_phase @ coshm(r)
+    active = global_phase @ sinhm(r) @ U.conj()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        for i in range(d):
+            pq.Q(i) | pq.Displacement(
+                r=np.random.rand(), phi=2 * np.pi * np.random.rand()
+            )
 
         pq.Q() | pq.GaussianTransform(passive=passive, active=active)
 

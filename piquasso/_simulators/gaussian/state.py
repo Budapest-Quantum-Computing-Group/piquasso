@@ -39,6 +39,7 @@ from .probabilities import (
     DensityMatrixCalculation,
     DisplacedDensityMatrixCalculation,
     NondisplacedDensityMatrixCalculation,
+    calculate_click_probability_nondisplaced,
     calculate_click_probability,
 )
 
@@ -929,10 +930,18 @@ class GaussianState(State):
                 f"occupation_number='{occupation_number}'."
             )
 
+        hbar = self._config.hbar
+
+        if not self._is_displaced():
+            return calculate_click_probability_nondisplaced(
+                self.xpxp_covariance_matrix / hbar,
+                tuple(occupation_number),
+            )
+
         return calculate_click_probability(
-            self.xxpp_covariance_matrix,
+            self.xpxp_covariance_matrix / hbar,
+            self.xpxp_mean_vector / np.sqrt(hbar),
             tuple(occupation_number),
-            self._config.hbar,
         )
 
     @property

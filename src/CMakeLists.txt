@@ -2,7 +2,19 @@ add_library(
     torontonianboost
     STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/torontonian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/torontonian_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/torontonian.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/torontonian_common.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/matrix.hpp
+)
+
+add_library(
+    looptorontonianboost
+    STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/loop_torontonian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/torontonian_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/loop_torontonian.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/torontonian_common.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/matrix.hpp
 )
 
@@ -10,6 +22,7 @@ add_library(
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(torontonianboost PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(looptorontonianboost PUBLIC OpenMP::OpenMP_CXX)
 else()
     # This could happen, because Apple disabled openmp in clang.
     # One could install it via brew, but it would only works on the machine where it
@@ -24,3 +37,4 @@ else()
 endif()
 
 target_include_directories(torontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(looptorontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

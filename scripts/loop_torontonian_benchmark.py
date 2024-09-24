@@ -21,8 +21,8 @@ import time
 
 import piquasso as pq
 
-from piquasso._math.torontonian import torontonian as pq_torontonian
-from thewalrus import rec_torontonian as tw_torontonian
+from piquasso._math.torontonian import loop_torontonian as pq_loop_torontonian
+from thewalrus import ltor as tw_loop_torontonian
 
 import matplotlib.pyplot as plt
 
@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
         program = pq.Program(
             instructions=[pq.Vacuum()]
+            + [pq.Displacement(r=np.random.rand()).on_modes(i) for i in range(d)]
             + [pq.Squeezing(r=np.random.rand()).on_modes(i) for i in range(d)]
             + [pq.Interferometer(unitary_group.rvs(d))]
         )
@@ -59,13 +60,14 @@ if __name__ == "__main__":
         sigma: np.ndarray = (xpxp_covariance_matrix / 2 + np.identity(2 * d)) / 2
 
         input_matrix = np.identity(len(sigma), dtype=float) - np.linalg.inv(sigma)
+        displacement_vector = state.xpxp_mean_vector
 
         sum_ = 0.0
 
         for _ in range(ITER):
             print("|", end="", flush=True)
             start_time = time.time()
-            pq_torontonian(input_matrix)
+            pq_loop_torontonian(input_matrix, displacement_vector)
             sum_ += time.time() - start_time
 
         y.append(sum_ / ITER)
@@ -76,13 +78,14 @@ if __name__ == "__main__":
         sigma: np.ndarray = (xxpp_covariance_matrix / 2 + np.identity(2 * d)) / 2
 
         input_matrix = np.identity(len(sigma), dtype=float) - np.linalg.inv(sigma)
+        displacement_vector = state.xxpp_mean_vector
 
         sum_ = 0.0
 
         for _ in range(ITER):
             print("-", end="", flush=True)
             start_time = time.time()
-            tw_torontonian(input_matrix)
+            tw_loop_torontonian(input_matrix, displacement_vector)
             sum_ += time.time() - start_time
 
         z.append(sum_ / ITER)

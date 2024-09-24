@@ -81,6 +81,10 @@ def block_reduce(array: np.ndarray, reduce_on: Tuple[int, ...]) -> np.ndarray:
     return reduce_(array, reduce_on=(reduce_on * 2))
 
 
+def block_reduce_xpxp(array: np.ndarray, reduce_on: Tuple[int, ...]) -> np.ndarray:
+    return reduce_(array, reduce_on=np.repeat(reduce_on, 2))
+
+
 def assym_reduce(array, row_reduce_on, col_reduce_on):
     particles = np.sum(row_reduce_on)
 

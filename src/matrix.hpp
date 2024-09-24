@@ -20,9 +20,97 @@
 #include <cstddef>
 #include <cstring>
 
-#ifndef DEBUG
+#ifdef DEBUG
 #include <iostream>
 #endif
+
+
+/**
+ * The class for storing vectors.
+ *
+ * @param size The number of elements.
+ * @param data The optional input data. If not provided, new data is allocated.
+ */
+template <typename TScalar>
+class Vector
+{
+public:
+    size_t length;
+    TScalar *data;
+    bool owner;       // True if data is owned by the instance, otherwise false.
+    size_t *refcount; // Number of references
+
+    Vector(size_t length) : length(length)
+    {
+        data = new TScalar[length];
+        owner = true;
+        refcount = new size_t;
+        (*refcount) = 1;
+    }
+
+    Vector(size_t length, TScalar *data)
+        : length(length), data(data)
+    {
+        owner = false;
+        refcount = new size_t;
+        (*refcount) = 1;
+    }
+
+    Vector(const Vector &other)
+        : length(other.length), data(other.data), owner(other.owner),
+            refcount(other.refcount)
+    {
+        (*refcount)++;
+    }
+
+    void operator=(const Vector &other)
+    {
+        length = other.length;
+        data = other.data;
+        owner = other.owner;
+        refcount = other.refcount;
+
+        (*refcount)++;
+    }
+
+    Vector copy()
+    {
+        Vector vector_copy(length);
+
+        memcpy(vector_copy.data, data, length * sizeof(TScalar));
+
+        return vector_copy;
+    }
+
+    ~Vector()
+    {
+        bool call_delete = ((*refcount) == 1);
+
+        if (call_delete)
+            delete refcount;
+        else
+            (*refcount)--;
+
+        if (call_delete && owner)
+            delete[] data;
+    }
+
+#ifdef DEBUG
+    void print()
+    {
+        std::cout << "The stored vector:\n";
+        for (size_t idx = 0; idx < length; idx++)
+            std::cout << " " << data[idx];
+
+        std::cout << "\n------------------------\n";
+    }
+#endif
+
+    TScalar &operator[](size_t idx) const
+    {
+        return data[idx];
+    }
+};
 
 /**
  * The class for storing matrices.
@@ -123,7 +211,7 @@ public:
     }
 #endif
 
-    TScalar &operator[](size_t idx)
+    TScalar &operator[](size_t idx) const
     {
         return data[idx];
     }

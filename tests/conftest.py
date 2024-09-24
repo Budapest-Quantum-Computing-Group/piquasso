@@ -19,6 +19,8 @@ import numpy as np
 
 import piquasso as pq
 
+from scipy.stats import unitary_group
+
 from pathlib import Path
 
 from scipy.linalg import polar, coshm, sinhm
@@ -54,9 +56,10 @@ def generate_complex_symmetric_matrix(generate_symmetric_matrix):
 
 @pytest.fixture
 def generate_unitary_matrix():
-    from scipy.stats import unitary_group
-
     def func(N):
+        if N == 1:
+            return np.array([[np.exp(np.random.rand() * 2 * np.pi * 1j)]])
+
         return np.array(unitary_group.rvs(N), dtype=complex)
 
     return func

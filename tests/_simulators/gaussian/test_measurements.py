@@ -234,9 +234,7 @@ def test_dyneMeasurement_results_in_same_state_regardless_of_hbar(MeasurementCla
     assert state_hbar_1 == state_hbar_3
 
 
-def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_torontonian(
-    state,
-):
+def test_displaced_ThresholdMeasurement_with_torontonian(state):
     state._config.use_torontonian = True
 
     state_with_nonzero_displacements = state
@@ -246,8 +244,7 @@ def test_displaced_ThresholdMeasurement_raises_NotImplementedError_with_toronton
 
     simulator = pq.GaussianSimulator(d=state.d)
 
-    with pytest.raises(NotImplementedError):
-        simulator.execute(program, initial_state=state_with_nonzero_displacements)
+    simulator.execute(program, initial_state=state_with_nonzero_displacements)
 
 
 def test_measure_threshold_on_one_modes(nondisplaced_state):
