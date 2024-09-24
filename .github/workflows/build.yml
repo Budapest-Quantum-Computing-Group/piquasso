@@ -8,12 +8,14 @@ on:
       - '**.cpp'
       - '**.hpp'
       - '**/CMakeLists.txt'
+      - '.github/workflows/**'
 
   pull_request:
     paths:
       - '**.cpp'
       - '**.hpp'
       - '**/CMakeLists.txt'
+      - '.github/workflows/**'
 
 jobs:
   build_sdist:
@@ -35,7 +37,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
     steps:
       - uses: actions/checkout@v4
