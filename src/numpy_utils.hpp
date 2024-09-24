@@ -67,4 +67,23 @@ Matrix<TScalar> numpy_to_matrix(
     return matrix;
 }
 
+
+/**
+ * Creates a Vector from a numpy array with shared memory.
+ */
+template <typename TScalar>
+Vector<TScalar> numpy_to_vector(
+    py::array_t<TScalar, py::array::c_style | py::array::forcecast> numpy_array)
+{
+    py::buffer_info bufferinfo = numpy_array.request();
+
+    size_t size = bufferinfo.shape[0];
+
+    TScalar *data = static_cast<TScalar *>(bufferinfo.ptr);
+
+    Vector<TScalar> vector(size, data);
+
+    return vector;
+}
+
 #endif

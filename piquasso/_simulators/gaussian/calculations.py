@@ -25,7 +25,10 @@ from functools import lru_cache
 from scipy.special import factorial
 
 from .state import GaussianState
-from .probabilities import calculate_click_probability
+from .probabilities import (
+    calculate_click_probability_nondisplaced,
+    calculate_click_probability,
+)
 
 from piquasso.instructions import gates
 
@@ -512,18 +515,11 @@ def threshold_measurement(
     return Result(state=state, samples=samples)
 
 
-def _generate_threshold_samples_using_torontonian(
-    state,
-    instruction,
-    shots,
-):
-    if not np.allclose(state.xpxp_mean_vector, np.zeros_like(state.xpxp_mean_vector)):
-        raise NotImplementedError(
-            "Threshold measurement for displaced states are not supported: "
-            f"xpxp_mean_vector={state.xpxp_mean_vector}"
-        )
+def _generate_threshold_samples_using_torontonian(state, instruction, shots):
+    is_displaced = state._is_displaced()
 
     rng = state._config.rng
+    hbar = state._config.hbar
 
     modes = instruction.modes
 
@@ -533,10 +529,16 @@ def _generate_threshold_samples_using_torontonian(
     ) -> float:
         reduced_state = state.reduced(subspace_modes)
 
+        if not is_displaced:
+            return calculate_click_probability_nondisplaced(
+                reduced_state.xpxp_covariance_matrix / hbar,
+                occupation_numbers,
+            )
+
         return calculate_click_probability(
-            reduced_state.xxpp_covariance_matrix,
+            reduced_state.xpxp_covariance_matrix / hbar,
+            reduced_state.xpxp_mean_vector / np.sqrt(hbar),
             occupation_numbers,
-            state._config.hbar,
         )
 
     samples = []

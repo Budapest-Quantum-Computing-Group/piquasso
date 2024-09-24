@@ -21,8 +21,8 @@ import numpy as np
 
 from scipy.special import factorial
 
-from piquasso._math.linalg import block_reduce
-from piquasso._math.torontonian import torontonian
+from piquasso._math.linalg import block_reduce_xpxp
+from piquasso._math.torontonian import torontonian, loop_torontonian
 from piquasso.api.calculator import BaseCalculator
 
 
@@ -142,10 +142,9 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         return self.calculator.loop_hafnian(self._A, self._gamma, reduce_on)
 
 
-def calculate_click_probability(
-    xp_covariance: np.ndarray,
+def calculate_click_probability_nondisplaced(
+    xpxp_covariance: np.ndarray,
     occupation_number: Tuple[int, ...],
-    hbar: float,
 ) -> float:
     r"""
     Calculates the threshold detection probability with the equation
@@ -167,19 +166,71 @@ def calculate_click_probability(
             \right ).
     """
 
-    d = len(xp_covariance) // 2
+    d = len(xpxp_covariance) // 2
 
-    sigma: np.ndarray = (xp_covariance / hbar + np.identity(2 * d)) / 2
+    sigma: np.ndarray = (xpxp_covariance + np.identity(2 * d)) / 2
 
-    sigma_inv_reduced = block_reduce(
-        np.linalg.inv(sigma),
-        reduce_on=occupation_number,
-    )
+    sigma_inv = np.linalg.inv(sigma)
+
+    sigma_inv_reduced = block_reduce_xpxp(sigma_inv, reduce_on=occupation_number)
+
+    A = np.identity(len(sigma_inv_reduced), dtype=float) - sigma_inv_reduced
+
+    probability = torontonian(A) / np.sqrt(np.linalg.det(sigma))
+
+    return max(probability, 0.0)
+
+
+def calculate_click_probability(
+    xpxp_covariance: np.ndarray,
+    xpxp_mean: np.ndarray,
+    occupation_number: Tuple[int, ...],
+) -> float:
+    r"""
+    Calculates the threshold detection probability with the equation
+
+    .. math::
+        p(S) = \frac{
+            \operatorname{ltor}( I - ( \Sigma^{-1} )_{(S)}, \vec{\gamma} )
+        }{
+            \sqrt{\operatorname{det}(\Sigma)}
+        },
+
+    where :math:`\Sigma \in \mathbb{R}^{2d \times 2d}` is a symmetric matrix
+    defined by
+
+    .. math::
+        \Sigma = \frac{1}{2} \left (
+                \frac{1}{\hbar} \sigma_{xp}
+                + I
+            \right ),
+
+    and
+
+    .. math::
+        \vec{\gamma} = \Sigma^{-1} \vec{\alpha}
+    """
+
+    d = len(xpxp_covariance) // 2
+
+    sigma: np.ndarray = (xpxp_covariance + np.identity(2 * d)) / 2
+
+    sigma_inv = np.linalg.inv(sigma)
+
+    gamma = sigma_inv @ xpxp_mean
+
+    sigma_inv_reduced = block_reduce_xpxp(sigma_inv, reduce_on=occupation_number)
+
+    gamma_reduced = block_reduce_xpxp(gamma, reduce_on=occupation_number)
+
+    A = np.identity(len(sigma_inv_reduced), dtype=float) - sigma_inv_reduced
+
+    exponential_term = np.exp(-xpxp_mean @ sigma_inv @ xpxp_mean / 2)
 
     probability = (
-        torontonian(
-            np.identity(len(sigma_inv_reduced), dtype=float) - sigma_inv_reduced
-        )
-    ).real / np.sqrt(np.linalg.det(sigma))
+        loop_torontonian(A, gamma_reduced).real
+        * exponential_term
+        / np.sqrt(np.linalg.det(sigma))
+    )
 
     return max(probability, 0.0)
