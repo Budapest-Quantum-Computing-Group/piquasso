@@ -3,8 +3,11 @@ project(piquasso LANGUAGES CXX)
 
 find_package(pybind11 CONFIG REQUIRED)
 
+message(LDFLAGS="$ENV{LDFLAGS}")
+message(CXXFLAGS="$ENV{CXXFLAGS}")
+
 if(MSVC)
-  add_compile_options(/W4 /WX)
+  add_compile_options(/W4 /WX /openmp)
 else()
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()

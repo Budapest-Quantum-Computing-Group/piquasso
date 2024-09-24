@@ -6,4 +6,21 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/matrix.hpp
 )
 
+# Source: https://cliutils.gitlab.io/modern-cmake/chapters/packages/OpenMP.html
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(torontonianboost PUBLIC OpenMP::OpenMP_CXX)
+else()
+    # This could happen, because Apple disabled openmp in clang.
+    # One could install it via brew, but it would only works on the machine where it
+    # is compiled, see:
+    # https://cibuildwheel.pypa.io/en/stable/faq/#macos-library-dependencies-do-not-satisfy-target-macos
+    # One can download binaries from here:
+    # https://mac.r-project.org/openmp/
+    # If one would like to make this work, one would need to download the correct binary
+    # and compile the project for every macOS version. We will avoid this, and build on
+    # macOS without OpenMP.
+    message("OpenMP not found, building without it.")
+endif()
+
 target_include_directories(torontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
