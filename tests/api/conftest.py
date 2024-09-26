@@ -87,7 +87,17 @@ def FakeConfig():
 
 
 @pytest.fixture
-def FakeSimulator(FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement):
+def FakeCalculator():
+    class FakeCalculator(pq.api.calculator.BaseCalculator):
+        pass
+
+    return FakeCalculator
+
+
+@pytest.fixture
+def FakeSimulator(
+    FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement, FakeCalculator
+):
     def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
         return pq.api.result.Result(state=state)
 
@@ -101,5 +111,7 @@ def FakeSimulator(FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurem
             FakeGate: fake_calculation,
             FakeMeasurement: fake_calculation,
         }
+
+        _default_calculator_class = FakeCalculator
 
     return FakeSimulator

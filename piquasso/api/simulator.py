@@ -48,7 +48,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     _state_class: Type[State]
     _config_class: Type[Config] = Config
-    _default_calculator_class: Type[BaseCalculator] = BaseCalculator
+    _default_calculator_class: Type[BaseCalculator]
 
     def __init__(
         self,
