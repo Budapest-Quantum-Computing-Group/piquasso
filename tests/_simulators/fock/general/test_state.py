@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
 
 import piquasso as pq
@@ -109,3 +111,30 @@ def test_FockState_quadratures_mean_variance():
     assert np.isclose(variance_on_1st, 0.9112844, rtol=1e-5)
     assert np.isclose(variance_on_2nd, 1, rtol=1e-5)
     assert np.isclose(variance_on_3rd, 1, rtol=1e-5)
+
+
+def test_FockState_non_selfadjoint_density_matrix_raises_InvalidState():
+
+    state = pq.FockState(d=1, calculator=pq.NumpyCalculator())
+
+    non_selfadjoint_matrix = np.array([[1, 2], [3, 4]])
+
+    state._density_matrix = non_selfadjoint_matrix
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        state.validate()
+
+    assert "The density matrix is not self-adjoint" in error.value.args[0]
+
+
+def test_FockState_non_selfadjoint_density_matrix_no_error_if_validate_False():
+
+    state = pq.FockState(
+        d=1, calculator=pq.NumpyCalculator(), config=pq.Config(validate=False)
+    )
+
+    non_selfadjoint_matrix = np.array([[1, 2], [3, 4]])
+
+    state._density_matrix = non_selfadjoint_matrix
+
+    state.validate()

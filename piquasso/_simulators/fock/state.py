@@ -31,7 +31,8 @@ class BaseFockState(State, abc.ABC):
     ) -> None:
         super().__init__(calculator=calculator, config=config)
         self._d = d
-        self._space = get_fock_space_basis(d=d, cutoff=config.cutoff)  # type: ignore
+        cutoff = self._config.cutoff
+        self._space = get_fock_space_basis(d=d, cutoff=cutoff)  # type: ignore
 
     @property
     def d(self) -> int:
@@ -156,7 +157,7 @@ class BaseFockState(State, abc.ABC):
         #    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
         #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-        if self.d != 1 and (modes is None or len(modes) != 1):
+        if self._config.validate and self.d != 1 and (modes is None or len(modes) != 1):
             raise InvalidModes(
                 "The Wigner function can only be calculated for a single mode: "
                 f"modes={modes}."

@@ -126,7 +126,7 @@ class PureFockState(BaseFockState):
     def get_particle_detection_probability(
         self, occupation_number: np.ndarray
     ) -> float:
-        if len(occupation_number) != self.d:
+        if self._config.validate and len(occupation_number) != self.d:
             raise PiquassoException(
                 f"The specified occupation number should have length '{self.d}': "
                 f"occupation_number='{occupation_number}'."
@@ -189,7 +189,7 @@ class PureFockState(BaseFockState):
     def normalize(self) -> None:
         norm = self.norm
 
-        if np.isclose(norm, 0):
+        if self._config.validate and np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
         self.state_vector = self.state_vector / self._np.sqrt(norm)
@@ -201,6 +201,9 @@ class PureFockState(BaseFockState):
             InvalidState:
                 Raised, if the norm of the state vector is not close to 1.0.
         """
+        if not self._config.validate:
+            return
+
         sum_of_probabilities = sum(self.fock_probabilities)
 
         if not self._np.isclose(sum_of_probabilities, 1.0):

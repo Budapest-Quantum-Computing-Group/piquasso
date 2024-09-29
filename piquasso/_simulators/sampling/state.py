@@ -58,6 +58,8 @@ class SamplingState(State):
             InvalidState: If the interferometer matrix is non-unitary, or the input
                 state is invalid.
         """
+        if not self._config.validate:
+            return
 
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
@@ -85,7 +87,7 @@ class SamplingState(State):
     def get_particle_detection_probability(
         self, occupation_number: np.ndarray
     ) -> float:
-        if len(occupation_number) != self.d:
+        if self._config.validate and len(occupation_number) != self.d:
             raise PiquassoException(
                 f"The specified occupation number should have length '{self.d}': "
                 f"occupation_number='{occupation_number}'."

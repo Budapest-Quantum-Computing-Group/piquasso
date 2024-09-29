@@ -56,7 +56,7 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
 
     modes = instruction.modes
 
-    if len(modes) != 1:
+    if state._config.validate and len(modes) != 1:
         raise InvalidInstruction(
             f"The instruction should be specified for '{len(modes)}' "
             f"modes: instruction={instruction}"
@@ -64,7 +64,7 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
 
     mean_thermal_excitation = instruction._all_params["mean_thermal_excitation"]
 
-    if not np.isclose(mean_thermal_excitation, 0.0):
+    if state._config.validate and not np.isclose(mean_thermal_excitation, 0.0):
         raise InvalidParameter(
             "Non-zero mean thermal excitation is not supported in this backend. "
             f"mean_thermal_excitation={mean_thermal_excitation}"

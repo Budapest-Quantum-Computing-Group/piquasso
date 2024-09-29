@@ -33,6 +33,16 @@ def test_initial_state_raises_InvalidState_for_nonnormalized_input_state():
     assert error.value.args[0] == "The state is not normalized: norm=0.25"
 
 
+def test_initial_state_for_nonnormalized_input_state_validate_False():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
+
+    simulator = pq.SamplingSimulator(d=5, config=pq.Config(validate=False))
+    state = simulator.execute(program).state
+
+    state.validate()
+
+
 def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_length():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)

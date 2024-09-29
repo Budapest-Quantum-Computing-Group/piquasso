@@ -48,6 +48,7 @@ def test_eq():
         use_torontonian=True,
         cutoff=6,
         measurement_cutoff=4,
+        validate=False,
     )
 
     assert config1 == config1
@@ -56,7 +57,7 @@ def test_eq():
     assert not (config1 == config3)
 
 
-def test_as_code():
+def test_as_code_dtype():
     conf_f32 = pq.Config(dtype=np.float32)
     conf_f64 = pq.Config(dtype=np.float64)
     conf_f = pq.Config(dtype=float)
@@ -68,6 +69,16 @@ def test_as_code():
     assert as_code_f32 == "pq.Config(dtype=np.float32)"
     assert as_code_f64 == "pq.Config()"
     assert as_code_f == "pq.Config()"
+
+
+def test_as_code_validate():
+    default = pq.Config()
+    default_2 = pq.Config(validate=True)
+    no_validate_config = pq.Config(validate=False)
+
+    assert default._as_code() == default_2._as_code()
+    assert default._as_code() == "pq.Config()"
+    assert no_validate_config._as_code() == "pq.Config(validate=False)"
 
 
 def test_complex_dtype():

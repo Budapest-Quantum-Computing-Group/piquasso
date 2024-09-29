@@ -68,6 +68,27 @@ def test_BatchPureFockState_without_normalization():
     )
 
 
+def test_BatchPureFockState_without_normalization_but_validate_False():
+    with pq.Program() as first_preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 4)
+
+    with pq.Program() as second_preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=1.0, phi=np.pi / 10)
+
+    with pq.Program() as batch_program:
+        pq.Q() | pq.BatchPrepare([first_preparation, second_preparation])
+
+        pq.Q() | pq.Beamsplitter(theta=np.pi / 6, phi=np.pi / 3)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5, validate=False))
+
+    batch_state = simulator.execute(batch_program).state
+
+    batch_state.validate()
+
+
 def test_invalid_BatchPureFockState_normalize():
     with pq.Program() as first_preparation:
         pq.Q() | pq.Vacuum()
