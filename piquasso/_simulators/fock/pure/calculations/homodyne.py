@@ -40,7 +40,7 @@ def homodyne_measurement(
 
     phi = instruction.params["phi"]
 
-    if not np.isclose(phi, 0.0):
+    if state._config.validate and not np.isclose(phi, 0.0):
         raise NotImplementedCalculation(
             "'HomodyneMeasurement' with nonzero rotation angle is not yet supported."
         )

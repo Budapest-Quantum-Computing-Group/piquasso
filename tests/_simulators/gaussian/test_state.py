@@ -52,6 +52,39 @@ def test_xpxp_representation(state, assets):
     )
 
 
+def test_set_xpxp_mean_vector_invalid_shape_raises_InvalidState(state):
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        state.xpxp_mean_vector = np.array([1, 2, 3])
+
+    assert "Invalid 'mean' vector shape" in error.value.args[0]
+
+
+def test_set_xpxp_mean_vector_invalid_shape_validate_False():
+    state = pq.GaussianState(
+        2, calculator=pq.NumpyCalculator(), config=pq.Config(validate=False)
+    )
+
+    state.xpxp_mean_vector = np.array([1, 2, 3])
+
+
+def test_set_xpxp_covariance_matrix_invalid_shape_raises_InvalidState(state):
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        state.xpxp_covariance_matrix = np.array([1, 2, 3])
+
+    assert "Invalid 'cov' matrix shape" in error.value.args[0]
+
+
+def test_set_xpxp_covariance_matrix_invalid_shape_validate_False():
+    state = pq.GaussianState(
+        2, calculator=pq.NumpyCalculator(), config=pq.Config(validate=False)
+    )
+
+    with pytest.raises(Exception) as exc:
+        state.xpxp_covariance_matrix = np.array([1, 2, 3])
+
+    assert not isinstance(exc, pq.api.exceptions.PiquassoException)
+
+
 def test_representation_roundtrip(state):
     initial_mean_vector = state.xpxp_mean_vector
     initial_covariance_matrix = state.xpxp_covariance_matrix

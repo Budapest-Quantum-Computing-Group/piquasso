@@ -517,7 +517,6 @@ def threshold_measurement(
 
 def _generate_threshold_samples_using_torontonian(state, instruction, shots):
     is_displaced = state._is_displaced()
-
     rng = state._config.rng
     hbar = state._config.hbar
 
@@ -654,7 +653,7 @@ def deterministic_gaussian_channel(
     Y = instruction._all_params["Y"] * state._config.hbar
     modes = instruction.modes
 
-    if len(X) != 2 * len(modes) or len(Y) != 2 * len(modes):
+    if state._config.validate and len(X) != 2 * len(modes) or len(Y) != 2 * len(modes):
         raise InvalidInstruction(
             f"The instruction should be specified for '{len(modes)}' modes: "
             f"instruction={instruction}"

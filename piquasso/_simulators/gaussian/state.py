@@ -118,12 +118,13 @@ class GaussianState(State):
                 - the covariance matrix doesn't fulfill the Robertson-Schrödinger
                   uncertainty relations.
         """
-
         self._validate_mean(self.xpxp_mean_vector, self.d)
         self._validate_cov(self.xpxp_covariance_matrix, self.d)
 
-    @staticmethod
-    def _validate_mean(mean: np.ndarray, d: int) -> None:
+    def _validate_mean(self, mean: np.ndarray, d: int) -> None:
+        if not self._config.validate:
+            return
+
         expected_shape = (2 * d,)
 
         if not mean.shape == expected_shape:
@@ -133,6 +134,9 @@ class GaussianState(State):
             )
 
     def _validate_cov(self, cov: np.ndarray, d: int) -> None:
+        if not self._config.validate:
+            return
+
         expected_shape = (2 * d,) * 2
 
         if not cov.shape == expected_shape:
@@ -800,7 +804,7 @@ class GaussianState(State):
 
         np = self._calculator.np
 
-        if not is_symmetric(A):
+        if self._config.validate and not is_symmetric(A):
             raise InvalidParameter("The specified matrix is not symmetric.")
 
         state = self.rotated(phi)
@@ -884,7 +888,7 @@ class GaussianState(State):
     def get_particle_detection_probability(
         self, occupation_number: np.ndarray
     ) -> float:
-        if len(occupation_number) != self.d:
+        if self._config.validate and len(occupation_number) != self.d:
             raise PiquassoException(
                 f"The specified occupation number should have length '{self.d}': "
                 f"occupation_number='{occupation_number}'."
@@ -916,7 +920,7 @@ class GaussianState(State):
             float: The threshold particle number detection probability.
         """
 
-        if len(occupation_number) != self.d:
+        if self._config.validate and len(occupation_number) != self.d:
             raise PiquassoException(
                 f"The specified occupation number should have length '{self.d}': "
                 f"occupation_number='{occupation_number}'."
@@ -924,7 +928,9 @@ class GaussianState(State):
 
         occupation_number_np = np.array(occupation_number)
 
-        if not np.array_equal(occupation_number_np, occupation_number_np.astype(bool)):
+        if self._config.validate and not np.array_equal(
+            occupation_number_np, occupation_number_np.astype(bool)
+        ):
             raise PiquassoException(
                 f"The specified occupation numbers must only contain '0' or '1': "
                 f"occupation_number='{occupation_number}'."

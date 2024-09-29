@@ -43,7 +43,7 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
     coefficient = instruction._all_params["coefficient"]
     occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    if len(occupation_numbers) != state.d:
+    if state._config.validate and len(occupation_numbers) != state.d:
         raise InvalidState(
             f"The occupation numbers '{occupation_numbers}' are not well-defined "
             f"on '{state.d}' modes: instruction={instruction}"
@@ -135,8 +135,10 @@ def particle_number_measurement(
     algorithm.
     """
 
-    if len(state._occupation_numbers) != 1 and not np.isclose(
-        state._coefficients[0], 1.0
+    if (
+        state._config.validate
+        and len(state._occupation_numbers) != 1
+        and not np.isclose(state._coefficients[0], 1.0)
     ):
         raise NotImplementedCalculation(
             f"The instruction {instruction} is not supported for states defined using "
