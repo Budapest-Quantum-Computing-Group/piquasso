@@ -13,21 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implementation for the Clements decomposition.
-
-References
-~~~~~~~~~~
-
-William R. Clements, Peter C. Humphreys, Benjamin J. Metcalf,
-W. Steven Kolthammer, Ian A. Walmsley, "An Optimal Design for Universal Multiport
-Interferometers", `arXiv:1603.08788 <https://arxiv.org/abs/1603.08788>`_.
-"""
+"""An implementation for the Clements decomposition."""
 
 from typing import List, Tuple, TYPE_CHECKING
 
 from dataclasses import dataclass
 
 from piquasso.api.calculator import BaseCalculator
+
+from piquasso.instructions.gates import Phaseshifter, Beamsplitter
 
 from piquasso._math.indices import get_operator_index
 
@@ -40,8 +34,12 @@ if TYPE_CHECKING:
 @dataclass
 class BS:
     """
-    The Beamsplitter is implemented as described in
+    Beamsplitter gate, implemented as described in
     `arXiv:1603.08788 <https://arxiv.org/abs/1603.08788>`_.
+
+    Note:
+        This means a different beamsplitter gate as defined by
+        :class:`~piquasso.instructions.gates.Beamsplitter`.
     """
 
     modes: Tuple[int, int]
@@ -51,7 +49,8 @@ class BS:
 @dataclass
 class PS:
     """
-    Phaseshifter gate.
+    Phaseshifter gate, corresponding to
+    :class:`~piquasso.instructions.gates.Phaseshifter`.
     """
 
     mode: int
@@ -65,7 +64,9 @@ class Decomposition:
 
     Example usage::
 
-        with pq.Program() as program_with_decomposition:
+        decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+        with pq.Program() as program:
             ...
 
             for operation in decomposition.first_beamsplitters:
@@ -84,6 +85,52 @@ class Decomposition:
     first_beamsplitters: List[BS]
     middle_phaseshifters: List[PS]
     last_beamsplitters: List[BS]
+
+
+def instructions_from_decomposition(decomposition):
+    """Helper function for using the Clements decomposition.
+
+    This function creates the list of :class:`~piquasso.instructions.gates.Beamsplitter`
+    and :class:`~piquasso.instructions.gates.Phaseshifter` instructions to be applied to
+    the program, which is equivalent to the decomposed interferometer.
+
+    Example usage::
+
+        decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+        with pq.Program() as program:
+            ...
+
+            program.instructions.extend(instructions_from_decomposition(decomposition))
+
+    Or, one can use it as::
+
+        decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+        program_with_decomposition = pq.Program(
+            instructions=[...] + instructions_from_decomposition(decomposition)
+        )
+
+    Args:
+        decomposition (Decomposition): Decomposition created by :func:`clements`.
+
+    Returns:
+        list: List of beamsplitter and phaseshifter gates to be applied.
+    """
+    instructions = []
+
+    for bs in decomposition.first_beamsplitters:
+        instructions.append(Phaseshifter(bs.params[1]).on_modes(bs.modes[0]))
+        instructions.append(Beamsplitter(bs.params[0], 0.0).on_modes(*bs.modes))
+
+    for ps in decomposition.middle_phaseshifters:
+        instructions.append(Phaseshifter(ps.phi).on_modes(ps.mode))
+
+    for bs in decomposition.last_beamsplitters:
+        instructions.append(Beamsplitter(-bs.params[0], 0.0).on_modes(*bs.modes))
+        instructions.append(Phaseshifter(-bs.params[1]).on_modes(bs.modes[0]))
+
+    return instructions
 
 
 def inverse_clements(
@@ -139,7 +186,7 @@ def clements(
         The Clements decomposition. See :class:`Decomposition`.
     """
 
-    first_beampsplitters = []
+    first_beamsplitters = []
     last_beamsplitters = []
 
     np = calculator.np
@@ -152,7 +199,7 @@ def clements(
             last_beamsplitters.extend(operations)
         else:
             operations, U = _apply_inverse_beamsplitters(column, U, calculator)
-            first_beampsplitters.extend(operations)
+            first_beamsplitters.extend(operations)
 
     middle_phasshifters = [
         PS(mode=mode, phi=np.angle(diagonal))
@@ -162,7 +209,7 @@ def clements(
     last_beamsplitters = list(reversed(last_beamsplitters))
 
     return Decomposition(
-        first_beamsplitters=first_beampsplitters,
+        first_beamsplitters=first_beamsplitters,
         last_beamsplitters=last_beamsplitters,
         middle_phaseshifters=middle_phasshifters,
     )

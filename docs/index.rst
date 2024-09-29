@@ -97,3 +97,4 @@ To install Piquasso with JAX is done by
 
    advanced/cvqnn
    advanced/calculators
+   advanced/decompositions
