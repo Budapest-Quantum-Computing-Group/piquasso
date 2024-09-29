@@ -30,6 +30,7 @@ from piquasso.decompositions.clements import (
     get_decomposition_from_weights,
     get_weights_from_interferometer,
     get_interferometer_from_weights,
+    instructions_from_decomposition,
 )
 
 
@@ -176,7 +177,99 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
             pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
-    simulator = pq.GaussianSimulator(d=d, config=pq.Config(cutoff=2))
+    simulator = pq.GaussianSimulator(d=d)
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+def test_instructions_from_decomposition_using_piquasso_GaussianSimulator(
+    dummy_unitary,
+):
+    d = 3
+    U = dummy_unitary(d)
+
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+    squeezings = [0.1, 0.2, 0.3]
+
+    with pq.Program() as program_with_interferometer:
+        for mode, r in enumerate(squeezings):
+            pq.Q(mode) | pq.Squeezing(r)
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    program_with_decomposition = pq.Program(
+        instructions=[
+            pq.Squeezing(r).on_modes(mode) for mode, r in enumerate(squeezings)
+        ]
+        + instructions_from_decomposition(decomposition)
+    )
+
+    simulator = pq.GaussianSimulator(d=d)
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_with_context(
+    dummy_unitary,
+):
+    d = 3
+    U = dummy_unitary(d)
+
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+    squeezings = [0.1, 0.2, 0.3]
+
+    with pq.Program() as program_with_interferometer:
+        for mode, r in enumerate(squeezings):
+            pq.Q(mode) | pq.Squeezing(r)
+
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        for mode, r in enumerate(squeezings):
+            pq.Q(mode) | pq.Squeezing(r)
+
+        program_with_decomposition.instructions.extend(
+            instructions_from_decomposition(decomposition)
+        )
+
+    simulator = pq.GaussianSimulator(d=d)
+
+    state_with_interferometer = simulator.execute(program_with_interferometer).state
+    state_with_decomposition = simulator.execute(program_with_decomposition).state
+
+    assert state_with_interferometer == state_with_decomposition
+
+
+@pytest.mark.monkey
+def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random(
+    dummy_unitary, generate_gaussian_transform
+):
+    d = 3
+    U = dummy_unitary(d)
+
+    decomposition = clements(U, calculator=pq.NumpyCalculator())
+
+    gaussian_transform = generate_gaussian_transform(d)
+
+    with pq.Program() as program_with_interferometer:
+        pq.Q() | gaussian_transform
+        pq.Q() | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_with_decomposition:
+        pq.Q() | gaussian_transform
+        program_with_decomposition.instructions.extend(
+            instructions_from_decomposition(decomposition)
+        )
+
+    simulator = pq.GaussianSimulator(d=d)
 
     state_with_interferometer = simulator.execute(program_with_interferometer).state
     state_with_decomposition = simulator.execute(program_with_decomposition).state

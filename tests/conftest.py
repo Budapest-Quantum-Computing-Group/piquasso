@@ -21,6 +21,8 @@ import piquasso as pq
 
 from pathlib import Path
 
+from scipy.linalg import polar, coshm, sinhm
+
 from piquasso._simulators.calculators import NumpyCalculator
 
 
@@ -65,6 +67,23 @@ def generate_random_positive_definite_matrix():
     def func(N):
         A = np.random.rand(N, N)
         return A @ A.transpose()
+
+    return func
+
+
+@pytest.fixture
+def generate_gaussian_transform(
+    generate_complex_symmetric_matrix, generate_unitary_matrix
+):
+    def func(d):
+        squeezing_matrix = generate_complex_symmetric_matrix(d)
+        U, r = polar(squeezing_matrix)
+
+        global_phase = generate_unitary_matrix(d)
+        passive = global_phase @ coshm(r)
+        active = global_phase @ sinhm(r) @ U.conj()
+
+        return pq.GaussianTransform(passive=passive, active=active)
 
     return func
 
