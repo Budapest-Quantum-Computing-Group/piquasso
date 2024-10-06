@@ -31,16 +31,16 @@ The original code has been re-implemented and adapted to Piquasso.
 __author__ = "Tomasz Rybotycki"
 
 
-def calculate_state_vector(interferometer, initial_state, config, calculator):
+def calculate_state_vector(interferometer, initial_state, config, connector):
     """
     Calculates the state vector on the particle subspace defined by `initial_state`.
     """
 
-    np = calculator.np
-    fallback_np = calculator.fallback_np
+    np = connector.np
+    fallback_np = connector.fallback_np
 
     possible_outputs = partitions(
-        particles=calculator.fallback_np.sum(initial_state),
+        particles=connector.fallback_np.sum(initial_state),
         boxes=len(initial_state),
     )
 
@@ -49,23 +49,23 @@ def calculate_state_vector(interferometer, initial_state, config, calculator):
     input = initial_state
 
     for idx, output in enumerate(possible_outputs):
-        permanent = calculator.permanent(interferometer, cols=input, rows=output)
+        permanent = connector.permanent(interferometer, cols=input, rows=output)
 
         state_vector_coefficient = permanent / fallback_np.sqrt(
             fallback_np.prod(factorial(output))
         )
 
-        state_vector = calculator.assign(state_vector, idx, state_vector_coefficient)
+        state_vector = connector.assign(state_vector, idx, state_vector_coefficient)
 
     state_vector /= fallback_np.sqrt(fallback_np.prod(factorial(input)))
 
     return state_vector
 
 
-def calculate_inner_product(interferometer, input, output, calculator):
-    np = calculator.np
-    fallback_np = calculator.fallback_np
-    permanent = calculator.permanent(interferometer, cols=input, rows=output)
+def calculate_inner_product(interferometer, input, output, connector):
+    np = connector.np
+    fallback_np = connector.fallback_np
+    permanent = connector.permanent(interferometer, cols=input, rows=output)
 
     return permanent / np.sqrt(
         fallback_np.prod(factorial(output)) * fallback_np.prod(factorial(input))
@@ -81,7 +81,7 @@ def generate_lossless_samples(input, shots, calculate_permanent, rng):
     Args:
         input: The input Fock basis state.
         shots: Number of samples to be generated.
-        calculate_permanent: Permanent calculator function, already containing
+        calculate_permanent: Permanent connector function, already containing
             the unitary matrix corresponding to the interferometer.
         rng: Random number generator.
 
@@ -156,7 +156,7 @@ def _generate_samples(input, shots, calculate_permanent, sample_generator, rng):
     # particles in the state.
     labeled_input_states = _generate_labeled_smaller_arrays(input)
 
-    calculate_weights = _get_weight_calculator(
+    calculate_weights = _get_weight_connector(
         input,
         labeled_input_states,
     )
@@ -323,7 +323,7 @@ def _generate_possible_output_states(sample):
     return repeated_sample + np.identity(d, dtype=sample.dtype)
 
 
-def _get_weight_calculator(input_state, labeled_states):
+def _get_weight_connector(input_state, labeled_states):
     @lru_cache
     def _calculate_weights(number_of_particle_to_sample):
         n = np.sum(input_state)

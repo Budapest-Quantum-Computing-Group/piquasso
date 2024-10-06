@@ -17,7 +17,7 @@ import numpy as np
 
 from typing import Callable
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 def create_single_mode_displacement_gradient(
@@ -25,10 +25,10 @@ def create_single_mode_displacement_gradient(
     phi: float,
     cutoff: int,
     transformation: np.ndarray,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> Callable:
     def displacement_matrix_gradient(upstream):
-        np = calculator.fallback_np
+        np = connector.fallback_np
 
         index_sqrts = np.sqrt(range(cutoff))
 
@@ -48,7 +48,7 @@ def create_single_mode_displacement_gradient(
 
         r_grad = -r * transformation + row_term - col_term
 
-        tf = calculator._tf
+        tf = connector._tf
         static_valued = tf.get_static_value(upstream) is not None
 
         if static_valued:
@@ -71,11 +71,11 @@ def create_single_mode_squeezing_gradient(
     phi: float,
     cutoff: int,
     transformation: np.ndarray,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> Callable:
     def squeezing_matrix_gradient(upstream):
-        np = calculator.fallback_np
-        tf = calculator._tf
+        np = connector.fallback_np
+        tf = connector._tf
 
         sechr = 1 / np.cosh(r)
         tanhr = np.tanh(r)

@@ -29,7 +29,7 @@ def test_Displacement_mean_photon_number_gradient_1_mode():
     r = tf.Variable(0.43)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=6), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=6), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -53,7 +53,7 @@ def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
     phi = tf.Variable(np.pi / 5)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=8), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=8), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -78,7 +78,7 @@ def test_Displacement_mean_photon_number_gradient_2_modes():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=6),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -104,7 +104,7 @@ def test_Displacement_fock_probabilities_jacobian_2_modes():
     r = tf.Variable([0.15, 0.2])
 
     simulator = pq.PureFockSimulator(
-        d=2, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=2, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -176,7 +176,7 @@ def test_Squeezing_mean_photon_number_gradient_1_mode():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=8),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -202,7 +202,7 @@ def test_Squeezing_mean_photon_number_gradient_1_mode_with_phaseshift():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=8),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -227,7 +227,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=2),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -260,7 +260,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=2),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -292,7 +292,7 @@ def test_decomposed_Beamsplitter_state_vector_gradient_1_particle():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=2),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -327,7 +327,7 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles():
     theta = tf.Variable(np.pi / 3)
 
     simulator = pq.PureFockSimulator(
-        d=2, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=2, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -375,7 +375,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -438,7 +438,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -504,7 +504,7 @@ def test_jacobian_of_state_after_mixing_with_fix_Interferometer():
     simulator = pq.PureFockSimulator(
         d=d,
         config=pq.Config(cutoff=2),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     U = unitary_group.rvs(3)
@@ -545,7 +545,7 @@ def test_Phaseshifter_density_matrix_gradient():
     phi = tf.Variable(np.pi / 3)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=2), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=2), connector=pq.TensorflowConnector()
     )
 
     coefficients = [np.sqrt(0.6), np.sqrt(0.4)]
@@ -590,7 +590,7 @@ def test_Phaseshifter_density_matrix_gradient_is_zero_at_zero_phaseshift():
     phi = tf.Variable(0.0)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -616,7 +616,7 @@ def test_Interferometer_fock_probabilities():
     config = pq.Config(cutoff=3)
 
     simulator = pq.PureFockSimulator(
-        d=2, config=config, calculator=pq.TensorflowCalculator()
+        d=2, config=config, connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -659,7 +659,7 @@ def test_Squeezing2_mean_photon_number():
     r = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
-        d=2, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=2, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -683,7 +683,7 @@ def test_Kerr_fock_probabilities_on_1_mode():
     xi = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with pq.Program() as program:
@@ -708,7 +708,7 @@ def test_Kerr_density_matrix_on_1_mode():
     n = 2
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=n + 1), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=n + 1), connector=pq.TensorflowConnector()
     )
 
     with pq.Program() as program:
@@ -741,7 +741,7 @@ def test_CubicPhase_fock_probabilities_on_1_mode():
     gamma = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
-        d=1, config=pq.Config(cutoff=4), calculator=pq.TensorflowCalculator()
+        d=1, config=pq.Config(cutoff=4), connector=pq.TensorflowConnector()
     )
 
     with pq.Program() as program:
@@ -764,7 +764,7 @@ def test_CrossKerr_density_matrix():
     xi = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
-        d=2, config=pq.Config(cutoff=4), calculator=pq.TensorflowCalculator()
+        d=2, config=pq.Config(cutoff=4), connector=pq.TensorflowConnector()
     )
 
     n = np.array(
@@ -813,7 +813,7 @@ def test_mean_position_Displacement_gradient_on_1_mode():
     config = pq.Config(cutoff=cutoff)
 
     simulator = pq.PureFockSimulator(
-        d=d, config=config, calculator=pq.TensorflowCalculator()
+        d=d, config=config, connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -840,7 +840,7 @@ def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
         pq.Q(all) | pq.Squeezing(r_)
 
     simulator = pq.PureFockSimulator(
-        d=d, config=pq.Config(cutoff=cutoff), calculator=pq.TensorflowCalculator()
+        d=d, config=pq.Config(cutoff=cutoff), connector=pq.TensorflowConnector()
     )
 
     with tf.GradientTape() as tape:
@@ -859,7 +859,7 @@ def test_Displacement_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -895,7 +895,7 @@ def test_complex_Displacement_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -943,7 +943,7 @@ def test_Squeezing_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -980,7 +980,7 @@ def test_complex_Squeezing_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=3),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -1034,7 +1034,7 @@ def test_displaced_state_Squeezing_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=5),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:
@@ -1077,7 +1077,7 @@ def test_displaced_state_Beamsplitter_state_vector_gradient():
     simulator = pq.PureFockSimulator(
         d=2,
         config=pq.Config(cutoff=6),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:

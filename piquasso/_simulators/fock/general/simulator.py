@@ -16,7 +16,7 @@
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._simulators.calculators import NumpyCalculator
+from piquasso._simulators.connectors import NumpyConnector
 
 from .state import FockState
 from .calculations import (
@@ -124,4 +124,4 @@ class FockSimulator(BuiltinSimulator):
 
     _state_class = FockState
 
-    _default_calculator_class = NumpyCalculator
+    _default_connector_class = NumpyConnector

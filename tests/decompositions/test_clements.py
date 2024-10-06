@@ -49,7 +49,7 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     with pq.Program() as program_with_interferometer:
         pq.Q() | pq.StateVector(tuple([1] * d))
@@ -82,7 +82,7 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
     d = 4
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     occupation_numbers = (1, 1, 0, 0)
 
@@ -119,7 +119,7 @@ def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
     d = 4
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     with pq.Program() as program_with_interferometer:
         pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
@@ -152,7 +152,7 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     squeezings = [0.1, 0.2, 0.3]
 
@@ -191,7 +191,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator(
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     squeezings = [0.1, 0.2, 0.3]
 
@@ -222,7 +222,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_with_c
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     squeezings = [0.1, 0.2, 0.3]
 
@@ -255,7 +255,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
     d = 3
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator=pq.NumpyCalculator())
+    decomposition = clements(U, connector=pq.NumpyConnector())
 
     gaussian_transform = generate_gaussian_transform(d)
 
@@ -278,58 +278,58 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
 
 
 @pytest.mark.parametrize(
-    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
 )
-def test_clements_decomposition_roundtrip(calculator, dummy_unitary):
+def test_clements_decomposition_roundtrip(connector, dummy_unitary):
     d = 5
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator)
+    decomposition = clements(U, connector)
 
-    new_U = inverse_clements(decomposition, calculator, dtype=U.dtype)
+    new_U = inverse_clements(decomposition, connector, dtype=U.dtype)
 
     assert np.allclose(U, new_U)
 
 
 @pytest.mark.parametrize(
-    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
 )
-def test_clements_decomposition_roundtrip_with_weights(calculator, dummy_unitary):
+def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary):
     d = 6
     U = dummy_unitary(d)
 
-    decomposition = clements(U, calculator)
+    decomposition = clements(U, connector)
 
-    weights = get_weights_from_decomposition(decomposition, d, calculator)
+    weights = get_weights_from_decomposition(decomposition, d, connector)
 
-    new_decomposition = get_decomposition_from_weights(weights, d, calculator)
+    new_decomposition = get_decomposition_from_weights(weights, d, connector)
 
     assert decomposition == new_decomposition
 
-    new_U = inverse_clements(new_decomposition, calculator, dtype=U.dtype)
+    new_U = inverse_clements(new_decomposition, connector, dtype=U.dtype)
 
     assert np.allclose(U, new_U)
 
 
 @pytest.mark.parametrize(
-    "calculator", (pq.NumpyCalculator(), pq.TensorflowCalculator(), pq.JaxCalculator())
+    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
 )
-def test_weigths_to_interferometer_roundtrip(calculator, dummy_unitary):
+def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     d = 6
-    U = calculator.np.array(dummy_unitary(d))
+    U = connector.np.array(dummy_unitary(d))
 
-    weights = get_weights_from_interferometer(U, calculator)
+    weights = get_weights_from_interferometer(U, connector)
 
-    new_U = get_interferometer_from_weights(weights, d, calculator, dtype=U.dtype)
+    new_U = get_interferometer_from_weights(weights, d, connector, dtype=U.dtype)
 
     assert np.allclose(U, new_U)
 
 
-def test_clements_decomposition_with_TensorflowCalculator(dummy_unitary):
+def test_clements_decomposition_with_TensorflowConnector(dummy_unitary):
     U = tf.Variable(dummy_unitary(2))
 
     with tf.GradientTape() as tape:
-        decomposition = clements(U, calculator=pq.TensorflowCalculator())
+        decomposition = clements(U, connector=pq.TensorflowConnector())
 
     assert len(decomposition.first_beamsplitters) == 0
     assert len(decomposition.middle_phaseshifters) == 2
@@ -352,9 +352,9 @@ def test_clements_decomposition_with_TensorflowCalculator(dummy_unitary):
     )
 
 
-def test_clements_decomposition_with_JaxCalculator(dummy_unitary):
+def test_clements_decomposition_with_JaxConnector(dummy_unitary):
     def get_first_beamsplitter_theta(U):
-        decomposition = clements(U, calculator=pq.JaxCalculator())
+        decomposition = clements(U, connector=pq.JaxConnector())
 
         assert len(decomposition.first_beamsplitters) == 0
         assert len(decomposition.middle_phaseshifters) == 2
@@ -390,15 +390,15 @@ def test_clements_decomposition_with_JaxCalculator(dummy_unitary):
     )
 
 
-def test_clements_decomposition_with_TensorflowCalculator_from_weights(dummy_unitary):
+def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unitary):
     d = 2
     U = dummy_unitary(d)
 
-    weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyCalculator()))
+    weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyConnector()))
 
     with tf.GradientTape() as tape:
         decomposition = get_decomposition_from_weights(
-            weights, d=d, calculator=pq.TensorflowCalculator()
+            weights, d=d, connector=pq.TensorflowConnector()
         )
 
     assert len(decomposition.first_beamsplitters) == 0
@@ -414,17 +414,17 @@ def test_clements_decomposition_with_TensorflowCalculator_from_weights(dummy_uni
     assert np.allclose(gradient, [0.0, 0.0, 1.0, 0.0])
 
 
-def test_clements_decomposition_with_JaxCalculator_from_weights(dummy_unitary):
+def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
     d = 2
     U = dummy_unitary(d)
 
-    weights = get_weights_from_interferometer(U, pq.NumpyCalculator())
+    weights = get_weights_from_interferometer(U, pq.NumpyConnector())
 
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     def get_first_beamsplitter_theta(weights):
         decomposition = get_decomposition_from_weights(
-            weights, d=d, calculator=calculator
+            weights, d=d, connector=connector
         )
 
         first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]

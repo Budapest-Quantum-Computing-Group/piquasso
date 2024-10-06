@@ -18,7 +18,7 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 @pytest.fixture
@@ -50,9 +50,9 @@ def FakeMeasurement():
 def FakeState():
     class FakeState(pq.State):
         def __init__(
-            self, d: int, calculator: BaseCalculator, config: pq.Config = None
+            self, d: int, connector: BaseConnector, config: pq.Config = None
         ) -> None:
-            super().__init__(calculator=calculator, config=config)
+            super().__init__(connector=connector, config=config)
 
             self._d = d
 
@@ -87,16 +87,16 @@ def FakeConfig():
 
 
 @pytest.fixture
-def FakeCalculator():
-    class FakeCalculator(pq.api.calculator.BaseCalculator):
+def FakeConnector():
+    class FakeConnector(pq.api.connector.BaseConnector):
         pass
 
-    return FakeCalculator
+    return FakeConnector
 
 
 @pytest.fixture
 def FakeSimulator(
-    FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement, FakeCalculator
+    FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement, FakeConnector
 ):
     def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
         return pq.api.result.Result(state=state)
@@ -112,6 +112,6 @@ def FakeSimulator(
             FakeMeasurement: fake_calculation,
         }
 
-        _default_calculator_class = FakeCalculator
+        _default_connector_class = FakeConnector
 
     return FakeSimulator

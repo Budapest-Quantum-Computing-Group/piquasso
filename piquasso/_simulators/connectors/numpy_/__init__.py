@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-from .calculator import JaxCalculator
+from .connector import NumpyConnector
 
-
-__all__ = ["JaxCalculator"]
+__all__ = ["NumpyConnector"]

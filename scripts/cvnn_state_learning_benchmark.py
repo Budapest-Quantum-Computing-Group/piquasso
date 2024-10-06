@@ -42,13 +42,13 @@ def measure_graph_size(f, *args):
     return len(g.as_graph_def().node)
 
 
-def _pq_loss(weights, cutoff, calculator):
+def _pq_loss(weights, cutoff, connector):
     d = cvqnn.get_number_of_modes(weights.shape[1])
 
     simulator = pq.PureFockSimulator(
         d=d,
         config=pq.Config(cutoff=cutoff),
-        calculator=calculator,
+        connector=connector,
     )
 
     program = cvqnn.create_program(weights)
@@ -65,9 +65,9 @@ def _pq_loss(weights, cutoff, calculator):
 
 
 @tf.function(jit_compile=True)
-def _calculate_piquasso_results(weights, cutoff, calculator):
+def _calculate_piquasso_results(weights, cutoff, connector):
     with tf.GradientTape() as tape:
-        loss = _pq_loss(weights, cutoff, calculator)
+        loss = _pq_loss(weights, cutoff, connector)
 
     return loss, tape.gradient(loss, weights)
 
@@ -162,13 +162,13 @@ if __name__ == "__main__":
         pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
     )
 
-    calculator = pq.TensorflowCalculator(decorate_with=tf.function(jit_compile=True))
+    connector = pq.TensorflowConnector(decorate_with=tf.function(jit_compile=True))
 
     start_time = time.time()
     _calculate_piquasso_results(
         weights,
         cutoff,
-        calculator,
+        connector,
     )
     print("PQ COMPILE TIME:", time.time() - start_time)
     print(
@@ -177,7 +177,7 @@ if __name__ == "__main__":
             _calculate_piquasso_results,
             weights,
             cutoff,
-            calculator,
+            connector,
         ),
     )
 
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         )
         start_time = time.time()
         print(f"{i:} ", end="")
-        _calculate_piquasso_results(weights, cutoff, calculator)
+        _calculate_piquasso_results(weights, cutoff, connector)
         print("PQ RUNTIME:", time.time() - start_time)
 
     weights = tf.Variable(

@@ -230,8 +230,8 @@ def test_LossyInterferometer_raises_InvalidParameter_for_invalid_matrix(
         pq.LossyInterferometer(invalid_matrix)
 
 
-@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
-def test_Interferometer_fock_probabilities(calculator):
+@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
+def test_Interferometer_fock_probabilities(connector):
     U = np.array(
         [
             [
@@ -278,7 +278,7 @@ def test_Interferometer_fock_probabilities(calculator):
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(
-        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+        d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
 
@@ -541,8 +541,8 @@ def test_Interferometer_fock_probabilities(calculator):
     )
 
 
-@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
-def test_LossyInterferometer_fock_probabilities(calculator):
+@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
+def test_LossyInterferometer_fock_probabilities(connector):
     U = np.array(
         [
             [
@@ -593,7 +593,7 @@ def test_LossyInterferometer_fock_probabilities(calculator):
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
     simulator = pq.SamplingSimulator(
-        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+        d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
 
@@ -856,8 +856,8 @@ def test_LossyInterferometer_fock_probabilities(calculator):
     )
 
 
-@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
-def test_Interferometer_state_vector(calculator):
+@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
+def test_Interferometer_state_vector(connector):
     U = np.array(
         [
             [
@@ -904,7 +904,7 @@ def test_Interferometer_state_vector(calculator):
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(
-        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+        d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
 
@@ -1167,8 +1167,8 @@ def test_Interferometer_state_vector(calculator):
     )
 
 
-@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
-def test_LossyInterferometer_state_vector(calculator):
+@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
+def test_LossyInterferometer_state_vector(connector):
     U = np.array(
         [
             [
@@ -1219,7 +1219,7 @@ def test_LossyInterferometer_state_vector(calculator):
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
     simulator = pq.SamplingSimulator(
-        d=5, calculator=calculator, config=pq.Config(cutoff=6)
+        d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
 

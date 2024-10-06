@@ -17,14 +17,14 @@ import numpy as np
 
 from functools import partial
 
-from ..calculator import BuiltinCalculator
+from ..connector import BuiltinConnector
 
 
-class TensorflowCalculator(BuiltinCalculator):
-    """Calculator enabling calculating the gradients of certain instructions.
+class TensorflowConnector(BuiltinConnector):
+    """Connector enabling calculating the gradients of certain instructions.
 
-    This calculator is similar to
-    :class:`~piquasso._simulators.calculator.NumpyCalculator`, but it enables the
+    This connector is similar to
+    :class:`~piquasso._simulators.connector.NumpyConnector`, but it enables the
     simulator to use Tensorflow to be able to compute gradients.
 
     Example usage::
@@ -34,9 +34,9 @@ class TensorflowCalculator(BuiltinCalculator):
 
         r = tf.Variable(0.43)
 
-        tensorflow_calculator = pq.TensorflowCalculator()
+        tensorflow_connector = pq.TensorflowConnector()
 
-        simulator = pq.PureFockSimulator(d=1, calculator=tensorflow_calculator)
+        simulator = pq.PureFockSimulator(d=1, connector=tensorflow_connector)
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
@@ -312,14 +312,14 @@ class TensorflowCalculator(BuiltinCalculator):
         return accumulator.stack()
 
     def __tf_tracing_type__(self, context):
-        # NOTE: We need to create a `TraceType` for `TensorflowCalculator` to avoid
+        # NOTE: We need to create a `TraceType` for `TensorflowConnector` to avoid
         # retracing, but it cannot be defined on module level due to the dependence
         # on `tensorflow`.
         # See `https://www.tensorflow.org/guide/function#use_the_tracing_protocol`_.
 
         class _TrivialTraceType(self._tf.types.experimental.TraceType):
-            def __init__(self, calculator):
-                self.calculator = calculator
+            def __init__(self, connector):
+                self.connector = connector
 
             def is_subtype_of(self, other):
                 return True
@@ -328,7 +328,7 @@ class TensorflowCalculator(BuiltinCalculator):
                 return self
 
             def placeholder_value(self, placeholder_context=None):
-                return self.calculator
+                return self.connector
 
             def __eq__(self, other):
                 return True

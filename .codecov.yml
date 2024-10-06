@@ -7,4 +7,4 @@ ignore:
   - piquasso/_math/fock.py
   - piquasso/_math/indices.py
   - piquasso/_simulators/fock/calculations.py
-  - piquasso/_simulators/calculators/numpy_/interferometer.py
+  - piquasso/_simulators/connectors/numpy_/interferometer.py

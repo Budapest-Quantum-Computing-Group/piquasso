@@ -26,7 +26,7 @@ from ..state import PureFockState
 def post_select_photons(
     state: PureFockState, instruction: PostSelectPhotons, shots: int
 ) -> Result:
-    calculator = state._calculator
+    connector = state._connector
 
     postselect_modes = instruction.params["postselect_modes"]
 
@@ -38,15 +38,15 @@ def post_select_photons(
         modes=postselect_modes,
         basis_vector=photon_counts,
     )
-    small_index = calculator.fallback_np.arange(index.shape[0])
+    small_index = connector.fallback_np.arange(index.shape[0])
 
     new_state = PureFockState(
         d=state.d - len(postselect_modes),
-        calculator=state._calculator,
+        connector=state._connector,
         config=state._config,
     )
 
-    new_state.state_vector = calculator.assign(
+    new_state.state_vector = connector.assign(
         new_state.state_vector, small_index, state.state_vector[index]
     )
 
@@ -56,7 +56,7 @@ def post_select_photons(
 def imperfect_post_select_photons(
     state: PureFockState, instruction: PostSelectPhotons, shots: int
 ) -> Result:
-    np = state._calculator.np
+    np = state._connector.np
 
     postselect_modes = instruction.params["postselect_modes"]
 
@@ -70,7 +70,7 @@ def imperfect_post_select_photons(
 
     new_state = FockState(
         d=state.d - len(postselect_modes),
-        calculator=state._calculator,
+        connector=state._connector,
         config=state._config,
     )
 
@@ -90,7 +90,7 @@ def imperfect_post_select_photons(
             dtype=new_state.density_matrix.dtype,
         )
 
-        state_vector = state._calculator.assign(
+        state_vector = state._connector.assign(
             state_vector, small_index, state.state_vector[index]
         )
 

@@ -24,7 +24,7 @@ import jax.numpy as jnp
 
 
 def test_Beamsplitter_gradient_at_theta_equal_0():
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     def get_fidelity(theta):
         initial_state = [1, 1, 0]
@@ -37,7 +37,7 @@ def test_Beamsplitter_gradient_at_theta_equal_0():
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.SamplingSimulator(d=3, calculator=calculator)
+        simulator = pq.SamplingSimulator(d=3, connector=connector)
 
         initial_state_vector = simulator.execute(program).state.state_vector
         rotated_state_vector = simulator.execute(rotated_program).state.state_vector
@@ -58,7 +58,7 @@ def test_Beamsplitter_gradient_at_theta_equal_0():
 
 @pytest.mark.monkey
 def test_Beamsplitter_gradient_at_random_angle():
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     def get_fidelity(theta):
         initial_state = [1, 1, 0]
@@ -71,7 +71,7 @@ def test_Beamsplitter_gradient_at_random_angle():
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.SamplingSimulator(d=3, calculator=calculator)
+        simulator = pq.SamplingSimulator(d=3, connector=connector)
 
         initial_state_vector = simulator.execute(program).state.state_vector
         rotated_state_vector = simulator.execute(rotated_program).state.state_vector

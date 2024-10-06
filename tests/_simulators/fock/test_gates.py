@@ -25,18 +25,18 @@ from functools import partial
 tf_purefock_simulators = (
     partial(
         pq.PureFockSimulator,
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     ),
     partial(
         pq.PureFockSimulator,
-        calculator=pq.TensorflowCalculator(decorate_with=tf.function),
+        connector=pq.TensorflowConnector(decorate_with=tf.function),
     ),
 )
 
 jax_purefock_simulator = [
     partial(
         pq.PureFockSimulator,
-        calculator=pq.JaxCalculator(),
+        connector=pq.JaxConnector(),
     ),
 ]
 

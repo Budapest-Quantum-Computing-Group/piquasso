@@ -25,7 +25,7 @@ def test_Interferometer_numpy_array_as_parameter(generate_unitary_matrix):
     interferometer = generate_unitary_matrix(d)
 
     simulator = pq.PureFockSimulator(
-        d=d, config=pq.Config(cutoff=3), calculator=pq.TensorflowCalculator()
+        d=d, config=pq.Config(cutoff=3), connector=pq.TensorflowConnector()
     )
 
     with pq.Program() as program:

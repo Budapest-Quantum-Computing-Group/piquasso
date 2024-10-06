@@ -88,7 +88,7 @@ To install Piquasso with JAX is done by
    api/result
    api/exceptions
    api/computer
-   api/calculator
+   api/connector
 
 .. toctree::
    :maxdepth: 3
@@ -96,5 +96,5 @@ To install Piquasso with JAX is done by
    :hidden:
 
    advanced/cvqnn
-   advanced/calculators
+   advanced/connectors
    advanced/decompositions

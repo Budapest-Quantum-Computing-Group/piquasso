@@ -23,10 +23,10 @@ from piquasso._math.symplectic import xp_symplectic_form
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
 
 from piquasso.api.exceptions import InvalidParameter
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
-def takagi(matrix, calculator, atol=1e-12):
+def takagi(matrix, connector, atol=1e-12):
     """Takagi factorization of complex symmetric matrices.
 
     Note:
@@ -40,9 +40,9 @@ def takagi(matrix, calculator, atol=1e-12):
     - https://journals.aps.org/pra/abstract/10.1103/PhysRevA.94.062109
     """
 
-    np = calculator.np
+    np = connector.np
 
-    V, singular_values, W_adjoint = calculator.svd(matrix)
+    V, singular_values, W_adjoint = connector.svd(matrix)
 
     W = np.conj(W_adjoint).T
 
@@ -65,14 +65,14 @@ def takagi(matrix, calculator, atol=1e-12):
     for indices in singular_value_multiplicity_indices:
         Z = V[:, indices].transpose() @ W[:, indices]
 
-        diagonal_blocks_for_Q.append(calculator.sqrtm(Z))
+        diagonal_blocks_for_Q.append(connector.sqrtm(Z))
 
-    Q = calculator.block_diag(*diagonal_blocks_for_Q)
+    Q = connector.block_diag(*diagonal_blocks_for_Q)
 
     return singular_values, V @ np.conj(Q)
 
 
-def _rotation_to_positive_above_diagonals(block_diagonal_matrix, calculator):
+def _rotation_to_positive_above_diagonals(block_diagonal_matrix, connector):
     """
     The block diagonal matrix returned by the Schur decomposition in the Williamson
     decomposition needs to be rotated.
@@ -82,13 +82,13 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix, calculator):
     diagonal matrix would have negative values.
     """
 
-    np = calculator.np
+    np = connector.np
 
     d = len(block_diagonal_matrix) // 2
     identity = np.identity(2)
     rotation = np.rot90(identity)
 
-    return calculator.block_diag(
+    return connector.block_diag(
         *[
             (
                 identity
@@ -100,7 +100,7 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix, calculator):
     )
 
 
-def williamson(matrix: np.ndarray, calculator: BaseCalculator) -> tuple:
+def williamson(matrix: np.ndarray, connector: BaseConnector) -> tuple:
     r"""
     Decomposes a positive definite matrix with Williamson decomposition, i.e. a
     positive definite :math:`M` is decomposed to
@@ -164,26 +164,26 @@ def williamson(matrix: np.ndarray, calculator: BaseCalculator) -> tuple:
     Returns
         tuple: Tuple of the symplectic and diagonal matrices, in this order.
     """
-    np = calculator.np
+    np = connector.np
 
     d = len(matrix) // 2
 
     omega = xp_symplectic_form(d)
 
-    root_matrix = calculator.sqrtm(matrix).real
+    root_matrix = connector.sqrtm(matrix).real
     inverse_root_matrix = np.linalg.inv(root_matrix)
 
-    block_diagonal_part, orthogonal_part = calculator.schur(
+    block_diagonal_part, orthogonal_part = connector.schur(
         inverse_root_matrix @ omega @ inverse_root_matrix,
         output="real",
     )
 
     basis_change = _rotation_to_positive_above_diagonals(
-        block_diagonal_part, calculator
+        block_diagonal_part, connector
     ) @ from_xxpp_to_xpxp_transformation_matrix(d)
     ordered_block_diagonal = basis_change.T @ block_diagonal_part @ basis_change
 
-    inverse_diagonal_matrix = calculator.block_diag(
+    inverse_diagonal_matrix = connector.block_diag(
         *(ordered_block_diagonal[:d, d:],) * 2
     )
 
@@ -201,11 +201,11 @@ def williamson(matrix: np.ndarray, calculator: BaseCalculator) -> tuple:
 def decompose_to_pure_and_mixed(
     matrix: np.ndarray,
     hbar: float,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    np = calculator.np
+    np = connector.np
 
-    symplectic, diagonal = williamson(matrix, calculator)
+    symplectic, diagonal = williamson(matrix, connector)
     pure_covariance = hbar * symplectic @ symplectic.transpose()
     mixed_contribution = (
         symplectic
@@ -216,9 +216,9 @@ def decompose_to_pure_and_mixed(
 
 
 def decompose_adjacency_matrix_into_circuit(
-    adjacency_matrix, mean_photon_number, calculator
+    adjacency_matrix, mean_photon_number, connector
 ):
-    singular_values, unitary = takagi(adjacency_matrix, calculator)
+    singular_values, unitary = takagi(adjacency_matrix, connector)
 
     scaling = _get_scaling(singular_values, mean_photon_number, adjacency_matrix)
 
@@ -276,18 +276,18 @@ def _get_scaling(
     return result.root
 
 
-def euler(symplectic, calculator):
-    np = calculator.np
+def euler(symplectic, connector):
+    np = connector.np
     d = len(symplectic) // 2
 
-    U_orig, R = calculator.polar(symplectic, side="left")
+    U_orig, R = connector.polar(symplectic, side="left")
 
     K = np.diag(np.array([1.0] * d + [-1.0] * d))
 
-    H_active = 1j * K @ calculator.logm(R)
+    H_active = 1j * K @ connector.logm(R)
 
     Z = 1j * H_active[:d, d:]
 
-    D, U = takagi(Z, calculator)
+    D, U = takagi(Z, connector)
 
     return U, D, np.conj(U).T @ U_orig[:d, :d]

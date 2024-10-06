@@ -21,7 +21,7 @@ import copy
 import numpy as np
 
 from piquasso.api.config import Config
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 from piquasso._math.indices import get_auxiliary_modes
 
 
@@ -30,7 +30,7 @@ class State(abc.ABC):
 
     Properties:
         d (int): Instance attribute specifying the number of modes.
-        calculator (BaseCalculator): Instance containing calculation functions.
+        connector (BaseConnector): Instance containing calculation functions.
         config (Config): Instance containing constants for the simulation.
     """
 
@@ -38,15 +38,15 @@ class State(abc.ABC):
 
     def __init__(
         self,
-        calculator: BaseCalculator,
+        connector: BaseConnector,
         config: Optional[Config] = None,
     ) -> None:
         self._config = config.copy() if config is not None else self._config_class()
-        self._calculator = calculator
+        self._connector = connector
 
     @property
     def _np(self):
-        return self._calculator.np
+        return self._connector.np
 
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return get_auxiliary_modes(self.d, modes)

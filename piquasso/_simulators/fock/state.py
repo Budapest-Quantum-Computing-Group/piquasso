@@ -19,7 +19,7 @@ import abc
 import numpy as np
 from piquasso.api.config import Config
 from piquasso.api.state import State
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.fock import get_fock_space_basis
 from piquasso.api.exceptions import InvalidModes
@@ -27,9 +27,9 @@ from piquasso.api.exceptions import InvalidModes
 
 class BaseFockState(State, abc.ABC):
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, *, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
-        super().__init__(calculator=calculator, config=config)
+        super().__init__(connector=connector, config=config)
         self._d = d
         cutoff = self._config.cutoff
         self._space = get_fock_space_basis(d=d, cutoff=cutoff)  # type: ignore
@@ -40,7 +40,7 @@ class BaseFockState(State, abc.ABC):
 
     @property
     def norm(self) -> float:
-        return self._calculator.np.sum(self.fock_probabilities)
+        return self._connector.np.sum(self.fock_probabilities)
 
     def _as_code(self) -> str:
         return f"pq.Q() | pq.{self.__class__.__name__}(d={self.d})"

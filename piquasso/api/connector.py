@@ -22,7 +22,7 @@ import numpy
 from piquasso.api.exceptions import NotImplementedCalculation
 
 
-class BaseCalculator(abc.ABC):
+class BaseConnector(abc.ABC):
     """The base class for encapsulating a framework.
 
     This class makes dependency injection into Piquasso possible. This way, Piquasso
@@ -49,7 +49,7 @@ class BaseCalculator(abc.ABC):
     sqrtm: Any
     schur: Any
 
-    def __deepcopy__(self, memo: Any) -> "BaseCalculator":
+    def __deepcopy__(self, memo: Any) -> "BaseConnector":
         """
         This method exists, because `copy.deepcopy` could not copy the entire modules
         and functions, and we don't need to, since every attribute of this class should

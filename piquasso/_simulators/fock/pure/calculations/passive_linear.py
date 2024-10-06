@@ -21,7 +21,7 @@ import numpy as np
 
 from scipy.special import factorial, comb
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from ..state import PureFockState
 from ...calculations import (
@@ -36,19 +36,19 @@ from piquasso.api.result import Result
 def passive_linear(
     state: PureFockState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:
-    calculator = state._calculator
+    connector = state._connector
 
     interferometer: np.ndarray = instruction._get_passive_block(
-        state._calculator, state._config
+        state._connector, state._config
     ).astype(state._config.complex_dtype)
 
-    _apply_passive_linear(state, interferometer, instruction.modes, calculator)
+    _apply_passive_linear(state, interferometer, instruction.modes, connector)
 
     return Result(state=state)
 
 
-def _apply_passive_linear(state, interferometer, modes, calculator):
-    wrapped = calculator.decorator(_do_apply_passive_linear)
+def _apply_passive_linear(state, interferometer, modes, connector):
+    wrapped = connector.decorator(_do_apply_passive_linear)
 
     state.state_vector = wrapped(
         state.state_vector,
@@ -56,25 +56,23 @@ def _apply_passive_linear(state, interferometer, modes, calculator):
         state.d,
         state._config.cutoff,
         modes,
-        calculator,
+        connector,
     )
 
 
-def _do_apply_passive_linear(
-    state_vector, interferometer, d, cutoff, modes, calculator
-):
+def _do_apply_passive_linear(state_vector, interferometer, d, cutoff, modes, connector):
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, cutoff, calculator
+        interferometer, cutoff, connector
     )
 
     return _apply_passive_gate_matrix_to_state(
-        state_vector, subspace_transformations, d, cutoff, modes, calculator
+        state_vector, subspace_transformations, d, cutoff, modes, connector
     )
 
 
-def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
+def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
     def _get_interferometer_with_gradient_callback(interferometer):
-        interferometer = calculator.preprocess_input_for_custom_gradient(interferometer)
+        interferometer = connector.preprocess_input_for_custom_gradient(interferometer)
         index_tuple = calculate_interferometer_helper_indices(
             d=len(interferometer), cutoff=cutoff
         )
@@ -87,37 +85,37 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
             "sqrt_first_occupation_numbers_tensor": index_tuple[4],
         }
 
-        subspace_representations = calculator.calculate_interferometer_on_fock_space(
+        subspace_representations = connector.calculate_interferometer_on_fock_space(
             interferometer, index_tuple
         )
         grad = _calculate_interferometer_gradient_on_fock_space(
             interferometer,
-            calculator,
+            connector,
             subspace_representations,
             index_dict,
         )
 
         return subspace_representations, grad
 
-    wrapped = calculator.custom_gradient(_get_interferometer_with_gradient_callback)
+    wrapped = connector.custom_gradient(_get_interferometer_with_gradient_callback)
 
     return wrapped(interferometer)
 
 
 def _calculate_interferometer_gradient_on_fock_space(
-    interferometer, calculator, subspace_representations, index_dict
+    interferometer, connector, subspace_representations, index_dict
 ):
     def interferometer_gradient(*upstream):
-        tf = calculator._tf
-        fallback_np = calculator.fallback_np
+        tf = connector._tf
+        fallback_np = connector.fallback_np
 
         static_valued = tf.get_static_value(upstream[0]) is not None
 
         if static_valued:
-            np = calculator.fallback_np
+            np = connector.fallback_np
             upstream = [x.numpy() for x in upstream]
         else:
-            np = calculator.np
+            np = connector.np
 
         subspace_index_tensor = index_dict["subspace_index_tensor"]
         first_subspace_index_tensor = index_dict["first_subspace_index_tensor"]
@@ -206,7 +204,7 @@ def _calculate_interferometer_gradient_on_fock_space(
                         "ij,ij", upstream[i], fallback_np.conj(subspace_grad[i])
                     )
 
-        return calculator.np.array(full_kl_grad, dtype=interferometer.dtype)
+        return connector.np.array(full_kl_grad, dtype=interferometer.dtype)
 
     return interferometer_gradient
 
@@ -217,13 +215,13 @@ def _apply_passive_gate_matrix_to_state(
     d: int,
     cutoff: int,
     modes: Tuple[int, ...],
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> None:
     def _apply_interferometer_matrix(state_vector, subspace_transformations):
-        state_vector = calculator.preprocess_input_for_custom_gradient(state_vector)
+        state_vector = connector.preprocess_input_for_custom_gradient(state_vector)
 
         subspace_transformations = [
-            calculator.preprocess_input_for_custom_gradient(matrix)
+            connector.preprocess_input_for_custom_gradient(matrix)
             for matrix in subspace_transformations
         ]
 
@@ -237,18 +235,18 @@ def _apply_passive_gate_matrix_to_state(
             state_vector,
             subspace_transformations,
             index_list,
-            calculator,
+            connector,
         )
 
         grad = _create_linear_passive_gate_gradient_function(
             state_vector,
             subspace_transformations,
             index_list,
-            calculator,
+            connector,
         )
         return new_state_vector, grad
 
-    wrapped = calculator.custom_gradient(_apply_interferometer_matrix)
+    wrapped = connector.custom_gradient(_apply_interferometer_matrix)
 
     return wrapped(state_vector, subspace_transformations)
 
@@ -257,9 +255,9 @@ def _calculate_state_vector_after_interferometer(
     state_vector: np.ndarray,
     subspace_transformations: List[np.ndarray],
     index_list: List[np.ndarray],
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> np.ndarray:
-    np = calculator.forward_pass_np
+    np = connector.forward_pass_np
 
     new_state_vector = np.empty_like(state_vector)
 
@@ -268,7 +266,7 @@ def _calculate_state_vector_after_interferometer(
     einsum_string = "ij,jkl->ikl" if is_batch else "ij,jk->ik"
 
     for n, indices in enumerate(index_list):
-        new_state_vector = calculator.assign(
+        new_state_vector = connector.assign(
             new_state_vector,
             indices,
             np.einsum(
@@ -283,19 +281,19 @@ def _create_linear_passive_gate_gradient_function(
     state_vector: np.ndarray,
     subspace_transformations: List[np.ndarray],
     index_list: List[np.ndarray],
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> Callable:
     def applying_interferometer_gradient(upstream):
-        tf = calculator._tf
-        fallback_np = calculator.fallback_np
+        tf = connector._tf
+        fallback_np = connector.fallback_np
 
         static_valued = tf.get_static_value(upstream) is not None
 
         if static_valued:
-            np = calculator.fallback_np
+            np = connector.fallback_np
             upstream = upstream.numpy()
         else:
-            np = calculator.np
+            np = connector.np
 
         is_batch = len(state_vector.shape) == 2
 
@@ -390,5 +388,5 @@ def _apply_beamsplitter5050(state, modes):
         d=state.d,
         cutoff=cutoff,
         modes=modes,
-        calculator=state._calculator,
+        connector=state._connector,
     )

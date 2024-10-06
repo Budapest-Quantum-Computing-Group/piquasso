@@ -115,7 +115,7 @@ def test_FockState_quadratures_mean_variance():
 
 def test_FockState_non_selfadjoint_density_matrix_raises_InvalidState():
 
-    state = pq.FockState(d=1, calculator=pq.NumpyCalculator())
+    state = pq.FockState(d=1, connector=pq.NumpyConnector())
 
     non_selfadjoint_matrix = np.array([[1, 2], [3, 4]])
 
@@ -130,7 +130,7 @@ def test_FockState_non_selfadjoint_density_matrix_raises_InvalidState():
 def test_FockState_non_selfadjoint_density_matrix_no_error_if_validate_False():
 
     state = pq.FockState(
-        d=1, calculator=pq.NumpyCalculator(), config=pq.Config(validate=False)
+        d=1, connector=pq.NumpyConnector(), config=pq.Config(validate=False)
     )
 
     non_selfadjoint_matrix = np.array([[1, 2], [3, 4]])

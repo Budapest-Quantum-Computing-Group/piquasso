@@ -19,13 +19,13 @@ from typing import List, Tuple, TYPE_CHECKING
 
 from dataclasses import dataclass
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso.instructions.gates import Phaseshifter, Beamsplitter
 
 from piquasso._math.indices import get_operator_index
 
-from piquasso._simulators.calculators import NumpyCalculator
+from piquasso._simulators.connectors import NumpyConnector
 
 if TYPE_CHECKING:
     import numpy as np
@@ -64,7 +64,7 @@ class Decomposition:
 
     Example usage::
 
-        decomposition = clements(U, calculator=pq.NumpyCalculator())
+        decomposition = clements(U, connector=pq.NumpyConnector())
 
         with pq.Program() as program:
             ...
@@ -96,7 +96,7 @@ def instructions_from_decomposition(decomposition):
 
     Example usage::
 
-        decomposition = clements(U, calculator=pq.NumpyCalculator())
+        decomposition = clements(U, connector=pq.NumpyConnector())
 
         with pq.Program() as program:
             ...
@@ -105,7 +105,7 @@ def instructions_from_decomposition(decomposition):
 
     Or, one can use it as::
 
-        decomposition = clements(U, calculator=pq.NumpyCalculator())
+        decomposition = clements(U, connector=pq.NumpyConnector())
 
         program_with_decomposition = pq.Program(
             instructions=[...] + instructions_from_decomposition(decomposition)
@@ -134,7 +134,7 @@ def instructions_from_decomposition(decomposition):
 
 
 def inverse_clements(
-    decomposition: Decomposition, calculator: BaseCalculator, dtype: "np.dtype"
+    decomposition: Decomposition, connector: BaseConnector, dtype: "np.dtype"
 ) -> "np.ndarray":
     """Inverse of the Clements decomposition.
 
@@ -144,12 +144,12 @@ def inverse_clements(
 
     d = len(decomposition.middle_phaseshifters)
 
-    np = calculator.np
+    np = connector.np
     interferometer = np.identity(d, dtype=dtype)
 
     for beamsplitter in decomposition.first_beamsplitters:
         beamsplitter_matrix = _get_embedded_beamsplitter_matrix(
-            beamsplitter, d, calculator, dtype=dtype
+            beamsplitter, d, connector, dtype=dtype
         )
 
         interferometer = beamsplitter_matrix @ interferometer
@@ -157,13 +157,13 @@ def inverse_clements(
     phis = np.empty(d, dtype=interferometer.dtype)
 
     for phaseshifter in decomposition.middle_phaseshifters:
-        phis = calculator.assign(phis, phaseshifter.mode, phaseshifter.phi)
+        phis = connector.assign(phis, phaseshifter.mode, phaseshifter.phi)
 
     interferometer = np.diag(np.exp(1j * phis)) @ interferometer
 
     for beamsplitter in decomposition.last_beamsplitters:
         beamsplitter_matrix = np.conj(
-            _get_embedded_beamsplitter_matrix(beamsplitter, d, calculator, dtype=dtype)
+            _get_embedded_beamsplitter_matrix(beamsplitter, d, connector, dtype=dtype)
         ).T
 
         interferometer = beamsplitter_matrix @ interferometer
@@ -173,7 +173,7 @@ def inverse_clements(
 
 def clements(
     U: "np.ndarray",
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> Decomposition:
     """
     Decomposes the specified unitary matrix by application of beamsplitters
@@ -189,16 +189,16 @@ def clements(
     first_beamsplitters = []
     last_beamsplitters = []
 
-    np = calculator.np
+    np = connector.np
 
     d = U.shape[0]
 
     for column in reversed(range(0, d - 1)):
         if column % 2 == 0:
-            operations, U = _apply_direct_beamsplitters(column, U, calculator)
+            operations, U = _apply_direct_beamsplitters(column, U, connector)
             last_beamsplitters.extend(operations)
         else:
-            operations, U = _apply_inverse_beamsplitters(column, U, calculator)
+            operations, U = _apply_inverse_beamsplitters(column, U, connector)
             first_beamsplitters.extend(operations)
 
     middle_phasshifters = [
@@ -216,7 +216,7 @@ def clements(
 
 
 def _apply_direct_beamsplitters(
-    column: int, U: "np.ndarray", calculator: BaseCalculator
+    column: int, U: "np.ndarray", connector: BaseConnector
 ) -> tuple:
     """
     Calculates the direct beamsplitters for a given column `column`, and
@@ -239,12 +239,12 @@ def _apply_direct_beamsplitters(
         matrix_element_above = -U[modes[1], j]
 
         angles = _get_angles(
-            matrix_element_to_eliminate, matrix_element_above, calculator
+            matrix_element_to_eliminate, matrix_element_above, connector
         )
 
         operation = BS(modes=modes, params=angles)
 
-        matrix = _get_embedded_beamsplitter_matrix(operation, d, calculator, dtype)
+        matrix = _get_embedded_beamsplitter_matrix(operation, d, connector, dtype)
 
         U = matrix @ U
 
@@ -254,7 +254,7 @@ def _apply_direct_beamsplitters(
 
 
 def _apply_inverse_beamsplitters(
-    column: int, U: "np.ndarray", calculator: BaseCalculator
+    column: int, U: "np.ndarray", connector: BaseConnector
 ) -> tuple:
     """
     Calculates the inverse beamsplitters for a given column `column`, and
@@ -279,13 +279,13 @@ def _apply_inverse_beamsplitters(
         matrix_element_to_left = U[i, modes[0]]
 
         angles = _get_angles(
-            matrix_element_to_eliminate, matrix_element_to_left, calculator
+            matrix_element_to_eliminate, matrix_element_to_left, connector
         )
 
         operation = BS(modes=modes, params=angles)
 
-        beamsplitter = calculator.np.conj(
-            _get_embedded_beamsplitter_matrix(operation, d, calculator, dtype)
+        beamsplitter = connector.np.conj(
+            _get_embedded_beamsplitter_matrix(operation, d, connector, dtype)
         ).T
 
         U = U @ beamsplitter
@@ -295,8 +295,8 @@ def _apply_inverse_beamsplitters(
     return operations, U
 
 
-def _get_angles(matrix_element_to_eliminate, other_matrix_element, calculator):
-    np = calculator.np
+def _get_angles(matrix_element_to_eliminate, other_matrix_element, connector):
+    np = connector.np
 
     if np.isclose(matrix_element_to_eliminate, 0.0):
         return np.pi / 2, 0.0
@@ -309,9 +309,9 @@ def _get_angles(matrix_element_to_eliminate, other_matrix_element, calculator):
 
 
 def _get_embedded_beamsplitter_matrix(
-    operation: BS, d: int, calculator: BaseCalculator, dtype: "np.dtype"
+    operation: BS, d: int, connector: BaseConnector, dtype: "np.dtype"
 ) -> "np.ndarray":
-    np = calculator.np
+    np = connector.np
 
     theta, phi = operation.params
     i, j = operation.modes
@@ -327,44 +327,44 @@ def _get_embedded_beamsplitter_matrix(
         dtype=dtype,
     )
 
-    return calculator.embed_in_identity(matrix, get_operator_index((i, j)), d)
+    return connector.embed_in_identity(matrix, get_operator_index((i, j)), d)
 
 
 def get_weights_from_decomposition(
-    decomposition: Decomposition, d: int, calculator: BaseCalculator
+    decomposition: Decomposition, d: int, connector: BaseConnector
 ) -> "np.ndarray":
     """Concatenates the weight vector from the angles in the Clements decomposition.
 
     Returns:
         The Clements decomposition. See :class:`Decomposition`.
     """
-    np = calculator.np
+    np = connector.np
 
     dtype = decomposition.middle_phaseshifters[0].phi.dtype
     weights = np.empty(d**2, dtype=dtype)
 
     index = 0
     for beamsplitter in decomposition.first_beamsplitters:
-        weights = calculator.assign(weights, index, beamsplitter.params[0])
+        weights = connector.assign(weights, index, beamsplitter.params[0])
         index += 1
-        weights = calculator.assign(weights, index, beamsplitter.params[1])
+        weights = connector.assign(weights, index, beamsplitter.params[1])
         index += 1
 
     for phaseshifter in decomposition.middle_phaseshifters:
-        weights = calculator.assign(weights, index, phaseshifter.phi)
+        weights = connector.assign(weights, index, phaseshifter.phi)
         index += 1
 
     for beamsplitter in decomposition.last_beamsplitters:
-        weights = calculator.assign(weights, index, beamsplitter.params[0])
+        weights = connector.assign(weights, index, beamsplitter.params[0])
         index += 1
-        weights = calculator.assign(weights, index, beamsplitter.params[1])
+        weights = connector.assign(weights, index, beamsplitter.params[1])
         index += 1
 
     return weights
 
 
 def get_decomposition_from_weights(
-    weights: "np.ndarray", d: int, calculator: BaseCalculator
+    weights: "np.ndarray", d: int, connector: BaseConnector
 ) -> Decomposition:
     """Puts the data in the weight vector into a Clements decompositon.
 
@@ -372,13 +372,13 @@ def get_decomposition_from_weights(
         The Clements decomposition. See :class:`Decomposition`.
     """
 
-    fallback_np = calculator.fallback_np
+    fallback_np = connector.fallback_np
 
     # NOTE: This is tricky: the ordering in the Clements decomposition is not unique,
     # since beamsplitters acting on different modes may commute, and the ordering comes
     # out very ugly after all the Givens rotations. Therefore, it is easier to just
     # create a trivial decomposition, and fill it with the required values (for now).
-    decomposition = clements(fallback_np.identity(d), calculator=NumpyCalculator())
+    decomposition = clements(fallback_np.identity(d), connector=NumpyConnector())
 
     index = 0
 
@@ -398,24 +398,24 @@ def get_decomposition_from_weights(
 
 
 def get_weights_from_interferometer(
-    U: "np.ndarray", calculator: BaseCalculator
+    U: "np.ndarray", connector: BaseConnector
 ) -> "np.ndarray":
     """Creates a vector of weights from the Clements angles."""
-    decomposition = clements(U, calculator)
+    decomposition = clements(U, connector)
 
-    return get_weights_from_decomposition(decomposition, U.shape[0], calculator)
+    return get_weights_from_decomposition(decomposition, U.shape[0], connector)
 
 
 def get_interferometer_from_weights(
     weights: "np.ndarray",
     d: int,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
     dtype: "np.dtype",
 ) -> "np.ndarray":
     """Returns the interferometer matrix corresponding to the specified weights.
 
     It is the inverse of :func:`get_weights_from_interferometer`.
     """
-    decomposition = get_decomposition_from_weights(weights, d, calculator)
+    decomposition = get_decomposition_from_weights(weights, d, connector)
 
-    return inverse_clements(decomposition, calculator, dtype)
+    return inverse_clements(decomposition, connector, dtype)

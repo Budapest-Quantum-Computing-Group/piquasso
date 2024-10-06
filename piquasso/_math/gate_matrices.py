@@ -19,7 +19,7 @@ from functools import lru_cache
 
 from scipy.special import factorial
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 def create_single_mode_displacement_matrix(
@@ -27,7 +27,7 @@ def create_single_mode_displacement_matrix(
     phi: float,
     cutoff: int,
     complex_dtype: np.dtype,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> np.ndarray:
     r"""
     This method generates the Displacement operator following a recursion rule.
@@ -44,8 +44,8 @@ def create_single_mode_displacement_matrix(
         np.ndarray: The constructed Displacement matrix representing the Fock
         operator.
     """
-    np = calculator.forward_pass_np
-    fallback_np = calculator.fallback_np
+    np = connector.forward_pass_np
+    fallback_np = connector.fallback_np
 
     cutoff_range = fallback_np.arange(cutoff)
     sqrt_indices = fallback_np.sqrt(cutoff_range)
@@ -54,7 +54,7 @@ def create_single_mode_displacement_matrix(
     displacement = r * np.exp(1j * phi)
     displacement_conj = np.conj(displacement)
 
-    matrix = calculator.accumulator(dtype=complex_dtype, size=cutoff)
+    matrix = connector.accumulator(dtype=complex_dtype, size=cutoff)
 
     # NOTE: Tensorflow does not implement the NumPy API correctly, since in
     # tensorflow `np.power(0.0j, 0.0)` results in `nan+nanj`, whereas in NumPy it
@@ -63,21 +63,21 @@ def create_single_mode_displacement_matrix(
     epsilon = 10e-100
     previous_element = np.power(displacement + epsilon, cutoff_range) * denominator
 
-    matrix = calculator.write_to_accumulator(matrix, 0, previous_element)
+    matrix = connector.write_to_accumulator(matrix, 0, previous_element)
 
     roll_index = fallback_np.arange(-1, cutoff - 1)
 
-    for i in calculator.range(1, cutoff):
+    for i in connector.range(1, cutoff):
         previous_element = (
             sqrt_indices * previous_element[roll_index]
             - displacement_conj * previous_element
         )
 
-        matrix = calculator.write_to_accumulator(matrix, i, previous_element)
+        matrix = connector.write_to_accumulator(matrix, i, previous_element)
 
     return (
         np.exp(-0.5 * r**2)
-        * calculator.transpose(calculator.stack_accumulator(matrix))
+        * connector.transpose(connector.stack_accumulator(matrix))
         * denominator
     )
 
@@ -103,7 +103,7 @@ def create_single_mode_squeezing_matrix(
     phi: float,
     cutoff: int,
     complex_dtype: np.dtype,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> np.ndarray:
     r"""
     This method generates the Squeezing operator following a recursion rule.
@@ -122,8 +122,8 @@ def create_single_mode_squeezing_matrix(
         np.ndarray: The constructed Squeezing matrix representing the Fock operator.
     """
 
-    np = calculator.forward_pass_np
-    fallback_np = calculator.fallback_np
+    np = connector.forward_pass_np
+    fallback_np = connector.fallback_np
 
     sechr = 1.0 / np.cosh(r)
     A = np.exp(1j * phi) * np.tanh(r)
@@ -142,29 +142,29 @@ def create_single_mode_squeezing_matrix(
     )
 
     first_row = np.zeros(shape=cutoff, dtype=complex_dtype)
-    first_row = calculator.assign(
+    first_row = connector.assign(
         first_row, fallback_np.arange(0, cutoff, 2), first_row_nonzero
     )
 
     roll_index = fallback_np.arange(-1, cutoff - 1)
     second_row = sechr_sqrt_indices * first_row[roll_index]
 
-    matrix = calculator.accumulator(dtype=complex_dtype, size=cutoff)
+    matrix = connector.accumulator(dtype=complex_dtype, size=cutoff)
 
-    matrix = calculator.write_to_accumulator(matrix, 0, first_row)
-    matrix = calculator.write_to_accumulator(matrix, 1, second_row)
+    matrix = connector.write_to_accumulator(matrix, 0, first_row)
+    matrix = connector.write_to_accumulator(matrix, 1, second_row)
 
     previous_previous = first_row
     previous = second_row
 
-    for col in calculator.range(2, cutoff):
+    for col in connector.range(2, cutoff):
         current = (
             sechr_sqrt_indices * previous[roll_index]
             + A_conj_sqrt_indices[col - 1] * previous_previous
         ) / sqrt_indices[col]
 
-        matrix = calculator.write_to_accumulator(matrix, col, current)
+        matrix = connector.write_to_accumulator(matrix, col, current)
         previous_previous = previous
         previous = current
 
-    return np.sqrt(sechr) * calculator.transpose(calculator.stack_accumulator(matrix))
+    return np.sqrt(sechr) * connector.transpose(connector.stack_accumulator(matrix))

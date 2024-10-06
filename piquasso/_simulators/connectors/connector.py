@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
-class BuiltinCalculator(BaseCalculator):
-    """Base class for built-in calculators."""
+class BuiltinConnector(BaseConnector):
+    """Base class for built-in connectors."""
 
     range = range
 

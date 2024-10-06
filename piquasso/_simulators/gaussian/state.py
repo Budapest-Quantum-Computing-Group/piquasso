@@ -22,7 +22,7 @@ import numpy as np
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, InvalidParameter, PiquassoException
 from piquasso.api.state import State
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.functions import gaussian_wigner_function
 from piquasso._math.linalg import (
@@ -48,14 +48,14 @@ class GaussianState(State):
     r"""Class to represent a Gaussian state."""
 
     def __init__(
-        self, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
         """
         Args:
             d (int): The number of modes.
 
         """
-        super().__init__(calculator=calculator, config=config)
+        super().__init__(connector=connector, config=config)
         self._d = d
         self.reset()
 
@@ -69,7 +69,7 @@ class GaussianState(State):
     def reset(self) -> None:
         r"""Resets the state to a vacuum."""
 
-        np = self._calculator.np
+        np = self._connector.np
 
         vector_shape = (self.d,)
         matrix_shape = vector_shape * 2
@@ -86,9 +86,9 @@ class GaussianState(State):
         G: np.ndarray,
         C: np.ndarray,
         config: Config,
-        calculator: BaseCalculator,
+        connector: BaseConnector,
     ) -> "GaussianState":
-        obj = cls(d=len(m), calculator=calculator, config=config)
+        obj = cls(d=len(m), connector=connector, config=config)
 
         obj._m = m
         obj._G = G
@@ -168,7 +168,7 @@ class GaussianState(State):
             numpy.ndarray: A :math:`2d`-vector where :math:`d` is the number of modes.
         """
 
-        np = self._calculator.np
+        np = self._connector.np
 
         dimensionless_xxpp_mean_vector = np.concatenate(
             [self._m.real, self._m.imag]
@@ -202,7 +202,7 @@ class GaussianState(State):
             numpy.ndarray:
                 The :math:`2d \times 2d` xp-ordered covariance matrix.
         """
-        np = self._calculator.np
+        np = self._connector.np
 
         C = self._C
         G = self._G
@@ -243,7 +243,7 @@ class GaussianState(State):
             numpy.ndarray: The :math:`2d \times 2d` correlation matrix in the
             xxpp-basis.
         """
-        np = self._calculator.np
+        np = self._connector.np
 
         xxpp_mean_vector = self.xxpp_mean_vector
 
@@ -276,7 +276,7 @@ class GaussianState(State):
 
     @xpxp_mean_vector.setter
     def xpxp_mean_vector(self, value: np.ndarray) -> None:
-        np = self._calculator.np
+        np = self._connector.np
 
         self._validate_mean(value, self.d)
 
@@ -312,7 +312,7 @@ class GaussianState(State):
 
     @xpxp_covariance_matrix.setter
     def xpxp_covariance_matrix(self, new_cov: np.ndarray) -> None:
-        np = self._calculator.np
+        np = self._connector.np
 
         d = self.d
 
@@ -402,7 +402,7 @@ class GaussianState(State):
         Returns:
             numpy.ndarray: The complex displacement.
         """
-        np = self._calculator.np
+        np = self._connector.np
 
         return np.concatenate([self._m, self._m.conj()])
 
@@ -443,7 +443,7 @@ class GaussianState(State):
             numpy.ndarray: The complex covariance.
         """
 
-        np = self._calculator.np
+        np = self._connector.np
 
         return 2 * np.block(
             [[self._C.conj(), self._G], [self._G.conj(), self._C]]
@@ -490,7 +490,7 @@ class GaussianState(State):
         Returns:
             GaussianState: The rotated `GaussianState` instance.
         """
-        np = self._calculator.np
+        np = self._connector.np
 
         phase = np.exp(-1j * phi)
 
@@ -499,7 +499,7 @@ class GaussianState(State):
             G=(self._G * phase**2),
             m=(self._m * phase),
             config=self._config,
-            calculator=self._calculator,
+            connector=self._connector,
         )
 
     def reduced(self, modes: Tuple[int, ...]) -> "GaussianState":
@@ -519,7 +519,7 @@ class GaussianState(State):
             G=self._G[np.ix_(modes, modes)],
             m=self._m[np.ix_(modes)],
             config=self._config,
-            calculator=self._calculator,
+            connector=self._connector,
         )
 
     def xpxp_reduced_rotated_mean_and_covariance(
@@ -603,7 +603,7 @@ class GaussianState(State):
         if modes is not None:
             return self.reduced(modes).mean_photon_number()
 
-        np = self._calculator.np
+        np = self._connector.np
 
         return (np.trace(self._C) + self._m.conjugate() @ self._m).real
 
@@ -631,7 +631,7 @@ class GaussianState(State):
         if modes is not None:
             return self.reduced(modes).variance_photon_number()
 
-        np = self._calculator.np
+        np = self._connector.np
 
         d = self._d
 
@@ -722,7 +722,7 @@ class GaussianState(State):
             float: The calculated fidelity.
         """  # noqa: E501
 
-        np = self._calculator.np
+        np = self._connector.np
 
         hbar = self._config.hbar
 
@@ -802,7 +802,7 @@ class GaussianState(State):
             float: The expectation value of the quadratic polynomial.
         """
 
-        np = self._calculator.np
+        np = self._connector.np
 
         if self._config.validate and not is_symmetric(A):
             raise InvalidParameter("The specified matrix is not symmetric.")
@@ -822,11 +822,11 @@ class GaussianState(State):
             return DisplacedDensityMatrixCalculation(
                 complex_displacement=self.complex_displacement,
                 complex_covariance=self.complex_covariance,
-                calculator=self._calculator,
+                connector=self._connector,
             )
 
         return NondisplacedDensityMatrixCalculation(
-            complex_covariance=self.complex_covariance, calculator=self._calculator
+            complex_covariance=self.complex_covariance, connector=self._connector
         )
 
     @property
@@ -981,7 +981,7 @@ class GaussianState(State):
         Returns:
             GaussianState: The purified Gaussian state.
         """  # noqa: E501
-        np = self._calculator.np
+        np = self._connector.np
 
         hbar = self._config.hbar
         cov = self.xpxp_covariance_matrix / hbar
@@ -990,7 +990,7 @@ class GaussianState(State):
 
         T = from_xxpp_to_xpxp_transformation_matrix(d)
 
-        S, D = williamson(T.T @ cov @ T, self._calculator)
+        S, D = williamson(T.T @ cov @ T, self._connector)
 
         beta_diagonals = np.diag(np.sqrt(np.abs(np.diag(D)[:d] ** 2 - 1)))
         zeros = np.zeros_like(beta_diagonals)
@@ -1009,7 +1009,7 @@ class GaussianState(State):
         )
 
         purification = GaussianState(
-            d=2 * d, calculator=self._calculator, config=self._config
+            d=2 * d, connector=self._connector, config=self._config
         )
 
         purification.xpxp_covariance_matrix = hbar * purified_cov

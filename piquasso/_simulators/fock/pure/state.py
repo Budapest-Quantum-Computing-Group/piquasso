@@ -19,7 +19,7 @@ import numpy as np
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis
 from piquasso._math.linalg import vector_absolute_square
@@ -49,16 +49,16 @@ class PureFockState(BaseFockState):
     """
 
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, *, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
         """
         Args:
             d (int): The number of modes.
-            calculator (BaseCalculator): Instance containing calculation functions.
+            connector (BaseConnector): Instance containing calculation functions.
             config (Config): Instance containing constants for the simulation.
         """
 
-        super().__init__(d=d, calculator=calculator, config=config)
+        super().__init__(d=d, connector=connector, config=config)
 
         self.state_vector = self._get_empty()
 
@@ -82,7 +82,7 @@ class PureFockState(BaseFockState):
         )
 
     def _nonzero_elements_for_single_state_vector(self, state_vector):
-        np = self._calculator.np
+        np = self._connector.np
         nonzero_indices = np.nonzero(state_vector)[0]
 
         occupation_numbers = self._space[nonzero_indices]
@@ -143,8 +143,8 @@ class PureFockState(BaseFockState):
         occupation_numbers: np.ndarray,
         modes: Tuple[int, ...],
     ) -> float:
-        np = self._calculator.np
-        fallback_np = self._calculator.fallback_np
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
 
         occupation_numbers = fallback_np.array(occupation_numbers)
 
@@ -175,7 +175,7 @@ class PureFockState(BaseFockState):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return vector_absolute_square(self.state_vector, self._calculator)
+        return vector_absolute_square(self.state_vector, self._connector)
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
@@ -214,7 +214,7 @@ class PureFockState(BaseFockState):
             )
 
     def _get_mean_position_indices(self, mode):
-        fallback_np = self._calculator.fallback_np
+        fallback_np = self._connector.fallback_np
 
         self._space[:, mode] -= 1
         lowered_indices = get_index_in_fock_space_array(self._space)
@@ -245,8 +245,8 @@ class PureFockState(BaseFockState):
         return multipliers, left_indices, right_indices
 
     def mean_position(self, mode: int) -> np.ndarray:
-        np = self._calculator.np
-        fallback_np = self._calculator.fallback_np
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
         multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
 
         state_vector = self.state_vector
@@ -299,7 +299,7 @@ class PureFockState(BaseFockState):
             (float, float): A tuple that contains the expectation value and the
                 varianceof of the quadrature operator respectively.
         """
-        np = self._calculator.np
+        np = self._connector.np
 
         reduced_dm = self.reduced(modes=modes).density_matrix
         annih = np.diag(np.sqrt(np.arange(1, self._config.cutoff)), 1)
@@ -360,7 +360,7 @@ class PureFockState(BaseFockState):
         cutoff = self._config.cutoff
         d = self.d
 
-        return self._calculator.scatter(
+        return self._connector.scatter(
             self._space,
             self.state_vector,
             [cutoff] * d,
@@ -370,10 +370,10 @@ class PureFockState(BaseFockState):
         # NOTE: `__deepcopy__` is not allowed for tensorflow variables, so we have to
         # do it explicitely here.
         state = self.__class__(
-            d=self.d, calculator=self._calculator, config=self._config.copy()
+            d=self.d, connector=self._connector, config=self._config.copy()
         )
 
-        state.state_vector = self._calculator.np.copy(self.state_vector)
+        state.state_vector = self._connector.np.copy(self.state_vector)
 
         return state
 

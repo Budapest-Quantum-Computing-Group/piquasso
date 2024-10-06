@@ -25,7 +25,7 @@ from pathlib import Path
 
 from scipy.linalg import polar, coshm, sinhm
 
-from piquasso._simulators.calculators import NumpyCalculator
+from piquasso._simulators.connectors import NumpyConnector
 
 
 @pytest.fixture(autouse=True)
@@ -205,7 +205,7 @@ def gaussian_state_assets(AssetHandler):
 
             d = len(properties["xpxp_mean_vector"]) // 2
 
-            state = pq.GaussianState(d=d, calculator=NumpyCalculator())
+            state = pq.GaussianState(d=d, connector=NumpyConnector())
 
             state.xpxp_mean_vector = properties["xpxp_mean_vector"]
             state.xpxp_covariance_matrix = properties["xpxp_covariance_matrix"]

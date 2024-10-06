@@ -16,7 +16,7 @@
 from typing import Optional, Tuple, Any, Generator, Dict
 
 import numpy as np
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
@@ -39,16 +39,16 @@ class FockState(BaseFockState):
     """
 
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, *, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
         """
         Args:
             d (int): The number of modes.
-            calculator (BaseCalculator): Instance containing calculation functions.
+            connector (BaseConnector): Instance containing calculation functions.
             config (Config): Instance containing constants for the simulation.
         """
 
-        super().__init__(d=d, calculator=calculator, config=config)
+        super().__init__(d=d, connector=connector, config=config)
 
         self._density_matrix = self._get_empty()
 
@@ -74,9 +74,7 @@ class FockState(BaseFockState):
                 The instance from which a :class:`FockState` instance is created.
         """
 
-        new_instance = cls(
-            d=state.d, calculator=state._calculator, config=state._config
-        )
+        new_instance = cls(d=state.d, connector=state._connector, config=state._config)
 
         new_instance._density_matrix = state.density_matrix
 
@@ -86,7 +84,7 @@ class FockState(BaseFockState):
     def nonzero_elements(
         self,
     ) -> Generator[Tuple[complex, Tuple], Any, None]:
-        np = self._calculator.np
+        np = self._connector.np
 
         nonzero_indices = np.nonzero(self._density_matrix)
 
@@ -136,7 +134,7 @@ class FockState(BaseFockState):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        return self._calculator.np.real(self._calculator.np.diag(self._density_matrix))
+        return self._connector.np.real(self._connector.np.diag(self._density_matrix))
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
@@ -148,8 +146,8 @@ class FockState(BaseFockState):
         return probability_map
 
     def reduced(self, modes: Tuple[int, ...]) -> "FockState":
-        np = self._calculator.np
-        fallback_np = self._calculator.fallback_np
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
         d = self.d
 
         if modes == tuple(range(d)):
@@ -161,7 +159,7 @@ class FockState(BaseFockState):
         outer_size = d - inner_size
 
         reduced_state = FockState(
-            d=inner_size, calculator=self._calculator, config=self._config
+            d=inner_size, connector=self._connector, config=self._config
         )
 
         density_list = [
@@ -205,7 +203,7 @@ class FockState(BaseFockState):
 
     @property
     def norm(self) -> float:
-        np = self._calculator.np
+        np = self._connector.np
         return np.real(np.trace(self._density_matrix))
 
     def normalize(self) -> None:
@@ -317,6 +315,6 @@ class FockState(BaseFockState):
         return expectation, variance
 
     def get_purity(self):
-        np = self._calculator.np
+        np = self._connector.np
         density_matrix = self.density_matrix
         return np.real(np.einsum("ij,ji", density_matrix, density_matrix))

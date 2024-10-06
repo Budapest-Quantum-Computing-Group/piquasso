@@ -19,7 +19,7 @@ import numpy as np
 
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.linalg import vector_absolute_square
 
@@ -30,16 +30,16 @@ class BatchPureFockState(PureFockState):
     r"""A simulated batch pure Fock state, containing multiple state vectors."""
 
     def __init__(
-        self, *, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, *, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
         """
         Args:
             d (int): The number of modes.
-            calculator (BaseCalculator): Instance containing calculation functions.
+            connector (BaseConnector): Instance containing calculation functions.
             config (Config): Instance containing constants for the simulation.
         """
 
-        super().__init__(d=d, calculator=calculator, config=config)
+        super().__init__(d=d, connector=connector, config=config)
 
     def _apply_separate_state_vectors(self, state_vectors):
         self.state_vector = self._np.array(
@@ -79,14 +79,14 @@ class BatchPureFockState(PureFockState):
     @property
     def fock_probabilities(self):
         return [
-            vector_absolute_square(state_vector, self._calculator)
+            vector_absolute_square(state_vector, self._connector)
             for state_vector in self._batch_state_vectors
         ]
 
     @property
     def norm(self):
         return [
-            self._calculator.np.sum(partial_fock_probabilities)
+            self._connector.np.sum(partial_fock_probabilities)
             for partial_fock_probabilities in self.fock_probabilities
         ]
 
@@ -109,8 +109,8 @@ class BatchPureFockState(PureFockState):
             )
 
     def mean_position(self, mode: int) -> np.ndarray:
-        np = self._calculator.np
-        fallback_np = self._calculator.fallback_np
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
         multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
 
         lhs = (multipliers * self.state_vector[left_indices].T).T

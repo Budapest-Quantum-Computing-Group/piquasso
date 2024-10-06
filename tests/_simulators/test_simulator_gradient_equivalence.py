@@ -26,7 +26,7 @@ import jax.numpy as jnp
 @pytest.mark.monkey
 @pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
 def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     def get_fidelity(theta):
         initial_state = [1, 1, 0]
@@ -44,7 +44,7 @@ def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
 
         simulator = SimulatorClass(
             d=d,
-            calculator=calculator,
+            connector=connector,
             config=pq.Config(cutoff=cutoff),
         )
 
@@ -71,7 +71,7 @@ def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
 
 @pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
 def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     def get_fidelity(theta):
         initial_state = [1, 1, 0]
@@ -93,7 +93,7 @@ def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
 
         simulator = SimulatorClass(
             d=d,
-            calculator=calculator,
+            connector=connector,
             config=pq.Config(cutoff=cutoff),
         )
 
@@ -120,11 +120,11 @@ def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
 
 @pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
 def test_PostSelectPhotons_gradient(SimulatorClass):
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
     state_vector = np.sqrt([0.2, 0.3, 0.5])
 
     def _calculate_loss(weights):
-        np = calculator.np
+        np = connector.np
 
         with pq.Program() as preparation:
             pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
@@ -151,9 +151,7 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
                 postselect_modes=(1, 2), photon_counts=(1, 0)
             )
 
-        simulator = SimulatorClass(
-            d=3, config=pq.Config(cutoff=4), calculator=calculator
-        )
+        simulator = SimulatorClass(d=3, config=pq.Config(cutoff=4), connector=connector)
 
         state = simulator.execute(program).state
 
@@ -162,7 +160,7 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
         density_matrix = state.density_matrix[:3, :3] / norm
 
         expected_state = np.copy(state_vector)
-        expected_state = calculator.assign(expected_state, 2, -expected_state[2])
+        expected_state = connector.assign(expected_state, 2, -expected_state[2])
 
         loss = 1 - np.sqrt(
             np.real(np.conj(expected_state) @ density_matrix @ expected_state)
@@ -188,12 +186,12 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
 @pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
 def test_ImperfectPostSelectPhotons_gradient(SimulatorClass):
 
-    calculator = pq.JaxCalculator()
+    connector = pq.JaxConnector()
 
     state_vector = np.sqrt([0.2, 0.3, 0.5])
 
     def _calculate_loss(weights):
-        np = calculator.np
+        np = connector.np
 
         with pq.Program() as preparation:
             pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
@@ -228,9 +226,7 @@ def test_ImperfectPostSelectPhotons_gradient(SimulatorClass):
                 ),
             )
 
-        simulator = SimulatorClass(
-            d=3, config=pq.Config(cutoff=4), calculator=calculator
-        )
+        simulator = SimulatorClass(d=3, config=pq.Config(cutoff=4), connector=connector)
 
         state = simulator.execute(program).state
 
@@ -239,7 +235,7 @@ def test_ImperfectPostSelectPhotons_gradient(SimulatorClass):
         density_matrix = state.density_matrix[:3, :3] / norm
 
         expected_state = np.copy(state_vector)
-        expected_state = calculator.assign(expected_state, 2, -expected_state[2])
+        expected_state = connector.assign(expected_state, 2, -expected_state[2])
 
         loss = 1 - np.sqrt(
             np.real(np.conj(expected_state) @ density_matrix @ expected_state)

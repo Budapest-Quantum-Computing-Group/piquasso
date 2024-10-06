@@ -23,14 +23,14 @@ from scipy.special import factorial
 
 from piquasso._math.linalg import block_reduce_xpxp
 from piquasso._math.torontonian import torontonian, loop_torontonian
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 class DensityMatrixCalculation(abc.ABC):
     _normalization: float
 
-    def __init__(self, calculator: BaseCalculator):
-        self.calculator = calculator
+    def __init__(self, connector: BaseConnector):
+        self.connector = connector
 
     @abc.abstractmethod
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
@@ -81,9 +81,9 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
     def __init__(
         self,
         complex_covariance: np.ndarray,
-        calculator: BaseCalculator,
+        connector: BaseConnector,
     ) -> None:
-        super().__init__(calculator=calculator)
+        super().__init__(connector=connector)
 
         d = len(complex_covariance) // 2
         Q = (complex_covariance + np.identity(2 * d)) / 2
@@ -104,7 +104,7 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
-        return self.calculator.hafnian(self._A, reduce_on)
+        return self.connector.hafnian(self._A, reduce_on)
 
 
 class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
@@ -112,9 +112,9 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         self,
         complex_displacement: np.ndarray,
         complex_covariance: np.ndarray,
-        calculator: BaseCalculator,
+        connector: BaseConnector,
     ) -> None:
-        super().__init__(calculator=calculator)
+        super().__init__(connector=connector)
 
         d = len(complex_displacement) // 2
         Q = (complex_covariance + np.identity(2 * d)) / 2
@@ -139,7 +139,7 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         ) / np.sqrt(np.linalg.det(Q))
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
-        return self.calculator.loop_hafnian(self._A, self._gamma, reduce_on)
+        return self.connector.loop_hafnian(self._A, self._gamma, reduce_on)
 
 
 def calculate_click_probability_nondisplaced(

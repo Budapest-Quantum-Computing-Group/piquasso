@@ -37,7 +37,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(),
+            connector=pq.TensorflowConnector(),
         )
 
         with tf.GradientTape() as tape:
@@ -106,7 +106,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(),
+            connector=pq.TensorflowConnector(),
         )
 
         with tf.GradientTape() as tape:
@@ -175,7 +175,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(decorate_with=tf.function),
+            connector=pq.TensorflowConnector(decorate_with=tf.function),
         )
 
         with tf.GradientTape() as tape:
@@ -244,7 +244,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(decorate_with=tf.function),
+            connector=pq.TensorflowConnector(decorate_with=tf.function),
         )
 
         with tf.GradientTape() as tape:
@@ -313,7 +313,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(
+            connector=pq.TensorflowConnector(
                 decorate_with=tf.function(jit_compile=True)
             ),
         )
@@ -384,7 +384,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
         simulator = pq.PureFockSimulator(
             d=d,
             config=pq.Config(cutoff=cutoff),
-            calculator=pq.TensorflowCalculator(
+            connector=pq.TensorflowConnector(
                 decorate_with=tf.function(jit_compile=True)
             ),
         )
@@ -458,17 +458,17 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator):
 
     @decorator
     def func(initial_state_vector, weights):
-        calculator = pq.TensorflowCalculator()
+        connector = pq.TensorflowConnector()
         config = pq.Config(cutoff=cutoff)
 
-        initial_state = pq.PureFockState(d=1, calculator=calculator, config=config)
+        initial_state = pq.PureFockState(d=1, connector=connector, config=config)
 
         initial_state.state_vector = initial_state_vector
 
         simulator = pq.PureFockSimulator(
             d=d,
             config=config,
-            calculator=calculator,
+            connector=connector,
         )
 
         with tf.GradientTape() as tape:

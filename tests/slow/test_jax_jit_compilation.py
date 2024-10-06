@@ -24,7 +24,7 @@ def test_jit_compilation():
         simulator = pq.PureFockSimulator(
             d=2,
             config=pq.Config(cutoff=5, dtype=np.float32),
-            calculator=pq.JaxCalculator(),
+            connector=pq.JaxConnector(),
         )
 
         with pq.Program() as program:
@@ -55,7 +55,7 @@ def test_jit_and_jacfwd_compilation():
         simulator = pq.PureFockSimulator(
             d=2,
             config=pq.Config(cutoff=5, dtype=np.float32),
-            calculator=pq.JaxCalculator(),
+            connector=pq.JaxConnector(),
         )
 
         with pq.Program() as program:

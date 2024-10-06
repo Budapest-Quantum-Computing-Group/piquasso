@@ -38,7 +38,7 @@ tf.get_logger().setLevel("ERROR")
 
 
 def get_expected_density_matrix(
-    state_vector: tf.Tensor, cutoff: int, calculator: pq.TensorflowCalculator
+    state_vector: tf.Tensor, cutoff: int, connector: pq.TensorflowConnector
 ) -> tf.Tensor:
     state_00 = [0, 1, 0, 1]
     state_01 = [0, 1, 1, 0]
@@ -55,14 +55,14 @@ def get_expected_density_matrix(
         ]
     )
 
-    simulator = pq.PureFockSimulator(d=4, config=config, calculator=calculator)
+    simulator = pq.PureFockSimulator(d=4, config=config, connector=connector)
     expected_state = simulator.execute(expected_program).state
 
     return expected_state.density_matrix
 
 
 def get_initial_weights():
-    calculator = pq.NumpyCalculator()
+    connector = pq.NumpyConnector()
     modes = (0, 2, 4, 5)
 
     U = np.array(
@@ -84,16 +84,16 @@ def get_initial_weights():
         ]
     )
 
-    V = calculator.embed_in_identity(U, get_operator_index(modes), 6)
+    V = connector.embed_in_identity(U, get_operator_index(modes), 6)
 
-    return get_weights_from_interferometer(V, calculator)
+    return get_weights_from_interferometer(V, connector)
 
 
 def _calculate_loss(
     weights: tf.Tensor,
     expected_density_matrix: tf.Tensor,
     P: tf.Tensor,
-    calculator: pq.TensorflowCalculator,
+    connector: pq.TensorflowConnector,
     state_vector: tf.Tensor,
     cutoff: int,
     alpha: tf.Tensor,
@@ -102,7 +102,7 @@ def _calculate_loss(
 ):
     d = 6
     config = pq.Config(cutoff=cutoff, normalize=False)
-    np = calculator.np
+    np = connector.np
 
     ancilla_modes = (4, 5)
 
@@ -114,7 +114,7 @@ def _calculate_loss(
     ancilla_state = [1, 1]
 
     interferometer = get_interferometer_from_weights(
-        weights, d, calculator, config.complex_dtype
+        weights, d, connector, config.complex_dtype
     )
 
     program = pq.Program(
@@ -132,7 +132,7 @@ def _calculate_loss(
         ]
     )
 
-    simulator = pq.PureFockSimulator(d=d, config=config, calculator=calculator)
+    simulator = pq.PureFockSimulator(d=d, config=config, connector=connector)
 
     state = simulator.execute(program).state
 
@@ -153,7 +153,7 @@ def _calculate_loss(
 def train_step(
     weights: tf.Tensor,
     P: tf.Tensor,
-    calculator: pq.TensorflowCalculator,
+    connector: pq.TensorflowConnector,
     expected_density_matrix: tf.Tensor,
     state_vector: tf.Tensor,
     cutoff: int,
@@ -165,7 +165,7 @@ def train_step(
         loss, success_prob, fidelity = _calculate_loss(
             weights=weights,
             P=P,
-            calculator=calculator,
+            connector=connector,
             expected_density_matrix=expected_density_matrix,
             state_vector=state_vector,
             cutoff=cutoff,
@@ -185,7 +185,7 @@ def train(
     P: tf.Tensor,
     state_vector: tf.Tensor,
     expected_density_matrix: tf.Tensor,
-    calculator: pq.TensorflowCalculator,
+    connector: pq.TensorflowConnector,
     cutoff: int,
 ):
     opt = tf.keras.optimizers.Adam(learning_rate=LR)
@@ -194,7 +194,7 @@ def train(
         loss, success_prob, fidelity, grad = _train_step(
             weights=weights,
             P=P,
-            calculator=calculator,
+            connector=connector,
             expected_density_matrix=expected_density_matrix,
             state_vector=state_vector,
             cutoff=cutoff,
@@ -215,9 +215,9 @@ def main() -> None:
     cutoff = 5
 
     decorator = tf.function(jit_compile=True)
-    calculator = pq.TensorflowCalculator(decorate_with=decorator)
-    np = calculator.np
-    fallback_np = calculator.fallback_np
+    connector = pq.TensorflowConnector(decorate_with=decorator)
+    np = connector.np
+    fallback_np = connector.fallback_np
 
     P = fallback_np.array(
         [
@@ -239,7 +239,7 @@ def main() -> None:
     state_vector = np.sqrt([1 / 4, 1 / 4, 1 / 4, 1 / 4])
 
     expected_density_matrix = get_expected_density_matrix(
-        state_vector=state_vector, cutoff=cutoff, calculator=calculator
+        state_vector=state_vector, cutoff=cutoff, connector=connector
     )
     expected_density_matrix = tf.convert_to_tensor(expected_density_matrix)
 
@@ -256,7 +256,7 @@ def main() -> None:
         P=P,
         state_vector=state_vector,
         expected_density_matrix=expected_density_matrix,
-        calculator=calculator,
+        connector=connector,
         cutoff=cutoff,
     )
     end = time.time()

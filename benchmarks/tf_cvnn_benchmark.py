@@ -74,8 +74,8 @@ def weights(layer_count, d):
 
 
 def piquasso_benchmark(benchmark, weights, cutoff):
-    calculator = pq.TensorflowCalculator(decorate_with=tf.function)
-    benchmark(lambda: _calculate_piquasso_results(weights, cutoff, calculator))
+    connector = pq.TensorflowConnector(decorate_with=tf.function)
+    benchmark(lambda: _calculate_piquasso_results(weights, cutoff, connector))
 
 
 def strawberryfields_benchmark(benchmark, weights, cutoff, sf):
@@ -84,7 +84,7 @@ def strawberryfields_benchmark(benchmark, weights, cutoff, sf):
 
 def test_state_vector_and_jacobian(weights, cutoff, sf):
     pq_state_vector, pq_jacobian = _calculate_piquasso_results(
-        weights, cutoff, pq.TensorflowCalculator(decorate_with=tf.function)
+        weights, cutoff, pq.TensorflowConnector(decorate_with=tf.function)
     )
     sf_state_vector, sf_jacobian = _calculate_strawberryfields_results(
         weights, cutoff, sf
@@ -94,13 +94,13 @@ def test_state_vector_and_jacobian(weights, cutoff, sf):
     assert np.sum(np.abs(pq_jacobian - sf_jacobian) ** 2) < 1e-10
 
 
-def _pq_state_vector(weights, cutoff, calculator):
+def _pq_state_vector(weights, cutoff, connector):
     d = cvqnn.get_number_of_modes(weights.shape[1])
 
     simulator = pq.PureFockSimulator(
         d=d,
         config=pq.Config(cutoff=cutoff),
-        calculator=calculator,
+        connector=connector,
     )
 
     program = cvqnn.create_program(weights)
@@ -111,9 +111,9 @@ def _pq_state_vector(weights, cutoff, calculator):
 
 
 @tf.function
-def _calculate_piquasso_results(weights, cutoff, calculator):
+def _calculate_piquasso_results(weights, cutoff, connector):
     with tf.GradientTape() as tape:
-        state_vector = _pq_state_vector(weights, cutoff, calculator)
+        state_vector = _pq_state_vector(weights, cutoff, connector)
 
     return state_vector, tape.jacobian(state_vector, weights)
 

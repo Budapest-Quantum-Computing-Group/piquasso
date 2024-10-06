@@ -34,7 +34,7 @@ from piquasso._math.gate_matrices import (
 )
 from piquasso._math.indices import get_index_in_fock_space
 
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 @functools.lru_cache()
@@ -88,26 +88,26 @@ def get_single_mode_squeezing_operator(
     phi: float,
     cutoff: int,
     complex_dtype: np.dtype,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> np.ndarray:
-    @calculator.custom_gradient
+    @connector.custom_gradient
     def _single_mode_squeezing_operator(r, phi):
-        r = calculator.preprocess_input_for_custom_gradient(r)
-        phi = calculator.preprocess_input_for_custom_gradient(phi)
+        r = connector.preprocess_input_for_custom_gradient(r)
+        phi = connector.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_squeezing_matrix(
             r,
             phi,
             cutoff,
             complex_dtype=complex_dtype,
-            calculator=calculator,
+            connector=connector,
         )
         grad = create_single_mode_squeezing_gradient(
             r,
             phi,
             cutoff,
             matrix,
-            calculator,
+            connector,
         )
         return matrix, grad
 
@@ -115,7 +115,7 @@ def get_single_mode_squeezing_operator(
 
 
 def get_single_mode_cubic_phase_operator(
-    gamma: float, cutoff: int, hbar: float, calculator: BaseCalculator
+    gamma: float, cutoff: int, hbar: float, connector: BaseConnector
 ) -> np.ndarray:
     r"""Cubic Phase gate.
 
@@ -144,11 +144,11 @@ def get_single_mode_cubic_phase_operator(
             The resulting transformation, which could be applied to the state.
     """
 
-    np = calculator.np
+    np = connector.np
 
     annih = np.diag(np.sqrt(np.arange(1, cutoff)), 1)
     position = (annih.T + annih) * np.sqrt(hbar / 2)
-    return calculator.expm(1j * calculator.powm(position, 3) * (gamma / (3 * hbar)))
+    return connector.expm(1j * connector.powm(position, 3) * (gamma / (3 * hbar)))
 
 
 def operator_basis(space):
@@ -181,25 +181,25 @@ def get_annihilation_operator(
     return get_creation_operator(modes, space, config).transpose()
 
 
-def get_single_mode_displacement_operator(r, phi, cutoff, complex_dtype, calculator):
-    @calculator.custom_gradient
+def get_single_mode_displacement_operator(r, phi, cutoff, complex_dtype, connector):
+    @connector.custom_gradient
     def _single_mode_displacement_operator(r, phi):
-        r = calculator.preprocess_input_for_custom_gradient(r)
-        phi = calculator.preprocess_input_for_custom_gradient(phi)
+        r = connector.preprocess_input_for_custom_gradient(r)
+        phi = connector.preprocess_input_for_custom_gradient(phi)
 
         matrix = create_single_mode_displacement_matrix(
             r,
             phi,
             cutoff,
             complex_dtype,
-            calculator=calculator,
+            connector=connector,
         )
         grad = create_single_mode_displacement_gradient(
             r,
             phi,
             cutoff,
             matrix,
-            calculator,
+            connector,
         )
         return matrix, grad
 
