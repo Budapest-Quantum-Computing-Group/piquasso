@@ -44,10 +44,10 @@ from piquasso._simulators.fock import (
     FockSimulator,
     PureFockSimulator,
 )
-from piquasso._simulators.calculators import (
-    NumpyCalculator,
-    TensorflowCalculator,
-    JaxCalculator,
+from piquasso._simulators.connectors import (
+    NumpyConnector,
+    TensorflowConnector,
+    JaxConnector,
 )
 
 from .instructions.preparations import (
@@ -124,10 +124,10 @@ __all__ = [
     "SamplingSimulator",
     "FockSimulator",
     "PureFockSimulator",
-    # Calculators
-    "NumpyCalculator",
-    "TensorflowCalculator",
-    "JaxCalculator",
+    # Connectors
+    "NumpyConnector",
+    "TensorflowConnector",
+    "JaxConnector",
     # States
     "GaussianState",
     "SamplingState",

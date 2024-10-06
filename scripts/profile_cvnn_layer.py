@@ -64,7 +64,7 @@ target_state_vector[1] = 1.0
 target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 
 simulator = pq.PureFockSimulator(
-    d=d, config=pq.Config(cutoff=cutoff), calculator=pq.TensorflowCalculator()
+    d=d, config=pq.Config(cutoff=cutoff), connector=pq.TensorflowConnector()
 )
 
 parameters = create_layer_parameters(d)

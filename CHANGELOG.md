@@ -21,7 +21,7 @@
 
 - Python 3.7 support dropped.
 - `TensorflowPureFockSimulator` has been deleted. Instead, one can use
-  `PureFockSimulator` with `TensorflowCalculator` specified.
+  `PureFockSimulator` with `TensorflowConnector` specified.
 - Printing format of Fock states have been changed.
 - Renamed `_state_vector` to `state_vector`.
 

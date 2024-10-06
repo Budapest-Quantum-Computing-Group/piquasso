@@ -47,10 +47,10 @@ from piquasso.instructions import (
     batch,
 )
 
-from piquasso._simulators.calculators import (
-    NumpyCalculator,
-    TensorflowCalculator,
-    JaxCalculator,
+from piquasso._simulators.connectors import (
+    NumpyConnector,
+    TensorflowConnector,
+    JaxConnector,
 )
 
 
@@ -143,6 +143,6 @@ class PureFockSimulator(BuiltinSimulator):
         batch.BatchApply: batch_apply,
     }
 
-    _default_calculator_class = NumpyCalculator
+    _default_connector_class = NumpyConnector
 
-    _extra_builtin_calculators = [TensorflowCalculator, JaxCalculator]
+    _extra_builtin_connectors = [TensorflowConnector, JaxConnector]

@@ -31,11 +31,11 @@ def measure_graph_size(f, *args):
     return len(g.as_graph_def().node)
 
 
-def calculate_mean_position(weights, cutoff, d, calculator):
+def calculate_mean_position(weights, cutoff, d, connector):
     simulator = pq.PureFockSimulator(
         d,
         pq.Config(cutoff=cutoff),
-        calculator=calculator,
+        connector=connector,
     )
 
     with tf.GradientTape() as tape:
@@ -71,21 +71,21 @@ if __name__ == "__main__":
 
     decorator = tf.function(jit_compile=True)
 
-    calculator = pq.TensorflowCalculator(decorate_with=decorator)
+    connector = pq.TensorflowConnector(decorate_with=decorator)
 
     enhanced_calculate_mean_position = decorator(calculate_mean_position)
 
     print("START")
     start_time = time.time()
 
-    enhanced_calculate_mean_position(weights, cutoff, d, calculator)
+    enhanced_calculate_mean_position(weights, cutoff, d, connector)
 
     print("COMPILATION TIME:", time.time() - start_time)
 
     print(
         "GRAPH SIZE:",
         measure_graph_size(
-            enhanced_calculate_mean_position, weights, cutoff, d, calculator
+            enhanced_calculate_mean_position, weights, cutoff, d, connector
         ),
     )
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         )
 
         start_time = time.time()
-        result = enhanced_calculate_mean_position(weights, cutoff, d, calculator)
+        result = enhanced_calculate_mean_position(weights, cutoff, d, connector)
         end_time = time.time()
 
         runtime = end_time - start_time

@@ -308,12 +308,12 @@ def test_seeded_gaussian_boson_sampling():
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
     simulator1 = pq.GaussianSimulator(
-        d=d, calculator=pq.NumpyCalculator(), config=pq.Config(seed_sequence=123)
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=123)
     )
     result1 = simulator1.execute(gaussian_boson_sampling, shots=shots)
 
     simulator2 = pq.GaussianSimulator(
-        d=d, calculator=pq.NumpyCalculator(), config=pq.Config(seed_sequence=123)
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=123)
     )
     result2 = simulator2.execute(gaussian_boson_sampling, shots=shots)
 
@@ -343,7 +343,7 @@ def test_ThresholdMeasurement_use_torontonian_seeding():
 
     simulator = pq.GaussianSimulator(
         d=d,
-        calculator=pq.NumpyCalculator(),
+        connector=pq.NumpyConnector(),
         config=pq.Config(seed_sequence=seed_sequence, use_torontonian=True),
     )
     result = simulator.execute(program, shots=shots)
@@ -385,7 +385,7 @@ def test_ThresholdMeasurement_use_torontonian_seeding_float32():
 
     simulator = pq.GaussianSimulator(
         d=d,
-        calculator=pq.NumpyCalculator(),
+        connector=pq.NumpyConnector(),
         config=pq.Config(
             seed_sequence=seed_sequence, use_torontonian=True, dtype=np.float32
         ),

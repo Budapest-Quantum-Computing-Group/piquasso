@@ -48,7 +48,7 @@ def passive_linear(
 ) -> Result:
     modes = instruction.modes
     passive_block: np.ndarray = instruction._get_passive_block(
-        state._calculator, state._config
+        state._connector, state._config
     )
 
     _apply_passive_linear(state, passive_block, modes=modes)
@@ -57,9 +57,9 @@ def passive_linear(
 
 
 def _apply_passive_linear(state, passive_block, modes):
-    calculator = state._calculator
+    connector = state._connector
 
-    state._m = calculator.assign(state._m, (modes,), passive_block @ state._m[modes,])
+    state._m = connector.assign(state._m, (modes,), passive_block @ state._m[modes,])
 
     _apply_passive_linear_to_C_and_G(state, passive_block, modes=modes)
 
@@ -67,14 +67,14 @@ def _apply_passive_linear(state, passive_block, modes):
 def _apply_passive_linear_to_C_and_G(
     state: GaussianState, T: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    calculator = state._calculator
+    connector = state._connector
 
     index = get_operator_index(modes)
 
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C, index, T.conjugate() @ state._C[index] @ T.transpose()
     )
-    state._G = calculator.assign(state._G, index, T @ state._G[index] @ T.transpose())
+    state._G = connector.assign(state._G, index, T @ state._G[index] @ T.transpose())
 
     auxiliary_modes = state._get_auxiliary_modes(modes)
 
@@ -88,23 +88,23 @@ def _apply_passive_linear_to_auxiliary_modes(
     modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
-    calculator = state._calculator
-    np = calculator.np
+    connector = state._connector
+    np = connector.np
 
     auxiliary_index = get_auxiliary_operator_index(modes, auxiliary_modes)
 
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C, auxiliary_index, T.conjugate() @ state._C[auxiliary_index]
     )
-    state._G = calculator.assign(
+    state._G = connector.assign(
         state._G, auxiliary_index, T @ state._G[auxiliary_index]
     )
 
     assign_index = np.ix_(np.arange(state.d), np.array(modes))
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C, assign_index, np.conj(state._C[modes, :]).transpose()
     )
-    state._G = calculator.assign(state._G, assign_index, state._G[modes, :].transpose())
+    state._G = connector.assign(state._G, assign_index, state._G[modes, :].transpose())
 
 
 def linear(
@@ -112,10 +112,10 @@ def linear(
 ) -> Result:
     modes = instruction.modes
     passive_block: np.ndarray = instruction._get_passive_block(
-        state._calculator, state._config
+        state._connector, state._config
     )
     active_block: np.ndarray = instruction._get_active_block(
-        state._calculator, state._config
+        state._connector, state._config
     )
 
     _apply_linear(state, passive_block, active_block, modes)
@@ -124,14 +124,14 @@ def linear(
 
 
 def _apply_linear(state, passive_block, active_block, modes):
-    calculator = state._calculator
-    np = calculator.np
+    connector = state._connector
+    np = connector.np
 
     passive_part = passive_block @ state._m[(modes,)]
 
     active_part = active_block @ np.conj(state._m[modes,])
 
-    state._m = calculator.assign(state._m, (modes,), passive_part + active_part)
+    state._m = connector.assign(state._m, (modes,), passive_part + active_part)
 
     _apply_linear_to_C_and_G(state, passive_block, active_block, modes)
 
@@ -139,15 +139,15 @@ def _apply_linear(state, passive_block, active_block, modes):
 def _apply_linear_to_C_and_G(
     state: GaussianState, P: np.ndarray, A: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    calculator = state._calculator
-    np = calculator.np
+    connector = state._connector
+    np = connector.np
 
     index = get_operator_index(modes)
 
     original_C = state._C[index]
     original_G = state._G[index]
 
-    state._G = calculator.assign(
+    state._G = connector.assign(
         state._G,
         index,
         P @ original_G @ P.transpose()
@@ -156,7 +156,7 @@ def _apply_linear_to_C_and_G(
         + A @ original_C @ P.transpose(),
     )
 
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C,
         index,
         P.conjugate() @ original_C @ P.transpose()
@@ -180,35 +180,35 @@ def _apply_linear_to_auxiliary_modes(
     modes: Tuple[int, ...],
     auxiliary_modes: Tuple[int, ...],
 ) -> None:
-    calculator = state._calculator
-    np = calculator.np
+    connector = state._connector
+    np = connector.np
 
     auxiliary_index = get_auxiliary_operator_index(modes, auxiliary_modes)
 
     auxiliary_C = state._C[auxiliary_index]
     auxiliary_G = state._G[auxiliary_index]
 
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C,
         auxiliary_index,
         P.conjugate() @ auxiliary_C + A.conjugate() @ auxiliary_G,
     )
 
-    state._G = calculator.assign(
+    state._G = connector.assign(
         state._G, auxiliary_index, P @ auxiliary_G + A @ auxiliary_C
     )
 
     assign_index = np.ix_(np.arange(state.d), np.array(modes))
 
-    state._C = calculator.assign(
+    state._C = connector.assign(
         state._C, assign_index, state._C[modes, :].conjugate().transpose()
     )
-    state._G = calculator.assign(state._G, assign_index, state._G[modes, :].transpose())
+    state._G = connector.assign(state._G, assign_index, state._G[modes, :].transpose())
 
 
 def displacement(state: GaussianState, instruction: Instruction, shots: int) -> Result:
-    calculator = state._calculator
-    np = calculator.np
+    connector = state._connector
+    np = connector.np
 
     modes = instruction.modes
     r = instruction._all_params["r"]
@@ -216,7 +216,7 @@ def displacement(state: GaussianState, instruction: Instruction, shots: int) -> 
 
     indices = np.ix_(np.array(modes))
 
-    state._m = calculator.assign(
+    state._m = connector.assign(
         state._m, indices, state._m[indices] + r * np.exp(1j * phi)
     )
 
@@ -326,7 +326,7 @@ def _get_generaldyne_evolved_state(state, sample, modes, detection_covariance):
     ) @ (sample - mean_measured)
 
     new_state = GaussianState(
-        d=len(evolved_r_A) // 2, calculator=state._calculator, config=state._config
+        d=len(evolved_r_A) // 2, connector=state._connector, config=state._config
     )
 
     new_state.xpxp_covariance_matrix = evolved_cov_outer
@@ -368,10 +368,10 @@ def _get_particle_number_measurement_samples(
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
         reduced_state.xxpp_covariance_matrix,
         hbar=state._config.hbar,
-        calculator=state._calculator,
+        connector=state._connector,
     )
     pure_state = GaussianState(
-        len(reduced_state), calculator=state._calculator, config=state._config
+        len(reduced_state), connector=state._connector, config=state._config
     )
 
     pure_state.xxpp_covariance_matrix = pure_covariance
@@ -480,9 +480,9 @@ def _get_particle_number_choice(
         occupation_numbers = np.array(previous_sample + (n,))
 
         hafnian_value = (
-            state._calculator.loop_hafnian(B, gamma, occupation_numbers)
+            state._connector.loop_hafnian(B, gamma, occupation_numbers)
             if is_displaced
-            else state._calculator.hafnian(B, occupation_numbers)
+            else state._connector.hafnian(B, occupation_numbers)
         )
 
         weight = abs(hafnian_value) ** 2 / factorial(n)
@@ -630,7 +630,7 @@ def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
     squeezings, interferometer = decompose_adjacency_matrix_into_circuit(
         adjacency_matrix=instruction._params["adjacency_matrix"],
         mean_photon_number=instruction._params["mean_photon_number"],
-        calculator=state._calculator,
+        connector=state._connector,
     )
 
     for mode, r in zip(instruction.modes, squeezings):

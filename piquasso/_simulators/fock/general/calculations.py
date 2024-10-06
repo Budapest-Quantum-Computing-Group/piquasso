@@ -56,7 +56,7 @@ def passive_linear(
     state: FockState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:
     operator: np.ndarray = instruction._get_passive_block(
-        state._calculator, state._config
+        state._connector, state._config
     )
 
     _apply_passive_linear(state, operator, instruction.modes)
@@ -66,7 +66,7 @@ def passive_linear(
 
 def _apply_passive_linear(state, interferometer, modes):
     subspace_transformations = _get_interferometer_on_fock_space(
-        interferometer, state._config.cutoff, state._calculator
+        interferometer, state._config.cutoff, state._connector
     )
 
     _apply_passive_gate_matrix_to_state(state, subspace_transformations, modes)
@@ -115,15 +115,13 @@ def _calculate_density_matrix_after_interferometer(
     return new_density_matrix
 
 
-def _get_interferometer_on_fock_space(interferometer, cutoff, calculator):
+def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
     index_tuple = calculate_interferometer_helper_indices(
         d=len(interferometer),
         cutoff=cutoff,
     )
 
-    return calculator.calculate_interferometer_on_fock_space(
-        interferometer, index_tuple
-    )
+    return connector.calculate_interferometer_on_fock_space(interferometer, index_tuple)
 
 
 def particle_number_measurement(
@@ -241,7 +239,7 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
         gamma=gamma,
         cutoff=state._config.cutoff,
         hbar=state._config.hbar,
-        calculator=state._calculator,
+        connector=state._connector,
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
@@ -343,7 +341,7 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
     matrix = get_single_mode_displacement_operator(
         r=r,
         phi=phi,
-        calculator=state._calculator,
+        connector=state._connector,
         cutoff=state._config.cutoff,
         complex_dtype=state._config.complex_dtype,
     )
@@ -361,7 +359,7 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
     matrix = get_single_mode_squeezing_operator(
         r=r,
         phi=phi,
-        calculator=state._calculator,
+        connector=state._connector,
         cutoff=state._config.cutoff,
         complex_dtype=state._config.complex_dtype,
     )
@@ -374,22 +372,22 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
 def linear(
     state: FockState, instruction: gates._ActiveLinearGate, shots: int
 ) -> Result:
-    calculator = state._calculator
+    connector = state._connector
     modes = instruction.modes
 
-    np = calculator.np
+    np = connector.np
 
-    passive_block = instruction._get_passive_block(state._calculator, state._config)
-    active_block = instruction._get_active_block(state._calculator, state._config)
+    passive_block = instruction._get_passive_block(state._connector, state._config)
+    active_block = instruction._get_active_block(state._connector, state._config)
 
-    symplectic = calculator.block(
+    symplectic = connector.block(
         [
             [passive_block, active_block],
             [np.conj(active_block), np.conj(passive_block)],
         ],
     )
 
-    unitary_last, squeezings, unitary_first = euler(symplectic, calculator)
+    unitary_last, squeezings, unitary_first = euler(symplectic, connector)
 
     _apply_passive_linear(state, unitary_first, modes)
 
@@ -397,7 +395,7 @@ def linear(
         matrix = get_single_mode_squeezing_operator(
             r=r,
             phi=0.0,
-            calculator=state._calculator,
+            connector=state._connector,
             cutoff=state._config.cutoff,
             complex_dtype=state._config.complex_dtype,
         )

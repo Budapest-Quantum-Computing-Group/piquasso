@@ -26,15 +26,15 @@ from piquasso._math.decompositions import (
     decompose_to_pure_and_mixed,
 )
 
-from piquasso._simulators.calculators import (
-    NumpyCalculator,
-    TensorflowCalculator,
-    JaxCalculator,
+from piquasso._simulators.connectors import (
+    NumpyConnector,
+    TensorflowConnector,
+    JaxConnector,
 )
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
-def test_takagi_on_real_symmetric_2_by_2_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
     matrix = np.array(
         [
             [1, 2],
@@ -43,15 +43,15 @@ def test_takagi_on_real_symmetric_2_by_2_matrix(calculator):
         dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix, calculator)
+    singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
-def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector):
     matrix = np.array(
         [
             [1, 2j],
@@ -60,15 +60,15 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(calculato
         dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix, calculator)
+    singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
-def test_takagi_on_real_symmetric_3_by_3_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
             [1, 2, 3],
@@ -78,15 +78,15 @@ def test_takagi_on_real_symmetric_3_by_3_matrix(calculator):
         dtype=complex,
     )
 
-    singular_values, unitary = takagi(matrix, calculator)
+    singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
-def test_takagi_on_complex_symmetric_3_by_3_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
             [1, 2, 3j],
@@ -95,7 +95,7 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(calculator):
         ],
     )
 
-    singular_values, unitary = takagi(matrix, calculator)
+    singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
@@ -103,9 +103,9 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(calculator):
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
-    calculator,
+    connector,
     generate_unitary_matrix,
 ):
     singular_values = np.array([1, 1, 2, 2, 2, 3], dtype=complex)
@@ -114,7 +114,7 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
     matrix = unitary @ np.diag(singular_values) @ unitary.transpose()
 
-    calculated_singular_values, calculated_unitary = takagi(matrix, calculator)
+    calculated_singular_values, calculated_unitary = takagi(matrix, connector)
 
     assert is_unitary(calculated_unitary)
     assert np.allclose(np.abs(calculated_singular_values), calculated_singular_values)
@@ -128,22 +128,22 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
 @pytest.mark.monkey
 @pytest.mark.parametrize("N", [2, 3, 4, 5, 6])
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), TensorflowCalculator()])
+@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
 def test_takagi_on_complex_symmetric_N_by_N_matrix(
-    N, calculator, generate_complex_symmetric_matrix
+    N, connector, generate_complex_symmetric_matrix
 ):
     matrix = generate_complex_symmetric_matrix(N)
-    singular_values, unitary = takagi(matrix, calculator)
+    singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
     assert np.allclose(np.abs(singular_values), singular_values)
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_williamson_with_identity(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_williamson_with_identity(connector):
     covariance_matrix = np.identity(4)
-    symplectic, diagonal = williamson(covariance_matrix, calculator)
+    symplectic, diagonal = williamson(covariance_matrix, connector)
 
     assert is_diagonal(diagonal)
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
@@ -151,10 +151,10 @@ def test_williamson_with_identity(calculator):
     assert np.allclose(covariance_matrix, symplectic @ diagonal @ symplectic.T)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_williamson_with_diagonal_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_williamson_with_diagonal_matrix(connector):
     covariance_matrix = np.diag([1, 2, 3, 4])
-    symplectic, diagonal = williamson(covariance_matrix, calculator)
+    symplectic, diagonal = williamson(covariance_matrix, connector)
 
     assert is_diagonal(diagonal)
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
@@ -162,8 +162,8 @@ def test_williamson_with_diagonal_matrix(calculator):
     assert np.allclose(covariance_matrix, symplectic @ diagonal @ symplectic.T)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_williamson_with_squeezed_covariance_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_williamson_with_squeezed_covariance_matrix(connector):
     d = 3
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
@@ -174,7 +174,7 @@ def test_williamson_with_squeezed_covariance_matrix(calculator):
 
     covariance_matrix = state.xpxp_covariance_matrix
 
-    symplectic, diagonal = williamson(covariance_matrix, calculator)
+    symplectic, diagonal = williamson(covariance_matrix, connector)
 
     assert is_diagonal(diagonal)
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
@@ -183,14 +183,14 @@ def test_williamson_with_squeezed_covariance_matrix(calculator):
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
 def test_williamson_with_random_positive_definite_matrix(
-    generate_random_positive_definite_matrix, calculator
+    generate_random_positive_definite_matrix, connector
 ):
     dim = 4
     matrix = generate_random_positive_definite_matrix(dim)
 
-    symplectic, diagonal = williamson(matrix, calculator)
+    symplectic, diagonal = williamson(matrix, connector)
 
     assert is_diagonal(diagonal)
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
@@ -198,8 +198,8 @@ def test_williamson_with_random_positive_definite_matrix(
     assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_williamson_with_special_matrix(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_williamson_with_special_matrix(connector):
     """
     Sometimes scipy.linalg.sqrtm returns complex matrices even when real matrices with
     positive eigenvalues got specified. This test specifies a matrix for which the
@@ -294,7 +294,7 @@ def test_williamson_with_special_matrix(calculator):
         dtype=float,
     )
 
-    symplectic, diagonal = williamson(matrix, calculator)
+    symplectic, diagonal = williamson(matrix, connector)
 
     assert is_diagonal(diagonal)
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
@@ -302,23 +302,23 @@ def test_williamson_with_special_matrix(calculator):
     assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_decompose_to_pure_and_mixed_with_identity(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_decompose_to_pure_and_mixed_with_identity(connector):
     hbar = 42
     covariance_matrix = hbar * np.identity(4)
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
         covariance_matrix,
         hbar=hbar,
-        calculator=calculator,
+        connector=connector,
     )
 
     assert np.allclose(mixed_contribution, 0.0)
     assert np.allclose(covariance_matrix, pure_covariance)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
 def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribution(
-    calculator,
+    connector,
 ):
     d = 3
     with pq.Program() as program:
@@ -333,15 +333,15 @@ def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribut
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
         covariance_matrix,
         hbar=state._config.hbar,
-        calculator=calculator,
+        connector=connector,
     )
 
     assert np.allclose(mixed_contribution, 0.0)
     assert np.allclose(covariance_matrix, pure_covariance)
 
 
-@pytest.mark.parametrize("calculator", [NumpyCalculator(), JaxCalculator()])
-def test_decompose_to_pure_and_mixed_with_reduced_gaussian(calculator):
+@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
+def test_decompose_to_pure_and_mixed_with_reduced_gaussian(connector):
     d = 3
     with pq.Program() as program:
         pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
@@ -355,7 +355,7 @@ def test_decompose_to_pure_and_mixed_with_reduced_gaussian(calculator):
     covariance_matrix = reduced_state.xxpp_covariance_matrix
 
     pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
-        covariance_matrix, hbar=state._config.hbar, calculator=calculator
+        covariance_matrix, hbar=state._config.hbar, connector=connector
     )
 
     assert np.allclose(pure_covariance + mixed_contribution, covariance_matrix)

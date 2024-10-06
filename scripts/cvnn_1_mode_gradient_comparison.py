@@ -24,7 +24,7 @@ def pq_cvnn_gradient(weights, d, cutoff, layer_count):
     simulator = pq.PureFockSimulator(
         d=d,
         config=pq.Config(cutoff=cutoff, normalize=True),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:

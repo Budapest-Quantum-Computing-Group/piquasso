@@ -85,7 +85,7 @@ def _calculate_piquasso_results(weights, cutoff, layer_count):
     simulator = pq.PureFockSimulator(
         d=1,
         config=pq.Config(cutoff=cutoff),
-        calculator=pq.TensorflowCalculator(),
+        connector=pq.TensorflowConnector(),
     )
 
     with tf.GradientTape() as tape:

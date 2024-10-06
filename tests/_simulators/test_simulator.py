@@ -18,48 +18,48 @@ import pytest
 import piquasso as pq
 
 
-def test_GaussianSimulator_supports_NumpyCalculator():
-    pq.GaussianSimulator(d=1, calculator=pq.NumpyCalculator())
+def test_GaussianSimulator_supports_NumpyConnector():
+    pq.GaussianSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_GaussianSimulator_does_not_support_TensorflowCalculator():
-    calculator = pq.TensorflowCalculator()
-
-    with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
-        pq.GaussianSimulator(d=1, calculator=calculator)
-
-    assert f"The calculator '{calculator}' is not supported." in error.value.args[0]
-
-
-def test_SamplingSimulator_supports_NumpyCalculator():
-    pq.SamplingSimulator(d=1, calculator=pq.NumpyCalculator())
-
-
-def test_SamplingSimulator_does_not_support_TensorflowCalculator():
-    calculator = pq.TensorflowCalculator()
+def test_GaussianSimulator_does_not_support_TensorflowConnector():
+    connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
-        pq.SamplingSimulator(d=1, calculator=calculator)
+        pq.GaussianSimulator(d=1, connector=connector)
 
-    assert f"The calculator '{calculator}' is not supported." in error.value.args[0]
-
-
-def test_FockSimulator_supports_NumpyCalculator():
-    pq.FockSimulator(d=1, calculator=pq.NumpyCalculator())
+    assert f"The connector '{connector}' is not supported." in error.value.args[0]
 
 
-def test_FockSimulator_does_not_support_TensorflowCalculator():
-    calculator = pq.TensorflowCalculator()
+def test_SamplingSimulator_supports_NumpyConnector():
+    pq.SamplingSimulator(d=1, connector=pq.NumpyConnector())
+
+
+def test_SamplingSimulator_does_not_support_TensorflowConnector():
+    connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
-        pq.FockSimulator(d=1, calculator=calculator)
+        pq.SamplingSimulator(d=1, connector=connector)
 
-    assert f"The calculator '{calculator}' is not supported." in error.value.args[0]
-
-
-def test_PureFockSimulator_supports_NumpyCalculator():
-    pq.PureFockSimulator(d=1, calculator=pq.NumpyCalculator())
+    assert f"The connector '{connector}' is not supported." in error.value.args[0]
 
 
-def test_PureFockSimulator_supports_TensorflowCalculator():
-    pq.PureFockSimulator(d=1, calculator=pq.TensorflowCalculator())
+def test_FockSimulator_supports_NumpyConnector():
+    pq.FockSimulator(d=1, connector=pq.NumpyConnector())
+
+
+def test_FockSimulator_does_not_support_TensorflowConnector():
+    connector = pq.TensorflowConnector()
+
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
+        pq.FockSimulator(d=1, connector=connector)
+
+    assert f"The connector '{connector}' is not supported." in error.value.args[0]
+
+
+def test_PureFockSimulator_supports_NumpyConnector():
+    pq.PureFockSimulator(d=1, connector=pq.NumpyConnector())
+
+
+def test_PureFockSimulator_supports_TensorflowConnector():
+    pq.PureFockSimulator(d=1, connector=pq.TensorflowConnector())

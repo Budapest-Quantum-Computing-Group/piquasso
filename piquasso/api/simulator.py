@@ -23,7 +23,7 @@ from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
 from piquasso.api.program import Program
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 from piquasso.api.exceptions import (
     InvalidParameter,
     InvalidInstruction,
@@ -48,17 +48,17 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     _state_class: Type[State]
     _config_class: Type[Config] = Config
-    _default_calculator_class: Type[BaseCalculator]
+    _default_connector_class: Type[BaseConnector]
 
     def __init__(
         self,
         d: int,
         config: Optional[Config] = None,
-        calculator: Optional[BaseCalculator] = None,
+        connector: Optional[BaseConnector] = None,
     ) -> None:
         self.d = d
         self.config = config.copy() if config is not None else self._config_class()
-        self._calculator = calculator or self._default_calculator_class()
+        self._connector = connector or self._default_connector_class()
 
     @property
     @abc.abstractmethod
@@ -87,7 +87,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         """
 
         return self._state_class(
-            d=self.d, calculator=self._calculator, config=self.config
+            d=self.d, connector=self._connector, config=self.config
         )
 
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:

@@ -57,7 +57,7 @@ from piquasso.instructions import gates
 
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 
 def particle_number_measurement(
@@ -83,7 +83,7 @@ def particle_number_measurement(
         subspace_basis=sample,
         modes=instruction.modes,
         normalization=normalization,
-        calculator=state._calculator,
+        connector=state._connector,
     )
 
     return Result(state=state, samples=samples)
@@ -107,19 +107,19 @@ def _apply_active_gate_matrix_to_state(
     d: int,
     cutoff: int,
     mode: int,
-    calculator: BaseCalculator,
+    connector: BaseConnector,
 ) -> None:
-    @calculator.custom_gradient
+    @connector.custom_gradient
     def _apply_active_gate_matrix(state_vector, matrix):
-        state_vector = calculator.preprocess_input_for_custom_gradient(state_vector)
-        matrix = calculator.preprocess_input_for_custom_gradient(matrix)
+        state_vector = connector.preprocess_input_for_custom_gradient(state_vector)
+        matrix = connector.preprocess_input_for_custom_gradient(matrix)
 
         state_index_matrix_list = calculate_state_index_matrix_list(d, cutoff, mode)
         new_state_vector = _calculate_state_vector_after_apply_active_gate(
-            state_vector, matrix, state_index_matrix_list, calculator
+            state_vector, matrix, state_index_matrix_list, connector
         )
         grad = _create_linear_active_gate_gradient_function(
-            state_vector, matrix, state_index_matrix_list, calculator
+            state_vector, matrix, state_index_matrix_list, connector
         )
         return new_state_vector, grad
 
@@ -130,9 +130,9 @@ def _calculate_state_vector_after_apply_active_gate(
     state_vector,
     matrix,
     state_index_matrix_list,
-    calculator,
+    connector,
 ):
-    np = calculator.forward_pass_np
+    np = connector.forward_pass_np
 
     new_state_vector = np.empty_like(state_vector, dtype=state_vector.dtype)
 
@@ -142,7 +142,7 @@ def _calculate_state_vector_after_apply_active_gate(
 
     for state_index_matrix in state_index_matrix_list:
         limit = state_index_matrix.shape[0]
-        new_state_vector = calculator.assign(
+        new_state_vector = connector.assign(
             new_state_vector,
             state_index_matrix,
             np.einsum(
@@ -157,19 +157,19 @@ def _create_linear_active_gate_gradient_function(
     state_vector,
     matrix,
     state_index_matrix_list,
-    calculator,
+    connector,
 ):
     def linear_active_gate_gradient(upstream):
-        tf = calculator._tf
-        fallback_np = calculator.fallback_np
+        tf = connector._tf
+        fallback_np = connector.fallback_np
 
         static_valued = tf.get_static_value(upstream) is not None
 
         if static_valued:
-            np = calculator.fallback_np
+            np = connector.fallback_np
             upstream = upstream.numpy()
         else:
-            np = calculator.np
+            np = connector.np
 
         cutoff = len(matrix)
 
@@ -272,13 +272,13 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
 def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
-    np = state._calculator.np
+    np = state._connector.np
 
     modes = instruction.modes
     xi = instruction._all_params["xi"]
     for index, basis in enumerate(space):
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
-        state.state_vector = state._calculator.assign(
+        state.state_vector = state._connector.assign(
             state.state_vector, index, state.state_vector[index] * coefficient
         )
 
@@ -286,22 +286,22 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
 
 def displacement(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    calculator = state._calculator
+    connector = state._connector
 
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
 
-    wrapped_get_matrix = calculator.decorator(get_single_mode_displacement_operator)
+    wrapped_get_matrix = connector.decorator(get_single_mode_displacement_operator)
 
     matrix = wrapped_get_matrix(
         r=r,
         phi=phi,
         cutoff=state._config.cutoff,
         complex_dtype=state._config.complex_dtype,
-        calculator=calculator,
+        connector=connector,
     )
 
-    wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
+    wrapped_apply = connector.decorator(_apply_active_gate_matrix_to_state)
 
     state.state_vector = wrapped_apply(
         state.state_vector,
@@ -309,26 +309,26 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
         state.d,
         state._config.cutoff,
         instruction.modes[0],
-        calculator,
+        connector,
     )
 
     return Result(state=state)
 
 
 def _apply_squeezing(state, r, phi, mode):
-    calculator = state._calculator
+    connector = state._connector
 
-    wrapped_get_matrix = calculator.decorator(get_single_mode_squeezing_operator)
+    wrapped_get_matrix = connector.decorator(get_single_mode_squeezing_operator)
 
     matrix = wrapped_get_matrix(
         r=r,
         phi=phi,
         cutoff=state._config.cutoff,
         complex_dtype=state._config.complex_dtype,
-        calculator=calculator,
+        connector=connector,
     )
 
-    wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
+    wrapped_apply = connector.decorator(_apply_active_gate_matrix_to_state)
 
     state.state_vector = wrapped_apply(
         state.state_vector,
@@ -336,7 +336,7 @@ def _apply_squeezing(state, r, phi, mode):
         state.d,
         state._config.cutoff,
         mode,
-        calculator=calculator,
+        connector=connector,
     )
 
 
@@ -352,20 +352,20 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
 
 
 def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
-    calculator = state._calculator
+    connector = state._connector
 
     gamma = instruction._all_params["gamma"]
 
-    wrapped_get_matrix = calculator.decorator(get_single_mode_cubic_phase_operator)
+    wrapped_get_matrix = connector.decorator(get_single_mode_cubic_phase_operator)
 
     matrix = wrapped_get_matrix(
         gamma=gamma,
         cutoff=state._config.cutoff,
         hbar=state._config.hbar,
-        calculator=calculator,
+        connector=connector,
     )
 
-    wrapped_apply = calculator.decorator(_apply_active_gate_matrix_to_state)
+    wrapped_apply = connector.decorator(_apply_active_gate_matrix_to_state)
 
     state.state_vector = wrapped_apply(
         state.state_vector,
@@ -373,7 +373,7 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         state.d,
         state._config.cutoff,
         instruction.modes[0],
-        calculator,
+        connector,
     )
 
     return Result(state=state)
@@ -382,29 +382,29 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
 def linear(
     state: PureFockState, instruction: gates._ActiveLinearGate, shots: int
 ) -> Result:
-    calculator = state._calculator
+    connector = state._connector
     modes = instruction.modes
 
-    np = calculator.np
+    np = connector.np
 
-    passive_block = instruction._get_passive_block(state._calculator, state._config)
-    active_block = instruction._get_active_block(state._calculator, state._config)
+    passive_block = instruction._get_passive_block(state._connector, state._config)
+    active_block = instruction._get_active_block(state._connector, state._config)
 
-    symplectic = calculator.block(
+    symplectic = connector.block(
         [
             [passive_block, active_block],
             [np.conj(active_block), np.conj(passive_block)],
         ],
     )
 
-    unitary_last, squeezings, unitary_first = euler(symplectic, calculator)
+    unitary_last, squeezings, unitary_first = euler(symplectic, connector)
 
-    _apply_passive_linear(state, unitary_first, modes, calculator)
+    _apply_passive_linear(state, unitary_first, modes, connector)
 
     for mode, r in zip(instruction.modes, squeezings):
         _apply_squeezing(state, r=r, phi=0.0, mode=mode)
 
-    _apply_passive_linear(state, unitary_last, modes, calculator)
+    _apply_passive_linear(state, unitary_last, modes, connector)
 
     return Result(state=state)
 
@@ -436,9 +436,7 @@ def _add_occupation_number_basis(  # type: ignore
 
     index = get_index_in_fock_space(occupation_numbers)
 
-    state.state_vector = state._calculator.assign(
-        state.state_vector, index, coefficient
-    )
+    state.state_vector = state._connector.assign(state.state_vector, index, coefficient)
 
 
 def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) -> Result:
@@ -450,7 +448,7 @@ def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) ->
     ]
 
     batch_state = BatchPureFockState(
-        d=state.d, calculator=state._calculator, config=state._config
+        d=state.d, connector=state._connector, config=state._config
     )
 
     batch_state._apply_separate_state_vectors(state_vectors)
@@ -465,13 +463,13 @@ def batch_apply(
     execute = instruction._all_params["execute"]
 
     d = state.d
-    calculator = state._calculator
+    connector = state._connector
     config = state._config
 
     resulting_state_vectors = []
 
     for state_vector, subprogram in zip(state._batch_state_vectors, subprograms):
-        small_state = PureFockState(d=d, calculator=calculator, config=config)
+        small_state = PureFockState(d=d, connector=connector, config=config)
 
         small_state.state_vector = state_vector
 

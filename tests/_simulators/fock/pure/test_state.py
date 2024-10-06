@@ -144,7 +144,7 @@ def test_mean_position():
     config = pq.Config(cutoff=cutoff)
 
     simulator = pq.PureFockSimulator(
-        d=d, config=config, calculator=pq.TensorflowCalculator()
+        d=d, config=config, connector=pq.TensorflowConnector()
     )
 
     state = simulator.execute(program).state
@@ -174,8 +174,8 @@ def test_normalize_if_disabled_in_Config():
     assert not np.isclose(norm, 1.0)
 
 
-@pytest.mark.parametrize("calculator", (pq.NumpyCalculator(), pq.JaxCalculator()))
-def test_PureFockState_get_tensor_representation(calculator):
+@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
+def test_PureFockState_get_tensor_representation(connector):
     d = 2
     cutoff = 3
 
@@ -186,7 +186,7 @@ def test_PureFockState_get_tensor_representation(calculator):
         pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(
-        d=d, config=pq.Config(cutoff=cutoff), calculator=calculator
+        d=d, config=pq.Config(cutoff=cutoff), connector=connector
     )
     state = simulator.execute(program).state
 

@@ -20,12 +20,12 @@ import numpy as np
 from piquasso._math.permanent import permanent
 from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
 
-from ..calculator import BuiltinCalculator
+from ..connector import BuiltinConnector
 
 from .interferometer import calculate_interferometer_on_fock_space
 
 
-class NumpyCalculator(BuiltinCalculator):
+class NumpyConnector(BuiltinConnector):
     """The calculations for a simulation using NumPy (and SciPy).
 
     This is enabled by default in the built-in simulators.

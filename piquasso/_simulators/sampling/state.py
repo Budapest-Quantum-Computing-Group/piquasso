@@ -23,7 +23,7 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState
 from piquasso.api.state import State
 from piquasso.api.exceptions import PiquassoException
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from .utils import (
     calculate_state_vector,
@@ -33,15 +33,15 @@ from .utils import (
 
 class SamplingState(State):
     def __init__(
-        self, d: int, calculator: BaseCalculator, config: Optional[Config] = None
+        self, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
         """
         Args:
             d (int): The number of modes.
-            calculator (BaseCalculator): Instance containing calculation functions.
+            connector (BaseConnector): Instance containing calculation functions.
             config (Config): Instance containing constants for the simulation.
         """
-        super().__init__(calculator=calculator, config=config)
+        super().__init__(connector=connector, config=config)
 
         self._d = d
 
@@ -105,7 +105,7 @@ class SamplingState(State):
                 interferometer=self.interferometer,
                 input=input_occupation_number,
                 output=np.array(occupation_number),
-                calculator=self._calculator,
+                connector=self._connector,
             )
             coefficient = self._coefficients[index]
 
@@ -115,9 +115,9 @@ class SamplingState(State):
 
     @property
     def state_vector(self):
-        calculator = self._calculator
-        np = calculator.np
-        fallback_np = calculator.fallback_np
+        connector = self._connector
+        np = connector.np
+        fallback_np = connector.fallback_np
 
         particle_numbers = fallback_np.sum(self._occupation_numbers, axis=1)
 
@@ -138,12 +138,12 @@ class SamplingState(State):
             input_state = self._occupation_numbers[index]
 
             partial_state_vector = calculate_state_vector(
-                self.interferometer, input_state, self._config, self._calculator
+                self.interferometer, input_state, self._config, self._connector
             )
 
             index = fallback_np.arange(starting_index, ending_index)
 
-            state_vector = calculator.assign(
+            state_vector = connector.assign(
                 state_vector,
                 index,
                 state_vector[index] + coefficient * partial_state_vector,
@@ -159,7 +159,7 @@ class SamplingState(State):
 
     @property
     def fock_probabilities(self) -> np.ndarray:
-        np = self._calculator.np
+        np = self._connector.np
 
         state_vector = self.state_vector
 

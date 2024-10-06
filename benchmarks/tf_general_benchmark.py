@@ -62,7 +62,7 @@ def piquasso_benchmark(benchmark, d, interferometer, alpha, r, xi):
                 pq.Q(i) | pq.Kerr(xi)
 
         simulator_fock = pq.PureFockSimulator(
-            d=d, config=pq.Config(cutoff=d), calculator=pq.TensorflowCalculator()
+            d=d, config=pq.Config(cutoff=d), connector=pq.TensorflowConnector()
         )
 
         with tf.GradientTape() as tape:

@@ -17,10 +17,10 @@ import numpy as np
 
 from functools import partial
 
-from ..calculator import BuiltinCalculator
+from ..connector import BuiltinConnector
 
 
-class JaxCalculator(BuiltinCalculator):
+class JaxConnector(BuiltinConnector):
     """The calculations for a simulation using JAX.
 
     Example usage::
@@ -30,12 +30,12 @@ class JaxCalculator(BuiltinCalculator):
         from jax import jit, grad
 
         def example_func(r, theta):
-            jax_calculator = pq.JaxCalculator()
+            jax_connector = pq.JaxConnector()
 
             simulator = pq.PureFockSimulator(
                 d=2,
                 config=pq.Config(cutoff=5, dtype=np.float32, normalize=False),
-                calculator=jax_calculator,
+                connector=jax_connector,
             )
 
             with pq.Program() as program:

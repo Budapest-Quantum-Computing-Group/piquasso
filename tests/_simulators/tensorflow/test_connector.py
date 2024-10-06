@@ -20,11 +20,11 @@ import pytest
 
 
 @pytest.fixture
-def raise_ImportError_when_importing_jax():
+def raise_ImportError_when_importing_tensorflow():
     real_import = builtins.__import__
 
     def fake_import(name, globals, locals, fromlist, level):
-        if name == "jax":
+        if name == "tensorflow":
             raise ImportError()
 
         return real_import(name, globals, locals, fromlist, level)
@@ -37,49 +37,49 @@ def raise_ImportError_when_importing_jax():
 
 
 @pytest.fixture
-def unimport_jax():
+def unimport_tensorflow():
     """
-    Deletes `jax` from `sys.modules`.
+    Deletes `tensorflow` from `sys.modules`.
     """
 
-    if "jax" in sys.modules:
-        del sys.modules["jax"]
+    if "tensorflow" in sys.modules:
+        del sys.modules["tensorflow"]
 
 
-def test_jaxCalculator_imports_jax_if_installed():
+def test_TensorflowConnector_imports_tensorflow_if_installed():
     import piquasso as pq
 
-    pq.JaxCalculator()
+    pq.TensorflowConnector()
 
-    assert "jax" in sys.modules
+    assert "tensorflow" in sys.modules
 
 
-def test_jaxCalculator_raises_ImportError_if_jax_not_installed(
-    raise_ImportError_when_importing_jax,
+def test_TensorflowConnector_raises_ImportError_if_TensorFlow_not_installed(
+    raise_ImportError_when_importing_tensorflow,
 ):
     import piquasso as pq
 
     with pytest.raises(ImportError) as error:
-        pq.JaxCalculator()
+        pq.TensorflowConnector()
 
     assert error.value.args[0] == (
-        "You have invoked a feature which requires 'jax'.\n"
-        "You can install JAX via:\n"
+        "You have invoked a feature which requires 'tensorflow'.\n"
+        "You can install tensorflow via:\n"
         "\n"
-        "pip install piquasso[jax]"
+        "pip install piquasso[tensorflow]"
     )
 
 
-def test_importing_Piquasso_does_not_import_jax(unimport_jax):
+def test_importing_Piquasso_does_not_import_tensorflow(unimport_tensorflow):
     import piquasso as pq  # noqa: F401
 
-    assert "jax" not in sys.modules
+    assert "tensorflow" not in sys.modules
 
 
-def test_Piquasso_works_without_jax(
-    unimport_jax,
-    raise_ImportError_when_importing_jax,
+def test_Piquasso_works_without_TensorFlow(
+    unimport_tensorflow,
+    raise_ImportError_when_importing_tensorflow,
 ):
     import piquasso as pq  # noqa: F401
 
-    assert "jax" not in sys.modules
+    assert "tensorflow" not in sys.modules

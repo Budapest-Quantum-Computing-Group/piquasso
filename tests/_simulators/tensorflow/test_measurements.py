@@ -19,8 +19,8 @@ import numpy as np
 
 
 def test_PostSelectPhotons_gradient():
-    def _calculate_loss(weights, calculator, state_vector):
-        np = calculator.np
+    def _calculate_loss(weights, connector, state_vector):
+        np = connector.np
 
         with pq.Program() as preparation:
             pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
@@ -48,7 +48,7 @@ def test_PostSelectPhotons_gradient():
             )
 
         simulator = pq.PureFockSimulator(
-            d=3, config=pq.Config(cutoff=4), calculator=calculator
+            d=3, config=pq.Config(cutoff=4), connector=connector
         )
 
         state = simulator.execute(program).state
@@ -58,7 +58,7 @@ def test_PostSelectPhotons_gradient():
         density_matrix = state.density_matrix[:3, :3]
 
         expected_state = np.copy(state_vector)
-        expected_state = calculator.assign(expected_state, 2, -expected_state[2])
+        expected_state = connector.assign(expected_state, 2, -expected_state[2])
 
         loss = 1 - np.sqrt(
             np.real(np.conj(expected_state) @ density_matrix @ expected_state)
@@ -66,7 +66,7 @@ def test_PostSelectPhotons_gradient():
 
         return loss
 
-    calculator = pq.TensorflowCalculator()
+    connector = pq.TensorflowConnector()
 
     weights = tf.Variable(
         [np.pi, 0.0, 0.0, np.pi / 8, 65.5302 * 2 * np.pi / 360, -np.pi / 8, 0, 0, 0]
@@ -75,7 +75,7 @@ def test_PostSelectPhotons_gradient():
     with tf.GradientTape() as tape:
         loss = _calculate_loss(
             weights=weights,
-            calculator=calculator,
+            connector=connector,
             state_vector=np.sqrt([0.2, 0.3, 0.5]),
         )
 
@@ -87,8 +87,8 @@ def test_PostSelectPhotons_gradient():
 
 
 def test_ImperfectPostSelectPhotons_gradient():
-    def _calculate_loss(weights, calculator, state_vector):
-        np = calculator.np
+    def _calculate_loss(weights, connector, state_vector):
+        np = connector.np
 
         with pq.Program() as preparation:
             pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
@@ -124,7 +124,7 @@ def test_ImperfectPostSelectPhotons_gradient():
             )
 
         simulator = pq.PureFockSimulator(
-            d=3, config=pq.Config(cutoff=4), calculator=calculator
+            d=3, config=pq.Config(cutoff=4), connector=connector
         )
 
         state = simulator.execute(program).state
@@ -134,7 +134,7 @@ def test_ImperfectPostSelectPhotons_gradient():
         density_matrix = state.density_matrix[:3, :3]
 
         expected_state = np.copy(state_vector)
-        expected_state = calculator.assign(expected_state, 2, -expected_state[2])
+        expected_state = connector.assign(expected_state, 2, -expected_state[2])
 
         loss = 1 - np.sqrt(
             np.real(np.conj(expected_state) @ density_matrix @ expected_state)
@@ -142,7 +142,7 @@ def test_ImperfectPostSelectPhotons_gradient():
 
         return loss
 
-    calculator = pq.TensorflowCalculator()
+    connector = pq.TensorflowConnector()
 
     weights = tf.Variable(
         [np.pi, 0.0, 0.0, np.pi / 8, 65.5302 * 2 * np.pi / 360, -np.pi / 8, 0, 0, 0]
@@ -151,7 +151,7 @@ def test_ImperfectPostSelectPhotons_gradient():
     with tf.GradientTape() as tape:
         loss = _calculate_loss(
             weights=weights,
-            calculator=calculator,
+            connector=connector,
             state_vector=np.sqrt([0.2, 0.3, 0.5]),
         )
 

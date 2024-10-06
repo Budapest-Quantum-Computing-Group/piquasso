@@ -54,15 +54,15 @@ from typing import Optional
 
 
 class _PassiveLinearGate(Gate):
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         raise NotImplementedError("Symplectic matrix passive block is not specified.")
 
 
 class _ActiveLinearGate(Gate):
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         raise NotImplementedError("Symplectic matrix passive block is not specified.")
 
-    def _get_active_block(self, calculator, config):
+    def _get_active_block(self, connector, config):
         raise NotImplementedError("Symplectic matrix active block is not specified.")
 
 
@@ -107,7 +107,7 @@ class Interferometer(_PassiveLinearGate):
 
         super().__init__(params=dict(matrix=matrix))
 
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         return self._params["matrix"]
 
 
@@ -161,8 +161,8 @@ class Beamsplitter(_PassiveLinearGate):
             ),
         )
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         theta = self._params["theta"]
         phi = self._params["phi"]
@@ -199,8 +199,8 @@ class Beamsplitter5050(_PassiveLinearGate):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         return np.array(
             [
@@ -243,8 +243,8 @@ class Phaseshifter(_PassiveLinearGate):
             params=dict(phi=phi),
         )
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         phi = self._params["phi"]
 
@@ -287,8 +287,8 @@ class MachZehnder(_PassiveLinearGate):
             params=dict(int_=int_, ext=ext),
         )
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         int_ = self._params["int_"]
         ext = self._params["ext"]
@@ -297,7 +297,7 @@ class MachZehnder(_PassiveLinearGate):
         return (
             1
             / 2
-            * calculator.np.array(
+            * connector.np.array(
                 [
                     [ext_phase * (int_phase - 1), 1j * (int_phase + 1)],
                     [1j * ext_phase * (int_phase + 1), 1 - int_phase],
@@ -339,8 +339,8 @@ class Fourier(_PassiveLinearGate):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_passive_block(self, calculator, config):
-        return calculator.np.array([[1j]], dtype=config.complex_dtype)
+    def _get_passive_block(self, connector, config):
+        return connector.np.array([[1j]], dtype=config.complex_dtype)
 
 
 class GaussianTransform(_ActiveLinearGate):
@@ -385,10 +385,10 @@ class GaussianTransform(_ActiveLinearGate):
 
         super().__init__(params=dict(passive=passive, active=active))
 
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         return self._params["passive"]
 
-    def _get_active_block(self, calculator, config):
+    def _get_active_block(self, connector, config):
         return self._params["active"]
 
 
@@ -430,15 +430,15 @@ class Squeezing(_ActiveLinearGate):
         """
         super().__init__(params=dict(r=r, phi=phi))
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         r = self.params["r"]
 
         return np.array([[np.cosh(r)]], dtype=config.complex_dtype)
 
-    def _get_active_block(self, calculator, config):
-        np = calculator.np
+    def _get_active_block(self, connector, config):
+        np = connector.np
 
         r = self.params["r"]
         phi = self.params["phi"]
@@ -471,15 +471,15 @@ class QuadraticPhase(_ActiveLinearGate):
     def __init__(self, s: float) -> None:
         super().__init__(params=dict(s=s))
 
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array([[1 + s / 2 * 1j]], dtype=config.complex_dtype)
+        return connector.np.array([[1 + s / 2 * 1j]], dtype=config.complex_dtype)
 
-    def _get_active_block(self, calculator, config):
+    def _get_active_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array([[s / 2 * 1j]], dtype=config.complex_dtype)
+        return connector.np.array([[s / 2 * 1j]], dtype=config.complex_dtype)
 
 
 class Squeezing2(_ActiveLinearGate):
@@ -513,8 +513,8 @@ class Squeezing2(_ActiveLinearGate):
         """
         super().__init__(params=dict(r=r, phi=phi))
 
-    def _get_passive_block(self, calculator, config):
-        np = calculator.np
+    def _get_passive_block(self, connector, config):
+        np = connector.np
 
         r = self._params["r"]
 
@@ -526,8 +526,8 @@ class Squeezing2(_ActiveLinearGate):
             dtype=config.complex_dtype,
         )
 
-    def _get_active_block(self, calculator, config):
-        np = calculator.np
+    def _get_active_block(self, connector, config):
+        np = connector.np
 
         r = self._params["r"]
         phi = self._params["phi"]
@@ -567,10 +567,10 @@ class ControlledX(_ActiveLinearGate):
     def __init__(self, s: float):
         super().__init__(params=dict(s=s))
 
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array(
+        return connector.np.array(
             [
                 [1, -s / 2],
                 [s / 2, 1],
@@ -578,10 +578,10 @@ class ControlledX(_ActiveLinearGate):
             dtype=config.complex_dtype,
         )
 
-    def _get_active_block(self, calculator, config):
+    def _get_active_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array(
+        return connector.np.array(
             [
                 [0, s / 2],
                 [s / 2, 0],
@@ -616,10 +616,10 @@ class ControlledZ(_ActiveLinearGate):
     def __init__(self, s: float):
         super().__init__(params=dict(s=s))
 
-    def _get_passive_block(self, calculator, config):
+    def _get_passive_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array(
+        return connector.np.array(
             [
                 [1, 1j * (s / 2)],
                 [1j * (s / 2), 1],
@@ -627,10 +627,10 @@ class ControlledZ(_ActiveLinearGate):
             dtype=config.complex_dtype,
         )
 
-    def _get_active_block(self, calculator, config):
+    def _get_active_block(self, connector, config):
         s = self._params["s"]
 
-        return calculator.np.array(
+        return connector.np.array(
             [
                 [0, 1j * (s / 2)],
                 [1j * (s / 2), 0],

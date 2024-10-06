@@ -37,7 +37,7 @@ with pq.Program() as program:
     pq.Q(all) | pq.Kerr(xi)
 
 simulator_fock = pq.PureFockSimulator(
-    d=d, config=pq.Config(cutoff=d), calculator=pq.TensorflowCalculator()
+    d=d, config=pq.Config(cutoff=d), connector=pq.TensorflowConnector()
 )
 
 with tf.GradientTape() as tape:

@@ -22,7 +22,7 @@ from jax import grad, jit
 
 def test_mean_photon_number_gradient():
     def func(r):
-        simulator = pq.GaussianSimulator(d=2, calculator=pq.JaxCalculator())
+        simulator = pq.GaussianSimulator(d=2, connector=pq.JaxConnector())
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()
@@ -47,7 +47,7 @@ def test_mean_photon_number_gradient():
 
 def test_variance_photon_number_gradient():
     def func(r):
-        simulator = pq.GaussianSimulator(d=2, calculator=pq.JaxCalculator())
+        simulator = pq.GaussianSimulator(d=2, connector=pq.JaxConnector())
 
         with pq.Program() as program:
             pq.Q() | pq.Vacuum()

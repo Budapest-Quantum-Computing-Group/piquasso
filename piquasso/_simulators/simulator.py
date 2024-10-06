@@ -16,39 +16,39 @@
 from typing import Optional, List, Type
 
 from piquasso.api.config import Config
-from piquasso.api.calculator import BaseCalculator
+from piquasso.api.connector import BaseConnector
 
 from piquasso.api.simulator import Simulator
 from piquasso.api.exceptions import InvalidSimulation
 
-from .calculators.calculator import BuiltinCalculator
+from .connectors.connector import BuiltinConnector
 
 
 class BuiltinSimulator(Simulator):
-    _extra_builtin_calculators: List[Type[BaseCalculator]] = []
+    _extra_builtin_connectors: List[Type[BaseConnector]] = []
 
     def __init__(
         self,
         d: int,
         config: Optional[Config] = None,
-        calculator: Optional[BaseCalculator] = None,
+        connector: Optional[BaseConnector] = None,
     ) -> None:
-        if calculator is not None:
-            self._validate_calculator(calculator)
+        if connector is not None:
+            self._validate_connector(connector)
 
-        super().__init__(d=d, config=config, calculator=calculator)
+        super().__init__(d=d, config=config, connector=connector)
 
-    def _validate_calculator(self, calculator):
+    def _validate_connector(self, connector):
         if (
-            isinstance(calculator, BuiltinCalculator)
-            and not isinstance(calculator, self._default_calculator_class)
+            isinstance(connector, BuiltinConnector)
+            and not isinstance(connector, self._default_connector_class)
             and not any(
-                [isinstance(calculator, cls) for cls in self._extra_builtin_calculators]
+                [isinstance(connector, cls) for cls in self._extra_builtin_connectors]
             )
         ):
             raise InvalidSimulation(
-                f"The calculator '{calculator}' is not supported."
-                f"Supported calculators:"
+                f"The connector '{connector}' is not supported."
+                f"Supported connectors:"
                 "\n"
-                f"{[self._default_calculator_class] + self._extra_builtin_calculators}"
+                f"{[self._default_connector_class] + self._extra_builtin_connectors}"
             )

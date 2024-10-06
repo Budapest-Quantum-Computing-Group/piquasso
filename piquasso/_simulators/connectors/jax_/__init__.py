@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .numpy_ import NumpyCalculator
-from .tensorflow_ import TensorflowCalculator
-from .jax_ import JaxCalculator
+
+from .connector import JaxConnector
 
 
-__all__ = ["NumpyCalculator", "TensorflowCalculator", "JaxCalculator"]
+__all__ = ["JaxConnector"]

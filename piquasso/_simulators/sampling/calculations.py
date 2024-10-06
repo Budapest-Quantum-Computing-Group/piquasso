@@ -69,7 +69,7 @@ def passive_linear(
     """
     _apply_matrix_on_modes(
         state=state,
-        matrix=instruction._get_passive_block(state._calculator, state._config),
+        matrix=instruction._get_passive_block(state._connector, state._config),
         modes=instruction.modes,
     )
 
@@ -79,13 +79,13 @@ def passive_linear(
 def _apply_matrix_on_modes(
     state: SamplingState, matrix: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
-    calculator = state._calculator
-    np = calculator.np
-    fallback_np = calculator.fallback_np
+    connector = state._connector
+    np = connector.np
+    fallback_np = connector.fallback_np
 
     embedded = np.identity(len(state.interferometer), dtype=state._config.complex_dtype)
 
-    embedded = calculator.assign(embedded, fallback_np.ix_(modes, modes), matrix)
+    embedded = connector.assign(embedded, fallback_np.ix_(modes, modes), matrix)
 
     state.interferometer = embedded @ state.interferometer
 
@@ -155,7 +155,7 @@ def particle_number_measurement(
 
     if not state.is_lossy:
         calculate_permanent = partial(
-            state._calculator.permanent, matrix=state.interferometer
+            state._connector.permanent, matrix=state.interferometer
         )
         samples = generate_lossless_samples(
             initial_state, shots, calculate_permanent, state._config.rng
@@ -164,7 +164,7 @@ def particle_number_measurement(
         uniform_transmission_probability = singular_values[0] ** 2
 
         calculate_permanent = partial(
-            state._calculator.permanent, matrix=state.interferometer
+            state._connector.permanent, matrix=state.interferometer
         )
 
         samples = generate_uniform_lossy_samples(
@@ -179,7 +179,7 @@ def particle_number_measurement(
         samples = generate_lossy_samples(
             initial_state,
             shots,
-            state._calculator.permanent,
+            state._connector.permanent,
             interferometer_svd,
             state._config.rng,
         )

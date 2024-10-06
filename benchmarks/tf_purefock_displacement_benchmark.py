@@ -33,7 +33,7 @@ def piquasso_benchmark(benchmark, cutoff, d):
     def func():
         r = tf.Variable(0.05)
         simulator = pq.PureFockSimulator(
-            d=d, config=pq.Config(cutoff=cutoff), calculator=pq.TensorflowCalculator()
+            d=d, config=pq.Config(cutoff=cutoff), connector=pq.TensorflowConnector()
         )
 
         with tf.GradientTape() as tape:
