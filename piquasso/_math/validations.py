@@ -26,6 +26,14 @@ def all_natural(array: Iterable) -> bool:
     return all(is_natural(number) for number in array)
 
 
+def is_zero_or_one(number: Union[int, float]) -> bool:
+    return bool(np.isclose(number, 0.0) or np.isclose(number, 1.0))
+
+
+def all_zero_or_one(array: Iterable) -> bool:
+    return all(is_zero_or_one(number) for number in array)
+
+
 def all_real_and_positive(vector: Iterable) -> bool:
     return all(element >= 0.0 or np.isclose(element, 0.0) for element in vector)
 

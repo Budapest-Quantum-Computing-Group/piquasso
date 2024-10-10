@@ -19,6 +19,7 @@ One can access all the instructions and states from here as attributes.
 """
 
 from piquasso import cvqnn
+from piquasso import fermionic
 
 from piquasso.api.mode import Q
 from piquasso.api.config import Config
@@ -44,6 +45,7 @@ from piquasso._simulators.fock import (
     FockSimulator,
     PureFockSimulator,
 )
+
 from piquasso._simulators.connectors import (
     NumpyConnector,
     TensorflowConnector,
@@ -181,6 +183,7 @@ __all__ = [
     "BatchApply",
     # Modules
     "cvqnn",
+    "fermionic",
 ]
 
 __version__ = "4.0.0"
