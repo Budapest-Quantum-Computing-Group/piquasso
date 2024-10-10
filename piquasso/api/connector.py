@@ -19,8 +19,6 @@ from typing import Any, Tuple
 
 import numpy
 
-from piquasso.api.exceptions import NotImplementedCalculation
-
 
 class BaseConnector(abc.ABC):
     """The base class for encapsulating a framework.
@@ -58,17 +56,19 @@ class BaseConnector(abc.ABC):
 
         return self
 
+    @abc.abstractmethod
     def preprocess_input_for_custom_gradient(self, value):
         """
         Applies modifications to inputs in custom gradients.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def permanent(
         self, matrix: numpy.ndarray, rows: Tuple[int, ...], columns: Tuple[int, ...]
     ) -> float:
-        raise NotImplementedCalculation()
+        """Calculates the permanent of a matrix with row and column repetitions."""
 
+    @abc.abstractmethod
     def hafnian(self, matrix: numpy.ndarray, reduce_on: numpy.ndarray) -> float:
         r"""Calculates the hafnian of a matrix with prescribed reduction array.
 
@@ -83,8 +83,8 @@ class BaseConnector(abc.ABC):
         Returns:
             float: The hafnian of the matrix.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def loop_hafnian(
         self, matrix: numpy.ndarray, diagonal: numpy.ndarray, reduce_on: numpy.ndarray
     ) -> float:
@@ -103,36 +103,37 @@ class BaseConnector(abc.ABC):
         Returns:
             float: The hafnian of the matrix.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def assign(self, array, index, value):
         """Item assignment."""
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def scatter(self, indices, updates, shape):
         """Filling an array of a given shape with the given indices and update values.
 
         Equivalent to :func:`tf.scatter_nd`.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def embed_in_identity(self, matrix, indices, dim):
-        raise NotImplementedCalculation()
+        """Embeds a matrix in identity."""
 
+    @abc.abstractmethod
     def block(self, arrays):
         """Assembling submatrices into a single matrix.
 
         Equivalent to :func:`numpy.block`.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def block_diag(self, *arrs):
         """Putting together matrices as a block diagonal matrix.
 
         Equivalent to :func:`scipy.linalg.block_diag`.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def polar(self, matrix, side="right"):
         """Polar decomposition.
 
@@ -142,8 +143,8 @@ class BaseConnector(abc.ABC):
             matrix (numpy.ndarray): The input matrix
             side (str, optional): The order of the decomposition. Defaults to "right".
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def logm(self, matrix):
         """Matrix logarithm.
 
@@ -153,8 +154,7 @@ class BaseConnector(abc.ABC):
             matrix (numpy.ndarray): The input matrix.
         """
 
-        raise NotImplementedCalculation()
-
+    @abc.abstractmethod
     def expm(self, matrix):
         """Matrix exponential.
 
@@ -163,8 +163,8 @@ class BaseConnector(abc.ABC):
         Args:
             matrix (numpy.ndarray): The input matrix.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def powm(self, matrix, power):
         """Matrix power.
 
@@ -173,48 +173,48 @@ class BaseConnector(abc.ABC):
         Args:
             matrix (numpy.ndarray): The input matrix.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def custom_gradient(self, func):
         """Custom gradient wrapper.
 
         Args:
             func: The function for which custom gradient is defined.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def accumulator(self, dtype, size, **kwargs):
         """Datatype to collect NumPy arrays.
 
         Common generalization of a Python list and
         `tf.TensorArray <https://www.tensorflow.org/api_docs/python/tf/TensorArray>`_.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def write_to_accumulator(self, accumulator, index, value):
         """Append an element to the accumulator.
 
         Common generalization of a Python list appending and
         `tf.TensorArray.write <https://www.tensorflow.org/api_docs/python/tf/TensorArray#write>`_.
         """  # noqa: E501
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def stack_accumulator(self, accumulator):
         """Stack elements in the accumulator.
 
         Common generalization of :func:`numpy.stack` and
         `tf.TensorArray.stack <https://www.tensorflow.org/api_docs/python/tf/TensorArray#stack>`_.
         """  # noqa: E501
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def decorator(self, func):
         """Decorates heavy computations in Piquasso.
 
         Args:
             func: Function to decorate.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def gather_along_axis_1(self, array, indices):
         """Gathering values along axis 1 of a matrix.
 
@@ -222,16 +222,16 @@ class BaseConnector(abc.ABC):
             Gather along axis 1 was terribly slow in Tensorflow, see
             https://github.com/tensorflow/ranking/issues/160.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def transpose(self, matrix):
         """Matrix transposition.
 
         Args:
             matrix (numpy.ndarray): The input matrix.
         """
-        raise NotImplementedCalculation()
 
+    @abc.abstractmethod
     def calculate_interferometer_on_fock_space(self, interferometer, helper_indices):
         """Calculates the interferometer unitary matrix on the Fock space.
 
@@ -243,4 +243,3 @@ class BaseConnector(abc.ABC):
             All the n-particle unitary matrices corresponding to the interferometer up
             to cutoff.
         """
-        raise NotImplementedCalculation()
