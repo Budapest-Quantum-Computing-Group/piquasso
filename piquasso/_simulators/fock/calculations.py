@@ -29,8 +29,8 @@ from piquasso.api.result import Result
 from piquasso.api.exceptions import InvalidInstruction, InvalidParameter
 
 from piquasso._math.fock import (
-    cutoff_cardinality,
-    cutoff_cardinality_array,
+    cutoff_fock_space_dim,
+    cutoff_fock_space_dim_array,
     operator_basis,
     get_fock_space_basis,
     nb_get_fock_space_basis,
@@ -116,7 +116,7 @@ def calculate_state_index_matrix_list(d, cutoff, mode):
 
     state_index_matrix_list = []
 
-    indices = cutoff_cardinality_array(cutoff=np.arange(cutoff + 1), d=d - 1)
+    indices = cutoff_fock_space_dim_array(cutoff=np.arange(cutoff + 1), d=d - 1)
 
     for n in range(cutoff):
         limit = cutoff - n
@@ -148,7 +148,7 @@ def calculate_state_index_matrix_list(d, cutoff, mode):
 def calculate_interferometer_helper_indices(d, cutoff):
     space = nb_get_fock_space_basis(d=d, cutoff=cutoff)
 
-    indices = cutoff_cardinality_array(cutoff=np.arange(1, cutoff + 1), d=d)
+    indices = cutoff_fock_space_dim_array(cutoff=np.arange(1, cutoff + 1), d=d)
 
     subspace_index_tensor = []
 
@@ -227,8 +227,8 @@ def calculate_index_list_for_appling_interferometer(
     subspace = get_fock_space_basis(d=len(modes), cutoff=cutoff)
     auxiliary_subspace = get_fock_space_basis(d=d - len(modes), cutoff=cutoff)
 
-    indices = cutoff_cardinality_array(cutoff=np.arange(cutoff + 1), d=len(modes))
-    auxiliary_indices = cutoff_cardinality_array(
+    indices = cutoff_fock_space_dim_array(cutoff=np.arange(cutoff + 1), d=len(modes))
+    auxiliary_indices = cutoff_fock_space_dim_array(
         cutoff=np.arange(cutoff + 1), d=d - len(modes)
     )
     auxiliary_modes = get_auxiliary_modes(d, modes)
@@ -258,7 +258,7 @@ def get_projection_operator_indices(d, cutoff, modes, basis_vector):
 
     boxes = d - len(modes)
 
-    card = cutoff_cardinality(cutoff=new_cutoff, d=boxes)
+    card = cutoff_fock_space_dim(cutoff=new_cutoff, d=boxes)
 
     basis = np.empty(shape=(card, d), dtype=int)
 

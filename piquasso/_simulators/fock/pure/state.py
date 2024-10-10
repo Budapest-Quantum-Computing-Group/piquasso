@@ -21,7 +21,7 @@ from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.connector import BaseConnector
 
-from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis
+from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
 from piquasso._math.linalg import vector_absolute_square
 from piquasso._math.indices import (
     get_index_in_fock_space,
@@ -63,11 +63,11 @@ class PureFockState(BaseFockState):
         self.state_vector = self._get_empty()
 
     def _get_empty_list(self) -> list:
-        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+        state_vector_size = cutoff_fock_space_dim(cutoff=self._config.cutoff, d=self.d)
         return [0.0] * state_vector_size
 
     def _get_empty(self) -> np.ndarray:
-        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+        state_vector_size = cutoff_fock_space_dim(cutoff=self._config.cutoff, d=self.d)
 
         return self._np.zeros(
             shape=(state_vector_size,), dtype=self._config.complex_dtype
@@ -111,7 +111,7 @@ class PureFockState(BaseFockState):
 
     @property
     def density_matrix(self) -> np.ndarray:
-        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
+        cardinality = cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff)
 
         state_vector = self.state_vector[:cardinality]
 
@@ -154,7 +154,7 @@ class PureFockState(BaseFockState):
 
         unordered_modes = fallback_np.concatenate([modes, auxiliary_modes])
 
-        card = cutoff_cardinality(d=auxiliary_d, cutoff=auxiliary_cutoff)
+        card = cutoff_fock_space_dim(d=auxiliary_d, cutoff=auxiliary_cutoff)
         auxiliary_basis = get_fock_space_basis(d=auxiliary_d, cutoff=auxiliary_cutoff)
 
         repeated_occupation_numbers = fallback_np.repeat(
@@ -225,7 +225,7 @@ class PureFockState(BaseFockState):
         relevant_column = self._space[:, mode]
 
         nonzero_indices_on_mode = (relevant_column > 0).nonzero()[0]
-        upper_index = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff - 1)
+        upper_index = cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff - 1)
 
         multipliers = fallback_np.sqrt(
             fallback_np.concatenate(

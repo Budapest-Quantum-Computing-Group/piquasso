@@ -19,9 +19,16 @@ import piquasso as pq
 
 import numpy as np
 
+from itertools import chain, combinations
+
+
 from piquasso._math.torontonian import torontonian, loop_torontonian
-from piquasso._math.combinatorics import powerset
 from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+
+
+def powerset(iterable):
+    s = list(iterable)
+    return chain.from_iterable(combinations(iterable, r) for r in range(len(s) + 1))
 
 
 def torontonian_naive(A: np.ndarray) -> complex:
@@ -70,9 +77,6 @@ def loop_torontonian_naive(A, gamma):
     """
 
     d = A.shape[0] // 2
-
-    from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
-    from piquasso._math.combinatorics import powerset
 
     T = from_xxpp_to_xpxp_transformation_matrix(d)
 

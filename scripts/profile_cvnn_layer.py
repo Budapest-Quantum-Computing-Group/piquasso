@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import piquasso as pq
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_fock_space_dim
 import tensorflow as tf
 import time
 import numpy as np
@@ -59,7 +59,7 @@ input = 0.01
 d = 2
 cutoff = 10
 
-target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex)
+target_state_vector = np.zeros(cutoff_fock_space_dim(cutoff=cutoff, d=d), dtype=complex)
 target_state_vector[1] = 1.0
 target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 
