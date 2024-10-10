@@ -101,7 +101,7 @@ class PureFockState(BaseFockState):
             [str(coefficient) + str(basis) for coefficient, basis in nonzero_elements]
         )
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return self._get_repr_for_single_state_vector(self.nonzero_elements)
 
     def __eq__(self, other: object) -> bool:

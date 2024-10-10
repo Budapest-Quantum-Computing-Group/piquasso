@@ -98,3 +98,6 @@ class State(abc.ABC):
         Returns:
             float: The probability of detection.
         """
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(d={self.d}, config={self._config}, connector={self._connector})"  # noqa: E501

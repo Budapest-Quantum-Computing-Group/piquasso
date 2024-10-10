@@ -182,7 +182,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         classname = self.__class__.__name__
 
-        return f"<pq.{classname}({params}{modes})>"
+        return f"{classname}({params}{modes})"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Instruction):

@@ -16,15 +16,8 @@
 import piquasso as pq
 
 
-def test_program_copy():
-    program = pq.Program()
-
-    program_copy = program.copy()
-
-    assert program_copy is not program
-
-
-def test_program_repr():
-    program = pq.Program()
-
-    assert repr(program) == "Program(instructions=[])"
+def test_State_repr(FakeState):
+    assert (
+        repr(FakeState(d=3, connector=pq.NumpyConnector()))
+        == "FakeState(d=3, config=Config(), connector=NumpyConnector())"
+    )

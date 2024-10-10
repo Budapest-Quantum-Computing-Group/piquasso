@@ -56,6 +56,9 @@ class BaseConnector(abc.ABC):
 
         return self
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
     @abc.abstractmethod
     def preprocess_input_for_custom_gradient(self, value):
         """

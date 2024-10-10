@@ -50,3 +50,18 @@ def test_BaseConnector_with_overriding_defaults():
     assert plugin_connector.loop_hafnian is plugin_loop_hafnian
 
     assert plugin_connector.loop_hafnian() == 43
+
+
+def test_BaseConnector_repr():
+
+    class PluginConnector(pq.api.connector.BaseConnector):
+        def __init__(self) -> None:
+            super().__init__()
+
+    p = patch.multiple(PluginConnector, __abstractmethods__=set())
+
+    p.start()
+    plugin_connector = PluginConnector()
+    p.stop()
+
+    assert repr(plugin_connector) == str(plugin_connector) == "PluginConnector()"

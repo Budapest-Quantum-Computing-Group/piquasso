@@ -104,7 +104,7 @@ def test_program_execution_with_unregistered_instruction_raises_InvalidSimulatio
     error_message = error.value.args[0]
 
     assert "No such instruction implemented for this simulator." in error_message
-    assert "instruction=<pq.ImproperInstruction(modes=())>" in error_message
+    assert "instruction=ImproperInstruction(modes=())" in error_message
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
         simulator.execute(program)
@@ -112,7 +112,7 @@ def test_program_execution_with_unregistered_instruction_raises_InvalidSimulatio
     error_message = error.value.args[0]
 
     assert "No such instruction implemented for this simulator." in error_message
-    assert "instruction=<pq.ImproperInstruction(modes=())>" in error_message
+    assert "instruction=ImproperInstruction(modes=())" in error_message
 
 
 def test_program_execution_with_wrong_instruction_order_raises_InvalidSimulation(
@@ -255,3 +255,10 @@ def test_Config_override(FakeSimulator, FakeConfig):
 
     assert isinstance(simulator.config, FakeConfig)
     assert isinstance(state._config, FakeConfig)
+
+
+def test_Simulator_repr(FakeSimulator):
+    assert (
+        repr(FakeSimulator(d=3))
+        == "FakeSimulator(d=3, config=Config(), connector=FakeConnector())"
+    )

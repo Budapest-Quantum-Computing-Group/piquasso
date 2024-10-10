@@ -39,7 +39,7 @@ class Result:
         )
 
     def __repr__(self) -> str:
-        return f"<Result samples={self.samples} state={self.state}>"
+        return f"Result(samples={self.samples}, state={self.state})"
 
     def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.

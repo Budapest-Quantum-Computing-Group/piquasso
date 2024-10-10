@@ -171,3 +171,6 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
             script += four_spaces + "pass"
 
         return script
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(instructions={self.instructions})"

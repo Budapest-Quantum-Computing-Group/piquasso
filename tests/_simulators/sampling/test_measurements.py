@@ -143,7 +143,7 @@ def test_multiple_StateVector_with_ParticleNumberMeasurement_raises_error():
         simulator.execute(program, shots=1)
 
     assert error.value.args[0] == (
-        "The instruction <pq.ParticleNumberMeasurement(modes=(0, 1, 2, 3, 4))> is "
+        "The instruction ParticleNumberMeasurement(modes=(0, 1, 2, 3, 4)) is "
         "not supported for states defined using multiple 'StateVector' instructions.\n"
         "If you need this feature to be implemented, please create an issue at "
         "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
