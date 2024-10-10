@@ -99,3 +99,70 @@ class BuiltinConnector(BaseConnector):
             )
 
         return subspace_representations
+
+    def pfaffian(self, matrix):
+        """
+        Lazy function for calculating the pfaffian.
+
+        Note:
+            There are faster algorithms, but this is fine for now.
+        """
+        if matrix.shape[0] % 2 == 1:
+            return 0.0
+
+        np = self.np
+
+        blocks, O = self.schur(matrix)
+        a = np.diag(blocks, 1)[::2]
+
+        return np.prod(a) * np.linalg.det(O)
+
+    def real_logm(self, matrix):
+        """Calculates the real logarithm of a matrix.
+
+        Note:
+            This function does not verify the existence of the real logarithm, and it
+            will return with a wrong result if such matrix is provided. Note also, that
+            this algorithm can certainly be made more efficient, but this is fine for
+            now.
+        """
+
+        np = self.np
+
+        eigvals, U = np.linalg.eig(matrix)
+
+        I = np.identity(2)
+        J = np.array([[0, 1], [-1, 0]])
+        WdJW = 1j * np.array([[1, 0], [0, -1]])
+
+        D = np.zeros_like(matrix, dtype=complex)
+
+        forbidden_indices = []
+
+        for index, eigval in enumerate(eigvals):
+            if index in forbidden_indices:
+                continue
+
+            if np.isclose(np.imag(eigval), 0.0) and eigval >= 0.0:
+                D = self.assign(D, (index, index), np.log(eigval))
+
+            else:
+                for conjugate_index, conjugate_eigval in enumerate(
+                    eigvals[index + 1 :]
+                ):
+                    if np.isclose(eigval.conj(), conjugate_eigval):
+                        break
+
+                forbidden_indices.append(index + conjugate_index + 1)
+
+                indices = np.ix_(*[np.array([index, index + conjugate_index + 1])] * 2)
+
+                r = np.abs(eigval)
+                phi = np.angle(eigval)
+
+                if np.isclose(np.imag(eigval), 0.0):
+                    D = self.assign(D, indices, np.log(r) * I + phi * J)
+                else:
+                    D = self.assign(D, indices, np.log(r) * I + phi * WdJW)
+
+        return U @ D @ np.linalg.inv(U)

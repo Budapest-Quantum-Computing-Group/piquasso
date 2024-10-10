@@ -7,4 +7,6 @@ extend-ignore =
         W605,
         # Ignoring whitespace after '(' or '[' for matrices
         E201,
-	E203
+	E203,
+        # Ignoring errors about ambiguous variable names like `I` or `O`
+        E741

@@ -23,7 +23,7 @@ from scipy.stats import unitary_group
 
 from pathlib import Path
 
-from scipy.linalg import polar, coshm, sinhm
+from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
@@ -70,6 +70,26 @@ def generate_random_positive_definite_matrix():
     def func(N):
         A = np.random.rand(N, N)
         return A @ A.transpose()
+
+    return func
+
+
+@pytest.fixture
+def generate_hermitian_matrix(generate_unitary_matrix):
+    def func(N):
+        U = generate_unitary_matrix(N)
+
+        return 1j * logm(U)
+
+    return func
+
+
+@pytest.fixture
+def generate_skew_symmetric_matrix(generate_unitary_matrix):
+    def func(N):
+        A = np.random.rand(N, N) + 1j * np.random.rand(N, N)
+
+        return A - A.T
 
     return func
 

@@ -98,3 +98,11 @@ To install Piquasso with JAX is done by
    advanced/cvqnn
    advanced/connectors
    advanced/decompositions
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Experimental:
+   :hidden:
+
+   experimental/fermionic

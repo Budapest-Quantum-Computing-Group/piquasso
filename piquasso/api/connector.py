@@ -246,3 +246,11 @@ class BaseConnector(abc.ABC):
             All the n-particle unitary matrices corresponding to the interferometer up
             to cutoff.
         """
+
+    @abc.abstractmethod
+    def pfaffian(self, matrix):
+        """Calculates the pfaffian of a matrix."""
+
+    @abc.abstractmethod
+    def real_logm(self, matrix):
+        """Calculates the real logarithm of a matrix."""
