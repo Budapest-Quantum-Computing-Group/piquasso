@@ -13,14 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import chain, combinations
-from typing import Tuple, Iterable, Iterator, TypeVar
-
 import numpy as np
 import numba as nb
 
 
-@nb.njit
+@nb.njit(cache=True)
 def arr_comb(n, k):
     n = np.where((n < 0) | (n < k), 0, n)
     prod = np.ones(n.shape, dtype=np.int64)
@@ -34,7 +31,7 @@ def arr_comb(n, k):
 
 @nb.njit(cache=True)
 def comb(n, k):
-    if n < 0 or n < k:
+    if n < 0 or k < 0 or n < k:
         return 0
 
     prod = 1
@@ -44,14 +41,6 @@ def comb(n, k):
         prod = prod // (i + 1)
 
     return prod
-
-
-_T = TypeVar("_T")
-
-
-def powerset(iterable: Iterable[_T]) -> Iterator[Tuple[_T, ...]]:
-    s = list(iterable)
-    return chain.from_iterable(combinations(iterable, r) for r in range(len(s) + 1))
 
 
 def is_even_permutation(permutation):
@@ -70,15 +59,30 @@ def is_even_permutation(permutation):
     return (length - cycles) % 2 == 0
 
 
-@nb.njit
-def partitions(boxes, particles):
+@nb.njit(cache=True)
+def partitions(boxes, particles, out=None):
+    r"""
+    Returns all the possible ways to put a specified number of particles in a specified
+    number of boxes in anti-lexicographic order.
+
+    Args:
+        boxes: Number of boxes.
+        particles: Number of particles.
+        out: Optional output array.
+    """
+
     positions = particles + boxes - 1
 
     if positions == -1 or boxes == 0:
         return np.empty((1, 0), dtype=np.int32)
 
     size = comb(positions, boxes - 1)
-    result = np.empty((size, boxes), dtype=np.int32)
+
+    if out is None:
+        result = np.empty((size, boxes), dtype=np.int32)
+    else:
+        result = out
+
     separators = np.arange(boxes - 1, dtype=np.int32)
     index = size - 1
 

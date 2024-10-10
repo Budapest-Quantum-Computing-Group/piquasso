@@ -21,7 +21,7 @@ from piquasso.api.connector import BaseConnector
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso._math.linalg import is_selfadjoint
-from piquasso._math.fock import cutoff_cardinality, get_fock_space_basis
+from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
 from piquasso._math.indices import (
     get_index_in_fock_space,
     get_index_in_fock_space_array,
@@ -53,7 +53,7 @@ class FockState(BaseFockState):
         self._density_matrix = self._get_empty()
 
     def _get_empty(self) -> np.ndarray:
-        state_vector_size = cutoff_cardinality(cutoff=self._config.cutoff, d=self.d)
+        state_vector_size = cutoff_fock_space_dim(cutoff=self._config.cutoff, d=self.d)
         return np.zeros(
             shape=(state_vector_size,) * 2, dtype=self._config.complex_dtype
         )
@@ -116,7 +116,7 @@ class FockState(BaseFockState):
 
     @property
     def density_matrix(self) -> np.ndarray:
-        cardinality = cutoff_cardinality(d=self.d, cutoff=self._config.cutoff)
+        cardinality = cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff)
 
         return self._density_matrix[:cardinality, :cardinality]
 
@@ -178,7 +178,7 @@ class FockState(BaseFockState):
         )
 
         for inner_basis in inner_space:
-            size = cutoff_cardinality(
+            size = cutoff_fock_space_dim(
                 cutoff=cutoff - fallback_np.sum(inner_basis), d=outer_size
             )
 

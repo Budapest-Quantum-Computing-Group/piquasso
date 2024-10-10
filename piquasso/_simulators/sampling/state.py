@@ -16,7 +16,7 @@
 from typing import Optional, List
 import numpy as np
 
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_fock_space_dim
 from piquasso._math.linalg import is_unitary
 
 from piquasso.api.config import Config
@@ -122,16 +122,16 @@ class SamplingState(State):
         particle_numbers = fallback_np.sum(self._occupation_numbers, axis=1)
 
         state_vector = np.zeros(
-            shape=cutoff_cardinality(d=self.d, cutoff=self._config.cutoff),
+            shape=cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff),
             dtype=self._config.complex_dtype,
         )
 
         for index in range(len(self._occupation_numbers)):
             particle_number = particle_numbers[index]
 
-            starting_index = cutoff_cardinality(d=self.d, cutoff=particle_number)
+            starting_index = cutoff_fock_space_dim(d=self.d, cutoff=particle_number)
 
-            ending_index = cutoff_cardinality(d=self.d, cutoff=particle_number + 1)
+            ending_index = cutoff_fock_space_dim(d=self.d, cutoff=particle_number + 1)
 
             coefficient = self._coefficients[index]
 

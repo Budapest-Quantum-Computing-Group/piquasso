@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import piquasso as pq
-from piquasso._math.fock import cutoff_cardinality
+from piquasso._math.fock import cutoff_fock_space_dim
 import tensorflow as tf
 import time
 import numpy as np
@@ -61,7 +61,7 @@ def create_layer_parameters(d: int):
 
 expected_mean_positions = 0.01 * np.random.rand(number_of_inputs)
 
-target_state_vector = np.zeros(cutoff_cardinality(cutoff=cutoff, d=d), dtype=complex)
+target_state_vector = np.zeros(cutoff_fock_space_dim(cutoff=cutoff, d=d), dtype=complex)
 target_state_vector[1] = 1.0
 target_state = tf.constant(target_state_vector, dtype=tf.complex128)
 

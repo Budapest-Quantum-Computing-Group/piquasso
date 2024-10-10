@@ -19,8 +19,7 @@ from typing import Tuple
 import numpy as np
 import numba as nb
 
-from scipy.special import comb
-from piquasso._math.combinatorics import comb as nb_comb
+from piquasso._math.combinatorics import comb
 
 from piquasso.api.config import Config
 from piquasso._math.combinatorics import partitions
@@ -37,44 +36,42 @@ from piquasso._math.indices import get_index_in_fock_space
 from piquasso.api.connector import BaseConnector
 
 
-@functools.lru_cache()
-def cutoff_cardinality(*, cutoff: int, d: int) -> int:
+@nb.njit(cache=True)
+def cutoff_fock_space_dim(cutoff: int, d: int) -> int:
     r"""
     Calculates the dimension of the cutoff Fock space with the relation
 
     ..math::
-        \sum_{i=0}^{c - 1} {d + i - 1 \choose i} = {d + c - 1 \choose c - 1}.
+        \sum_{i=0}^{c - 1} {d + i - 1 \choose i} = {d + c - 1 \choose d}.
     """
-    return comb(d + cutoff - 1, cutoff - 1, exact=True)
+    return comb(d + cutoff - 1, d)
 
 
-@nb.njit
-def cutoff_cardinality_array(cutoff, d):
+@nb.njit(cache=True)
+def cutoff_fock_space_dim_array(cutoff, d):
     ret = np.empty(cutoff.shape, dtype=np.int32)
 
     for i in range(len(cutoff)):
-        ret[i] = nb_comb(d + cutoff[i] - 1, d)
+        ret[i] = comb(d + cutoff[i] - 1, d)
 
     return ret
 
 
-def symmetric_subspace_cardinality_array(*, d: int, n: int) -> int:
-    return np.round(comb(d + n - 1, n)).astype(int)
+@nb.njit(cache=True)
+def symmetric_subspace_cardinality(d: int, n: int) -> int:
+    return comb(d + n - 1, n)
 
 
 @nb.njit(cache=True)
 def nb_get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
-    partitions_list = [partitions(boxes=d, particles=n) for n in range(cutoff)]
+    size = cutoff_fock_space_dim(cutoff=cutoff, d=d)
 
-    total_elements = 0
-    for part in partitions_list:
-        total_elements += part.shape[0]
-
-    ret = np.empty((total_elements, d), dtype=partitions_list[0].dtype)
+    ret = np.empty((size, d), dtype=np.int32)
     current_row = 0
-    for part in partitions_list:
-        num_rows = part.shape[0]
-        ret[current_row : current_row + num_rows, :] = part
+    for n in range(cutoff):
+        num_rows = symmetric_subspace_cardinality(d, n)
+        out = ret[current_row : current_row + num_rows, :]
+        _ = partitions(boxes=d, particles=n, out=out)
         current_row += num_rows
 
     return ret
@@ -161,7 +158,7 @@ def get_creation_operator(
     modes: Tuple[int, ...], space: np.ndarray, config: Config
 ) -> np.ndarray:
     d = len(space[0])
-    size = cutoff_cardinality(cutoff=config.cutoff, d=d)
+    size = cutoff_fock_space_dim(cutoff=config.cutoff, d=d)
     operator = np.zeros(shape=(size,) * 2, dtype=config.complex_dtype)
 
     for index, basis in enumerate(space):
