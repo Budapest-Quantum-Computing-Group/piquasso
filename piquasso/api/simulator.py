@@ -273,3 +273,6 @@ class Simulator(Computer, _mixins.CodeMixin):
         return self.execute_instructions(
             instructions, initial_state=initial_state, shots=shots
         )
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(d={self.d}, config={self.config}, connector={self._connector})"  # noqa: E501

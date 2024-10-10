@@ -19,41 +19,40 @@ import piquasso as pq
 
 
 def test_str_of_preparations():
-    assert str(pq.Vacuum()) == "<pq.Vacuum(modes=())>"
+    assert str(pq.Vacuum()) == "Vacuum(modes=())"
     assert (
         str(pq.StateVector([1, 2]))
-        == "<pq.StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=())>"
+        == "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=())"
     )
 
     assert (
         str(pq.StateVector([1, 2]).on_modes(0, 1))
-        == "<pq.StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1))>"
+        == "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1))"
     )
 
     assert (
         str(pq.StateVector([1, 2]).on_modes(0, 1) * 0.2)
-        == "<pq.StateVector(occupation_numbers=(1, 2), coefficient=0.2, modes=(0, 1))>"
+        == "StateVector(occupation_numbers=(1, 2), coefficient=0.2, modes=(0, 1))"
     )
 
 
 def test_str_of_gates():
     assert (
         str(pq.Phaseshifter(phi=np.pi / 3))
-        == "<pq.Phaseshifter(phi=1.0471975511965976, modes=())>"
+        == "Phaseshifter(phi=1.0471975511965976, modes=())"
     )
 
     assert (
         str(pq.Phaseshifter(phi=np.pi / 3).on_modes(1))
-        == "<pq.Phaseshifter(phi=1.0471975511965976, modes=(1,))>"
+        == "Phaseshifter(phi=1.0471975511965976, modes=(1,))"
     )
 
-    assert str(pq.Squeezing(r=1.0)) == "<pq.Squeezing(r=1.0, phi=0.0, modes=())>"
+    assert str(pq.Squeezing(r=1.0)) == "Squeezing(r=1.0, phi=0.0, modes=())"
     assert (
-        str(pq.Displacement(r=1.0, phi=0.5))
-        == "<pq.Displacement(r=1.0, phi=0.5, modes=())>"
+        str(pq.Displacement(r=1.0, phi=0.5)) == "Displacement(r=1.0, phi=0.5, modes=())"
     )
 
     assert (
         str(pq.Beamsplitter(theta=0.2, phi=0.3))
-        == "<pq.Beamsplitter(theta=0.2, phi=0.3, modes=())>"
+        == "Beamsplitter(theta=0.2, phi=0.3, modes=())"
     )

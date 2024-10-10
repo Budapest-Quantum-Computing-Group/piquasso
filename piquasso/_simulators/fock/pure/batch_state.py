@@ -62,7 +62,7 @@ class BatchPureFockState(PureFockState):
             for state_vector in self._batch_state_vectors
         ]
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         partial_strings = []
         for partial_nonzero_elements in self.nonzero_elements:
             partial_strings.append(

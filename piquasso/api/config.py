@@ -153,3 +153,6 @@ class Config(_mixins.CodeMixin):
         config_copy.rng = self.rng
 
         return config_copy
+
+    def __repr__(self):
+        return self._as_code()[3:]

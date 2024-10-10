@@ -101,7 +101,7 @@ class FockState(BaseFockState):
                 tuple(col_occupation_numbers[index]),
             )
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return " + ".join(
             [
                 str(coefficient) + str(basis)

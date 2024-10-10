@@ -55,8 +55,8 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
 
     assert error.value.args[0] == (
         "The occupation numbers '(1, 1, 1)' are not well-defined on '5' modes: "
-        "instruction=<pq.StateVector(occupation_numbers=(1, 1, 1), "
-        "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))>"
+        "instruction=StateVector(occupation_numbers=(1, 1, 1), "
+        "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))"
     )
 
 
