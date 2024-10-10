@@ -42,6 +42,8 @@ Most of the gates defined here are linear gates, which can be characterized by
 :math:`S_{(c)}` and :math:`d`.
 """
 
+import abc
+
 import numpy as np
 
 from piquasso.api.instruction import Gate
@@ -53,17 +55,26 @@ from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 from typing import Optional
 
 
-class _PassiveLinearGate(Gate):
+class _PassiveLinearGate(Gate, abc.ABC):
+    @abc.abstractmethod
     def _get_passive_block(self, connector, config):
-        raise NotImplementedError("Symplectic matrix passive block is not specified.")
+        """
+        The upper left (passive) block of the transformation.
+        """
 
 
-class _ActiveLinearGate(Gate):
+class _ActiveLinearGate(Gate, abc.ABC):
+    @abc.abstractmethod
     def _get_passive_block(self, connector, config):
-        raise NotImplementedError("Symplectic matrix passive block is not specified.")
+        """
+        The upper left (passive) block of the transformation.
+        """
 
+    @abc.abstractmethod
     def _get_active_block(self, connector, config):
-        raise NotImplementedError("Symplectic matrix active block is not specified.")
+        """
+        The upper right (active) block of the transformation.
+        """
 
 
 class Interferometer(_PassiveLinearGate):
@@ -639,7 +650,7 @@ class ControlledZ(_ActiveLinearGate):
         )
 
 
-class Displacement(_ActiveLinearGate):
+class Displacement(Gate):
     r"""Phase space displacement instruction.
 
     Evolves the ladder operators by
@@ -680,7 +691,7 @@ class Displacement(_ActiveLinearGate):
         super().__init__(params=dict(r=r, phi=phi))
 
 
-class PositionDisplacement(_ActiveLinearGate):
+class PositionDisplacement(Gate):
     r"""Position displacement gate. It affects only the :math:`\hat{x}` quadrature.
 
     Note:
@@ -697,7 +708,7 @@ class PositionDisplacement(_ActiveLinearGate):
         super().__init__(params=dict(x=x), extra_params=dict(r=x, phi=0.0))
 
 
-class MomentumDisplacement(_ActiveLinearGate):
+class MomentumDisplacement(Gate):
     r"""Momentum displacement gate. It only affects the :math:`\hat{p}` quadrature.
 
     Note:
