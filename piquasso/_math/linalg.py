@@ -42,6 +42,10 @@ def is_symmetric(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, matrix.transpose())
 
 
+def is_skew_symmetric(matrix: np.ndarray) -> bool:
+    return np.allclose(matrix, -matrix.transpose())
+
+
 def is_selfadjoint(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, matrix.conjugate().transpose())
 
