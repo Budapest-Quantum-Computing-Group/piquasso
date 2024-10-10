@@ -155,7 +155,7 @@ pip install -e ".[dev]"
 
 For document generation one should use
 ```
-pip install -e ".[doc]"
+pip install -e ".[docs]"
 ```
 and for running files under `benchmarks/` or `scripts/`, please issue
 ```
