@@ -17,12 +17,19 @@ import scipy
 
 import numpy as np
 
-from piquasso._math.permanent import permanent
+from piquasso._math.permanent import permanent as permanent_with_reduction
 from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
 
 from ..connector import BuiltinConnector
 
 from .interferometer import calculate_interferometer_on_fock_space
+
+
+def instancemethod(func):
+    def wrapped(self, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapped
 
 
 class NumpyConnector(BuiltinConnector):
@@ -31,26 +38,22 @@ class NumpyConnector(BuiltinConnector):
     This is enabled by default in the built-in simulators.
     """
 
-    def __init__(self):
-        self.np = np
-        self.fallback_np = np
-        self.forward_pass_np = np
-        self.block_diag = scipy.linalg.block_diag
-        self.block = np.block
-        self.logm = scipy.linalg.logm
-        self.expm = scipy.linalg.expm
-        self.powm = np.linalg.matrix_power
-        self.polar = scipy.linalg.polar
-        self.svd = np.linalg.svd
-        self.schur = scipy.linalg.schur
+    np = fallback_np = forward_pass_np = np
 
-        self.permanent = permanent
-        self.hafnian = hafnian_with_reduction
-        self.loop_hafnian = loop_hafnian_with_reduction
-
-        self.calculate_interferometer_on_fock_space = (
-            calculate_interferometer_on_fock_space
-        )
+    block_diag = instancemethod(scipy.linalg.block_diag)
+    block = instancemethod(np.block)
+    logm = instancemethod(scipy.linalg.logm)
+    expm = instancemethod(scipy.linalg.expm)
+    powm = instancemethod(np.linalg.matrix_power)
+    polar = instancemethod(scipy.linalg.polar)
+    svd = instancemethod(np.linalg.svd)
+    schur = instancemethod(scipy.linalg.schur)
+    permanent = instancemethod(permanent_with_reduction)
+    hafnian = instancemethod(hafnian_with_reduction)
+    loop_hafnian = instancemethod(loop_hafnian_with_reduction)
+    calculate_interferometer_on_fock_space = instancemethod(
+        calculate_interferometer_on_fock_space
+    )
 
     def sqrtm(self, matrix):
         return scipy.linalg.sqrtm(matrix).astype(np.complex128)

@@ -87,21 +87,11 @@ class JaxConnector(BuiltinConnector):
 
         config.update("jax_enable_x64", True)
 
-        from piquasso._math.jax.permanent import permanent_with_reduction
-
         self.np = jnp
         self._scipy = jax.scipy
+        self._jax = jax
         self.fallback_np = np
         self.forward_pass_np = jnp
-        self.block_diag = jax.scipy.linalg.block_diag
-        self.block = jnp.block
-        self.logm = partial(jax.scipy.linalg.funm, func=jnp.log)
-        self.expm = jax.scipy.linalg.expm
-        self.powm = jnp.linalg.matrix_power
-        self.sqrtm = jax.scipy.linalg.sqrtm
-        self.svd = jnp.linalg.svd
-        self.schur = jax.scipy.linalg.schur
-        self.permanent = permanent_with_reduction
 
     def preprocess_input_for_custom_gradient(self, value):
         return value
@@ -120,3 +110,38 @@ class JaxConnector(BuiltinConnector):
         # NOTE: The default QDWH algorithm does not support left polar decomposition
         # in `jax.scipy.linalg.polar`, so we have to switch to SVD.
         return self._scipy.linalg.polar(a, side, method="svd")
+
+    def block_diag(self, *args, **kwargs):
+        return self._scipy.linalg.block_diag(*args, **kwargs)
+
+    def block(self, *args, **kwargs):
+        return self.np.block(*args, **kwargs)
+
+    def logm(self, *args, **kwargs):
+        return partial(self._scipy.linalg.funm, func=self.np.log)(*args, **kwargs)
+
+    def expm(self, *args, **kwargs):
+        return self._scipy.linalg.expm(*args, **kwargs)
+
+    def powm(self, *args, **kwargs):
+        return self.np.linalg.matrix_power(*args, **kwargs)
+
+    def sqrtm(self, *args, **kwargs):
+        return self._scipy.linalg.sqrtm(*args, **kwargs)
+
+    def svd(self, *args, **kwargs):
+        return self.np.linalg.svd(*args, **kwargs)
+
+    def schur(self, *args, **kwargs):
+        return self._scipy.linalg.schur(*args, **kwargs)
+
+    def permanent(self, *args, **kwargs):
+        from piquasso._math.jax.permanent import permanent_with_reduction
+
+        return permanent_with_reduction(*args, **kwargs)
+
+    def hafnian(self, matrix, reduce_on):
+        raise NotImplementedError()
+
+    def loop_hafnian(self, matrix, diagonal, reduce_on):
+        raise NotImplementedError()

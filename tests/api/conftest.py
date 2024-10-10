@@ -17,6 +17,8 @@ import pytest
 
 import numpy as np
 
+from unittest.mock import patch
+
 import piquasso as pq
 from piquasso.api.connector import BaseConnector
 
@@ -91,7 +93,10 @@ def FakeConnector():
     class FakeConnector(pq.api.connector.BaseConnector):
         pass
 
-    return FakeConnector
+    p = patch.multiple(FakeConnector, __abstractmethods__=set())
+    p.start()
+    yield FakeConnector
+    p.stop()
 
 
 @pytest.fixture
