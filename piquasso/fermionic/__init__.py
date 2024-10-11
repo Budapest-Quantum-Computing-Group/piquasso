@@ -69,7 +69,9 @@ where :math:`a_k` and :math:`a_k^\dagger` denote the Dirac operators.
 from . import gaussian
 
 from .gaussian import GaussianState, GaussianSimulator
-from .instructions import GaussianHamiltonian, ParentHamiltonian
+from .instructions import GaussianHamiltonian
+from .instructions import GaussianHamiltonian, ParentHamiltonian, Correlations
+from .heisenberg import HeisenbergState, HeisenbergSimulator
 
 
 __all__ = [
@@ -77,10 +79,13 @@ __all__ = [
     "gaussian",
     # States
     "GaussianState",
+    "HeisenbergState",
     # Simulators
     "GaussianSimulator",
     # Preparations
     "ParentHamiltonian",
+    "HeisenbergSimulator",
     # Gates
     "GaussianHamiltonian",
+    "Correlations",
 ]
