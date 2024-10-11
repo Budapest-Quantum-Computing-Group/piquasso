@@ -72,3 +72,8 @@ class GaussianHamiltonian(Gate):
 
     def __init__(self, hamiltonian):
         super().__init__(params=dict(hamiltonian=hamiltonian))
+
+
+class Correlations(Gate):
+    def __init__(self, correlations):
+        super().__init__(params=dict(correlations=correlations))
