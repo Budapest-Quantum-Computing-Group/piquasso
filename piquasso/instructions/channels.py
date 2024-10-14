@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Channels
+========
+
+The built-in channel instructions in Piquasso.
+"""
+
 import numpy as np
 
 from piquasso._math.linalg import is_positive_semidefinite, is_real_2n_by_2n

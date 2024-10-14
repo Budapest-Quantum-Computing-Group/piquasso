@@ -14,6 +14,12 @@
 # limitations under the License.
 
 """
+Measurements
+============
+
+All the built-in measurement instructions in Piquasso. Measurement instructions should
+be placed at the end of the Piquasso program.
+
 .. note::
 
    When multiple shots are specified and the evolution of the choses simulated state is

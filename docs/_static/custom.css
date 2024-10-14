@@ -12,3 +12,22 @@ div.nbinput.container div.input_area {
     /* border-radius: 0.5rem!important; */
     box-shadow: 0 0 7px 2px rgba(0,0,0,.1);
 }
+
+.sd-card-title {
+    font-size: 1.4em;
+    text-align: center;
+}
+
+.sd-card-text {
+    font-size: 0.8em;
+    text-align: center;
+}
+
+.mission-statement {
+    font-size: 1.3em;
+    text-align: center;
+}
+
+h1 {
+    text-align: center;
+}

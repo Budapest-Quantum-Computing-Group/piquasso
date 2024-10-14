@@ -1,5 +1,5 @@
 Simulator
----------
+=========
 
 .. automodule:: piquasso.api.simulator
    :show-inheritance:

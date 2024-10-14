@@ -36,6 +36,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "nbsphinx",
+    "sphinx_design",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 

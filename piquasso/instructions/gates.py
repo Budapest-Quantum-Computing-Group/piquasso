@@ -14,6 +14,11 @@
 # limitations under the License.
 
 r"""
+Gates
+-----
+
+The built-in gates in Piquasso.
+
 Gates can be characterized by a unitary operator :math:`U`, which evolves the
 quantum state in the following manner
 

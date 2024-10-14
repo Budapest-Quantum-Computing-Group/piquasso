@@ -1,108 +1,134 @@
-Piquasso
-********
+======================
+Piquasso documentation
+======================
 
 
-Piquasso is an open source Python package, which allows you to simulate a photonic
-quantum computer. One could use Gaussian or Fock state corresponding to different
-representations to run simulations.
+|
+
+.. container:: mission-statement
+
+   Piquasso is an open source Python package, which allows you to simulate a photonic
+   quantum computer.
+
+|
+
+.. grid:: 4
+
+   .. grid-item-card::  Installation
+      :link: installation
+      :link-type: doc
+      :class-title: cardclass
+
+      Instructions on the installation of the Piquasso package
+
+   .. grid-item-card::  Tutorials
+      :link: tutorials/index
+      :link-type: doc
+
+      Basic tutorials for using Piquasso
+
+   .. grid-item-card::  Simulators
+      :link: simulators/index
+      :link-type: doc
+
+      The built-in simulators in Piquasso
+
+   .. grid-item-card::  API reference
+      :link: api/index
+      :link-type: doc
+
+      API reference for Piquasso
 
 
-Installation
+|
+
+Code example
 ============
 
-One could easily install Piquasso with the following command:
+.. code-block::
 
-.. code-block:: bash
+   import numpy as np
+   import piquasso as pq
 
-   pip install piquasso
+   # Program definition
+   with pq.Program() as program:
+      # Prepare a Gaussian vacuum state
+      pq.Q() | pq.Vacuum()
 
-For a basic example, check out :doc:`tutorials/getting-started`.
+      # Displace the state on mode 0
+      pq.Q(0) | pq.Displacement(r=np.sqrt(2), phi=np.pi / 4)
 
-One can also use Piquasso along with TensorFlow, see, e.g.,
-:doc:`tutorials/cvqnn-with-tensorflow`. To install Piquasso with TensorFlow, just enter
+      # Use a beamsplitter gate on modes 0, 1
+      pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 2)
 
-.. code-block:: bash
+      # Measurement on mode 0
+      pq.Q(0) | pq.HomodyneMeasurement(phi=0)
 
-   pip install piquasso[tensorflow]
+   # Creating the Gaussian simulator
+   simulator = pq.GaussianSimulator(d=3)
+
+   # Apply the program with 10 shots
+   result = simulator.execute(program, shots=10)
 
 
-Similarly, Piquasso admits a JAX support, as described in :doc:`tutorials/jax-example`
-To install Piquasso with JAX is done by
+How to cite us
+==============
 
-.. code-block:: bash
+If you are doing research using Piquasso, please cite us as follows:
 
-   pip install piquasso[jax]
+.. code-block::
+
+   @misc{piquasso2024,
+   title         = {Piquasso: A Photonic Quantum Computer Simulation Software Platform},
+   author        = {Z. Kolarovszki and
+                     T. Rybotycki and
+                     P. Rakyta and
+                     Á. Kaposi and
+                     B. Poór and
+                     Sz. Jóczik and
+                     D. T. R. Nagy and
+                     H. Varga and
+                     K. H. El-Safty and
+                     G. Morse and
+                     M. Oszmaniec and
+                     T. Kozsik and
+                     Z. Zimborás
+                     },
+   year          = {2024},
+   eprint        = {2403.04006},
+   archiveprefix = {arXiv},
+   primaryclass  = {quant-ph}
+   }
+
+
+
+.. toctree::
+   :hidden:
+   :caption: Basics
+
+   installation
+   tutorials/index
 
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Tutorials:
    :hidden:
+   :caption: Features
 
-   tutorials/getting-started
-   tutorials/separating-programs
-   tutorials/boson-sampling
-   tutorials/gaussian-boson-sampling
-   tutorials/cvqnn-with-tensorflow
-   tutorials/jax-example
+   simulators/index
+   states/index
+   instructions/index
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Simulators:
    :hidden:
+   :caption: Advanced
 
-   simulators/gaussian
-   simulators/fock
-   simulators/sampling
-
-.. toctree::
-   :maxdepth: 3
-   :caption: States:
-   :hidden:
-
-   states/gaussian
-   states/fock
-   states/sampling
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Instructions:
-   :hidden:
-
-   instructions/preparations
-   instructions/gates
-   instructions/measurements
-   instructions/channels
-
-.. toctree::
-   :maxdepth: 3
-   :caption: API:
-   :hidden:
-
-   api/program
-   api/simulator
-   api/config
-   api/mode
-   api/state
-   api/instruction
-   api/result
-   api/exceptions
-   api/computer
-   api/connector
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Advanced:
-   :hidden:
-
-   advanced/cvqnn
+   api/index
    advanced/connectors
    advanced/decompositions
-
+   advanced/cvqnn
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Experimental:
    :hidden:
+   :caption: Experimental
 
    experimental/fermionic

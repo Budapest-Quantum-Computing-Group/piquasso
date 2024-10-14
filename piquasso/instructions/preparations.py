@@ -13,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Preparations
+------------
+
+The built-in preparation instructions in Piquasso. Preparation instructions should
+be placed at the beginning of the Piquasso program.
+"""
+
+
 from typing import Iterable
 
 import numpy as np
