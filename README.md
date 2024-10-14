@@ -89,7 +89,7 @@ Resulting state: <piquasso._simulators.gaussian.state.GaussianState object at 0x
 Detected samples: [(0,), (2,), (1,), (2,), (2,), (4,), (1,), (1,), (4,), (1,)]
 ```
 
-For more details, please refer to [docs.piquasso.com](https://docs.piquasso.com/).
+For more details, please refer to [the Piquasso documentation](https://piquasso.readthedocs.io/).
 
 ## Install
 
@@ -138,7 +138,7 @@ If you are doing research using Piquasso, please cite us as follows:
 
 ## Documentation
 
-The documentation is avaliable at [docs.piquasso.com](https://docs.piquasso.com/).
+The documentation is avaliable at [https://piquasso.readthedocs.io/](https://piquasso.readthedocs.io/).
 
 ## How to contribute?
 

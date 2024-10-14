@@ -6,6 +6,15 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+  jobs:
+    post_install:
+      # These steps are required for building the documentation on ReadtheDocs.
+      # If Piquasso is not compiled, several modules will not be imported by the
+      # documentation, and will not appear.
+      - pip install cmake pybind11[global]
+      - cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
+      - cmake --build build
+      - cmake --install build
 
 sphinx:
   configuration: docs/conf.py
