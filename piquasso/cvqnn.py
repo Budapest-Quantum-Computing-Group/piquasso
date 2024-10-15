@@ -13,6 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+CVQNN Module
+============
+
+Some tools for simulating CVQNN (Continuous-Variable Quantum Neural Networks) are also
+available in Piquasso.
+"""
+
 from typing import List, Optional
 
 import numpy as np
