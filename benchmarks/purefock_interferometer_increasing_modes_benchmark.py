@@ -15,8 +15,6 @@
 
 import pytest
 
-import numpy as np
-
 import piquasso as pq
 
 from scipy.stats import unitary_group
@@ -28,24 +26,19 @@ pytestmark = pytest.mark.benchmark(
 
 
 @pytest.fixture
-def theta():
-    return np.pi / 5
-
-
-@pytest.fixture
 def cutoff():
-    return 4
+    return 7
 
 
-parameters = [(d, unitary_group.rvs(d)) for d in range(3, 18)]
+parameters = [(d, unitary_group.rvs(d)) for d in range(7, 10)]
 
 
 @pytest.mark.parametrize("d, interferometer", parameters)
-def piquasso_benchmark(benchmark, d, interferometer, cutoff, theta):
+def piquasso_benchmark(benchmark, d, interferometer, cutoff):
     @benchmark
     def func():
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector([1] * 3 + [0] * (d - 3))
+            pq.Q(all) | pq.StateVector([1] * (cutoff - 1) + [0] * (d - cutoff + 1))
 
             pq.Q(all) | pq.Interferometer(interferometer)
 
@@ -55,7 +48,7 @@ def piquasso_benchmark(benchmark, d, interferometer, cutoff, theta):
 
 
 @pytest.mark.parametrize("d, interferometer", parameters[:2])
-def strawberryfields_benchmark(benchmark, d, interferometer, cutoff, theta, sf):
+def strawberryfields_benchmark(benchmark, d, interferometer, cutoff, sf):
     @benchmark
     def func():
         eng = sf.Engine(backend="fock", backend_options={"cutoff_dim": cutoff})
