@@ -17,7 +17,7 @@ import numpy as np
 import numba as nb
 
 
-@nb.njit(cache=True)
+@nb.njit(parallel=True, cache=True)
 def calculate_interferometer_on_fock_space(interferometer, helper_indices):
     cutoff = len(helper_indices[0]) + 2
     subspace_representations = []

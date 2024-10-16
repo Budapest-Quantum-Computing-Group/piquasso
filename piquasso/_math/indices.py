@@ -18,8 +18,7 @@ from typing import Tuple
 import numpy as np
 import numba as nb
 
-from scipy.special import comb
-from piquasso._math.combinatorics import arr_comb
+from piquasso._math.combinatorics import arr_comb, comb
 
 
 def get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
@@ -43,48 +42,52 @@ def get_auxiliary_operator_index(
     return auxiliary_rows, auxiliary_modes
 
 
+@nb.njit(cache=True)
 def get_index_in_fock_space(element):
     sum_ = 0
     accumulator = 0
     for i in range(len(element)):
         sum_ += element[-1 - i]
-        accumulator += comb(sum_ + i, i + 1, exact=True)
+        accumulator += comb(sum_ + i, i + 1)
 
     return accumulator
 
 
+@nb.njit(cache=True)
 def get_index_in_fock_space_array(basis: np.ndarray) -> np.ndarray:
-    sum_ = np.zeros(shape=basis.shape[:-1], dtype=int)
-    accumulator = np.zeros(shape=basis.shape[:-1], dtype=int)
+    sum_ = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
+    accumulator = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
 
     for i in range(basis.shape[-1]):
         sum_ += basis[..., -1 - i]
-        accumulator += np.round(comb(sum_ + i, i + 1)).astype(int)
+        accumulator += arr_comb(sum_ + i, i + 1)
 
     return accumulator
 
 
+@nb.njit(cache=True)
 def get_index_in_fock_subspace(element: np.ndarray) -> int:
     sum_ = 0
     accumulator = 0
     for i in range(len(element) - 1):
         sum_ += element[-1 - i]
-        accumulator += comb(sum_ + i, i + 1, exact=True)
+        accumulator += comb(sum_ + i, i + 1)
 
     return accumulator
 
 
-@nb.njit
+@nb.njit(cache=True)
 def get_index_in_fock_subspace_array(basis: np.ndarray) -> np.ndarray:
     sum_ = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
     accumulator = np.zeros(shape=basis.shape[:-1], dtype=np.int32)
 
     for i in range(basis.shape[-1] - 1):
         sum_ += basis[..., -1 - i]
-        accumulator += np.round(arr_comb(sum_ + i, i + 1)).astype(np.int32)
+        accumulator += arr_comb(sum_ + i, i + 1)
 
     return accumulator
 
 
-def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> Tuple[int, ...]:
-    return tuple(np.delete(np.arange(d), modes))
+@nb.njit(cache=True)
+def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> np.ndarray:
+    return np.delete(np.arange(d), modes)
