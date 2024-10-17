@@ -21,6 +21,8 @@ import time
 
 import piquasso as pq
 
+import json
+
 from piquasso._math.torontonian import loop_torontonian as pq_loop_torontonian
 from thewalrus import ltor as tw_loop_torontonian
 
@@ -38,9 +40,11 @@ if __name__ == "__main__":
     y = []
     z = []
 
-    ITER = 10
+    ITER = 100
 
-    for d in range(3, 20):
+    FILENAME = f"loop_torontonian_benchmark_{int(time.time())}.json"
+
+    for d in range(3, 30):
         print(d)
         x.append(d)
 
@@ -64,6 +68,7 @@ if __name__ == "__main__":
 
         sum_ = 0.0
 
+        print(pq_loop_torontonian(input_matrix, displacement_vector))
         for _ in range(ITER):
             print("|", end="", flush=True)
             start_time = time.time()
@@ -82,6 +87,7 @@ if __name__ == "__main__":
 
         sum_ = 0.0
 
+        print(tw_loop_torontonian(input_matrix, displacement_vector))
         for _ in range(ITER):
             print("-", end="", flush=True)
             start_time = time.time()
@@ -91,9 +97,14 @@ if __name__ == "__main__":
         z.append(sum_ / ITER)
         print()
 
+        with open(FILENAME, "w") as f:
+            json.dump(dict(x=x, y=y, z=z), f, indent=4)
+
     plt.scatter(x[1:], y[1:], label="Piquasso")
     plt.scatter(x[1:], z[1:], label="TheWalrus")
     plt.legend()
     plt.yscale("log")
+    plt.xlabel("d [-]")
+    plt.ylabel("Execution time [s]")
 
     plt.show()
