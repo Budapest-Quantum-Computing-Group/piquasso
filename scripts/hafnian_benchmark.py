@@ -19,6 +19,8 @@ Benchmarking the Piquasso vs. TheWalrus hafnian with repetitions.
 
 import time
 
+import json
+
 from piquasso._math.hafnian import hafnian_with_reduction
 from thewalrus import hafnian_repeated
 
@@ -34,9 +36,20 @@ if __name__ == "__main__":
     y = []
     z = []
 
-    ITER = 10
+    ITER = 5
 
-    for d in range(6, 24, 2):
+    FILENAME = f"hafnian_benchmark_{int(time.time())}.json"
+
+    # Compilation
+    d = 2
+    A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+    A = A + A.T
+    occupation_numbers = 2 * np.ones(d, dtype=int)
+    hafnian_with_reduction(A, occupation_numbers)
+    hafnian_repeated(A, occupation_numbers)
+    ###
+
+    for d in range(6, 20 + 1, 2):
         print(d)
         x.append(d)
         A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
@@ -66,8 +79,14 @@ if __name__ == "__main__":
         z.append(sum_ / ITER)
         print()
 
-    plt.scatter(x[1:], np.log(y[1:]), label="Piquasso")
-    plt.scatter(x[1:], np.log(z[1:]), label="TheWalrus")
+        with open(FILENAME, "w") as f:
+            json.dump(dict(x=x, y=y, z=z), f, indent=4)
+
+    plt.scatter(x, y, label="Piquasso")
+    plt.scatter(x, z, label="TheWalrus")
     plt.legend()
+    plt.yscale("log")
+    plt.xlabel("d [-]")
+    plt.ylabel("Execution time [s]")
 
     plt.show()
