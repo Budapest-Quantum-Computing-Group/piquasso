@@ -18,6 +18,7 @@ from typing import Tuple, List, Callable
 from functools import lru_cache
 
 import numpy as np
+import numba as nb
 
 from scipy.special import factorial, comb
 
@@ -77,14 +78,6 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
             d=len(interferometer), cutoff=cutoff
         )
 
-        index_dict = {
-            "subspace_index_tensor": index_tuple[0],
-            "first_nonzero_index_tensor": index_tuple[1],
-            "first_subspace_index_tensor": index_tuple[2],
-            "sqrt_occupation_numbers_tensor": index_tuple[3],
-            "sqrt_first_occupation_numbers_tensor": index_tuple[4],
-        }
-
         subspace_representations = connector.calculate_interferometer_on_fock_space(
             interferometer, index_tuple
         )
@@ -92,7 +85,7 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
             interferometer,
             connector,
             subspace_representations,
-            index_dict,
+            index_tuple,
         )
 
         return subspace_representations, grad
@@ -102,8 +95,57 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
     return wrapped(interferometer)
 
 
+@nb.njit(cache=True)
+def _calculate_subspace_grad(
+    row_index,
+    col_index,
+    previous_subspace_representation,
+    subspace_index_tuple,
+    interferometer,
+    previous_subspace_grad,
+):
+    (
+        subspace_indices,
+        first_nonzero_indices,
+        first_subspace_indices,
+        sqrt_occupation_numbers,
+        sqrt_first_occupation_numbers,
+    ) = subspace_index_tuple
+
+    matrix_dim = sqrt_occupation_numbers.shape[0]
+
+    subspace_grad = np.zeros(shape=(matrix_dim, matrix_dim), dtype=interferometer.dtype)
+
+    for jdx in range(matrix_dim):
+        for idx, first_nonzero_index in enumerate(first_nonzero_indices):
+            if first_nonzero_index != row_index:
+                continue
+
+            subspace_grad[idx, jdx] += (
+                previous_subspace_representation[
+                    first_subspace_indices[idx],
+                    subspace_indices[jdx, col_index],
+                ]
+                * sqrt_occupation_numbers[jdx, col_index]
+            )
+
+        for idx in range(matrix_dim):
+            for kdx in range(sqrt_occupation_numbers.shape[1]):
+                subspace_grad[idx, jdx] += (
+                    sqrt_occupation_numbers[jdx, kdx]
+                    * interferometer[first_nonzero_indices[idx], kdx]
+                    * previous_subspace_grad[
+                        first_subspace_indices[idx], subspace_indices[jdx, kdx]
+                    ]
+                )
+
+            subspace_grad[idx, jdx] /= sqrt_first_occupation_numbers[idx]
+
+    return subspace_grad
+
+
 def _calculate_interferometer_gradient_on_fock_space(
-    interferometer, connector, subspace_representations, index_dict
+    interferometer, connector, subspace_representations, index_tuple
 ):
     def interferometer_gradient(*upstream):
         tf = connector._tf
@@ -117,94 +159,59 @@ def _calculate_interferometer_gradient_on_fock_space(
         else:
             np = connector.np
 
-        subspace_index_tensor = index_dict["subspace_index_tensor"]
-        first_subspace_index_tensor = index_dict["first_subspace_index_tensor"]
-        first_nonzero_index_tensor = index_dict["first_nonzero_index_tensor"]
-        sqrt_first_occupation_numbers_tensor = index_dict[
-            "sqrt_first_occupation_numbers_tensor"
-        ]
-        sqrt_occupation_numbers_tensor = index_dict["sqrt_occupation_numbers_tensor"]
-
         d = len(interferometer)
-        cutoff = len(subspace_index_tensor) + 2
+        cutoff = len(index_tuple[0]) + 2
+
+        (
+            subspace_index_tensor,
+            first_nonzero_index_tensor,
+            first_subspace_index_tensor,
+            sqrt_occupation_numbers_tensor,
+            sqrt_first_occupation_numbers_tensor,
+        ) = index_tuple
 
         full_kl_grad = []
         for row_index in range(d):
             full_kl_grad.append([0] * d)
             for col_index in range(d):
-                subspace_grad = []
-                subspace_grad.append(
-                    fallback_np.array([[0]], dtype=interferometer.dtype)
-                )
-                second_subspace = fallback_np.zeros(
+                second_subspace_grad = fallback_np.zeros(
                     shape=interferometer.shape, dtype=interferometer.dtype
                 )
-                second_subspace[row_index, col_index] = 1
-                subspace_grad.append(second_subspace)
+                second_subspace_grad[row_index, col_index] = 1.0
+
+                previous_subspace_grad = second_subspace_grad
 
                 for p in range(2, cutoff):
-                    previous_subspace_grad = subspace_grad[p - 1]
+                    previous_subspace_representation = subspace_representations[p - 1]
 
-                    first_subspace_indices = fallback_np.asarray(
-                        first_subspace_index_tensor[p - 2]
-                    )
-                    first_nonzero_indices = first_nonzero_index_tensor[p - 2]
-                    sqrt_first_occupation_numbers = (
-                        sqrt_first_occupation_numbers_tensor[p - 2]
-                    )
-
-                    partial_previous_subspace_grad = previous_subspace_grad[
-                        first_subspace_indices, :
-                    ]
-
-                    sqrt_occupation_numbers = sqrt_occupation_numbers_tensor[p - 2]
-
-                    subspace_indices = subspace_index_tensor[p - 2]
-
-                    first_part_partially_indexed = interferometer[
-                        first_nonzero_indices, :
-                    ]
-                    second_part = partial_previous_subspace_grad[:, subspace_indices]
-
-                    matrix = fallback_np.einsum(
-                        "ij,kj,kij->ik",
-                        sqrt_occupation_numbers,
-                        first_part_partially_indexed,
-                        second_part,
+                    subspace_index_tuple = (
+                        subspace_index_tensor[p - 2],
+                        first_nonzero_index_tensor[p - 2],
+                        first_subspace_index_tensor[p - 2],
+                        sqrt_occupation_numbers_tensor[p - 2],
+                        sqrt_first_occupation_numbers_tensor[p - 2],
                     )
 
-                    matrix = (matrix / sqrt_first_occupation_numbers).T
-
-                    mp1i_indices = fallback_np.where(
-                        fallback_np.asarray(first_nonzero_indices) == row_index
-                    )[0]
-
-                    occupation_number_sqrts = sqrt_first_occupation_numbers[
-                        mp1i_indices
-                    ]
-
-                    nm1l_indices = subspace_indices[:, col_index]
-
-                    correction_first_part = subspace_representations[p - 1][
-                        first_subspace_indices[mp1i_indices]
-                    ][:, nm1l_indices]
-                    correction_second_part = (
-                        sqrt_occupation_numbers[:, col_index, None]
-                        / occupation_number_sqrts
+                    subspace_grad = _calculate_subspace_grad(
+                        row_index,
+                        col_index,
+                        previous_subspace_representation,
+                        subspace_index_tuple,
+                        interferometer,
+                        previous_subspace_grad,
                     )
 
-                    correction_matrix = correction_first_part * correction_second_part.T
-
-                    matrix[mp1i_indices, :] += correction_matrix
-
-                    subspace_grad.append(matrix)
-
-                for i in range(cutoff):
                     full_kl_grad[row_index][col_index] += np.einsum(
-                        "ij,ij", upstream[i], fallback_np.conj(subspace_grad[i])
+                        "ij,ij", upstream[p], fallback_np.conj(subspace_grad)
                     )
 
-        return connector.np.array(full_kl_grad, dtype=interferometer.dtype)
+                    previous_subspace_grad = subspace_grad
+
+        partial_result = connector.np.array(full_kl_grad, dtype=interferometer.dtype)
+        one_particle_term = upstream[1]
+        result = partial_result + one_particle_term
+
+        return result
 
     return interferometer_gradient
 
