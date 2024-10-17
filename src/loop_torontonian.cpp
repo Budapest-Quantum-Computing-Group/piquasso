@@ -32,10 +32,6 @@
 #include <cstring>
 #include <iostream>
 
-// See: https://stackoverflow.com/a/8447025
-#if defined(_OPENMP)
-#include <omp.h>
-#endif
 
 /**
  * Copies the  lower triangular matrix to the `target` matrix from the `source`
@@ -116,14 +112,6 @@ void iterate_over_selected_modes(
     // add new index hole to the iterations
     size_t new_hole_to_iterate = hole_to_iterate + 1;
 
-    // NOTE: On windows, reduce argument cannot be of reference type.
-    // We simply go around this by copying it to a value-type variable temporarily.
-    TScalar inner_sum = sum;
-
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) reduction(+:inner_sum)
-// NOTE: OMP indices on windows must be signed
-#endif
     // now do the rest of the iterations
     for (
         int idx = static_cast<int>(index_min) + 1;
@@ -148,7 +136,7 @@ void iterate_over_selected_modes(
 
         auto loop_correction = calc_loop_correction(displacement_vector, L_new, positions_of_ones);
 
-        inner_sum += partial_torontonian * loop_correction;
+        sum += partial_torontonian * loop_correction;
 
         // return if new index hole would give no nontrivial result
         // (in this case the partial torontonian is unity and should be counted only once in function torontonian_cpp)
@@ -157,10 +145,8 @@ void iterate_over_selected_modes(
 
         selected_index_holes_new.push_back(num_of_modes - 1);
         reuse_index_new = L_new.rows / 2 - 1;
-        iterate_over_selected_modes(selected_index_holes_new, new_hole_to_iterate, L_new, reuse_index_new, inner_sum, num_of_modes, matrix, displacement_vector);
+        iterate_over_selected_modes(selected_index_holes_new, new_hole_to_iterate, L_new, reuse_index_new, sum, num_of_modes, matrix, displacement_vector);
     }
-
-    sum = inner_sum;
 
     selected_index_holes[hole_to_iterate] = index_max - 1;
 
