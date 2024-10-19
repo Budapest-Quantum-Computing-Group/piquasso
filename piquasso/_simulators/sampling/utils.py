@@ -14,10 +14,9 @@
 # limitations under the License.
 
 import numpy as np
-from scipy.special import factorial, binom
+from scipy.special import factorial
 
-from collections import defaultdict
-from functools import lru_cache, partial
+from functools import partial
 
 
 from piquasso._math.combinatorics import partitions
@@ -72,16 +71,15 @@ def calculate_inner_product(interferometer, input, output, connector):
     )
 
 
-def generate_lossless_samples(input, shots, calculate_permanent, rng):
+def generate_lossless_samples(input, shots, permanent, interferometer, rng):
     """
-    Generates samples corresponding to the Clifford & Clifford algorithm
-    from [Brod, Oszmaniec 2020] see
-    `this article <https://arxiv.org/abs/1906.06696>`_ for more details.
+    Generates samples corresponding to the Clifford & Clifford algorithm B from
+    https://arxiv.org/abs/1706.01260.
 
     Args:
         input: The input Fock basis state.
         shots: Number of samples to be generated.
-        calculate_permanent: Permanent connector function, already containing
+        permanent: Permanent calculator function, already containing
             the unitary matrix corresponding to the interferometer.
         rng: Random number generator.
 
@@ -92,14 +90,15 @@ def generate_lossless_samples(input, shots, calculate_permanent, rng):
     return _generate_samples(
         input,
         shots,
-        calculate_permanent,
+        permanent,
         sample_generator=_generate_lossless_sample,
+        interferometer=interferometer,
         rng=rng,
     )
 
 
 def generate_uniform_lossy_samples(
-    input, shots, calculate_permanent, transmissivity, rng
+    input, shots, permanent, interferometer, transmissivity, rng
 ):
     """
     Basically the same algorithm as in `generate_lossless_samples`, but rejects
@@ -110,7 +109,12 @@ def generate_uniform_lossy_samples(
     )
 
     return _generate_samples(
-        input, shots, calculate_permanent, sample_generator=sample_generator, rng=rng
+        input,
+        shots,
+        permanent,
+        interferometer=interferometer,
+        sample_generator=sample_generator,
+        rng=rng,
     )
 
 
@@ -132,9 +136,8 @@ def generate_lossy_samples(
         2 * len(input_state),
     )
 
-    calculate_permanent = partial(permanent, matrix=expanded_matrix)
     expanded_samples = generate_lossless_samples(
-        expanded_state, samples_number, calculate_permanent, rng
+        expanded_state, samples_number, permanent, expanded_matrix, rng
     )
 
     # Trim output state
@@ -148,34 +151,33 @@ def generate_lossy_samples(
     return samples
 
 
-def _generate_samples(input, shots, calculate_permanent, sample_generator, rng):
+def _get_first_quantized(occupation_numbers):
+    first_quantized = np.empty(sum(occupation_numbers), dtype=occupation_numbers.dtype)
+
+    idx = 0
+    for mode, reps in enumerate(occupation_numbers):
+        for _ in range(reps):
+            first_quantized[idx] = mode
+            idx += 1
+
+    return first_quantized
+
+
+def _generate_samples(input, shots, permanent, interferometer, sample_generator, rng):
     d = len(input)
     n = np.sum(input)
 
-    # Labeling possible input states into dict where keys are being number of
-    # particles in the state.
-    labeled_input_states = _generate_labeled_smaller_arrays(input)
-
-    calculate_weights = _get_weight_connector(
-        input,
-        labeled_input_states,
-    )
-
-    cache = {
-        "all_possible_outputs": dict(),
-        "probability_mass_functions": dict(),
-    }
-
     samples = []
 
+    first_quantized_input = _get_first_quantized(input)
+
     while len(samples) < shots:
-        sample, cache = sample_generator(
+        sample = sample_generator(
             d,
             n,
-            calculate_permanent,
-            calculate_weights,
-            labeled_input_states,
-            cache,
+            permanent,
+            interferometer,
+            first_quantized_input,
             rng=rng,
         )
         samples.append(sample)
@@ -183,174 +185,113 @@ def _generate_samples(input, shots, calculate_permanent, sample_generator, rng):
     return samples
 
 
+def _grow_current_input(current_input, to_shrink, rng):
+    random_index = rng.choice(len(to_shrink))
+    random_mode = to_shrink[random_index]
+
+    current_input[random_mode] += 1
+
+    to_shrink = np.delete(to_shrink, random_index)
+
+    return current_input, to_shrink
+
+
 def _generate_lossless_sample(
-    d, n, calculate_permanent, calculate_weights, labeled_input_states, cache, rng
+    d, n, permanent, interferometer, first_quantized_input, rng
 ):
     sample = np.zeros(d, dtype=int)
 
-    for number_of_particle_to_sample in range(1, n + 1):
-        key = tuple(sample)
+    current_input = np.zeros(d, dtype=int)
+    to_shrink = np.copy(first_quantized_input)
 
-        if key not in cache["all_possible_outputs"]:
-            possible_inputs = labeled_input_states[number_of_particle_to_sample]
+    for _ in range(1, n + 1):
+        current_input, to_shrink = _grow_current_input(current_input, to_shrink, rng)
 
-            weights = calculate_weights(number_of_particle_to_sample)
+        pmf = _calculate_pmf(current_input, sample, permanent, interferometer)
 
-            possible_outputs = _generate_possible_output_states(sample)
-            pmf = _calculate_pmf(
-                possible_inputs, possible_outputs, weights, calculate_permanent
-            )
+        index = _sample_from_pmf(pmf, rng)
 
-            cache["all_possible_outputs"][key] = possible_outputs
-            cache["probability_mass_functions"][key] = pmf
-        else:
-            possible_outputs = cache["all_possible_outputs"][key]
-            pmf = cache["probability_mass_functions"][key]
+        sample[index] += 1
 
-        sample_index = _sample_from_pmf(pmf, rng)
-
-        sample = possible_outputs[sample_index]
-
-    return sample, cache
+    return sample
 
 
 def _generate_uniform_lossy_sample(
-    d,
-    n,
-    calculate_permanent,
-    calculate_weights,
-    labeled_input_states,
-    cache,
-    transmissivity,
-    rng,
+    d, n, permanent, interferometer, first_quantized_input, transmissivity, rng
 ):
     sample = np.zeros(d, dtype=int)
 
     number_of_particle_to_sample = 0
 
-    for _ in range(1, n + 1):
-        key = tuple(sample)
+    current_input = np.zeros(d, dtype=int)
+    to_shrink = np.copy(first_quantized_input)
 
+    for _ in range(1, n + 1):
         if rng.uniform() > transmissivity:
             continue
         else:
             number_of_particle_to_sample += 1
 
-        if key not in cache["all_possible_outputs"]:
-            possible_inputs = labeled_input_states[number_of_particle_to_sample]
+        current_input, to_shrink = _grow_current_input(current_input, to_shrink, rng)
 
-            weights = calculate_weights(number_of_particle_to_sample)
+        pmf = _calculate_pmf(current_input, sample, permanent, interferometer)
 
-            possible_outputs = _generate_possible_output_states(sample)
-            pmf = _calculate_pmf(
-                possible_inputs, possible_outputs, weights, calculate_permanent
+        index = _sample_from_pmf(pmf, rng)
+
+        sample[index] += 1
+
+    return sample
+
+
+def _filter_zeros(matrix, input_state, output_state):
+    nonzero_input_indices = input_state > 0
+    nonzero_output_indices = output_state > 0
+
+    new_input_state = input_state[input_state > 0]
+    new_output_state = output_state[output_state > 0]
+
+    new_matrix = matrix[np.ix_(nonzero_output_indices, nonzero_input_indices)]
+
+    return new_matrix, new_input_state, new_output_state
+
+
+def _calculate_pmf(input_state, sample, calculate_permanent, interferometer):
+    d = len(sample)
+    pmf = np.empty(d, dtype=np.float64)
+
+    nonzero_indices = np.arange(d)[input_state > 0]
+
+    partial_permanents = np.zeros(len(nonzero_indices), dtype=interferometer.dtype)
+
+    for idx, nonzero_idx in enumerate(nonzero_indices):
+        input_state_subtracted = input_state.copy()
+        input_state_subtracted[nonzero_idx] -= 1
+
+        filtered_interferometer, filtered_input_state, filtered_output_state = (
+            _filter_zeros(interferometer, input_state_subtracted, sample)
+        )
+        partial_permanents[idx] = calculate_permanent(
+            filtered_interferometer, filtered_output_state, filtered_input_state
+        )
+
+    normalization = 0.0
+    for idx in range(d):
+        permanent = 0.0
+        for j in range(len(partial_permanents)):
+            permanent += (
+                input_state[nonzero_indices[j]]
+                * partial_permanents[j]
+                * interferometer[idx, nonzero_indices[j]]
             )
 
-            cache["all_possible_outputs"][key] = possible_outputs
-            cache["probability_mass_functions"][key] = pmf
-        else:
-            possible_outputs = cache["all_possible_outputs"][key]
-            pmf = cache["probability_mass_functions"][key]
-
-        sample_index = _sample_from_pmf(pmf, rng)
-
-        sample = possible_outputs[sample_index]
-
-    return sample, cache
-
-
-def _calculate_pmf(
-    possible_inputs,
-    possible_outputs,
-    weights,
-    calculate_permanent,
-):
-    normalization = 0.0
-
-    no_of_possible_outputs = possible_outputs.shape[0]
-    no_of_possible_inputs = len(possible_inputs)
-
-    pmf = np.empty(no_of_possible_outputs, dtype=np.float64)
-
-    for i in range(no_of_possible_outputs):
-        inner_sum = 0.0
-        possible_output = possible_outputs[i]
-
-        for j in range(no_of_possible_inputs):
-            possible_input = possible_inputs[j]
-
-            permanent = calculate_permanent(cols=possible_input, rows=possible_output)
-            probability = weights[j] * np.abs(permanent) ** 2
-            inner_sum += probability
-
-        normalization += inner_sum
-        pmf[i] = inner_sum
+        pmf[idx] = np.abs(permanent) ** 2
+        normalization += pmf[idx]
 
     return pmf / normalization
 
 
 def _sample_from_pmf(pmf, rng):
     return rng.choice(np.arange(pmf.shape[0]), p=pmf)
-
-
-def _generate_smaller_arrays(array):
-    """Generates elementwise smaller non-negative integer arrays from `array`."""
-    ranges = [np.arange(x + 1) for x in array]
-    grids = np.meshgrid(*ranges, indexing="ij")
-    combinations = np.stack(grids, axis=-1).reshape(-1, len(array))
-    return combinations
-
-
-def _generate_labeled_smaller_arrays(array):
-    smaller_arrays = _generate_smaller_arrays(array)
-
-    labeled_arrays = defaultdict(list)
-
-    for small_array in smaller_arrays:
-        labeled_arrays[np.sum(small_array)].append(small_array)
-
-    for key in labeled_arrays.keys():
-        labeled_arrays[key] = np.array(labeled_arrays[key])
-
-    return labeled_arrays
-
-
-def _generate_possible_output_states(sample):
-    d = sample.shape[0]
-
-    repeated_sample = np.repeat(sample[None, :], d, axis=0)
-
-    return repeated_sample + np.identity(d, dtype=sample.dtype)
-
-
-def _get_weight_connector(input_state, labeled_states):
-    @lru_cache
-    def _calculate_weights(number_of_particle_to_sample):
-        n = np.sum(input_state)
-
-        fac_no_of_particles = factorial(number_of_particle_to_sample)
-
-        possible_input_states = labeled_states[number_of_particle_to_sample]
-
-        factorials = (
-            np.prod(factorial(possible_input_states), axis=1) * fac_no_of_particles
-        )
-
-        size = len(possible_input_states)
-
-        weights = np.empty(shape=size, dtype=np.float64)
-        normalization = 0.0
-
-        for i in range(size):
-            weight = np.prod(binom(input_state, possible_input_states[i]))
-            normalization += weight
-            weights[i] = weight
-
-        divisor = normalization * binom(n, number_of_particle_to_sample) * factorials
-
-        return weights / divisor
-
-    return _calculate_weights
 
 
 def _prepare_interferometer_matrix_in_expanded_space(interferometer_svd):

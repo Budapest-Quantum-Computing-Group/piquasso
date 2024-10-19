@@ -180,7 +180,7 @@ def test_general_loss():
     simulator.execute(program, shots=1)
 
 
-def test_Interferometer_fock_probabilities():
+def test_boson_sampling_seeded():
     seed_sequence = 123
 
     U = np.array(
@@ -234,32 +234,32 @@ def test_Interferometer_fock_probabilities():
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
-        (4, 0, 0, 1, 0),
-        (0, 1, 0, 0, 4),
-        (0, 2, 1, 2, 0),
-        (0, 0, 2, 1, 2),
-        (2, 2, 1, 0, 0),
-        (1, 2, 1, 0, 1),
-        (0, 1, 0, 0, 4),
-        (0, 2, 0, 1, 2),
-        (1, 1, 3, 0, 0),
-        (2, 3, 0, 0, 0),
-        (4, 1, 0, 0, 0),
-        (0, 0, 2, 1, 2),
-        (0, 0, 3, 2, 0),
-        (2, 1, 1, 0, 1),
-        (1, 0, 4, 0, 0),
-        (0, 0, 3, 2, 0),
-        (4, 0, 0, 1, 0),
+        (3, 0, 0, 0, 2),
+        (0, 0, 1, 2, 2),
+        (0, 1, 0, 4, 0),
+        (1, 0, 0, 0, 4),
         (0, 1, 0, 1, 3),
+        (1, 0, 0, 3, 1),
+        (2, 0, 3, 0, 0),
+        (3, 1, 1, 0, 0),
+        (0, 1, 0, 3, 1),
+        (1, 2, 0, 0, 2),
+        (1, 0, 4, 0, 0),
+        (0, 1, 1, 2, 1),
+        (0, 0, 1, 1, 3),
+        (0, 2, 0, 1, 2),
+        (2, 0, 1, 0, 2),
+        (0, 0, 3, 1, 1),
+        (0, 0, 4, 1, 0),
         (2, 0, 0, 0, 3),
-        (3, 0, 1, 0, 1),
+        (0, 0, 2, 1, 2),
+        (1, 1, 0, 1, 2),
     ]
 
     assert samples == expected_samples
 
 
-def test_LossyInterferometer_fock_probabilities():
+def test_LossyInterferometer_boson_sampling_seeded():
     seed_sequence = 123
 
     U = np.array(
@@ -317,32 +317,32 @@ def test_LossyInterferometer_fock_probabilities():
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
-        (1, 2, 0, 0, 1),
+        (0, 0, 3, 0, 0),
+        (0, 0, 1, 1, 0),
+        (0, 0, 1, 1, 0),
+        (1, 0, 0, 1, 0),
         (0, 0, 1, 0, 0),
-        (0, 0, 2, 0, 0),
         (0, 0, 1, 0, 0),
+        (1, 1, 1, 0, 0),
+        (0, 2, 0, 0, 2),
+        (0, 0, 1, 0, 0),
+        (1, 0, 1, 0, 2),
+        (1, 0, 0, 0, 3),
+        (0, 0, 1, 1, 2),
+        (0, 0, 0, 1, 0),
+        (0, 0, 0, 1, 2),
+        (0, 1, 1, 1, 0),
         (0, 1, 2, 0, 0),
-        (1, 0, 0, 0, 1),
-        (0, 0, 1, 0, 0),
-        (0, 0, 0, 2, 0),
-        (2, 0, 1, 0, 0),
-        (2, 0, 0, 1, 1),
-        (1, 1, 1, 0, 2),
-        (0, 0, 0, 1, 1),
-        (0, 0, 0, 1, 3),
-        (1, 0, 0, 0, 2),
-        (1, 0, 0, 0, 4),
-        (0, 0, 0, 0, 3),
-        (2, 1, 0, 0, 1),
-        (0, 0, 0, 1, 1),
-        (1, 0, 1, 0, 0),
-        (0, 3, 0, 0, 1),
+        (0, 1, 0, 0, 1),
+        (1, 0, 0, 1, 1),
+        (0, 0, 2, 1, 0),
+        (0, 1, 1, 0, 0),
     ]
 
     assert samples == expected_samples
 
 
-def test_LossyInterferometer_fock_probabilities_uniform_losses():
+def test_LossyInterferometer_boson_sampling_uniform_losses():
     seed_sequence = 123
 
     U = np.array(
@@ -400,26 +400,26 @@ def test_LossyInterferometer_fock_probabilities_uniform_losses():
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
-        (2, 0, 0, 0, 2),
-        (0, 1, 0, 1, 1),
-        (0, 2, 2, 0, 1),
-        (0, 1, 0, 0, 3),
-        (0, 0, 1, 2, 2),
-        (1, 3, 1, 0, 0),
-        (0, 1, 1, 1, 0),
-        (1, 0, 3, 0, 0),
-        (3, 0, 2, 0, 0),
-        (0, 1, 0, 0, 2),
-        (1, 2, 0, 1, 0),
-        (0, 0, 2, 2, 0),
-        (0, 0, 2, 3, 0),
+        (1, 0, 2, 0, 0),
+        (1, 0, 0, 1, 1),
         (0, 2, 1, 0, 2),
-        (1, 1, 1, 0, 1),
-        (0, 2, 0, 0, 2),
+        (1, 0, 0, 0, 2),
+        (5, 0, 0, 0, 0),
+        (0, 2, 2, 0, 1),
+        (0, 3, 2, 0, 0),
+        (0, 1, 1, 2, 1),
+        (1, 1, 0, 0, 3),
+        (0, 0, 0, 2, 2),
+        (0, 2, 1, 0, 2),
         (2, 0, 2, 0, 0),
-        (1, 1, 0, 0, 1),
-        (0, 0, 0, 3, 2),
-        (0, 2, 1, 1, 1),
+        (0, 1, 0, 0, 3),
+        (0, 1, 3, 0, 0),
+        (1, 1, 0, 0, 2),
+        (0, 0, 4, 1, 0),
+        (1, 3, 0, 0, 1),
+        (2, 1, 1, 0, 1),
+        (0, 2, 1, 0, 2),
+        (0, 1, 1, 0, 2),
     ]
 
     assert samples == expected_samples

@@ -15,8 +15,6 @@
 
 from typing import Tuple
 
-from functools import partial
-
 import numpy as np
 from piquasso._simulators.sampling.state import SamplingState
 
@@ -154,23 +152,21 @@ def particle_number_measurement(
     singular_values = interferometer_svd[1]
 
     if not state.is_lossy:
-        calculate_permanent = partial(
-            state._connector.permanent, matrix=state.interferometer
-        )
         samples = generate_lossless_samples(
-            initial_state, shots, calculate_permanent, state._config.rng
+            initial_state,
+            shots,
+            state._connector.permanent,
+            state.interferometer,
+            state._config.rng,
         )
     elif np.all(np.isclose(singular_values, singular_values[0])):
         uniform_transmission_probability = singular_values[0] ** 2
 
-        calculate_permanent = partial(
-            state._connector.permanent, matrix=state.interferometer
-        )
-
         samples = generate_uniform_lossy_samples(
             initial_state,
             shots,
-            calculate_permanent,
+            state._connector.permanent,
+            state.interferometer,
             uniform_transmission_probability,
             state._config.rng,
         )

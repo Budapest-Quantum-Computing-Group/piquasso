@@ -15,7 +15,10 @@
 
 import numpy as np
 
+import pytest
+
 from piquasso._math.permanent import permanent
+from piquasso._math.linalg import assym_reduce
 
 
 def test_permanent_trivial_case():
@@ -52,7 +55,7 @@ def test_permanent_zero_input():
     assert np.isclose(permanent(interferometer, cols=input, rows=output), 1.0)
 
 
-def test_permanent_ones():
+def test_permanent_no_repetition():
     interferometer = np.array(
         [
             [
@@ -114,7 +117,55 @@ def test_permanent_ones():
     )
 
 
-def test_permanent():
+def test_permanent_2_by_2_asymmetric():
+    output = np.array([2, 0])
+    input = np.array([0, 2])
+
+    interferometer = np.array([[1, 1j], [1, -1j]]) / np.sqrt(2)
+
+    assert np.isclose(permanent(interferometer, cols=input, rows=output), -1)
+
+
+def test_permanent_4_by_4():
+    unitary = np.array(
+        [
+            [
+                0.50142122 - 0.15131566j,
+                0.0265964 - 0.67076793j,
+                -0.48706586 - 0.15221542j,
+                0.1148288 - 0.0381445j,
+            ],
+            [
+                -0.30504953 + 0.02783877j,
+                -0.33442264 + 0.27130083j,
+                -0.52279136 - 0.6644152j,
+                -0.04684954 + 0.06143215j,
+            ],
+            [
+                0.20279518 + 0.57890235j,
+                -0.47584393 - 0.16777288j,
+                0.08168919 + 0.10673884j,
+                -0.34434342 + 0.48221603j,
+            ],
+            [
+                0.31022502 - 0.39919511j,
+                0.21927998 + 0.24751057j,
+                -0.06266598 - 0.05334444j,
+                -0.78447544 + 0.11350836j,
+            ],
+        ]
+    )
+
+    rows = np.array([3, 0, 0, 1], dtype=int)
+    cols = np.array([0, 0, 3, 1], dtype=int)
+
+    assert np.isclose(
+        permanent(unitary, rows=rows, cols=cols),
+        0.4302957973670928 + 0.3986355418194044j,
+    )
+
+
+def test_permanent_6_by_6():
     interferometer = np.array(
         [
             [
@@ -174,4 +225,63 @@ def test_permanent():
     assert np.isclose(
         permanent(interferometer, cols=input, rows=output),
         0.13160241373727416 + 0.36535625772184577j,
+    )
+
+
+@pytest.mark.monkey
+def test_permanent_equivalence_without_repetitions(
+    generate_unitary_matrix,
+    generate_random_fock_state,
+):
+    d = np.random.randint(1, 10)
+    n = np.random.randint(1, 10)
+
+    rows = generate_random_fock_state(d, n)
+    cols = generate_random_fock_state(d, n)
+
+    unitary = generate_unitary_matrix(d)
+
+    ones = np.ones(n, dtype=int)
+
+    assert np.allclose(
+        permanent(unitary, rows=rows, cols=cols),
+        permanent(assym_reduce(unitary, rows, cols), ones, ones),
+    )
+
+
+def test_permanent_asymmetric_matrix():
+    unitary = np.array(
+        [
+            [0.909394 + 0.264435j, 0.00450261 + 0.0188079j, 0.316704 + 0.0490014j],
+            [-0.109435 - 0.117915j, 0.35198 + 0.812257j, 0.312276 + 0.304881j],
+        ]
+    )
+
+    rows = np.array([2, 1], dtype=int)
+    cols = np.array([1, 1, 1], dtype=int)
+
+    ones = np.ones(sum(rows), dtype=int)
+
+    assert np.isclose(
+        permanent(unitary, rows=rows, cols=cols),
+        permanent(assym_reduce(unitary, rows, cols), ones, ones),
+    )
+
+
+@pytest.mark.monkey
+def test_permanent_asymmetric_matrix_random(generate_random_fock_state):
+    d1 = np.random.randint(1, 10)
+    d2 = np.random.randint(1, 10)
+    n = np.random.randint(1, 10)
+
+    matrix = np.random.rand(d1, d2) + 1j * np.random.rand(d1, d2)
+
+    rows = generate_random_fock_state(d1, n)
+    cols = generate_random_fock_state(d2, n)
+
+    ones = np.ones(sum(rows), dtype=int)
+
+    assert np.isclose(
+        permanent(matrix, rows=rows, cols=cols),
+        permanent(assym_reduce(matrix, rows, cols), ones, ones),
     )

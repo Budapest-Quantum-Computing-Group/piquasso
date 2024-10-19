@@ -19,6 +19,8 @@ import numpy as np
 
 import piquasso as pq
 
+from scipy.special import comb
+
 from scipy.stats import unitary_group
 
 from pathlib import Path
@@ -233,3 +235,35 @@ def gaussian_state_assets(AssetHandler):
             return state
 
     return GaussianStateAssetHandler()
+
+
+def _get_click_distribution(d, n):
+    dist = np.empty(shape=(d,))
+    for c in range(1, d + 1):
+        dist[c - 1] = comb(d, c) * comb(n - 1, n - c) / comb(n + d - 1, n)
+
+    return dist
+
+
+@pytest.fixture(scope="session")
+def generate_random_fock_state():
+    def func(d, n):
+        occupation_numbers = np.zeros(shape=(d,), dtype=int)
+
+        modes = tuple(range(d))
+        c = d
+        k = n
+
+        while k > 0:
+            dist = _get_click_distribution(c, k)
+
+            c = np.random.choice(tuple(range(1, c + 1)), p=dist)
+            k -= c
+
+            modes = np.random.choice(modes, size=c, replace=False)
+
+            occupation_numbers[modes] += 1
+
+        return occupation_numbers
+
+    return func
