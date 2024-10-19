@@ -100,12 +100,12 @@ def assym_reduce(array, row_reduce_on, col_reduce_on):
 
     for index in range(len(row_reduce_on)):
         row_multiplier = row_reduce_on[index]
-        col_multiplier = col_reduce_on[index]
-
         proper_row_index[row_stride : row_stride + row_multiplier] = index
-        proper_col_index[col_stride : col_stride + col_multiplier] = index
-
         row_stride += row_multiplier
+
+    for index in range(len(col_reduce_on)):
+        col_multiplier = col_reduce_on[index]
+        proper_col_index[col_stride : col_stride + col_multiplier] = index
         col_stride += col_multiplier
 
     return array[np.ix_(proper_row_index, proper_col_index)]
