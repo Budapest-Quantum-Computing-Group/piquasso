@@ -32,7 +32,7 @@ RUN = "pq"
 GRAPH_COMPILE = True
 
 n_layers = 4
-n_mode_range = list(range(2, 16 + 1))
+n_mode_range = list(range(2, 15 + 1))
 cutoff = 10
 np_seed = 42
 
@@ -110,8 +110,8 @@ def benchmark(n_layers, d, cutoff, np_seed):
 
 
 def make_weights(layer_count, d, np_seed):
-    active_sd = 0.01
-    passive_sd = 0.1
+    active_sd = 0.1
+    passive_sd = 1.0
     np.random.seed(np_seed)
 
     M = int(d * (d - 1)) + max(1, d - 1)
