@@ -36,7 +36,7 @@ if __name__ == "__main__":
     y = []
     z = []
 
-    ITER = 5
+    ITER = 100
 
     FILENAME = f"hafnian_benchmark_{int(time.time())}.json"
 
