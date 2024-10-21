@@ -29,6 +29,10 @@ from piquasso import cvqnn
 import time
 
 
+ACTIVE_VAR = 0.1
+PASSIVE_VAR = 1.0
+
+
 tf.get_logger().setLevel("ERROR")
 np.set_printoptions(suppress=True, linewidth=200)
 
@@ -64,7 +68,6 @@ def _pq_loss(weights, cutoff, connector):
     )
 
 
-@tf.function(jit_compile=True)
 def _calculate_piquasso_results(weights, cutoff, connector):
     with tf.GradientTape() as tape:
         loss = _pq_loss(weights, cutoff, connector)
@@ -152,57 +155,60 @@ def _sf_layer(params, q):
 
 
 if __name__ == "__main__":
-    d = 2
-    layer_count = 5
-    cutoff = 10
+    d = 8
+    layer_count = 4
+    NUMBER_OF_ITERATIONS = 1
 
-    NUMBER_OF_ITERATIONS = 10
+    run_sf = False
 
-    weights = tf.Variable(
-        pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
-    )
+    for cutoff in range(3, 16):
+        print(cutoff)
+        weights = tf.Variable(
+            pq.cvqnn.generate_random_cvqnn_weights(
+                layer_count=layer_count,
+                d=d,
+                active_var=ACTIVE_VAR,
+                passive_var=PASSIVE_VAR,
+            )
+        )
 
-    connector = pq.TensorflowConnector(decorate_with=tf.function(jit_compile=True))
+        connector = pq.TensorflowConnector()
 
-    start_time = time.time()
-    _calculate_piquasso_results(
-        weights,
-        cutoff,
-        connector,
-    )
-    print("PQ COMPILE TIME:", time.time() - start_time)
-    print(
-        "GRAPH SIZE:",
-        measure_graph_size(
-            _calculate_piquasso_results,
+        # Warmup
+        _calculate_piquasso_results(
             weights,
             cutoff,
             connector,
-        ),
-    )
-
-    for i in range(NUMBER_OF_ITERATIONS):
-        weights = tf.Variable(
-            pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
         )
-        start_time = time.time()
-        print(f"{i:} ", end="")
-        _calculate_piquasso_results(weights, cutoff, connector)
-        print("PQ RUNTIME:", time.time() - start_time)
+        if run_sf:
+            _calculate_strawberryfields_results(weights, cutoff)
+        ####
 
-    weights = tf.Variable(
-        pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
-    )
+        for i in range(NUMBER_OF_ITERATIONS):
+            weights = tf.Variable(
+                pq.cvqnn.generate_random_cvqnn_weights(
+                    layer_count=layer_count,
+                    d=d,
+                    active_var=ACTIVE_VAR,
+                    passive_var=PASSIVE_VAR,
+                )
+            )
+            start_time = time.time()
+            _calculate_piquasso_results(weights, cutoff, connector)
+            print("PQ RUNTIME:", time.time() - start_time)
 
-    start_time = time.time()
-    _calculate_strawberryfields_results(weights, cutoff)
-    print("SF COMPILE TIME:", time.time() - start_time)
+        if not run_sf:
+            continue
 
-    for i in range(10):
-        weights = tf.Variable(
-            pq.cvqnn.generate_random_cvqnn_weights(layer_count=layer_count, d=d)
-        )
-        print(f"{i:} ", end="")
-        start_time = time.time()
-        _calculate_strawberryfields_results(weights, cutoff)
-        print("SF RUNTIME:", time.time() - start_time)
+        for i in range(NUMBER_OF_ITERATIONS):
+            weights = tf.Variable(
+                pq.cvqnn.generate_random_cvqnn_weights(
+                    layer_count=layer_count,
+                    d=d,
+                    active_var=ACTIVE_VAR,
+                    passive_var=PASSIVE_VAR,
+                )
+            )
+            start_time = time.time()
+            _calculate_strawberryfields_results(weights, cutoff)
+            print("SF RUNTIME:", time.time() - start_time)
