@@ -17,7 +17,7 @@ import numpy as np
 
 import numba as nb
 
-from numba import int32
+from numba import int64
 
 from piquasso._math.combinatorics import comb
 
@@ -32,8 +32,8 @@ def permanent(matrix, rows, cols):
     Implements Eq. (8) from https://arxiv.org/pdf/2309.07027.pdf.
     """  # noqa: E501
 
-    rows = rows.astype(np.int32)
-    cols = cols.astype(np.int32)
+    rows = rows.astype(np.int64)
+    cols = cols.astype(np.int64)
 
     # Determine minimal nonzero element
     min_idx = 0
@@ -44,7 +44,7 @@ def permanent(matrix, rows, cols):
             min_idx = i
 
     if len(rows) > 0 and minelem != 0:
-        rows_ = np.empty(len(rows) + 1, dtype=np.int32)
+        rows_ = np.empty(len(rows) + 1, dtype=np.int64)
         rows_[0] = 1
         rows_[1:] = rows
         rows_[1 + min_idx] -= 1
@@ -75,7 +75,7 @@ def permanent(matrix, rows, cols):
 
     mtx2 = matrix * 2
 
-    n_ary_limits = np.empty(len(rows) - 1, dtype=np.int32)
+    n_ary_limits = np.empty(len(rows) - 1, dtype=np.int64)
 
     for idx in range(len(n_ary_limits)):
         n_ary_limits[idx] = rows[idx + 1] + 1
@@ -172,11 +172,11 @@ def permanent(matrix, rows, cols):
 
 @nb.experimental.jitclass(
     [
-        ("gray_code", int32[:]),
-        ("n_ary_limits", int32[:]),
-        ("counter_chain", int32[:]),
-        ("offset_max", int32),
-        ("offset", int32),
+        ("gray_code", int64[:]),
+        ("n_ary_limits", int64[:]),
+        ("counter_chain", int64[:]),
+        ("offset_max", int64),
+        ("offset", int64),
     ]
 )
 class NaryGrayCodeCounter(object):
