@@ -29,13 +29,14 @@ def _get_inverse_permutation(p):
 
 @nb.njit(cache=True)
 def match_occupation_numbers(nvec_orig):
+    dtype = nvec_orig.dtype
     nvec = np.copy(nvec_orig)
     edge_reps = []
     edge_indices = []
 
     if len(nvec_orig) == 1:
         # NOTE: This function only executed when `sum(nvec_orig) % 2 == 0`.
-        return np.array([nvec_orig[0] // 2]), np.array([0, 0])
+        return np.array([nvec_orig[0] // 2], dtype=dtype), np.array([0, 0], dtype=dtype)
 
     while sum(nvec) > 1:
         sorter = np.argsort(nvec)
@@ -58,12 +59,18 @@ def match_occupation_numbers(nvec_orig):
         sorterinv = _get_inverse_permutation(sorter)
         nvec = nvec_sorted[sorterinv]
 
-    return np.array(edge_reps), np.array(edge_indices)
+    return np.array(edge_reps, dtype=dtype), np.array(edge_indices, dtype=dtype)
 
 
 @nb.njit(cache=True)
-def ix_(arr, rows, cols):
-    return arr[rows][:, cols]
+def ix_(matrix, rows, cols):
+    sliced_matrix = np.empty(shape=(len(rows), len(cols)), dtype=matrix.dtype)
+
+    for idx in range(len(rows)):
+        for jdx in range(len(cols)):
+            sliced_matrix[idx, jdx] = matrix[rows[idx], cols[jdx]]
+
+    return sliced_matrix
 
 
 @nb.njit(cache=True)

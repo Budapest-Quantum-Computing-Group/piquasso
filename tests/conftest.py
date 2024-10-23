@@ -32,7 +32,7 @@ from piquasso._simulators.connectors import NumpyConnector
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
-    np.set_printoptions(suppress=True, linewidth=200)
+    np.set_printoptions(suppress=True, linewidth=200, precision=5)
 
 
 @pytest.fixture

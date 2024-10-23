@@ -28,8 +28,6 @@ from perceval.algorithm import Sampler
 import piquasso as pq
 
 
-n = 2  # number of photons at the input
-m = 4  # number of modes
 N = 100  # number of samplings
 
 

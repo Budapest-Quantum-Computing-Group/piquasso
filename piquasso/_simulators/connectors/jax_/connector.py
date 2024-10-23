@@ -145,3 +145,6 @@ class JaxConnector(BuiltinConnector):
 
     def loop_hafnian(self, matrix, diagonal, reduce_on):
         raise NotImplementedError()
+
+    def loop_hafnian_batch(self, matrix, diagonal, reduce_on, cutoff):
+        raise NotImplementedError()

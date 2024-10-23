@@ -15,7 +15,6 @@
 
 from typing import Tuple, List
 
-import itertools
 import scipy
 import numpy as np
 
@@ -38,7 +37,7 @@ from piquasso.api.exceptions import InvalidInstruction
 
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import (
-    decompose_to_pure_and_mixed,
+    williamson,
     decompose_adjacency_matrix_into_circuit,
 )
 
@@ -358,139 +357,86 @@ def _get_particle_number_measurement_samples(
     state: GaussianState,
     instruction: Instruction,
     shots: int,
-) -> List[Tuple[int, ...]]:
+) -> np.ndarray:
     modes: Tuple[int, ...] = instruction.modes
+    connector = state._connector
+    config = state._config
 
     reduced_state = state.reduced(modes)
 
-    reduced_modes = tuple(range(len(modes)))
+    d = reduced_state.d
 
-    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
-        reduced_state.xxpp_covariance_matrix,
-        hbar=state._config.hbar,
-        connector=state._connector,
+    hbar = config.hbar
+    hbar_in_calculations = 2.0
+
+    normalized_cov = (
+        hbar / (2.0 * hbar_in_calculations) * reduced_state.xxpp_covariance_matrix
     )
-    pure_state = GaussianState(
-        len(reduced_state), connector=state._connector, config=state._config
+    normalized_mean = (
+        np.sqrt(hbar / hbar_in_calculations) * reduced_state.xxpp_mean_vector
     )
+    S, D = williamson(normalized_cov, connector)
 
-    pure_state.xxpp_covariance_matrix = pure_covariance
+    T = S @ S.T
+    mixed_diag = D - 2 * np.identity(len(D)) / 2
+    mixed_diag[mixed_diag < 0.0] = 0.0
 
-    heterodyne_detection_covariance = np.identity(2)
+    I = np.identity(d)
+    F = np.block([[I, 1j * I], [I, -1j * I]]) / np.sqrt(2)
+    Q = (F @ T @ F.conj().T + np.identity(2 * d)) / 2
+    B = -np.linalg.inv(Q)[d:, :d]
 
-    samples = []
+    sqrt_cov_1 = S @ np.sqrt(mixed_diag)
+    sqrt_cov_2 = np.linalg.cholesky(T + np.identity(2 * d))
 
-    for _ in itertools.repeat(None, shots):
-        pure_state.xxpp_mean_vector = state._config.rng.multivariate_normal(
-            reduced_state.xxpp_mean_vector, mixed_contribution
+    samples = np.empty(shape=(shots, d), dtype=int)
+
+    for idx in range(shots):
+        sample = _generate_sample(
+            B,
+            sqrt_cov_1,
+            sqrt_cov_2,
+            mean=normalized_mean,
+            connector=reduced_state._connector,
+            config=config,
         )
 
-        heterodyne_sample = _get_generaldyne_samples(
-            state=pure_state,
-            modes=reduced_modes,
-            shots=1,
-            detection_covariance=heterodyne_detection_covariance,
-        )[0]
-
-        sample: Tuple[int, ...] = tuple()
-
-        heterodyne_measured_modes = reduced_modes
-
-        for _ in itertools.repeat(None, len(reduced_modes)):
-            heterodyne_sample = heterodyne_sample[2:]
-            heterodyne_measured_modes = heterodyne_measured_modes[1:]
-
-            evolved_state = _get_generaldyne_evolved_state(
-                pure_state,
-                heterodyne_sample,
-                heterodyne_measured_modes,
-                heterodyne_detection_covariance,
-            )
-
-            choice = _get_particle_number_choice(
-                evolved_state,
-                sample,
-            )
-
-            sample = sample + (choice,)
-
-        samples.append(sample)
+        samples[idx] = sample
 
     return samples
 
 
-def _get_particle_number_choice(
-    state: GaussianState,
-    previous_sample: Tuple[int, ...],
-) -> int:
-    r"""
-    The original equations are
+def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, connector, config):
+    d = len(B)
+    cutoff = config.measurement_cutoff
+    rng = config.rng
 
-    .. math::
-        A = X - X Q^{-1} = \begin{bmatrix}
-            B & 0 \\
-            0 & B^* \\
-        \end{bmatrix}
+    possible_choices = np.arange(cutoff)
 
-    with
+    sample = np.zeros(d, dtype=int)
 
-    .. math::
-        X = \begin{bmatrix}
-            0 & \mathbb{I} \\
-            \mathbb{I} & 0 \\
-        \end{bmatrix}
+    pure_mean = mean + sqrt_cov_1 @ rng.normal(size=2 * d)
+    pure_mean_complex = (pure_mean[:d] + 1j * pure_mean[d:]) / 2
 
-    But then one could write
+    evolved_mean = pure_mean + sqrt_cov_2 @ rng.normal(size=2 * d)
+    evolved_mean_complex = (evolved_mean[:d] + 1j * evolved_mean[d:]) / 2
+    gamma = pure_mean_complex.conj() + B @ (evolved_mean_complex - pure_mean_complex)
 
-    .. math::
-        B = - Q^{-1}[d:, :d]
-
-    Everything can be rewritten using :math:`B` in the following manner:
-
-    ..math::
-        \gamma = \alpha^* - \alpha B \\
-        p_{vac} = \exp
-            \left (
-                - \Re(\gamma \alpha)
-            \right )
-            \sqrt{
-                \operatorname{det}(\mathbb{I} - B^* B)
-            } \\
-        p_{S} = p_{vac} \frac{
-            | \operatorname{lhaf}(\operatorname{filldiag}(B_S, \gamma_S))
-        }{
-            S!
-        }
-    """
-
-    d = len(state)
-
-    is_displaced = state._is_displaced()
-
-    B = -np.linalg.inv(state.Q_matrix)[d:, :d]
-    alpha = state.complex_displacement[:d]
-
-    gamma = alpha.conj() - alpha @ B
-
-    weights: np.ndarray = np.array([])
-
-    possible_choices = tuple(range(state._config.measurement_cutoff))
-
-    for n in possible_choices:
-        occupation_numbers = np.array(previous_sample + (n,))
-
-        hafnian_value = (
-            state._connector.loop_hafnian(B, gamma, occupation_numbers)
-            if is_displaced
-            else state._connector.hafnian(B, occupation_numbers)
+    for mode in range(d):
+        gamma -= evolved_mean_complex[mode] * B[:, mode]
+        mode_p_1 = mode + 1
+        matrix = B[:mode_p_1, :mode_p_1]
+        diagonal = gamma[:mode_p_1]
+        partial_sample = sample[:mode_p_1]
+        lhaf_values = connector.loop_hafnian_batch(
+            matrix, diagonal, partial_sample, cutoff
         )
+        weights = np.abs(lhaf_values) ** 2 / factorial(possible_choices)
+        weights /= np.sum(weights)
 
-        weight = abs(hafnian_value) ** 2 / factorial(n)
-        weights = np.append(weights, weight)
+        sample[mode] = rng.choice(possible_choices, p=weights)
 
-    weights /= np.sum(weights)
-
-    return state._config.rng.choice(possible_choices, p=weights)
+    return sample
 
 
 def threshold_measurement(

@@ -16,6 +16,8 @@
 import numba as nb
 import numpy as np
 
+from numba import complex128, int64
+
 from piquasso._math.combinatorics import comb
 
 from .powtrace import calculate_power_traces_loop
@@ -25,7 +27,7 @@ from .loop_corrections import calculate_loop_corrections
 
 
 @nb.njit(cache=True)
-def _scale_matrix(matrix):
+def _get_scale_factor(matrix):
     r"""
     Scales the matrix for better accuracy.
     """
@@ -33,26 +35,30 @@ def _scale_matrix(matrix):
     dim = matrix.shape[0]
 
     if dim <= 10:
-        return matrix, 1.0
+        return 1.0
 
     scale_factor = np.sum(np.abs(matrix))
 
     scale_factor = scale_factor / dim**2 / np.sqrt(2.0)
 
+    return scale_factor
+
+
+@nb.njit(cache=True)
+def _scale_matrix_and_diagonal(matrix, diagonal, scale_factor):
     inverse_scale_factor = 1 / scale_factor
+
+    dim = len(diagonal)
 
     for row_idx in range(dim):
         for col_idx in range(dim):
             if col_idx == row_idx:
-                matrix[row_idx, col_idx] = matrix[row_idx, col_idx] * np.sqrt(
-                    inverse_scale_factor
-                )
-            else:
-                matrix[row_idx, col_idx] = (
-                    matrix[row_idx, col_idx] * inverse_scale_factor
-                )
+                sqrt_inverse_scale_factor = np.sqrt(inverse_scale_factor)
+                diagonal[row_idx] = diagonal[row_idx] * sqrt_inverse_scale_factor
 
-    return matrix, scale_factor
+            matrix[row_idx, col_idx] = matrix[row_idx, col_idx] * inverse_scale_factor
+
+    return matrix, diagonal
 
 
 @nb.njit(cache=True)
@@ -147,7 +153,31 @@ def _calc_f_loop(traces, loop_corrections):
             for kdx in range(idx * jdx, dim_over_2 + 1):
                 data[p_aux1][kdx] += data[p_aux0][kdx - idx * jdx] * powfactor
 
-    return data[p_aux1][dim_over_2]
+    return data[p_aux1]
+
+
+@nb.njit(cache=True)
+def _extend(matrix_orig, diagonal_orig, occupation_numbers):
+    dim = len(matrix_orig)
+    new_matrix = np.empty((dim + 1, dim + 1), dtype=matrix_orig.dtype)
+    new_matrix[1:, 1:] = matrix_orig
+    new_matrix[0, 0] = 1.0
+    new_matrix[1:, 0] = 0.0
+    new_matrix[0, 1:] = 0.0
+
+    d = len(occupation_numbers)
+
+    new_occupation_numbers = np.empty(d + 1, dtype=occupation_numbers.dtype)
+    new_diagonal = np.empty(d + 1, dtype=diagonal_orig.dtype)
+
+    new_occupation_numbers[0] = 1
+    new_diagonal[0] = 1.0
+
+    for i in range(d):
+        new_occupation_numbers[i + 1] = occupation_numbers[i]
+        new_diagonal[i + 1] = diagonal_orig[i]
+
+    return new_matrix, new_diagonal, new_occupation_numbers
 
 
 @nb.njit(cache=True, parallel=True)
@@ -171,40 +201,20 @@ def loop_hafnian_with_reduction(matrix_orig, diagonal_orig, occupation_numbers):
         #
         # TODO: This is not the best handling of the odd case, and we can definitely
         # squeeze out a bit more performance if needed.
-        dim = len(matrix_orig)
-        new_matrix = np.empty((dim + 1, dim + 1), dtype=matrix_orig.dtype)
-        new_matrix[1:, 1:] = matrix_orig
-        new_matrix[0, 0] = 1.0
-        new_matrix[1:, 0] = 0.0
-        new_matrix[0, 1:] = 0.0
-
-        matrix_orig = new_matrix
-
-        d = len(occupation_numbers)
-
-        new_occupation_numbers = np.empty(d + 1, dtype=occupation_numbers.dtype)
-        new_diagonal = np.empty(d + 1, dtype=diagonal_orig.dtype)
-
-        new_occupation_numbers[0] = 1
-        new_diagonal[0] = 1.0
-
-        for i in range(d):
-            new_occupation_numbers[i + 1] = occupation_numbers[i]
-            new_diagonal[i + 1] = diagonal_orig[i]
-
-        occupation_numbers = new_occupation_numbers
-        diagonal_orig = new_diagonal
+        matrix_orig, diagonal_orig, occupation_numbers = _extend(
+            matrix_orig, diagonal_orig, occupation_numbers
+        )
 
     all_edges, edge_indices = match_occupation_numbers(occupation_numbers)
 
     matrix = ix_(matrix_orig, edge_indices, edge_indices)
     diagonal = diagonal_orig[edge_indices]
 
-    matrix, scale_factor = _scale_matrix(matrix)
-    diagonal = diagonal / np.sqrt(scale_factor)
+    scale_factor = _get_scale_factor(matrix)
+    matrix, diagonal = _scale_matrix_and_diagonal(matrix, diagonal, scale_factor)
 
     dim_over_2 = sum(all_edges)
-    dim = 2 * dim_over_2
+    number_of_reps = len(all_edges)
 
     result = 0.0
 
@@ -223,7 +233,7 @@ def loop_hafnian_with_reduction(matrix_orig, diagonal_orig, occupation_numbers):
 
         delta = np.empty_like(all_edges)
 
-        for i in range(len(all_edges)):
+        for i in range(number_of_reps):
             no_of_edges = all_edges[i]
             no_of_kept_edges = kept_edges[i]
 
@@ -233,21 +243,11 @@ def loop_hafnian_with_reduction(matrix_orig, diagonal_orig, occupation_numbers):
 
             delta[i] = 2 * no_of_kept_edges - no_of_edges
 
-        prefactor = (-1.0 if fact else 1) * combinatorial_factor
+        prefactor = (-1 if fact else 1) * combinatorial_factor
 
-        B, reduced_diagonal_left, reduced_diagonal_right = (
-            _calc_B_and_reduced_diagonals(matrix, diagonal, delta)
-        )
+        fs = _calculate_f_loop_from_matrix(matrix, diagonal, delta, dim_over_2)
 
-        traces = calculate_power_traces_loop(
-            reduced_diagonal_right, reduced_diagonal_left, B, dim_over_2
-        )
-
-        loop_corrections = calculate_loop_corrections(
-            reduced_diagonal_right, reduced_diagonal_left, B, dim_over_2
-        )
-
-        summand = prefactor * _calc_f_loop(traces, loop_corrections)
+        summand = prefactor * fs[dim_over_2]
 
         result += summand
 
@@ -256,3 +256,277 @@ def loop_hafnian_with_reduction(matrix_orig, diagonal_orig, occupation_numbers):
     result /= 1 << (dim_over_2 - 1)
 
     return result
+
+
+@nb.njit(cache=True)
+def _prepare_data(matrix_orig, diagonal_orig, occupation_numbers_orig, cutoff):
+    int_dtype = occupation_numbers_orig.dtype
+
+    particle_number_sum = sum(occupation_numbers_orig)
+
+    result_size = (cutoff - 1) // 2
+    result_size_odd = (cutoff - 2) // 2
+
+    occupation_numbers_orig_copy = np.copy(occupation_numbers_orig)
+
+    if particle_number_sum % 2 == 0:
+        all_edges_orig, edge_indices_orig = match_occupation_numbers(
+            occupation_numbers_orig
+        )
+        matrix = matrix_orig
+        diagonal = diagonal_orig
+
+        all_edges = np.concatenate(
+            (all_edges_orig, np.array((result_size,), dtype=int_dtype))
+        )
+        last_col_idx = len(matrix) - 1
+        edge_indices = np.concatenate(
+            (
+                edge_indices_orig,
+                np.array((last_col_idx, last_col_idx), dtype=int_dtype),
+            ),
+        )
+
+        occupation_numbers_orig_copy[-1] += 1
+
+        matrix_odd, diagonal_odd, _ = _extend(
+            matrix_orig, diagonal_orig, occupation_numbers_orig_copy
+        )
+
+        all_edges_odd = np.concatenate(
+            (
+                np.array((1,), dtype=int_dtype),
+                all_edges_orig,
+                np.array((result_size_odd,), dtype=int_dtype),
+            )
+        )
+        last_col_idx = len(matrix_odd) - 1
+        edge_indices_odd = np.concatenate(
+            (
+                np.array((0, last_col_idx), dtype=int_dtype),
+                edge_indices_orig + 1,
+                np.array((last_col_idx, last_col_idx), dtype=int_dtype),
+            )
+        )
+
+    else:
+        matrix, diagonal, occupation_numbers = _extend(
+            matrix_orig, diagonal_orig, occupation_numbers_orig
+        )
+        all_edges_orig, edge_indices_orig = match_occupation_numbers(occupation_numbers)
+        all_edges = np.concatenate(
+            (all_edges_orig, np.array((result_size,), dtype=int_dtype))
+        )
+        last_col_idx = len(matrix) - 1
+        edge_indices = np.concatenate(
+            (
+                edge_indices_orig,
+                np.array((last_col_idx, last_col_idx), dtype=int_dtype),
+            ),
+        )
+
+        occupation_numbers_orig_copy[-1] += 1
+
+        matrix_odd = matrix_orig
+        diagonal_odd = diagonal_orig
+
+        all_edges_odd, edge_indices_odd = match_occupation_numbers(
+            occupation_numbers_orig_copy
+        )
+        all_edges_odd = np.concatenate(
+            (all_edges_odd, np.array((result_size_odd,), dtype=int_dtype))
+        )
+        last_col_idx = len(matrix_odd) - 1
+        edge_indices_odd = np.concatenate(
+            (edge_indices_odd, np.array((last_col_idx, last_col_idx), dtype=int_dtype))
+        )
+
+    matrix = ix_(matrix, edge_indices, edge_indices)
+    diagonal = diagonal[edge_indices]
+
+    matrix_odd = ix_(matrix_odd, edge_indices_odd, edge_indices_odd)
+    diagonal_odd = diagonal_odd[edge_indices_odd]
+
+    return matrix, diagonal, matrix_odd, diagonal_odd, all_edges, all_edges_odd
+
+
+@nb.njit(cache=True)
+def _concatenate_results(
+    result, result_odd, scale_factor, scale_factor_odd, dim_over_2, dim_over_2_odd
+):
+    dim_even = len(result)
+    dim_odd = len(result_odd)
+    concat_result = np.empty(dim_even + dim_odd, dtype=result.dtype)
+
+    for i in range(dim_even):
+        concat_result[2 * i] = (
+            result[i]
+            / (1 << (dim_over_2 - dim_even + 1 + i))
+            * scale_factor ** (dim_over_2 - dim_even + 1 + i)
+        )
+
+    for i in range(dim_odd):
+        concat_result[2 * i + 1] = (
+            result_odd[i]
+            / (1 << (dim_over_2_odd - dim_odd + 1 + i))
+            * scale_factor_odd ** (dim_over_2_odd - dim_odd + 1 + i)
+        )
+
+    return concat_result
+
+
+@nb.njit(cache=True)
+def _calculate_aux_data(all_edges, kept_edges, comb_cache):
+    comb_factor = 1.0
+    fact = False
+
+    number_of_reps = len(all_edges)
+
+    delta = np.empty_like(all_edges)
+
+    for i in range(number_of_reps):
+        no_of_edges = all_edges[i]
+        no_of_kept_edges = kept_edges[i]
+
+        fact ^= (no_of_edges - no_of_kept_edges) % 2
+
+        if i != number_of_reps - 1:
+            comb_input = (no_of_edges, no_of_kept_edges)
+            comb_factor *= comb_cache[comb_input]
+
+        delta[i] = 2 * no_of_kept_edges - no_of_edges
+
+    return delta, fact, comb_factor
+
+
+@nb.njit(cache=True)
+def _calculate_f_loop_from_matrix(matrix, diagonal, delta, dim_over_2):
+    B, reduced_diagonal_left, reduced_diagonal_right = _calc_B_and_reduced_diagonals(
+        matrix, diagonal, delta
+    )
+
+    traces = calculate_power_traces_loop(
+        reduced_diagonal_right, reduced_diagonal_left, B, dim_over_2
+    )
+
+    loop_corrections = calculate_loop_corrections(
+        reduced_diagonal_right, reduced_diagonal_left, B, dim_over_2
+    )
+
+    return _calc_f_loop(traces, loop_corrections)
+
+
+@nb.njit(cache=True)
+def _calculate_summand(fs, result_size, kept_edges, fact, comb_factor, comb_cache):
+    dim_over_2 = len(fs) - 1
+
+    summand = np.zeros(result_size + 1, dtype=fs.dtype)
+    for idx in range(kept_edges[-1], result_size + 1):
+        prefactor = (
+            (-1 if fact ^ ((idx - result_size) % 2) else 1)
+            * comb_factor
+            * comb_cache[idx, kept_edges[-1]]
+        )
+
+        if idx >= result_size - kept_edges[-1]:
+            prefactor *= (
+                1
+                + (-1 if (result_size - idx) % 2 else 1)
+                * comb_cache[idx, result_size - kept_edges[-1]]
+                / comb_cache[idx, kept_edges[-1]]
+            )
+
+        summand[idx] = prefactor * fs[dim_over_2 - result_size + idx]
+
+    return summand
+
+
+@nb.njit(
+    complex128[:](complex128[:, :], complex128[:], int64[:], int64),
+    cache=True,
+    parallel=True,
+)
+def loop_hafnian_with_reduction_batch(
+    matrix_orig, diagonal_orig, occupation_numbers_orig, cutoff
+):
+    r"""
+    Calculates the loop hafnian of the input matrix using the power trace algorithm with
+    Glynn-type iterations with batching, as described in
+    https://arxiv.org/abs/2108.01622.
+    """
+    particle_number_sum = sum(occupation_numbers_orig)
+
+    matrix, diagonal, matrix_odd, diagonal_odd, all_edges, all_edges_odd = (
+        _prepare_data(
+            matrix_orig,
+            diagonal_orig,
+            occupation_numbers_orig,
+            cutoff,
+        )
+    )
+
+    scale_factor = _get_scale_factor(matrix)
+    scale_factor_odd = _get_scale_factor(matrix_odd)
+
+    matrix, diagonal = _scale_matrix_and_diagonal(matrix, diagonal, scale_factor)
+    matrix_odd, diagonal_odd = _scale_matrix_and_diagonal(
+        matrix_odd, diagonal_odd, scale_factor_odd
+    )
+
+    comb_cache = nb.typed.Dict()
+    for n in range(max(max(all_edges_odd), max(all_edges)) + 1):
+        for k in range(n + 1):
+            comb_cache[(n, k)] = comb(n, k)
+
+    dim_over_2 = sum(all_edges)
+    dim_over_2_odd = sum(all_edges_odd)
+
+    size = np.prod(all_edges + 1) // 2
+    size_odd = np.prod(all_edges_odd + 1) // 2
+
+    result_size = (cutoff - 1) // 2
+    result_size_odd = (cutoff - 2) // 2
+
+    result = np.zeros(result_size + 1, dtype=matrix.dtype)
+    result_odd = np.zeros(result_size_odd + 1, dtype=matrix.dtype)
+
+    for permutation_idx in nb.prange(size + size_odd):
+        if permutation_idx < size:
+            kept_edges = get_kept_edges(all_edges, permutation_idx)
+
+            delta, fact, comb_factor = _calculate_aux_data(
+                all_edges, kept_edges, comb_cache
+            )
+
+            fs = _calculate_f_loop_from_matrix(matrix, diagonal, delta, dim_over_2)
+
+            summand = _calculate_summand(
+                fs, result_size, kept_edges, fact, comb_factor, comb_cache
+            )
+
+            result += summand
+        else:
+            kept_edges = get_kept_edges(all_edges_odd, permutation_idx - size)
+
+            delta, fact, comb_factor = _calculate_aux_data(
+                all_edges_odd, kept_edges, comb_cache
+            )
+
+            fs = _calculate_f_loop_from_matrix(
+                matrix_odd, diagonal_odd, delta, dim_over_2_odd
+            )
+
+            summand = _calculate_summand(
+                fs, result_size_odd, kept_edges, fact, comb_factor, comb_cache
+            )
+
+            result_odd += summand
+
+    concat_result = _concatenate_results(
+        result, result_odd, scale_factor, scale_factor_odd, dim_over_2, dim_over_2_odd
+    )
+
+    if particle_number_sum == 0:
+        concat_result[0] = 1.0
+
+    return concat_result

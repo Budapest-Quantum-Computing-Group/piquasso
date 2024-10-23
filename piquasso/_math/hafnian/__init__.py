@@ -23,12 +23,17 @@ Moreover, the algorithms are enhanced by factoring in repetitions according to
 https://arxiv.org/abs/2108.01622.
 """
 
-from .plain_hafnian import hafnian_with_reduction
+from .plain_hafnian import hafnian_with_reduction, hafnian_with_reduction_batch
 
-from .loop_hafnian import loop_hafnian_with_reduction
+from .loop_hafnian import (
+    loop_hafnian_with_reduction,
+    loop_hafnian_with_reduction_batch,
+)
 
 
 __all__ = [
     "hafnian_with_reduction",
+    "hafnian_with_reduction_batch",
     "loop_hafnian_with_reduction",
+    "loop_hafnian_with_reduction_batch",
 ]

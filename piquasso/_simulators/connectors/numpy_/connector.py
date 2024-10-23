@@ -18,7 +18,11 @@ import scipy
 import numpy as np
 
 from piquasso._math.permanent import permanent as permanent_with_reduction
-from piquasso._math.hafnian import hafnian_with_reduction, loop_hafnian_with_reduction
+from piquasso._math.hafnian import (
+    hafnian_with_reduction,
+    loop_hafnian_with_reduction,
+    loop_hafnian_with_reduction_batch,
+)
 
 from ..connector import BuiltinConnector
 
@@ -51,6 +55,7 @@ class NumpyConnector(BuiltinConnector):
     permanent = instancemethod(permanent_with_reduction)
     hafnian = instancemethod(hafnian_with_reduction)
     loop_hafnian = instancemethod(loop_hafnian_with_reduction)
+    loop_hafnian_batch = instancemethod(loop_hafnian_with_reduction_batch)
     calculate_interferometer_on_fock_space = instancemethod(
         calculate_interferometer_on_fock_space
     )
