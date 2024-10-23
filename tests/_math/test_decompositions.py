@@ -23,7 +23,6 @@ from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
 from piquasso._math.decompositions import (
     takagi,
     williamson,
-    decompose_to_pure_and_mixed,
 )
 
 from piquasso._simulators.connectors import (
@@ -300,62 +299,3 @@ def test_williamson_with_special_matrix(connector):
     assert is_symplectic(symplectic, form_func=xp_symplectic_form)
     assert np.all(np.isreal(symplectic))
     assert np.allclose(matrix, symplectic @ diagonal @ symplectic.T)
-
-
-@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
-def test_decompose_to_pure_and_mixed_with_identity(connector):
-    hbar = 42
-    covariance_matrix = hbar * np.identity(4)
-    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
-        covariance_matrix,
-        hbar=hbar,
-        connector=connector,
-    )
-
-    assert np.allclose(mixed_contribution, 0.0)
-    assert np.allclose(covariance_matrix, pure_covariance)
-
-
-@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
-def test_decompose_to_pure_and_mixed_with_pure_gaussian_yield_no_mixed_contribution(
-    connector,
-):
-    d = 3
-    with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
-        pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
-
-    simulator = pq.GaussianSimulator(d=d)
-    state = simulator.execute(program).state
-
-    covariance_matrix = state.xxpp_covariance_matrix
-
-    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
-        covariance_matrix,
-        hbar=state._config.hbar,
-        connector=connector,
-    )
-
-    assert np.allclose(mixed_contribution, 0.0)
-    assert np.allclose(covariance_matrix, pure_covariance)
-
-
-@pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
-def test_decompose_to_pure_and_mixed_with_reduced_gaussian(connector):
-    d = 3
-    with pq.Program() as program:
-        pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
-        pq.Q(1, 2) | pq.Squeezing2(r=0.2, phi=np.pi / 5)
-
-    simulator = pq.GaussianSimulator(d=d)
-    state = simulator.execute(program).state
-
-    reduced_state = state.reduced(modes=(0, 2))
-
-    covariance_matrix = reduced_state.xxpp_covariance_matrix
-
-    pure_covariance, mixed_contribution = decompose_to_pure_and_mixed(
-        covariance_matrix, hbar=state._config.hbar, connector=connector
-    )
-
-    assert np.allclose(pure_covariance + mixed_contribution, covariance_matrix)

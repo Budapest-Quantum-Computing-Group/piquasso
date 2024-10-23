@@ -108,6 +108,20 @@ class BaseConnector(abc.ABC):
         """
 
     @abc.abstractmethod
+    def loop_hafnian_batch(
+        self,
+        matrix: numpy.ndarray,
+        diagonal: numpy.ndarray,
+        reduce_on: numpy.ndarray,
+        cutoff: int,
+    ) -> float:
+        r"""Batch loop hafnian calculation.
+
+        Same as :meth:`loop_hafnian`, but with batching, according to
+        https://arxiv.org/abs/2108.01622.
+        """
+
+    @abc.abstractmethod
     def assign(self, array, index, value):
         """Item assignment."""
 

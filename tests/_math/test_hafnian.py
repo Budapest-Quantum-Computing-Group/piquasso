@@ -20,7 +20,9 @@ import numpy as np
 from scipy.linalg import block_diag
 from piquasso._math.hafnian import (
     hafnian_with_reduction,
+    hafnian_with_reduction_batch,
     loop_hafnian_with_reduction,
+    loop_hafnian_with_reduction_batch,
 )
 
 from piquasso._math.linalg import reduce_
@@ -439,6 +441,27 @@ def test_hafnian_with_reduction_equivalence():
 
 
 @pytest.mark.monkey
+def test_hafnian_with_reduction_scaling_equivalence():
+    for _ in range(10):
+        d = np.random.randint(1, 10)
+        max_photons = np.random.randint(1, 10)
+        A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+
+        A = A + A.T
+
+        occupation_numbers = np.random.randint(0, max_photons, d)
+
+        scaling_factor = np.random.rand() + 1 / 2
+
+        scaled_before = hafnian_with_reduction(scaling_factor * A, occupation_numbers)
+        scaled_after = scaling_factor ** (
+            np.sum(occupation_numbers) // 2
+        ) * hafnian_with_reduction(A, occupation_numbers)
+
+        assert np.isclose(scaled_before, scaled_after)
+
+
+@pytest.mark.monkey
 def test_loop_hafnian_with_reduction_equivalence():
     for _ in range(100):
         d = 5
@@ -465,3 +488,187 @@ def test_loop_hafnian_with_reduction_equivalence():
         actual = loop_hafnian_with_reduction(A, diagonal, occupation_numbers)
 
         assert np.isclose(expected, actual)
+
+
+@pytest.mark.monkey
+def test_loop_hafnian_with_reduction_scaling_equivalence():
+    for _ in range(10):
+        d = np.random.randint(1, 10)
+        max_photons = np.random.randint(1, 5)
+        A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+
+        A = A + A.T
+
+        diagonal = np.random.rand(d) + 1j * np.random.rand(d)
+
+        occupation_numbers = 2 * np.random.randint(0, max_photons, d)
+
+        scaling_factor = np.random.rand() + 1 / 2
+
+        scaled_before = loop_hafnian_with_reduction(
+            scaling_factor * A, np.sqrt(scaling_factor) * diagonal, occupation_numbers
+        )
+        scaled_after = scaling_factor ** (
+            np.sum(occupation_numbers) // 2
+        ) * loop_hafnian_with_reduction(A, diagonal, occupation_numbers)
+
+        assert np.isclose(scaled_before, scaled_after)
+
+
+@pytest.mark.monkey
+def test_loop_hafnian_with_reduction_odd_even_equivalence():
+    for _ in range(100):
+        d = np.random.randint(1, 10)
+        max_photons = np.random.randint(1, 5)
+        A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+
+        A_odd = A + A.T
+
+        diagonal_odd = np.random.rand(d) + 1j * np.random.rand(d)
+
+        occupation_numbers_odd = 2 * np.random.randint(0, max_photons, d)
+        occupation_numbers_odd[0] += 1
+
+        odd_case = loop_hafnian_with_reduction(
+            A_odd, diagonal_odd, occupation_numbers_odd
+        )
+
+        occupation_numbers_even = np.concatenate([[1], occupation_numbers_odd])
+        diagonal_even = np.concatenate([[1.0], diagonal_odd])
+
+        A_even = block_diag([1.0], A_odd)
+
+        even_case = loop_hafnian_with_reduction(
+            A_even, diagonal_even, occupation_numbers_even
+        )
+
+        assert np.isclose(odd_case, even_case)
+
+
+@pytest.mark.parametrize(
+    "occupation_numbers, cutoff",
+    [
+        (np.array([1, 3, 0, 0]), 5),
+        (np.array([1, 3, 2, 0]), 6),
+        (np.array([1, 5, 2, 0]), 9),
+        (np.array([1, 5, 2, 0]), 11),
+        (np.array([2, 0, 2, 0]), 12),
+        (np.array([0, 0, 0, 0]), 7),
+        (np.array([2, 2, 4, 0]), 6),
+        (np.array([0, 1, 0, 0]), 8),
+        (np.array([2, 1, 0, 0]), 7),
+        (np.array([2, 1, 4, 0]), 12),
+    ],
+)
+def test_hafnian_with_reduction_batch(occupation_numbers, cutoff):
+    matrix = np.array(
+        [
+            [1j, 2, 3j, 4],
+            [2, 6, 7, 8j],
+            [3j, 7, 3, 4],
+            [4, 8j, 4, 8j],
+        ],
+        dtype=complex,
+    )
+    mask = np.array([0, 0, 0, 1], dtype=int)
+
+    assert np.allclose(
+        hafnian_with_reduction_batch(matrix, occupation_numbers, cutoff),
+        [
+            hafnian_with_reduction(matrix, occupation_numbers + i * mask)
+            for i in range(cutoff)
+        ],
+    )
+
+
+@pytest.mark.monkey
+def test_hafnian_with_reduction_batch_random():
+    for _ in range(100):
+        d = np.random.randint(1, 10)
+        max_photons = np.random.randint(1, 5)
+        A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+
+        A = A + A.T
+
+        occupation_numbers = np.random.randint(0, max_photons, d)
+        occupation_numbers[-1] = 0
+
+        cutoff = np.random.randint(1, 12)
+
+        mask = np.zeros_like(occupation_numbers)
+        mask[-1] = 1
+
+        assert np.allclose(
+            hafnian_with_reduction_batch(A, occupation_numbers, cutoff),
+            [
+                hafnian_with_reduction(A, occupation_numbers + i * mask)
+                for i in range(cutoff)
+            ],
+        )
+
+
+@pytest.mark.parametrize(
+    "occupation_numbers, cutoff",
+    [
+        (np.array([1, 3, 0, 0]), 5),
+        (np.array([1, 3, 2, 0]), 6),
+        (np.array([1, 5, 2, 0]), 9),
+        (np.array([1, 5, 2, 0]), 11),
+        (np.array([2, 0, 2, 0]), 12),
+        (np.array([0, 0, 0, 0]), 7),
+        (np.array([2, 2, 4, 0]), 6),
+        (np.array([0, 1, 0, 0]), 8),
+        (np.array([2, 1, 0, 0]), 7),
+        (np.array([2, 1, 4, 0]), 12),
+        (np.array([2, 4, 5, 0]), 16),
+        (np.array([1, 1, 1, 0]), 15),
+    ],
+)
+def test_loop_hafnian_with_reduction_batch(occupation_numbers, cutoff):
+    matrix = np.array(
+        [
+            [1j, 2, 3j, 4],
+            [2, 6, 7, 8j],
+            [3j, 7, 3, 4],
+            [4, 8j, 4, 8j],
+        ],
+        dtype=complex,
+    )
+    mask = np.array([0, 0, 0, 1], dtype=int)
+    diagonal = np.array([0.1, 0.2, 0.3, 0.4], dtype=complex)
+
+    assert np.allclose(
+        loop_hafnian_with_reduction_batch(matrix, diagonal, occupation_numbers, cutoff),
+        [
+            loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers + i * mask)
+            for i in range(cutoff)
+        ],
+    )
+
+
+@pytest.mark.monkey
+def test_loop_hafnian_with_reduction_batch_random():
+    for _ in range(100):
+        d = np.random.randint(1, 12)
+        max_photons = np.random.randint(1, 5)
+        A = np.random.rand(d, d) + 1j * np.random.rand(d, d)
+        A = A + A.T
+        diagonal = np.random.rand(d) + 1j * np.random.rand(d)
+
+        occupation_numbers = np.random.randint(0, max_photons, d)
+        occupation_numbers[-1] = 0
+
+        cutoff = np.random.randint(1, 12)
+
+        mask = np.zeros_like(occupation_numbers)
+        mask[-1] = 1
+
+        expected = [
+            loop_hafnian_with_reduction(A, diagonal, occupation_numbers + i * mask)
+            for i in range(cutoff)
+        ]
+        actual = loop_hafnian_with_reduction_batch(
+            A, diagonal, occupation_numbers, cutoff
+        )
+
+        assert np.allclose(expected, actual)

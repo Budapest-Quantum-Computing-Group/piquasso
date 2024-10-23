@@ -130,7 +130,7 @@ def _calc_f(traces, scale_factor):
 
         inverse_scale_factor = inverse_scale_factor / scale_factor
 
-    return data[p_aux1][dim_over_2]
+    return data[p_aux1]
 
 
 @nb.njit(cache=True, parallel=True)
@@ -201,7 +201,7 @@ def hafnian_with_reduction(matrix_orig, occupation_numbers):
 
         traces = calc_power_traces(reduced_matrix, dim_over_2)
 
-        summand = prefactor * _calc_f(traces, second_scale_factor)
+        summand = prefactor * _calc_f(traces, second_scale_factor)[dim_over_2]
 
         result += summand
 
@@ -209,3 +209,121 @@ def hafnian_with_reduction(matrix_orig, occupation_numbers):
     result /= 1 << (dim_over_2 - 1)
 
     return result
+
+
+@nb.njit(cache=True, parallel=True)
+def hafnian_with_reduction_batch(matrix_orig, occupation_numbers, cutoff):
+    r"""
+    Calculates the hafnian of the input matrix using the power trace algorithm with
+    Glynn-type iterations with batching, as described in
+    https://arxiv.org/abs/2108.01622.
+    """
+    particle_number_sum = sum(occupation_numbers)
+
+    odd = particle_number_sum % 2
+
+    if odd:
+        result_size = cutoff // 2 - 1
+        new_occupation_numbers = np.copy(occupation_numbers)
+        new_occupation_numbers[-1] += 1
+    else:
+        result_size = (cutoff - 1) // 2
+        new_occupation_numbers = occupation_numbers
+
+    all_edges, edge_indices = match_occupation_numbers(new_occupation_numbers)
+
+    new_all_edges = np.empty(len(all_edges) + 1, dtype=all_edges.dtype)
+    new_all_edges[: len(all_edges)] = all_edges
+    new_all_edges[-1] = result_size
+    all_edges = new_all_edges
+
+    new_edge_indices = np.empty(len(edge_indices) + 2, dtype=edge_indices.dtype)
+    new_edge_indices[: len(edge_indices)] = edge_indices
+    new_edge_indices[-1] = len(matrix_orig) - 1
+    new_edge_indices[-2] = len(matrix_orig) - 1
+    edge_indices = new_edge_indices
+
+    matrix_reduced = ix_(matrix_orig, edge_indices, edge_indices)
+
+    if matrix_reduced.shape[0] <= 10:
+        scale_factor = 1.0
+        matrix = matrix_reduced
+    else:
+        scale_factor = (
+            np.sum(np.abs(matrix_reduced)) / matrix_reduced.shape[0] ** 2 / np.sqrt(2.0)
+        )
+        matrix = matrix_reduced / scale_factor
+
+    dim_over_2 = np.sum(all_edges)
+    number_of_reps = len(all_edges)
+
+    size = np.prod(all_edges + 1) // 2
+
+    comb_cache = {}
+
+    for n in range(max(all_edges) + 1):
+        for k in range(n + 1):
+            comb_cache[(n, k)] = comb(n, k)
+
+    result = np.zeros(shape=result_size + 1, dtype=matrix.dtype)
+
+    for permutation_idx in nb.prange(size):
+        summand = np.zeros(shape=result_size + 1, dtype=matrix.dtype)
+        kept_edges = get_kept_edges(all_edges, permutation_idx)
+        fact = False ^ (result_size % 2)
+        combinatorial_factor = 1.0
+
+        delta = np.empty_like(all_edges)
+
+        for i in range(number_of_reps):
+            no_of_edges = all_edges[i]
+            no_of_kept_edges = kept_edges[i]
+
+            fact ^= (no_of_edges - no_of_kept_edges) % 2
+
+            if i != number_of_reps - 1:
+                comb_input = (no_of_edges, no_of_kept_edges)
+                combinatorial_factor *= comb_cache[comb_input]
+
+            delta[i] = 2 * no_of_kept_edges - no_of_edges
+
+        reduced_matrix = _calc_reduced_matrix(matrix, delta)
+
+        reduced_matrix, second_scale_factor = _scale_matrix(reduced_matrix)
+
+        traces = calc_power_traces(reduced_matrix, dim_over_2)
+
+        fs = _calc_f(traces, second_scale_factor)
+
+        for idx in range(kept_edges[-1], result_size + 1):
+            prefactor = (
+                (-1 if fact ^ (idx % 2) else 1)
+                * combinatorial_factor
+                * comb_cache[idx, kept_edges[-1]]
+            )
+
+            if idx >= result_size - kept_edges[-1]:
+                prefactor *= (
+                    1
+                    + (-1 if (result_size - idx) % 2 else 1)
+                    * comb_cache[idx, result_size - kept_edges[-1]]
+                    / comb_cache[idx, kept_edges[-1]]
+                )
+
+            summand[idx] = prefactor * fs[dim_over_2 - result_size + idx]
+
+        result += summand
+
+    for i in range(result_size + 1):
+        result[i] *= np.power(scale_factor, dim_over_2 + i - result_size)
+        result[i] /= 1 << (dim_over_2 - result_size + i)
+
+    concat_result = np.zeros(cutoff, dtype=result.dtype)
+
+    for i in range(len(result)):
+        concat_result[2 * i + odd] = result[i]
+
+    if particle_number_sum == 0:
+        concat_result[0] = 1.0
+
+    return concat_result

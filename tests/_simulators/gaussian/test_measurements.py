@@ -287,7 +287,6 @@ def test_measure_threshold_on_all_modes(nondisplaced_state):
     assert result
 
 
-@pytest.mark.monkey
 def test_seeded_gaussian_boson_sampling():
     d = 5
     shots = 10
@@ -317,7 +316,170 @@ def test_seeded_gaussian_boson_sampling():
     )
     result2 = simulator2.execute(gaussian_boson_sampling, shots=shots)
 
-    assert result1.samples == result2.samples
+    assert np.allclose(result1.samples, result2.samples)
+
+
+def test_seeded_gaussian_boson_sampling_samples_from_graph():
+    d = 5
+    shots = 50
+
+    A = np.array(
+        [
+            [0, 1, 0, 1, 1],
+            [1, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0],
+            [1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 0],
+        ]
+    )
+
+    with pq.Program() as gaussian_boson_sampling:
+        pq.Q(all) | pq.Graph(A)
+
+        pq.Q(all) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=123)
+    )
+    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+
+    assert np.allclose(
+        samples,
+        [
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 1, 0],
+            [2, 0, 0, 2, 2],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [4, 2, 1, 4, 3],
+            [0, 0, 0, 0, 0],
+            [4, 4, 0, 2, 4],
+            [0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 1],
+            [2, 0, 0, 1, 1],
+            [3, 1, 0, 3, 3],
+            [0, 0, 0, 1, 1],
+            [0, 1, 0, 0, 1],
+            [0, 0, 0, 0, 0],
+            [3, 1, 2, 4, 2],
+            [0, 0, 1, 1, 0],
+            [1, 1, 0, 1, 1],
+            [0, 0, 0, 0, 0],
+            [1, 2, 0, 0, 1],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [1, 2, 0, 1, 2],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [1, 1, 0, 2, 2],
+            [0, 0, 0, 0, 0],
+            [2, 0, 1, 3, 2],
+            [2, 1, 0, 0, 1],
+            [1, 4, 0, 0, 3],
+            [3, 4, 1, 3, 3],
+            [0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 0],
+            [1, 1, 0, 0, 2],
+            [0, 0, 0, 0, 0],
+            [3, 0, 0, 4, 3],
+            [1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 1],
+            [0, 1, 1, 2, 2],
+            [0, 1, 0, 0, 1],
+            [0, 0, 0, 0, 0],
+            [1, 1, 0, 1, 1],
+            [2, 3, 0, 2, 3],
+            [0, 0, 1, 1, 0],
+            [0, 0, 0, 1, 1],
+            [1, 2, 0, 1, 2],
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 2, 1],
+        ],
+    )
+
+
+def test_seeded_gaussian_boson_sampling_samples_displaced():
+    d = 5
+    shots = 50
+
+    with pq.Program() as gaussian_boson_sampling:
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.1) | pq.Displacement(r=1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(0.0959408065906761, 0.06786053071484363)
+        pq.Q(2, 3) | pq.Beamsplitter(0.7730047654405018, 1.453770233324797)
+        pq.Q(1, 2) | pq.Beamsplitter(1.0152680371119776, 1.2863559998816205)
+        pq.Q(3, 4) | pq.Beamsplitter(1.3205517879465705, 0.5236836466492961)
+        pq.Q(0, 1) | pq.Beamsplitter(4.394480318177715, 4.481575657714487)
+        pq.Q(2, 3) | pq.Beamsplitter(2.2300919706807534, 1.5073556513699888)
+        pq.Q(1, 2) | pq.Beamsplitter(2.2679037068773673, 1.9550229282085838)
+        pq.Q(3, 4) | pq.Beamsplitter(3.340269832485504, 3.289367083610399)
+
+        pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=123)
+    )
+
+    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+
+    assert np.allclose(
+        samples,
+        [
+            [1, 1, 1],
+            [1, 4, 1],
+            [0, 3, 0],
+            [0, 1, 1],
+            [0, 2, 1],
+            [1, 3, 1],
+            [0, 4, 0],
+            [0, 3, 1],
+            [0, 4, 0],
+            [0, 3, 0],
+            [0, 3, 0],
+            [0, 2, 0],
+            [0, 0, 0],
+            [0, 2, 1],
+            [0, 1, 0],
+            [2, 0, 0],
+            [1, 1, 2],
+            [0, 0, 1],
+            [0, 0, 2],
+            [0, 2, 0],
+            [2, 4, 1],
+            [0, 1, 1],
+            [0, 1, 0],
+            [0, 0, 0],
+            [0, 4, 1],
+            [0, 4, 0],
+            [1, 3, 2],
+            [1, 2, 0],
+            [1, 4, 1],
+            [1, 1, 2],
+            [0, 4, 1],
+            [0, 2, 0],
+            [2, 1, 2],
+            [1, 1, 2],
+            [0, 2, 1],
+            [1, 3, 3],
+            [0, 3, 2],
+            [0, 2, 0],
+            [0, 4, 0],
+            [0, 3, 0],
+            [0, 2, 0],
+            [0, 2, 1],
+            [1, 2, 1],
+            [0, 3, 1],
+            [1, 3, 0],
+            [0, 3, 0],
+            [0, 2, 2],
+            [0, 4, 0],
+            [1, 2, 0],
+            [0, 1, 1],
+        ],
+    )
 
 
 def test_ThresholdMeasurement_use_torontonian_seeding():
