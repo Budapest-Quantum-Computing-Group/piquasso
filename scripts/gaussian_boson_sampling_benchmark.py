@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     # Warmup
     m = 2
-    squeezings = np.random.normal(0.0, 1.0, m)
+    squeezings = np.arcsinh(1)
     unitary = unitary_group.rvs(m)
     get_strawberry_samples(squeezings, unitary)
     get_piquasso_samples(squeezings, unitary)
@@ -82,11 +82,11 @@ if __name__ == "__main__":
     sf_times = []
     pq_times = []
 
-    for m in range(2, 30):
+    for m in range(2, 100):
         print("m=", m)
         x.append(m)
 
-        squeezings = np.random.normal(0.0, 1.0, m)
+        squeezings = np.arcsinh(1)
         unitary = unitary_group.rvs(m)
 
         start_time = time.time()
