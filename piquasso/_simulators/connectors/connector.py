@@ -107,6 +107,9 @@ class BuiltinConnector(BaseConnector):
         Note:
             There are faster algorithms, but this is fine for now.
         """
+        if matrix.shape[0] == 0:
+            return 1.0
+
         if matrix.shape[0] % 2 == 1:
             return 0.0
 

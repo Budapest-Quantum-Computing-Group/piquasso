@@ -530,6 +530,31 @@ def test_get_majorana_monomial_expectation_value_random_without_multiplicities(
 
 @pytest.mark.monkey
 @for_all_connectors
+def test_get_majorana_monomial_expectation_value_empty(
+    connector, generate_fermionic_gaussian_hamiltonian
+):
+    d = 3
+
+    parent_hamiltonian = generate_fermionic_gaussian_hamiltonian(d)
+
+    program = pq.Program(
+        [pq.fermionic.ParentHamiltonian(hamiltonian=parent_hamiltonian)]
+    )
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+    state = simulator.execute(program).state
+
+    density_matrix = state.density_matrix
+
+    empty_indices = np.array([], dtype=int)
+
+    assert np.isclose(
+        state.get_majorana_monomial_expectation_value(empty_indices),
+        np.trace(density_matrix),
+    )
+
+
+@pytest.mark.monkey
+@for_all_connectors
 def test_get_majorana_monomial_expectation_value_random_with_possible_multiplicities(
     connector, get_majorana_operators, generate_fermionic_gaussian_hamiltonian
 ):
