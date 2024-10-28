@@ -12,7 +12,7 @@ keywords = ["piquasso", "quantum", "photonic"]
 maintainers = [
   { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" },
 ]
-requires-python = ">=3.8,<3.13"
+requires-python = ">=3.8"
 dependencies = [
   "numpy>=1.19.5",
   "scipy>=1.5.4",
