@@ -17,14 +17,25 @@ import pytest
 
 import numpy as np
 import piquasso as pq
-import tensorflow as tf
+
+from pytest_lazy_fixtures import lf
+
+
+@pytest.fixture
+def tf_function(tf):
+    return tf.function
+
+
+@pytest.fixture
+def tf_function_jit(tf):
+    return tf.function(jit_compile=True)
 
 
 def noop_decorator(func):
     return func
 
 
-def test_tf_function_cvnn_layer_1_mode_1_layers():
+def test_tf_function_cvnn_layer_1_mode_1_layers(tf):
     d = 1
     cutoff = 3
 
@@ -60,7 +71,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers():
     )
 
 
-def test_tf_function_cvnn_layer_2_modes_2_layers():
+def test_tf_function_cvnn_layer_2_modes_2_layers(tf):
     d = 2
     cutoff = 3
 
@@ -162,7 +173,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers():
     )
 
 
-def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function():
+def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function(tf):
     d = 1
     cutoff = 3
 
@@ -198,7 +209,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function():
     )
 
 
-def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function():
+def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function(tf):
     d = 2
     cutoff = 3
 
@@ -300,7 +311,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function():
     )
 
 
-def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
+def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile(tf):
     d = 1
     cutoff = 3
 
@@ -338,7 +349,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
     )
 
 
-def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
+def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile(tf):
     d = 2
     cutoff = 3
 
@@ -443,9 +454,9 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
 
 
 @pytest.mark.parametrize(
-    "decorator", (noop_decorator, tf.function, tf.function(jit_compile=True))
+    "decorator", (noop_decorator, lf("tf_function"), lf("tf_function_jit"))
 )
-def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator):
+def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator, tf):
     d = 1
     cutoff = 3
 

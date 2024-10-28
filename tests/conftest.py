@@ -17,6 +17,8 @@ import os
 import pytest
 import numpy as np
 
+from functools import partial
+
 import piquasso as pq
 
 from scipy.special import comb
@@ -267,3 +269,53 @@ def generate_random_fock_state():
         return occupation_numbers
 
     return func
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--skip-tensorflow",
+        action="store_true",
+        help="Skips tests using TensorFlow.",
+    )
+
+
+@pytest.fixture
+def tf(request):
+    skip_tf = request.config.getoption("--skip-tensorflow")
+
+    if skip_tf:
+        pytest.skip(
+            reason=(
+                "This test is skipped, as it uses TensorFlow, and the "
+                "'--skip-tensorflow' option is enabled."
+            )
+        )
+
+    import tensorflow
+
+    return tensorflow
+
+
+@pytest.fixture
+def tensorflow_connector(tf):
+    return pq.TensorflowConnector()
+
+
+@pytest.fixture
+def tensorflow_connector_tf_function(tf):
+    return pq.TensorflowConnector(decorate_with=tf.function)
+
+
+@pytest.fixture
+def PureFockSimulator_with_tensorflow(tensorflow_connector):
+    return partial(pq.PureFockSimulator, connector=tensorflow_connector)
+
+
+@pytest.fixture
+def PureFockSimulator_with_tensorflow_tf_function(tensorflow_connector_tf_function):
+    return partial(pq.PureFockSimulator, connector=tensorflow_connector_tf_function)
+
+
+@pytest.fixture
+def PureFockSimulator_with_jax():
+    return partial(pq.PureFockSimulator, connector=pq.JaxConnector())

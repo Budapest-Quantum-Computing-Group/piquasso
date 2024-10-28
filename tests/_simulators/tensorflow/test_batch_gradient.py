@@ -15,21 +15,18 @@
 
 import pytest
 
-import tensorflow as tf
-
 import numpy as np
 
 import piquasso as pq
 
+from pytest_lazy_fixtures import lf
 
-connectors = (
-    pq.TensorflowConnector(),
-    pq.TensorflowConnector(decorate_with=tf.function),
-)
+
+connectors = (lf("tensorflow_connector"), lf("tensorflow_connector_tf_function"))
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_Beamsplitter_mean_position(connector):
+def test_batch_Beamsplitter_mean_position(connector, tf):
     theta = tf.Variable(np.pi / 3)
 
     with pq.Program() as first_preparation:
@@ -82,7 +79,7 @@ def test_batch_Beamsplitter_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_Squeezing_mean_position(connector):
+def test_batch_Squeezing_mean_position(connector, tf):
     r = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -138,7 +135,7 @@ def test_batch_Squeezing_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_Displacement_mean_position(connector):
+def test_batch_Displacement_mean_position(connector, tf):
     r = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -194,7 +191,7 @@ def test_batch_Displacement_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_Kerr_mean_position(connector):
+def test_batch_Kerr_mean_position(connector, tf):
     xi = tf.Variable(0.1)
 
     with pq.Program() as first_preparation:
@@ -250,7 +247,7 @@ def test_batch_Kerr_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_Phaseshifter_mean_position(connector):
+def test_batch_Phaseshifter_mean_position(connector, tf):
     phi = tf.Variable(np.pi / 5)
 
     with pq.Program() as first_preparation:
@@ -306,7 +303,7 @@ def test_batch_Phaseshifter_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_complex_circuit_mean_position(connector):
+def test_batch_complex_circuit_mean_position(connector, tf):
     theta1 = tf.Variable(np.pi / 3)
     phi1 = tf.Variable(np.pi / 4)
 
@@ -415,7 +412,7 @@ def test_batch_complex_circuit_mean_position(connector):
 
 
 @pytest.mark.parametrize("connector", connectors)
-def test_batch_complex_circuit_mean_position_with_batch_apply(connector):
+def test_batch_complex_circuit_mean_position_with_batch_apply(connector, tf):
     theta1 = tf.Variable(np.pi / 3)
     phi1 = tf.Variable(np.pi / 4)
 

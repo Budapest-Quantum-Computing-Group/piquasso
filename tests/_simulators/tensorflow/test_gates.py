@@ -15,11 +15,10 @@
 
 import piquasso as pq
 import pytest
-import tensorflow as tf
 
 
 @pytest.mark.monkey
-def test_Interferometer_numpy_array_as_parameter(generate_unitary_matrix):
+def test_Interferometer_numpy_array_as_parameter(generate_unitary_matrix, tf):
     r = tf.Variable(0.01)
     d = 5
     interferometer = generate_unitary_matrix(d)

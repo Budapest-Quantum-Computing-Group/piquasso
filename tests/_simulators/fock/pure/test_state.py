@@ -195,9 +195,7 @@ def test_mean_position():
 
     config = pq.Config(cutoff=cutoff)
 
-    simulator = pq.PureFockSimulator(
-        d=d, config=config, connector=pq.TensorflowConnector()
-    )
+    simulator = pq.PureFockSimulator(d=d, config=config)
 
     state = simulator.execute(program).state
     mean = state.mean_position(mode=0)
