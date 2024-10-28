@@ -17,12 +17,17 @@ import pytest
 
 import numpy as np
 
+import jax.numpy as jnp
+
 from scipy.linalg import block_diag
 from piquasso._math.hafnian import (
     hafnian_with_reduction,
     hafnian_with_reduction_batch,
     loop_hafnian_with_reduction,
     loop_hafnian_with_reduction_batch,
+)
+from piquasso._math.jax.hafnian import (
+    loop_hafnian_with_reduction as jax_loop_hafnian_with_reduction,
 )
 
 from piquasso._math.linalg import reduce_
@@ -672,3 +677,24 @@ def test_loop_hafnian_with_reduction_batch_random():
         )
 
         assert np.allclose(expected, actual)
+
+
+def test_jax_loop_hafnian_with_reduction():
+    matrix = jnp.array(
+        [
+            [1j, 2, 3j, 4],
+            [2, 6, 7, 8j],
+            [3j, 7, 3, 4],
+            [4, 8j, 4, 8j],
+        ],
+        dtype=complex,
+    )
+
+    assert jnp.isclose(
+        jax_loop_hafnian_with_reduction(
+            matrix,
+            jnp.array([0.1, 0.2j, 0.3, 0.4 + 0.1j]),
+            jnp.array([1, 3, 1, 1]),
+        ),
+        205.376424 + 690.048304j,
+    )

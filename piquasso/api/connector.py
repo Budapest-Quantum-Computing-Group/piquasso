@@ -40,6 +40,8 @@ class BaseConnector(abc.ABC):
         Every attribute of this class should be stateless!
     """  # noqa: E501
 
+    allow_conditionals = True
+
     np: Any
     fallback_np: Any
     forward_pass_np: Any

@@ -815,18 +815,17 @@ class GaussianState(State):
         return first_moment
 
     def _is_displaced(self) -> bool:
-        return not np.allclose(self._m, 0.0)
+        return not self._connector.np.allclose(self._m, 0.0)
 
     def _get_density_matrix_calculation(self) -> DensityMatrixCalculation:
-        if self._is_displaced():
-            return DisplacedDensityMatrixCalculation(
-                complex_displacement=self.complex_displacement,
-                complex_covariance=self.complex_covariance,
-                connector=self._connector,
+        if self._connector.allow_conditionals and not self._is_displaced():
+            return NondisplacedDensityMatrixCalculation(
+                complex_covariance=self.complex_covariance, connector=self._connector
             )
-
-        return NondisplacedDensityMatrixCalculation(
-            complex_covariance=self.complex_covariance, connector=self._connector
+        return DisplacedDensityMatrixCalculation(
+            complex_displacement=self.complex_displacement,
+            complex_covariance=self.complex_covariance,
+            connector=self._connector,
         )
 
     @property
@@ -896,9 +895,11 @@ class GaussianState(State):
 
         calculation = self._get_density_matrix_calculation()
 
-        return calculation.get_density_matrix_element(
-            bra=occupation_number,
-            ket=occupation_number,
+        return self._connector.np.real(
+            calculation.get_density_matrix_element(
+                bra=occupation_number,
+                ket=occupation_number,
+            )
         )
 
     def get_threshold_detection_probability(
