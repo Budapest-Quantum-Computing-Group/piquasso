@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -69,11 +69,17 @@ def is_diagonal(matrix: np.ndarray) -> bool:
     return np.allclose(matrix, np.diag(np.diag(matrix)))
 
 
-def reduce_(array: np.ndarray, reduce_on: Iterable[int]) -> np.ndarray:
-    proper_index = []
+def reduce_(array, reduce_on):
+    particles = np.sum(reduce_on)
 
-    for index, multiplier in enumerate(reduce_on):
-        proper_index.extend([index] * multiplier)
+    proper_index = np.zeros(particles, dtype=int)
+
+    stride = 0
+
+    for index in range(len(reduce_on)):
+        multiplier = reduce_on[index]
+        proper_index[stride : stride + multiplier] = index
+        stride += multiplier
 
     if array.ndim == 1:
         return array[proper_index]

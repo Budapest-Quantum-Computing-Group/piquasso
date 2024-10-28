@@ -85,6 +85,8 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
     ) -> None:
         super().__init__(connector=connector)
 
+        np = connector.np
+
         d = len(complex_covariance) // 2
         Q = (complex_covariance + np.identity(2 * d)) / 2
 
@@ -99,7 +101,7 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
             ],
         )
 
-        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+        self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
 
@@ -116,6 +118,8 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
     ) -> None:
         super().__init__(connector=connector)
 
+        np = connector.np
+
         d = len(complex_displacement) // 2
         Q = (complex_covariance + np.identity(2 * d)) / 2
 
@@ -130,9 +134,9 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
             ],
         )
 
-        self._A: np.ndarray = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+        self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
-        self._gamma: np.ndarray = complex_displacement.conj() @ Qinv
+        self._gamma = complex_displacement.conj() @ Qinv
 
         self._normalization: float = np.exp(
             -0.5 * self._gamma @ complex_displacement

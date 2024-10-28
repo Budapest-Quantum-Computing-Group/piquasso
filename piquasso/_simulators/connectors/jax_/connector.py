@@ -67,6 +67,11 @@ class JaxConnector(BuiltinConnector):
         Only CPU calculations are supported currently.
     """
 
+    # JAX calculations are often JIT-compiled, while JIT-compilation and conditionals
+    # don't work together, when the condition depends on a tracer. Therefore,
+    # conditionals must be disabled in this case
+    allow_conditionals = False
+
     def __init__(self):
         try:
             import jax.numpy as jnp
@@ -144,7 +149,9 @@ class JaxConnector(BuiltinConnector):
         raise NotImplementedError()
 
     def loop_hafnian(self, matrix, diagonal, reduce_on):
-        raise NotImplementedError()
+        from piquasso._math.jax.hafnian import loop_hafnian_with_reduction
+
+        return loop_hafnian_with_reduction(matrix, diagonal, reduce_on)
 
     def loop_hafnian_batch(self, matrix, diagonal, reduce_on, cutoff):
         raise NotImplementedError()
