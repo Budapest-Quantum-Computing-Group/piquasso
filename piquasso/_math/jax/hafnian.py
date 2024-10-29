@@ -48,15 +48,17 @@ def _reduce_matrix_with_diagonal(matrix, diagonal, reduce_on):
     return reduced_matrix
 
 
-def _fG(polynom_coefficients):
+def _calculate_f(polynom_coefficients):
     dim_over_2 = len(polynom_coefficients)
     dim = 2 * dim_over_2
 
     data = jnp.zeros(shape=(2, dim_over_2 + 1), dtype=polynom_coefficients.dtype)
 
     data = data.at[0, 0].set(1.0)
+    indices = jnp.arange(dim_over_2 + 1)
 
-    for idx in range(1, dim_over_2 + 1):
+    def outer_body_fun(idx, args):
+        data, p_aux1 = args
         factor = polynom_coefficients[idx - 1]
 
         p_aux0 = jax.lax.cond(idx % 2 == 1, lambda: 0, lambda: 1)
@@ -66,15 +68,25 @@ def _fG(polynom_coefficients):
 
         size = dim // (2 * idx) + 1
 
-        powfactors = jnp.power(factor, jnp.arange(size)) / factorial(
-            jnp.arange(size, dtype=float)
+        powfactors = jnp.power(factor, jnp.arange(dim_over_2 + 1)) / factorial(
+            jnp.arange(dim_over_2 + 1, dtype=float)
         )
 
-        for jdx in range(1, size):
-            data = data.at[p_aux1, idx * jdx : dim_over_2 + 1].set(
-                data[p_aux1, idx * jdx : dim_over_2 + 1]
-                + data[p_aux0, : (dim_over_2 + 1 - idx * jdx)] * powfactors[jdx]
+        def inner_body_fun(jdx, data):
+            mask = jnp.where(idx * jdx <= indices, 1, 0)
+            aux0_copy = jnp.copy(data[p_aux0])
+            aux0_rolled = jnp.roll(aux0_copy, idx * jdx)
+
+            mask2 = jnp.where(jdx < size, 1, 0)
+            return data * (1 - mask2) + mask2 * data.at[p_aux1].set(
+                data[p_aux1] + aux0_rolled * mask * powfactors[jdx]
             )
+
+        data = jax.lax.fori_loop(1, dim_over_2 + 1, inner_body_fun, data)
+
+        return (data, p_aux1)
+
+    data, p_aux1 = jax.lax.fori_loop(1, dim_over_2 + 1, outer_body_fun, (data, 1))
 
     return data[p_aux1]
 
@@ -117,7 +129,7 @@ def _loop_hafnian(A):
 
         polynom_coefficients = _get_loop_polynom_coefficients(A, X_delta, degree)
 
-        ret += prefact * _fG(polynom_coefficients)[degree]
+        ret += prefact * _calculate_f(polynom_coefficients)[degree]
 
         return ret
 
