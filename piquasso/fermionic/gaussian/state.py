@@ -20,7 +20,7 @@ from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.transformations import (
     from_xxpp_to_xpxp_transformation_matrix,
 )
-from piquasso._math.combinatorics import is_even_permutation
+from piquasso._math.combinatorics import sort_and_get_parity
 
 from piquasso.api.exceptions import InvalidState, PiquassoException
 from piquasso.api.state import State
@@ -403,9 +403,7 @@ class GaussianState(State):
 
         indices = fallback_np.array(indices)
 
-        sorter = fallback_np.argsort(indices)
-
-        sorted_indices = indices[sorter]
+        sorted_indices, parity = sort_and_get_parity(indices)
 
         unique, counts = fallback_np.unique(sorted_indices, return_counts=True)
         filtered_indices = unique[counts % 2 == 1]
@@ -414,8 +412,6 @@ class GaussianState(State):
 
         covariance_matrix_reduced = self.covariance_matrix[matrix_index]
 
-        parity_term = 1 if is_even_permutation(sorter) else -1
-
         # Majorana "momentum" operators introduce a -1
         momentum_term = (-1) ** (len(filtered_indices[filtered_indices >= self.d]))
         normalization = 1 / 2j ** (len(covariance_matrix_reduced) // 2)
@@ -423,7 +419,7 @@ class GaussianState(State):
         # Duplicates will yield a 1/2.
         duplicate_term = 2 ** (-(len(sorted_indices) - len(filtered_indices)) // 2)
 
-        prefactor = parity_term * momentum_term * normalization * duplicate_term
+        prefactor = parity * momentum_term * normalization * duplicate_term
 
         return prefactor * self._connector.pfaffian(covariance_matrix_reduced)
 
