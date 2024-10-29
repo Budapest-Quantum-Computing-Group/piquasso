@@ -43,20 +43,17 @@ def comb(n, k):
     return prod
 
 
-def is_even_permutation(permutation):
-    permutation = list(permutation)
-    length = len(permutation)
-    elements_seen = [False] * length
-    cycles = 0
-    for index, already_seen in enumerate(elements_seen):
-        if already_seen:
-            continue
-        cycles += 1
-        current = index
-        while not elements_seen[current]:
-            elements_seen[current] = True
-            current = permutation[current]
-    return (length - cycles) % 2 == 0
+@nb.njit(cache=True)
+def sort_and_get_parity(array):
+    n = len(array)
+    parity = 1
+    for n in range(n - 1, 0, -1):
+        for i in range(n):
+            if array[i] > array[i + 1]:
+                array[i], array[i + 1] = array[i + 1], array[i]
+                parity *= -1
+
+    return array, parity
 
 
 @nb.njit(cache=True)
