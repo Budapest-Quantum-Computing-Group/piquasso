@@ -19,14 +19,6 @@ Fermionic Gaussian Simulations
 ******************************
 
 This is a package for Fermionic Linear Optics (FLO) or Fermionic Gaussian states.
-
-Note:
-    For consistency, we tried to the conventions from the SciPost Physics Lecture Note
-    "Fermionic Gaussian states: an introduction to numerical approaches" from J. Surace
-    and L. Tagliacozzo, `arXiv:2111.08343 <https://arxiv.org/pdf/2111.08343>`_.
-    However, this article uses anti-lexicographic ordering (i.e. :math:`| 1 \langle` is
-    before :math:`| 0 \langle` in order), and we prefer lexicographic ordering,
-    therefore we changed some calculations accordingly.
 """
 
 from .simulator import GaussianSimulator

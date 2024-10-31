@@ -24,6 +24,8 @@ import pytest
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.validations import all_in_interval
 
+from piquasso.fermionic.gaussian._misc import get_omega
+
 
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
@@ -142,7 +144,6 @@ def test_vacuum_evolved_with_GaussianHamiltonian_correlation_matrix_random(
 def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
     connector,
     generate_fermionic_gaussian_hamiltonian,
-    get_omega,
 ):
     d = 3
 
@@ -157,7 +158,7 @@ def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
 
     state = simulator.execute(program).state
 
-    omega = get_omega(d)
+    omega = get_omega(d, connector)
 
     assert np.allclose(
         state.covariance_matrix,
@@ -168,12 +169,41 @@ def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
     ), "Eq. (45) from https://arxiv.org/pdf/2111.08343 should hold"
 
 
+@for_all_connectors
+def test_vacuum_correlation_matrix_density_matrix_equivalence(
+    connector,
+    get_ladder_operators,
+):
+    d = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    fs = get_ladder_operators(d)
+
+    rho = state.density_matrix
+
+    correlation_matrix = state.correlation_matrix
+
+    expected_correlation_matrix = np.empty_like(correlation_matrix)
+
+    for i in range(2 * d):
+        for j in range(2 * d):
+            expected_correlation_matrix[i, j] = np.trace(rho @ fs[i].T @ fs[j])
+
+    assert np.allclose(correlation_matrix, expected_correlation_matrix)
+
+
 @pytest.mark.monkey
 @for_all_connectors
-def test_GaussianHamiltonian_correlation_matrix_and_maj_equivalence(
+def test_correlation_matrix_density_matrix_equivalence_random(
     connector,
     generate_fermionic_gaussian_hamiltonian,
-    get_omega,
+    get_ladder_operators,
 ):
     d = 3
 
@@ -188,7 +218,103 @@ def test_GaussianHamiltonian_correlation_matrix_and_maj_equivalence(
 
     state = simulator.execute(program).state
 
-    omega = get_omega(d)
+    fs = get_ladder_operators(d)
+
+    rho = state.density_matrix
+
+    correlation_matrix = state.correlation_matrix
+
+    expected_correlation_matrix = np.empty_like(correlation_matrix)
+
+    for i in range(2 * d):
+        for j in range(2 * d):
+            expected_correlation_matrix[i, j] = np.trace(rho @ fs[i].T @ fs[j])
+
+    assert np.allclose(correlation_matrix, expected_correlation_matrix)
+
+
+@for_all_connectors
+def test_vacuum_covariance_matrix_with_majorana_operators_and_density_matrix(
+    connector, get_majorana_operators
+):
+    d = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    m = get_majorana_operators(d)
+
+    covariance_matrix = state.covariance_matrix
+
+    rho = state.density_matrix
+
+    for i in range(2 * d):
+        for j in range(2 * d):
+            assert np.isclose(
+                covariance_matrix[i, j],
+                -1j * np.trace(rho @ (m[i] @ m[j] - m[j] @ m[i])),
+            )
+
+
+@pytest.mark.monkey
+@for_all_connectors
+def test_covariance_matrix_with_majorana_operators_and_density_matrix(
+    connector, generate_fermionic_gaussian_hamiltonian, get_majorana_operators
+):
+    d = 3
+
+    hamiltonian = generate_fermionic_gaussian_hamiltonian(d)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    m = get_majorana_operators(d)
+
+    covariance_matrix = state.covariance_matrix
+
+    rho = state.density_matrix
+
+    expected_covariance_matrix = np.empty(shape=(2 * d, 2 * d), dtype=rho.dtype)
+
+    for i in range(2 * d):
+        for j in range(2 * d):
+            expected_covariance_matrix[i, j] = -1j * np.trace(
+                rho @ (m[i] @ m[j] - m[j] @ m[i])
+            )
+
+    assert np.allclose(covariance_matrix, expected_covariance_matrix)
+
+
+@pytest.mark.monkey
+@for_all_connectors
+def test_GaussianHamiltonian_correlation_matrix_and_maj_equivalence(
+    connector,
+    generate_fermionic_gaussian_hamiltonian,
+):
+    d = 3
+
+    hamiltonian = generate_fermionic_gaussian_hamiltonian(d)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    omega = get_omega(d, connector)
 
     assert np.allclose(
         state.maj_correlation_matrix,
@@ -874,7 +1000,7 @@ def test_density_matrix_2_mode(connector, generate_fermionic_gaussian_hamiltonia
     )
 
     assert np.allclose(
-        density_matrix, connector.expm(-bigH) / np.trace(connector.expm(-bigH))
+        density_matrix, connector.expm(bigH) / np.trace(connector.expm(bigH))
     )
 
 
@@ -944,7 +1070,7 @@ def test_different_state_vector_overlap(connector):
 @pytest.mark.monkey
 @for_all_connectors
 def test_covariance_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
-    connector, generate_fermionic_gaussian_hamiltonian, get_omega
+    connector, generate_fermionic_gaussian_hamiltonian
 ):
     d = 3
 
@@ -962,7 +1088,7 @@ def test_covariance_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
     initial_state = simulator.execute(preparation).state
     final_state = simulator.execute(program).state
 
-    omega = get_omega(d)
+    omega = get_omega(d, connector)
 
     gate_hamiltonian_majorana = -1j * omega @ gate_hamiltonian @ omega.conj().T
 
