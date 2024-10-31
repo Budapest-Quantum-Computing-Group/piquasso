@@ -256,7 +256,7 @@ def test_vacuum_covariance_matrix_with_majorana_operators_and_density_matrix(
         for j in range(2 * d):
             assert np.isclose(
                 covariance_matrix[i, j],
-                -1j * np.trace(rho @ (m[i] @ m[j] - m[j] @ m[i])),
+                -1j * np.trace(rho @ (m[i] @ m[j] - m[j] @ m[i])) / 2,
             )
 
 
@@ -288,8 +288,8 @@ def test_covariance_matrix_with_majorana_operators_and_density_matrix(
 
     for i in range(2 * d):
         for j in range(2 * d):
-            expected_covariance_matrix[i, j] = -1j * np.trace(
-                rho @ (m[i] @ m[j] - m[j] @ m[i])
+            expected_covariance_matrix[i, j] = (
+                -1j * np.trace(rho @ (m[i] @ m[j] - m[j] @ m[i])) / 2
             )
 
     assert np.allclose(covariance_matrix, expected_covariance_matrix)

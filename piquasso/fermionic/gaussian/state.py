@@ -69,7 +69,7 @@ class GaussianState(State):
 
         .. math::
 
-            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]).
+            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]) / 2.
 
         The covariance matrix is a real-valued, skew-symmetric matrix.
         """
@@ -454,13 +454,7 @@ class GaussianState(State):
 
         covariance_matrix_reduced = self.covariance_matrix[matrix_index]
 
-        # NOTE: This is due to the \sqrt{2} in the denominator of the Majorana operator
-        # definiton. We will drop this in the future.
-        majorana_convention_term = (1 / 2) ** (len(indices) // 2)
-
-        prefactor = (
-            parity * 1j ** (len(filtered_indices) // 2) * majorana_convention_term
-        )
+        prefactor = parity * 1j ** (len(filtered_indices) // 2)
 
         return prefactor * self._connector.pfaffian(covariance_matrix_reduced)
 
@@ -470,11 +464,11 @@ class GaussianState(State):
         The parity operator is defined as
 
         .. math::
-            P = (2i)^d m_1 \dots m_{2d} = (2i)^d x_1 \dots x_d p_1 \dots p_d.
+            P = i^d m_1 \dots m_{2d} = i^d x_1 \dots x_d p_1 \dots p_d.
         """
         fallback_np = self._connector.fallback_np
 
-        return 2j**self.d * self.get_majorana_monomial_expectation_value(
+        return 1j**self.d * self.get_majorana_monomial_expectation_value(
             fallback_np.arange(2 * self.d)
         )
 

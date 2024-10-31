@@ -54,10 +54,10 @@ def get_majorana_operators():
         ms = []
 
         for i in range(d):
-            ms.append((fs[i] + fdags[i]) / np.sqrt(2))
+            ms.append(fs[i] + fdags[i])
 
         for i in range(d):
-            ms.append((fs[i] - fdags[i]) / (1j * np.sqrt(2)))
+            ms.append(-1j * (fs[i] - fdags[i]))
 
         return ms
 
