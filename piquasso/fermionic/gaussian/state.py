@@ -69,7 +69,7 @@ class GaussianState(State):
 
         .. math::
 
-            \Sigma_{ij} := i \operatorname{Tr} (\rho [\mathbf{m}_i , \mathbf{m}_j] ).
+            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]).
 
         The covariance matrix is a real-valued, skew-symmetric matrix.
         """
@@ -122,17 +122,17 @@ class GaussianState(State):
 
         .. math::
             \Gamma := \begin{bmatrix}
-                \Gamma^{a^\dagger a} & \Gamma^{a^\dagger a^\dagger} \\
-                \Gamma^{a a} & \Gamma^{a a^\dagger}
+                \Gamma^{f^\dagger f} & \Gamma^{f^\dagger f^\dagger} \\
+                \Gamma^{f f} & \Gamma^{f f^\dagger}
             \end{bmatrix},
 
-        where :math:`\Gamma_{i,j}^{a^\dagger a} = \langle a_i^\dagger a_j \rangle` and
-        :math:`\Gamma_{i,j}^{a a} = \langle a_i a_j \rangle`.
+        where :math:`\Gamma_{i,j}^{f^\dagger f} = \langle f_i^\dagger f_j \rangle` and
+        :math:`\Gamma_{i,j}^{f f} = \langle f_i f_j \rangle`.
 
         By CAR, we know that
-        :math:`\Gamma_{i,j}^{a^\dagger a} = - \overline{\Gamma_{i,j}^{a a^\dagger }}`
+        :math:`\Gamma_{i,j}^{f^\dagger f} = - \overline{\Gamma_{i,j}^{f f^\dagger }}`
         and
-        :math:`\Gamma_{i,j}^{a a} = I - \overline{\Gamma_{i,j}^{a^\dagger a^\dagger }}`
+        :math:`\Gamma_{i,j}^{f f} = I - \overline{\Gamma_{i,j}^{f^\dagger f^\dagger }}`
 
         The correlation matrix is a self-adjoint matrix.
         """
@@ -268,6 +268,29 @@ class GaussianState(State):
         )
 
     def get_parent_hamiltonian(self):
+        r"""Calculates the parent Hamiltonian.
+
+        When the correlation matrix is not singular, the density matrix is
+
+        .. math::
+            \rho = e^{\hat{H}} / \operatorname{Tr} e^{\hat{H}},
+
+        where :math:`\hat{H}` is the parent hamiltonian (see
+        :meth:`get_parent_hamiltonian`) given by
+
+        .. math::
+            \hat{H} = \mathbf{f}^\dagger H \mathbf{f}, \\\\
+
+            H = \begin{bmatrix}
+                A & -\overline{B} \\
+                B & -\overline{A}
+            \end{bmatrix}.
+
+        where :math:`A^\dagger = A` and :math:`B^T = - B`.
+
+        Raises:
+            PiquassoException: When the correlation matrix is singular.
+        """
         d = self.d
         np = self._connector.np
 
@@ -290,7 +313,24 @@ class GaussianState(State):
 
     @property
     def density_matrix(self) -> "np.ndarray":
-        """Density matrix in the lexicographic ordering.
+        r"""Density matrix in the lexicographic ordering.
+
+        When applicable, the density matrix is just
+
+        .. math::
+            \rho = e^{\hat{H}} / \operatorname{Tr} e^{\hat{H}},
+
+        where :math:`\hat{H}` is the parent hamiltonian (see
+        :meth:`get_parent_hamiltonian`) given by
+
+        .. math::
+            \hat{H} = \mathbf{f}^\dagger H \mathbf{f}, \\\\
+            H = \begin{bmatrix}
+                A & -\overline{B} \\
+                B & -\overline{A}
+            \end{bmatrix}.
+
+        where :math:`A^\dagger = A` and :math:`B^T = - B`.
 
         Note:
             The density matrix is returned in matrix form here. This will probably
@@ -393,6 +433,8 @@ class GaussianState(State):
     def get_majorana_monomial_expectation_value(self, indices):
         r"""Calculates Majorana monomial expectation values using Wick's theorem.
 
+        The monomial indices are understood in the xxpp-ordering.
+
         Args:
             indices:
                 Indices of the Majorana operators in any order with possible with
@@ -412,14 +454,13 @@ class GaussianState(State):
 
         covariance_matrix_reduced = self.covariance_matrix[matrix_index]
 
-        # Majorana "momentum" operators introduce a -1
-        momentum_term = (-1) ** (len(filtered_indices[filtered_indices >= self.d]))
-        normalization = 1 / 2j ** (len(covariance_matrix_reduced) // 2)
+        # NOTE: This is due to the \sqrt{2} in the denominator of the Majorana operator
+        # definiton. We will drop this in the future.
+        majorana_convention_term = (1 / 2) ** (len(indices) // 2)
 
-        # Duplicates will yield a 1/2.
-        duplicate_term = 2 ** (-(len(sorted_indices) - len(filtered_indices)) // 2)
-
-        prefactor = parity * momentum_term * normalization * duplicate_term
+        prefactor = (
+            parity * 1j ** (len(filtered_indices) // 2) * majorana_convention_term
+        )
 
         return prefactor * self._connector.pfaffian(covariance_matrix_reduced)
 
@@ -429,7 +470,7 @@ class GaussianState(State):
         The parity operator is defined as
 
         .. math::
-            P = (i2)^d m_1 \dots m_{2d} = i^{2d} x_1 \dots x_d p_1 \dots p_d.
+            P = (2i)^d m_1 \dots m_{2d} = (2i)^d x_1 \dots x_d p_1 \dots p_d.
         """
         fallback_np = self._connector.fallback_np
 

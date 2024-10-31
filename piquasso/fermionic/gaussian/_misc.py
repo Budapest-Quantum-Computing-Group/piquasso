@@ -26,8 +26,19 @@ if TYPE_CHECKING:
 
 
 def validate_fermionic_gaussian_hamiltonian(H):
-    """
+    r"""
     Checks if `H` is a fermionic quadratic Hamiltonian in the Dirac representation.
+
+    More concretely, it validates if :math:`H \in \mathbb{C}^{2d \times 2d}` is a
+    self-adjoint matrix of the form
+
+    .. math::
+        H = \begin{bmatrix}
+            A & -\overline{B} \\
+            B & -\overline{A}
+        \end{bmatrix}.
+
+    where :math:`A^\dagger = A` and :math:`B^T = - B`.
     """
     d = len(H) // 2
 
@@ -54,15 +65,25 @@ def tensor_product(ops):
 
 
 def _embed_f(op, index, d):
-    K = np.diag([1, -1])
+    r"""Embeds the single-mode Dirac operators into the Fock space.
+
+    This function returns with
+
+    .. math::
+        f_i &= Z^{\otimes (i-1)} \otimes f \otimes, I^{d-i} \\\\
+        f_i^\dagger &= Z^{\otimes (i-1)} \otimes f^\dagger \otimes I^{d-i},
+
+    where :math:`f` and :math:`f^\dagger` are the single-mode annihilation and creation
+    operators, respectively.
+    """
+
+    Z = np.diag([1, -1])
     I = np.identity(2)
 
-    ops = [K] * index
+    ops = [Z] * index
 
     ops.append(op)
     ops += [I] * (d - index - 1)
-
-    assert len(ops) == d
 
     return tensor_product(ops)
 
@@ -99,29 +120,35 @@ def _get_fs_fdags(d):
 
 
 def get_fermionic_hamiltonian(H, connector):
-    """Calculates the fermionic Hamiltonian.
+    r"""Calculates the fermionic Hamiltonian.
 
-    It uses Eq. (15) from https://arxiv.org/pdf/2111.08343, but we modified it so that
-    the operators will be in lexicographic ordering, otherwise it could be
-    anti-lexicographic. One could have implemented this modification differently by
-    changing a different convention, but it is easiest to do here.
+    This function returns
+
+    .. math::
+        \hat{H} = \mathbf{f} H \mathbf{f}^\dagger,
+
+    where :math:`H \in \mathbb{C}^{2d \times 2d}` is a self-adjoint matrix of the form
+
+    .. math::
+        H = \begin{bmatrix}
+            A & -\overline{B} \\
+            B & -\overline{A}
+        \end{bmatrix}.
+
+    where :math:`A^\dagger = A` and :math:`B^T = - B`.
     """
 
     d = len(H) // 2
-
-    A = H[d:, d:]
-    B = H[:d, d:]
 
     bigH = connector.np.zeros(shape=(2**d, 2**d), dtype=complex)
 
     fs, fdags = _get_fs_fdags(d)
 
-    for i in range(d):
-        for j in range(d):
-            bigH += A[i, j] * fs[i] @ fdags[j]
-            bigH += -A[i, j].conj() * fdags[i] @ fs[j]
-            bigH += B[i, j] * fdags[i] @ fdags[j]
-            bigH += -B[i, j].conj() * fs[i] @ fs[j]
+    f = fs + fdags
+
+    for i in range(2 * d):
+        for j in range(2 * d):
+            bigH += H[i, j] * f[i] @ f[j].T
 
     return bigH
 

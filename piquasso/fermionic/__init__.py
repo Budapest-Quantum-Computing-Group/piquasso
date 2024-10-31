@@ -25,26 +25,26 @@ Note:
 Basic notations
 ---------------
 
-Let :math:`a_k` and :math:`a_k^\dagger` denote the Dirac operators. These fulfill the
+Let :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators. These fulfill the
 CAR algebra, i.e.,
 
 .. math::
-    \{ a_i, a_j^\dagger \} &= I \delta_{ij}, \\\\
-    \{a_i, a_j \} &= \{ a_i^\dagger, a_j^\dagger \} = 0.
+    \{ f_i, f_j^\dagger \} &= I \delta_{ij}, \\\\
+    \{ f_i, f_j \} &= \{ f_i^\dagger, f_j^\dagger \} = 0.
 
-Let us define :math:`\mathbf{\alpha}` as
+Let us define :math:`\mathbf{f}` as
 
 .. math::
-    \mathbf{\alpha} = [a_1^\dagger, \dots, a_d^\dagger, a_1, \dots, a_d].
+    \mathbf{f} = [f_1^\dagger, \dots, f_d^\dagger, f_1, \dots, f_d].
 
 The Majorana operators are defined as
 
 .. math::
 
-    x_k &:= \frac{a_k + a_k^\dagger}{\sqrt{2}}, \\\\
-    p_k &:= \frac{a_k - a_k^\dagger}{i\sqrt{2}},
+    x_k &:= \frac{f_k + f_k^\dagger}{\sqrt{2}}, \\\\
+    p_k &:= \frac{f_k - f_k^\dagger}{i\sqrt{2}},
 
-where :math:`a_k` and :math:`a_k^\dagger` denote the Dirac operators.
+where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
 
 :math:`\mathbf{m}` denotes the vector of Majorana operators, i.e.,
 

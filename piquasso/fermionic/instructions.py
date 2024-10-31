@@ -30,13 +30,13 @@ class ParentHamiltonian(Preparation):
 
     .. math::
 
-        \rho = \frac{e^{-\hat{H}}}{\operatorname{Tr} e^{-\hat{H}}},
+        \rho = \frac{e^{\hat{H}}}{\operatorname{Tr} e^{\hat{H}}},
 
     where :math:`\hat{H}` is the parent Hamiltonian and has the form
 
     .. math::
 
-        \hat{H} &= \mathbf{\alpha}^\dagger H \mathbf{\alpha}, \\\\
+        \hat{H} &= \mathbf{f}^\dagger H \mathbf{f}, \\\\
         H &= \begin{bmatrix}
             - \overline{A} & B \\
             - \overline{B} & A
@@ -61,12 +61,11 @@ class GaussianHamiltonian(Gate):
     where
 
     .. math::
-
-        \hat{H} &= \mathbf{\alpha}^\dagger H \mathbf{\alpha}, \\\\
+        \hat{H} &= \mathbf{f} H \mathbf{f}^\dagger, \\\\
         H &= \begin{bmatrix}
-            - \overline{A} & B \\
-            - \overline{B} & A
-        \end{bmatrix}. \\\\
+            A & -\overline{B} \\
+            B & -\overline{A}
+        \end{bmatrix}.
 
     Here, :math:`A` is self-adjoint and :math:`B` is skew-symmetric.
     """
