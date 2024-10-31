@@ -41,8 +41,8 @@ The Majorana operators are defined as
 
 .. math::
 
-    x_k &:= \frac{f_k + f_k^\dagger}{\sqrt{2}}, \\\\
-    p_k &:= \frac{f_k - f_k^\dagger}{i\sqrt{2}},
+    x_k &:= f_k + f_k^\dagger, \\\\
+    p_k &:= -i (f_k - f_k^\dagger),
 
 where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
 
