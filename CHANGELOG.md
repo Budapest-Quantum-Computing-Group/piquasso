@@ -1,5 +1,70 @@
 # Changelog
 
+## [5.0.0] - 2024-10-01
+
+### Added
+
+- `get_purity` in `*FockState` for calculating the purity.
+- `PostSelectPhotons` and `ImperfectPostSelectPhotons` for `PureFockSimulator` and
+  `SamplingSimulator`.
+- `Beamsplitter5050` support.
+- `SamplingState.state_vector`, analog of `*FockState.state_vector`.
+- JAX support for `SamplingSimulator`.
+- Support for multiple occupation numbers in `SamplingSimulator`.
+- `PureFockState.get_particle_detection_probability_on_modes`, which is similar to
+  `get_particle_detection_probability`, but for the specified modes.
+- `HomodyneMeasurement` support for `PureFockSimulator`.
+- `cvqnn.get_cvqnn_weight_indices` is created, which enables slicing of the weights when
+   needed.
+- `PureFockState.variance_photon_number` for calculating the variance of the photon
+  number operator.
+- Partial JAX support for `GaussianSimulator`.
+- `GaussianState.get_threshold_detection_probability`.
+- Python 3.12 support.
+- Support for `ParticleNumberMeasurement` in `GaussianSimulator` with the config
+  `use_torontonian=True` and displaced Gaussian states.
+- `Config.validate` flag. If set to `validate=False`, validations are skipped, possibly
+  enabling minor speed-up or JIT compilation.
+- `piquasso.fermionic` package with support for fermionic Gaussian states.
+- Support for differentiable `GaussianState.get_particle_detection_probability`.
+
+### Fixed
+
+- `Simulator.execute` with `initial_state` specified while using `tf.function`.
+- `GaussianSimulator` random number generation from `Config.rng`.
+- Error message formatting in `Simulator`.
+- `Beamsplitter` default parameters.
+- `fock_probabilities` differentiability in `PureFockSimulator`.
+- `SamplingState.fock_probabilities` returns with probabilities corresponding to all
+  particle number sectors.
+
+### Breaking changes
+
+- Delete unused attributes in `SamplingState`.
+- Clements decomposition rewritten.
+- The original RNG is kept when a `Config` is copied. This is done to prevent unexpected
+  behaviour with seeded calculations.
+- The config variable `Config.normalize` is deleted. For the same result, one can call
+  `State.normalize` at the end of the calculations.
+- `Simulator._default_calculator_class` initial value got deleted to avoid confusion.
+- Renamed `Calculator` to `Connector` and corresponding names containing the term
+  `calculator`, referring to the original `Calculator` class (e.g.,
+  `_default_calculator_class` -> `_default_connector_class`).
+- `BaseConnector` (former `BaseCalculator`) rewritten as an abstract class.
+- Added/updated `__repr__` methods for all classes in the Piquasso API.
+
+### Performance improvements
+
+- Hafnian, loop hafnian, torontonian and permanent implementations replaced with faster
+  implementations. The torontonian calculation is written in C++, and is distributed in
+  the wheels alongside the Python code.
+- Faster `FockState.norm`.
+- Faster `SamplingState.get_particle_detection_probability`.
+- JIT compilation of passive linear gates in `*FockSimulator`.
+- Common Fock-space related calculations got rewritten, JIT compilation enabled.
+- More efficient sampling algorithms for BS and GBS simulations.
+
+
 ## [4.0.0] - 2024-02-29
 
 ### Added
