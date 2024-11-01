@@ -1,6 +1,7 @@
 name: Build SDist and wheels
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -16,6 +17,10 @@ on:
       - '**.hpp'
       - '**/CMakeLists.txt'
       - '.github/workflows/**'
+
+  release:
+    types:
+      - published
 
 jobs:
   build_sdist:
@@ -81,3 +86,20 @@ jobs:
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
+
+  # See: https://cibuildwheel.pypa.io/en/stable/deliver-to-pypi/
+  upload_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
