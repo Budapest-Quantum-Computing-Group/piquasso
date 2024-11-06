@@ -2,4 +2,8 @@ pybind11_add_module(torontonian SHARED ${CMAKE_CURRENT_SOURCE_DIR}/torontonian.c
 
 target_link_libraries(torontonian PUBLIC torontonianboost looptorontonianboost)
 
-install(TARGETS torontonian LIBRARY DESTINATION piquasso/_math)
+install(
+    TARGETS torontonian
+    RUNTIME DESTINATION piquasso/_math
+    LIBRARY DESTINATION piquasso/_math
+)

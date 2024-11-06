@@ -81,6 +81,9 @@ jobs:
           ## NOTE: --import-mode=importlib prevents pytest to import piquasso from
           ## directory
           # CIBW_TEST_COMMAND: "pytest -v --import-mode=importlib {project}/tests"
+        env:
+          CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
 
       - uses: actions/upload-artifact@v4
         with:
