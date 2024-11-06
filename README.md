@@ -102,7 +102,7 @@ pip install piquasso
 If you have problems installing Piquasso as above, try installing from source with
 
 ```
-pip install --no-binary piquasso
+pip install --no-binary=:all: piquasso
 ```
 
 When installing from source does not work on your machine, please open an issue in the
