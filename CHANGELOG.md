@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1] - 2024-10-06
+
+### Fixed
+
+- Windows binary wheel packaging.
+
+
 ## [5.0.0] - 2024-10-01
 
 ### Added
