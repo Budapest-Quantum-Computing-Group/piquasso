@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.instructions import gates, preparations
+from piquasso.instructions import gates
 from .state import HeisenbergState
 
 from ..instructions import GaussianHamiltonian, Correlations
 
-from .calculations import gaussian_hamiltonian, correlations
+from .calculations import gaussian_hamiltonian, correlations, interferometer
 
 from piquasso._simulators.simulator import BuiltinSimulator
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
@@ -32,7 +32,7 @@ class HeisenbergSimulator(BuiltinSimulator):
     _instruction_map = {
         GaussianHamiltonian: gaussian_hamiltonian,
         Correlations: correlations,
-        # gates.Interferometer: passive_linear_gate,
+        gates.Interferometer: interferometer,
         # gates.Beamsplitter: passive_linear_gate,
         # gates.Phaseshifter: passive_linear_gate,
     }

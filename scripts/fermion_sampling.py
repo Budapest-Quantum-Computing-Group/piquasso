@@ -7,16 +7,39 @@ import piquasso as pq
 connector = pq.NumpyConnector()
 
 
+def _to_occupation_number_picture(tensor_index, N):
+    ret = np.zeros(shape=8 * N, dtype=tensor_index.dtype)
+
+    for i in range(len(tensor_index)):
+        ret[tensor_index[i]] = 1
+
+    return ret
+
+
 def get_fermion_sampling_initial_tensor(N: int, l: int):
-    tensor = np.empty(shape=(2 * N,) * (2 * l), dtype=complex)
-    size = (2 * N) ** (2 * l)
+    tensor = np.empty(shape=(8 * N,) * (2 * l), dtype=complex)
+    size = (8 * N) ** (2 * l)
     psi_tensor = get_psi()
     for idx in range(size):
-        tensor_index = np.empty(shape=2 * l)
+        tensor_index = np.empty(shape=2 * l, dtype=int)
         for i in range(2 * l):
-            tensor_index[2 * l - i - 1] = idx % (2 * N)
-            idx = idx // (2 * N)
-        first_quantized_index = np.arange(2 * N)[tensor_index == 1]
+            tensor_index[2 * l - i - 1] = idx % (8 * N)
+            idx = idx // (8 * N)
+
+        sorted_tensor_index, prefactor = reduce_and_sort_majoranas(tensor_index)
+
+        occ_tensor_index = _to_occupation_number_picture(sorted_tensor_index, N)
+
+        sliced = np.reshape(occ_tensor_index, (N, 8))
+
+        prod = 1.0
+
+        for i in range(N):
+            prod *= psi_tensor[tuple(sliced[i])]
+
+        tensor[tuple(tensor_index)] = prefactor * prod
+
+    return tensor
 
 
 def get_psi():
@@ -27,6 +50,7 @@ def get_psi():
         for i in range(2 * 4):
             tensor_index[2 * 4 - i - 1] = idx % (2 * 1)
             idx = idx // (2 * 1)
+
         first_quantized_index = np.arange(2 * 4)[tensor_index == 1]
         extended = np.empty(
             len(first_quantized_index) + 4, dtype=first_quantized_index.dtype
@@ -98,6 +122,7 @@ def test_psi_systematic():
         for i in range(2 * 4):
             tensor_index[2 * 4 - i - 1] = idx % (2 * 1)
             idx = idx // (2 * 1)
+
         act_inds = np.where(tensor_index == 1)[0]
         filtered_ms = [ms[i] for i in act_inds]
         if len(filtered_ms) > 1:
@@ -130,7 +155,36 @@ def get_prefactor(tensor_index):
     return prefactor
 
 
-def reduce_and_sort_majoranas(tensor_index, l):
+def reduce_and_sort_majoranas(tensor_index):
+    # first sort the factors and get the parity of the permutation
     sorted_tensor_index, prefactor = sort_and_get_parity(np.copy(tensor_index))
     filtered_tensor_index, counts = np.unique(sorted_tensor_index, return_counts=True)
+    # remove those completely, that appear an even number of times
     filtered_tensor_index = np.delete(filtered_tensor_index, np.where(counts % 2 == 0))
+
+    return filtered_tensor_index, prefactor
+
+
+if __name__ == "__main__":
+    N = 2
+    l = 2
+
+    d = 4 * N
+
+    initial_tensor = get_fermion_sampling_initial_tensor(N=N, l=l)
+
+    import piquasso as pq
+
+    from scipy.stats import unitary_group
+
+    simulator = pq.fermionic.HeisenbergSimulator(d=d)
+
+    U = unitary_group.rvs(d)
+
+    program = pq.Program(
+        [pq.fermionic.Correlations(initial_tensor), pq.Interferometer(U)]
+    )
+
+    result = simulator.execute(program)
+
+    breakpoint()

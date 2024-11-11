@@ -17,44 +17,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from piquasso.api.exceptions import InvalidParameter
-
-from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
-
 if TYPE_CHECKING:
     from piquasso.api.connector import BaseConnector
-
-
-def validate_fermionic_gaussian_hamiltonian(H):
-    r"""
-    Checks if `H` is a fermionic quadratic Hamiltonian in the Dirac representation.
-
-    More concretely, it validates if :math:`H \in \mathbb{C}^{2d \times 2d}` is a
-    self-adjoint matrix of the form
-
-    .. math::
-        H = \begin{bmatrix}
-            A & -\overline{B} \\
-            B & -\overline{A}
-        \end{bmatrix}.
-
-    where :math:`A^\dagger = A` and :math:`B^T = - B`.
-    """
-    d = len(H) // 2
-
-    A = H[d:, d:]
-    B = H[:d, d:]
-
-    H11 = H[:d, :d]
-    H21 = H[d:, :d]
-
-    if (
-        not is_selfadjoint(A)
-        or not is_skew_symmetric(B)
-        or not np.allclose(-A.conj(), H11)
-        or not np.allclose(-B.conj(), H21)
-    ):
-        raise InvalidParameter("Invalid Hamiltonian specified.")
 
 
 def tensor_product(ops):

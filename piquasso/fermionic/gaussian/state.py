@@ -28,11 +28,12 @@ from piquasso.api.config import Config
 from piquasso.api.connector import BaseConnector
 
 from ._misc import (
-    validate_fermionic_gaussian_hamiltonian,
     get_fermionic_hamiltonian,
     get_omega,
     tensor_product,
 )
+
+from ..utils import validate_fermionic_gaussian_hamiltonian
 
 if TYPE_CHECKING:
     import numpy as np
