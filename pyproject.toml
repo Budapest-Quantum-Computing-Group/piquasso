@@ -48,7 +48,7 @@ docs = [
   "nbsphinx~=0.8.8",
   "furo~=2024.8.6",
   "ipython~=8.12.3",
-  "sphinx-design~=0.5.0",
+  "sphinx-design>=0.5,<0.7",
 ]
 benchmark = [
   "matplotlib~=3.9.2",
