@@ -21,6 +21,9 @@ from piquasso.api.instruction import Instruction
 from piquasso.instructions.gates import _PassiveLinearGate
 
 from piquasso._math.validations import all_zero_or_one
+from piquasso._math.transformations import (
+    from_xxpp_to_xpxp_transformation_matrix,
+)
 
 from ._misc import validate_fermionic_gaussian_hamiltonian
 from .state import GaussianState
@@ -85,12 +88,17 @@ def gaussian_hamiltonian(
 
     A_plus_B = A + B
     A_minus_B = A - B
+    T = from_xxpp_to_xpxp_transformation_matrix(d)
 
-    h = np.block(
-        [
-            [A_plus_B.imag, A_plus_B.real],
-            [-A_minus_B.real, A_minus_B.imag],
-        ]
+    h = (
+        T
+        @ np.block(
+            [
+                [A_plus_B.imag, A_plus_B.real],
+                [-A_minus_B.real, A_minus_B.imag],
+            ]
+        )
+        @ T.T
     )
 
     SO = state._connector.expm(-2 * h)

@@ -85,26 +85,36 @@ class GaussianState(State):
         two_D_plus_E = 2 * (D + E)
         two_D_minus_E = 2 * (D - E)
 
-        return np.block(
-            [
-                [two_D_plus_E.imag, -two_D_minus_E.real + ident],
-                [two_D_plus_E.real - ident, two_D_minus_E.imag],
-            ]
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
+
+        return (
+            T
+            @ np.block(
+                [
+                    [two_D_plus_E.imag, -two_D_minus_E.real + ident],
+                    [two_D_plus_E.real - ident, two_D_minus_E.imag],
+                ]
+            )
+            @ T.T
         )
 
     @covariance_matrix.setter
-    def covariance_matrix(self, input_covariance_matrix):
+    def covariance_matrix(self, input_covariance_matrix_xpxp):
         d = self.d
+
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
+
+        input_covariance_matrix_xxpp = T.T @ input_covariance_matrix_xpxp @ T
 
         np = self._connector.np
 
         ident = np.identity(d)
 
-        two_D_plus_E_real = input_covariance_matrix[d:, :d] + ident
-        two_D_plus_E_imag = input_covariance_matrix[:d, :d]
+        two_D_plus_E_real = input_covariance_matrix_xxpp[d:, :d] + ident
+        two_D_plus_E_imag = input_covariance_matrix_xxpp[:d, :d]
 
-        two_D_minus_E_real = -input_covariance_matrix[:d, d:] + ident
-        two_D_minus_E_imag = input_covariance_matrix[d:, d:]
+        two_D_minus_E_real = -input_covariance_matrix_xxpp[:d, d:] + ident
+        two_D_minus_E_imag = input_covariance_matrix_xxpp[d:, d:]
 
         D_plus_E_over_2 = (two_D_plus_E_real + 1j * two_D_plus_E_imag) / 4
         D_minus_E_over_2 = (two_D_minus_E_real + 1j * two_D_minus_E_imag) / 4
@@ -345,18 +355,12 @@ class GaussianState(State):
 
         etas = np.diag(blocks, 1)[::2].copy()
 
-        # NOTE: This would be equivalent to decomposing the covariance matrix in the
-        # xpxp basis, but we originally have it in the xxpp basis.
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        O = T @ O
-
         is_special_orthogonal: bool = np.isclose(np.linalg.det(O), 1.0)
 
         if not is_special_orthogonal:
             # NOTE: If the orthogonal coming from the real Schur decomposition is not
             # special, then there is no corresponding real logarithm from which we can
-            # calculate the gate hamiltonian. To fix this, we can just, flip the
-            # decomposition.
+            # calculate the gate hamiltonian. To fix this, we can just perform a flip.
             flip = connector.block_diag(
                 *([np.array([[0, 1], [1, 0]])] + [np.identity(2)] * (d - 1))
             )
@@ -375,6 +379,8 @@ class GaussianState(State):
 
         # 2. Unitary which diagonalizes the original density matrix
         omega = get_omega(self.d, connector)
+
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
 
         basis_transformation = T @ omega
 
@@ -398,8 +404,12 @@ class GaussianState(State):
 
         zeros = np.zeros_like(plus_minus)
 
-        self.covariance_matrix = np.block(
-            [[zeros, plus_minus], [-plus_minus, zeros]]
+        d = len(occupation_numbers)
+
+        T = from_xxpp_to_xpxp_transformation_matrix(d)
+
+        self.covariance_matrix = (
+            T @ np.block([[zeros, plus_minus], [-plus_minus, zeros]]) @ T.T
         ).astype(dtype)
 
     @classmethod
@@ -468,7 +478,7 @@ class GaussianState(State):
         """
         fallback_np = self._connector.fallback_np
 
-        return 1j**self.d * self.get_majorana_monomial_expectation_value(
+        return (-1j) ** self.d * self.get_majorana_monomial_expectation_value(
             fallback_np.arange(2 * self.d)
         )
 
