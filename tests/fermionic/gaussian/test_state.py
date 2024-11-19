@@ -21,6 +21,12 @@ import piquasso as pq
 
 import pytest
 
+from scipy.linalg import block_diag
+
+from piquasso._math.transformations import (
+    from_xxpp_to_xpxp_transformation_matrix,
+)
+
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.validations import all_in_interval
 
@@ -43,16 +49,13 @@ def test_vacuum_covariance_matrix(connector):
 
     state = simulator.execute(program).state
 
-    ident = np.identity(d)
-    zeros = np.zeros_like(ident)
-
     state.validate()
 
     assert type(state) is pq.fermionic.GaussianState
 
-    assert np.allclose(
-        state.covariance_matrix, np.block([[zeros, ident], [-ident, zeros]])
-    )
+    J = np.array([[0, 1], [-1, 0]])
+
+    assert np.allclose(state.covariance_matrix, block_diag(*[J] * d))
 
 
 @for_all_connectors
@@ -160,8 +163,10 @@ def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
 
     omega = get_omega(d, connector)
 
+    T = from_xxpp_to_xpxp_transformation_matrix(d)
+
     assert np.allclose(
-        state.covariance_matrix,
+        T.T @ state.covariance_matrix @ T,
         -1j
         * omega
         @ (2 * state.correlation_matrix - np.identity(2 * d))
@@ -1092,7 +1097,9 @@ def test_covariance_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
 
     gate_hamiltonian_majorana = -1j * omega @ gate_hamiltonian @ omega.conj().T
 
-    covariance_unitary = connector.expm(-2 * gate_hamiltonian_majorana)
+    T = from_xxpp_to_xpxp_transformation_matrix(d)
+
+    covariance_unitary = T @ connector.expm(-2 * gate_hamiltonian_majorana) @ T.T
 
     assert np.allclose(
         final_state.covariance_matrix,
@@ -1318,7 +1325,7 @@ def test_parity_StateVector(connector):
 @pytest.mark.monkey
 @for_all_connectors
 def test_parity_StateVector_random(connector):
-    d = 3
+    d = np.random.randint(1, 10)
 
     state_vector = np.random.randint(0, 2, d)
 
@@ -1340,12 +1347,14 @@ def test_parity_is_invariant_under_linear_transformations(
     connector,
     generate_fermionic_gaussian_hamiltonian,
 ):
-    d = 3
+    d = np.random.randint(1, 10)
+
+    state_vector = np.random.randint(0, 2, d)
 
     H = generate_fermionic_gaussian_hamiltonian(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1, 0])
+        pq.Q() | pq.StateVector(state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(H)
 
@@ -1355,7 +1364,7 @@ def test_parity_is_invariant_under_linear_transformations(
 
     parity = state.get_parity_operator_expectation_value()
 
-    assert np.isclose(parity, -1)
+    assert np.isclose(parity, (-1) ** np.sum(state_vector))
 
 
 @pytest.mark.monkey

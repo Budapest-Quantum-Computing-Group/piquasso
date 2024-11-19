@@ -55,8 +55,6 @@ def get_majorana_operators():
 
         for i in range(d):
             ms.append(fs[i] + fdags[i])
-
-        for i in range(d):
             ms.append(-1j * (fs[i] - fdags[i]))
 
         return ms
