@@ -17,9 +17,7 @@ from typing import Optional, TYPE_CHECKING
 
 from piquasso._math.validations import all_in_interval
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
-from piquasso._math.transformations import (
-    from_xxpp_to_xpxp_transformation_matrix,
-)
+from piquasso._math.transformations import xpxp_to_xxpp_indices, xxpp_to_xpxp_indices
 from piquasso._math.combinatorics import sort_and_get_parity
 
 from piquasso.api.exceptions import InvalidState, PiquassoException
@@ -85,26 +83,24 @@ class GaussianState(State):
         two_D_plus_E = 2 * (D + E)
         two_D_minus_E = 2 * (D - E)
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xxpp_to_xpxp_indices(d)
 
-        return (
-            T
-            @ np.block(
-                [
-                    [two_D_plus_E.imag, -two_D_minus_E.real + ident],
-                    [two_D_plus_E.real - ident, two_D_minus_E.imag],
-                ]
-            )
-            @ T.T
-        )
+        return np.block(
+            [
+                [two_D_plus_E.imag, -two_D_minus_E.real + ident],
+                [two_D_plus_E.real - ident, two_D_minus_E.imag],
+            ]
+        )[np.ix_(indices, indices)]
 
     @covariance_matrix.setter
     def covariance_matrix(self, input_covariance_matrix_xpxp):
         d = self.d
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xpxp_to_xxpp_indices(d)
 
-        input_covariance_matrix_xxpp = T.T @ input_covariance_matrix_xpxp @ T
+        input_covariance_matrix_xxpp = input_covariance_matrix_xpxp[
+            self._connector.fallback_np.ix_(indices, indices)
+        ]
 
         np = self._connector.np
 
@@ -380,9 +376,9 @@ class GaussianState(State):
         # 2. Unitary which diagonalizes the original density matrix
         omega = get_omega(self.d, connector)
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xxpp_to_xpxp_indices(d)
 
-        basis_transformation = T @ omega
+        basis_transformation = omega[indices]
 
         i2H = (
             basis_transformation.conj().T
@@ -398,6 +394,7 @@ class GaussianState(State):
 
     def _set_occupation_numbers(self, occupation_numbers):
         dtype = self._config.dtype
+        fallback_np = self._connector.fallback_np
         np = self._connector.np
 
         plus_minus = np.diag(1 - 2 * np.array(occupation_numbers))
@@ -406,10 +403,12 @@ class GaussianState(State):
 
         d = len(occupation_numbers)
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xxpp_to_xpxp_indices(d)
 
         self.covariance_matrix = (
-            T @ np.block([[zeros, plus_minus], [-plus_minus, zeros]]) @ T.T
+            np.block([[zeros, plus_minus], [-plus_minus, zeros]])[
+                fallback_np.ix_(indices, indices)
+            ]
         ).astype(dtype)
 
     @classmethod

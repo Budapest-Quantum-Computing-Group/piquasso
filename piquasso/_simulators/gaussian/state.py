@@ -31,7 +31,7 @@ from piquasso._math.linalg import (
 )
 from piquasso._math.symplectic import symplectic_form
 from piquasso._math.fock import get_fock_space_basis
-from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
 from piquasso._math.decompositions import williamson
 
@@ -178,8 +178,7 @@ class GaussianState(State):
 
     @xxpp_mean_vector.setter
     def xxpp_mean_vector(self, value):
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        self.xpxp_mean_vector = T @ value
+        self.xpxp_mean_vector = value[xxpp_to_xpxp_indices(self.d)]
 
     @property
     def xxpp_covariance_matrix(self) -> np.ndarray:
@@ -218,8 +217,8 @@ class GaussianState(State):
 
     @xxpp_covariance_matrix.setter
     def xxpp_covariance_matrix(self, value):
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        self.xpxp_covariance_matrix = T @ value @ T.transpose()
+        indices = xxpp_to_xpxp_indices(self.d)
+        self.xpxp_covariance_matrix = value[np.ix_(indices, indices)]
 
     @property
     def xxpp_correlation_matrix(self) -> np.ndarray:
@@ -271,8 +270,7 @@ class GaussianState(State):
             operators in `xxpp`-ordering, i.e. :math:`\operatorname{Tr} \rho R`, where
             :math:`R = (x_1, p_1, \dots, x_d, p_d)^T`.
         """
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        return T @ self.xxpp_mean_vector
+        return self.xxpp_mean_vector[xxpp_to_xpxp_indices(self.d)]
 
     @xpxp_mean_vector.setter
     def xpxp_mean_vector(self, value: np.ndarray) -> None:
@@ -307,8 +305,8 @@ class GaussianState(State):
                 xpxp-ordered basis.
         """
 
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        return T @ self.xxpp_covariance_matrix @ T.transpose()
+        indices = xxpp_to_xpxp_indices(self.d)
+        return self.xxpp_covariance_matrix[np.ix_(indices, indices)]
 
     @xpxp_covariance_matrix.setter
     def xpxp_covariance_matrix(self, new_cov: np.ndarray) -> None:
@@ -318,10 +316,10 @@ class GaussianState(State):
 
         self._validate_cov(new_cov, d)
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xpxp_to_xxpp_indices(self.d)
 
         dimensionless_cov = new_cov / self._config.hbar
-        dimensionless_xp_cov = T.transpose() @ dimensionless_cov @ T
+        dimensionless_xp_cov = dimensionless_cov[np.ix_(indices, indices)]
 
         blocks = (dimensionless_xp_cov - np.identity(2 * d)) / 4
 
@@ -359,8 +357,8 @@ class GaussianState(State):
             numpy.ndarray: The :math:`2d \times 2d` `xpxp`-ordered correlation matrix.
         """
 
-        T = from_xxpp_to_xpxp_transformation_matrix(self.d)
-        return T @ self.xxpp_correlation_matrix @ T.transpose()
+        indices = xxpp_to_xpxp_indices(self.d)
+        return self.xxpp_correlation_matrix[np.ix_(indices, indices)]
 
     @property
     def xpxp_representation(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -983,22 +981,25 @@ class GaussianState(State):
             GaussianState: The purified Gaussian state.
         """  # noqa: E501
         np = self._connector.np
+        fallback_np = self._connector.fallback_np
 
         hbar = self._config.hbar
         cov = self.xpxp_covariance_matrix / hbar
 
         d = self.d
 
-        T = from_xxpp_to_xpxp_transformation_matrix(d)
+        indices = xpxp_to_xxpp_indices(d)
 
-        S, D = williamson(T.T @ cov @ T, self._connector)
+        S, D = williamson(cov[fallback_np.ix_(indices, indices)], self._connector)
 
         beta_diagonals = np.diag(np.sqrt(np.abs(np.diag(D)[:d] ** 2 - 1)))
         zeros = np.zeros_like(beta_diagonals)
 
         beta_skeleton = np.block([[zeros, beta_diagonals], [beta_diagonals, zeros]])
 
-        TS = T @ S
+        indices = xxpp_to_xpxp_indices(d)
+
+        TS = S[indices, :]
 
         beta = TS @ beta_skeleton @ TS.T
 
