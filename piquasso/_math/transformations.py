@@ -13,40 +13,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import numpy as np
+import numba as nb
 
 
-@functools.lru_cache()
-def from_xxpp_to_xpxp_transformation_matrix(d: int) -> np.ndarray:
+@nb.njit(cache=True)
+def xxpp_to_xpxp_indices(d: int) -> np.ndarray:
     r"""
-    Basis changing with the basis change operator.
-
-    This transformation will change the basis from xxpp-basis to xpxp-basis.
-
-    .. math::
-
-        T_{ij} = \delta_{j, 2i-1} + \delta_{j + 2d, 2i}
-
-    Intuitively, it changes the basis as
-
-    .. math::
-
-        T Y = T (x_1, \dots, x_d, p_1, \dots, p_d)^T
-            = (x_1, p_1, \dots, x_d, p_d)^T,
-
-    which is very helpful in :mod:`piquasso._simulators.gaussian.state`.
+    Indices for basis changing from the xxpp to the xpxp basis.
 
     Args:
         d (int): The number of modes.
 
     Returns:
-        numpy.ndarray: The basis changing matrix.
+        numpy.ndarray: The basis changing indices.
     """
 
-    T = np.zeros((2 * d, 2 * d), dtype=int)
-    for i in range(d):
-        T[2 * i, i] = 1
-        T[2 * i + 1, i + d] = 1
+    indices = np.empty(2 * d, dtype=nb.int32)
 
-    return T
+    for i in range(d):
+        indices[2 * i] = i
+        indices[2 * i + 1] = d + i
+
+    return indices
+
+
+@nb.njit(cache=True)
+def xpxp_to_xxpp_indices(d: int) -> np.ndarray:
+    r"""
+    Indices for basis changing from the xpxp to the xxpp basis.
+
+    Args:
+        d (int): The number of modes.
+
+    Returns:
+        numpy.ndarray: The basis changing indices.
+    """
+
+    indices = np.empty(2 * d, dtype=nb.int32)
+
+    for i in range(d):
+        indices[i] = 2 * i
+        indices[d + i] = 2 * i + 1
+
+    return indices

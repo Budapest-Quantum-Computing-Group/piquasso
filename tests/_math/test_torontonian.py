@@ -23,7 +23,7 @@ from itertools import chain, combinations
 
 
 from piquasso._math.torontonian import torontonian, loop_torontonian
-from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+from piquasso._math.transformations import xpxp_to_xxpp_indices
 
 
 def powerset(iterable):
@@ -38,9 +38,9 @@ def torontonian_naive(A: np.ndarray) -> complex:
     """
     d = A.shape[0] // 2
 
-    T = from_xxpp_to_xpxp_transformation_matrix(d)
+    indices = xpxp_to_xxpp_indices(d)
 
-    A = T.T @ A @ T
+    A = A[np.ix_(indices, indices)]
 
     if d == 0:
         return 1.0 + 0j
@@ -78,10 +78,10 @@ def loop_torontonian_naive(A, gamma):
 
     d = A.shape[0] // 2
 
-    T = from_xxpp_to_xpxp_transformation_matrix(d)
+    indices = xpxp_to_xxpp_indices(d)
 
-    A = T.T @ A @ T
-    gamma = T.T @ gamma
+    A = A[np.ix_(indices, indices)]
+    gamma = gamma[indices]
 
     if d == 0:
         return 1.0

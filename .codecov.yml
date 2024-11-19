@@ -6,5 +6,6 @@ ignore:
   - piquasso/_math/combinatorics.py
   - piquasso/_math/fock.py
   - piquasso/_math/indices.py
+  - piquasso/_math/transformations.py
   - piquasso/_simulators/fock/calculations.py
   - piquasso/_simulators/connectors/numpy_/interferometer.py

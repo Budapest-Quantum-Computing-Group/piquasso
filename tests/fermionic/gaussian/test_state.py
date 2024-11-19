@@ -23,9 +23,7 @@ import pytest
 
 from scipy.linalg import block_diag
 
-from piquasso._math.transformations import (
-    from_xxpp_to_xpxp_transformation_matrix,
-)
+from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.validations import all_in_interval
@@ -163,10 +161,10 @@ def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
 
     omega = get_omega(d, connector)
 
-    T = from_xxpp_to_xpxp_transformation_matrix(d)
+    indices = xpxp_to_xxpp_indices(d)
 
     assert np.allclose(
-        T.T @ state.covariance_matrix @ T,
+        state.covariance_matrix[np.ix_(indices, indices)],
         -1j
         * omega
         @ (2 * state.correlation_matrix - np.identity(2 * d))
@@ -1097,9 +1095,11 @@ def test_covariance_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
 
     gate_hamiltonian_majorana = -1j * omega @ gate_hamiltonian @ omega.conj().T
 
-    T = from_xxpp_to_xpxp_transformation_matrix(d)
+    indices = xxpp_to_xpxp_indices(d)
 
-    covariance_unitary = T @ connector.expm(-2 * gate_hamiltonian_majorana) @ T.T
+    covariance_unitary = connector.expm(-2 * gate_hamiltonian_majorana)[
+        np.ix_(indices, indices)
+    ]
 
     assert np.allclose(
         final_state.covariance_matrix,

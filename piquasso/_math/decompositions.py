@@ -18,7 +18,7 @@ import numpy as np
 from scipy.optimize import root_scalar
 
 from piquasso._math.symplectic import xp_symplectic_form
-from piquasso._math.transformations import from_xxpp_to_xpxp_transformation_matrix
+from piquasso._math.transformations import xpxp_to_xxpp_indices
 
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.connector import BaseConnector
@@ -176,9 +176,10 @@ def williamson(matrix: np.ndarray, connector: BaseConnector) -> tuple:
         output="real",
     )
 
+    indices = xpxp_to_xxpp_indices(d)
     basis_change = _rotation_to_positive_above_diagonals(
         block_diagonal_part, connector
-    ) @ from_xxpp_to_xpxp_transformation_matrix(d)
+    )[:, indices]
     ordered_block_diagonal = basis_change.T @ block_diagonal_part @ basis_change
 
     inverse_diagonal_matrix = connector.block_diag(
