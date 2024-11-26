@@ -1,5 +1,7 @@
 import numpy as np
 import scipy
+import numba as nb
+from piquasso._math.combinatorics import comb
 from piquasso._math.combinatorics import sort_and_get_parity
 from piquasso.fermionic.gaussian._misc import _get_fs_fdags, tensor_product
 import piquasso as pq
@@ -7,13 +9,39 @@ import piquasso as pq
 connector = pq.NumpyConnector()
 
 
+@nb.njit(cache=True)
+def next_index(first_quantized, d):
+    l = len(first_quantized)
+
+    for i in range(l):
+        if first_quantized[l - i - 1] < d - i - 1:
+            first_quantized[l - i - 1] += 1
+            for k in range(l - i, l):
+                first_quantized[k] = first_quantized[l - i - 1] + 1
+
+            return first_quantized
+
+    new_majorana_string = np.empty(l + 1, dtype=first_quantized.dtype)
+
+    for i in range(len(new_majorana_string)):
+        new_majorana_string[i] = i
+
+    return new_majorana_string
+
+
 def _to_occupation_number_picture(tensor_index, N):
     ret = np.zeros(shape=8 * N, dtype=tensor_index.dtype)
-
     for i in range(len(tensor_index)):
         ret[tensor_index[i]] = 1
 
     return ret
+
+
+def get_vector_lengths(N, l):
+    lengths = []
+    for l1 in range(2*l+1):
+        lengths += [comb(8*N, l1)]
+    return lengths
 
 
 def get_fermion_sampling_initial_tensor(N: int, l: int):
@@ -40,6 +68,34 @@ def get_fermion_sampling_initial_tensor(N: int, l: int):
         tensor[tuple(tensor_index)] = prefactor * prod
 
     return tensor
+
+
+def get_fermion_sampling_initial_vector(N: int, l: int):
+    sub_vec_lengths = get_vector_lengths(N, l)
+    size = np.sum(sub_vec_lengths)
+    initial_vector = np.empty(shape=size, dtype=complex)
+    psi_tensor = get_psi()
+    # initialize
+    current_index = 0
+    majorannas = np.array([], dtype=int)
+    # do the empty one by hand
+    initial_vector[current_index] = 1
+    current_index += 1
+    majorannas = next_index(majorannas, 8*N)
+    for i in range(size-1):
+        occ_tensor_index = _to_occupation_number_picture(majorannas, N)
+        sliced = np.reshape(occ_tensor_index, (N, 8))
+
+        prod = 1.0
+
+        for i in range(N):
+            prod *= psi_tensor[tuple(sliced[i])]
+
+        initial_vector[current_index] = prod
+        current_index += 1
+        majorannas = next_index(majorannas, 8*N)
+
+    return initial_vector
 
 
 def get_psi():
@@ -171,7 +227,8 @@ if __name__ == "__main__":
 
     d = 4 * N
 
-    initial_tensor = get_fermion_sampling_initial_tensor(N=N, l=l)
+    initial_vector= get_fermion_sampling_initial_vector(N=N, l=l)
+    breakpoint()
 
     import piquasso as pq
 
@@ -187,4 +244,4 @@ if __name__ == "__main__":
 
     result = simulator.execute(program)
 
-    breakpoint()
+    
