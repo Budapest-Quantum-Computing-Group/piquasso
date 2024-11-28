@@ -16,7 +16,7 @@
 import pytest
 import numpy as np
 
-from scipy.linalg import polar, coshm, sinhm
+from scipy.linalg import polar, coshm, sinhm, block_diag
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
@@ -936,3 +936,27 @@ def test_GaussianState_purify_on_3_modes():
     assert purification.is_pure()
     assert purification.d == 2 * mixed_state.d
     assert purification.reduced(modes=(0, 1, 2)) == mixed_state
+
+
+def test_density_matrix_Thermal_Interferometer(generate_unitary_matrix):
+    d = 3
+
+    preparation = pq.Program([pq.Thermal([0.1, 0.2, 0.3])])
+
+    U = generate_unitary_matrix(d)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+        pq.Q() | pq.Interferometer(U)
+
+    simulator = pq.GaussianSimulator(d=d, config=pq.Config(cutoff=2))
+
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
+
+    fock_space_unitary = block_diag(np.array([1.0]), U)
+
+    assert np.allclose(
+        final_state.density_matrix,
+        fock_space_unitary @ initial_state.density_matrix @ fock_space_unitary.conj().T,
+    )
