@@ -88,17 +88,18 @@ class Interferometer(_PassiveLinearGate):
     The general unitary operator can be written as
 
     .. math::
-        I = \exp \left (
-            i \sum_{i, j = 1}^d H_{i j} a_i^\dagger a_j
+        I(U) = \exp \left (
+            i \left( \sum_{i, j = 1}^d A_{i j} a_i^\dagger a_j + h.c. \right)
         \right ),
 
-    where the parameter `U` and :math:`H` is related by
+    where the parameter `U` and :math:`A` is related by
 
     .. math::
         U = \exp \left (
-            i H
+            -i A
         \right ).
 
+    The interpretation of :math:`U` is that it is the one-particle unitary matrix.
     The evolution of the ladder operators can be described by
 
     .. math::

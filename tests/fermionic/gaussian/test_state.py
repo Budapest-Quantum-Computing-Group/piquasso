@@ -1444,3 +1444,37 @@ def test_fock_probabilities_density_matrix_equivalence(
     fock_probabilities_from_density_matrix = np.real(np.diag(state.density_matrix))
 
     assert np.allclose(state.fock_probabilities, fock_probabilities_from_density_matrix)
+
+
+@for_all_connectors
+def test_density_matrix_Interferometer_2_by_2_simple(connector):
+    theta = np.pi / 5
+    phi = np.pi / 7
+
+    U = np.array(
+        [
+            [np.cos(theta), -np.exp(-1j * phi) * np.sin(theta)],
+            [np.exp(1j * phi) * np.sin(theta), np.cos(theta)],
+        ]
+    )
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.Interferometer(U)
+
+    simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
+    state = simulator.execute(program).state
+
+    initial_state_vector = np.array([0, 1, 0, 0])  # Lexicographic ordering
+
+    # The basis is ordered as [0, 0], [0, 1], [1, 0], [1, 1], but the unitary acting
+    # on the one-particle Hilbert space is understood in the basis [1, 0], [0, 1],
+    # therefore we have to flip it.
+    U_big = block_diag(np.array([1.0]), U[::-1, ::-1], np.array([1.0]))
+
+    evolved_state_vector = U_big @ initial_state_vector
+
+    assert np.allclose(
+        state.density_matrix,
+        np.outer(evolved_state_vector.conj(), evolved_state_vector),
+    )
