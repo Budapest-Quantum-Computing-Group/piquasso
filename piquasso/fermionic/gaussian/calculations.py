@@ -113,12 +113,12 @@ def passive_linear_gate(
     The transformation is equivalent to
 
     .. math::
-        \Gamma^{a^\dagger a} &\mapsto U \Gamma^{a^\dagger a} U^\dagger, \\\\
-        \Gamma^{a^\dagger a^\dagger} &\mapsto U \Gamma^{a^\dagger a^\dagger} U^T,
+        \Gamma^{a^\dagger a} &\mapsto \overline{U} \Gamma^{a^\dagger a} U^T, \\\\
+        \Gamma^{a^\dagger a^\dagger} &\mapsto \overline{U} \Gamma^{a^\dagger a^\dagger} U^\dagger,
 
     where :math:`U` is the unitary corresponding to the passive linear gate in the Dirac
     basis.
-    """
+    """  # noqa: E501
 
     unitary = instruction._get_passive_block(state._connector, state._config)
     modes = instruction.modes
@@ -135,13 +135,17 @@ def passive_linear_gate(
     select_rows = fallback_np.ix_(modes, all_modes)
 
     state._D = connector.assign(
-        state._D, select_columns, state._D[select_columns] @ unitary.conj().T
+        state._D, select_columns, state._D[select_columns] @ unitary.T
     )
-    state._D = connector.assign(state._D, select_rows, unitary @ state._D[modes, :])
+    state._D = connector.assign(
+        state._D, select_rows, unitary.conj() @ state._D[modes, :]
+    )
 
     state._E = connector.assign(
-        state._E, select_columns, state._E[select_columns] @ unitary.T
+        state._E, select_columns, state._E[select_columns] @ unitary.T.conj()
     )
-    state._E = connector.assign(state._E, select_rows, unitary @ state._E[select_rows])
+    state._E = connector.assign(
+        state._E, select_rows, unitary.conj() @ state._E[select_rows]
+    )
 
     return Result(state=state)

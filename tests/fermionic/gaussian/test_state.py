@@ -1458,23 +1458,136 @@ def test_density_matrix_Interferometer_2_by_2_simple(connector):
         ]
     )
 
-    with pq.Program() as program:
+    with pq.Program() as preparation:
         pq.Q(0, 1) | pq.StateVector([0, 1])
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | preparation
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
-    state = simulator.execute(program).state
-
-    initial_state_vector = np.array([0, 1, 0, 0])  # Lexicographic ordering
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
 
     # The basis is ordered as [0, 0], [0, 1], [1, 0], [1, 1], but the unitary acting
     # on the one-particle Hilbert space is understood in the basis [1, 0], [0, 1],
     # therefore we have to flip it.
-    U_big = block_diag(np.array([1.0]), U[::-1, ::-1], np.array([1.0]))
+    indices = [0, 2, 1, 3]
 
-    evolved_state_vector = U_big @ initial_state_vector
+    initial_state_density_matrix = initial_state.density_matrix[
+        np.ix_(indices, indices)
+    ]
+    final_state_density_matrix = final_state.density_matrix[np.ix_(indices, indices)]
+
+    fock_space_unitary = block_diag(np.array([1.0]), U, np.array([1.0]))
 
     assert np.allclose(
-        state.density_matrix,
-        np.outer(evolved_state_vector.conj(), evolved_state_vector),
+        final_state_density_matrix,
+        fock_space_unitary @ initial_state_density_matrix @ fock_space_unitary.T.conj(),
+    )
+
+
+@pytest.mark.monkey
+@for_all_connectors
+def test_density_matrix_Interferometer_2_by_2_random(
+    connector, generate_unitary_matrix
+):
+    U = generate_unitary_matrix(2)
+
+    with pq.Program() as preparation:
+        pq.Q(0, 1) | pq.StateVector([0, 1])
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | preparation
+        pq.Q(0, 1) | pq.Interferometer(U)
+
+    simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
+
+    # The basis is ordered as [0, 0], [0, 1], [1, 0], [1, 1], but the unitary acting
+    # on the one-particle Hilbert space is understood in the basis [1, 0], [0, 1],
+    # therefore we have to flip it.
+    indices = [0, 2, 1, 3]
+
+    initial_state_density_matrix = initial_state.density_matrix[
+        np.ix_(indices, indices)
+    ]
+    final_state_density_matrix = final_state.density_matrix[np.ix_(indices, indices)]
+
+    fock_space_unitary = block_diag(np.array([1.0]), U, np.array([1.0]))
+
+    assert np.allclose(
+        final_state_density_matrix,
+        fock_space_unitary @ initial_state_density_matrix @ fock_space_unitary.T.conj(),
+    )
+
+
+@for_all_connectors
+def test_density_matrix_StateVector_ordering(connector):
+    d = 3
+
+    state_vectors = [
+        [0, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0],
+        [0, 1, 1],
+        [1, 0, 0],
+        [1, 0, 1],
+        [1, 1, 0],
+        [1, 1, 1],
+    ]
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    for i in range(len(state_vectors)):
+        with pq.Program() as preparation:
+            pq.Q(0, 1, 2) | pq.StateVector(state_vectors[i])
+
+        state = simulator.execute(preparation).state
+
+        density_matrix = state.density_matrix
+
+        assert np.isclose(density_matrix[i, i], 1.0)
+
+
+@pytest.mark.monkey
+@for_all_connectors
+def test_density_matrix_Interferometer_3_by_3_random(
+    connector, generate_unitary_matrix
+):
+    d = 3
+
+    U = generate_unitary_matrix(d)
+
+    with pq.Program() as preparation:
+        pq.Q(0, 1, 2) | pq.StateVector([1, 0, 0])
+
+    with pq.Program() as program:
+        pq.Q(0, 1, 2) | preparation
+        pq.Q(0, 1, 2) | pq.Interferometer(U)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
+
+    # The basis is ordered as lexicographically, but the unitary acting
+    # on the one-particle Hilbert space is understood in a different basis,
+    # therefore we have to flip it.
+    indices = [0, 4, 2, 1, 6, 5, 3, 7]
+
+    initial_state_density_matrix = initial_state.density_matrix[
+        np.ix_(indices, indices)
+    ]
+    final_state_density_matrix = final_state.density_matrix[np.ix_(indices, indices)]
+
+    does_not_matter = np.random.rand(d, d)
+
+    fock_space_unitary = block_diag(
+        np.array([1.0]), U, does_not_matter, np.array([1.0])
+    )
+
+    assert np.allclose(
+        final_state_density_matrix,
+        fock_space_unitary @ initial_state_density_matrix @ fock_space_unitary.T.conj(),
     )
