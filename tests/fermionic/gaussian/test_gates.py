@@ -295,3 +295,35 @@ def test_Interferometer_clements_equivalence(connector):
     decomposed_state = simulator.execute(decomposed_program).state
 
     assert state == decomposed_state
+
+
+@for_all_connectors
+def test_Interferometer_subsystem_equivalence(connector, generate_unitary_matrix):
+    d = 3
+
+    U = generate_unitary_matrix(2)
+
+    bigU = np.identity(d, dtype=complex)
+
+    bigU[0, 0] = U[0, 0]
+    bigU[0, 2] = U[0, 1]
+    bigU[2, 0] = U[1, 0]
+    bigU[2, 2] = U[1, 1]
+
+    with pq.Program() as preparation:
+        pq.Q() | pq.StateVector(occupation_numbers=[1, 1, 0])
+
+    with pq.Program() as program_subsystem:
+        pq.Q() | preparation
+        pq.Q(0, 2) | pq.Interferometer(matrix=U)
+
+    with pq.Program() as program_full:
+        pq.Q() | preparation
+        pq.Q(0, 1, 2) | pq.Interferometer(matrix=bigU)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state_subsystem = simulator.execute(program_subsystem).state
+    state_full = simulator.execute(program_full).state
+
+    assert state_subsystem == state_full

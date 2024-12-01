@@ -24,16 +24,9 @@ from piquasso._math.hafnian import (
     loop_hafnian_with_reduction_batch,
 )
 
-from ..connector import BuiltinConnector
+from ..connector import BuiltinConnector, instancemethod
 
 from .interferometer import calculate_interferometer_on_fock_space
-
-
-def instancemethod(func):
-    def wrapped(self, *args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapped
 
 
 class NumpyConnector(BuiltinConnector):

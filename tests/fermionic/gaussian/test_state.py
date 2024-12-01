@@ -28,7 +28,7 @@ from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_in
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.validations import all_in_interval
 
-from piquasso.fermionic.gaussian._misc import get_omega
+from piquasso.fermionic._utils import get_omega, binary_to_fock_indices
 
 
 for_all_connectors = pytest.mark.parametrize(
@@ -159,7 +159,7 @@ def test_GaussianHamiltonian_covariance_and_correlation_matrix_equivalence(
 
     state = simulator.execute(program).state
 
-    omega = get_omega(d, connector)
+    omega = get_omega(d)
 
     indices = xpxp_to_xxpp_indices(d)
 
@@ -317,7 +317,7 @@ def test_GaussianHamiltonian_correlation_matrix_and_maj_equivalence(
 
     state = simulator.execute(program).state
 
-    omega = get_omega(d, connector)
+    omega = get_omega(d)
 
     assert np.allclose(
         state.maj_correlation_matrix,
@@ -965,7 +965,7 @@ def test_density_matrix_two_mode_simple(connector):
 
     f = 1 / (1 + np.exp(2 * eps))
 
-    from piquasso.fermionic.gaussian._misc import tensor_product
+    from piquasso.fermionic._utils import tensor_product
 
     single_mode_dms = []
 
@@ -998,9 +998,7 @@ def test_density_matrix_2_mode(connector, generate_fermionic_gaussian_hamiltonia
 
     assert np.isclose(np.trace(density_matrix), 1.0)
 
-    bigH = pq.fermionic.gaussian._misc.get_fermionic_hamiltonian(
-        parent_hamiltonian, connector
-    )
+    bigH = pq.fermionic._utils.get_fermionic_hamiltonian(parent_hamiltonian, connector)
 
     assert np.allclose(
         density_matrix, connector.expm(bigH) / np.trace(connector.expm(bigH))
@@ -1091,7 +1089,7 @@ def test_covariance_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
     initial_state = simulator.execute(preparation).state
     final_state = simulator.execute(program).state
 
-    omega = get_omega(d, connector)
+    omega = get_omega(d)
 
     gate_hamiltonian_majorana = -1j * omega @ gate_hamiltonian @ omega.conj().T
 
@@ -1161,9 +1159,7 @@ def test_density_matrix_GaussianHamiltonian_equivalence_from_Vacuum(
     initial_state = simulator.execute(preparation).state
     final_state = simulator.execute(program).state
 
-    bigH = pq.fermionic.gaussian._misc.get_fermionic_hamiltonian(
-        gate_hamiltonian, connector
-    )
+    bigH = pq.fermionic._utils.get_fermionic_hamiltonian(gate_hamiltonian, connector)
 
     gate_unitary = connector.expm(1j * bigH)
 
@@ -1196,9 +1192,7 @@ def test_density_matrix_GaussianHamiltonian_equivalence_1_mode(
 
     final_state = simulator.execute(program, initial_state=initial_state).state
 
-    bigH = pq.fermionic.gaussian._misc.get_fermionic_hamiltonian(
-        gate_hamiltonian, connector
-    )
+    bigH = pq.fermionic._utils.get_fermionic_hamiltonian(gate_hamiltonian, connector)
 
     gate_unitary = connector.expm(1j * bigH)
 
@@ -1231,9 +1225,7 @@ def test_density_matrix_GaussianHamiltonian_equivalence_2_mode(
 
     final_state = simulator.execute(program, initial_state=initial_state).state
 
-    bigH = pq.fermionic.gaussian._misc.get_fermionic_hamiltonian(
-        gate_hamiltonian, connector
-    )
+    bigH = pq.fermionic._utils.get_fermionic_hamiltonian(gate_hamiltonian, connector)
 
     gate_unitary = connector.expm(1j * bigH)
 
@@ -1266,9 +1258,7 @@ def test_density_matrix_GaussianHamiltonian_equivalence(
 
     final_state = simulator.execute(program, initial_state=initial_state).state
 
-    bigH = pq.fermionic.gaussian._misc.get_fermionic_hamiltonian(
-        gate_hamiltonian, connector
-    )
+    bigH = pq.fermionic._utils.get_fermionic_hamiltonian(gate_hamiltonian, connector)
 
     gate_unitary = connector.expm(1j * bigH)
 
@@ -1448,6 +1438,7 @@ def test_fock_probabilities_density_matrix_equivalence(
 
 @for_all_connectors
 def test_density_matrix_Interferometer_2_by_2_simple(connector):
+    d = 2
     theta = np.pi / 5
     phi = np.pi / 7
 
@@ -1465,14 +1456,14 @@ def test_density_matrix_Interferometer_2_by_2_simple(connector):
         pq.Q(0, 1) | preparation
         pq.Q(0, 1) | pq.Interferometer(U)
 
-    simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
     initial_state = simulator.execute(preparation).state
     final_state = simulator.execute(program).state
 
     # The basis is ordered as [0, 0], [0, 1], [1, 0], [1, 1], but the unitary acting
     # on the one-particle Hilbert space is understood in the basis [1, 0], [0, 1],
     # therefore we have to flip it.
-    indices = [0, 2, 1, 3]
+    indices = binary_to_fock_indices(d)
 
     initial_state_density_matrix = initial_state.density_matrix[
         np.ix_(indices, indices)
@@ -1492,7 +1483,8 @@ def test_density_matrix_Interferometer_2_by_2_simple(connector):
 def test_density_matrix_Interferometer_2_by_2_random(
     connector, generate_unitary_matrix
 ):
-    U = generate_unitary_matrix(2)
+    d = 2
+    U = generate_unitary_matrix(d)
 
     with pq.Program() as preparation:
         pq.Q(0, 1) | pq.StateVector([0, 1])
@@ -1501,14 +1493,14 @@ def test_density_matrix_Interferometer_2_by_2_random(
         pq.Q(0, 1) | preparation
         pq.Q(0, 1) | pq.Interferometer(U)
 
-    simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
     initial_state = simulator.execute(preparation).state
     final_state = simulator.execute(program).state
 
     # The basis is ordered as [0, 0], [0, 1], [1, 0], [1, 1], but the unitary acting
     # on the one-particle Hilbert space is understood in the basis [1, 0], [0, 1],
     # therefore we have to flip it.
-    indices = [0, 2, 1, 3]
+    indices = binary_to_fock_indices(d)
 
     initial_state_density_matrix = initial_state.density_matrix[
         np.ix_(indices, indices)
@@ -1574,7 +1566,7 @@ def test_density_matrix_Interferometer_3_by_3_random(
     # The basis is ordered as lexicographically, but the unitary acting
     # on the one-particle Hilbert space is understood in a different basis,
     # therefore we have to flip it.
-    indices = [0, 4, 2, 1, 6, 5, 3, 7]
+    indices = binary_to_fock_indices(d)
 
     initial_state_density_matrix = initial_state.density_matrix[
         np.ix_(indices, indices)

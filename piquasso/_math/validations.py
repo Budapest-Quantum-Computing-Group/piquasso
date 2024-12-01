@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Union
+from typing import Iterable, Union, Tuple
 
 import numpy as np
 
@@ -44,3 +44,9 @@ def all_in_interval(vector: Iterable, lower: float, upper: float) -> bool:
         and (element <= upper or np.isclose(element, upper))
         for element in vector
     )
+
+
+def are_modes_consecutive(modes: Tuple[int, ...]) -> bool:
+    expected = np.arange(modes[0], modes[-1] + 1)
+
+    return len(modes) == len(expected) and bool(np.all(modes == expected))
