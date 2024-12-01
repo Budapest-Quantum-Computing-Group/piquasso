@@ -25,7 +25,7 @@ from piquasso.api.state import State
 from piquasso.api.config import Config
 from piquasso.api.connector import BaseConnector
 
-from ._misc import (
+from .._utils import (
     validate_fermionic_gaussian_hamiltonian,
     get_fermionic_hamiltonian,
     get_omega,
@@ -374,7 +374,7 @@ class GaussianState(State):
         rho_D = tensor_product(single_mode_dms)
 
         # 2. Unitary which diagonalizes the original density matrix
-        omega = get_omega(self.d, connector)
+        omega = get_omega(self.d)
 
         indices = xxpp_to_xpxp_indices(d)
 

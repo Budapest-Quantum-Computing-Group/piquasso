@@ -15,11 +15,31 @@
 
 from piquasso.api.connector import BaseConnector
 
+from .connections import (
+    calculate_interferometer_on_fermionic_fock_space,
+    apply_fermionic_passive_linear_to_state_vector,
+)
+
+
+def instancemethod(func):
+    def wrapped(self, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapped
+
 
 class BuiltinConnector(BaseConnector):
     """Base class for built-in connectors."""
 
     range = range
+
+    calculate_interferometer_on_fermionic_fock_space = (
+        calculate_interferometer_on_fermionic_fock_space
+    )
+
+    apply_fermionic_passive_linear_to_state_vector = (
+        apply_fermionic_passive_linear_to_state_vector
+    )
 
     def custom_gradient(self, func):
         def noop_grad(*args, **kwargs):

@@ -270,3 +270,13 @@ class BaseConnector(abc.ABC):
     @abc.abstractmethod
     def real_logm(self, matrix):
         """Calculates the real logarithm of a matrix."""
+
+    @abc.abstractmethod
+    def calculate_interferometer_on_fermionic_fock_space(self, matrix, cutoff):
+        """Calculates the representation of the interferometer on the Fock space."""
+
+    @abc.abstractmethod
+    def apply_fermionic_passive_linear_to_state_vector(
+        self, representations, state_vector, modes, d, cutoff
+    ):
+        """Applies a passive linear gate to a state vector expressed in the Fock basis."""  # noqa: E501

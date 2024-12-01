@@ -13,18 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """
-Fermionic Gaussian simulations
-******************************
+Fermionic Fock space-based simulators
+*************************************
 
-This is a package for Fermionic Linear Optics (FLO) or Fermionic Gaussian states.
+This is a package for Fock space-based simulations of fermionic states.
 """
 
-from .simulator import GaussianSimulator
-from .state import GaussianState
 
-__all__ = [
-    "GaussianSimulator",
-    "GaussianState",
-]
+from .simulator import PureFockSimulator
+from .state import PureFockState
+
+
+__all__ = ["PureFockState", "PureFockSimulator"]

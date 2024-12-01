@@ -25,7 +25,7 @@ from piquasso._math.transformations import (
     xxpp_to_xpxp_indices,
 )
 
-from ._misc import validate_fermionic_gaussian_hamiltonian
+from .._utils import validate_fermionic_gaussian_hamiltonian
 from .state import GaussianState
 
 

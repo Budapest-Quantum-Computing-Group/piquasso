@@ -17,7 +17,12 @@ import numpy as np
 
 from functools import partial
 
-from ..connector import BuiltinConnector
+from ..connector import BuiltinConnector, instancemethod
+
+from .connections import (
+    calculate_interferometer_on_fermionic_fock_space,
+    apply_fermionic_passive_linear_to_state_vector,
+)
 
 
 class JaxConnector(BuiltinConnector):
@@ -71,6 +76,14 @@ class JaxConnector(BuiltinConnector):
     # don't work together, when the condition depends on a tracer. Therefore,
     # conditionals must be disabled in this case
     allow_conditionals = False
+
+    calculate_interferometer_on_fermionic_fock_space = instancemethod(
+        calculate_interferometer_on_fermionic_fock_space
+    )
+
+    apply_fermionic_passive_linear_to_state_vector = instancemethod(
+        apply_fermionic_passive_linear_to_state_vector
+    )
 
     def __init__(self):
         try:

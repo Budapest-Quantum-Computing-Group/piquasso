@@ -18,7 +18,7 @@ import pytest
 
 import numpy as np
 
-from piquasso.fermionic.gaussian._misc import _get_fs_fdags
+from piquasso.fermionic._utils import _get_fs_fdags
 
 
 @pytest.fixture

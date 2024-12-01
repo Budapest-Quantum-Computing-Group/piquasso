@@ -8,4 +8,7 @@ ignore:
   - piquasso/_math/indices.py
   - piquasso/_math/transformations.py
   - piquasso/_simulators/fock/calculations.py
+  - piquasso/_simulators/connectors/connections.py
+  - piquasso/_simulators/connectors/jax_/connections.py
   - piquasso/_simulators/connectors/numpy_/interferometer.py
+  - piquasso/fermionic/_utils.py

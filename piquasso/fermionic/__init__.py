@@ -52,7 +52,6 @@ where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
 
     \mathbf{m} := [x_1, \dots, x_d, p_1, \dots, p_d].
 
-
 .. automodule:: piquasso.fermionic.instructions
    :members:
    :show-inheritance:
@@ -63,12 +62,18 @@ where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
    :show-inheritance:
    :inherited-members:
 
+.. automodule:: piquasso.fermionic.fock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :inherited-members:
 """
 
 from . import gaussian
 
 from .gaussian import GaussianState, GaussianSimulator
 from .instructions import GaussianHamiltonian, ParentHamiltonian
+from .fock import PureFockState, PureFockSimulator
 
 
 __all__ = [
@@ -76,10 +81,12 @@ __all__ = [
     "gaussian",
     # States
     "GaussianState",
+    "PureFockState",
     # Simulators
     "GaussianSimulator",
     # Preparations
     "ParentHamiltonian",
+    "PureFockSimulator",
     # Gates
     "GaussianHamiltonian",
 ]
