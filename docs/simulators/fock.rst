@@ -3,16 +3,15 @@ Fock Simulators
 
 .. warning::
    The ordering of the Fock basis is increasing with particle numbers, and in each
-   particle number conserving subspace, lexicographic ordering is used.
+   particle number conserving subspace, anti-lexicographic ordering is used.
 
    Example for 3 modes:
 
    .. math ::
 
-      | 000 \rangle,
-      | 001 \rangle, | 010 \rangle, | 100 \rangle,
-      | 002 \rangle, | 011 \rangle, | 020 \rangle, | 101 \rangle, | 110 \rangle,
-      | 200 \rangle \dots
+      \ket{000},
+      \ket{100}, \ket{010}, \ket{001},
+      \ket{200}, \ket{110}, \ket{101}, \ket{020}, \ket{011}, \ket{002}, \dots
 
 General Fock Simulator
 ----------------------
