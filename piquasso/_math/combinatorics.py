@@ -36,9 +36,11 @@ def comb(n, k):
 
     prod = 1
 
+    k = min(k, n - k)
+
     for i in range(k):
         prod *= n - i
-        prod = prod // (i + 1)
+        prod //= i + 1
 
     return prod
 

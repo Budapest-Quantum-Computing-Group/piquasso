@@ -17,55 +17,13 @@
 This file contains some calculations for `JaxConnector`.
 """
 
-import numpy as np
-import numba as nb
-
 from functools import partial
 
 import jax
 import jax.numpy as jnp
 
-from piquasso.fermionic._utils import (
-    get_fock_subspace_dimension,
-    get_fock_subspace_index_first_quantized,
-    next_first_quantized,
-)
-
 from ..connections import _calculate_index_list_for_appling_interferometer
-
-
-@nb.njit(cache=True)
-def _precalculate_passive_linear_indices(n, d):
-    dim = get_fock_subspace_dimension(d, n)
-
-    matrix_row_indices = np.empty(dim, dtype=np.int64)
-    deleted_row_indices = np.empty(dim, dtype=np.int64)
-    laplace_indices = np.empty((dim, n), dtype=np.int64)
-    deleted_indices = np.empty((dim, n), dtype=np.int64)
-
-    first_quantized = np.arange(n)
-    for row_idx in range(dim):
-        matrix_row_idx = first_quantized[0]
-        deleted_row = first_quantized[1:]
-        deleted_row_idx = get_fock_subspace_index_first_quantized(deleted_row, d)
-
-        matrix_row_indices[row_idx] = matrix_row_idx
-        deleted_row_indices[row_idx] = deleted_row_idx
-
-        for laplace_index in range(n):
-            deleted = np.delete(first_quantized, laplace_index)
-            deleted_idx = get_fock_subspace_index_first_quantized(deleted, d)
-            deleted_indices[row_idx, laplace_index] = deleted_idx
-            laplace_indices[row_idx, laplace_index] = first_quantized[laplace_index]
-
-        first_quantized = next_first_quantized(first_quantized, d)
-
-    return (
-        matrix_row_indices,
-        deleted_row_indices,
-        laplace_indices,
-        deleted_indices,
-    )
+from .._utils import precalculate_fermionic_passive_linear_indices
 
 
 @partial(jax.jit, static_argnames="cutoff")
@@ -93,12 +51,12 @@ def calculate_interferometer_on_fermionic_fock_space(matrix, cutoff):
         return subspace_representations
 
     for n in range(2, cutoff):
-        (
-            matrix_row_indices,
-            deleted_row_indices,
-            laplace_indices,
-            deleted_indices,
-        ) = _precalculate_passive_linear_indices(n, d)
+        laplace_indices, deleted_indices = (
+            precalculate_fermionic_passive_linear_indices(n, d)
+        )
+
+        matrix_row_indices = laplace_indices[:, 0]
+        deleted_row_indices = deleted_indices[:, 0]
 
         previous_representation = subspace_representations[n - 1]
 

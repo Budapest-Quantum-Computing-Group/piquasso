@@ -207,13 +207,13 @@ def get_fock_subspace_index(occupation_numbers):
 def get_fock_subspace_index_first_quantized(first_quantized, d):
     n = len(first_quantized)
 
-    sum_ = 0
-    previous = 0
+    if n == 0:
+        return 0
+
+    sum_ = comb(d, n) - 1
 
     for i in range(n):
-        m = n - i
-        sum_ += comb(d - previous, m) - comb(d - first_quantized[i], m)
-        previous = first_quantized[i] + 1
+        sum_ -= comb(d - first_quantized[i] - 1, n - i)
 
     return sum_
 
