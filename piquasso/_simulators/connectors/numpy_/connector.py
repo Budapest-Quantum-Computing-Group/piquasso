@@ -27,6 +27,7 @@ from piquasso._math.hafnian import (
 from ..connector import BuiltinConnector, instancemethod
 
 from .interferometer import calculate_interferometer_on_fock_space
+from .connections import calculate_interferometer_on_fermionic_fock_space
 
 
 class NumpyConnector(BuiltinConnector):
@@ -51,6 +52,9 @@ class NumpyConnector(BuiltinConnector):
     loop_hafnian_batch = instancemethod(loop_hafnian_with_reduction_batch)
     calculate_interferometer_on_fock_space = instancemethod(
         calculate_interferometer_on_fock_space
+    )
+    calculate_interferometer_on_fermionic_fock_space = instancemethod(
+        calculate_interferometer_on_fermionic_fock_space
     )
 
     def sqrtm(self, matrix):
