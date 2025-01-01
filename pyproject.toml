@@ -52,7 +52,7 @@ docs = [
 ]
 benchmark = [
   "matplotlib~=3.9.2",
-  "pytest-profiling~=1.7.0",
+  "pytest-profiling>=1.7,<1.9",
   "pytest-benchmark>=4.0,<5.2",
   "perceval-quandela~=0.11.2",
 ]
