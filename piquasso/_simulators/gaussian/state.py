@@ -15,8 +15,6 @@
 
 from typing import Optional, Tuple, List, Union
 
-from scipy.linalg import block_diag
-
 import numpy as np
 
 from piquasso.api.config import Config
@@ -958,13 +956,14 @@ class GaussianState(State):
         )
 
     def is_pure(self) -> bool:
-        d = self.d
-        cov = self.xpxp_covariance_matrix / self._config.hbar
+        return bool(np.isclose(self.get_purity(), 1.0))
 
-        J = np.array([[0, 1], [-1, 0]], dtype=cov.dtype)
-        Jp = block_diag(*[J] * self.d)
+    def get_purity(self) -> float:
+        """Purity of the Gaussian state."""
 
-        return np.allclose(np.linalg.matrix_power(Jp @ cov, 2), -np.identity(2 * d))
+        np = self._connector.np
+
+        return np.real(2**self.d / np.sqrt(np.linalg.det(self.xxpp_covariance_matrix)))
 
     def purify(self) -> "GaussianState":
         """

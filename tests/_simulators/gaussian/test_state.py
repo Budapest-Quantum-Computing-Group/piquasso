@@ -861,6 +861,16 @@ def test_GaussianState_Vacuum_is_pure():
     assert state.is_pure()
 
 
+def test_GaussianState_Vacuum_get_purity():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.GaussianSimulator(d=3)
+    state = simulator.execute(program).state
+
+    assert np.isclose(state.get_purity(), 1.0)
+
+
 def test_GaussianState_purify_vacuum():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -960,3 +970,33 @@ def test_density_matrix_Thermal_Interferometer(generate_unitary_matrix):
         final_state.density_matrix,
         fock_space_unitary @ initial_state.density_matrix @ fock_space_unitary.conj().T,
     )
+
+
+def test_get_purity_Thermal_Interferometer(generate_unitary_matrix):
+    d = 3
+
+    preparation = pq.Program([pq.Thermal([0.1, 0.2, 0.3])])
+
+    U = generate_unitary_matrix(d)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+        pq.Q() | pq.Interferometer(U)
+
+    simulator = pq.GaussianSimulator(d=d, config=pq.Config(cutoff=7))
+
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
+
+    initial_density_matrix = initial_state.density_matrix
+    final_density_matrix = final_state.density_matrix
+
+    actual_initial_purity = np.trace(initial_density_matrix @ initial_density_matrix)
+    actual_final_purity = np.trace(final_density_matrix @ final_density_matrix)
+
+    expected_initial_purity = initial_state.get_purity()
+    expected_final_purity = final_state.get_purity()
+
+    assert np.isclose(actual_initial_purity, actual_final_purity)
+    assert np.isclose(expected_initial_purity, expected_final_purity)
+    assert np.isclose(expected_final_purity, actual_final_purity)
