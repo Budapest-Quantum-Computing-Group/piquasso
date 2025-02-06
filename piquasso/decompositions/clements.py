@@ -33,9 +33,17 @@ if TYPE_CHECKING:
 
 @dataclass
 class BS:
-    """
+    r"""
     Beamsplitter gate, implemented as described in
     `arXiv:1603.08788 <https://arxiv.org/abs/1603.08788>`_.
+
+    The single-particle unitary matrix corresponding to the beamsplitter is
+
+    .. math::
+        BS(\theta, \phi) = \begin{bmatrix}
+            e^{i \phi} \cos \theta & - \sin \theta \\
+            e^{i \phi} \sin \theta & \cos \theta
+        \end{bmatrix}.
 
     Note:
         This means a different beamsplitter gate as defined by
@@ -69,22 +77,16 @@ class Decomposition:
         with pq.Program() as program:
             ...
 
-            for operation in decomposition.first_beamsplitters:
+            for operation in decomposition.beamsplitters:
                 pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
                 pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-            for operation in decomposition.middle_phaseshifters:
+            for operation in decomposition.phaseshifters:
                 pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-            for operation in decomposition.last_beamsplitters:
-                pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-                pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
-
     """
 
-    first_beamsplitters: List[BS]
-    middle_phaseshifters: List[PS]
-    last_beamsplitters: List[BS]
+    beamsplitters: List[BS]
+    phaseshifters: List[PS]
 
 
 def instructions_from_decomposition(decomposition):
@@ -119,16 +121,12 @@ def instructions_from_decomposition(decomposition):
     """
     instructions = []
 
-    for bs in decomposition.first_beamsplitters:
+    for bs in decomposition.beamsplitters:
         instructions.append(Phaseshifter(bs.params[1]).on_modes(bs.modes[0]))
         instructions.append(Beamsplitter(bs.params[0], 0.0).on_modes(*bs.modes))
 
-    for ps in decomposition.middle_phaseshifters:
+    for ps in decomposition.phaseshifters:
         instructions.append(Phaseshifter(ps.phi).on_modes(ps.mode))
-
-    for bs in decomposition.last_beamsplitters:
-        instructions.append(Beamsplitter(-bs.params[0], 0.0).on_modes(*bs.modes))
-        instructions.append(Phaseshifter(-bs.params[1]).on_modes(bs.modes[0]))
 
     return instructions
 
@@ -142,12 +140,12 @@ def inverse_clements(
         The unitary matrix corresponding to the interferometer.
     """
 
-    d = len(decomposition.middle_phaseshifters)
+    d = len(decomposition.phaseshifters)
 
     np = connector.np
     interferometer = np.identity(d, dtype=dtype)
 
-    for beamsplitter in decomposition.first_beamsplitters:
+    for beamsplitter in decomposition.beamsplitters:
         beamsplitter_matrix = _get_embedded_beamsplitter_matrix(
             beamsplitter, d, connector, dtype=dtype
         )
@@ -156,31 +154,21 @@ def inverse_clements(
 
     phis = np.empty(d, dtype=interferometer.dtype)
 
-    for phaseshifter in decomposition.middle_phaseshifters:
+    for phaseshifter in decomposition.phaseshifters:
         phis = connector.assign(phis, phaseshifter.mode, phaseshifter.phi)
 
     interferometer = np.diag(np.exp(1j * phis)) @ interferometer
 
-    for beamsplitter in decomposition.last_beamsplitters:
-        beamsplitter_matrix = np.conj(
-            _get_embedded_beamsplitter_matrix(beamsplitter, d, connector, dtype=dtype)
-        ).T
-
-        interferometer = beamsplitter_matrix @ interferometer
-
     return interferometer
 
 
-def clements(
-    U: "np.ndarray",
-    connector: BaseConnector,
-) -> Decomposition:
+def clements(U: "np.ndarray", connector: BaseConnector) -> Decomposition:
     """
     Decomposes the specified unitary matrix by application of beamsplitters
     prescribed by the decomposition.
 
     Args:
-        U (numpy.ndarray): The (square) unitary matrix to be decomposed.
+        U (numpy.ndarray): The unitary matrix to be decomposed.
 
     Returns:
         The Clements decomposition. See :class:`Decomposition`.
@@ -208,11 +196,79 @@ def clements(
 
     last_beamsplitters = list(reversed(last_beamsplitters))
 
-    return Decomposition(
-        first_beamsplitters=first_beamsplitters,
-        last_beamsplitters=last_beamsplitters,
-        middle_phaseshifters=middle_phasshifters,
+    commuted_beamsplitters, phasehifters = _commute(
+        middle_phasshifters, last_beamsplitters, connector
     )
+
+    return Decomposition(
+        beamsplitters=first_beamsplitters + commuted_beamsplitters,
+        phaseshifters=phasehifters,
+    )
+
+
+def _commute(
+    middle_phaseshifters: List[PS],
+    last_beamsplitters: List[BS],
+    connector: BaseConnector,
+) -> Tuple:
+    r"""
+    Rewrites the decomposition so that the phaseshifters are at the end of the circuit.
+
+    One can commute an inverse beamsplitter and a layer of phaseshifters to another
+    layer of phaseshifters and a different beamsplitter, as follows:
+
+    .. math::
+        BS(\theta, \phi)^{-1} D = D' BS(\theta', \phi')
+
+    where :math:`D, D'` represent phaseshifters parametrized by
+    :math:`\varphi_1, \varphi_2` and :math:`\varphi_1', \varphi_2'`, respectively.
+    """
+
+    commuted_beamsplitters = []
+
+    for bs in last_beamsplitters:
+        modes = bs.modes
+
+        bs_theta_p, bs_phi_p, phi1_p, phi2_p = _get_commute_angles(
+            bs.params[0],
+            bs.params[1],
+            middle_phaseshifters[modes[0]].phi,
+            middle_phaseshifters[modes[1]].phi,
+            connector,
+        )
+
+        bs2 = BS(modes=modes, params=(bs_theta_p, bs_phi_p))
+
+        commuted_beamsplitters.append(bs2)
+        middle_phaseshifters[modes[0]].phi = phi1_p
+        middle_phaseshifters[modes[1]].phi = phi2_p
+
+    return commuted_beamsplitters, middle_phaseshifters
+
+
+def _get_commute_angles(bs_theta, bs_phi, phi1, phi2, connector):
+    r"""Calculates the commutation angles.
+
+    More concretely, this method calculates
+    :math:`\theta', \phi', \varphi_1', \varphi_2'` from the relation
+
+    .. math::
+        BS(\theta, \phi)^{-1} D = D' BS(\theta', \phi')
+
+    where :math:`D, D'` represent phaseshifters parametrized by
+    :math:`\varphi_1, \varphi_2` and :math:`\varphi_1', \varphi_2'`, respectively.
+    """
+
+    np = connector.np
+
+    bs_theta_p = bs_theta
+    phi2_p = phi2
+
+    bs_phi_p = np.mod(phi1 - phi2 + np.pi, 2 * np.pi)
+
+    phi1_p = np.mod(phi2 - bs_phi + np.pi, 2 * np.pi)
+
+    return bs_theta_p, bs_phi_p, phi1_p, phi2_p
 
 
 def _apply_direct_beamsplitters(
@@ -340,24 +396,18 @@ def get_weights_from_decomposition(
     """
     np = connector.np
 
-    dtype = decomposition.middle_phaseshifters[0].phi.dtype
+    dtype = decomposition.phaseshifters[0].phi.dtype
     weights = np.empty(d**2, dtype=dtype)
 
     index = 0
-    for beamsplitter in decomposition.first_beamsplitters:
+    for beamsplitter in decomposition.beamsplitters:
         weights = connector.assign(weights, index, beamsplitter.params[0])
         index += 1
         weights = connector.assign(weights, index, beamsplitter.params[1])
         index += 1
 
-    for phaseshifter in decomposition.middle_phaseshifters:
+    for phaseshifter in decomposition.phaseshifters:
         weights = connector.assign(weights, index, phaseshifter.phi)
-        index += 1
-
-    for beamsplitter in decomposition.last_beamsplitters:
-        weights = connector.assign(weights, index, beamsplitter.params[0])
-        index += 1
-        weights = connector.assign(weights, index, beamsplitter.params[1])
         index += 1
 
     return weights
@@ -382,17 +432,13 @@ def get_decomposition_from_weights(
 
     index = 0
 
-    for beamsplitter in decomposition.first_beamsplitters:
+    for beamsplitter in decomposition.beamsplitters:
         beamsplitter.params = (weights[index], weights[index + 1])
         index += 2
 
-    for phaseshifter in decomposition.middle_phaseshifters:
+    for phaseshifter in decomposition.phaseshifters:
         phaseshifter.phi = weights[index]
         index += 1
-
-    for beamsplitter in decomposition.last_beamsplitters:
-        beamsplitter.params = (weights[index], weights[index + 1])
-        index += 2
 
     return decomposition
 

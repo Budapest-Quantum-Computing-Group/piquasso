@@ -63,16 +63,12 @@ def piquasso_clements_benchmark(benchmark, d, cutoff, U):
             for i in range(d):
                 pq.Q(i) | pq.Squeezing(r=0.1)
 
-            for operation in decomposition.first_beamsplitters:
+            for operation in decomposition.beamsplitters:
                 pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
                 pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-            for operation in decomposition.middle_phaseshifters:
+            for operation in decomposition.phaseshifters:
                 pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-            for operation in decomposition.last_beamsplitters:
-                pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-                pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
         simulator_fock = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
 

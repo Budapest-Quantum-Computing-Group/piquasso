@@ -59,16 +59,12 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.StateVector(tuple([1] * d))
 
-        for operation in decomposition.first_beamsplitters:
+        for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
             pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for operation in decomposition.middle_phaseshifters:
+        for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-        for operation in decomposition.last_beamsplitters:
-            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.SamplingSimulator(d=d)
 
@@ -94,16 +90,12 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.StateVector(occupation_numbers)
 
-        for operation in decomposition.first_beamsplitters:
+        for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
             pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for operation in decomposition.middle_phaseshifters:
+        for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-        for operation in decomposition.last_beamsplitters:
-            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.PureFockSimulator(
         d=d, config=pq.Config(cutoff=sum(occupation_numbers) + 1)
@@ -129,16 +121,12 @@ def test_clements_decomposition_using_piquasso_FockSimulator(dummy_unitary):
     with pq.Program() as program_with_decomposition:
         pq.Q() | pq.DensityMatrix((1, 0, 1, 0), (1, 0, 1, 0))
 
-        for operation in decomposition.first_beamsplitters:
+        for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
             pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for operation in decomposition.middle_phaseshifters:
+        for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-        for operation in decomposition.last_beamsplitters:
-            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.FockSimulator(d=d, config=pq.Config(cutoff=3))
 
@@ -166,16 +154,12 @@ def test_clements_decomposition_using_piquasso_GaussianSimulator(dummy_unitary):
         for mode, r in enumerate(squeezings):
             pq.Q(mode) | pq.Squeezing(r)
 
-        for operation in decomposition.first_beamsplitters:
+        for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
             pq.Q(*operation.modes) | pq.Beamsplitter(operation.params[0], 0.0)
 
-        for operation in decomposition.middle_phaseshifters:
+        for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
-
-        for operation in decomposition.last_beamsplitters:
-            pq.Q(*operation.modes) | pq.Beamsplitter(-operation.params[0], 0.0)
-            pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=-operation.params[1])
 
     simulator = pq.GaussianSimulator(d=d)
 
@@ -331,11 +315,10 @@ def test_clements_decomposition_with_TensorflowConnector(dummy_unitary):
     with tf.GradientTape() as tape:
         decomposition = clements(U, connector=pq.TensorflowConnector())
 
-    assert len(decomposition.first_beamsplitters) == 0
-    assert len(decomposition.middle_phaseshifters) == 2
-    assert len(decomposition.last_beamsplitters) == 1
+    assert len(decomposition.beamsplitters) == 1
+    assert len(decomposition.phaseshifters) == 2
 
-    first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+    first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
 
     assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
 
@@ -356,11 +339,10 @@ def test_clements_decomposition_with_JaxConnector(dummy_unitary):
     def get_first_beamsplitter_theta(U):
         decomposition = clements(U, connector=pq.JaxConnector())
 
-        assert len(decomposition.first_beamsplitters) == 0
-        assert len(decomposition.middle_phaseshifters) == 2
-        assert len(decomposition.last_beamsplitters) == 1
+        assert len(decomposition.beamsplitters) == 1
+        assert len(decomposition.phaseshifters) == 2
 
-        first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+        first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
 
         return first_beamsplitter_theta
 
@@ -401,17 +383,16 @@ def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unit
             weights, d=d, connector=pq.TensorflowConnector()
         )
 
-    assert len(decomposition.first_beamsplitters) == 0
-    assert len(decomposition.middle_phaseshifters) == 2
-    assert len(decomposition.last_beamsplitters) == 1
+    assert len(decomposition.beamsplitters) == 1
+    assert len(decomposition.phaseshifters) == 2
 
-    first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+    first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
 
     assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
 
     gradient = tape.gradient(first_beamsplitter_theta, weights)
 
-    assert np.allclose(gradient, [0.0, 0.0, 1.0, 0.0])
+    assert np.allclose(gradient, [1.0, 0.0, 0.0, 0.0])
 
 
 def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
@@ -427,7 +408,7 @@ def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
             weights, d=d, connector=connector
         )
 
-        first_beamsplitter_theta = decomposition.last_beamsplitters[0].params[0]
+        first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
 
         return first_beamsplitter_theta
 
@@ -441,5 +422,5 @@ def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
 
     assert np.allclose(
         gradient,
-        [0.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0],
     )
