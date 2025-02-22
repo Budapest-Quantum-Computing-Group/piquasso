@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.0.0] - 2025-03-26
+
+### Added
+
+- Minimal `fermionic.PureFockSimulator` implementation.
+- `GaussianState.get_purity()` function for calculating Gaussian state purity.
+
+### Fixed
+
+- Passive linear operations in `fermionic.GaussianSimulator` time evolution direction.
+
+### Breaking changes
+
+- Majorana operator ordering changed in `piquasso.fermionic` package.
+- Phaseshifters are commuted to the end of the circuit in the Clements decomposition.
+
 ## [5.0.1] - 2024-10-06
 
 ### Fixed
