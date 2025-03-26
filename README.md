@@ -144,7 +144,7 @@ The documentation is avaliable at [https://piquasso.readthedocs.io/](https://piq
 
 We welcome people who want to make contributions to Piquasso, be it big or small! If you are considering larger contributions to the source code, please contact us first.
 
-We welcome bug reports, suggestions, and any kind of feedback about Piquasso. If you'd like to share your thoughts, please fill out [this form](https://forms.gle/urLy5S3kYs143ags6).
+We welcome bug reports, suggestions, and any feedback about Piquasso. To share these, open an issue or fill out the [Piquasso User Survey](https://forms.gle/urLy5S3kYs143ags6).
 
 ## Development guide
 
