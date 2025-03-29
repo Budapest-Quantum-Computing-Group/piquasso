@@ -91,3 +91,11 @@ def get_index_in_fock_subspace_array(basis: np.ndarray) -> np.ndarray:
 @nb.njit(cache=True)
 def get_auxiliary_modes(d: int, modes: Tuple[int, ...]) -> np.ndarray:
     return np.delete(np.arange(d), modes)
+
+
+@nb.njit(cache=True)
+def double_modes(arr):
+    result = np.empty(len(arr) * 2, dtype=arr.dtype)
+    result[0::2] = 2 * arr
+    result[1::2] = 2 * arr + 1
+    return result
