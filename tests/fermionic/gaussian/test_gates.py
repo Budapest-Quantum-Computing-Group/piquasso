@@ -366,3 +366,92 @@ def test_Interferometer_subsystem_equivalence(connector, generate_unitary_matrix
     state_full = simulator.execute(program_full).state
 
     assert state_subsystem == state_full
+
+
+@for_all_connectors
+def test_Squeezing2_on_two_modes_00(connector):
+    d = 2
+
+    state_vector = [0, 0]
+
+    r = 0.1
+    phi = np.pi / 7
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+
+        pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    term_00 = np.cos(r / 2)
+    term_11 = -np.sin(r / 2) * np.exp(1j * phi)
+
+    expected_state_vector = np.array([term_00, 0.0, 0.0, term_11])
+
+    expected_density_matrix = np.outer(
+        expected_state_vector, expected_state_vector.conj()
+    )
+
+    actual_density_matrix = state.density_matrix
+
+    assert np.allclose(expected_density_matrix, actual_density_matrix)
+
+
+@for_all_connectors
+def test_Squeezing2_on_two_modes_11(connector):
+    d = 2
+
+    state_vector = [1, 1]
+
+    r = 0.1
+    phi = np.pi / 7
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+
+        pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    state = simulator.execute(program).state
+
+    term_00 = np.sin(r / 2) * np.exp(-1j * phi)
+    term_11 = np.cos(r / 2)
+
+    expected_state_vector = np.array([term_00, 0.0, 0.0, term_11])
+
+    expected_density_matrix = np.outer(
+        expected_state_vector, expected_state_vector.conj()
+    )
+
+    actual_density_matrix = state.density_matrix
+
+    assert np.allclose(expected_density_matrix, actual_density_matrix)
+
+
+@for_all_connectors
+def test_Squeezing2_leaves_odd_occupation_numbers_invariant(connector):
+    d = 2
+
+    state_vector = [1, 0]
+
+    r = 0.1
+    phi = np.pi / 7
+
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    with pq.Program() as empty_program:
+        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+
+    with pq.Program() as program:
+        pq.Q() | empty_program
+
+        pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
+
+    initial_state = simulator.execute(empty_program).state
+    squeezed_state = simulator.execute(program).state
+
+    assert initial_state == squeezed_state

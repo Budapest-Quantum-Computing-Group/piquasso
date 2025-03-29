@@ -19,14 +19,19 @@ from piquasso.api.exceptions import InvalidParameter
 
 from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
 
-from .._utils import get_fock_space_index
+
+from .._utils import (
+    get_fock_space_index,
+    get_cutoff_fock_space_dimension,
+    next_second_quantized,
+)
 from .state import PureFockState
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from piquasso.instructions.preparations import StateVector
-    from piquasso.instructions.gates import _PassiveLinearGate
+    from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
 
 
 def state_vector(
@@ -77,5 +82,56 @@ def passive_linear(
         state._d,
         config.cutoff,
     )
+
+    return Result(state=state)
+
+
+def squeezing2(state: PureFockState, instruction: "Squeezing2", shots: int) -> Result:
+    connector = state._connector
+    config = state._config
+
+    modes = instruction.modes
+
+    d = state._d
+    cutoff = state._config.cutoff
+
+    np = connector.np
+    fallback_np = connector.fallback_np
+
+    if config.validate and not are_modes_consecutive(modes):
+        raise InvalidParameter(f"Specified modes must be consecutive: modes={modes}")
+
+    r = instruction.params["r"]
+    phi = instruction.params["phi"]
+
+    size = get_cutoff_fock_space_dimension(d, cutoff)
+
+    index = fallback_np.zeros(d, dtype=np.int64)
+
+    U = np.array(
+        [
+            [np.cos(r / 2), np.sin(r / 2) * np.exp(-1j * phi)],
+            [-np.sin(r / 2) * np.exp(1j * phi), np.cos(r / 2)],
+        ]
+    )
+
+    for i in range(size):
+        if index[modes[0]] == 0 and index[modes[1]] == 0:
+            index[modes[0]] = 1
+            index[modes[1]] = 1
+            j = get_fock_space_index(index)
+            index[modes[0]] = 0
+            index[modes[1]] = 0
+
+            if j < size:
+                state._state_vector = connector.assign(
+                    state._state_vector, ((i, j),), U @ state._state_vector[(i, j),]
+                )
+            else:
+                state._state_vector = connector.assign(
+                    state._state_vector, i, U[0, 0] * state._state_vector[i]
+                )
+
+        index = next_second_quantized(index)
 
     return Result(state=state)
