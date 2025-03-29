@@ -25,6 +25,8 @@ from piquasso._math.transformations import (
     xxpp_to_xpxp_indices,
 )
 
+from piquasso._math.indices import double_modes
+
 from .._utils import validate_fermionic_gaussian_hamiltonian
 from .state import GaussianState
 
@@ -76,20 +78,23 @@ def gaussian_hamiltonian(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> Result:
     H = instruction.params["hamiltonian"]
+    modes = instruction.modes
 
     validate_fermionic_gaussian_hamiltonian(H)
 
-    np = state._connector.np
-    fallback_np = state._connector.fallback_np
+    connector = state._connector
+    np = connector.np
+    fallback_np = connector.fallback_np
 
-    d = state.d
+    d = state._d
+    small_d = len(modes)
 
-    A = H[d:, d:]
-    B = H[:d, d:]
+    A = H[small_d:, small_d:]
+    B = H[:small_d, small_d:]
 
     A_plus_B = A + B
     A_minus_B = A - B
-    indices = xxpp_to_xpxp_indices(d)
+    indices = xxpp_to_xpxp_indices(small_d)
 
     h = np.block(
         [
@@ -98,7 +103,11 @@ def gaussian_hamiltonian(
         ]
     )[fallback_np.ix_(indices, indices)]
 
-    SO = state._connector.expm(-2 * h)
+    doubled_modes = double_modes(fallback_np.array(modes))
+
+    SO = connector.embed_in_identity(
+        connector.expm(-2 * h), np.ix_(doubled_modes, doubled_modes), 2 * d
+    )
 
     state.covariance_matrix = SO @ state.covariance_matrix @ SO.T
 

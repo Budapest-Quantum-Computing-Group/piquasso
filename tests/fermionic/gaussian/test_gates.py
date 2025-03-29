@@ -96,6 +96,45 @@ def test_passive_GaussianHamiltonian_preserves_particle_number(
     )
 
 
+@pytest.mark.monkey
+@for_all_connectors
+def test_GaussianHamiltonian_subsystem_equivalence(
+    connector,
+    generate_fermionic_gaussian_hamiltonian,
+):
+    d = 3
+
+    modes = (0, 2)
+
+    hamiltonian = generate_fermionic_gaussian_hamiltonian(d - 1)
+
+    embedded_hamiltonian = connector.np.zeros((2 * d, 2 * d), dtype=hamiltonian.dtype)
+
+    doubled_modes = np.concatenate([modes, np.array(modes) + d])
+
+    embedded_hamiltonian = connector.assign(
+        embedded_hamiltonian, np.ix_(doubled_modes, doubled_modes), hamiltonian
+    )
+
+    state_vector = [1, 0, 1]
+    simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    with pq.Program() as program_subsystem:
+        pq.Q() | pq.StateVector(state_vector)
+
+        pq.Q(*modes) | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
+
+    with pq.Program() as program_embedded:
+        pq.Q() | pq.StateVector(state_vector)
+
+        pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=embedded_hamiltonian)
+
+    subsystem_state = simulator.execute(program_subsystem).state
+    embedded_state = simulator.execute(program_embedded).state
+
+    assert subsystem_state == embedded_state
+
+
 @for_all_connectors
 def test_Interferometer_on_state_vector(connector):
     passive_hamiltonian = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
