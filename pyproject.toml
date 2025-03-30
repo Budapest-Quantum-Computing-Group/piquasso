@@ -5,10 +5,10 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "piquasso"
 version = "6.0.0"
-description = "A simulator for photonic quantum computations."
+description = "A Photonic Quantum Computer Simulator written in Python and C++."
 readme = "README.md"
 license = { file = "LICENSE.txt" }
-keywords = ["piquasso", "quantum", "photonic"]
+keywords = ["quantum computing", "photonic quantum computing", "boson sampling"]
 maintainers = [
   { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" },
 ]
@@ -20,16 +20,28 @@ dependencies = [
   "quantum-blackbird==0.5.0",
 ]
 classifiers = [
-  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
   "Natural Language :: English",
-]
 
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+
+  "Topic :: Scientific/Engineering :: Quantum Computing",
+  "Development Status :: 5 - Production/Stable",
+]
 
 [project.urls]
 Homepage = "https://piquasso.com"
 Documentation = "https://piquasso.readthedocs.io"
 Repository = "https://github.com/Budapest-Quantum-Computing-Group/piquasso"
+Issues = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 tensorflow = ["tensorflow"]
