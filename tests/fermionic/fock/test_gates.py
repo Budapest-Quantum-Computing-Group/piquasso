@@ -242,3 +242,32 @@ def test_Squeezing2_cutoff(connector):
     expected_state_vector = np.array([np.cos(r / 2), 0.0, 0.0, 0.0])
 
     assert np.allclose(state.state_vector, expected_state_vector)
+
+
+@for_all_connectors
+def test_ControlledPhase(connector):
+    d = 2
+    r = 0.1
+
+    phi = np.pi / 7
+    cp_phi = np.pi / 5
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1])
+
+        pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
+
+        pq.Q(0, 1) | pq.fermionic.ControlledPhase(phi=cp_phi)
+
+    simulator = pq.fermionic.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=d + 1), connector=connector
+    )
+
+    state = simulator.execute(program).state
+
+    term_00 = np.sin(r / 2) * np.exp(-1j * phi)
+    term_11 = np.cos(r / 2) * np.exp(1j * cp_phi)
+
+    expected_state_vector = np.array([term_00, 0.0, 0.0, term_11])
+
+    assert np.allclose(state.state_vector, expected_state_vector)

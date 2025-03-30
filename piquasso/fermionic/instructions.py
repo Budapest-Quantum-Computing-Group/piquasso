@@ -72,3 +72,30 @@ class GaussianHamiltonian(Gate):
 
     def __init__(self, hamiltonian):
         super().__init__(params=dict(hamiltonian=hamiltonian))
+
+
+class ControlledPhase(Gate):
+    r"""Controlled-phase gate.
+
+    The controlled-phase gate is defined via the unitary operator
+
+    .. math::
+        \text{CPhase}_{ij} (\phi) = \exp \left ( i \phi n_i n_j \right ).
+
+    Note:
+        This is a non-linear gate, therefore it couldn't be used with
+        :class:`~piquasso.fermionic.gaussian.simulator.GaussianSimulator`.
+
+    Note:
+        This is analoguous to the :class:`~piquasso.instructions.gates.CrossKerr` gate
+        in the photonic setting.
+    """
+
+    NUMBER_OF_MODES = 2
+
+    def __init__(self, phi: float) -> None:
+        """
+        Args:
+            phi (float): The controlled-phase angle.
+        """
+        super().__init__(params=dict(phi=phi))
