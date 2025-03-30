@@ -19,6 +19,7 @@ from piquasso.api.exceptions import InvalidParameter
 
 from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
 
+from ._utils import calculate_indices_for_controlled_phase
 
 from .._utils import (
     get_fock_space_index,
@@ -32,6 +33,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from piquasso.instructions.preparations import StateVector
     from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
+    from piquasso.fermionic.instructions import ControlledPhase
 
 
 def state_vector(
@@ -133,5 +135,30 @@ def squeezing2(state: PureFockState, instruction: "Squeezing2", shots: int) -> R
                 )
 
         index = next_second_quantized(index)
+
+    return Result(state=state)
+
+
+def controlled_phase(
+    state: PureFockState, instruction: "ControlledPhase", shots: int
+) -> Result:
+    connector = state._connector
+
+    modes = instruction.modes
+
+    d = state._d
+    cutoff = state._config.cutoff
+
+    np = connector.np
+
+    phi = instruction.params["phi"]
+
+    rotation = np.exp(1j * phi)
+
+    indices = calculate_indices_for_controlled_phase(d, cutoff, modes)
+
+    state._state_vector = connector.assign(
+        state._state_vector, indices, rotation * state._state_vector[indices]
+    )
 
     return Result(state=state)

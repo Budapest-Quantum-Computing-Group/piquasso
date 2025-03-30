@@ -13,3 +13,4 @@ ignore:
   - piquasso/_simulators/connectors/numpy_/interferometer.py
   - piquasso/_simulators/connectors/numpy_/connections.py
   - piquasso/fermionic/_utils.py
+  - piquasso/fermionic/fock/_utils.py

@@ -72,7 +72,7 @@ where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
 from . import gaussian
 
 from .gaussian import GaussianState, GaussianSimulator
-from .instructions import GaussianHamiltonian, ParentHamiltonian
+from .instructions import GaussianHamiltonian, ParentHamiltonian, ControlledPhase
 from .fock import PureFockState, PureFockSimulator
 
 
@@ -89,4 +89,5 @@ __all__ = [
     "PureFockSimulator",
     # Gates
     "GaussianHamiltonian",
+    "ControlledPhase",
 ]
