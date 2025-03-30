@@ -509,7 +509,7 @@ class Squeezing2(_ActiveLinearGate):
             \frac{1}{2}(z^* a_i a_j - z a_i^\dagger a_j^\dagger )
         \right ).
 
-    The symplectic representation of the two-mode squeezing gate is
+    In the bosonic setting, symplectic representation of the two-mode squeezing gate is
 
     .. math::
         S_{(c)} = \begin{bmatrix}
@@ -518,6 +518,16 @@ class Squeezing2(_ActiveLinearGate):
             0 & e^{- i \phi} \sinh r & \cosh r & 0 \\
             e^{- i \phi} \sinh r & 0 & 0 & \cosh r
         \end{bmatrix}.
+
+    In the fermionic setting, an analoguous definition is used: the bosonic ladder
+    operators are just exchanged to fermionic ones. For two fermionic modes, the action
+    on :math:`\ket{00}` and :math:`\ket{11}` is simply given as
+
+    .. math::
+        S_{12} (z) \ket{00} &= \cos (r/2) \ket{00} - e^{i \phi} \sin (r/2) \ket{11}, \\
+        S_{12} (z) \ket{11} &= \cos (r/2) \ket{11} + e^{-i \phi} \sin (r/2) \ket{00},
+
+    where :math:`z = r e^{i \phi}`.
     """
 
     NUMBER_OF_MODES = 2

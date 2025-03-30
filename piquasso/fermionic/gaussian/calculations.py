@@ -18,7 +18,7 @@ from piquasso.api.result import Result
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Instruction
 
-from piquasso.instructions.gates import _PassiveLinearGate
+from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
 
 from piquasso._math.validations import all_zero_or_one
 from piquasso._math.transformations import (
@@ -29,6 +29,12 @@ from piquasso._math.indices import double_modes
 
 from .._utils import validate_fermionic_gaussian_hamiltonian
 from .state import GaussianState
+
+import typing
+
+if typing.TYPE_CHECKING:
+    import numpy as np
+    from typing import Tuple
 
 
 def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result:
@@ -82,6 +88,14 @@ def gaussian_hamiltonian(
 
     validate_fermionic_gaussian_hamiltonian(H)
 
+    evolved_state = _do_apply_gaussian_hamiltonian(state, H, modes)
+
+    return Result(state=evolved_state)
+
+
+def _do_apply_gaussian_hamiltonian(
+    state: GaussianState, H: "np.ndarray", modes: "Tuple[int, ...]"
+) -> GaussianState:
     connector = state._connector
     np = connector.np
     fallback_np = connector.fallback_np
@@ -111,7 +125,7 @@ def gaussian_hamiltonian(
 
     state.covariance_matrix = SO @ state.covariance_matrix @ SO.T
 
-    return Result(state=state)
+    return state
 
 
 def passive_linear_gate(
@@ -158,3 +172,31 @@ def passive_linear_gate(
     )
 
     return Result(state=state)
+
+
+def squeezing2(state: GaussianState, instruction: Squeezing2, shots: int) -> Result:
+    connector = state._connector
+    np = connector.np
+    complex_dtype = state._D.dtype
+
+    modes = instruction.modes
+    r = instruction.params["r"]
+    phi = instruction.params["phi"]
+
+    z_over_4 = r * np.exp(1j * phi) / 4
+
+    B = -1j * np.array(
+        [
+            [0, -z_over_4],
+            [z_over_4, 0],
+        ],
+        dtype=complex_dtype,
+    )
+
+    zeros = np.zeros_like(B)
+
+    H = np.block([[zeros, -B.conj()], [B, zeros]])
+
+    evolved_state = _do_apply_gaussian_hamiltonian(state, H, modes)
+
+    return Result(state=evolved_state)

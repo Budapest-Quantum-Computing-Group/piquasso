@@ -16,7 +16,7 @@
 from piquasso.instructions import gates, preparations
 from .state import PureFockState
 
-from .calculations import passive_linear, state_vector
+from .calculations import passive_linear, state_vector, squeezing2
 
 from piquasso._simulators.simulator import BuiltinSimulator
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
@@ -59,6 +59,7 @@ class PureFockSimulator(BuiltinSimulator):
         gates.Beamsplitter5050: passive_linear,
         gates.MachZehnder: passive_linear,
         gates.Fourier: passive_linear,
+        gates.Squeezing2: squeezing2,
     }
 
     _default_connector_class = NumpyConnector

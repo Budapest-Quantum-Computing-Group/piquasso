@@ -23,6 +23,7 @@ from .calculations import (
     parent_hamiltonian,
     gaussian_hamiltonian,
     passive_linear_gate,
+    squeezing2,
 )
 from .state import GaussianState
 
@@ -72,6 +73,7 @@ class GaussianSimulator(BuiltinSimulator):
         gates.Interferometer: passive_linear_gate,
         gates.Beamsplitter: passive_linear_gate,
         gates.Phaseshifter: passive_linear_gate,
+        gates.Squeezing2: squeezing2,
     }
 
     _default_connector_class = NumpyConnector
