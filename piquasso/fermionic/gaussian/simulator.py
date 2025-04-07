@@ -15,7 +15,7 @@
 
 from piquasso.instructions import gates, preparations
 
-from ..instructions import GaussianHamiltonian, ParentHamiltonian
+from ..instructions import GaussianHamiltonian, ParentHamiltonian, IsingXX
 
 from .calculations import (
     state_vector,
@@ -24,6 +24,7 @@ from .calculations import (
     gaussian_hamiltonian,
     passive_linear_gate,
     squeezing2,
+    ising_XX,
 )
 from .state import GaussianState
 
@@ -74,6 +75,7 @@ class GaussianSimulator(BuiltinSimulator):
         gates.Beamsplitter: passive_linear_gate,
         gates.Phaseshifter: passive_linear_gate,
         gates.Squeezing2: squeezing2,
+        IsingXX: ising_XX,
     }
 
     _default_connector_class = NumpyConnector
