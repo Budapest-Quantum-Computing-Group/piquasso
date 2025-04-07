@@ -224,3 +224,31 @@ def test_PureFockSimulator_GaussianSimulator_squeezing2_equivalence(connector):
     ]
 
     assert np.allclose(density_matrix_fock, density_matrix_gaussian_reordered)
+
+
+@for_all_connectors
+def test_PureFockSimulator_GaussianSimulator_IsingXX_equivalence(connector):
+    d = 2
+
+    phi = np.pi / 5
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1])
+
+        pq.Q(0, 1) | pq.fermionic.IsingXX(phi=phi)
+
+    fock_simulator = pq.fermionic.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=d + 1), connector=connector
+    )
+    gaussian_simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    density_matrix_gaussian = gaussian_simulator.execute(program).state.density_matrix
+    density_matrix_fock = fock_simulator.execute(program).state.density_matrix
+
+    indices = binary_to_fock_indices(d)
+
+    density_matrix_gaussian_reordered = density_matrix_gaussian[
+        np.ix_(indices, indices)
+    ]
+
+    assert np.allclose(density_matrix_fock, density_matrix_gaussian_reordered)

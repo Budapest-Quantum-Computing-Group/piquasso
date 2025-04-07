@@ -99,3 +99,29 @@ class ControlledPhase(Gate):
             phi (float): The controlled-phase angle.
         """
         super().__init__(params=dict(phi=phi))
+
+
+class IsingXX(Gate):
+    r"""Ising XX coupling gate.
+
+    The Ising XX gate is defined via the unitary operator
+
+    .. math::
+        \text{XX}_{ij} (\phi) = \exp \left ( i \phi X \otimes X \right )
+            = \cos \phi I + i \sin \phi (X \otimes X).
+
+    Considering a two-mode system with Majorana operators :math:`m_1, m_2, m_3, m_4`,
+    :math:`X \otimes X` can also be written as
+
+    .. math::
+        X \otimes X = -i m_2 m_3.
+    """
+
+    NUMBER_OF_MODES = 2
+
+    def __init__(self, phi: float) -> None:
+        """
+        Args:
+            phi (float): The rotation angle.
+        """
+        super().__init__(params=dict(phi=phi))

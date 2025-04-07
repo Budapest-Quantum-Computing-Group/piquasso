@@ -271,3 +271,35 @@ def test_ControlledPhase(connector):
     expected_state_vector = np.array([term_00, 0.0, 0.0, term_11])
 
     assert np.allclose(state.state_vector, expected_state_vector)
+
+
+@for_all_connectors
+def test_IsingXX(connector):
+    d = 2
+
+    phi = np.pi / 7
+    a = np.sqrt(3 / 4)
+    b = np.sqrt(1 / 4)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 0]) * a
+        pq.Q() | pq.StateVector([0, 1]) * b
+
+        pq.Q(0, 1) | pq.fermionic.IsingXX(phi=phi)
+
+    simulator = pq.fermionic.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=d + 1), connector=connector
+    )
+
+    state = simulator.execute(program).state
+
+    expected_state_vector = np.array(
+        [
+            a * np.cos(phi),
+            b * 1j * np.sin(phi),
+            b * np.cos(phi),
+            a * 1j * np.sin(phi),
+        ]
+    )
+
+    assert np.allclose(state.state_vector, expected_state_vector)

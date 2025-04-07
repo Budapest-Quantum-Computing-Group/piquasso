@@ -56,3 +56,33 @@ def calculate_indices_for_controlled_phase(d, cutoff, modes):
         aux_occ_number = next_second_quantized(aux_occ_number)
 
     return indices
+
+
+@nb.njit(cache=True)
+def calculate_indices_for_ising_XX(d, cutoff, modes):
+    int_dtype = np.int64
+
+    full_occ_number = np.empty(d, dtype=int_dtype)
+
+    aux_modes = get_auxiliary_modes(d, modes)
+
+    size = get_cutoff_fock_space_dimension(d - 2, cutoff)
+
+    indices = np.empty((size, 4), dtype=int_dtype)
+
+    aux_occ_number = np.zeros(d - 2, dtype=int_dtype)
+
+    for i in range(size):
+        full_occ_number[aux_modes] = aux_occ_number
+
+        for j in range(4):
+            full_occ_number[modes[0]] = j // 2
+            full_occ_number[modes[1]] = j % 2
+
+            index = get_fock_space_index(full_occ_number)
+
+            indices[i, j] = index
+
+        aux_occ_number = next_second_quantized(aux_occ_number)
+
+    return indices
