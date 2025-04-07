@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.0.1] - 2025-04-07
+
+### Fixed
+
+- A bug introduced in 6.0.0 caused JAX (meant to be optional) to become a required
+  dependency, leading to errors when importing Piquasso. This release removes the
+  unintended requirement so JAX is again strictly optional.
+
+
+
 ## [6.0.0] - 2025-03-26
 
 ### Added
