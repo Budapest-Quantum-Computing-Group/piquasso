@@ -29,6 +29,7 @@ from piquasso.api.exceptions import (
     InvalidInstruction,
     InvalidSimulation,
     InvalidState,
+    InvalidModes,
 )
 from piquasso.api.instruction import (
     Gate,
@@ -39,6 +40,7 @@ from piquasso.api.instruction import (
 )
 
 from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
+from piquasso._math.validations import are_modes_valid
 
 from .computer import Computer
 
@@ -237,6 +239,11 @@ class Simulator(Computer, _mixins.CodeMixin):
         for instruction in instructions:
             if not hasattr(instruction, "modes") or instruction.modes is tuple():
                 instruction.modes = tuple(range(self.d))
+
+            if self.config.validate and not are_modes_valid(instruction.modes, self.d):
+                raise InvalidModes(
+                    f"Not enough modes: " f"modes={instruction.modes}, d={self.d}"
+                )
 
             calculation = self._get_calculation(instruction)
 

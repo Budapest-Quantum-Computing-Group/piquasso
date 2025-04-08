@@ -50,3 +50,7 @@ def are_modes_consecutive(modes: Tuple[int, ...]) -> bool:
     expected = np.arange(modes[0], modes[-1] + 1)
 
     return len(modes) == len(expected) and bool(np.all(modes == expected))
+
+
+def are_modes_valid(modes: Tuple[int, ...], d: int):
+    return all_natural(modes) and all(mode < d for mode in modes)

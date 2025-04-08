@@ -18,15 +18,16 @@ from .state import PureFockState
 
 from .calculations import (
     passive_linear,
-    state_vector,
+    apply_state_vector,
     squeezing2,
     controlled_phase,
     ising_XX,
+    rz,
 )
 
 from piquasso._simulators.simulator import BuiltinSimulator
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
-from piquasso.fermionic.instructions import ControlledPhase, IsingXX
+from piquasso.fermionic.instructions import ControlledPhase, IsingXX, RZ
 
 
 class PureFockSimulator(BuiltinSimulator):
@@ -59,7 +60,7 @@ class PureFockSimulator(BuiltinSimulator):
     _state_class = PureFockState
 
     _instruction_map = {
-        preparations.StateVector: state_vector,
+        preparations.StateVector: apply_state_vector,
         gates.Interferometer: passive_linear,
         gates.Phaseshifter: passive_linear,
         gates.Beamsplitter: passive_linear,
@@ -69,6 +70,7 @@ class PureFockSimulator(BuiltinSimulator):
         gates.Squeezing2: squeezing2,
         ControlledPhase: controlled_phase,
         IsingXX: ising_XX,
+        RZ: rz,
     }
 
     _default_connector_class = NumpyConnector

@@ -20,6 +20,7 @@ from piquasso.api.exceptions import InvalidParameter
 from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
 
 from ._utils import (
+    calculate_indices_for_RZ,
     calculate_indices_for_controlled_phase,
     calculate_indices_for_ising_XX,
 )
@@ -36,10 +37,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from piquasso.instructions.preparations import StateVector
     from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
-    from piquasso.fermionic.instructions import ControlledPhase, IsingXX
+    from piquasso.fermionic.instructions import ControlledPhase, IsingXX, RZ
 
 
-def state_vector(
+def apply_state_vector(
     state: PureFockState, instruction: "StateVector", shots: int
 ) -> Result:
     connector = state._connector
@@ -89,6 +90,30 @@ def passive_linear(
     )
 
     return Result(state=state)
+
+
+def rz(state: PureFockState, instruction: "RZ", shots: int):
+    connector = state._connector
+
+    mode = instruction.modes[0]
+    phi = instruction.params["phi"]
+
+    d = state._d
+    cutoff = state._config.cutoff
+
+    state._state_vector = _do_rz(state._state_vector, d, cutoff, phi, mode, connector)
+
+    return Result(state=state)
+
+
+def _do_rz(state_vector, d, cutoff, phi, mode, connector):
+    np = connector.np
+
+    indices = calculate_indices_for_RZ(d, cutoff, mode)
+
+    return connector.assign(
+        state_vector, indices, np.exp(1j * phi) * state_vector[indices]
+    )
 
 
 def squeezing2(state: PureFockState, instruction: "Squeezing2", shots: int) -> Result:
@@ -152,24 +177,27 @@ def controlled_phase(
     d = state._d
     cutoff = state._config.cutoff
 
-    np = connector.np
-
     phi = instruction.params["phi"]
 
-    rotation = np.exp(1j * phi)
-
-    indices = calculate_indices_for_controlled_phase(d, cutoff, modes)
-
-    state._state_vector = connector.assign(
-        state._state_vector, indices, rotation * state._state_vector[indices]
+    state._state_vector = _do_controlled_phase(
+        state._state_vector, d, cutoff, phi, modes, connector
     )
 
     return Result(state=state)
 
 
+def _do_controlled_phase(state_vector, d, cutoff, phi, modes, connector):
+    np = connector.np
+
+    rotation = np.exp(1j * phi)
+
+    indices = calculate_indices_for_controlled_phase(d, cutoff, modes)
+
+    return connector.assign(state_vector, indices, rotation * state_vector[indices])
+
+
 def ising_XX(state: PureFockState, instruction: "IsingXX", shots: int) -> Result:
     connector = state._connector
-    np = connector.np
 
     phi = instruction.params["phi"]
     modes = instruction.modes
@@ -177,14 +205,25 @@ def ising_XX(state: PureFockState, instruction: "IsingXX", shots: int) -> Result
     d = state._d
     cutoff = state._config.cutoff
 
+    state._state_vector = _do_ising_XX(
+        state._state_vector, d, cutoff, phi, modes, connector
+    )
+
+    return Result(state=state)
+
+
+def _do_ising_XX(state_vector, d, cutoff, phi, modes, connector):
+    np = connector.np
     cos_phi = np.cos(phi)
     i_sin_phi = 1j * np.sin(phi)
 
     indices = calculate_indices_for_ising_XX(d, cutoff, modes)
 
-    for index in indices:
-        initial = state._state_vector[index]
-        final = cos_phi * initial + i_sin_phi * np.flip(initial)
-        state._state_vector = connector.assign(state._state_vector, index, final)
+    indexed_state_vector = state_vector[indices]
 
-    return Result(state=state)
+    return connector.assign(
+        state_vector,
+        indices,
+        cos_phi * indexed_state_vector
+        + i_sin_phi * np.flip(indexed_state_vector, axis=1),
+    )
