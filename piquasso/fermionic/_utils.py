@@ -281,6 +281,12 @@ def _to_second_quantized(first_quantized, d):
 
 
 def binary_to_fock_indices(d):
+    """Creating indices for changing the state vector ordering to Fock from binary.
+
+    Binary ordering goes as `000, 001, 010, 011, 100, 101, 110, 111`
+    Fock ordering goes as `000, 100, 010, 001, 110, 101, 011, 111`
+    """
+
     size = get_cutoff_fock_space_dimension(d, d + 1)
 
     power_array = np.empty(d, dtype=int)
@@ -301,6 +307,22 @@ def binary_to_fock_indices(d):
         indices[i] = second_quantized @ power_array
 
     return indices
+
+
+def fock_to_binary_indices(d):
+    """Creating indices for changing the state vector ordering to binary from Fock.
+
+    Binary ordering goes as `000, 001, 010, 011, 100, 101, 110, 111`
+    Fock ordering goes as `000, 100, 010, 001, 110, 101, 011, 111`
+    """
+
+    b2f = binary_to_fock_indices(d)
+    f2b = np.empty_like(b2f)
+
+    for fock_index, binary_index in enumerate(b2f):
+        f2b[binary_index] = fock_index
+
+    return f2b
 
 
 @nb.njit(cache=True)

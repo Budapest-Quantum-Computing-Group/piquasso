@@ -125,3 +125,14 @@ class IsingXX(Gate):
             phi (float): The rotation angle.
         """
         super().__init__(params=dict(phi=phi))
+
+
+class RZ(Gate):
+    NUMBER_OF_MODES = 1
+
+    def __init__(self, phi: float) -> None:
+        """
+        Args:
+            phi (float): The rotation angle.
+        """
+        super().__init__(params=dict(phi=phi))

@@ -77,6 +77,7 @@ from .instructions import (
     ParentHamiltonian,
     ControlledPhase,
     IsingXX,
+    RZ,
 )
 from .fock import PureFockState, PureFockSimulator
 
@@ -96,4 +97,5 @@ __all__ = [
     "GaussianHamiltonian",
     "ControlledPhase",
     "IsingXX",
+    "RZ",
 ]

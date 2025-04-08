@@ -75,7 +75,7 @@ class PureFockState(State):
     @property
     def fock_probabilities(self) -> "np.ndarray":
         np = self._connector.np
-        return np.conj(self._state_vector) * self._state_vector
+        return np.real(np.conj(self._state_vector) * self._state_vector)
 
     @property
     def norm(self) -> float:
