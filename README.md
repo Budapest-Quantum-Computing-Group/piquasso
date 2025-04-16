@@ -167,7 +167,8 @@ For building Piquasso, one also needs to install build dependencies:
 pip install 'pybind11[global]' scikit-build-core cmake
 ```
 
-To build Piquasso for local development, run
+### Linux
+To build Piquasso for local development on Linux, run
 ```
 cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
 cmake --build build
@@ -175,6 +176,24 @@ cmake --install build
 ```
 Here, the `-DCMAKE_INSTALL_PREFIX=$(pwd)` flag is needed to copy shared libraries into
 the source tree for development.
+
+### Windows
+
+1. Open a terminal (e.g., Command Prompt or PowerShell).
+2. Navigate (`cd`) to the root directory of the Piquasso project.
+3. Run the following command:
+```
+build.bat
+```
+
+The `build.bat` script automatically runs all the required commands for building the project.
+
+Alternatively, you can run the commands manually for building the project:
+```
+cmake -B build -DCMAKE_INSTALL_PREFIX="%cd%" -DPYBIND11_FINDPYTHON=ON
+cmake --build build --config Debug
+cmake --install build --config Debug
+```
 
 ## Testing
 

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso._math.pfaffian import pfaffian
 from piquasso.api.connector import BaseConnector
 
 from .connections import (
@@ -127,18 +128,7 @@ class BuiltinConnector(BaseConnector):
         Note:
             There are faster algorithms, but this is fine for now.
         """
-        if matrix.shape[0] == 0:
-            return 1.0
-
-        if matrix.shape[0] % 2 == 1:
-            return 0.0
-
-        np = self.np
-
-        blocks, O = self.schur(matrix)
-        a = np.diag(blocks, 1)[::2]
-
-        return np.prod(a) * np.linalg.det(O)
+        return pfaffian(matrix)
 
     def real_logm(self, matrix):
         """Calculates the real logarithm of a matrix.
