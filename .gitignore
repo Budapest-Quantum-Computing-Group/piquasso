@@ -25,3 +25,4 @@ logdir/
 
 # Shared libraries
 *.so
+*.pyd
