@@ -36,8 +36,8 @@ def create_single_mode_displacement_matrix(
     r (float): This is the Displacement amplitude. Typically this value can be
         negative or positive depending on the desired displacement direction.
         Note:
-            Setting :math:`|r|` to higher values will require you to have a higer
-            cuttof dimensions.
+            Setting :math:`|r|` to higher values will require you to have a higher
+            cutoff dimensions.
     phi (float): This is the Dispalacement angle. Its ranges are
         :math:`\phi \in [ 0, 2 \pi )`
     Returns:
@@ -113,8 +113,8 @@ def create_single_mode_squeezing_matrix(
     r (float): This is the Squeezing amplitude. Typically this value can be
         negative or positive depending on the desired squeezing direction.
         Note:
-            Setting :math:`|r|` to higher values will require you to have a higer
-            cuttof dimensions.
+            Setting :math:`|r|` to higher values will require you to have a higher
+            cutoff dimensions.
     phi (float): This is the Squeezing angle. Its ranges are
         :math:`\phi \in [ 0, 2 \pi )`
 
