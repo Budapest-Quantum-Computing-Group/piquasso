@@ -1,7 +1,7 @@
 [flake8]
 # Longer line-length is more convenient for math
 max-line-length = 88
-exclude = .tox,.venv
+exclude = .tox,.venv*,build
 extend-ignore =
         # Ignoring latex syntax in docstrings
         W605,
