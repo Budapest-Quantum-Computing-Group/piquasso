@@ -163,7 +163,11 @@ For document generation one should use
 ```
 pip install -e ".[docs]"
 ```
-and for running files under `benchmarks/` or `scripts/`, please issue
+Additionally, `pandoc` needs to be installed. To building the documentation, execute
+`make html` in the `docs` folder. After a successful build, the documentation is
+available under `docs/_build`.
+
+For running files under `benchmarks/` or `scripts/`, please issue
 ```
 pip install -e ".[benchmark]"
 ```

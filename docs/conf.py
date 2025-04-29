@@ -36,6 +36,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "nbsphinx",
+    "sphinxcontrib.bibtex",
     "sphinx_design",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
@@ -142,3 +143,10 @@ nbsphinx_prolog = r"""
             <a href="/{{ docname }}" download>here</a>.
         </div>
 """  # TODO: get base path.
+
+bibtex_bibfiles = ["bibliography.bib"]
+bibtex_reference_style = "author_year"
+
+nbsphinx_epilog = r"""
+.. footbibliography::
+"""
