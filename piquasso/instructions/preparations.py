@@ -15,7 +15,7 @@
 
 """
 Preparations
-------------
+============
 
 The built-in preparation instructions in Piquasso. Preparation instructions should
 be placed at the beginning of the Piquasso program.
