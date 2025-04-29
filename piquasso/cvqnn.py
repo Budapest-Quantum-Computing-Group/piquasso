@@ -129,7 +129,7 @@ def create_layers(weights: np.ndarray) -> Program:
         cvnn_layers = pq.cvqnn.create_program(weights)
 
         with pq.Program() as program:
-            for i in range(d):
+            for i in range(5):
                 pq.Q(i) | pq.Displacement(r=0.1)
 
             pq.Q() | cvnn_layers
