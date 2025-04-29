@@ -113,26 +113,32 @@ If you wish to, you can also install
 
 If you are doing research using Piquasso, please cite us as follows:
 ```
-@misc{piquasso2024,
-  title         = {Piquasso: A Photonic Quantum Computer Simulation Software Platform},
-  author        = {Z. Kolarovszki and
-                   T. Rybotycki and
-                   P. Rakyta and
-                   Á. Kaposi and
-                   B. Poór and
-                   Sz. Jóczik and
-                   D. T. R. Nagy and
-                   H. Varga and
-                   K. H. El-Safty and
-                   G. Morse and
-                   M. Oszmaniec and
-                   T. Kozsik and
-                   Z. Zimborás
-                   },
-  year          = {2024},
-  eprint        = {2403.04006},
-  archiveprefix = {arXiv},
-  primaryclass  = {quant-ph}
+@article{Kolarovszki_2025,
+   title={Piquasso: A Photonic Quantum Computer Simulation Software Platform},
+   volume={9},
+   ISSN={2521-327X},
+   url={http://dx.doi.org/10.22331/q-2025-04-15-1708},
+   DOI={10.22331/q-2025-04-15-1708},
+   journal={Quantum},
+   publisher={Verein zur Forderung des Open Access Publizierens in den Quantenwissenschaften},
+   author={
+      Kolarovszki, Zoltán
+      and Rybotycki, Tomasz
+      and Rakyta, Péter
+      and Kaposi, Ágoston
+      and Poór, Boldizsár
+      and Jóczik, Szabolcs
+      and Nagy, Dániel T. R.
+      and Varga, Henrik
+      and El-Safty, Kareem H.
+      and Morse, Gregory
+      and Oszmaniec, Michał
+      and Kozsik, Tamás
+      and Zimborás, Zoltán
+   },
+   year={2025},
+   month=apr,
+   pages={1708}
 }
 ```
 
@@ -168,6 +174,7 @@ pip install 'pybind11[global]' scikit-build-core cmake
 ```
 
 ### Linux
+
 To build Piquasso for local development on Linux, run
 ```
 cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
@@ -195,18 +202,32 @@ cmake --build build --config Debug
 cmake --install build --config Debug
 ```
 
-## Testing
+### Testing
 
-Tests and additional checks can be run using `tox`. After installation, run the
+All tests and additional checks can be run using `tox`. After installation, run the
 following command:
-
 ```
 tox -e py312
 ```
 
 Alternatively, you can run only the tests using `pytest`. After installation, run the
 following command:
-
 ```
 pytest tests
 ```
+
+Besides testing, we have several additional checks:
+
+1. We use an automatic formatting tool called `black`. To run automatic formatting, simply
+   execute
+   ```
+   black .
+   ```
+2. Moreover, we also use a linter called `flake8`, which can be executed by issuing
+   ```
+   flake8
+   ```
+3. Finally, we use a static type checker called `mypy` on the `piquasso` folder:
+   ```
+   mypy piquasso
+   ```
