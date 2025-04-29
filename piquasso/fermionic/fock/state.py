@@ -82,7 +82,9 @@ class PureFockState(State):
         return self._connector.np.sum(self.fock_probabilities)
 
     def get_particle_detection_probability(self, occupation_number):
-        index = get_fock_space_index(occupation_number)
+        index = get_fock_space_index(
+            self._connector.fallback_np.array(occupation_number, dtype=int)
+        )
 
         return self._connector.np.abs(self._state_vector[index]) ** 2
 
