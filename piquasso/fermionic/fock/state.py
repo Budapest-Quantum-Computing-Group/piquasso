@@ -15,7 +15,11 @@
 
 from typing import Optional, TYPE_CHECKING
 
-from .._utils import get_cutoff_fock_space_dimension, get_fock_space_index
+from .._utils import (
+    get_cutoff_fock_space_dimension,
+    get_fock_space_index,
+    get_fock_space_basis,
+)
 
 from piquasso.api.exceptions import InvalidState
 
@@ -76,6 +80,49 @@ class PureFockState(State):
     def fock_probabilities(self) -> "np.ndarray":
         np = self._connector.np
         return np.conj(self._state_vector) * self._state_vector
+
+    def get_marginal_fock_probabilities_on_modes(self, modes) -> "np.ndarray":
+        """Calculates marginal particle detection probabilities on the specified modes.
+
+        Args:
+            modes (Tuple[int, ...]): The modes to calculate the probabilities on.
+
+        Returns:
+            np.ndarray: The probabilities on the specified modes.
+        """
+
+        full_probabilities = self.fock_probabilities
+
+        if len(modes) == tuple(list(range(self._d))):
+            return full_probabilities
+
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
+
+        aux_modes = self._get_auxiliary_modes(modes)
+
+        size = get_cutoff_fock_space_dimension(len(modes), self._config.cutoff)
+
+        probabilities = np.zeros(shape=(size,), dtype=full_probabilities.dtype)
+
+        basis = get_fock_space_basis(len(modes), self._config.cutoff)
+        aux_basis = get_fock_space_basis(len(aux_modes), self._config.cutoff)
+
+        occ_number = fallback_np.empty(self._d, dtype=int)
+
+        for index_on_modes, occ_number_on_modes in enumerate(basis):
+            occ_number[modes] = occ_number_on_modes
+
+            for occ_number_aux in aux_basis:
+                occ_number[aux_modes] = occ_number_aux
+
+                index = get_fock_space_index(
+                    self._connector.fallback_np.array(occ_number, dtype=int)
+                )
+
+                probabilities[index_on_modes] += full_probabilities[index]
+
+        return probabilities
 
     @property
     def norm(self) -> float:
