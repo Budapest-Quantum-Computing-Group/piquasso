@@ -29,7 +29,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 This project and everyone participating in it is governed by the
 [Piquasso Code of Conduct](https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob//CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
-to <>.
+to via the [Piquasso Discord](https://discord.com/invite/c4xmF5PPaj).
 
 
 ## I Have a Question
