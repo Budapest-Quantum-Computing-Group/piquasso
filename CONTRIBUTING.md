@@ -106,23 +106,8 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/Budape
 - **Explain why this enhancement would be useful** to most Piquasso users. You may also want to point out the other projects that solved it better and which could serve as inspiration.
 
 ### Your First Code Contribution
-<!-- TODO
-include Setup of env, IDE and typical getting started instructions?
 
--->
+For details on installing dependencies, testing and running linting and typing checks refer to the [Development Guide](https://github.com/Budapest-Quantum-Computing-Group/piquasso?tab=readme-ov-file#development-guide) section of Piquasso's readme file.
 
-### Improving The Documentation
-<!-- TODO
-Updating, improving and correcting the documentation
-
--->
-
-## Styleguides
-### Commit Messages
-<!-- TODO
-
--->
-
-<!-- omit in toc -->
 ## Attribution
 This guide is based on the [contributing.md](https://contributing.md/generator)!
