@@ -15,7 +15,7 @@
 
 r"""
 Gates
------
+=====
 
 The built-in gates in Piquasso.
 
