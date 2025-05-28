@@ -15,7 +15,11 @@
 
 from typing import Optional, TYPE_CHECKING
 
-from .._utils import get_cutoff_fock_space_dimension, get_fock_space_index
+from .._utils import (
+    get_cutoff_fock_space_dimension,
+    get_fock_space_index,
+    get_fock_space_basis,
+)
 
 from piquasso.api.exceptions import InvalidState
 
@@ -76,6 +80,14 @@ class PureFockState(State):
     def fock_probabilities(self) -> "np.ndarray":
         np = self._connector.np
         return np.conj(self._state_vector) * self._state_vector
+
+    @property
+    def fock_probabilities_map(self) -> dict:
+        fock_space_basis = get_fock_space_basis(self.d, self._config.cutoff)
+
+        occupation_numbers = [tuple(x) for x in fock_space_basis.tolist()]
+
+        return dict(zip(occupation_numbers, self.fock_probabilities))
 
     @property
     def norm(self) -> float:
