@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import sys
 import pytest
 import numpy as np
 
@@ -29,6 +30,29 @@ from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
+
+
+def pytest_ignore_collect(path, config):
+    # Only apply this skip logic for Python >= 3.13
+    if sys.version_info >= (3, 13):
+        # Convert path to string for easier checks
+        path_str = str(path)
+
+        # Skip tests that are explicitly TensorFlow-related
+        if "tensorflow" in path_str.lower():
+            return True
+        
+        # Skip test files that are known to import TensorFlow
+        tf_related_files = [
+            "test_simulator_equivalence.py",
+            "test_tf_function.py",
+            "test_clements.py",
+            "test_gates.py",
+            "test_decompositions.py",
+        ]
+        return any(filename in path_str for filename in tf_related_files)
+
+    return False  # Run everything for Python < 3.13
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
