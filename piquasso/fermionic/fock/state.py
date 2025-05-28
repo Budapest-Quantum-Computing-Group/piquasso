@@ -25,9 +25,24 @@ from piquasso.api.connector import BaseConnector
 
 if TYPE_CHECKING:
     import numpy as np
+from piquasso.fermionic._utils import get_fock_space_basis
 
 
 class PureFockState(State):
+
+    @property
+    def fock_probabilities_map(self) -> dict:
+        """
+        Build a dict mapping each Fock-basis occupation tuple 
+        to its detection probability. Uses get_fock_space_basis
+        under the hood to enumerate all basis states up to the cutoff.
+        """
+        # enumerate all basis states for current dimension & cutoff
+        basis = get_fock_space_basis(self.d, self._config.cutoff)
+        # convert array rows to tuples of occupation numbers
+        occ_nums = [tuple(x) for x in basis.tolist()]
+        # zip occupation tuples with their probabilities
+        return dict(zip(occ_nums, self.fock_probabilities))
     r"""A fermionic pure Fock state."""
 
     def __init__(
