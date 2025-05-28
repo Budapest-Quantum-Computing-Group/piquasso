@@ -1,3 +1,5 @@
+CVQNN Module
+============
+
 .. automodule:: piquasso.cvqnn
-   :noindex:
    :members:

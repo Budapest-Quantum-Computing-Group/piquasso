@@ -1,6 +1,10 @@
-======================
-Piquasso documentation
-======================
+
+
+.. figure:: _static/logo_only_text.svg
+   :alt: Piquasso logo
+   :width: 200%
+   :align: center
+   :class: no-scaled-link
 
 
 |
@@ -19,25 +23,25 @@ Piquasso documentation
       :link-type: doc
       :class-title: cardclass
 
-      Instructions on the installation of the Piquasso package
+      Instructions on the installation of the Piquasso package.
 
    .. grid-item-card::  Tutorials
       :link: tutorials/index
       :link-type: doc
 
-      Basic tutorials for using Piquasso
+      Basic tutorials for using Piquasso.
 
    .. grid-item-card::  Simulators
       :link: simulators/index
       :link-type: doc
 
-      The built-in simulators in Piquasso
+      The built-in simulators in Piquasso.
 
    .. grid-item-card::  API reference
       :link: api/index
       :link-type: doc
 
-      API reference for Piquasso
+      API reference for Piquasso.
 
 
 |
@@ -78,26 +82,32 @@ If you are doing research using Piquasso, please cite us as follows:
 
 .. code-block::
 
-   @misc{piquasso2024,
-   title         = {Piquasso: A Photonic Quantum Computer Simulation Software Platform},
-   author        = {Z. Kolarovszki and
-                     T. Rybotycki and
-                     P. Rakyta and
-                     Á. Kaposi and
-                     B. Poór and
-                     Sz. Jóczik and
-                     D. T. R. Nagy and
-                     H. Varga and
-                     K. H. El-Safty and
-                     G. Morse and
-                     M. Oszmaniec and
-                     T. Kozsik and
-                     Z. Zimborás
-                     },
-   year          = {2024},
-   eprint        = {2403.04006},
-   archiveprefix = {arXiv},
-   primaryclass  = {quant-ph}
+   @article{Kolarovszki_2025,
+      title={Piquasso: A Photonic Quantum Computer Simulation Software Platform},
+      volume={9},
+      ISSN={2521-327X},
+      url={http://dx.doi.org/10.22331/q-2025-04-15-1708},
+      DOI={10.22331/q-2025-04-15-1708},
+      journal={Quantum},
+      publisher={Verein zur Forderung des Open Access Publizierens in den Quantenwissenschaften},
+      author={
+         Kolarovszki, Zoltán
+         and Rybotycki, Tomasz
+         and Rakyta, Péter
+         and Kaposi, Ágoston
+         and Poór, Boldizsár
+         and Jóczik, Szabolcs
+         and Nagy, Dániel T. R.
+         and Varga, Henrik
+         and El-Safty, Kareem H.
+         and Morse, Gregory
+         and Oszmaniec, Michał
+         and Kozsik, Tamás
+         and Zimborás, Zoltán
+      },
+      year={2025},
+      month=apr,
+      pages={1708}
    }
 
 
