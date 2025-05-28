@@ -106,6 +106,17 @@ class PureFockState(State):
     def density_matrix(self):
         return self._connector.np.outer(self._state_vector, self._state_vector.conj())
 
+    @property
+    def fock_probabilities_map(self) -> dict:
+        # Use the connector's numpy for compatibility
+        from piquasso.fermionic._utils import get_fock_space_basis
+        np = self._connector.np
+        fock_space_basis = get_fock_space_basis(self.d, self._config.cutoff)
+        occupation_numbers = [tuple(x) for x in np.array(fock_space_basis).tolist()]
+        # Convert probabilities to real Python floats for test compatibility
+        probabilities = [float(np.real(p)) for p in self.fock_probabilities]
+        return dict(zip(occupation_numbers, probabilities))
+
     def __eq__(self, other):
         if not isinstance(other, PureFockState):
             return False
