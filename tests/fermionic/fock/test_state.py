@@ -58,6 +58,32 @@ def test_PureFockState_fock_probabilities(connector):
 
 
 @for_all_connectors
+def test_PureFockState_fock_probabilities_map(connector):
+    theta = np.pi / 5
+
+    U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.Interferometer(U)
+
+    simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(
+        list(state.fock_probabilities_map.values()),
+        [0, np.sin(theta) ** 2, np.cos(theta) ** 2, 0],
+    )
+    assert state.fock_probabilities_map == {
+        (0, 0): 0,
+        (0, 1): np.sin(theta) ** 2,
+        (1, 0): np.cos(theta) ** 2,
+        (1, 1): 0,
+    }
+
+
+@for_all_connectors
 def test_PureFockState_norm(connector):
     theta = np.pi / 5
 
