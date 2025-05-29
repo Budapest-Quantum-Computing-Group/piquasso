@@ -188,15 +188,10 @@ def test_PureFockState_fock_probabilities_map(connector):
 
     expected = {
         (0, 0): 0,
-        (0, 1): np.sin(theta) ** 2,
-        (1, 0): np.cos(theta) ** 2,
+        (1, 0): np.sin(theta) ** 2,
+        (0, 1): np.cos(theta) ** 2,
         (1, 1): 0,
     }
 
-    actual = state.fock_probabilities_map
-
-    for occupation_number, expected_probability in expected.items():
-        assert np.isclose(
-            actual[occupation_number],
-            expected_probability,
-        )
+    for occupation_number, probability in expected.items():
+        assert np.isclose(state.fock_probabilities_map[occupation_number], probability)
