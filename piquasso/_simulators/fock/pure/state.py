@@ -176,7 +176,11 @@ class PureFockState(BaseFockState):
     @property
     def fock_probabilities(self) -> np.ndarray:
         return vector_absolute_square(self.state_vector, self._connector)
-
+        
+    def get_marginal_fock_probabilities(self, modes) -> np.ndarray:
+        reduced_state = self.reduced(modes)
+        return reduced_state.fock_probabilities 
+        
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         probability_map: Dict[Tuple[int, ...], float] = {}
