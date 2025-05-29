@@ -201,7 +201,7 @@ class FockState(BaseFockState):
 
         return reduced_state
 
-    def get_marginal_fock_probabilities(self, modes) -> np.ndarray:
+    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
         reduced_state = self.reduced(modes)
         return reduced_state.fock_probabilities 
     
