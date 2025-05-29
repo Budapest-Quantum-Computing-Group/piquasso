@@ -170,3 +170,28 @@ def test_PureFockState_eq_different_type(connector):
     some_other_object = object()
 
     assert state != some_other_object
+
+
+@for_all_connectors
+def test_PureFockState_fock_probabilities_map(connector):
+    theta = np.pi / 5
+
+    U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.Interferometer(U)
+
+    simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
+
+    state = simulator.execute(program).state
+
+    expected = {
+        (0, 0): 0,
+        (1, 0): np.sin(theta) ** 2,
+        (0, 1): np.cos(theta) ** 2,
+        (1, 1): 0,
+    }
+
+    for occupation_number, probability in expected.items():
+        assert np.isclose(state.fock_probabilities_map[occupation_number], probability)
