@@ -955,7 +955,7 @@ class GaussianState(State):
             get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
 
-    def get_marginal_fock_probabilities(self, modes) -> np.ndarray:
+    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
         reduced_state = self.reduced(modes)
         return reduced_state.fock_probabilities
     
