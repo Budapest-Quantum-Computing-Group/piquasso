@@ -13,6 +13,79 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import sys
+import pytest
+
+# Check Python version and TensorFlow availability
+PYTHON_VERSION = sys.version_info
+TENSORFLOW_AVAILABLE = False
+JAX_AVAILABLE = False
+
+try:
+    import tensorflow as tf  # noqa: F401
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    pass
+
+try:
+    import jax  # noqa: F401
+    JAX_AVAILABLE = True
+except ImportError:
+    pass
+
+
+def pytest_configure(config):
+    """Pytest configuration hook."""
+    config.addinivalue_line(
+        "markers",
+        "tensorflow: mark test as requiring TensorFlow"
+    )
+    config.addinivalue_line(
+        "markers",
+        "jax: mark test as requiring JAX"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip tests that require TensorFlow or JAX if not available or incompatible."""
+    for item in items:
+        # Skip TensorFlow tests if not available or on Python 3.13+
+        if "tensorflow" in item.keywords:
+            if not TENSORFLOW_AVAILABLE:
+                marker = pytest.mark.skip(reason="Test requires TensorFlow")
+                item.add_marker(marker)
+            elif PYTHON_VERSION >= (3, 13):
+                marker = pytest.mark.skip(reason="TensorFlow not supported on Python 3.13+")
+                item.add_marker(marker)
+        # Skip JAX tests if not available
+        elif "jax" in item.keywords and not JAX_AVAILABLE:
+            marker = pytest.mark.skip(reason="Test requires JAX")
+            item.add_marker(marker)
+
+
+@pytest.fixture(scope="session")
+def tf():
+    """Fixture to provide TensorFlow or skip the test if not available."""
+    if not TENSORFLOW_AVAILABLE:
+        pytest.skip("TensorFlow is not installed")
+    if PYTHON_VERSION >= (3, 13):
+        pytest.skip("TensorFlow is not supported on Python 3.13+")
+    
+    import tensorflow as tf
+    return tf
+
+
+@pytest.fixture(scope="session")
+def jax():
+    """Fixture to provide JAX or skip the test if not available."""
+    if not JAX_AVAILABLE:
+        pytest.skip("JAX is not installed")
+    
+    import jax
+    return jax
+
+
 import os
 import sys
 import pytest
@@ -32,28 +105,66 @@ from piquasso._simulators.connectors import NumpyConnector
 
 
 
-def pytest_ignore_collect(path, config):
-    # Only apply this skip logic for Python >= 3.13
+import sys
+from pathlib import Path
+
+# tests/conftest.py
+import pytest
+import sys
+
+
+import pytest
+import sys
+
+
+def is_tensorflow_available():
+    """Check if TensorFlow is importable and compatible with current Python version."""
     if sys.version_info >= (3, 13):
-        # Convert path to string for easier checks
-        path_str = str(path)
+        return False, "TensorFlow not supported on Python 3.13+"
+    
+    try:
+        import tensorflow as tf  # noqa: F401
+        return True, None
+    except ImportError:
+        return False, "TensorFlow is not installed"
+    except Exception as e:
+        return False, f"Error importing TensorFlow: {str(e)}"
 
-        # Skip tests that are explicitly TensorFlow-related
-        if "tensorflow" in path_str.lower():
-            return True
-        
-        # Skip test files that are known to import TensorFlow
-        tf_related_files = [
-            "test_simulator_equivalence.py",
-            "test_tf_function.py",
-            "test_clements.py",
-            "test_gates.py",
-            "test_decompositions.py",
-        ]
-        return any(filename in path_str for filename in tf_related_files)
 
-    return False  # Run everything for Python < 3.13
+@pytest.fixture(scope="session")
+def tf():
+    """
+    Fixture that provides a TensorFlow session for tests.
+    Skips the test if TensorFlow is not available or not compatible.
+    """
+    is_available, reason = is_tensorflow_available()
+    if not is_available:
+        pytest.skip(reason)
+    
+    import tensorflow as tf
+    
+    # Configure TensorFlow to use CPU and disable GPU if needed
+    tf.config.set_visible_devices([], 'GPU')
+    
+    return tf
 
+
+def pytest_collection_modifyitems(config, items):
+    """Handle TensorFlow test markers."""
+    is_available, reason = is_tensorflow_available()
+    
+    skip_tf = pytest.mark.skip(reason=reason)
+    for item in items:
+        if "tensorflow" in item.keywords and not is_available:
+            item.add_marker(skip_tf)
+
+
+@pytest.fixture(autouse=True)
+def skip_tensorflow_marked_tests(request):
+    """Auto-skip tests marked with @pytest.mark.tensorflow on Python 3.13+"""
+    if sys.version_info >= (3, 13) and "tensorflow" in request.keywords:
+        pytest.skip("TensorFlow tests disabled on Python 3.13")
+                
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
     np.set_printoptions(suppress=True, linewidth=200, precision=6)

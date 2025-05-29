@@ -19,9 +19,16 @@ from scipy.stats import unitary_group
 
 import piquasso as pq
 
-import tensorflow as tf
+# Import TensorFlow only if available
+pytest.importorskip("tensorflow")
+import tensorflow as tf  # noqa: E402
 
-from jax import grad
+# Import JAX only if available
+try:
+    from jax import grad  # noqa: F401
+    JAX_AVAILABLE = True
+except ImportError:
+    JAX_AVAILABLE = False
 
 from piquasso.decompositions.clements import (
     clements,
@@ -31,6 +38,7 @@ from piquasso.decompositions.clements import (
     get_weights_from_interferometer,
     get_interferometer_from_weights,
     instructions_from_decomposition,
+    get_decomposition_from_instructions,
 )
 
 
@@ -261,10 +269,24 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
     assert state_with_interferometer == state_with_decomposition
 
 
-@pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
-)
+connectors = [pytest.param(pq.NumpyConnector(), id="numpy")]
+
+try:
+    import tensorflow as tf  # noqa: F811, F401
+    connectors.append(pytest.param(pq.TensorflowConnector(), id="tensorflow"))
+except ImportError:
+    pass
+
+if JAX_AVAILABLE:
+    connectors.append(pytest.param(pq.JaxConnector(), id="jax"))
+
+
+@pytest.mark.parametrize("connector", connectors)
 def test_clements_decomposition_roundtrip(connector, dummy_unitary):
+    """Test that the Clements decomposition roundtrips correctly."""
+    if isinstance(connector, pq.TensorflowConnector) and sys.version_info >= (3, 13):
+        pytest.skip("TensorFlow not supported on Python 3.13+")
+    
     d = 5
     U = dummy_unitary(d)
 
@@ -275,10 +297,12 @@ def test_clements_decomposition_roundtrip(connector, dummy_unitary):
     assert np.allclose(U, new_U)
 
 
-@pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
-)
+@pytest.mark.parametrize("connector", connectors)
 def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary):
+    """Test that the Clements decomposition roundtrips correctly with weights."""
+    if isinstance(connector, pq.TensorflowConnector) and sys.version_info >= (3, 13):
+        pytest.skip("TensorFlow not supported on Python 3.13+")
+    
     d = 6
     U = dummy_unitary(d)
 
@@ -295,10 +319,12 @@ def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary)
     assert np.allclose(U, new_U)
 
 
-@pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
-)
+@pytest.mark.parametrize("connector", connectors)
 def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
+    """Test that weights to interferometer conversion roundtrips correctly."""
+    if isinstance(connector, pq.TensorflowConnector) and sys.version_info >= (3, 13):
+        pytest.skip("TensorFlow not supported on Python 3.13+")
+    
     d = 6
     U = connector.np.array(dummy_unitary(d))
 
@@ -309,7 +335,12 @@ def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     assert np.allclose(U, new_U)
 
 
+@pytest.mark.tensorflow
 def test_clements_decomposition_with_TensorflowConnector(dummy_unitary):
+    """Test Clements decomposition with TensorFlow connector."""
+    if sys.version_info >= (3, 13):
+        pytest.skip("TensorFlow not supported on Python 3.13+")
+    
     U = tf.Variable(dummy_unitary(2))
 
     with tf.GradientTape() as tape:
@@ -335,7 +366,37 @@ def test_clements_decomposition_with_TensorflowConnector(dummy_unitary):
     )
 
 
+@pytest.mark.tensorflow
+def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unitary):
+    """Test Clements decomposition with TensorFlow connector from weights."""
+    if sys.version_info >= (3, 13):
+        pytest.skip("TensorFlow not supported on Python 3.13+")
+    
+    d = 2
+    U = dummy_unitary(d)
+
+    weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyConnector()))
+
+    with tf.GradientTape() as tape:
+        decomposition = get_decomposition_from_weights(
+            weights, d=d, connector=pq.TensorflowConnector()
+        )
+
+    assert len(decomposition.beamsplitters) == 1
+    assert len(decomposition.phaseshifters) == 2
+
+    first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
+
+    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
+
+    gradient = tape.gradient(first_beamsplitter_theta, weights)
+
+    assert np.allclose(gradient, [1.0, 0.0, 0.0, 0.0])
+
+
+@pytest.mark.skipif(not JAX_AVAILABLE, reason="JAX not installed")
 def test_clements_decomposition_with_JaxConnector(dummy_unitary):
+    """Test Clements decomposition with JAX connector."""
     def get_first_beamsplitter_theta(U):
         decomposition = clements(U, connector=pq.JaxConnector())
 
@@ -372,30 +433,9 @@ def test_clements_decomposition_with_JaxConnector(dummy_unitary):
     )
 
 
-def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unitary):
-    d = 2
-    U = dummy_unitary(d)
-
-    weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyConnector()))
-
-    with tf.GradientTape() as tape:
-        decomposition = get_decomposition_from_weights(
-            weights, d=d, connector=pq.TensorflowConnector()
-        )
-
-    assert len(decomposition.beamsplitters) == 1
-    assert len(decomposition.phaseshifters) == 2
-
-    first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
-
-    assert np.isclose(first_beamsplitter_theta, np.arctan(np.abs(U[1, 0] / U[0, 0])))
-
-    gradient = tape.gradient(first_beamsplitter_theta, weights)
-
-    assert np.allclose(gradient, [1.0, 0.0, 0.0, 0.0])
-
-
+@pytest.mark.skipif(not JAX_AVAILABLE, reason="JAX not installed")
 def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
+    """Test Clements decomposition with JAX connector from weights."""
     d = 2
     U = dummy_unitary(d)
 

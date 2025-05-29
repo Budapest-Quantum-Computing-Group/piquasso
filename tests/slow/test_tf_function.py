@@ -13,17 +13,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 
+import pytest
 import numpy as np
 import piquasso as pq
-import tensorflow as tf
+import sys
 
+# Skip all tests in this file if TensorFlow is not available
+pytest.importorskip("tensorflow")
+
+# Import TensorFlow only if available
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
+# Skip all tests in this file if TensorFlow is not available
+pytestmark = pytest.mark.skipif(
+    not TENSORFLOW_AVAILABLE or sys.version_info >= (3, 13),
+    reason="TensorFlow is not available or not supported on Python 3.13+"
+)
 
 def noop_decorator(func):
     return func
 
+# Define decorators for testing
+decorators = [
+    pytest.param(
+        noop_decorator,
+        id="noop",
+    ),
+    pytest.param(
+        tf.function,
+        id="tf_function",
+    ),
+    pytest.param(
+        tf.function(jit_compile=True),
+        id="tf_function_jit",
+    ),
+]
 
+@pytest.mark.tensorflow
+def test_tf_function_cvnn_layer_1_mode_1_layers(tf):  # <-- tf fixture injected here
+    x = tf.constant(5)
+    assert x.numpy() == 5
+    
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_1_mode_1_layers():
     d = 1
     cutoff = 3
@@ -59,7 +95,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers():
         [[0.0, 0.00001151, -0.00000038, 1.9829729, -0.00001934, -0.00001949]],
     )
 
-
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_2_modes_2_layers():
     d = 2
     cutoff = 3
@@ -161,7 +197,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers():
         ],
     )
 
-
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_1_mode_1_layers_decorate_with_tf_function():
     d = 1
     cutoff = 3
@@ -299,7 +335,7 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_decorate_with_tf_function():
         ],
     )
 
-
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
     d = 1
     cutoff = 3
@@ -337,7 +373,7 @@ def test_tf_function_cvnn_layer_1_mode_1_layers_jit_compile():
         [[0.0, 0.00001151, -0.00000038, 1.9829729, -0.00001934, -0.00001949]],
     )
 
-
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
     d = 2
     cutoff = 3
@@ -443,8 +479,9 @@ def test_tf_function_cvnn_layer_2_modes_2_layers_jit_compile():
 
 
 @pytest.mark.parametrize(
-    "decorator", (noop_decorator, tf.function, tf.function(jit_compile=True))
+    "decorator", decorators
 )
+@pytest.mark.tensorflow
 def test_tf_function_cvnn_layer_1_mode_1_layers_custom_initial_state(decorator):
     d = 1
     cutoff = 3

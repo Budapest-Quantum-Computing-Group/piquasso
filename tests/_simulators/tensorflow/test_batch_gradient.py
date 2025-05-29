@@ -13,14 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
-import tensorflow as tf
-
 import numpy as np
+import pytest
+import sys
 
 import piquasso as pq
 
+# Skip all tests in this file if TensorFlow is not available
+pytest.importorskip("tensorflow")
+
+# Import TensorFlow only if available
+try:
+    import tensorflow as tf  # noqa: F401
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
+# Skip all tests in this file if TensorFlow is not available
+pytestmark = pytest.mark.skipif(
+    not TENSORFLOW_AVAILABLE,
+    reason="TensorFlow is not available"
+)
+
+# Skip all tests in this file if running on Python 3.13+
+pytestmark = pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="TensorFlow is not supported on Python 3.13+"
+)
 
 connectors = (
     pq.TensorflowConnector(),

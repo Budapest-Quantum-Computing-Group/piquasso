@@ -13,15 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import pytest
+import sys
 
 import piquasso as pq
+
+# Skip TensorFlow tests if not available or on Python 3.13+
+try:
+    import tensorflow as tf  # noqa: F401
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
+SKIP_TF_TESTS = not TENSORFLOW_AVAILABLE or sys.version_info >= (3, 13)
 
 
 def test_GaussianSimulator_supports_NumpyConnector():
     pq.GaussianSimulator(d=1, connector=pq.NumpyConnector())
 
 
+@pytest.mark.skipif(SKIP_TF_TESTS, reason="TensorFlow is not available or not supported on Python 3.13+")
 def test_GaussianSimulator_does_not_support_TensorflowConnector():
     connector = pq.TensorflowConnector()
 
@@ -35,6 +47,7 @@ def test_SamplingSimulator_supports_NumpyConnector():
     pq.SamplingSimulator(d=1, connector=pq.NumpyConnector())
 
 
+@pytest.mark.skipif(SKIP_TF_TESTS, reason="TensorFlow is not available or not supported on Python 3.13+")
 def test_SamplingSimulator_does_not_support_TensorflowConnector():
     connector = pq.TensorflowConnector()
 
@@ -48,6 +61,7 @@ def test_FockSimulator_supports_NumpyConnector():
     pq.FockSimulator(d=1, connector=pq.NumpyConnector())
 
 
+@pytest.mark.skipif(SKIP_TF_TESTS, reason="TensorFlow is not available or not supported on Python 3.13+")
 def test_FockSimulator_does_not_support_TensorflowConnector():
     connector = pq.TensorflowConnector()
 
@@ -61,5 +75,6 @@ def test_PureFockSimulator_supports_NumpyConnector():
     pq.PureFockSimulator(d=1, connector=pq.NumpyConnector())
 
 
+@pytest.mark.skipif(SKIP_TF_TESTS, reason="TensorFlow is not available or not supported on Python 3.13+")
 def test_PureFockSimulator_supports_TensorflowConnector():
     pq.PureFockSimulator(d=1, connector=pq.TensorflowConnector())
