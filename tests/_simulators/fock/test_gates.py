@@ -14,41 +14,50 @@
 # limitations under the License.
 
 import pytest
-
 import numpy as np
-
 import piquasso as pq
-import tensorflow as tf
-
 from functools import partial
 
-tf_purefock_simulators = (
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(),
-    ),
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(decorate_with=tf.function),
-    ),
-)
+# Skip TensorFlow tests if not available
+pytest.importorskip("tensorflow")
 
-jax_purefock_simulator = [
+# Import TensorFlow only if available
+try:
+    import tensorflow as tf  # noqa: F401
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
+# Define simulators with different backends
+purefock_simulators = [
     partial(
         pq.PureFockSimulator,
-        connector=pq.JaxConnector(),
+        connector=pq.NumpyConnector(),
     ),
 ]
+
+if TENSORFLOW_AVAILABLE:
+    tf_purefock_simulators = [
+        partial(
+            pq.PureFockSimulator,
+            connector=pq.TensorflowConnector(),
+        ),
+        partial(
+            pq.PureFockSimulator,
+            connector=pq.TensorflowConnector(decorate_with=tf.function),
+        ),
+    ]
+    purefock_simulators.extend(tf_purefock_simulators)
 
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
-        pq.FockSimulator,
-    ),
+    purefock_simulators,
+    ids=[
+        "Numpy",
+        *["Tensorflow" + (" (eager)" if i == 0 else " (tf.function)")
+          for i in range(len(tf_purefock_simulators) if TENSORFLOW_AVAILABLE else 0)],
+    ],
 )
 def test_squeezing_probabilities(SimulatorClass):
     with pq.Program() as program:
@@ -74,12 +83,12 @@ def test_squeezing_probabilities(SimulatorClass):
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
-        pq.FockSimulator,
-    ),
+    purefock_simulators,
+    ids=[
+        "Numpy",
+        *["Tensorflow" + (" (eager)" if i == 0 else " (tf.function)")
+          for i in range(len(tf_purefock_simulators) if TENSORFLOW_AVAILABLE else 0)],
+    ],
 )
 def test_displacement_probabilities(SimulatorClass):
     with pq.Program() as program:

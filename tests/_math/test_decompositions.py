@@ -32,7 +32,23 @@ from piquasso._simulators.connectors import (
 )
 
 
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+# Create a list of connectors to test
+CONNECTORS = [NumpyConnector()]
+
+try:
+    import tensorflow as tf  # noqa: F401
+    CONNECTORS.append(TensorflowConnector())
+except ImportError:
+    pass
+
+try:
+    import jax  # noqa: F401
+    CONNECTORS.append(JaxConnector())
+except ImportError:
+    pass
+
+
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
     matrix = np.array(
         [
@@ -49,7 +65,7 @@ def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector):
     matrix = np.array(
         [
@@ -66,7 +82,7 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
@@ -84,7 +100,7 @@ def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
@@ -102,7 +118,7 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
     connector,
     generate_unitary_matrix,
@@ -127,7 +143,7 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
 @pytest.mark.monkey
 @pytest.mark.parametrize("N", [2, 3, 4, 5, 6])
-@pytest.mark.parametrize("connector", [NumpyConnector(), TensorflowConnector()])
+@pytest.mark.parametrize("connector", CONNECTORS)
 def test_takagi_on_complex_symmetric_N_by_N_matrix(
     N, connector, generate_complex_symmetric_matrix
 ):

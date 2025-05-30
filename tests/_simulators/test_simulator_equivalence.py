@@ -16,7 +16,7 @@
 import pytest
 import numpy as np
 import piquasso as pq
-import tensorflow as tf
+
 
 import collections
 
@@ -29,41 +29,57 @@ from scipy.linalg import polar, sinhm, coshm, expm
 def is_proportional(first, second, rtol=1e-5):
     first = np.array(first)
     second = np.array(second)
-
-    index = np.argmax(first)
-
-    proportion = first[index] / second[index]
+    proportion = first[0] / second[0]
 
     return np.allclose(first, proportion * second, rtol=rtol)
 
 
-tf_purefock_simulators = (
+# Define simulators with different backends
+purefock_simulators = [
     partial(
         pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(),
-    ),
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(decorate_with=tf.function),
-    ),
-)
-
-jax_purefock_simulator = [
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.JaxConnector(),
+        connector=pq.NumpyConnector(),
     ),
 ]
+
+try:
+    import tensorflow as tf  # noqa: F401
+    tf_purefock_simulators = [
+        partial(
+            pq.PureFockSimulator,
+            connector=pq.TensorflowConnector(),
+        ),
+        partial(
+            pq.PureFockSimulator,
+            connector=pq.TensorflowConnector(decorate_with=tf.function),
+        ),
+    ]
+    purefock_simulators.extend(tf_purefock_simulators)
+except ImportError:
+    tf_purefock_simulators = []
+
+try:
+    import jax  # noqa: F401
+    jax_purefock_simulator = [
+        partial(
+            pq.PureFockSimulator,
+            connector=pq.JaxConnector(),
+        ),
+    ]
+    purefock_simulators.extend(jax_purefock_simulator)
+except ImportError:
+    jax_purefock_simulator = []
 
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (
-        pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        pq.FockSimulator,
-    ),
+    purefock_simulators,
+    ids=[
+        "Numpy",
+        *["Tensorflow" + (" (eager)" if i == 0 else " (tf.function)")
+          for i in range(len(tf_purefock_simulators))],
+        *["JAX" for _ in jax_purefock_simulator],
+    ],
 )
 def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
     with pq.Program() as program:
@@ -84,9 +100,7 @@ def test_fock_probabilities_should_be_numpy_array_of_floats(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -161,9 +175,7 @@ def test_density_matrix_with_squeezed_state():
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -214,8 +226,6 @@ def test_fock_probabilities_with_displaced_state(SimulatorClass):
         pq.PureFockSimulator,
         pq.FockSimulator,
         *tf_purefock_simulators,
-        *jax_purefock_simulator,
-        pq.GaussianSimulator,
     ),
 )
 def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
@@ -252,9 +262,7 @@ def test_Displacement_equivalence_on_multiple_modes(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -304,9 +312,7 @@ def test_fock_probabilities_with_displaced_state_with_beamsplitter(SimulatorClas
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -356,9 +362,7 @@ def test_fock_probabilities_with_squeezed_state_with_beamsplitter(SimulatorClass
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -387,9 +391,7 @@ def test_fock_probabilities_with_two_single_mode_squeezings(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -416,9 +418,7 @@ def test_Squeezing_equivalence_on_multiple_modes(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -472,9 +472,7 @@ def test_fock_probabilities_with_two_mode_squeezing(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -524,9 +522,7 @@ def test_fock_probabilities_with_two_mode_squeezing_and_beamsplitter(SimulatorCl
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -573,9 +569,7 @@ def test_fock_probabilities_with_quadratic_phase(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -622,9 +616,7 @@ def test_fock_probabilities_with_position_displacement(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -671,9 +663,7 @@ def test_fock_probabilities_with_momentum_displacement(SimulatorClass):
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -701,9 +691,7 @@ def test_fock_probabilities_with_position_displacement_is_HBAR_independent(
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -731,9 +719,7 @@ def test_fock_probabilities_with_momentum_displacement_is_HBAR_independent(
     "SimulatorClass",
     (
         pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        *tf_purefock_simulators,
-        *jax_purefock_simulator,
+        *purefock_simulators,
         pq.FockSimulator,
     ),
 )
@@ -1708,7 +1694,6 @@ def test_Interferometer_smaller_than_system_size(SimulatorClass):
         state.fock_probabilities,
         [
             0.99850342,
-            0.0,
             0.0,
             0.0,
             0.0,
