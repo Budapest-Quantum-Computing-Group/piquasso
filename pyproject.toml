@@ -14,7 +14,7 @@ maintainers = [
 ]
 requires-python = ">=3.8,<3.13"
 dependencies = [
-  "numpy>=1.19.5",
+  "numpy>=1.19.5,<2.0.0", 
   "scipy>=1.5.4",
   "numba>=0.57.1",
   "quantum-blackbird==0.5.0",
@@ -44,8 +44,8 @@ Issues = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
 Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-tensorflow = ["tensorflow"]
-jax = ["jax[cpu]"]
+tensorflow = ["tensorflow<2.20.0"] 
+jax = ["jax[cpu]<0.7.0"]  
 dev = [
   "pytest>=8.0.1,<8.4.0",
   "coverage~=7.6.1",

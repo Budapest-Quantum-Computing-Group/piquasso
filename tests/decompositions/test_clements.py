@@ -38,7 +38,6 @@ from piquasso.decompositions.clements import (
     get_weights_from_interferometer,
     get_interferometer_from_weights,
     instructions_from_decomposition,
-    get_decomposition_from_instructions,
 )
 
 
