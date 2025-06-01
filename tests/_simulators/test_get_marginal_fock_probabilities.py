@@ -31,46 +31,6 @@ def is_proportional(first, second, atol=1e-3):
     return np.allclose(first, second, atol=atol)
 
 
-"""
-@pytest.mark.parametrize(
-    "SimulatorClass",
-    (
-        pq.GaussianSimulator,
-        pq.PureFockSimulator,
-        pq.FockSimulator,
-    ),
-)
-def test_get_marginal_fock_probabilities_multiple_modes(SimulatorClass):
-    #Test marginal probabilities for multiple modes from a multi-mode state.
-    
-    with pq.Program() as program:
-        pq.Q(all) | pq.Vacuum()
-
-        pq.Q(0) | pq.Squeezing(r=0.1)
-        pq.Q(1) | pq.Squeezing(r=0.15)
-        pq.Q(2) | pq.Squeezing(r=0.05)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
-        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 8)
-
-    simulator = SimulatorClass(d=3, config=pq.Config(cutoff=4))
-    state = simulator.execute(program).state
-
-    # Get marginal probabilities for modes (0, 1)
-    marginal_probs_01 = state.get_marginal_fock_probabilities(modes=(0, 1))
-    
-    # Get marginal probabilities for modes (1, 2)
-    marginal_probs_12 = state.get_marginal_fock_probabilities(modes=(1, 2))
-
-    # Check that probabilities sum to 1
-    assert np.isclose(np.sum(marginal_probs_01), 1.0,atol=1e-02)
-    assert np.isclose(np.sum(marginal_probs_12), 1.0,atol=1e-02)
-    
-    # Check that probabilities are non-negative
-    assert np.all(marginal_probs_01 >= 0)
-    assert np.all(marginal_probs_12 >= 0)
-"""
-
-
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
