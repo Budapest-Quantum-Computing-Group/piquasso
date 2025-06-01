@@ -12,7 +12,7 @@ keywords = ["quantum computing", "photonic quantum computing", "boson sampling"]
 maintainers = [
   { name = "Budapest Quantum Computing Group", email = "kolarovszki@inf.elte.hu" },
 ]
-requires-python = ">=3.8,<3.13"
+requires-python = ">=3.8,<3.14"
 dependencies = [
   "numpy>=1.19.5",
   "scipy>=1.5.4",
