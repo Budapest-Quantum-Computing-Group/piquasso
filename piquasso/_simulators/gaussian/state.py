@@ -1021,7 +1021,7 @@ class GaussianState(State):
         return purification
 
     def plot_gaussian_state(
-        state: "GaussianState",
+        self,
         mode: int = 0,
         xlims: tuple[float, float] | None = None,
         plims: tuple[float, float] | None = None,
