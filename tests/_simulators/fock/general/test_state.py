@@ -98,7 +98,7 @@ def test_FockState_get_marginal_fock_probabilities():
     state = simulator.execute(program).state
 
     modes = (1,)
-    expected_probabilities = state.reduced(modes).fock_probabilities
+    expected_probabilities = np.array([0.5, 0.25, 0.25, 0.0])
     actual_probabilities = state.get_marginal_fock_probabilities(modes)
 
     assert np.allclose(actual_probabilities, expected_probabilities)
