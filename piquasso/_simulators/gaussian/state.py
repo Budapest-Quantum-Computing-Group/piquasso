@@ -1019,3 +1019,151 @@ class GaussianState(State):
         purification.xpxp_mean_vector = np.concatenate([mean] * 2)
 
         return purification
+
+    def plot_gaussian_state(
+        state: "GaussianState",
+        mode: int = 0,
+        xlims: tuple[float, float] | None = None,
+        plims: tuple[float, float] | None = None,
+        resolution: int = 200,
+        library: str = "matplotlib",):
+        r"""
+        Plot the single‐mode Wigner function of a GaussianState.
+
+        Parameters
+        ----------
+        state : GaussianState
+            A piquasso GaussianState with `d >= mode+1`.
+        mode : int, default=0
+            Which mode index (0‐based) to visualize.
+        xlims : (float, float) or None
+            If given, use these exact (min, max) limits for the x quadrature.
+            Otherwise, default to ±4·sigma_x around the mean.
+        plims : (float, float) or None
+            If given, use these exact (min, max) limits for the p quadrature.
+            Otherwise, default to ±4·sigma_p around the mean.
+        resolution : int, default=200
+            Number of points along each axis (so total grid=resolution×resolution).
+        library : {"matplotlib", "plotly"}
+            Which plotting backend to attempt. If the chosen library is not installed,
+            an ImportError is raised with a user‐friendly message.
+
+        Raises
+        ------
+        ImportError
+            If the requested `library` cannot be imported (e.g. Matplotlib not installed).
+        IndexError
+            If `mode` ≥ `state.d`.
+        """
+
+        # 1) Extract the full (2d × 2d) covariance and mean:
+        cov_full = state.xpxp_covariance_matrix    # shape = (2d, 2d)
+        mean_full = state.xpxp_mean_vector         # shape = (2d,)
+
+        d = state.d
+        if not (0 <= mode < d):
+            raise IndexError(f"Requested mode {mode} but state has d={d} modes.")
+
+        # 2) Build the 2×2 submatrix and 2×1 mean for this single mode:
+        #    In piquasso, xpxp ordering is [x0, p0, x1, p1, …].
+        i, j = 2 * mode, 2 * mode + 1
+        # covariance for (x_mode, p_mode)
+        Sigma = cov_full[np.ix_([i, j], [i, j])]   # shape = (2,2)
+        mu = mean_full[[i, j]]                     # shape = (2,)
+
+        # 3) Decide on plotting ranges (in x, p) if user didn't give them:
+        #    Use ±4·σ_x, ±4·σ_p by default around the means.
+        sigma_x = np.sqrt(float(Sigma[0, 0]))
+        sigma_p = np.sqrt(float(Sigma[1, 1]))
+        x_center, p_center = float(mu[0]), float(mu[1])
+
+        if xlims is None:
+            x_min = x_center - 4 * sigma_x
+            x_max = x_center + 4 * sigma_x
+        else:
+            x_min, x_max = xlims
+
+        if plims is None:
+            p_min = p_center - 4 * sigma_p
+            p_max = p_center + 4 * sigma_p
+        else:
+            p_min, p_max = plims
+
+        # 4) Build the 2D grid of points:
+        xs = np.linspace(x_min, x_max, resolution)
+        ps = np.linspace(p_min, p_max, resolution)
+        X, P = np.meshgrid(xs, ps, indexing="xy")   # each shape (resolution, resolution)
+
+        # 5) Invert Sigma and compute its determinant:
+        det_Sigma = float(np.linalg.det(Sigma))
+        inv_Sigma = np.linalg.inv(Sigma)
+
+        # 6) Flatten the grid, subtract the mean, and evaluate the exponent:
+        #    For every grid point (x, p), let v = [x - mu_x, p - mu_p].
+        #    Then exponent argument is -(1/2)*v^T Sigma^{-1} v.
+        XY = np.stack([X.ravel(), P.ravel()], axis=1)            # shape = (N^2, 2)
+        delta = XY - mu[None, :]                                 # shape = (N^2, 2)
+        # Compute exponent for each point:
+        exponents = -0.5 * np.einsum("ni,ij,nj->n", delta, inv_Sigma, delta)
+        W_flat = (1.0 / (2 * np.pi * np.sqrt(det_Sigma))) * np.exp(exponents)
+        W = W_flat.reshape((resolution, resolution))
+
+        # 7) Try to import plotting library:
+        if library.lower() == "matplotlib":
+            try:
+                import matplotlib.pyplot as plt
+            except ImportError as e:
+                raise ImportError(
+                    "Matplotlib is required to plot the Wigner function. "
+                    "Install it with, e.g., `pip install matplotlib`."
+                ) from e
+
+            fig, ax = plt.subplots(figsize=(5, 4))
+            # im = ax.imshow(W, extent=[x_min, x_max, p_min, p_max], origin="lower", cmap="RdBu_r")
+            im = ax.contourf(
+                xs,
+                ps,
+                W,
+                levels=75,
+                cmap="RdBu_r",
+                vmin=-np.max(np.abs(W)),
+                vmax=np.max(np.abs(W)),
+            )
+            ax.set_xlabel(r"$x$")
+            ax.set_ylabel(r"$p$")
+            ax.set_title(f"Wigner function (mode {mode})")
+            cbar = fig.colorbar(im, ax=ax)
+            cbar.set_label(r"$W(x,p)$")
+            plt.tight_layout()
+            return fig, ax
+
+        elif library.lower() == "plotly":
+            try:
+                import plotly.graph_objects as go
+            except ImportError as e:
+                raise ImportError(
+                    "Plotly is required to plot the Wigner function with `library='plotly'`. "
+                    "Install it with, e.g., `pip install plotly`."
+                ) from e
+
+            fig = go.Figure(
+                data=go.Contour(
+                    x=xs.tolist(),
+                    y=ps.tolist(),
+                    z=W.tolist(),
+                    colorscale="RdBu",
+                    contours=dict(start=-np.max(np.abs(W)), end=np.max(np.abs(W)), size=0.01),
+                    reversescale=True,
+                )
+            )
+            fig.update_layout(
+                title=f"Wigner function (mode {mode})",
+                xaxis_title="x",
+                yaxis_title="p",
+            )
+            return fig
+
+        else:
+            raise ValueError(
+                f"Unknown library '{library}'. Choose either 'matplotlib' or 'plotly'."
+            )
