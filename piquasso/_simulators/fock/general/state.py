@@ -295,6 +295,8 @@ class FockState(BaseFockState):
             (float, float): A tuple that contains the expectation value and the
                 varianceof of the quadrature operator respectively.
         """
+        np = self._connector.np
+
         reduced_dm = self.reduced(modes=modes).density_matrix
         annih = np.diag(np.sqrt(np.arange(1, self._config.cutoff)), 1)
         create = annih.T
@@ -306,19 +308,16 @@ class FockState(BaseFockState):
         else:
             rotated_quadratures = position
 
-        expectation = np.trace(np.dot(reduced_dm, rotated_quadratures)).real
+        expectation = np.real(np.trace(np.dot(reduced_dm, rotated_quadratures)))
         variance = (
-            np.trace(
-                np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
-            ).real
+            np.real(
+                np.trace(
+                    np.dot(reduced_dm, np.dot(rotated_quadratures, rotated_quadratures))
+                )
+            )
             - expectation**2
         )
         return expectation, variance
-
-    def get_purity(self):
-        np = self._connector.np
-        density_matrix = self.density_matrix
-        return np.real(np.einsum("ij,ji", density_matrix, density_matrix))
 
     def plot_wigner(
         self,
@@ -386,7 +385,7 @@ class FockState(BaseFockState):
         """
 
         # 1) Extract ℏ, dimension d, and check `mode`
-        ℏ = float(self._config.hbar)
+        _hbar = float(self._config.hbar)
         d = self.d
         if not (0 <= mode < d):
             raise IndexError(f"Requested mode {mode} but state.d = {d}.")
@@ -394,8 +393,8 @@ class FockState(BaseFockState):
         # 2) Build the single‐mode (cutoff×cutoff) density matrix ρ:
         #    FockState.reduced((mode,)) returns a FockState on only that mode.
         mixed_single = self.reduced((mode,))
-        ρ = mixed_single.density_matrix     # shape = (cutoff, cutoff), complex128
-        cutoff = ρ.shape[0]
+        rho = mixed_single.density_matrix     # shape = (cutoff, cutoff), complex128
+        cutoff = rho.shape[0]
 
         # 3) From ρ we can compute ⟨x⟩, ⟨x²⟩, ⟨p⟩, ⟨p²⟩ to get variances for default plotting windows.
         #    Build annihilation/creation in truncated basis:
@@ -404,15 +403,15 @@ class FockState(BaseFockState):
         a_data = np_mod.diag(np_mod.sqrt(levels[1:]), k=-1)  # a_{n,n+1} = √(n+1)
         a = a_data
         adag = a_data.T
-        x_op = (adag + a) * np_mod.sqrt(ℏ / 2)                     # x = √(ℏ/2)(a + a†)
-        p_op = (adag - a) * ( -1j * np_mod.sqrt(ℏ / 2) )           # p = -i√(ℏ/2)(a - a†)
+        x_op = (adag + a) * np_mod.sqrt(_hbar / 2)                     # x = √(_hbar/2)(a + a†)
+        p_op = (adag - a) * ( -1j * np_mod.sqrt(_hbar / 2) )           # p = -i√(_hbar/2)(a - a†)
 
-        mean_x = np_mod.real(np_mod.trace(ρ @ x_op))
-        mean_x2 = np_mod.real(np_mod.trace(ρ @ (x_op @ x_op)))
+        mean_x = np_mod.real(np_mod.trace(rho @ x_op))
+        mean_x2 = np_mod.real(np_mod.trace(rho @ (x_op @ x_op)))
         var_x = mean_x2 - mean_x**2
 
-        mean_p = np_mod.real(np_mod.trace(ρ @ p_op))
-        mean_p2 = np_mod.real(np_mod.trace(ρ @ (p_op @ p_op)))
+        mean_p = np_mod.real(np_mod.trace(rho @ p_op))
+        mean_p2 = np_mod.real(np_mod.trace(rho @ (p_op @ p_op)))
         var_p = mean_p2 - mean_p**2
 
         sigma_x = np_mod.sqrt(var_x)
@@ -454,8 +453,8 @@ class FockState(BaseFockState):
             coeffs[-1] = 1.0
             return hermval(u, coeffs)
 
-        #    Normalization prefactor: φ_n(q) = (πℏ)^(-1/4) (1/√(2^n n!)) H_n(q/√ℏ) e^(−q²/(2ℏ))
-        norm_prefac = (np_mod.pi * ℏ) ** (-0.25)
+        #    Normalization prefactor: φ_n(q) = (π_hbar)^(-1/4) (1/√(2^n n!)) H_n(q/√_hbar) e^(−q²/(2_hbar))
+        norm_prefac = (np_mod.pi * _hbar) ** (-0.25)
 
         #    Precompute √(2^n n!) for n=0..cutoff−1:
         fact = np_mod.cumprod(np_mod.concatenate(([1.0], np_mod.arange(1.0, cutoff))))  # length=cutoff
@@ -476,18 +475,18 @@ class FockState(BaseFockState):
         phi_plus  = np_mod.empty_like(phi_minus)
 
         for n in range(cutoff):
-            # Evaluate H_n at (q/√ℏ):
-            arg_minus = (grids_minus / np_mod.sqrt(ℏ))           # shape = (res, res, y_points)
+            # Evaluate H_n at (q/√_hbar):
+            arg_minus = (grids_minus / np_mod.sqrt(_hbar))           # shape = (res, res, y_points)
             Hn_minus = hermite_phys(n, arg_minus)                 # shape = (res, res, y_points)
 
-            arg_plus  = (grids_plus / np_mod.sqrt(ℏ))
+            arg_plus  = (grids_plus / np_mod.sqrt(_hbar))
             Hn_plus  = hermite_phys(n, arg_plus)
 
             # Gaussian factors:
-            gauss_minus = np_mod.exp(- (grids_minus ** 2) / (2 * ℏ))
-            gauss_plus  = np_mod.exp(- (grids_plus  ** 2) / (2 * ℏ))
+            gauss_minus = np_mod.exp(- (grids_minus ** 2) / (2 * _hbar))
+            gauss_plus  = np_mod.exp(- (grids_plus  ** 2) / (2 * _hbar))
 
-            # φ_n(q) = norm_prefac * H_n(q/√ℏ)/√(2^n n!) * e^(−q²/(2ℏ))
+            # φ_n(q) = norm_prefac * H_n(q/√_hbar)/√(2^n n!) * e^(−q²/(2_hbar))
             denom = sqrt_denoms[n]
             phi_minus[n] = norm_prefac * (Hn_minus / denom) * gauss_minus
             phi_plus[n]  = norm_prefac * (Hn_plus  / denom) * gauss_plus
@@ -512,7 +511,7 @@ class FockState(BaseFockState):
         M = np_mod.empty((resolution, resolution, y_points), dtype=complex)
 
         # Precompute ρ once:
-        ρ_mat = ρ  # shape = (cutoff, cutoff)
+        rho_mat = rho  # shape = (cutoff, cutoff)
 
         # Now loop over k to build M[..., k]:
         for k in range(y_points):
@@ -520,21 +519,23 @@ class FockState(BaseFockState):
             phi_plus_conj_k  = phi_plus_conj_flat[..., k]   # shape = (cutoff, N)
 
             # D_k = ρ @ phi_plus_conj_k   (shape = (cutoff, N))
-            D_k = ρ_mat @ phi_plus_conj_k
+            D_k = rho_mat @ phi_plus_conj_k
 
             # M_k_flat[ℓ] = sum_{m=0..cutoff−1} phi_minus_k[m,ℓ] * D_k[m,ℓ]
             M_k_flat = np_mod.sum(phi_minus_k * D_k, axis=0)   # shape = (N,)
 
             M[..., k] = M_k_flat.reshape((resolution, resolution))
 
-        # 8) Build the phase factor exp(2 i p y / ℏ) on the same grid:
+        # 8) Build the phase factor exp(2 i p y / _hbar) on the same grid:
         P_expanded = P[..., None]      # shape = (res, res, 1)
         Ys_expanded = Ys[None, None, :]  # shape = (1, 1, y_points)
-        phase = np_mod.exp((2j * P_expanded * Ys_expanded) / ℏ)   # shape = (res, res, y_points)
+        phase = np_mod.exp((2j * P_expanded * Ys_expanded) / _hbar)   # shape = (res, res, y_points)
 
         # 9) Form the integrand = M * phase.  Then integrate over y via trapezoidal rule:
         integrand = M * phase   # shape = (res, res, y_points)
-        W_vals = (1.0 / (np_mod.pi * ℏ)) * np_mod.trapezoid(integrand, Ys, axis=2)
+        trapz_func = np_mod.trapezoid if hasattr(np_mod, "trapezoid") else np_mod.trapz
+        W_vals = (1.0 / (np_mod.pi * _hbar)) * trapz_func(integrand, Ys, axis=2)
+        #W_vals = (1.0 / (np_mod.pi * _hbar)) * np_mod.trapz(integrand, Ys, axis=2)
         W = np_mod.real(W_vals)   # shape = (res, res)
 
         # 10) Deferred import / plotting:
@@ -597,3 +598,8 @@ class FockState(BaseFockState):
             raise ValueError(
                 f"Unknown library '{library}'. Choose either 'matplotlib' or 'plotly'."
             )
+
+    def get_purity(self):
+        np = self._connector.np
+        density_matrix = self.density_matrix
+        return np.real(np.einsum("ij,ji", density_matrix, density_matrix))
