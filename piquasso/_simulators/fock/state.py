@@ -226,9 +226,7 @@ class BaseFockState(State, abc.ABC):
         )
         return np.abs(np.sum(geometric_mean)) ** 2
 
-    def get_marginal_fock_probabilities(
-        self, modes: Tuple[int, ...]
-    ) -> np.ndarray:
+    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
         """Return the particle number probabilities on a given subsystem.
 
         Args:

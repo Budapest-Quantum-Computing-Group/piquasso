@@ -955,9 +955,7 @@ class GaussianState(State):
             get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
 
-    def get_marginal_fock_probabilities(
-        self, modes: Tuple[int, ...]
-    ) -> np.ndarray:
+    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
         """Return the particle number probabilities on a given subsystem."""
 
         return self.reduced(modes).fock_probabilities
