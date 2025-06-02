@@ -14,8 +14,11 @@
 # limitations under the License.
 
 import piquasso as pq
-import tensorflow as tf
 import numpy as np
+
+def test_tensorflow_ops(tensorflow):
+    # tensorflow is safely imported via fixture
+    assert tensorflow.constant(1.0) == 1.0
 
 
 def test_PostSelectPhotons_gradient():

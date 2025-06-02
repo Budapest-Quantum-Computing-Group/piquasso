@@ -15,14 +15,17 @@
 
 import pytest
 
-import tensorflow as tf
-
 import numpy as np
 
 import piquasso as pq
 
 from scipy.stats import unitary_group
 from scipy.linalg import block_diag
+
+
+def test_tensorflow_ops(tensorflow):
+    # tensorflow is safely imported via fixture
+    assert tensorflow.constant(1.0) == 1.0
 
 
 def test_Displacement_mean_photon_number_gradient_1_mode():

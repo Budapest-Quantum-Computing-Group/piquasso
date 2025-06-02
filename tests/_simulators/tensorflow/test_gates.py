@@ -15,7 +15,11 @@
 
 import piquasso as pq
 import pytest
-import tensorflow as tf
+
+def test_tensorflow_ops(tensorflow):
+    # tensorflow is safely imported via fixture
+    assert tensorflow.constant(1.0) == 1.0
+
 
 
 @pytest.mark.monkey
