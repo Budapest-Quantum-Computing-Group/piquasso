@@ -292,6 +292,27 @@ def test_reduced_state_inherits_config():
     assert reduced_state._config == state._config
 
 
+def test_GaussianState_get_marginal_fock_probabilities():
+    with pq.Program() as program:
+        pq.Q(0) | pq.Displacement(r=1.0)
+        pq.Q(1) | pq.Displacement(r=2.0)
+        pq.Q(2) | pq.Displacement(r=3.0, phi=np.pi / 2)
+
+        pq.Q(0, 1) | pq.Squeezing2(r=np.log(2.0), phi=0.0)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 2, phi=0)
+
+    simulator = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+    state.validate()
+
+    modes = (0, 2)
+    expected_probabilities = state.reduced(modes).fock_probabilities
+    actual_probabilities = state.get_marginal_fock_probabilities(modes)
+
+    assert np.allclose(actual_probabilities, expected_probabilities)
+
+
 def test_vacuum_covariance_is_proportional_to_identity():
     d = 2
 
