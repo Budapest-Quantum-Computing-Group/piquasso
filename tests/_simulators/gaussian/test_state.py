@@ -1095,8 +1095,9 @@ def test_get_xp_string_expectation_value_random():
     g_state = pq.GaussianSimulator(d=d).execute(program).state
     f_state = pq.FockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
 
-    length = np.random.randint(1, 6)
-    indices = np.random.randint(0, 2 * d, length)
+    rng = np.random.default_rng(0)
+    length = rng.integers(1, 6)
+    indices = rng.integers(0, 2 * d, length)
 
     expected = _xp_string_expectation(f_state, indices)
     actual = g_state.get_xp_string_expectation_value(indices)
