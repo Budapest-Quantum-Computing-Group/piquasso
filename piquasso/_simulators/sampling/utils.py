@@ -34,7 +34,7 @@ def calculate_state_vector(interferometer, initial_state, config, connector):
     """Calculate the state vector on the particle subspace defined by ``initial_state``.
 
     This implementation follows Algorithm 1 (``SLOS_full``) from
-    `Strong Simulation of Linear Optical Processes`_.
+    `Strong Simulation of Linear Optical Processes`.
     """
 
     np = connector.np
@@ -44,10 +44,7 @@ def calculate_state_vector(interferometer, initial_state, config, connector):
     n = int(fallback_np.sum(initial_state))
 
     bases = [partitions(boxes=d, particles=k) for k in range(n + 1)]
-    index_maps = [
-        {tuple(basis[i]): i for i in range(len(basis))}
-        for basis in bases
-    ]
+    index_maps = [{tuple(basis[i]): i for i in range(len(basis))} for basis in bases]
 
     sigma = fallback_np.zeros(d, dtype=int)
     schedule_sigma = []
@@ -80,8 +77,7 @@ def calculate_state_vector(interferometer, initial_state, config, connector):
                 UF_next = connector.assign(
                     UF_next,
                     index_new,
-                    UF_next[index_new]
-                    + factor * interferometer[i, p] * A,
+                    UF_next[index_new] + factor * interferometer[i, p] * A,
                 )
 
         UF_curr = UF_next
