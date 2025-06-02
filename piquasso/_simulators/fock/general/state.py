@@ -320,7 +320,7 @@ class FockState(BaseFockState):
         density_matrix = self.density_matrix
         return np.real(np.einsum("ij,ji", density_matrix, density_matrix))
 
-    def plot_wigner_fockstate(
+    def plot_wigner(
         self,
         mode: int = 0,
         xlims: Optional[Tuple[float, float]] = None,
