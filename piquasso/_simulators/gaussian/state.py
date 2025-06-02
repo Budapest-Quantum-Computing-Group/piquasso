@@ -960,6 +960,55 @@ class GaussianState(State):
 
         return self.reduced(modes).fock_probabilities
 
+    def get_xp_string_expectation_value(self, operators: List[int]) -> complex:
+        """Expectation value of a product of quadrature operators.
+
+        The indices of ``operators`` correspond to the xxpp ordering, i.e.
+        ``0`` denotes :math:`x_0`, ``d`` denotes :math:`p_0`, etc.
+
+        The implementation uses Wick's (Isserlis's) theorem.
+        """
+
+        d = self.d
+        hbar = self._config.hbar
+
+        mean_xxpp = self.xxpp_mean_vector
+        cov_xxpp = self.xxpp_covariance_matrix
+
+        def is_x(index: int) -> bool:
+            return index < d
+
+        def mode_of(index: int) -> int:
+            return index if index < d else index - d
+
+        def recursive(op_list: List[int]) -> complex:
+            if not op_list:
+                return 1.0
+            if len(op_list) == 1:
+                return mean_xxpp[op_list[0]]
+
+            first = op_list[0]
+            rest = op_list[1:]
+
+            total = mean_xxpp[first] * recursive(rest)
+
+            for j, second in enumerate(rest):
+                remaining = rest[:j] + rest[j + 1 :]
+
+                pair_val = cov_xxpp[first, second] / 2
+
+                if mode_of(first) == mode_of(second) and is_x(first) != is_x(second):
+                    if is_x(first):
+                        pair_val += 0.5j * hbar
+                    else:
+                        pair_val -= 0.5j * hbar
+
+                total += pair_val * recursive(remaining)
+
+            return total
+
+        return recursive(list(operators))
+
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
 

@@ -1021,3 +1021,84 @@ def test_get_purity_Thermal_Interferometer(generate_unitary_matrix):
     assert np.isclose(actual_initial_purity, actual_final_purity)
     assert np.isclose(expected_initial_purity, expected_final_purity)
     assert np.isclose(expected_final_purity, actual_final_purity)
+
+
+def _xp_string_expectation(state, indices):
+    from piquasso._math.fock import (
+        get_fock_space_basis,
+        get_creation_operator,
+        get_annihilation_operator,
+    )
+
+    np = state._connector.np
+
+    d = state.d
+
+    space = get_fock_space_basis(d=d, cutoff=state._config.cutoff)
+
+    x_ops = []
+    p_ops = []
+    for m in range(d):
+        create = get_creation_operator((m,), space=space, config=state._config)
+        annih = get_annihilation_operator((m,), space=space, config=state._config)
+        x_ops.append((create + annih) * np.sqrt(state._config.hbar / 2))
+        p_ops.append(-1j * (annih - create) * np.sqrt(state._config.hbar / 2))
+
+    operator = np.identity(len(space), dtype=state._config.complex_dtype)
+    for idx in indices:
+        if idx < d:
+            operator = operator @ x_ops[idx]
+        else:
+            operator = operator @ p_ops[idx - d]
+
+    if hasattr(state, "state_vector"):
+        vec = state.state_vector[: len(space)]
+        return np.vdot(vec, operator @ vec)
+
+    rho = state.density_matrix
+    return np.trace(rho @ operator)
+
+
+def test_get_xp_string_expectation_value_against_fock_states():
+    d = 2
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.05, phi=0.1)
+        pq.Q(1) | pq.Squeezing(r=0.05, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=0.5, phi=0.2)
+
+    g_state = pq.GaussianSimulator(d=d).execute(program).state
+    f_state = pq.FockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
+    p_state = (
+        pq.PureFockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
+    )
+
+    indices = [0, d, d + 1, 1]
+
+    expected_fock = _xp_string_expectation(f_state, indices)
+    expected_pure = _xp_string_expectation(p_state, indices)
+    actual = g_state.get_xp_string_expectation_value(indices)
+
+    assert np.isclose(actual, expected_fock, atol=1e-2)
+    assert np.isclose(actual, expected_pure, atol=1e-2)
+
+
+def test_get_xp_string_expectation_value_random():
+    d = 2
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.05, phi=0.1)
+        pq.Q(1) | pq.Displacement(r=0.05, phi=0.4)
+
+    g_state = pq.GaussianSimulator(d=d).execute(program).state
+    f_state = pq.FockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
+
+    length = np.random.randint(1, 6)
+    indices = np.random.randint(0, 2 * d, length)
+
+    expected = _xp_string_expectation(f_state, indices)
+    actual = g_state.get_xp_string_expectation_value(indices)
+
+    assert np.isclose(actual, expected, atol=1e-2)
