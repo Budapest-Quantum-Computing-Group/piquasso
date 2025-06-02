@@ -31,34 +31,60 @@ __author__ = "Tomasz Rybotycki"
 
 
 def calculate_state_vector(interferometer, initial_state, config, connector):
-    """
-    Calculates the state vector on the particle subspace defined by `initial_state`.
+    """Calculate the state vector on the particle subspace defined by ``initial_state``.
+
+    This implementation follows Algorithm 1 (``SLOS_full``) from
+    `Strong Simulation of Linear Optical Processes`.
     """
 
     np = connector.np
     fallback_np = connector.fallback_np
 
-    possible_outputs = partitions(
-        particles=connector.fallback_np.sum(initial_state),
-        boxes=len(initial_state),
-    )
+    d = len(initial_state)
+    n = int(fallback_np.sum(initial_state))
 
-    state_vector = np.empty(possible_outputs.shape[0], dtype=config.complex_dtype)
+    bases = [partitions(boxes=d, particles=k) for k in range(n + 1)]
+    index_maps = [{tuple(basis[i]): i for i in range(len(basis))} for basis in bases]
 
-    input = initial_state
+    sigma = fallback_np.zeros(d, dtype=int)
+    schedule_sigma = []
+    schedule_mode = []
+    for p in range(d):
+        for _ in range(initial_state[p]):
+            schedule_sigma.append(sigma.copy())
+            schedule_mode.append(p)
+            sigma[p] += 1
 
-    for idx, output in enumerate(possible_outputs):
-        permanent = connector.permanent(interferometer, cols=input, rows=output)
+    UF_curr = np.zeros(len(bases[0]), dtype=config.complex_dtype)
+    UF_curr = connector.assign(UF_curr, 0, 1.0)
 
-        state_vector_coefficient = permanent / fallback_np.sqrt(
-            fallback_np.prod(factorial(output))
-        )
+    for k in range(n):
+        sigma_k = schedule_sigma[k]
+        p = schedule_mode[k]
+        UF_next = np.zeros(len(bases[k + 1]), dtype=config.complex_dtype)
 
-        state_vector = connector.assign(state_vector, idx, state_vector_coefficient)
+        for idx_t, t in enumerate(bases[k]):
+            A = UF_curr[idx_t]
 
-    state_vector /= fallback_np.sqrt(fallback_np.prod(factorial(input)))
+            for i in range(d):
+                t_i = t[i]
+                new_t = t.copy()
+                new_t[i] += 1
+                index_new = index_maps[k + 1][tuple(new_t)]
 
-    return state_vector
+                factor = fallback_np.sqrt((t_i + 1) / (sigma_k[p] + 1))
+
+                UF_next = connector.assign(
+                    UF_next,
+                    index_new,
+                    UF_next[index_new] + factor * interferometer[i, p] * A,
+                )
+
+        UF_curr = UF_next
+
+    norm_factor = 1 / fallback_np.prod(factorial(initial_state))
+
+    return UF_curr * norm_factor
 
 
 def calculate_inner_product(interferometer, input, output, connector):

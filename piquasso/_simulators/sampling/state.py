@@ -141,12 +141,12 @@ class SamplingState(State):
                 self.interferometer, input_state, self._config, self._connector
             )
 
-            index = fallback_np.arange(starting_index, ending_index)
+            index_range = fallback_np.arange(starting_index, ending_index)
 
             state_vector = connector.assign(
                 state_vector,
-                index,
-                state_vector[index] + coefficient * partial_state_vector,
+                index_range,
+                state_vector[index_range] + coefficient * partial_state_vector,
             )
 
         return state_vector
