@@ -20,6 +20,7 @@ from scipy.linalg import polar, coshm, sinhm, block_diag
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
+from piquasso._math.symplectic import xp_symplectic_form
 
 
 def test_xxpp_representation(state, assets):
@@ -1023,83 +1024,109 @@ def test_get_purity_Thermal_Interferometer(generate_unitary_matrix):
     assert np.isclose(expected_final_purity, actual_final_purity)
 
 
-def _xp_string_expectation(state, indices):
-    from piquasso._math.fock import (
-        get_fock_space_basis,
-        get_creation_operator,
-        get_annihilation_operator,
+def _coherent_state_params(r, phi, hbar):
+    """Return the mean and covariance for a single-mode coherent state."""
+
+    mu_x = np.sqrt(2 * hbar) * r * np.cos(phi)
+    mu_p = np.sqrt(2 * hbar) * r * np.sin(phi)
+
+    var_x = var_p = hbar / 2
+
+    return mu_x, mu_p, var_x, var_p, 0.0
+
+
+def _squeezed_state_covariance(r, phi, hbar):
+    """Return the variances and covariance for a single-mode squeezed state."""
+
+    var_x = (hbar / 2) * (np.cosh(2 * r) - np.cos(phi) * np.sinh(2 * r))
+    var_p = (hbar / 2) * (np.cosh(2 * r) + np.cos(phi) * np.sinh(2 * r))
+    cov_xp = (hbar / 2) * np.sin(phi) * np.sinh(2 * r)
+
+    return var_x, var_p, cov_xp
+
+
+def _moment_x4(mu, var):
+    return 3 * var**2 + 6 * var * mu**2 + mu**4
+
+
+def _moment_x2p2(mu_x, mu_p, var_x, var_p, cov_xp, hbar):
+    r"""Return ``\langle x^2 p^2 \rangle`` for a single-mode Gaussian state."""
+
+    return (
+        mu_x**2 * mu_p**2
+        + mu_x**2 * var_p
+        + mu_p**2 * var_x
+        + 4 * mu_x * mu_p * cov_xp
+        + var_x * var_p
+        + 2 * (-cov_xp + 0.5j * hbar) ** 2
     )
 
-    np = state._connector.np
 
-    d = state.d
+def test_get_xp_string_expectation_value_coherent_state_analytic():
+    r = 0.3
+    phi = 0.4
 
-    space = get_fock_space_basis(d=d, cutoff=state._config.cutoff)
-
-    x_ops = []
-    p_ops = []
-    for m in range(d):
-        create = get_creation_operator((m,), space=space, config=state._config)
-        annih = get_annihilation_operator((m,), space=space, config=state._config)
-        x_ops.append((create + annih) * np.sqrt(state._config.hbar / 2))
-        p_ops.append(-1j * (annih - create) * np.sqrt(state._config.hbar / 2))
-
-    operator = np.identity(len(space), dtype=state._config.complex_dtype)
-    for idx in indices:
-        if idx < d:
-            operator = operator @ x_ops[idx]
-        else:
-            operator = operator @ p_ops[idx - d]
-
-    if hasattr(state, "state_vector"):
-        vec = state.state_vector[: len(space)]
-        return np.vdot(vec, operator @ vec)
-
-    rho = state.density_matrix
-    return np.trace(rho @ operator)
-
-
-def test_get_xp_string_expectation_value_against_fock_states():
-    d = 2
+    hbar = 2.0
 
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Displacement(r=0.05, phi=0.1)
-        pq.Q(1) | pq.Squeezing(r=0.05, phi=0.3)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.5, phi=0.2)
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
 
-    g_state = pq.GaussianSimulator(d=d).execute(program).state
-    f_state = pq.FockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
-    p_state = (
-        pq.PureFockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
-    )
+    g_state = pq.GaussianSimulator(d=1).execute(program).state
 
-    indices = [0, d, d + 1, 1]
+    indices = [0, 0, 0, 0]
 
-    expected_fock = _xp_string_expectation(f_state, indices)
-    expected_pure = _xp_string_expectation(p_state, indices)
+    mu_x, mu_p, var_x, var_p, cov_xp = _coherent_state_params(r, phi, hbar)
+    expected = _moment_x4(mu_x, var_x)
+
     actual = g_state.get_xp_string_expectation_value(indices)
 
-    assert np.isclose(actual, expected_fock, atol=1e-2)
-    assert np.isclose(actual, expected_pure, atol=1e-2)
+    assert np.isclose(actual, expected, atol=1e-6)
 
 
-def test_get_xp_string_expectation_value_random():
-    d = 2
+def test_get_xp_string_expectation_value_squeezed_state_analytic():
+    r = 0.2
+    phi = 0.5
+
+    hbar = 2.0
 
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.05, phi=0.1)
-        pq.Q(1) | pq.Displacement(r=0.05, phi=0.4)
+        pq.Q(0) | pq.Squeezing(r=r, phi=phi)
 
-    g_state = pq.GaussianSimulator(d=d).execute(program).state
-    f_state = pq.FockSimulator(d=d, config=pq.Config(cutoff=10)).execute(program).state
+    g_state = pq.GaussianSimulator(d=1).execute(program).state
 
-    rng = np.random.default_rng(0)
-    length = rng.integers(1, 6)
-    indices = rng.integers(0, 2 * d, length)
+    indices = [0, 0, 1, 1]
 
-    expected = _xp_string_expectation(f_state, indices)
+    var_x, var_p, cov_xp = _squeezed_state_covariance(r, phi, hbar)
+
+    mu_x = 0.0
+    mu_p = 0.0
+    expected = _moment_x2p2(mu_x, mu_p, var_x, var_p, cov_xp, hbar)
+
     actual = g_state.get_xp_string_expectation_value(indices)
 
-    assert np.isclose(actual, expected, atol=1e-2)
+    assert np.isclose(actual, expected, atol=1e-6)
+
+
+def test_get_xp_string_expectation_value_hbar_dependence():
+    r = 0.2
+    phi = 0.1
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=r, phi=phi)
+
+    state1 = (
+        pq.GaussianSimulator(d=1, config=pq.Config(hbar=1.0)).execute(program).state
+    )
+    state2 = (
+        pq.GaussianSimulator(d=1, config=pq.Config(hbar=3.0)).execute(program).state
+    )
+
+    indices = [0, 0, 1, 1]
+
+    value1 = state1.get_xp_string_expectation_value(indices)
+    value2 = state2.get_xp_string_expectation_value(indices)
+
+    assert not np.isclose(value1, value2)

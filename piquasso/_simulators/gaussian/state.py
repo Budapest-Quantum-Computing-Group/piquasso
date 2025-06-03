@@ -27,7 +27,7 @@ from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
 )
-from piquasso._math.symplectic import symplectic_form
+from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
@@ -967,6 +967,9 @@ class GaussianState(State):
         ``0`` denotes :math:`x_0`, ``d`` denotes :math:`p_0`, etc.
 
         The implementation uses Wick's (Isserlis's) theorem.
+
+        Source:
+            - `General Wick's theorem for bosonic and fermionic operators <https://doi.org/10.1103/PhysRevA.104.052209>`_
         """
 
         d = self.d
@@ -975,11 +978,7 @@ class GaussianState(State):
         mean_xxpp = self.xxpp_mean_vector
         cov_xxpp = self.xxpp_covariance_matrix
 
-        def is_x(index: int) -> bool:
-            return index < d
-
-        def mode_of(index: int) -> int:
-            return index if index < d else index - d
+        corr_xxpp = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
 
         def recursive(op_list: List[int]) -> complex:
             if not op_list:
@@ -995,13 +994,7 @@ class GaussianState(State):
             for j, second in enumerate(rest):
                 remaining = rest[:j] + rest[j + 1 :]
 
-                pair_val = cov_xxpp[first, second] / 2
-
-                if mode_of(first) == mode_of(second) and is_x(first) != is_x(second):
-                    if is_x(first):
-                        pair_val += 0.5j * hbar
-                    else:
-                        pair_val -= 0.5j * hbar
+                pair_val = corr_xxpp[first, second]
 
                 total += pair_val * recursive(remaining)
 
