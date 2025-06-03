@@ -20,7 +20,6 @@ from scipy.linalg import polar, coshm, sinhm, block_diag
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
-from piquasso._math.symplectic import xp_symplectic_form
 
 
 def test_xxpp_representation(state, assets):
