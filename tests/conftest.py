@@ -267,3 +267,18 @@ def generate_random_fock_state():
         return occupation_numbers
 
     return func
+
+def is_python_313():
+    return sys.version_info >= (3, 13)
+
+def is_tensorflow_unavailable():
+    try:
+        import tensorflow  # noqa: F401
+        return False
+    except ImportError:
+        return True
+
+@pytest.fixture
+def pytest_runtest_setup(item):
+    if "requires_tensorflow" in item.keywords and is_python_313():
+        pytest.skip("Skipping TensorFlow-related test on Python 3.13 (TensorFlow not supported)")
