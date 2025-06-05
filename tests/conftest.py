@@ -283,3 +283,8 @@ def is_tensorflow_unavailable():
 def pytest_runtest_setup(item):
     if "requires_tensorflow" in item.keywords and is_python_313():
         pytest.skip("Skipping TensorFlow-related test on Python 3.13 (TensorFlow not supported)")
+
+def pytest_collection_modifyitems(config, items):
+    for item in items:
+        if "tests/_simulators/tensorflow/" in str(item.fspath):
+            item.add_marker(pytest.mark.requires_tensorflow)
