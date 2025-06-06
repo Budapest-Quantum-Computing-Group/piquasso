@@ -37,6 +37,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "nbsphinx",
     "sphinxcontrib.bibtex",
+    'sphinx_copybutton',
     "sphinx_design",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
