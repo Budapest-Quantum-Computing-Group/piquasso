@@ -27,7 +27,7 @@ from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
 )
-from piquasso._math.symplectic import symplectic_form
+from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
@@ -959,6 +959,49 @@ class GaussianState(State):
         """Return the particle number probabilities on a given subsystem."""
 
         return self.reduced(modes).fock_probabilities
+
+    def get_xp_string_expectation_value(self, operators: List[int]) -> complex:
+        """Expectation value of a product of quadrature operators.
+
+        The indices of ``operators`` correspond to the xxpp ordering, i.e.
+        ``0`` denotes :math:`x_0`, ``d`` denotes :math:`p_0`, etc.
+
+        The implementation uses Wick's (Isserlis's) theorem.
+
+        Source:
+            - `General Wick's theorem for bosonic and fermionic operators
+            <https://doi.org/10.1103/PhysRevA.104.052209>`_
+        """
+
+        d = self.d
+        hbar = self._config.hbar
+
+        mean_xxpp = self.xxpp_mean_vector
+        cov_xxpp = self.xxpp_covariance_matrix
+
+        corr_xxpp = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
+
+        def recursive(op_list: List[int]) -> complex:
+            if not op_list:
+                return 1.0
+            if len(op_list) == 1:
+                return mean_xxpp[op_list[0]]
+
+            first = op_list[0]
+            rest = op_list[1:]
+
+            total = mean_xxpp[first] * recursive(rest)
+
+            for j, second in enumerate(rest):
+                remaining = rest[:j] + rest[j + 1 :]
+
+                pair_val = corr_xxpp[first, second]
+
+                total += pair_val * recursive(remaining)
+
+            return total
+
+        return recursive(list(operators))
 
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
