@@ -272,19 +272,20 @@ def generate_random_fock_state():
 def is_python_313():
     return sys.version_info >= (3, 13)
 
-def is_tensorflow_unavailable():
+@pytest.fixture(autouse=False, scope="function")
+def tensorflow_backend():
+    if is_python_313():
+        pytest.skip("TensorFlow backend tests are skipped on Python 3.13")
     try:
-        import tensorflow  # noqa: F401
-        return False
+        import tensorflow as tf
+        return tf
     except ImportError:
-        return True
+        pytest.skip("TensorFlow not available")
 
-@pytest.fixture
-def pytest_runtest_setup(item):
-    if "requires_tensorflow" in item.keywords and is_python_313():
-        pytest.skip("Skipping TensorFlow-related test on Python 3.13 (TensorFlow not supported)")
 
 def pytest_collection_modifyitems(config, items):
-    for item in items:
-        if "tests/_simulators/tensorflow/" in str(item.fspath):
-            item.add_marker(pytest.mark.requires_tensorflow)
+    if is_python_313():
+        skip_tensorflow = pytest.mark.skip(reason="TensorFlow backend tests are skipped on Python 3.13")
+        for item in items:
+            if "requires_tensorflow" in item.keywords or "tensorflow_backend" in item.fixturenames:
+                item.add_marker(skip_tensorflow)
