@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import sys
 import pytest
 import numpy as np
 
@@ -267,3 +268,24 @@ def generate_random_fock_state():
         return occupation_numbers
 
     return func
+
+def is_python_313():
+    return sys.version_info >= (3, 13)
+
+@pytest.fixture(autouse=False, scope="function")
+def tensorflow_backend():
+    if is_python_313():
+        pytest.skip("TensorFlow backend tests are skipped on Python 3.13")
+    try:
+        import tensorflow as tf
+        return tf
+    except ImportError:
+        pytest.skip("TensorFlow not available")
+
+
+def pytest_collection_modifyitems(config, items):
+    if is_python_313():
+        skip_tensorflow = pytest.mark.skip(reason="TensorFlow backend tests are skipped on Python 3.13")
+        for item in items:
+            if "requires_tensorflow" in item.keywords or "tensorflow_backend" in item.fixturenames:
+                item.add_marker(skip_tensorflow)
