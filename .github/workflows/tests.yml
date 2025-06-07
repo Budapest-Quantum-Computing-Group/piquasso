@@ -11,24 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
+        pip install tox tox-gh-actions pytest pytest-cov jax jaxlib
+        if [[ "${{ matrix.python-version }}" != "3.13" ]]; then
+          pip install tensorflow
+        fi
+    - name: Install project with extras
+      run: |
+        pip install -e .[jax,dev]
     - name: Test with tox
-      run: tox
+      run: |
+        tox -e py${{ matrix.python-version//./ }}
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         fail_ci_if_error: true
-
