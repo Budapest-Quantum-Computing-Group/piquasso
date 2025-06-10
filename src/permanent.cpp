@@ -215,7 +215,9 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
         // iterate over gray codes to calculate permanent addends
         for (int64_t i = initial_offset + 1; i < offset_max + 1; i++)
         {
-            int changed_index, prev_value, value;
+            int changed_index = 0;
+            int prev_value = 0;
+            int value = 0;
             if (gcode_counter.next(changed_index, prev_value, value))
             {
                 break;
