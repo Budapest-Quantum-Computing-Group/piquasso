@@ -274,18 +274,31 @@ def is_python_313():
 
 @pytest.fixture(autouse=False, scope="function")
 def tensorflow_backend():
+    """Fixture providing Tensorflow module; skips if unavailable or on Python 3.13."""
     if is_python_313():
         pytest.skip("TensorFlow backend tests are skipped on Python 3.13")
     try:
-        import tensorflow as tf
+        import tensorflow as tf  # noqa: F401
         return tf
     except ImportError:
         pytest.skip("TensorFlow not available")
 
-
 def pytest_collection_modifyitems(config, items):
-    if is_python_313():
-        skip_tensorflow = pytest.mark.skip(reason="TensorFlow backend tests are skipped on Python 3.13")
-        for item in items:
-            if "requires_tensorflow" in item.keywords or "tensorflow_backend" in item.fixturenames:
-                item.add_marker(skip_tensorflow)
+    """Skip Tensorflow-related test cases on Python 3.13 during collection."""
+    if not is_python_313():
+        return
+    skip_tensorflow = pytest.mark.skip(reason="TensorFlow backend tests are skipped on Python 3.13")
+    for item in items:
+        # Handle parametrized tests
+        if hasattr(item, "callspec"):
+            for mark in item.iter_markers(name="parametrize"):
+                param_values = mark.args[1]
+                for idx, param in enumerate(param_values):
+                    if isinstance(param, pytest.param) and any(m.name == "requires_tensorflow" for m in param.marks):
+                        # Create a new item for non-Tensorflow params only
+                        if idx < len(item.callspec.params[list(item.callspec.params.keys())[0]]):
+                            continue
+                        item.add_marker(skip_tensorflow)
+        # Skip tests with explicit Tensorflow dependency
+        if "requires_tensorflow" in item.keywords or "tensorflow_backend" in item.fixturenames:
+            item.add_marker(skip_tensorflow)
