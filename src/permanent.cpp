@@ -146,7 +146,7 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
     int64_t concurrency = static_cast<int64_t>(n_threads) * 4;
     concurrency = concurrency < idx_max ? concurrency : static_cast<int64_t>(idx_max);
 
-    std::vector<TComplex> thread_results(concurrency, TComplex(0.0, 0.0));
+    std::vector<TComplex> thread_results(static_cast<unsigned int>(concurrency), TComplex(0.0, 0.0));
 
 // See: https://stackoverflow.com/a/8447025
 #if defined(_OPENMP)
