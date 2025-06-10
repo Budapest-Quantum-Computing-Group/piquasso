@@ -135,7 +135,7 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
         n_ary_limits[i] = rows[i + 1] + 1;
     }
 
-    uint64_t idx_max = n_ary_limits[0];
+    int64_t idx_max = n_ary_limits[0];
     for (size_t i = 1; i < n_ary_size; i++)
     {
         idx_max *= n_ary_limits[i];
@@ -143,21 +143,21 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
 
     // determine the concurrency of the calculation
     unsigned int n_threads = std::thread::hardware_concurrency();
-    uint64_t concurrency = static_cast<uint64_t>(n_threads) * 4;
-    concurrency = concurrency < idx_max ? concurrency : static_cast<uint64_t>(idx_max);
+    auto concurrency = static_cast<int64_t>(n_threads * 4);
+    concurrency = concurrency < idx_max ? concurrency : idx_max;
 
     std::vector<TComplex> thread_results(static_cast<unsigned int>(concurrency), TComplex(0.0, 0.0));
 
 // See: https://stackoverflow.com/a/8447025
 #if defined(_OPENMP)
-#pragma omp parallel for num_threads(concurrency)
+#pragma omp parallel for num_threads(static_cast<unsigned int>(concurrency))
 #endif
-    for (uint64_t job_idx = 0; job_idx < concurrency; job_idx++)
+    for (int64_t job_idx = 0; job_idx < concurrency; job_idx++)
     {
         // initial offset and upper boundary of the gray code counter
-        uint64_t work_batch = idx_max / concurrency;
-        uint64_t initial_offset = job_idx * work_batch;
-        uint64_t offset_max = (job_idx + 1) * work_batch - 1;
+        int64_t work_batch = idx_max / concurrency;
+        int64_t initial_offset = job_idx * work_batch;
+        int64_t offset_max = (job_idx + 1) * work_batch - 1;
         if (job_idx == concurrency - 1)
         {
             offset_max = idx_max - 1;
@@ -215,7 +215,7 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
         addend_loc += colsum_prod * static_cast<T>(binomial_coeff);
 
         // iterate over gray codes to calculate permanent addends
-        for (uint64_t i = initial_offset + 1; i < offset_max + 1; i++)
+        for (int64_t i = initial_offset + 1; i < offset_max + 1; i++)
         {
             int changed_index = 0;
             int prev_value = 0;
