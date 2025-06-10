@@ -20,6 +20,7 @@ from scipy.linalg import polar, coshm, sinhm, block_diag
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
+from piquasso._math.symplectic import xp_symplectic_form
 
 
 def test_xxpp_representation(state, assets):
@@ -1023,89 +1024,58 @@ def test_get_purity_Thermal_Interferometer(generate_unitary_matrix):
     assert np.isclose(expected_final_purity, actual_final_purity)
 
 
-def _coherent_state_params(r, phi, hbar):
-    """Return the mean and covariance for a single-mode coherent state."""
+def analytic_xp_string_expectation_value(S, d, indices, hbar):
+    """Analytically compute xp-string expectations from a symplectic matrix.
 
-    mu_x = np.sqrt(2 * hbar) * r * np.cos(phi)
-    mu_p = np.sqrt(2 * hbar) * r * np.sin(phi)
+    Args:
+        S (numpy.ndarray): The symplectic matrix in ``xxpp`` ordering.
+        d (numpy.ndarray): The displacement vector in ``xxpp`` ordering.
+        indices (list[int]): The operator string indices in ``xxpp`` ordering.
+        hbar (float): The value of :math:`\hbar` used by the state.
 
-    var_x = var_p = hbar / 2
+    Returns:
+        complex: The expectation value of the specified operator product.
+    """
 
-    return mu_x, mu_p, var_x, var_p, 0.0
+    d_modes = len(d) // 2
+    mean = d
+    covariance = hbar * (S @ S.T)
+
+    corr = covariance / 2 + 0.5j * hbar * xp_symplectic_form(d_modes)
+
+    def recursive(ops):
+        if not ops:
+            return 1.0
+        if len(ops) == 1:
+            return mean[ops[0]]
+
+        first, rest = ops[0], ops[1:]
+        total = mean[first] * recursive(rest)
+
+        for j, second in enumerate(rest):
+            remaining = rest[:j] + rest[j + 1 :]
+            total += corr[first, second] * recursive(remaining)
+
+        return total
+
+    return recursive(list(indices))
 
 
-def _squeezed_state_covariance(r, phi, hbar):
-    """Return the variances and covariance for a single-mode squeezed state."""
-
-    var_x = (hbar / 2) * (np.cosh(2 * r) - np.cos(phi) * np.sinh(2 * r))
-    var_p = (hbar / 2) * (np.cosh(2 * r) + np.cos(phi) * np.sinh(2 * r))
-    cov_xp = (hbar / 2) * np.sin(phi) * np.sinh(2 * r)
-
-    return var_x, var_p, cov_xp
+def _squeezing_symplectic(r: float) -> np.ndarray:
+    return np.diag([np.exp(-r), np.exp(r)])
 
 
-def _moment_x4(mu, var):
-    return 3 * var**2 + 6 * var * mu**2 + mu**4
-
-
-def _moment_x2p2(mu_x, mu_p, var_x, var_p, cov_xp, hbar):
-    r"""Return ``\langle x^2 p^2 \rangle`` for a single-mode Gaussian state."""
-
-    return (
-        mu_x**2 * mu_p**2
-        + mu_x**2 * var_p
-        + mu_p**2 * var_x
-        + 4 * mu_x * mu_p * cov_xp
-        + var_x * var_p
-        + 2 * (-cov_xp + 0.5j * hbar) ** 2
+def _beamsplitter_symplectic(theta: float) -> np.ndarray:
+    c = np.cos(theta)
+    s = np.sin(theta)
+    return np.array(
+        [
+            [c, -s, 0.0, 0.0],
+            [s, c, 0.0, 0.0],
+            [0.0, 0.0, c, -s],
+            [0.0, 0.0, s, c],
+        ]
     )
-
-
-def test_get_xp_string_expectation_value_coherent_state_analytic():
-    r = 0.3
-    phi = 0.4
-
-    hbar = 2.0
-
-    with pq.Program() as program:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Displacement(r=r, phi=phi)
-
-    g_state = pq.GaussianSimulator(d=1).execute(program).state
-
-    indices = [0, 0, 0, 0]
-
-    mu_x, mu_p, var_x, var_p, cov_xp = _coherent_state_params(r, phi, hbar)
-    expected = _moment_x4(mu_x, var_x)
-
-    actual = g_state.get_xp_string_expectation_value(indices)
-
-    assert np.isclose(actual, expected, atol=1e-6)
-
-
-def test_get_xp_string_expectation_value_squeezed_state_analytic():
-    r = 0.2
-    phi = 0.5
-
-    hbar = 2.0
-
-    with pq.Program() as program:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=r, phi=phi)
-
-    g_state = pq.GaussianSimulator(d=1).execute(program).state
-
-    indices = [0, 0, 1, 1]
-
-    var_x, var_p, cov_xp = _squeezed_state_covariance(r, phi, hbar)
-
-    mu_x = 0.0
-    mu_p = 0.0
-    expected = _moment_x2p2(mu_x, mu_p, var_x, var_p, cov_xp, hbar)
-
-    actual = g_state.get_xp_string_expectation_value(indices)
-
-    assert np.isclose(actual, expected, atol=1e-6)
 
 
 def test_get_xp_string_expectation_value_hbar_dependence():
@@ -1129,3 +1099,81 @@ def test_get_xp_string_expectation_value_hbar_dependence():
     value2 = state2.get_xp_string_expectation_value(indices)
 
     assert not np.isclose(value1, value2)
+
+
+def test_get_xp_string_expectation_value_analytic_nondisplaced():
+    r = 0.3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=r, phi=0.0)
+
+    simulator = pq.GaussianSimulator(d=1)
+    state = simulator.execute(program).state
+
+    indices = [0, 0, 1, 1]
+
+    S = _squeezing_symplectic(r)
+    d = np.zeros(2)
+
+    expected = analytic_xp_string_expectation_value(S, d, indices, state._config.hbar)
+    actual = state.get_xp_string_expectation_value(indices)
+
+    assert np.allclose(actual, expected)
+
+
+def test_get_xp_string_expectation_value_analytic_displaced():
+    r = 0.2
+    disp_r = 0.1
+    disp_phi = 0.4
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=disp_r, phi=disp_phi)
+        pq.Q(0) | pq.Squeezing(r=r, phi=0.0)
+
+    simulator = pq.GaussianSimulator(d=1)
+    state = simulator.execute(program).state
+
+    indices = [0, 0, 1, 1]
+
+    S = _squeezing_symplectic(r)
+    hbar = state._config.hbar
+    d0 = np.array(
+        [
+            np.sqrt(2 * hbar) * disp_r * np.cos(disp_phi),
+            np.sqrt(2 * hbar) * disp_r * np.sin(disp_phi),
+        ]
+    )
+    d = S @ d0
+
+    expected = analytic_xp_string_expectation_value(S, d, indices, hbar)
+    actual = state.get_xp_string_expectation_value(indices)
+
+    assert np.allclose(actual, expected)
+
+
+def test_get_xp_string_expectation_value_analytic_two_mode():
+    r1 = 0.1
+    r2 = 0.2
+    theta = 0.3
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=r1, phi=0.0)
+        pq.Q(1) | pq.Squeezing(r=r2, phi=0.0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=0.0)
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    indices = [0, 1]
+
+    squeeze = np.diag([np.exp(-r1), np.exp(-r2), np.exp(r1), np.exp(r2)])
+    S = _beamsplitter_symplectic(theta) @ squeeze
+    d = np.zeros(4)
+
+    expected = analytic_xp_string_expectation_value(S, d, indices, state._config.hbar)
+    actual = state.get_xp_string_expectation_value(indices)
+
+    assert np.allclose(actual, expected)

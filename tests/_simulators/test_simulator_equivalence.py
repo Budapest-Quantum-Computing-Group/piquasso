@@ -2233,6 +2233,7 @@ def test_variance_photon_number_equivalence(SimulatorClass):
     assert np.allclose(state.variance_photon_number(), 0.030268090551006963)
 
 
+# Note: Relying on these tests isn't a safe bet
 def test_get_xp_string_expectation_value_against_fock_states():
     d = 2
 
@@ -2279,4 +2280,4 @@ def test_get_xp_string_expectation_value_random():
     expected = f_state._xp_string_expectation(indices)
     actual = g_state.get_xp_string_expectation_value(indices)
 
-    assert np.isclose(actual, expected, atol=1e-2)
+    assert np.isclose(actual, expected, atol=1e-4)

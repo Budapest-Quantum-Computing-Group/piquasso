@@ -969,8 +969,7 @@ class GaussianState(State):
         The implementation uses Wick's (Isserlis's) theorem.
 
         Source:
-            - `General Wick's theorem for bosonic and fermionic operators
-            <https://doi.org/10.1103/PhysRevA.104.052209>`_
+            - `Isserlis's theorem <https://en.wikipedia.org/wiki/Isserlis%27s_theorem>`_
         """
 
         d = self.d
