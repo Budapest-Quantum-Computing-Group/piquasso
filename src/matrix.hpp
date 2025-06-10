@@ -82,6 +82,21 @@ public:
         return vector_copy;
     }
 
+    size_t size()
+    {
+        return length;
+    }
+
+    TScalar sum()
+    {
+        TScalar result = TScalar{};
+
+        for (std::size_t i = 0; i < length; i++) {
+            result += data[i];
+        }
+        return result;
+    }
+
     ~Vector()
     {
         bool call_delete = ((*refcount) == 1);
@@ -214,6 +229,11 @@ public:
     TScalar &operator[](size_t idx) const
     {
         return data[idx];
+    }
+
+    TScalar &operator()(size_t row, size_t col)
+    {
+        return data[row * stride + col];
     }
 };
 
