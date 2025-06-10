@@ -23,7 +23,9 @@
 
 #include "n_aryGrayCodeCounter.hpp"
 #include <thread>
+#if defined(_OPENMP)
 #include <omp.h>
+#endif
 
 /**
  * @brief Computes the permanent of a given matrix.
