@@ -211,7 +211,7 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
         }
 
         // add the initial addend to the permanent - store in thread-local result
-        TComplex &addend_loc = thread_results[job_idx];
+        TComplex &addend_loc = thread_results[static_cast<unsigned int>(job_idx)];
         addend_loc += colsum_prod * static_cast<T>(binomial_coeff);
 
         // iterate over gray codes to calculate permanent addends
@@ -229,7 +229,7 @@ std::complex<T> permanent_cpp(Matrix<std::complex<T>> &A, Vector<int> &rows, Vec
 
             // update column sum and calculate the product of the elements
             int row_offset = changed_index + 1;
-            TComplex colsum_prod(static_cast<T>(parity), static_cast<T>(0.0));
+            colsum_prod = TComplex(static_cast<T>(parity), static_cast<T>(0.0));
             for (size_t j = 0; j < cols.size(); j++)
             {
                 colsum[j] += mtx2(row_offset, j) *
