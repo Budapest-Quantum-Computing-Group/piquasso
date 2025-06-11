@@ -48,7 +48,7 @@ class Q:
     permits, e.g. when registering states.
 
     One could use the `all` keyword to indicate that the registered
-    :class:`~piquasso.api.instruction.Instruction` mashould be applied to all modes,
+    :class:`~piquasso.api.instruction.Instruction` should be applied to all modes,
     i.e.::
 
         with pq.Program() as program:
