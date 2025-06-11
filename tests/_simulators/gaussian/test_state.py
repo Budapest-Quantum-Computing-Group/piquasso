@@ -152,8 +152,55 @@ def test_wigner_function(state, assets):
     )
 
     expected_result = assets.load("expected_wigner_function_result")
+    assert np.allclose(expected_result, actual_result, atol=1e-6)
 
-    assert np.allclose(expected_result, actual_result)
+
+def test_wigner_plot_1D():
+    # Create a Gaussian state
+    config = pq.Config(cutoff=10, hbar=42)
+    dim = 1
+    with pq.Program() as initialization:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.10, phi=np.angle(1 - 0.5j))
+        pq.Q(0) | pq.Squeezing(r=0.10)
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(initialization).state
+    state.validate()
+
+    x = np.linspace(-5, 5, 20)
+    p = np.linspace(-5, 5, 20)
+
+    x = np.array([x[i : i + dim] for i in range(0, len(x), dim)])
+    p = np.array([p[i : i + dim] for i in range(0, len(p), dim)])
+    try:
+        state.plot_wigner(positions=x, momentums=p)
+    except Exception as e:
+        pytest.fail(f"Plotting failed with exception: {e}")
+
+
+def test_gauss_plot_squeezing():
+    config = pq.Config(cutoff=10, hbar=42)
+    dim = 20
+    with pq.Program() as initialization:
+        for i in range(dim):
+            pq.Q(i) | pq.Squeezing(np.log(2), phi=np.pi / 2)
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(initialization).state
+    state.validate()
+
+    x = np.linspace(-5, 5, 20)
+    p = np.linspace(-5, 5, 20)
+    x, p = np.meshgrid(x, p)
+    x = x.flatten()
+    p = p.flatten()
+
+    # Convert x and p into arrays of shape (num_points/2, dim)
+    x = np.array([x[i : i + dim] for i in range(0, len(x), dim)])
+    p = np.array([p[i : i + dim] for i in range(0, len(p), dim)])
+    try:
+        state.plot_wigner(positions=x, momentums=p)
+    except Exception as e:
+        pytest.fail(f"Plotting failed with exception: {e}")
 
 
 def test_reduced_rotated_mean_and_covariance(state, assets):

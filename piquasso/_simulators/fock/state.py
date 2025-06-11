@@ -23,6 +23,7 @@ from piquasso.api.connector import BaseConnector
 
 from piquasso._math.fock import get_fock_space_basis
 from piquasso.api.exceptions import InvalidModes
+from piquasso._simulators.plot import plot_wigner_function
 
 
 class BaseFockState(State, abc.ABC):
@@ -201,6 +202,25 @@ class BaseFockState(State, abc.ABC):
                 W += 2 * np.real(rho[m, n] * Wlist[n])
 
         return 0.5 * W * g**2
+
+    def plot_wigner(
+        self,
+        positions: List[float],
+        momentums: List[float],
+        modes: Optional[Tuple[int, ...]] = None,
+    ) -> None:
+        fock_wigner_function_values = self.wigner_function(
+            positions=positions, momentums=momentums, modes=modes
+        )
+        x, p = np.meshgrid(positions, momentums)
+        xlist = x.tolist()
+        plist = p.tolist()
+
+        plot_wigner_function(
+            fock_wigner_function_values,
+            positions=xlist,
+            momentums=plist,
+        )
 
     def fidelity(self, state: "BaseFockState") -> float:
         r"""Calculates the state fidelity between two quantum states.

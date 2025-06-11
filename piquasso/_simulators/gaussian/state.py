@@ -32,6 +32,7 @@ from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
 from piquasso._math.decompositions import williamson
+from piquasso._simulators.plot import plot_wigner_function
 
 from .probabilities import (
     DensityMatrixCalculation,
@@ -878,6 +879,25 @@ class GaussianState(State):
             d=self.d,
             mean=self.xpxp_mean_vector,
             cov=self.xpxp_covariance_matrix,
+        )
+
+    def plot_wigner(
+        self,
+        positions: List[List[float]],
+        momentums: List[List[float]],
+        modes: Optional[Tuple[int, ...]] = None,
+    ) -> None:
+        gaussian_wigner_function_values = self.wigner_function(
+            positions=positions, momentums=momentums, modes=modes
+        )
+        if self.d == 1:
+            x, p = np.meshgrid(positions, momentums)
+            positions = x.tolist()
+            momentums = p.tolist()
+        plot_wigner_function(
+            gaussian_wigner_function_values,
+            positions=positions,
+            momentums=momentums,
         )
 
     def get_particle_detection_probability(

@@ -84,6 +84,25 @@ def test_FockState_wigner_function(SimulatorClass):
 
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_wigner_function_plot(SimulatorClass):
+    config = pq.Config(cutoff=10, hbar=42)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.10, phi=np.angle(1 - 0.5j))
+        pq.Q(0) | pq.Squeezing(r=0.10)
+
+    fock_simulator = SimulatorClass(d=1, config=config)
+    fock_state = fock_simulator.execute(program).state
+    x = np.linspace(-5, 5, 20)
+    p = np.linspace(-5, 5, 20)
+    try:
+        fock_state.plot_wigner(x, p)
+    except Exception as e:
+        pytest.fail(f"Plotting failed with exception: {e}")
+
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
 def test_FockState_wigner_function_raises_InvalidModes_for_multiple_modes(
     SimulatorClass,
 ):
