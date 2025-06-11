@@ -94,6 +94,23 @@ def test_PureFockState_fock_probabilities_map():
         )
 
 
+def test_PureFockState_get_marginal_fock_probabilities():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) / 2
+
+        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+    simulator = pq.PureFockSimulator(d=2)
+    state = simulator.execute(program).state
+
+    modes = (1,)
+    expected_probabilities = np.array([0.5, 0.25, 0.25, 0.0])
+    actual_probabilities = state.get_marginal_fock_probabilities(modes)
+
+    assert np.allclose(actual_probabilities, expected_probabilities)
+
+
 def test_PureFockState_quadratures_mean_variance():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
