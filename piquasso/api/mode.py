@@ -107,10 +107,10 @@ class Q:
             (Q): The current qumode.
         """
 
-        if _context.current_program is None:
+        if len(_context.program_stack) == 0:
             raise PiquassoException(
-                "The current program is None; therefore, it is not possible to register"
-                " the parameters on the given modes.\n"
+                "There is no `Program` instance available; it is not possible to"
+                " register the parameters on the specified modes.\n"
                 "Please use `Q(...) | ...` only inside `with pq.Program() as program:` "
                 "blocks, e.g.\n"
                 "\n"
@@ -118,7 +118,7 @@ class Q:
                 "    pq.Q(0, 1) | pq.Squeezing(r=0.5)"
             )
 
-        rhs._apply_to_program_on_register(_context.current_program, register=self)
+        rhs._apply_to_program_on_register(_context.program_stack[-1], register=self)
 
         return self
 

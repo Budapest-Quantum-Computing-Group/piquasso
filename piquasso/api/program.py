@@ -92,12 +92,12 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
             )
 
     def __enter__(self) -> "Program":
-        _context.current_program = self
+        _context.program_stack.append(self)
 
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        _context.current_program = None
+        _context.program_stack.pop()
 
     @classmethod
     def from_dict(cls, dict_: dict) -> "Program":
