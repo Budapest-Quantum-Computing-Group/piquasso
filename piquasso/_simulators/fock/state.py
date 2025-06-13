@@ -238,36 +238,6 @@ class BaseFockState(State, abc.ABC):
 
         return self.reduced(modes).fock_probabilities
 
-    def _xp_string_expectation(state, indices):
-        from piquasso._math.fock import (
-            get_fock_space_basis,
-            get_creation_operator,
-            get_annihilation_operator,
-        )
-
-        np = state._connector.np
-        d = state.d
-
-        space = get_fock_space_basis(d=d, cutoff=state._config.cutoff)
-
-        x_ops = []
-        p_ops = []
-        for m in range(d):
-            create = get_creation_operator((m,), space=space, config=state._config)
-            annih = get_annihilation_operator((m,), space=space, config=state._config)
-            x_ops.append((create + annih) * np.sqrt(state._config.hbar / 2))
-            p_ops.append(-1j * (annih - create) * np.sqrt(state._config.hbar / 2))
-
-        operator = np.identity(len(space), dtype=state._config.complex_dtype)
-        for idx in indices:
-            if idx < d:
-                operator = operator @ x_ops[idx]
-            else:
-                operator = operator @ p_ops[idx - d]
-
-        if hasattr(state, "state_vector"):
-            vec = state.state_vector[: len(space)]
-            return np.vdot(vec, operator @ vec)
-
-        rho = state.density_matrix
-        return np.trace(rho @ operator)
+    @abc.abstractmethod
+    def get_purity(self):
+        """The purity of the Fock state."""
