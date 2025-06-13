@@ -16,6 +16,7 @@
 from typing import Optional, Tuple, Generator, Any, Dict, List
 
 import abc
+from collections import defaultdict
 import numpy as np
 from piquasso.api.config import Config
 from piquasso.api.state import State
@@ -78,6 +79,15 @@ class BaseFockState(State, abc.ABC):
         """
 
     @property
+    def fock_amplitudes_map(self) -> defaultdict[tuple, complex]:
+        """Probability amplitudes of Fock basis states representing the state."""
+        amplitude_map = defaultdict(complex)
+
+        for elem in self.nonzero_elements:
+            amplitude_map[elem[1]] = elem[0]
+
+        return amplitude_map
+
     @abc.abstractmethod
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         """The particle number detection probabilities in a map."""
