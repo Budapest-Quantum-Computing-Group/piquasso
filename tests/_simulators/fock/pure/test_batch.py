@@ -486,6 +486,7 @@ def test_Batch_with_OneByOne():
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
 
+
 def test_batch_state_fock_amplitudes_map_output_type():
     with pq.Program() as first_preparation:
         pq.Q() | pq.Vacuum()

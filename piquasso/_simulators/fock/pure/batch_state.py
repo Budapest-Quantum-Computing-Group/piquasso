@@ -68,7 +68,9 @@ class BatchPureFockState(PureFockState):
         maps = []
         for state_vector in self._batch_state_vectors:
             amplitude_map = defaultdict(complex)
-            nonzero_elements = self._nonzero_elements_for_single_state_vector(state_vector)
+            nonzero_elements = self._nonzero_elements_for_single_state_vector(
+                state_vector
+            )
             for elem in nonzero_elements:
                 amplitude_map[elem[1]] = elem[0]
             maps.append(amplitude_map)
