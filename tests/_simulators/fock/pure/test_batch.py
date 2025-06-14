@@ -485,3 +485,28 @@ def test_Batch_with_OneByOne():
 
     assert np.allclose(batch_state_vector[:, 0], first_state_vector)
     assert np.allclose(batch_state_vector[:, 1], second_state_vector)
+
+
+def test_batch_state_fock_amplitudes_map_output_type():
+    with pq.Program() as first_preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Squeezing(r=0.1, phi=np.pi / 4)
+
+    with pq.Program() as second_preparation:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=1.0, phi=np.pi / 10)
+
+    with pq.Program() as common:
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 6, phi=np.pi / 3)
+
+    with pq.Program() as batch_program:
+        pq.Q() | pq.BatchPrepare([first_preparation, second_preparation])
+
+        pq.Q() | common
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
+
+    batch_state = simulator.execute(batch_program).state
+    assert len(batch_state.fock_amplitudes_map) == 2
+    assert isinstance(batch_state.fock_amplitudes_map[0], dict)
+    assert isinstance(batch_state.fock_amplitudes_map[1], dict)
