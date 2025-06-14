@@ -17,6 +17,7 @@ import pytest
 import numpy as np
 
 from scipy.linalg import polar, coshm, sinhm, block_diag
+from scipy.special import factorial2
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
@@ -1021,3 +1022,350 @@ def test_get_purity_Thermal_Interferometer(generate_unitary_matrix):
     assert np.isclose(actual_initial_purity, actual_final_purity)
     assert np.isclose(expected_initial_purity, expected_final_purity)
     assert np.isclose(expected_final_purity, actual_final_purity)
+
+
+def test_get_xp_string_moment_vacuum_state_first_and_second_moments():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(state.get_xp_string_moment([]), 1.0)
+
+    assert np.isclose(state.get_xp_string_moment([0]), 0.0)
+    assert np.isclose(state.get_xp_string_moment([1]), 0.0)
+
+    assert np.isclose(state.get_xp_string_moment([0, 0]), 1.0)
+    assert np.isclose(state.get_xp_string_moment([1, 1]), 1.0)
+    assert np.isclose(state.get_xp_string_moment([0, 1]), 1.0j)
+    assert np.isclose(state.get_xp_string_moment([1, 0]), -1.0j)
+
+
+def test_get_xp_string_moment_vacuum_energy():
+    config = pq.Config()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1, config=config).execute(program).state
+    energy = (
+        state.get_xp_string_moment([0, 0]) + state.get_xp_string_moment([1, 1])
+    ) / 2
+
+    assert np.isclose(energy, config.hbar / 2)
+
+
+def test_get_xp_string_moment_vacuum_state_degree_4_decomposes_into_degree_2():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 0, 1, 1]),
+        state.get_xp_string_moment([0, 0]) * state.get_xp_string_moment([1, 1])
+        + 2 * state.get_xp_string_moment([0, 1]) ** 2,
+    )
+
+
+def test_get_xp_string_moment_vacuum_state_against_explicit_formula():
+    r"""
+    We know that
+    .. math::
+        \bra{0} \hat{x}^n \ket{0} = \bra{0} \hat{p}^n \ket{0} = (n-1)!!,
+
+    see, e.g., https://physics.stackexchange.com/a/748168/325715.
+    """
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(state.get_xp_string_moment([0] * 6), factorial2(6 - 1))
+    assert np.isclose(state.get_xp_string_moment([0] * 8), factorial2(8 - 1))
+
+    assert np.isclose(state.get_xp_string_moment([1] * 6), factorial2(6 - 1))
+    assert np.isclose(state.get_xp_string_moment([1] * 8), factorial2(8 - 1))
+
+
+def test_get_xp_string_moment_admits_ccr_for_vacuum_state():
+    config = pq.Config()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1, config=config).execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 0, 1, 1])
+        - state.get_xp_string_moment([0, 1, 0, 1]),
+        1j * config.hbar * state.get_xp_string_moment([0, 1]),
+    )
+
+
+def test_get_xp_string_moment_single_mode_squeezed_state():
+    r"""
+    Consider :math:`\ket{r} := S(r) \ket{0}`, which is the state vector of a single-mode
+    squeezed vacuum.
+
+    Then, we know that
+    .. math::
+        \bra{r} \hat{X} \ket{r}
+            = e^{-(n-m)r} \bra{0} \hat{X} \ket{0},
+
+    where :math:`\hat{X}` is an XP-string consisting of :math:`n` :math:`\hat{x}`
+    operators and :math:`m` :math:`\hat{p}` operators.
+    """
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    vacuum_state = pq.GaussianSimulator(d=1).execute(program).state
+
+    r = 0.2
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=r)
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    xp_string = [0, 1, 0, 0, 1, 1, 0]
+
+    m = np.count_nonzero(xp_string)
+    n = len(xp_string) - m
+
+    assert np.isclose(
+        state.get_xp_string_moment(xp_string),
+        np.exp(-(n - m) * r) * vacuum_state.get_xp_string_moment(xp_string),
+    )
+
+
+def test_get_xp_string_moment_coherent_state_first_and_second_moments():
+    r"""
+    This test uses the following fact:
+
+    .. math::
+        D(r, \phi)^\dagger \hat{x} D(r, \phi) = \hat{x} + \sqrt{2 \hbar} r \cos \phi, \\
+        D(r, \phi)^\dagger \hat{p} D(r, \phi) = \hat{x} + \sqrt{2 \hbar} r \sin \phi.
+    """
+
+    hbar = 2
+    config = pq.Config(hbar=hbar)
+
+    r = 0.2
+    phi = np.pi / 7
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
+
+    state = pq.GaussianSimulator(d=1, config=config).execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0]), np.sqrt(2 * hbar) * r * np.cos(phi)
+    )
+    assert np.isclose(
+        state.get_xp_string_moment([1]), np.sqrt(2 * hbar) * r * np.sin(phi)
+    )
+    assert np.isclose(
+        state.get_xp_string_moment([0, 1]),
+        hbar * (1j / 2 + 2 * r**2 * np.cos(phi) * np.sin(phi)),
+    )
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 0]), hbar * (1 / 2 + 2 * r**2 * np.cos(phi) ** 2)
+    )
+
+
+def test_get_xp_string_moment_coherent_state_higher_moments():
+    r"""
+    This test uses the following fact:
+
+    .. math::
+        D(r, \phi)^\dagger \hat{x} D(r, \phi) &= \hat{x} + \sqrt{2 \hbar} r \cos \phi, \\
+        D(r, \phi)^\dagger \hat{p} D(r, \phi) &= \hat{x} + \sqrt{2 \hbar} r \sin \phi.
+    """  # noqa: E501
+
+    hbar = 2
+    config = pq.Config(hbar=hbar)
+
+    r = 0.2
+    phi = np.pi / 7
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
+
+    state = pq.GaussianSimulator(d=1, config=config).execute(program).state
+
+    x_moment = state.get_xp_string_moment([0])
+    p_moment = state.get_xp_string_moment([1])
+
+    moment_000 = state.get_xp_string_moment([0, 0, 0])
+
+    assert np.isclose(
+        moment_000,
+        3 * (state.get_xp_string_moment([0, 0]) - x_moment**2) * x_moment + x_moment**3,
+    )
+    assert np.isclose(
+        moment_000,
+        np.sqrt(hbar) ** 3
+        * (3 * r * np.cos(phi) / np.sqrt(2) + (np.sqrt(2) * r * np.cos(phi)) ** 3),
+    )
+
+    moment_011 = state.get_xp_string_moment([0, 1, 1])
+
+    assert np.isclose(
+        moment_011,
+        x_moment * (state.get_xp_string_moment([1, 1]) - p_moment**2)
+        + 2 * p_moment * (state.get_xp_string_moment([0, 1]) - x_moment * p_moment)
+        + x_moment * p_moment**2,
+    )
+
+    assert np.isclose(
+        moment_011,
+        np.sqrt(hbar) ** 3
+        * (
+            np.sqrt(2**3) * r**3 * np.cos(phi) * np.sin(phi) ** 2
+            + r * np.cos(phi) / np.sqrt(2)
+            + 1j * np.sqrt(2) * r * np.sin(phi)
+        ),
+    )
+
+
+def test_get_xp_string_moment_2_mode_first_and_second_moments():
+    r"""
+    This test uses the photonic `ControlledZ` gate (:math:`\hbar=1`):
+
+    .. math::
+        CZ(s)^\dagger \hat{x}_i CZ(s) &= \hat{x}_i, \\
+        CZ(s)^\dagger \hat{p}_1 CZ(s) &= \hat{p}_1 + s \hat{x}_2, \\
+        CZ(s)^\dagger \hat{p}_2 CZ(s) &= \hat{p}_2 + s \hat{x}_1,
+
+    From these relations, the moments can be easily calculated.
+    """
+    config = pq.Config(hbar=1)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.ControlledZ(s=1)
+
+    state = pq.GaussianSimulator(d=2, config=config).execute(program).state
+
+    assert np.isclose(state.get_xp_string_moment([]), 1.0)
+    assert np.isclose(state.get_xp_string_moment([0]), 0.0)
+    assert np.isclose(state.get_xp_string_moment([1]), 0.0)
+    assert np.isclose(state.get_xp_string_moment([2]), 0.0)
+    assert np.isclose(state.get_xp_string_moment([3]), 0.0)
+
+    second_moment_matrix = np.empty(shape=(4, 4), dtype=config.complex_dtype)
+
+    for i in range(4):
+        for j in range(4):
+            second_moment_matrix[i, j] = state.get_xp_string_moment([i, j])
+
+    assert np.allclose(
+        second_moment_matrix,
+        [
+            [0.5 + 0.0j, 0.0 + 0.0j, 0.0 + 0.5j, 0.5 + 0.0j],
+            [0.0 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j, 0.0 + 0.5j],
+            [0.0 - 0.5j, 0.5 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j],
+            [0.5 + 0.0j, 0.0 - 0.5j, 0.0 + 0.0j, 1.0 + 0.0j],
+        ],
+    )
+
+
+def test_get_xp_string_moment_2_mode_higher_moments():
+    r"""
+    This test uses the photonic `ControlledZ` gate (:math:`\hbar=1`):
+
+    .. math::
+        CZ(s)^\dagger \hat{x}_i CZ(s) &= \hat{x}_i, \\
+        CZ(s)^\dagger \hat{p}_1 CZ(s) &= \hat{p}_1 + s \hat{x}_2, \\
+        CZ(s)^\dagger \hat{p}_2 CZ(s) &= \hat{p}_2 + s \hat{x}_1,
+
+    From these relations, the moments can be easily calculated.
+    """
+    config = pq.Config(hbar=1)
+
+    with pq.Program() as vacuum_program:
+        pq.Q() | pq.Vacuum()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.ControlledZ(s=1)
+
+    simulator = pq.GaussianSimulator(d=2, config=config)
+
+    vacuum_state = simulator.execute(vacuum_program).state
+    state = simulator.execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 2, 0, 2]),
+        vacuum_state.get_xp_string_moment([0, 2, 0, 2])
+        + vacuum_state.get_xp_string_moment([0, 1, 0, 2])
+        + vacuum_state.get_xp_string_moment([0, 2, 0, 1])
+        + vacuum_state.get_xp_string_moment([0, 1, 0, 1]),
+    )
+
+
+def test_get_xp_string_moment_admits_ccr_1():
+    config = pq.Config()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Displacement(r=0.4)
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5)
+
+    state = pq.GaussianSimulator(d=2, config=config).execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 0, 2, 2])
+        - state.get_xp_string_moment([0, 2, 0, 2]),
+        1j * config.hbar * state.get_xp_string_moment([0, 2]),
+    )
+
+
+def test_get_xp_string_moment_admits_ccr_2():
+    config = pq.Config()
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Displacement(r=0.4)
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5)
+
+    state = pq.GaussianSimulator(d=2, config=config).execute(program).state
+
+    assert np.isclose(
+        state.get_xp_string_moment([0, 1, 2, 3]),
+        state.get_xp_string_moment([0, 2, 1, 3]),
+    )
+
+
+def test_get_xp_string_moment_hbar_dependence():
+    hbar_1 = 1.0
+    hbar_2 = 3.0
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Displacement(r=0.4)
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5)
+
+    state1 = (
+        pq.GaussianSimulator(d=2, config=pq.Config(hbar=hbar_1)).execute(program).state
+    )
+    state2 = (
+        pq.GaussianSimulator(d=2, config=pq.Config(hbar=hbar_2)).execute(program).state
+    )
+
+    indices = [0, 2, 1, 3, 0, 2]
+
+    value1 = state1.get_xp_string_moment(indices)
+    value2 = state2.get_xp_string_moment(indices)
+
+    assert np.isclose(value1 * np.sqrt(hbar_2 / hbar_1) ** len(indices), value2)
