@@ -26,17 +26,29 @@ def gaussian_wigner_function(
     mean: np.ndarray,
     cov: np.ndarray,
 ) -> np.ndarray:
-    return np.array(
-        [
-            [
-                gaussian_wigner_function_for_scalar(
-                    [*position, *momentum], d=d, mean=mean, cov=cov
+    if d > 1:
+        arr = np.zeros(np.array(positions).shape)
+        for i in range(len(positions)):
+            for j in range(len(positions[i])):
+                arr[i, j] = gaussian_wigner_function_for_scalar(
+                    [positions[i][j], momentums[i][j]],
+                    d=d,
+                    mean=mean[2 * j : 2 * j + 2],
+                    cov=cov[2 * j : 2 * j + 2, 2 * j : 2 * j + 2],
                 )
-                for position in positions
+    else:
+        return np.array(
+            [
+                [
+                    gaussian_wigner_function_for_scalar(
+                        [*position, *momentum], d=d, mean=mean, cov=cov
+                    )
+                    for position in positions
+                ]
+                for momentum in momentums
             ]
-            for momentum in momentums
-        ]
-    )
+        )
+    return arr
 
 
 def gaussian_wigner_function_for_scalar(
