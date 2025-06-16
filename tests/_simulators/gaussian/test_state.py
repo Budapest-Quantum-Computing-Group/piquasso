@@ -182,7 +182,7 @@ def test_wigner_plot_1D():
 def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes():
     alpha = 1 - 0.5j
     config = pq.Config(cutoff=10, hbar=42)
-    dim = 1
+    dim = 2
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
