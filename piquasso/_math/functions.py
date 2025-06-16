@@ -36,6 +36,7 @@ def gaussian_wigner_function(
                     mean=mean[2 * j : 2 * j + 2],
                     cov=cov[2 * j : 2 * j + 2, 2 * j : 2 * j + 2],
                 )
+        return arr
     else:
         return np.array(
             [
@@ -48,7 +49,6 @@ def gaussian_wigner_function(
                 for momentum in momentums
             ]
         )
-    return arr
 
 
 def gaussian_wigner_function_for_scalar(

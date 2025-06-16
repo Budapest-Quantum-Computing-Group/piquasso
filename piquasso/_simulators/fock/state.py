@@ -209,6 +209,19 @@ class BaseFockState(State, abc.ABC):
         momentums: List[float],
         modes: Optional[Tuple[int, ...]] = None,
     ) -> None:
+        r"""
+        Plots the Wigner function for the specified modes using the given positions and momentums.
+
+        Args:
+            positions (List[float]): List of position values (x-axis) at which to evaluate the Wigner function.
+            momentums (List[float]): List of momentum values (p-axis) at which to evaluate the Wigner function.
+            modes (Optional[Tuple[int, ...]], optional): Tuple of mode indices for which to plot the Wigner function.
+                If None, the Wigner function is plotted for all modes. Defaults to None.
+
+        Returns:
+            None: This method generates a plot and does not return a value.
+
+        """
         fock_wigner_function_values = self.wigner_function(
             positions=positions, momentums=momentums, modes=modes
         )
