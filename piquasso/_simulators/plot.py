@@ -27,10 +27,10 @@ def plot_wigner_function(
     Plots the Wigner function using matplotlib.
 
     Args:
-    vals: Values to plot.
-    positions: List or list of lists of positions.
-    momentums: List or list of lists of momentums.
-    levels: Number of contour levels.
+        vals: Values to plot.
+        positions: List or list of lists of positions.
+        momentums: List or list of lists of momentums.
+        levels: Number of contour levels.
     """
     try:
         import matplotlib.pyplot as plt
