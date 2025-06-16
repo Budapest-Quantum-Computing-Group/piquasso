@@ -34,15 +34,13 @@ def test_import_piquasso_works_without_jax_dependency():
         help(piquasso)
 
 
-def test_plot_importerror(monkeypatch):
+def test_matplotlib_plot_importerror():
     with mock.patch.dict("sys.modules", {"matplotlib.pyplot": None}):
         with pytest.raises(
             ImportError, match="The visualization feature requires matplotlib."
         ):
-            print("hi")
             plot_wigner_function(
                 vals=[[0, 1], [2, 3]],
                 positions=[[0, 1], [2, 3]],
                 momentums=[[0, 1], [2, 3]],
             )
-            print("This line should not be executed due to the ImportError.")
