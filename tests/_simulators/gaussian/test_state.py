@@ -152,7 +152,7 @@ def test_wigner_function(state, assets):
     )
 
     expected_result = assets.load("expected_wigner_function_result")
-    assert np.allclose(expected_result, actual_result, atol=1e-6)
+    assert np.allclose(expected_result, actual_result)
 
 
 def test_wigner_plot_1D():
