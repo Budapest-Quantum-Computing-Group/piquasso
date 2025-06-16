@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from collections import defaultdict
-from typing import Optional
+from typing import DefaultDict, List, Optional
 
 import numpy as np
 
@@ -64,7 +64,7 @@ class BatchPureFockState(PureFockState):
         ]
 
     @property
-    def fock_amplitudes_map(self) -> list[defaultdict[tuple, complex]]:
+    def fock_amplitudes_map(self):
         maps = []
         for state_vector in self._batch_state_vectors:
             amplitude_map = defaultdict(complex)

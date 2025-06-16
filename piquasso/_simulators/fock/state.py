@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Generator, Any, Dict, List
+from typing import DefaultDict, Optional, Tuple, Generator, Any, Dict, List
 
 import abc
 from collections import defaultdict
@@ -79,7 +79,7 @@ class BaseFockState(State, abc.ABC):
         """
 
     @property
-    def fock_amplitudes_map(self) -> defaultdict[tuple, complex]:
+    def fock_amplitudes_map(self) -> DefaultDict[tuple, complex]:
         """Probability amplitudes of Fock basis states representing the state."""
         amplitude_map = defaultdict(complex)
 
@@ -88,6 +88,7 @@ class BaseFockState(State, abc.ABC):
 
         return amplitude_map
 
+    @property
     @abc.abstractmethod
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
         """The particle number detection probabilities in a map."""
