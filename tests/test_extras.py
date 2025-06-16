@@ -15,8 +15,6 @@
 
 import sys
 
-import pytest
-from piquasso._simulators.plot import plot_wigner_function
 from unittest import mock
 
 
@@ -36,6 +34,9 @@ def test_import_piquasso_works_without_jax_dependency():
 
 def test_matplotlib_plot_importerror():
     with mock.patch.dict("sys.modules", {"matplotlib.pyplot": None}):
+        from piquasso._simulators.plot import plot_wigner_function
+        import pytest
+
         with pytest.raises(
             ImportError, match="The visualization feature requires matplotlib."
         ):
