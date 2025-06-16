@@ -35,7 +35,10 @@ def plot_wigner_function(
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        print("Matplotlib is not installed. Please install it to visualize the Wigner function.")
+        print(
+            "Matplotlib is not installed. Please install it to visualize "
+            "the Wigner function."
+        )
         raise ImportError("The visualization feature requires matplotlib.")
 
     plt.contourf(positions, momentums, vals, levels=levels, cmap="RdBu")

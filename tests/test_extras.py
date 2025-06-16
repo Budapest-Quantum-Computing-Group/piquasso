@@ -31,6 +31,7 @@ def test_import_piquasso_works_without_jax_dependency():
 
         help(piquasso)
 
+
 def test_import_piquasso_works_without_matplotlib_dependency():
     with mock.patch.dict(sys.modules, {"matplotlib": None}):
         import piquasso
