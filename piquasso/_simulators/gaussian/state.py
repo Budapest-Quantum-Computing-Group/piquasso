@@ -894,7 +894,7 @@ class GaussianState(State):
 
         Args:
             positions (List[List[float]]): List of list of position values (x-axis).
-            momentums (List[float]): List of momentum values (p-axis) .
+            momentums (List[List[float]]): List of list of momentum values (p-axis) .
             mode (tuple[int], optional):
                 Mode where Wigner function should be calculcated.
 
