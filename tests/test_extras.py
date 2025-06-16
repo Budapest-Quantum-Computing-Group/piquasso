@@ -29,7 +29,7 @@ def test_import_piquasso_works_without_jax_dependency():
     with mock.patch.dict(sys.modules, {"jax": None}):
         import piquasso
 
-        help(piquasso)
+        print(piquasso)
 
 
 def test_matplotlib_plot_importerror():
