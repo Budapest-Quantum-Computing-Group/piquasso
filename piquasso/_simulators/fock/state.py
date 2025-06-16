@@ -210,7 +210,7 @@ class BaseFockState(State, abc.ABC):
         modes: Optional[Tuple[int, ...]] = None,
     ) -> None:
         r"""
-        Plots the Wigner function in phase space for the specified modes using the
+        Plots the Wigner function in phase space for a single mode using the
         given positions and momentums.
 
         Args:
