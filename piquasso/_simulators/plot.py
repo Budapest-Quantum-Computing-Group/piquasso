@@ -28,8 +28,8 @@ def plot_wigner_function(
 
     Args:
         vals: Values to plot.
-        positions: List or list of lists of positions.
-        momentums: List or list of lists of momentums.
+        positions: List of lists of positions.
+        momentums: List of lists of momentums.
         levels: Number of contour levels.
     """
     try:
