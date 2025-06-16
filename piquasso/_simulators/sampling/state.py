@@ -93,18 +93,21 @@ class SamplingState(State):
                 f"occupation_number='{occupation_number}'."
             )
 
-        output_number_of_particles = np.sum(occupation_number)
+        np = self._connector.np
+        fallback_np = self._connector.fallback_np
+
+        output_number_of_particles = fallback_np.sum(occupation_number)
 
         sum_ = 0.0
 
         for index, input_occupation_number in enumerate(self._occupation_numbers):
-            if output_number_of_particles != np.sum(input_occupation_number):
+            if output_number_of_particles != fallback_np.sum(input_occupation_number):
                 continue
 
             inner_product = calculate_inner_product(
                 interferometer=self.interferometer,
                 input=input_occupation_number,
-                output=np.array(occupation_number),
+                output=fallback_np.array(occupation_number),
                 connector=self._connector,
             )
             coefficient = self._coefficients[index]
@@ -141,12 +144,12 @@ class SamplingState(State):
                 self.interferometer, input_state, self._config, self._connector
             )
 
-            index = fallback_np.arange(starting_index, ending_index)
+            index_range = fallback_np.arange(starting_index, ending_index)
 
             state_vector = connector.assign(
                 state_vector,
-                index,
-                state_vector[index] + coefficient * partial_state_vector,
+                index_range,
+                state_vector[index_range] + coefficient * partial_state_vector,
             )
 
         return state_vector

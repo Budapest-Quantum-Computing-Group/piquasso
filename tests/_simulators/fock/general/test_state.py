@@ -84,6 +84,26 @@ def test_FockState_fock_probabilities_map():
         )
 
 
+def test_FockState_get_marginal_fock_probabilities():
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(2, 0)) * np.sqrt(1 / 8)
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(0, 2)) * np.sqrt(1 / 8)
+
+    simulator = pq.FockSimulator(d=2)
+    state = simulator.execute(program).state
+
+    modes = (1,)
+    expected_probabilities = np.array([0.5, 0.25, 0.25, 0.0])
+    actual_probabilities = state.get_marginal_fock_probabilities(modes)
+
+    assert np.allclose(actual_probabilities, expected_probabilities)
+
+
 def test_FockState_quadratures_mean_variance():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

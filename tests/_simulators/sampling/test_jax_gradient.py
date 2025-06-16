@@ -140,3 +140,31 @@ def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
     expected_fidelity_grad = overlap_grad * (1 if (overlap > 0) else -1)
 
     assert np.isclose(fidelity_grad, expected_fidelity_grad)
+
+
+def test_get_particle_detection_probability_gradient():
+    theta = jnp.pi / 3
+
+    simulator = pq.SamplingSimulator(
+        d=2, config=pq.Config(cutoff=3), connector=pq.JaxConnector()
+    )
+
+    def func(theta):
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector((2, 0))
+
+            pq.Q(all) | pq.Beamsplitter(theta=theta)
+
+        state = simulator.execute(program).state
+
+        return state.get_particle_detection_probability(occupation_number=(2, 0))
+
+    get_jacobian = grad(func)
+
+    probability = func(theta)
+
+    assert jnp.isclose(probability, np.cos(theta) ** 4)
+
+    jacobian = get_jacobian(theta)
+
+    assert jnp.isclose(jacobian, -4 * np.cos(theta) ** 3 * np.sin(theta))

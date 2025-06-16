@@ -22,7 +22,7 @@ def test_import_piquasso_works_without_tensorflow_dependency():
     with mock.patch.dict(sys.modules, {"tensorflow": None}):
         import piquasso
 
-        help(piquasso)
+        print(piquasso)
 
 
 def test_import_piquasso_works_without_jax_dependency():

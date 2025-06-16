@@ -81,3 +81,30 @@ def test_mixed_index_program_stacking(FakeGate):
 
     assert program.instructions[1].modes == (1, 3)
     assert program.instructions[1].params == {"param": 100}
+
+
+def test_program_stacking_with_nested_definition(FakeGate):
+
+    def create_subprogram():
+        with pq.Program() as sub_program:
+            pq.Q(0, 1) | FakeGate(param=1)
+            pq.Q(2, 3) | FakeGate(param=2)
+
+        return sub_program
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakeGate(param=0)
+        pq.Q(0, 2, 1, 3) | create_subprogram()
+        pq.Q(0, 3) | FakeGate(param=3)
+
+    assert program.instructions[0].modes == (0, 1)
+    assert program.instructions[0].params == {"param": 0}
+
+    assert program.instructions[1].modes == (0, 2)
+    assert program.instructions[1].params == {"param": 1}
+
+    assert program.instructions[2].modes == (1, 3)
+    assert program.instructions[2].params == {"param": 2}
+
+    assert program.instructions[3].modes == (0, 3)
+    assert program.instructions[3].params == {"param": 3}

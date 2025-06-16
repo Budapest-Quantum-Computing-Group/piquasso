@@ -27,7 +27,7 @@ from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
 )
-from piquasso._math.symplectic import symplectic_form
+from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
@@ -989,6 +989,133 @@ class GaussianState(State):
         return calculation.get_particle_number_detection_probabilities(
             get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
+
+    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
+        """Return the particle number probabilities on a given subsystem."""
+
+        return self.reduced(modes).fock_probabilities
+
+    def get_xp_string_moment(self, string: List[int]) -> complex:
+        r"""Moment corresponding to a product of quadrature operators (XP-string).
+
+        The indices of `string` correspond to the xxpp-ordering, i.e.,
+        :math:`0, \dots, d-1` denotes :math:`\hat{x}_1, \dots \hat{x}_d` and
+        :math:`d, \dots, 2d-1` denotes :math:`\hat{p}_0, \dots, \hat{p}_d`.
+
+        We use the following formula:
+
+        .. math::
+            \left\langle Y_{\alpha_1} Y_{\alpha_2} \cdots Y_{\alpha_n} \right\rangle
+            = \sum_{\substack{\text{all pairings}\\ \text{and singletons}}}
+            \Biggl(
+                \prod_{\text{single }r}
+                \mu_{\alpha_r}
+            \Biggr)
+            \Biggl(
+                \prod_{\text{pairing }(i,j)} V_{\alpha_i, \alpha_j}
+            \Biggr),
+
+        where :math:`Y_{\alpha_i}` are quadrature operators in xxpp-ordering,
+        :math:`\mu` is the mean vector from :meth:`xxpp_mean_vector`, :math:`\Sigma`
+        is the covariance matrix from :meth:`xxpp_covariance_matrix`, and
+
+        .. math::
+            V &= \Sigma + \frac{i\hbar}{2} \Omega, \\
+            \Omega &= \begin{bmatrix}
+                0 & I \\
+                -I & 0
+            \end{bmatrix},
+
+        where :math:`\Omega` encodes the canonical commutation relations.
+
+        The reasoning for this formula goes as follows: suppose that the characteristic
+        function giving the Weyl ordering of the quadrature operators is
+        :math:`\chi_W(\mathbf{x}, \mathbf{p})`. Then, writing the Weyl operator in terms
+        of :math:`\hat{x}_i` and :math:`\hat{p}_i` and using the
+        Baker-Campbell-Hausdorff formula, we get that for normal ordering
+        (:math:`\hat{x}_i` always in the front) we need to use
+        :math:`\chi_W(\mathbf{x}, \mathbf{p}) e^{i \mathbf{x}\cdot\mathbf{p}}`, which
+        induces a shift in the covariance matrix
+        :math:`\Sigma_{\text{normal}} := \Sigma + \frac{i}{2}X`, where
+
+        .. math::
+            X = \begin{bmatrix}
+                0 & I \\
+                I & 0
+            \end{bmatrix}.
+
+        By differentiating the characteristic function correspondng to the normal order,
+        one can get the normal-ordered moments. Hence, inserting
+        :math:`\Sigma_{\text{normal}}` as the covariance matrix in Isserlis' formula,
+        one would get the value for the normal ordered moment. However, the terms
+        form :math:`(\Sigma_{\text{normal}})_{i+d, i}` do not appear
+        (which is also equal to :math:`(\Sigma_{\text{normal}})_{i, i+d}` due to
+        symmetry). Therefore, we can just encode the canonical commutation relations
+        by applying the following transformation:
+
+        .. math::
+            (\Sigma_{\text{normal}})_{i+d, i} \mapsto
+                = (\Sigma_{\text{normal}})_{i, i+d} - i \hbar.
+
+        This yields a formula which works for normal ordered moments, but also
+        incorporates the commutation relations, therefore it must work for any ordering.
+
+        Furthermore, by differentiating the normal-ordered characteristic function,
+        we get---as an extension to the centered Isserlis' theorem---the following
+        formula:
+
+        .. math::
+            \left\langle Y_{\alpha_1} Y_{\alpha_2} \cdots Y_{\alpha_n} \right\rangle
+            = \sum_{\substack{\text{all pairings}\\ \text{and singletons}}}
+            \Biggl(
+                \prod_{\text{single }r}
+                    \mu_{\alpha_r}
+            \Biggr)
+            \Biggl(
+                \prod_{\text{pairing }(i,j)}
+                    (\Sigma_\text{normal})_{\alpha_i, \alpha_j}
+            \Biggr),
+
+        and here, one can just replace :math:`\Sigma_\text{normal}` with :math:`V` by
+        the previous argument to obtain the formula for all orderings.
+
+        Sources:
+            - `Isserlis's theorem <https://en.wikipedia.org/wiki/Isserlis%27s_theorem>`_
+            - `Ordered Expansions in Boson Amplitude Operators <https://journals.aps.org/pr/abstract/10.1103/PhysRev.177.1857>`_
+            - Section 4.4 from `Quantum Continuous Variables <https://books.google.hu/books/about/Quantum_Continuous_Variables.html?id=bMItDwAAQBAJ>`_
+        """  # noqa: E501
+
+        d = self.d
+        hbar = self._config.hbar
+
+        first_order_moments = self.xxpp_mean_vector
+        cov_xxpp = self.xxpp_covariance_matrix
+
+        second_order_moments = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
+
+        # TODO: Reimplement this using the loop hafnian!
+        def recursive(op_list: List[int]) -> complex:
+            if not op_list:
+                return 1.0
+
+            if len(op_list) == 1:
+                return first_order_moments[op_list[0]]
+
+            first = op_list[0]
+            rest = op_list[1:]
+
+            total = first_order_moments[first] * recursive(rest)
+
+            for j, second in enumerate(rest):
+                remaining = rest[:j] + rest[j + 1 :]
+
+                pair_val = second_order_moments[first, second]
+
+                total += pair_val * recursive(remaining)
+
+            return total
+
+        return recursive(list(string))
 
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
