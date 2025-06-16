@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from collections import defaultdict
-from typing import DefaultDict, List, Optional
+from typing import Optional
 
 import numpy as np
 
