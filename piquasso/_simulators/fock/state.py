@@ -207,7 +207,7 @@ class BaseFockState(State, abc.ABC):
         self,
         positions: List[float],
         momentums: List[float],
-        mode: Optional[int] = None,
+        mode: Optional[Tuple[int, ...]] = None,
     ) -> None:
         r"""
         Plots the Wigner function in phase space for a single mode using the
@@ -216,7 +216,7 @@ class BaseFockState(State, abc.ABC):
         Args:
             positions (List[float]): List of position values (x-axis)
             momentums (List[float]): List of momentum values (p-axis)
-            mode (int, optional):
+            mode (tuple[int], optional):
                 Mode where Wigner function should be calculcated.
 
         Note:
