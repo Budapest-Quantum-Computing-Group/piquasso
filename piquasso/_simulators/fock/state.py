@@ -220,8 +220,8 @@ class BaseFockState(State, abc.ABC):
                 Mode where Wigner function should be calculcated.
 
         Note:
-            Only a single mode is supported.   
-        
+            Only a single mode is supported.
+
         Returns:
             None: This method generates a plot and does not return a value.
 
@@ -231,7 +231,7 @@ class BaseFockState(State, abc.ABC):
                 "The Wigner function can only be calculated for a single mode: "
                 f"modes={mode}."
             )
-        
+
         fock_wigner_function_values = self.wigner_function(
             positions=positions, momentums=momentums, modes=mode
         )

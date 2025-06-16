@@ -179,29 +179,24 @@ def test_wigner_plot_1D():
         pytest.fail(f"Plotting failed with exception: {e}")
 
 
-def test_gauss_plot_squeezing():
-    config = pq.Config(cutoff=10, hbar=42)
-    dim = 20
-    with pq.Program() as initialization:
-        for i in range(dim):
-            pq.Q(i) | pq.Squeezing(np.log(2), phi=np.pi / 2)
-    simulator = pq.GaussianSimulator(d=dim, config=config)
-    state = simulator.execute(initialization).state
-    state.validate()
+def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
+    SimulatorClass,
+):
+    alpha = 1 - 0.5j
 
-    x = np.linspace(-5, 5, 20)
-    p = np.linspace(-5, 5, 20)
-    x, p = np.meshgrid(x, p)
-    x = x.flatten()
-    p = p.flatten()
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
 
-    # Convert x and p into arrays of shape (num_points/2, dim)
-    x = np.array([x[i : i + dim] for i in range(0, len(x), dim)])
-    p = np.array([p[i : i + dim] for i in range(0, len(p), dim)])
-    try:
-        state.plot_wigner(positions=x, momentums=p)
-    except Exception as e:
-        pytest.fail(f"Plotting failed with exception: {e}")
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = SimulatorClass(d=2)
+    state = simulator.execute(program).state
+
+    with pytest.raises(pq.api.exceptions.InvalidModes):
+        x = np.linspace(-5, 5, 20)
+        p = np.linspace(-5, 5, 20)
+        state.plot_wigner(x, p)
 
 
 def test_reduced_rotated_mean_and_covariance(state, assets):
