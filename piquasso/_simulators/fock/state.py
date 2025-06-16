@@ -216,7 +216,7 @@ class BaseFockState(State, abc.ABC):
         Args:
             positions (List[float]): List of position values (x-axis)
             momentums (List[float]): List of momentum values (p-axis)
-            mode (tuple[int], optional):
+            mode (int, optional):
                 Mode where Wigner function should be calculcated.
 
         Note:
