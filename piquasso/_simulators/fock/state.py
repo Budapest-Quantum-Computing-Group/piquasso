@@ -231,7 +231,7 @@ class BaseFockState(State, abc.ABC):
         ):
             raise InvalidModes(
                 "The Wigner function can only be plotted for a single mode: "
-                f"modes={mode}."
+                f"modes={mode}  was specified."
             )
 
         fock_wigner_function_values = self.wigner_function(
