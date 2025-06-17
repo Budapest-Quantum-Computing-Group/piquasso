@@ -207,7 +207,7 @@ class BaseFockState(State, abc.ABC):
         self,
         positions: List[float],
         momentums: List[float],
-        mode: Optional[Tuple[int, ...]] = None,
+        mode: Optional[int] = None,
     ) -> None:
         r"""
         Plots the Wigner function in phase space for a single mode using the
@@ -216,7 +216,7 @@ class BaseFockState(State, abc.ABC):
         Args:
             positions (List[float]): List of position values (x-axis)
             momentums (List[float]): List of momentum values (p-axis)
-            mode (tuple[int], optional):
+            mode (int, optional):
                 Mode where Wigner function should be calculcated.
 
         Note:
@@ -226,16 +226,24 @@ class BaseFockState(State, abc.ABC):
             None: This method generates a plot and does not return a value.
 
         """
-        if self._config.validate and (
-            self.d != 1 or (mode is not None and len(mode) != 1)
-        ):
+        if self._config.validate and mode is not None and mode > self.d - 1:
+            raise InvalidModes(
+                f"Mode {mode} is out of range for the state with {self.d} modes."
+            )
+
+        if mode is not None:
+            mode_tuple = (mode,)
+        else:
+            mode_tuple = None
+
+        if self._config.validate and self.d != 1 and mode_tuple is None:
             raise InvalidModes(
                 "The Wigner function can only be plotted for a single mode: "
-                f"modes={mode}  was specified."
+                f"modes={mode_tuple} was specified."
             )
 
         fock_wigner_function_values = self.wigner_function(
-            positions=positions, momentums=momentums, modes=mode
+            positions=positions, momentums=momentums, modes=mode_tuple
         )
         x, p = np.meshgrid(positions, momentums)
         xlist = x.tolist()

@@ -120,7 +120,7 @@ def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        modes = (0, 1)
+        modes = 2
         state.plot_wigner(x, p, mode=modes)
 
 
@@ -142,8 +142,7 @@ def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensi
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        mode = (0,)
-        state.plot_wigner(x, p, mode=mode)
+        state.plot_wigner(x, p)
 
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))

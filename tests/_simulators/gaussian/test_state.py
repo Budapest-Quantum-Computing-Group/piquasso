@@ -196,7 +196,7 @@ def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        mode = (0, 2)
+        mode = 2
         state.plot_wigner(x, p, mode=mode)
 
 
@@ -217,8 +217,7 @@ def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_dimens
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        mode = (0,)
-        state.plot_wigner(x, p, mode=mode)
+        state.plot_wigner(x, p)
 
 
 def test_reduced_rotated_mean_and_covariance(state, assets):
