@@ -230,7 +230,7 @@ class BaseFockState(State, abc.ABC):
             self.d != 1 or (mode is not None and len(mode) != 1)
         ):
             raise InvalidModes(
-                "The Wigner function can only be calculated for a single mode: "
+                "The Wigner function can only be plotted for a single mode: "
                 f"modes={mode}."
             )
 
