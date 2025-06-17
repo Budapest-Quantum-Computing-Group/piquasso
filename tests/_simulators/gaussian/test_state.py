@@ -182,6 +182,26 @@ def test_wigner_plot_1D():
 def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes():
     alpha = 1 - 0.5j
     config = pq.Config(cutoff=10, hbar=42)
+    dim = 1
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(program).state
+    state.validate()
+
+    with pytest.raises(pq.api.exceptions.InvalidModes):
+        x = np.linspace(-5, 5, 20)
+        p = np.linspace(-5, 5, 20)
+        mode = (0,2)
+        state.plot_wigner(x, p, mode=mode)
+
+def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensions():
+    alpha = 1 - 0.5j
+    config = pq.Config(cutoff=10, hbar=42)
     dim = 2
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
@@ -196,7 +216,8 @@ def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        state.plot_wigner(x, p)
+        mode = (0,)
+        state.plot_wigner(x, p, mode=mode)
 
 
 def test_reduced_rotated_mean_and_covariance(state, assets):

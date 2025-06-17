@@ -114,13 +114,35 @@ def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
         pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
         pq.Q(0) | pq.Squeezing(r=0.2)
 
+    simulator = SimulatorClass(d=1)
+    state = simulator.execute(program).state
+
+    with pytest.raises(pq.api.exceptions.InvalidModes):
+        x = np.linspace(-5, 5, 20)
+        p = np.linspace(-5, 5, 20)
+        modes = (0, 1)
+        state.plot_wigner(x, p, modes=modes)
+
+@pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
+def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensions(
+    SimulatorClass,
+):
+    alpha = 1 - 0.5j
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
     simulator = SimulatorClass(d=2)
     state = simulator.execute(program).state
 
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        state.plot_wigner(x, p)
+        modes = (0,)
+        state.plot_wigner(x, p, modes=modes)
 
 
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
