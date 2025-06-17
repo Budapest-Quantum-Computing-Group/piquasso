@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Generator, Any, Dict, List
+from typing import DefaultDict, Optional, Tuple, Generator, Any, Dict, List
 
 import abc
+from collections import defaultdict
 import numpy as np
 from piquasso.api.config import Config
 from piquasso.api.state import State
@@ -76,6 +77,16 @@ class BaseFockState(State, abc.ABC):
         """
         Resets the Fock state to a vacuum state.
         """
+
+    @property
+    def fock_amplitudes_map(self) -> DefaultDict[tuple, complex]:
+        """Probability amplitudes of Fock basis states representing the state."""
+        amplitude_map = defaultdict(complex)
+
+        for elem in self.nonzero_elements:
+            amplitude_map[elem[1]] = elem[0]
+
+        return amplitude_map
 
     @property
     @abc.abstractmethod

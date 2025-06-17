@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 from typing import Optional
 
 import numpy as np
@@ -61,6 +62,19 @@ class BatchPureFockState(PureFockState):
             self._nonzero_elements_for_single_state_vector(state_vector)
             for state_vector in self._batch_state_vectors
         ]
+
+    @property
+    def fock_amplitudes_map(self):
+        maps = []
+        for state_vector in self._batch_state_vectors:
+            amplitude_map = defaultdict(complex)
+            nonzero_elements = self._nonzero_elements_for_single_state_vector(
+                state_vector
+            )
+            for elem in nonzero_elements:
+                amplitude_map[elem[1]] = elem[0]
+            maps.append(amplitude_map)
+        return maps
 
     def __str__(self) -> str:
         partial_strings = []
