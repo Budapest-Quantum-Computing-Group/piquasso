@@ -910,7 +910,7 @@ class GaussianState(State):
         ):
             raise InvalidModes(
                 "The Wigner function can only be plotted for a single mode: "
-                f"modes={mode}."
+                f"modes={mode} was specified."
             )
         gaussian_wigner_function_values = self.wigner_function(
             positions=positions, momentums=momentums, modes=mode
