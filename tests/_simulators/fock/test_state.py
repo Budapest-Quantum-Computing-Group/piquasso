@@ -123,6 +123,7 @@ def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
         modes = (0, 1)
         state.plot_wigner(x, p, modes=modes)
 
+
 @pytest.mark.parametrize("SimulatorClass", (pq.FockSimulator, pq.PureFockSimulator))
 def test_FockState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensions(
     SimulatorClass,

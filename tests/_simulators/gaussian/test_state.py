@@ -196,8 +196,9 @@ def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes(
     with pytest.raises(pq.api.exceptions.InvalidModes):
         x = np.linspace(-5, 5, 20)
         p = np.linspace(-5, 5, 20)
-        mode = (0,2)
+        mode = (0, 2)
         state.plot_wigner(x, p, mode=mode)
+
 
 def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensions():
     alpha = 1 - 0.5j
