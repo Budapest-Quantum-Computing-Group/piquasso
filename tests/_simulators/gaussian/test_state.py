@@ -173,8 +173,9 @@ def test_wigner_plot_1D():
 
     x = np.array([x[i : i + dim] for i in range(0, len(x), dim)])
     p = np.array([p[i : i + dim] for i in range(0, len(p), dim)])
+    mode = 0
     try:
-        state.plot_wigner(positions=x, momentums=p)
+        state.plot_wigner(positions=x, momentums=p, mode=mode)
     except Exception as e:
         pytest.fail(f"Plotting failed with exception: {e}")
 

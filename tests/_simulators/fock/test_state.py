@@ -96,8 +96,9 @@ def test_FockState_wigner_function_plot(SimulatorClass):
     fock_state = fock_simulator.execute(program).state
     x = np.linspace(-5, 5, 20)
     p = np.linspace(-5, 5, 20)
+    mode = 0
     try:
-        fock_state.plot_wigner(x, p)
+        fock_state.plot_wigner(x, p, mode=mode)
     except Exception as e:
         pytest.fail(f"Plotting failed with exception: {e}")
 
