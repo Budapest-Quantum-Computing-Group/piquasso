@@ -153,8 +153,72 @@ def test_wigner_function(state, assets):
     )
 
     expected_result = assets.load("expected_wigner_function_result")
-
     assert np.allclose(expected_result, actual_result)
+
+
+def test_wigner_plot_1D():
+    # Create a Gaussian state
+    config = pq.Config(cutoff=10, hbar=42)
+    dim = 1
+    with pq.Program() as initialization:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.10, phi=np.angle(1 - 0.5j))
+        pq.Q(0) | pq.Squeezing(r=0.10)
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(initialization).state
+    state.validate()
+
+    x = np.linspace(-5, 5, 20)
+    p = np.linspace(-5, 5, 20)
+
+    x = np.array([x[i : i + dim] for i in range(0, len(x), dim)])
+    p = np.array([p[i : i + dim] for i in range(0, len(p), dim)])
+    mode = 0
+    try:
+        state.plot_wigner(positions=x, momentums=p, mode=mode)
+    except Exception as e:
+        pytest.fail(f"Plotting failed with exception: {e}")
+
+
+def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_modes():
+    alpha = 1 - 0.5j
+    config = pq.Config(cutoff=10, hbar=42)
+    dim = 1
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(program).state
+    state.validate()
+
+    with pytest.raises(pq.api.exceptions.InvalidModes):
+        x = np.linspace(-5, 5, 20)
+        p = np.linspace(-5, 5, 20)
+        mode = 2
+        state.plot_wigner(x, p, mode=mode)
+
+
+def test_GaussState_plot_wigner_function_raises_InvalidModes_for_multiple_dimensions():
+    alpha = 1 - 0.5j
+    config = pq.Config(cutoff=10, hbar=42)
+    dim = 2
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.Squeezing(r=0.2)
+
+    simulator = pq.GaussianSimulator(d=dim, config=config)
+    state = simulator.execute(program).state
+    state.validate()
+
+    with pytest.raises(pq.api.exceptions.InvalidModes):
+        x = np.linspace(-5, 5, 20)
+        p = np.linspace(-5, 5, 20)
+        state.plot_wigner(x, p)
 
 
 def test_reduced_rotated_mean_and_covariance(state, assets):
