@@ -17,23 +17,27 @@ r"""
 Gates
 =====
 
-The built-in gates in Piquasso.
+The built-in quantum gates of Piquasso.
 
-Gates can be characterized by a unitary operator :math:`U`, which evolves the
-quantum state in the following manner
+Gates can be characterized by a unitary operator :math:`U`, which describes the
+time evolution of quantum states as
 
 .. math::
-    \rho' = U \rho U^\dagger
+    \rho' = U \rho U^\dagger,
+
+where :math:`\rho` is a density operator.
 
 Gates with at most quadratic Hamiltonians are called linear gates. Evolution of the
 ladder operators by linear gates could be expressed in the form
 
 .. math::
 
-    U^\dagger \xi U = S_{(c)} \xi + d,
+    U^\dagger \mathbf{\xi} U = S_{(c)} \mathbf{\xi} + \mathbf{\beta},
 
-where :math:`S_{(c)} \in \operatorname{Sp}(2d, \mathbb{R})`,
-:math:`d \in \mathbb{C}^{2d}`,
+where :math:`S_{(c)} \in \operatorname{Sp}(2d, \mathbb{R})` is a symplectic matrix in
+the complex form,
+:math:`\mathbf{\beta} = [\mathbf{\alpha}, \overline{\mathbf{\alpha}}]`,
+:math:`\alpha \in \mathbb{C}^{d}`, and
 
 .. math::
     \xi = \begin{bmatrix}
@@ -44,7 +48,7 @@ where :math:`a_1^\dagger, ..., a_d^\dagger` and :math:`a_1, \dots, a_d` are the
 creation and annihilation operators, respectively.
 
 Most of the gates defined here are linear gates, which can be characterized by
-:math:`S_{(c)}` and :math:`d`.
+:math:`S_{(c)}` and :math:`\mathbf{\beta}`.
 """
 
 import abc
@@ -85,30 +89,34 @@ class _ActiveLinearGate(Gate, abc.ABC):
 class Interferometer(_PassiveLinearGate):
     r"""Applies a general interferometer gate.
 
-    The general unitary operator can be written as
+    The unitary operator corresponding to an interferometer can be written as
 
     .. math::
-        I(U) = \exp \left (
-            i \left( \sum_{i, j = 1}^d A_{i j} a_i^\dagger a_j + h.c. \right)
-        \right ),
+        I(U) = \exp(i \hat{H}),
 
-    where the parameter `U` and :math:`A` is related by
+    where :math:`\hat{H}` is a quadratic Hamiltonian
 
     .. math::
-        U = \exp \left (
-            -i A
-        \right ).
+        \hat{H} = \mathbf{\xi}^\dagger H \mathbf{\xi}, \qquad H = \frac{1}{2}
+        \begin{bmatrix}
+            A & \\
+            & \overline{A}
+        \end{bmatrix},
 
-    The interpretation of :math:`U` is that it is the one-particle unitary matrix.
-    The evolution of the ladder operators can be described by
+    where :math:`A` is self-adjoint. The interferometer is parametrized as
+    :math:`U = e^{iA}`.
+
+    The interpretation of the interferometer matrix :math:`U` is that it is the
+    one-particle unitary matrix, i.e., the matrix which acts on single particles.
+    Moreover, the evolution of the ladder operators can be described by
 
     .. math::
         S_{(c)} = \begin{bmatrix}
             U & 0_{d \times d} \\
-            0_{d \times d} & U^*
+            0_{d \times d} & \overline{U}
         \end{bmatrix},
 
-    where :math:`U \in \mathbb{C}^{d \times d}` is a unitary matrix.
+    where :math:`U \in \mathbb{C}^{d \times d}` is the interferometer matrix.
 
     Args:
         matrix (numpy.ndarray):
@@ -131,7 +139,7 @@ class Interferometer(_PassiveLinearGate):
 class Beamsplitter(_PassiveLinearGate):
     r"""Applies a beamsplitter gate.
 
-    The general unitary operator can be written as
+    The unitary operator of the beamsplitter gate can be written as
 
     .. math::
         B_{ij} (\theta, \phi) = \exp \left (
@@ -143,7 +151,7 @@ class Beamsplitter(_PassiveLinearGate):
 
     .. math::
         U = \begin{bmatrix}
-            t & -r^* \\
+            t & -\overline{r} \\
             r & t
         \end{bmatrix},
 
@@ -151,11 +159,11 @@ class Beamsplitter(_PassiveLinearGate):
     Moreover, the symplectic representation of the beamsplitter gate is
 
     .. math::
-        S_{(c)} = U \oplos U^* = \begin{bmatrix}
-            t  & -r^* &    & \\
+        S_{(c)} = U \oplus \overline{U} = \begin{bmatrix}
+            t  & -\overline{r} &    & \\
             r & t   &    & \\
                &     & t  & -r \\
-               &     & r^* & t
+               &     & \overline{r} & t
         \end{bmatrix}.
     """
 
@@ -325,12 +333,13 @@ class MachZehnder(_PassiveLinearGate):
 
 
 class Fourier(_PassiveLinearGate):
-    r"""Applies a Fourier gate. It simply transforms the quadratures as follows:
+    r"""Applies a Fourier gate.
+
+    The Fourier gate simply transforms the quadratures as follows:
 
     .. math::
-        -\hat{p} = \operatorname{\textit{F}} \hat{x} \operatorname{\textit{F}}^\dagger
-            \\ \hat{x} = \operatorname{\textit{F}} \hat{p}
-                \operatorname{\textit{F}}^\dagger
+        F^\dagger \hat{x} F &= -\hat{p} \\
+        F^\dagger \hat{p} F &= \hat{x}
 
     The unitary operator corresponding to the Fourier gate on the :math:`i`-th mode is
 
@@ -368,25 +377,25 @@ class GaussianTransform(_ActiveLinearGate):
     .. math::
         S_{(c)} = \begin{bmatrix}
             P & A \\
-            A^* & P^*
+            \overline{A} & \overline{P}
         \end{bmatrix},
 
     where :math:`P, A \in C^{d \times d}` fulfilling the relations
 
     .. math::
-        P P^\dagger - A A^\dagger &= I_{d \times d} \\
-        P A^T &= A P^T
+        P P^\dagger - A A^\dagger &= I_{d \times d}, \\
+        P A^T &= A P^T.
     """
 
     def __init__(self, passive: np.ndarray, active: np.ndarray) -> None:
         """
         Args:
             passive (numpy.ndarray):
-                The passive submatrix of the symplectic matrix corresponding to the
-                transformation.
+                The passive submatrix :math:`P` of the symplectic matrix corresponding
+                to the transformation.
             active (numpy.ndarray):
-                The active submatrix of the symplectic matrix corresponding to the
-                transformation.
+                The active submatrix :math:`A`
+                of the symplectic matrix corresponding to the transformation.
 
         Raises:
             InvalidParameters: Raised if the parameters do not form a symplectic matrix.
@@ -410,13 +419,13 @@ class GaussianTransform(_ActiveLinearGate):
 
 
 class Squeezing(_ActiveLinearGate):
-    r"""Applies the squeezing gate.
+    r"""Applies the single-mode squeezing gate.
 
     The unitary operator corresponding to the squeezing gate is
 
     .. math::
         S_{i} (z) = \exp \left (
-            \frac{1}{2}(z^* a_i^2 - z a_i^{\dagger 2} )
+            \frac{1}{2}(\overline{z} a_i^2 - z a_i^{\dagger 2} )
         \right ).
 
     The symplectic representation of the squeezing gate is
@@ -427,11 +436,11 @@ class Squeezing(_ActiveLinearGate):
             - e^{- i \phi} \sinh r & \cosh r
         \end{bmatrix}.
 
-    The unitary squeezing operator is
+    The unitary operator corresponding to the squeezing gate is
 
     .. math::
         S(z) = \exp \left (
-            \frac{1}{2}(z^* a_i^2 - z a_i^{\dagger 2})
+            \frac{1}{2}(\overline{z} a_i^2 - z a_i^{\dagger 2})
         \right ),
 
     where :math:`z = re^{i\phi}`.
@@ -486,6 +495,10 @@ class QuadraticPhase(_ActiveLinearGate):
     NUMBER_OF_MODES = 1
 
     def __init__(self, s: float) -> None:
+        """
+        Args:
+            s (float): The parameter quadratic phase gate.
+        """
         super().__init__(params=dict(s=s))
 
     def _get_passive_block(self, connector, config):
@@ -506,7 +519,7 @@ class Squeezing2(_ActiveLinearGate):
 
     .. math::
         S_{ij} (z) = \exp \left (
-            \frac{1}{2}(z^* a_i a_j - z a_i^\dagger a_j^\dagger )
+            \frac{1}{2}(\overline{z} a_i a_j - z a_i^\dagger a_j^\dagger )
         \right ).
 
     In the bosonic setting, symplectic representation of the two-mode squeezing gate is
@@ -569,16 +582,16 @@ class Squeezing2(_ActiveLinearGate):
 
 
 class ControlledX(_ActiveLinearGate):
-    r"""Applies the controlled X gate to the state.
+    r"""Applies the controlled-X gate to the state.
 
-    The unitary operator corresponding to the controlled X gate is
+    The unitary operator corresponding to the controlled-X gate is
 
     .. math::
         CX_{ij} (s) = \exp \left (
             -i \frac{s}{\hbar} x_i p_j
         \right ).
 
-    The symplectic representation of the controlled X gate is
+    The symplectic representation of the controlled-X gate is
 
     .. math::
         S_{(z)} = \begin{bmatrix}
@@ -592,6 +605,10 @@ class ControlledX(_ActiveLinearGate):
     NUMBER_OF_MODES = 2
 
     def __init__(self, s: float):
+        """
+        Args:
+            s (float): The parameter controlled-X gate.
+        """
         super().__init__(params=dict(s=s))
 
     def _get_passive_block(self, connector, config):
@@ -618,9 +635,9 @@ class ControlledX(_ActiveLinearGate):
 
 
 class ControlledZ(_ActiveLinearGate):
-    r"""Applies the controlled Z gate to the state.
+    r"""Applies the controlled-Z gate to the state.
 
-    The unitary operator corresponding to the controlled Z gate is
+    The unitary operator corresponding to the controlled-Z gate is
 
     .. math::
         CZ_{ij} (s) = \exp \left (
@@ -641,6 +658,10 @@ class ControlledZ(_ActiveLinearGate):
     NUMBER_OF_MODES = 2
 
     def __init__(self, s: float):
+        """
+        Args:
+            s (float): The parameter controlled-Z gate.
+        """
         super().__init__(params=dict(s=s))
 
     def _get_passive_block(self, connector, config):
@@ -667,17 +688,18 @@ class ControlledZ(_ActiveLinearGate):
 
 
 class Displacement(Gate):
-    r"""Phase space displacement instruction.
+    r"""Displacement gate.
 
-    Evolves the ladder operators by
+    The displacement gate evolves the ladder operators by
 
     .. math::
-        \xi \mapsto \xi + \begin{bmatrix}
+        \mathbf{\xi} \mapsto \mathbf{\xi} + \begin{bmatrix}
             \alpha \\
-            \alpha^*
+            \overline{\alpha}
         \end{bmatrix},
 
-    where :math:`\alpha \in \mathbb{C}^{d}`.
+    where :math:`\alpha \in \mathbb{C}` and :math:`\mathbf{\xi} = [a, a^\dagger]^T` is
+    a formal vector of the ladder operators.
 
     One must either specify :math:`\alpha` only, or the combination of :math:`r` and
     :math:`\phi`.
@@ -685,7 +707,26 @@ class Displacement(Gate):
     calculated via:
 
     .. math::
-        \alpha = r e^{i\phi}
+        \alpha = r e^{i\phi}.
+
+    For more intuition, one can consider transforming the quadrature operators
+    :math:`\hat{x}_j` and :math:`\hat{p}_j`:
+
+    .. math::
+        D^\dagger_j(\alpha)
+        \begin{bmatrix}
+            \hat{x}_j \\
+            \hat{p}_j
+        \end{bmatrix}
+        D_j(\alpha)
+        = \begin{bmatrix}
+            \hat{x}_j + \sqrt{2 \hbar} \Re{\alpha} I \\
+            \hat{p}_j + \sqrt{2 \hbar} \Im{\alpha} I
+        \end{bmatrix}.
+
+    This means, that the parameter $\alpha \in \C$ describes the shift of the quadrature
+    operators in the two-dimensional phase space, i.e., the real part is responsible
+    for a shift in position, and the imaginary part for a shift in momentum.
 
     Note:
         The specified displacement is automatically scaled by :math:`\sqrt{2 \hbar}`.
@@ -787,13 +828,24 @@ class Kerr(Gate):
             i \xi n_i n_i
         \right ).
 
-    The Kerr gate transforms the annihilation operator as
+    Since the Kerr gate is non-linear, the ladder operators are not evolved into a
+    linear combination of ladder operators, which can be attributed to the fact that the
+    commutator :math:`[a_j, \hat{n}^2_j]` is not a linear combination of the ladder
+    operators, i.e., :math:`[a_j, \hat{n}^2_j] = a_j (2\hat{n}_j-I)`. Hence,
+    the Kerr gate transforms the ladder operators as
 
     .. math::
-        K(\xi) a K(\xi)^\dagger = a \exp(- i \xi (1 + 2 n)).
+        \begin{split}
+            K^\dagger_j(\kappa) a_j K_j(\kappa) &=
+                a_j \exp\left(i \kappa \left( 2 \hat{n}_j - I\right)\right),\\
+            K^\dagger_j(\kappa) a_j^\dagger K_j(\kappa) &=
+                a_j^\dagger \exp\left(
+                    -i \kappa \left(2 \hat{n}_j - I \right)
+                \right).
+        \end{split}
 
     Note:
-        This is a non-linear gate, therefore it couldn't be used with
+        This is a non-linear gate, therefore it cannot be used with
         :class:`~piquasso._simulators.gaussian.state.GaussianState`.
     """
 
