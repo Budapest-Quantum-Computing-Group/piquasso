@@ -32,6 +32,37 @@ from .utils import (
 
 
 class SamplingState(State):
+    """A state dedicated for Boson Sampling (or related) simulations.
+
+    When using :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`, the
+    simulation results will contain an instance of this class, containing the input
+    occupation numbers and the interferometer to be applied.
+
+    Example usage:
+
+    .. code-block:: python
+
+        >>> import piquasso as pq
+        >>>
+        >>> from scipy.stats import unitary_group
+        >>>
+        >>> d = 7
+        >>>
+        >>> interferometer_matrix = unitary_group.rvs(d)
+        >>>
+        >>> with pq.Program() as program:
+        >>>     pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0, 0, 0])
+        >>>     pq.Q(all) | pq.Interferometer(interferometer_matrix)
+        >>>     pq.Q(all) | pq.ParticleNumberMeasurement()
+        >>>
+        >>> simulator = pq.SamplingSimulator(d=d)
+        >>>
+        >>> result = simulator.execute(program, shots=3)
+        >>>
+        >>> result.samples
+        [(0, 0, 0, 0, 2, 1, 0), (3, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 2, 1)]
+    """
+
     def __init__(
         self, d: int, connector: BaseConnector, config: Optional[Config] = None
     ) -> None:
@@ -47,9 +78,12 @@ class SamplingState(State):
 
         self._occupation_numbers: List = []
         self._coefficients: List = []
+
         self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
+        """The interferometer matrix corresponding to the circuit."""
 
         self.is_lossy = False
+        """Returns `True` if the state is lossy, otherwise `False`."""
 
     def validate(self) -> None:
         """Validates the current state.
@@ -82,6 +116,7 @@ class SamplingState(State):
 
     @property
     def norm(self):
+        """The norm of the state."""
         return np.sum(np.abs(self._coefficients) ** 2)
 
     def get_particle_detection_probability(
@@ -118,6 +153,12 @@ class SamplingState(State):
 
     @property
     def state_vector(self):
+        """The state vector representation of this state.
+
+        This implementation follows Algorithm 1 (`SLOS_full`) from
+        `Strong Simulation of Linear Optical Processes <https://arxiv.org/pdf/2206.10549>`_.
+        """  # noqa: E501
+
         connector = self._connector
         np = connector.np
         fallback_np = connector.fallback_np
@@ -156,6 +197,7 @@ class SamplingState(State):
 
     @property
     def density_matrix(self) -> np.ndarray:
+        """The density matrix of the state in the truncated Fock space."""
         state_vector = self.state_vector
 
         return self._np.outer(state_vector, self._np.conj(state_vector))
