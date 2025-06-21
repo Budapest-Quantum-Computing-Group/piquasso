@@ -14,12 +14,13 @@
 # limitations under the License.
 
 import pytest
+
+from pytest_lazy_fixtures import lf
+
 import numpy as np
 from scipy.stats import unitary_group
 
 import piquasso as pq
-
-import tensorflow as tf
 
 from jax import grad
 
@@ -262,7 +263,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
 )
 def test_clements_decomposition_roundtrip(connector, dummy_unitary):
     d = 5
@@ -276,7 +277,7 @@ def test_clements_decomposition_roundtrip(connector, dummy_unitary):
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
 )
 def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary):
     d = 6
@@ -296,7 +297,7 @@ def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary)
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), pq.TensorflowConnector(), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
 )
 def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     d = 6
@@ -309,7 +310,7 @@ def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     assert np.allclose(U, new_U)
 
 
-def test_clements_decomposition_with_TensorflowConnector(dummy_unitary):
+def test_clements_decomposition_with_TensorflowConnector(dummy_unitary, tf):
     U = tf.Variable(dummy_unitary(2))
 
     with tf.GradientTape() as tape:
@@ -372,7 +373,9 @@ def test_clements_decomposition_with_JaxConnector(dummy_unitary):
     )
 
 
-def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unitary):
+def test_clements_decomposition_with_TensorflowConnector_from_weights(
+    dummy_unitary, tf
+):
     d = 2
     U = dummy_unitary(d)
 

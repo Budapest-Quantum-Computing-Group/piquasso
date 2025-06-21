@@ -16,11 +16,10 @@
 import pytest
 import numpy as np
 import piquasso as pq
-import tensorflow as tf
 
 import collections
 
-from functools import partial
+from pytest_lazy_fixtures import lf
 
 from scipy.stats import unitary_group
 from scipy.linalg import polar, sinhm, coshm, expm
@@ -38,21 +37,12 @@ def is_proportional(first, second, rtol=1e-5):
 
 
 tf_purefock_simulators = (
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(),
-    ),
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(decorate_with=tf.function),
-    ),
+    lf("PureFockSimulator_with_tensorflow"),
+    lf("PureFockSimulator_with_tensorflow_tf_function"),
 )
 
 jax_purefock_simulator = [
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.JaxConnector(),
-    ),
+    lf("PureFockSimulator_with_jax"),
 ]
 
 
