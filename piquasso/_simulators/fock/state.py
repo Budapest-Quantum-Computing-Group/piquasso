@@ -62,7 +62,7 @@ class BaseFockState(State, abc.ABC):
     @property
     @abc.abstractmethod
     def density_matrix(self) -> np.ndarray:
-        """The density matrix of the state in terms of the Fock basis vectors."""
+        """The density matrix of the state in the truncated Fock space."""
 
     @abc.abstractmethod
     def reduced(self, modes: Tuple[int, ...]) -> "BaseFockState":
