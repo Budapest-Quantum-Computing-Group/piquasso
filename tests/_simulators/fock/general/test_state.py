@@ -49,6 +49,43 @@ def test_FockState_reduced():
     assert expected_reduced_state == reduced_state
 
 
+def test_FockState_fock_amplitudes_map():
+
+    theta = 0.3
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=(1, 0), bra=(0, 1)) / 2
+
+        pq.Q() | pq.DensityMatrix(ket=(0, 2), bra=(0, 2)) / 4
+        pq.Q() | pq.DensityMatrix(ket=(2, 0), bra=(2, 0)) / 2
+
+        pq.Q(0) | pq.Phaseshifter(theta)
+
+    simulator = pq.FockSimulator(d=2)
+    state = simulator.execute(program).state
+
+    expected_fock_amplitudes = {
+        ((1, 0), (0, 1)): 1 / 2 * np.exp(1j * theta),
+        ((2, 0), (2, 0)): 0.5 + 0.0j,
+        ((0, 2), (0, 2)): 1 / 4,
+    }
+
+    actual_fock_amplitudes = state.fock_amplitudes_map
+
+    assert len(actual_fock_amplitudes.items()) == len(expected_fock_amplitudes.items())
+
+    for occupation_number, expected_ampl in expected_fock_amplitudes.items():
+        assert np.isclose(
+            actual_fock_amplitudes[occupation_number],
+            expected_ampl,
+        )
+
+    # Try some Fock states that are expected to have zero amplitudes
+    assert np.isclose(actual_fock_amplitudes[(0, 0)], 0.0)
+    assert np.isclose(actual_fock_amplitudes[(1, 0)], 0.0)
+    assert np.isclose(actual_fock_amplitudes[(2, 1)], 0.0)
+    assert np.isclose(actual_fock_amplitudes[(122, 35)], 0.0)
+
+
 def test_FockState_fock_probabilities_map():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=(0, 1), bra=(0, 1)) / 4

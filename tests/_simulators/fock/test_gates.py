@@ -18,26 +18,17 @@ import pytest
 import numpy as np
 
 import piquasso as pq
-import tensorflow as tf
 
-from functools import partial
+from pytest_lazy_fixtures import lf
+
 
 tf_purefock_simulators = (
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(),
-    ),
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.TensorflowConnector(decorate_with=tf.function),
-    ),
+    lf("PureFockSimulator_with_tensorflow"),
+    lf("PureFockSimulator_with_tensorflow_tf_function"),
 )
 
 jax_purefock_simulator = [
-    partial(
-        pq.PureFockSimulator,
-        connector=pq.JaxConnector(),
-    ),
+    lf("PureFockSimulator_with_jax"),
 ]
 
 

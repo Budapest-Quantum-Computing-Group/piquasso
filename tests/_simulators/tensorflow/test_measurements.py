@@ -14,11 +14,10 @@
 # limitations under the License.
 
 import piquasso as pq
-import tensorflow as tf
 import numpy as np
 
 
-def test_PostSelectPhotons_gradient():
+def test_PostSelectPhotons_gradient(tf):
     def _calculate_loss(weights, connector, state_vector):
         np = connector.np
 
@@ -86,7 +85,7 @@ def test_PostSelectPhotons_gradient():
     assert np.allclose(grad, 0.0, atol=1e-7)
 
 
-def test_ImperfectPostSelectPhotons_gradient():
+def test_ImperfectPostSelectPhotons_gradient(tf):
     def _calculate_loss(weights, connector, state_vector):
         np = connector.np
 

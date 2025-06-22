@@ -15,8 +15,6 @@
 
 import pytest
 
-import tensorflow as tf
-
 import numpy as np
 
 import piquasso as pq
@@ -25,7 +23,7 @@ from scipy.stats import unitary_group
 from scipy.linalg import block_diag
 
 
-def test_Displacement_mean_photon_number_gradient_1_mode():
+def test_Displacement_mean_photon_number_gradient_1_mode(tf):
     r = tf.Variable(0.43)
 
     simulator = pq.PureFockSimulator(
@@ -48,7 +46,7 @@ def test_Displacement_mean_photon_number_gradient_1_mode():
     assert np.isclose(gradient, 2 * r)
 
 
-def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
+def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift(tf):
     r = 0.1
     phi = tf.Variable(np.pi / 5)
 
@@ -72,7 +70,7 @@ def test_Displacement_mean_photon_number_gradient_1_mode_with_phaseshift():
     assert np.isclose(gradient, -np.sqrt(2 * simulator.config.hbar) * r * np.sin(phi))
 
 
-def test_Displacement_mean_photon_number_gradient_2_modes():
+def test_Displacement_mean_photon_number_gradient_2_modes(tf):
     r = tf.Variable([0.15, 0.2])
 
     simulator = pq.PureFockSimulator(
@@ -100,7 +98,7 @@ def test_Displacement_mean_photon_number_gradient_2_modes():
     assert np.allclose(gradient, 2 * r)
 
 
-def test_Displacement_fock_probabilities_jacobian_2_modes():
+def test_Displacement_fock_probabilities_jacobian_2_modes(tf):
     r = tf.Variable([0.15, 0.2])
 
     simulator = pq.PureFockSimulator(
@@ -170,7 +168,7 @@ def test_Displacement_fock_probabilities_jacobian_2_modes():
     )
 
 
-def test_Squeezing_mean_photon_number_gradient_1_mode():
+def test_Squeezing_mean_photon_number_gradient_1_mode(tf):
     r = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -195,7 +193,7 @@ def test_Squeezing_mean_photon_number_gradient_1_mode():
     assert np.isclose(gradient, 2 * np.sinh(r) * np.cosh(r))
 
 
-def test_Squeezing_mean_photon_number_gradient_1_mode_with_phaseshift():
+def test_Squeezing_mean_photon_number_gradient_1_mode_with_phaseshift(tf):
     r = 0.1
     phi = tf.Variable(np.pi / 5)
 
@@ -221,7 +219,7 @@ def test_Squeezing_mean_photon_number_gradient_1_mode_with_phaseshift():
     assert np.isclose(gradient, np.sinh(2 * r) * np.sin(phi))
 
 
-def test_Beamsplitter_fock_probabilities_gradient_1_particle():
+def test_Beamsplitter_fock_probabilities_gradient_1_particle(tf):
     theta = tf.Variable(np.pi / 3)
 
     simulator = pq.PureFockSimulator(
@@ -253,7 +251,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle():
     )
 
 
-def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift():
+def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift(tf):
     theta = tf.Variable(np.pi / 3)
     phi = np.pi / 5
 
@@ -286,7 +284,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift():
     )
 
 
-def test_decomposed_Beamsplitter_state_vector_gradient_1_particle():
+def test_decomposed_Beamsplitter_state_vector_gradient_1_particle(tf):
     theta = tf.Variable(11 * np.pi / 17)
 
     simulator = pq.PureFockSimulator(
@@ -323,7 +321,7 @@ def test_decomposed_Beamsplitter_state_vector_gradient_1_particle():
     )
 
 
-def test_Beamsplitter_fock_probabilities_gradient_2_particles():
+def test_Beamsplitter_fock_probabilities_gradient_2_particles(tf):
     theta = tf.Variable(np.pi / 3)
 
     simulator = pq.PureFockSimulator(
@@ -367,7 +365,7 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles():
     )
 
 
-def test_multiple_Beamsplitter_state_vector_gradient_2_particles():
+def test_multiple_Beamsplitter_state_vector_gradient_2_particles(tf):
     theta_1 = np.pi / 7
     phi_1 = 5 * np.pi / 9
     theta = tf.Variable(np.pi / 5)
@@ -430,7 +428,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles():
     )
 
 
-def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed():
+def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed(tf):
     theta_1 = np.pi / 7
     phi_1 = 5 * np.pi / 9
     theta = tf.Variable(np.pi / 5)
@@ -494,7 +492,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed():
 
 
 @pytest.mark.monkey
-def test_jacobian_of_state_after_mixing_with_fix_Interferometer():
+def test_jacobian_of_state_after_mixing_with_fix_Interferometer(tf):
     c1 = tf.Variable(np.sqrt(0.2))
     c2 = tf.Variable(np.sqrt(0.3))
     c3 = tf.Variable(np.sqrt(0.5))
@@ -541,7 +539,7 @@ def test_jacobian_of_state_after_mixing_with_fix_Interferometer():
     )
 
 
-def test_Phaseshifter_density_matrix_gradient():
+def test_Phaseshifter_density_matrix_gradient(tf):
     phi = tf.Variable(np.pi / 3)
 
     simulator = pq.PureFockSimulator(
@@ -586,7 +584,7 @@ def test_Phaseshifter_density_matrix_gradient():
     )
 
 
-def test_Phaseshifter_density_matrix_gradient_is_zero_at_zero_phaseshift():
+def test_Phaseshifter_density_matrix_gradient_is_zero_at_zero_phaseshift(tf):
     phi = tf.Variable(0.0)
 
     simulator = pq.PureFockSimulator(
@@ -610,7 +608,7 @@ def test_Phaseshifter_density_matrix_gradient_is_zero_at_zero_phaseshift():
     assert np.allclose(jacobian, np.zeros_like(jacobian))
 
 
-def test_Interferometer_fock_probabilities():
+def test_Interferometer_fock_probabilities(tf):
     param = tf.Variable(0.0)
 
     config = pq.Config(cutoff=3)
@@ -655,7 +653,7 @@ def test_Interferometer_fock_probabilities():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_Squeezing2_mean_photon_number():
+def test_Squeezing2_mean_photon_number(tf):
     r = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -679,7 +677,7 @@ def test_Squeezing2_mean_photon_number():
     assert np.allclose(jacobian, [-0.19349256, 0.0, 0.0, 0.0, 0.19349256, 0.0])
 
 
-def test_Kerr_fock_probabilities_on_1_mode():
+def test_Kerr_fock_probabilities_on_1_mode(tf):
     xi = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -702,7 +700,7 @@ def test_Kerr_fock_probabilities_on_1_mode():
     assert np.allclose(jacobian, [0.0, 0.0, 0.0], atol=1e-6)
 
 
-def test_Kerr_density_matrix_on_1_mode():
+def test_Kerr_density_matrix_on_1_mode(tf):
     xi = tf.Variable(np.pi / 5)
 
     n = 2
@@ -737,7 +735,7 @@ def test_Kerr_density_matrix_on_1_mode():
     assert np.allclose(jacobian, np.real(excepted_jacobian))
 
 
-def test_CubicPhase_fock_probabilities_on_1_mode():
+def test_CubicPhase_fock_probabilities_on_1_mode(tf):
     gamma = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -760,7 +758,7 @@ def test_CubicPhase_fock_probabilities_on_1_mode():
     assert np.allclose(jacobian, [-0.16857366, 0.35571513, -0.5196387, 0.33249724])
 
 
-def test_CrossKerr_density_matrix():
+def test_CrossKerr_density_matrix(tf):
     xi = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -799,7 +797,7 @@ def test_CrossKerr_density_matrix():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_mean_position_Displacement_gradient_on_1_mode():
+def test_mean_position_Displacement_gradient_on_1_mode(tf):
     d = 1
     cutoff = 7
 
@@ -826,7 +824,7 @@ def test_mean_position_Displacement_gradient_on_1_mode():
     assert np.allclose(grad, np.sqrt(2 * config.hbar))
 
 
-def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
+def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode(tf):
     d = 1
     cutoff = 7
 
@@ -853,7 +851,7 @@ def test_mean_position_Displacement_and_Squeezing_gradient_on_1_mode():
     assert np.allclose(grad, [-0.019024614, 1.9024585382680494])
 
 
-def test_Displacement_state_vector_gradient():
+def test_Displacement_state_vector_gradient(tf):
     r = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -886,7 +884,7 @@ def test_Displacement_state_vector_gradient():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_complex_Displacement_state_vector_gradient():
+def test_complex_Displacement_state_vector_gradient(tf):
     r = tf.Variable(0.1)
     phi = tf.Variable(np.pi / 3)
 
@@ -937,7 +935,7 @@ def test_complex_Displacement_state_vector_gradient():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_Squeezing_state_vector_gradient():
+def test_Squeezing_state_vector_gradient(tf):
     r = tf.Variable(0.1)
 
     simulator = pq.PureFockSimulator(
@@ -973,7 +971,7 @@ def test_Squeezing_state_vector_gradient():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_complex_Squeezing_state_vector_gradient():
+def test_complex_Squeezing_state_vector_gradient(tf):
     r = tf.Variable(0.1)
     phi = tf.Variable(np.pi / 3)
 
@@ -1027,7 +1025,7 @@ def test_complex_Squeezing_state_vector_gradient():
     assert np.allclose(jacobian, expected_jacobian)
 
 
-def test_displaced_state_Squeezing_state_vector_gradient():
+def test_displaced_state_Squeezing_state_vector_gradient(tf):
     r = tf.Variable(0.1)
     phi = tf.Variable(np.pi / 3)
 
@@ -1070,7 +1068,7 @@ def test_displaced_state_Squeezing_state_vector_gradient():
     )
 
 
-def test_displaced_state_Beamsplitter_state_vector_gradient():
+def test_displaced_state_Beamsplitter_state_vector_gradient(tf):
     theta = tf.Variable(0.05)
     phi = tf.Variable(np.pi / 3)
 

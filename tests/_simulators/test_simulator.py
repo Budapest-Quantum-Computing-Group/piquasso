@@ -22,7 +22,7 @@ def test_GaussianSimulator_supports_NumpyConnector():
     pq.GaussianSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_GaussianSimulator_does_not_support_TensorflowConnector():
+def test_GaussianSimulator_does_not_support_TensorflowConnector(tf):
     connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
@@ -35,7 +35,7 @@ def test_SamplingSimulator_supports_NumpyConnector():
     pq.SamplingSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_SamplingSimulator_does_not_support_TensorflowConnector():
+def test_SamplingSimulator_does_not_support_TensorflowConnector(tf):
     connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
@@ -48,7 +48,7 @@ def test_FockSimulator_supports_NumpyConnector():
     pq.FockSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_FockSimulator_does_not_support_TensorflowConnector():
+def test_FockSimulator_does_not_support_TensorflowConnector(tf):
     connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
@@ -61,5 +61,5 @@ def test_PureFockSimulator_supports_NumpyConnector():
     pq.PureFockSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_PureFockSimulator_supports_TensorflowConnector():
+def test_PureFockSimulator_supports_TensorflowConnector(tf):
     pq.PureFockSimulator(d=1, connector=pq.TensorflowConnector())

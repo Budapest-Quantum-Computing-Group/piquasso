@@ -20,7 +20,7 @@ import pytest
 
 
 @pytest.fixture
-def raise_ImportError_when_importing_tensorflow():
+def raise_ImportError_when_importing_tensorflow(tf):
     real_import = builtins.__import__
 
     def fake_import(name, globals, locals, fromlist, level):
@@ -37,7 +37,7 @@ def raise_ImportError_when_importing_tensorflow():
 
 
 @pytest.fixture
-def unimport_tensorflow():
+def unimport_tensorflow(tf):
     """
     Deletes `tensorflow` from `sys.modules`.
     """
@@ -46,7 +46,7 @@ def unimport_tensorflow():
         del sys.modules["tensorflow"]
 
 
-def test_TensorflowConnector_imports_tensorflow_if_installed():
+def test_TensorflowConnector_imports_tensorflow_if_installed(tf):
     import piquasso as pq
 
     pq.TensorflowConnector()
@@ -56,6 +56,7 @@ def test_TensorflowConnector_imports_tensorflow_if_installed():
 
 def test_TensorflowConnector_raises_ImportError_if_TensorFlow_not_installed(
     raise_ImportError_when_importing_tensorflow,
+    tf,
 ):
     import piquasso as pq
 
