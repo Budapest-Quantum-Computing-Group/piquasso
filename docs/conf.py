@@ -151,3 +151,7 @@ bibtex_reference_style = "author_year"
 nbsphinx_epilog = r"""
 .. footbibliography::
 """
+
+# COPYBUTTON
+
+copybutton_exclude = ".linenos, .gp, .go"

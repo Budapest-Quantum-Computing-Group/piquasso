@@ -828,6 +828,7 @@ class GaussianState(State):
 
     @property
     def density_matrix(self) -> np.ndarray:
+        """The density matrix of the state in the truncated Fock space."""
         calculation = self._get_density_matrix_calculation()
 
         return calculation.get_density_matrix(
