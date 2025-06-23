@@ -30,3 +30,18 @@ def test_import_piquasso_works_without_jax_dependency():
         import piquasso
 
         print(piquasso)
+
+
+def test_matplotlib_plot_importerror():
+    with mock.patch.dict("sys.modules", {"matplotlib.pyplot": None}):
+        from piquasso._simulators.plot import plot_wigner_function
+        import pytest
+
+        with pytest.raises(
+            ImportError, match="The visualization feature requires matplotlib."
+        ):
+            plot_wigner_function(
+                vals=[[0, 1], [2, 3]],
+                positions=[[0, 1], [2, 3]],
+                momentums=[[0, 1], [2, 3]],
+            )

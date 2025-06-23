@@ -32,6 +32,8 @@ from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
 from piquasso._math.decompositions import williamson
+from piquasso.api.exceptions import InvalidModes
+from piquasso._simulators.plot import plot_wigner_function
 
 from .probabilities import (
     DensityMatrixCalculation,
@@ -878,6 +880,58 @@ class GaussianState(State):
             d=self.d,
             mean=self.xpxp_mean_vector,
             cov=self.xpxp_covariance_matrix,
+        )
+
+    def plot_wigner(
+        self,
+        positions: List[List[float]],
+        momentums: List[List[float]],
+        mode: Optional[int] = None,
+    ) -> None:
+        r"""
+        Plots the Wigner function in phase space for a single mode
+        using the given positions and momentums.
+
+        Args:
+            positions (List[List[float]]): List of list of position values (x-axis).
+            momentums (List[List[float]]): List of list of momentum values (p-axis) .
+            mode (int, optional):
+                Mode where Wigner function should be calculcated.
+
+        Note:
+            Only a single mode is supported.
+
+        Returns:
+            None: This method generates a plot and does not return a value.
+
+        """
+        if self._config.validate and mode is not None and mode > self.d - 1:
+            raise InvalidModes(
+                f"Mode {mode} is out of range for the state with {self.d} modes."
+            )
+
+        if mode is not None:
+            mode_tuple = (mode,)
+        else:
+            mode_tuple = None
+
+        if self._config.validate and self.d != 1 and mode_tuple is None:
+            raise InvalidModes(
+                "The Wigner function can only be plotted for a single mode: "
+                f"modes={mode_tuple} was specified."
+            )
+
+        gaussian_wigner_function_values = self.wigner_function(
+            positions=positions, momentums=momentums, modes=mode_tuple
+        )
+        x, p = np.meshgrid(positions, momentums)
+        positions = x.tolist()
+        momentums = p.tolist()
+
+        plot_wigner_function(
+            gaussian_wigner_function_values,
+            positions=positions,
+            momentums=momentums,
         )
 
     def get_particle_detection_probability(
