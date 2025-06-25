@@ -281,6 +281,12 @@ def _to_second_quantized(first_quantized, d):
 
 
 def binary_to_fock_indices(d):
+    """Creating indices for changing the state vector ordering to Fock from binary.
+
+    Binary ordering goes as `000, 001, 010, 011, 100, 101, 110, 111`
+    Fock ordering goes as `000, 100, 010, 001, 110, 101, 011, 111`
+    """
+
     size = get_cutoff_fock_space_dimension(d, d + 1)
 
     power_array = np.empty(d, dtype=int)
@@ -303,6 +309,22 @@ def binary_to_fock_indices(d):
     return indices
 
 
+def fock_to_binary_indices(d):
+    """Creating indices for changing the state vector ordering to binary from Fock.
+
+    Binary ordering goes as `000, 001, 010, 011, 100, 101, 110, 111`
+    Fock ordering goes as `000, 100, 010, 001, 110, 101, 011, 111`
+    """
+
+    b2f = binary_to_fock_indices(d)
+    f2b = np.empty_like(b2f)
+
+    for fock_index, binary_index in enumerate(b2f):
+        f2b[binary_index] = fock_index
+
+    return f2b
+
+
 @nb.njit(cache=True)
 def get_fock_space_basis(d, cutoff):
     size = get_cutoff_fock_space_dimension(d, cutoff)
@@ -315,3 +337,28 @@ def get_fock_space_basis(d, cutoff):
         basis[i] = next_second_quantized(basis[i - 1])
 
     return basis
+
+
+def get_majorana_operators(d):
+    r"""Returns the list of Majorana operators on :math:`d` modes.
+
+    The list represents a formal vector of Majorana operators
+    :math:`\mathbf{m} := [m_0, \dots, m_{2d+1}]`, where
+
+    .. math::
+        m_{2k} &:= f_k + f_k^\dagger, \\\\
+        m_{2k+1} &:= -i (f_k - f_k^\dagger).
+
+    Args:
+        d (int): The number of modes.
+    """
+
+    fs, fdags = _get_fs_fdags(d)
+
+    ms = []
+
+    for i in range(d):
+        ms.append(fs[i] + fdags[i])
+        ms.append(-1j * (fs[i] - fdags[i]))
+
+    return ms

@@ -60,16 +60,21 @@ class GaussianState(State):
         return self._d
 
     @property
-    def covariance_matrix(self):
+    def covariance_matrix(self) -> "np.ndarray":
         r"""The covariance matrix.
+
         A fermionic Gaussian state can be fully characterized by its covariance matrix
         defined by
 
         .. math::
 
-            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]) / 2.
+            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]) / 2,
 
-        The covariance matrix is a real-valued, skew-symmetric matrix.
+        where :math:`\mathbf{m}` is defined by Eq. :eq:`majorana`. The covariance matrix
+        is a real-valued, skew-symmetric matrix.
+
+        Returns:
+            np.ndarray: The covariance matrix.
         """
 
         d = self.d

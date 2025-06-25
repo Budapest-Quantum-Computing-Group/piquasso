@@ -28,7 +28,11 @@ from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_in
 from piquasso._math.linalg import is_selfadjoint, is_skew_symmetric
 from piquasso._math.validations import all_in_interval
 
-from piquasso.fermionic._utils import get_omega, binary_to_fock_indices
+from piquasso.fermionic._utils import (
+    get_omega,
+    binary_to_fock_indices,
+    get_majorana_operators,
+)
 
 
 for_all_connectors = pytest.mark.parametrize(
@@ -237,9 +241,7 @@ def test_correlation_matrix_density_matrix_equivalence_random(
 
 
 @for_all_connectors
-def test_vacuum_covariance_matrix_with_majorana_operators_and_density_matrix(
-    connector, get_majorana_operators
-):
+def test_vacuum_covariance_matrix_with_majorana_operators_and_density_matrix(connector):
     d = 3
 
     with pq.Program() as program:
@@ -266,7 +268,7 @@ def test_vacuum_covariance_matrix_with_majorana_operators_and_density_matrix(
 @pytest.mark.monkey
 @for_all_connectors
 def test_covariance_matrix_with_majorana_operators_and_density_matrix(
-    connector, generate_fermionic_gaussian_hamiltonian, get_majorana_operators
+    connector, generate_fermionic_gaussian_hamiltonian
 ):
     d = 3
 
@@ -402,9 +404,7 @@ def test_vacuum_evolved_with_GaussianHamiltonian_correlation_matrix(connector):
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_2_terms_consecutive(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_2_terms_consecutive(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -433,9 +433,7 @@ def test_get_majorana_monomial_expectation_value_2_terms_consecutive(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_2_terms(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_2_terms(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -464,9 +462,7 @@ def test_get_majorana_monomial_expectation_value_2_terms(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_4_terms(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_4_terms(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -495,9 +491,7 @@ def test_get_majorana_monomial_expectation_value_4_terms(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_4_terms_consecutive(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_4_terms_consecutive(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -526,9 +520,7 @@ def test_get_majorana_monomial_expectation_value_4_terms_consecutive(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_4_terms_flipped(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_4_terms_flipped(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -562,9 +554,7 @@ def test_get_majorana_monomial_expectation_value_4_terms_flipped(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_with_duplicates(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_with_duplicates(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -593,9 +583,7 @@ def test_get_majorana_monomial_expectation_value_with_duplicates(
 
 
 @for_all_connectors
-def test_get_majorana_monomial_expectation_value_with_triple(
-    connector, get_majorana_operators
-):
+def test_get_majorana_monomial_expectation_value_with_triple(connector):
     d = 3
 
     A = np.array([[1, 2j, 3j], [-2j, 5, 6], [-3j, 6, 7]])
@@ -628,7 +616,7 @@ def test_get_majorana_monomial_expectation_value_with_triple(
 @pytest.mark.monkey
 @for_all_connectors
 def test_get_majorana_monomial_expectation_value_random_without_multiplicities(
-    connector, get_majorana_operators, generate_fermionic_gaussian_hamiltonian
+    connector, generate_fermionic_gaussian_hamiltonian
 ):
     d = 3
 
@@ -685,7 +673,7 @@ def test_get_majorana_monomial_expectation_value_empty(
 @pytest.mark.monkey
 @for_all_connectors
 def test_get_majorana_monomial_expectation_value_random_with_possible_multiplicities(
-    connector, get_majorana_operators, generate_fermionic_gaussian_hamiltonian
+    connector, generate_fermionic_gaussian_hamiltonian
 ):
     d = 3
 

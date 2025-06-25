@@ -227,15 +227,18 @@ def test_PureFockSimulator_GaussianSimulator_squeezing2_equivalence(connector):
 
 
 @for_all_connectors
-def test_PureFockSimulator_GaussianSimulator_IsingXX_equivalence(connector):
+@pytest.mark.parametrize("input_state", ([0, 0], [1, 0], [0, 1], [1, 1]))
+def test_PureFockSimulator_GaussianSimulator_IsingXX_equivalence(
+    connector, input_state
+):
     d = 2
 
-    phi = np.pi / 5
-
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1])
+        pq.Q() | pq.StateVector(input_state)
 
-        pq.Q(0, 1) | pq.fermionic.IsingXX(phi=phi)
+        pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
+
+        pq.Q(0, 1) | pq.fermionic.IsingXX(phi=np.pi / 5)
 
     fock_simulator = pq.fermionic.PureFockSimulator(
         d=d, config=pq.Config(cutoff=d + 1), connector=connector
@@ -252,3 +255,31 @@ def test_PureFockSimulator_GaussianSimulator_IsingXX_equivalence(connector):
     ]
 
     assert np.allclose(density_matrix_fock, density_matrix_gaussian_reordered)
+
+
+@for_all_connectors
+def test_PureFockSimulator_GaussianSimulator_covariance_matrix_equivalence(
+    connector,
+):
+    d = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0] * d)
+
+        pq.Q(0, 1) | pq.fermionic.IsingXX(phi=np.pi / 5)
+
+        pq.Q(0) | pq.Phaseshifter(np.pi / 7)
+
+        pq.Q(1, 2) | pq.fermionic.IsingXX(phi=np.pi / 5)
+
+        pq.Q(2) | pq.Phaseshifter(-np.pi / 7)
+
+    fock_simulator = pq.fermionic.PureFockSimulator(
+        d=d, config=pq.Config(cutoff=d + 1), connector=connector
+    )
+    gaussian_simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
+
+    gaussian_state = gaussian_simulator.execute(program).state
+    fock_state = fock_simulator.execute(program).state
+
+    assert np.allclose(gaussian_state.covariance_matrix, fock_state.covariance_matrix)
