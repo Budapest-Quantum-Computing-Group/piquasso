@@ -19,7 +19,7 @@
   for Gaussian states.
 - `fock_amplitudes_map` method for `FockState`, `PureFockState` and
   `BatchPureFockState`, a defaultdict containing the probability amplitudes,
-  indexed by occupation numbers.
+  indexed by tuples of occupation numbers on each mode.
 - Support for Python 3.13.
 - `plot_wigner` method for `FockState`, `PureFockState` and `GaussianState`,
   which can be used to visualize the marginal Wigner function on a single mode.
