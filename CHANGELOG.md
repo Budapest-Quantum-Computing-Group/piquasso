@@ -28,7 +28,7 @@
 
 - JAX has been mistakenly loaded when importing Piquasso, but has been fixed in
   this release.
-- Numba reflexted list warning got removed.
+- Numba reflected list warning got removed.
 - Some typos in the documentation got fixed.
 
 ### Performance improvements
