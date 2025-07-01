@@ -48,7 +48,7 @@ tensorflow = ["tensorflow"]
 jax = ["jax[cpu]"]
 matplotlib = ["matplotlib"]
 dev = [
-  "pytest>=8.0.1,<8.4.0",
+  "pytest>=8.0.1,<8.5.0",
   "coverage~=7.6.1",
   "mypy==1.8.0",
   "flake8~=7.1.1",
