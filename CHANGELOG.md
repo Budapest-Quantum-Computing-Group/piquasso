@@ -30,6 +30,7 @@
   this release.
 - Numba reflected list warning got removed.
 - Some typos in the documentation got fixed.
+- Pfaffian, torontonian and loop torontonian precision type is fixed.
 
 ### Performance improvements
 
