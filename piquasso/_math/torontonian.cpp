@@ -25,7 +25,7 @@ namespace py = pybind11;
 
 template <typename TScalar>
 py::object torontonian_np(
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> matrix)
+    py::array_t<TScalar, py::array::c_style> matrix)
 {
     Matrix<TScalar> native_matrix = numpy_to_matrix(matrix);
 
@@ -36,8 +36,8 @@ py::object torontonian_np(
 
 template <typename TScalar>
 py::object loop_torontonian_np(
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> matrix,
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> displacement_vector)
+    py::array_t<TScalar, py::array::c_style> matrix,
+    py::array_t<TScalar, py::array::c_style> displacement_vector)
 {
     Matrix<TScalar> native_matrix = numpy_to_matrix(matrix);
     Vector<TScalar> native_displacement_vector = numpy_to_vector(displacement_vector);

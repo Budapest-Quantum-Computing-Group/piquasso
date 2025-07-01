@@ -249,6 +249,39 @@ def test_permanent_equivalence_without_repetitions(
     )
 
 
+def test_permanent_equivalence_without_repetitions_integer_matrix():
+    n = 10
+
+    rows = np.array([0, 0, 0, 0, 0, 3, 4, 0, 3, 0], dtype=int)
+    cols = np.array([1, 0, 0, 0, 0, 0, 1, 7, 0, 1], dtype=int)
+
+    matrix = np.array(
+        [
+            [0.0, 0.0, -1.0, -1.0, -1.0, 0.0, -1.0, 0.0, 0.0, -1.0],
+            [-1.0, -1.0, -1.0, -1.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0],
+            [-1.0, 0.0, -1.0, -1.0, -1.0, 0.0, 0.0, -1.0, 0.0, -1.0],
+            [-1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 0.0, -1.0, -1.0, -1.0],
+            [-1.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0, -1.0, 0.0, -1.0],
+            [0.0, -1.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0, 0.0, -1.0],
+            [-1.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0, 0.0, -1.0],
+            [0.0, 0.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, -1.0, -1.0, -1.0, 0.0, 0.0, -1.0, -1.0],
+            [0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, -1.0, -1.0, 0.0],
+        ],
+        dtype=np.complex128,
+    )
+
+    ones = np.ones(n, dtype=int)
+
+    direct_value = permanent(matrix, rows=rows, cols=cols)
+    indirect_value = permanent(assym_reduce(matrix, rows, cols), ones, ones)
+
+    assert direct_value.dtype == np.complex128
+
+    assert np.isclose(direct_value, indirect_value)
+    assert np.isclose(direct_value, 0.0)
+
+
 def test_permanent_asymmetric_matrix():
     unitary = np.array(
         [
