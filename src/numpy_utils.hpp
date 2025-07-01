@@ -51,9 +51,9 @@ py::object create_numpy_scalar(TScalar input)
 /**
  * Creates a Matrix from a numpy array with shared memory.
  */
-template <typename TScalar>
+template <typename TScalar, int Flags>
 Matrix<TScalar> numpy_to_matrix(
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> numpy_array)
+    py::array_t<TScalar, Flags> numpy_array)
 {
     py::buffer_info bufferinfo = numpy_array.request();
 
@@ -71,9 +71,9 @@ Matrix<TScalar> numpy_to_matrix(
 /**
  * Creates a Vector from a numpy array with shared memory.
  */
-template <typename TScalar>
+template <typename TScalar, int Flags>
 Vector<TScalar> numpy_to_vector(
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> numpy_array)
+    py::array_t<TScalar, Flags> numpy_array)
 {
     py::buffer_info bufferinfo = numpy_array.request();
 

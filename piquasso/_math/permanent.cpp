@@ -24,7 +24,7 @@ namespace py = pybind11;
 
 template <typename TScalar>
 py::object permanent_np(
-    py::array_t<std::complex<TScalar>, py::array::c_style | py::array::forcecast> matrix,
+    py::array_t<std::complex<TScalar>, py::array::c_style> matrix,
     py::array_t<int, py::array::c_style | py::array::forcecast> row_mult_arr,
     py::array_t<int, py::array::c_style | py::array::forcecast> col_mult_arr
 )

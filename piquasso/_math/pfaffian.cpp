@@ -24,7 +24,7 @@ namespace py = pybind11;
 
 template <typename TScalar>
 py::object pfaffian_np(
-    py::array_t<TScalar, py::array::c_style | py::array::forcecast> matrix)
+    py::array_t<TScalar, py::array::c_style> matrix)
 {
     Matrix<TScalar> native_matrix = numpy_to_matrix(matrix);
 
