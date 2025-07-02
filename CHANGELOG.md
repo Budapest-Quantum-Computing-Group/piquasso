@@ -1,5 +1,45 @@
 # Changelog
 
+## [6.1.0] - 2025-06-23
+
+### Added
+
+- Fermionic `GaussianHamiltonian` support for subsystem.
+- The analog of the `Squeezing2` gate in the fermionic setting.
+- Fermionic `ControlledPhase` gate.
+- Fermionic Ising XX coupling gate.
+- Fermionic `PureFockState.fock_probabilities_map`.
+- `get_marginal_fock_probabilities` methods for `GaussianState`, `FockState`
+  and `PureFockState` for calculating the marginal particle detection
+  probabilities.
+- The `SamplingState.get_particle_detection_probability` method is made
+  differentiable via JAX.
+- Support for nested program definitions.
+- `GaussianState.get_xp_string_moment` for calculating higher XP-string moments
+  for Gaussian states.
+- `fock_amplitudes_map` method for `FockState`, `PureFockState` and
+  `BatchPureFockState`, a defaultdict containing the probability amplitudes,
+  indexed by tuples of occupation numbers on each mode.
+- Support for Python 3.13.
+- `plot_wigner` method for `FockState`, `PureFockState` and `GaussianState`,
+  which can be used to visualize the marginal Wigner function on a single mode.
+
+### Fixed
+
+- JAX has been mistakenly loaded when importing Piquasso, but has been fixed in
+  this release.
+- Numba reflected list warning got removed.
+- Some typos in the documentation got fixed.
+- Pfaffian, torontonian and loop torontonian precision type is fixed.
+
+### Performance improvements
+
+- Pfaffian got reimplemented in C++ using the Parlett-Reid algorithm.
+- `SLOS_full` algorithm implemented for state vector calculation in `SamplingState`.
+- Permanent function got reimplemented in C++ using the algorithm described in
+  https://arxiv.org/abs/2309.07027.
+
+
 ## [6.0.0] - 2025-03-26
 
 ### Added
