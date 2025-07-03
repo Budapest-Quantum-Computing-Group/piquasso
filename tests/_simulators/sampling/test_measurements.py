@@ -105,11 +105,13 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
         first_sample, second_sample
     ), f"Expected same samples, got: {first_sample} & {second_sample}"
 
+
 basis_states = [
     (0, 1),
     (1, 0),
     (2, 0),
 ]
+
 
 @pytest.mark.parametrize("input_state", basis_states)
 def test_counts(input_state):
@@ -126,7 +128,7 @@ def test_counts(input_state):
     assert len(counts) == len(expected)
     for r, e in zip(counts.items(), expected.items()):
         assert r[0] == e[0]
-        assert np.isclose(r[1]/shots, e[1]/shots)
+        assert np.isclose(r[1] / shots, e[1] / shots)
 
 
 def test_mach_zehnder():
