@@ -167,8 +167,15 @@ class Simulator(Computer, _mixins.CodeMixin):
     def _validate_state(self, initial_state: State) -> None:
         if not isinstance(initial_state, self._state_class):
             raise InvalidState(
-                f"State specified with type '{type(initial_state)}', but it should be "
-                f"{self._state_class} for this simulator."
+                f"Initial state is specified with type '{type(initial_state)}', but it "
+                f"should be {self._state_class} for this simulator."
+            )
+
+        if initial_state.d != self.d:
+            raise InvalidState(
+                f"Mismatch in number of specified modes: According to the simulator, "
+                f"the number of modes should be '{self.d}', but the specified "
+                f"'initial_state' is defined on '{initial_state.d}' modes."
             )
 
     def validate(self, program: Program) -> None:
