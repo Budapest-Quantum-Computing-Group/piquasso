@@ -41,6 +41,15 @@ class Result:
     def __repr__(self) -> str:
         return f"Result(samples={self.samples}, state={self.state})"
 
+    def get_counts(self):
+        counts_dct = {}
+        for sample in self.samples:
+            if sample not in counts_dct:
+                counts_dct[sample] = 1
+            else:
+                counts_dct[sample] += 1
+        return counts_dct
+
     def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.
 
