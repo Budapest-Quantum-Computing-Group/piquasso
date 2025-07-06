@@ -219,3 +219,6 @@ class Gate(Instruction):
 
 class Measurement(Instruction):
     r"""Base class for measurements."""
+
+class PostSelection(Measurement):
+    r"""Base class for postselections."""

@@ -34,6 +34,7 @@ from piquasso.api.instruction import (
     Gate,
     Instruction,
     Measurement,
+    PostSelection,
     Preparation,
     BatchInstruction,
 )
@@ -42,6 +43,7 @@ from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 
 from .computer import Computer
 
+all_instruction_categories = [Preparation, Gate, Measurement]
 
 class Simulator(Computer, _mixins.CodeMixin):
     """Base class for all simulators defined in Piquasso."""
@@ -110,33 +112,28 @@ class Simulator(Computer, _mixins.CodeMixin):
             + "."
         )
 
+    @staticmethod
+    def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
+        
+        for instruction_category in all_instruction_categories:
+            if isinstance(instruction, instruction_category):
+                return instruction_category
+
+        raise InvalidInstruction(
+            f"\n"
+            f"The instruction is not a subclass of the following classes:\n"
+            f"{all_instruction_categories}.\n"
+            f"Make sure that all your instructions are subclassed properly from "
+            f"the above classes.\n"
+            f"instruction={instruction}."
+        )
+
     def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
-        all_instruction_categories = [Preparation, Gate, Measurement]
-
-        def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
-            for instruction_category in all_instruction_categories:
-                if isinstance(instruction, instruction_category):
-                    return instruction_category
-
-            raise InvalidInstruction(
-                f"\n"
-                f"The instruction is not a subclass of the following classes:\n"
-                f"{all_instruction_categories}.\n"
-                f"Make sure that all your instructions are subclassed properly from "
-                f"the above classes.\n"
-                f"instruction={instruction}."
-            )
-
         instruction_category_projection = list(
-            map(_to_instruction_category, instructions)
+            map(self._to_instruction_category, instructions)
         )
 
         measurement_count = instruction_category_projection.count(Measurement)
-
-        if measurement_count not in (0, 1):
-            raise InvalidSimulation(
-                "Up to one measurement could be registered for simulations."
-            )
 
         if (
             measurement_count == 1
@@ -241,8 +238,9 @@ class Simulator(Computer, _mixins.CodeMixin):
             calculation = self._get_calculation(instruction)
 
             instruction = self._maybe_postprocess_batch_instruction(instruction)
-
             result = calculation(result.state, instruction, shots)
+            if isinstance(instruction, PostSelection):
+                self.d = result.state.d
 
         return result
 

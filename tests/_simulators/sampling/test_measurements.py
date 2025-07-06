@@ -450,3 +450,17 @@ def test_post_select_random_unitary():
     state.validate()
 
     assert state.d == d - len(postselect_modes)
+
+def test_multi_measurements_post_select_and_pnm():
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.PostSelectPhotons(postselect_modes=[3, 4], photon_counts=[0, 0])
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.PureFockSimulator(d=5)
+    res = simulator.execute(program, shots=1)
+    assert res.samples == [(1,1,1)]
+    assert len(res.state.fock_amplitudes_map) == 1
+    assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
+    assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]

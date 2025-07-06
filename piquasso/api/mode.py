@@ -117,7 +117,6 @@ class Q:
                 "with pq.Program() as program:\n"
                 "    pq.Q(0, 1) | pq.Squeezing(r=0.5)"
             )
-
         rhs._apply_to_program_on_register(_context.program_stack[-1], register=self)
 
         return self
