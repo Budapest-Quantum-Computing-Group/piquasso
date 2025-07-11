@@ -127,6 +127,7 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
 def particle_number_measurement(
     state: FockState, instruction: Instruction, shots: int
 ) -> Result:
+    print("general impl")
     reduced_state = state.reduced(instruction.modes)
 
     probability_map = reduced_state.fock_probabilities_map

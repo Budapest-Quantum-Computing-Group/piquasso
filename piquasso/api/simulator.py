@@ -235,6 +235,7 @@ class Simulator(Computer, _mixins.CodeMixin):
             if not hasattr(instruction, "modes") or instruction.modes is tuple():
                 instruction.modes = tuple(range(self.d))
 
+            print(type(self))
             calculation = self._get_calculation(instruction)
 
             instruction = self._maybe_postprocess_batch_instruction(instruction)

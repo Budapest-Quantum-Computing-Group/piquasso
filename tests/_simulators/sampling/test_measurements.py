@@ -464,3 +464,42 @@ def test_multi_measurements_post_select_and_pnm():
     assert len(res.state.fock_amplitudes_map) == 1
     assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
     assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (pq.PureFockSimulator, pq.SamplingSimulator),
+)
+def test_multi_measurements_post_select_and_pnm(SimulatorClass):
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.PostSelectPhotons(postselect_modes=[3, 4], photon_counts=[0, 0])
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = SimulatorClass(d=5)
+    res = simulator.execute(program, shots=1)
+    assert res.samples == [(1,1,1)]
+    assert len(res.state.fock_amplitudes_map) == 1
+    assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
+    assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]
+
+    
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (pq.PureFockSimulator, pq.SamplingSimulator),
+)
+def test_multi_measurements_post_select_and_pnm(SimulatorClass):
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.PostSelectPhotons(postselect_modes=[3, 4], photon_counts=[0, 0]
+                    detector_efficiency_matrix=detector_efficiency_matrix,
+)
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = SimulatorClass(d=5)
+    res = simulator.execute(program, shots=1)
+    assert res.samples == [(1,1,1)]
+    assert len(res.state.fock_amplitudes_map) == 1
+    assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
+    assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]
