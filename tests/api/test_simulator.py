@@ -242,8 +242,36 @@ def test_program_execution_with_initial_state_of_wrong_type_raises_InvalidState(
 
     other_simulator.validate(program)
 
-    with pytest.raises(pq.api.exceptions.InvalidState):
+    with pytest.raises(pq.api.exceptions.InvalidState) as exc:
         other_simulator.execute(program, initial_state=initial_state)
+
+    assert "Initial state is specified with type" in exc.value.args[0]
+
+
+def test_program_execution_with_initial_state_of_wrong_no_of_modes_raises_InvalidState(
+    FakeSimulator,
+):
+    single_mode_simulator = FakeSimulator(d=1)
+
+    with pq.Program() as program:
+        pass
+
+    single_mode_simulator.validate(program)
+
+    single_mode_initial_state = single_mode_simulator.execute(program).state
+
+    two_mode_simulator = FakeSimulator(d=2)
+
+    two_mode_simulator.validate(program)
+
+    expected_error_message = (
+        "Mismatch in number of specified modes: According to the simulator, "
+        "the number of modes should be '2', but the specified 'initial_state' "
+        "is defined on '1' modes."
+    )
+
+    with pytest.raises(pq.api.exceptions.InvalidState, match=expected_error_message):
+        two_mode_simulator.execute(program, initial_state=single_mode_initial_state)
 
 
 def test_Config_override(FakeSimulator, FakeConfig):
