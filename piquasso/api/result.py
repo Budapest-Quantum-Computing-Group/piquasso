@@ -17,8 +17,7 @@ from typing import List, Tuple, Optional, Union, TYPE_CHECKING
 
 from piquasso.api.state import State
 
-if TYPE_CHECKING:
-    import numpy as np
+import numpy as np
 
 
 class Result:
@@ -42,6 +41,10 @@ class Result:
         return f"Result(samples={self.samples}, state={self.state})"
 
     def get_counts(self):
+        if any(not isinstance(sample, (int, np.integer)) for sample_tuple in self.samples for sample in sample_tuple):
+            raise NotImplementedError("The get_counts method only supports measurements that provide integer samples."\
+            "(like particle number measurements).")
+
         counts_dct = {}
         for sample in self.samples:
             if sample not in counts_dct:

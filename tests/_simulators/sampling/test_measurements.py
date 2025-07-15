@@ -130,6 +130,27 @@ def test_counts(input_state):
         assert r[0] == e[0]
         assert np.isclose(r[1] / shots, e[1] / shots)
 
+@pytest.mark.parametrize("simulator, measurement_class", [
+    (pq.PureFockSimulator, pq.HomodyneMeasurement),
+    (pq.GaussianSimulator, pq.HeterodyneMeasurement),
+    ])
+def test_counts_raises(simulator, measurement_class):
+    shots = 100
+
+    with pq.Program() as program:
+        if simulator == pq.PureFockSimulator:
+            pq.Q() | pq.StateVector((0, 1, 0))
+        else:
+            pq.Q(0) | pq.Fourier()
+            pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0)
+        pq.Q() | measurement_class()
+
+    simulator = simulator(d=3)
+    res = simulator.execute(program, shots=shots)
+    with pytest.raises(NotImplementedError, match="The get_counts method only supports measurements that provide integer samples"):
+        counts = res.get_counts()
+
 
 def test_mach_zehnder():
     int_ = np.pi / 3
