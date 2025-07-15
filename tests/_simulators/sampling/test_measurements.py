@@ -130,10 +130,14 @@ def test_counts(input_state):
         assert r[0] == e[0]
         assert np.isclose(r[1] / shots, e[1] / shots)
 
-@pytest.mark.parametrize("simulator, measurement_class", [
-    (pq.PureFockSimulator, pq.HomodyneMeasurement),
-    (pq.GaussianSimulator, pq.HeterodyneMeasurement),
-    ])
+
+@pytest.mark.parametrize(
+    "simulator, measurement_class",
+    [
+        (pq.PureFockSimulator, pq.HomodyneMeasurement),
+        (pq.GaussianSimulator, pq.HeterodyneMeasurement),
+    ],
+)
 def test_counts_raises(simulator, measurement_class):
     shots = 100
 
@@ -148,7 +152,10 @@ def test_counts_raises(simulator, measurement_class):
 
     simulator = simulator(d=3)
     res = simulator.execute(program, shots=shots)
-    with pytest.raises(NotImplementedError, match="The get_counts method only supports measurements that provide integer samples"):
+    with pytest.raises(
+        NotImplementedError,
+        match="The get_counts method only supports measurements that provide integer samples",
+    ):
         counts = res.get_counts()
 
 
