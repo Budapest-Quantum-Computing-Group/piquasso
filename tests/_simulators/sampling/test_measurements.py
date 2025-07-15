@@ -154,9 +154,10 @@ def test_counts_raises(simulator, measurement_class):
     res = simulator.execute(program, shots=shots)
     with pytest.raises(
         NotImplementedError,
-        match="The get_counts method only supports measurements that provide integer samples",
+        match="The get_counts method only supports measurements "\
+        "that provide integer samples",
     ):
-        counts = res.get_counts()
+        res.get_counts()
 
 
 def test_mach_zehnder():

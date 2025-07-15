@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Optional, Union, TYPE_CHECKING
+from typing import List, Tuple, Optional, Union
 
 from piquasso.api.state import State
 
@@ -47,8 +47,8 @@ class Result:
             for sample in sample_tuple
         ):
             raise NotImplementedError(
-                "The get_counts method only supports measurements that provide integer samples."
-                "(like particle number measurements)."
+                "The get_counts method only supports measurements that provide "
+                "integer samples. (like particle number measurements)."
             )
 
         counts_dct = {}
