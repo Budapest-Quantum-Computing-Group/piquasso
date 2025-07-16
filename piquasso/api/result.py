@@ -41,7 +41,9 @@ class Result:
         return f"Result(samples={self.samples}, state={self.state})"
 
     def get_counts(self):
-        if self.samples and not isinstance(self.samples[0][0], (int, np.integer)):
+        if isinstance(self.samples, np.ndarray) or (
+            self.samples and not isinstance(self.samples[0][0], (int, np.integer))
+        ):
             raise NotImplementedError(
                 "The 'Result.get_counts' method only supports samples that contain "
                 "integers (e.g., samples from 'ParticleNumberMeasurement')."

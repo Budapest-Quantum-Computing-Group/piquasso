@@ -153,9 +153,7 @@ def test_counts_raises(simulator, measurement_class):
     simulator = simulator(d=3)
     res = simulator.execute(program, shots=shots)
     with pytest.raises(
-        NotImplementedError,
-        match="The get_counts method only supports measurements "
-        "that provide integer samples",
+        NotImplementedError, match="method only supports samples that contain integers"
     ):
         res.get_counts()
 
