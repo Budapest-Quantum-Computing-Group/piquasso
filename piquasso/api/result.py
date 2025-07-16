@@ -41,14 +41,10 @@ class Result:
         return f"Result(samples={self.samples}, state={self.state})"
 
     def get_counts(self):
-        if any(
-            not isinstance(sample, (int, np.integer))
-            for sample_tuple in self.samples
-            for sample in sample_tuple
-        ):
+        if self.samples and not isinstance(self.samples[0][0], (int, np.integer)):
             raise NotImplementedError(
-                "The get_counts method only supports measurements that provide "
-                "integer samples. (like particle number measurements)."
+                "The 'Result.get_counts' method only supports samples that contain "
+                "integers (e.g., samples from 'ParticleNumberMeasurement')."
             )
 
         counts_dct = {}
