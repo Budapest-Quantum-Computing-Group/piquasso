@@ -144,7 +144,7 @@ If you are doing research using Piquasso, please cite us as follows:
 
 ## Documentation
 
-The documentation is avaliable at [https://piquasso.readthedocs.io/](https://piquasso.readthedocs.io/).
+The documentation is available at [https://piquasso.readthedocs.io/](https://piquasso.readthedocs.io/).
 
 ## How to contribute?
 
