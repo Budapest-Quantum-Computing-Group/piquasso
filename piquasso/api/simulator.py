@@ -29,6 +29,7 @@ from piquasso.api.exceptions import (
     InvalidInstruction,
     InvalidSimulation,
     InvalidState,
+    InvalidModes,
 )
 from piquasso.api.instruction import (
     Gate,
@@ -93,6 +94,20 @@ class Simulator(Computer, _mixins.CodeMixin):
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
             self._get_calculation(instruction)
+
+    def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
+        for instruction in instructions:
+            modes = instruction.modes if instruction.modes else tuple(range(self.d))
+
+            for mode in modes:
+                if mode < 0 or mode >= self.d:
+                    allowed_range = f"0-{self.d - 1}" if self.d > 1 else "0"
+                    raise InvalidModes(
+                        f"Instruction {instruction} uses mode {mode},"
+                        f" which is out of range "
+                        f"for the simulator with {self.d} modes "
+                        f"(allowed range: {allowed_range})."
+                    )
 
     def _get_calculation(self, instruction: Instruction) -> Callable:
         for instruction_class, calculation in self._instruction_map.items():
@@ -162,6 +177,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def _validate_instructions(self, instructions: List[Instruction]) -> None:
         self._validate_instruction_existence(instructions)
+        self._validate_instruction_modes(instructions)
         self._validate_instruction_order(instructions)
 
     def _validate_state(self, initial_state: State) -> None:
