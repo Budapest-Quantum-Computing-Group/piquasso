@@ -16,7 +16,7 @@
 from typing import Optional, List
 import numpy as np
 
-from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
+from piquasso._math.fock import cutoff_fock_space_dim
 from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.linalg import is_unitary
 
