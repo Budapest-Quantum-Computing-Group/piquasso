@@ -374,3 +374,53 @@ def test_multiple_StateVector_instructions_get_particle_detection_probability():
         sampling_state.get_particle_detection_probability((1, 1, 0, 1)),
         0.0018507569323483858,
     )
+
+
+def test_full_state_vector_preparation_sampling():
+    vector = np.array([0.6, 0.8])
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullStateVector(vector)
+
+    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.state_vector, vector)
+
+
+def test_full_state_vector_preparation_invalid_shape_raises_InvalidState():
+    vector = np.array([0.6, 0.2, 0.2])
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullStateVector(vector)
+
+    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState):
+        simulator.execute(program)
+
+
+def test_full_density_matrix_preparation_sampling():
+    matrix = np.array([[0.5, 0.5], [0.5, 0.5]])
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullDensityMatrix(matrix)
+
+    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.density_matrix, matrix)
+
+
+def test_full_density_matrix_preparation_invalid_shape_raises_InvalidState():
+    matrix = np.zeros((3, 3))
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullDensityMatrix(matrix)
+
+    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState):
+        simulator.execute(program)

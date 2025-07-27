@@ -309,3 +309,43 @@ class Annihilate(Preparation):
 
     def __init__(self) -> None:
         pass
+
+
+class FullStateVector(Preparation):
+    r"""State preparation from an entire state vector.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.FullStateVector(np.array([1.0, 0.0, 0.0, 0.0]))
+
+    """
+
+    def __init__(self, state_vector: np.ndarray) -> None:
+        """Store the provided state vector.
+
+        Args:
+            state_vector (numpy.ndarray): The full state vector.
+        """
+
+        super().__init__(params=dict(state_vector=state_vector))
+
+
+class FullDensityMatrix(Preparation):
+    r"""State preparation from an entire density matrix.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.FullDensityMatrix(np.eye(4))
+
+    """
+
+    def __init__(self, density_matrix: np.ndarray) -> None:
+        """Store the provided density matrix.
+
+        Args:
+            density_matrix (numpy.ndarray): The full density matrix.
+        """
+
+        super().__init__(params=dict(density_matrix=density_matrix))

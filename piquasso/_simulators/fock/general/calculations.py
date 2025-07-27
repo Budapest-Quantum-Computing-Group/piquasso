@@ -26,6 +26,7 @@ from piquasso._math.decompositions import euler
 
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
+from piquasso.api.exceptions import InvalidState
 
 from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.fock import (
@@ -36,6 +37,7 @@ from piquasso._math.fock import (
     get_single_mode_squeezing_operator,
     get_single_mode_cubic_phase_operator,
     get_fock_space_basis,
+    cutoff_fock_space_dim,
 )
 
 from ..calculations import (
@@ -410,6 +412,47 @@ def density_matrix_instruction(
     state: FockState, instruction: Instruction, shots: int
 ) -> Result:
     _add_occupation_number_basis(state, **instruction.params)
+
+    return Result(state=state)
+
+
+def full_density_matrix_instruction(
+    state: FockState, instruction: Instruction, shots: int
+) -> Result:
+    """Replace the state's density matrix with the provided one."""
+
+    density_matrix = instruction.params["density_matrix"]
+
+    expected_dim = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
+    expected_shape = (expected_dim, expected_dim)
+
+    if state._config.validate and density_matrix.shape != expected_shape:
+        raise InvalidState(
+            "Invalid density matrix shape:\n"
+            f"expected={expected_shape}, got={density_matrix.shape}"
+        )
+
+    state._density_matrix = density_matrix
+
+    return Result(state=state)
+
+
+def full_state_vector_instruction(
+    state: FockState, instruction: Instruction, shots: int
+) -> Result:
+    """Replace the state's density matrix with the pure state from the given vector."""
+
+    state_vector = instruction.params["state_vector"]
+
+    expected_size = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
+
+    if state._config.validate and state_vector.size != expected_size:
+        raise InvalidState(
+            "Invalid state vector shape:\n"
+            f"expected size={expected_size}, got shape={state_vector.shape}"
+        )
+
+    state._density_matrix = np.outer(state_vector, np.conj(state_vector))
 
     return Result(state=state)
 
