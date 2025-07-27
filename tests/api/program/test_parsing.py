@@ -128,6 +128,50 @@ def test_program_from_dict_with_DensityMatrix_preparation():
     assert program.instructions[2].modes == [0]
 
 
+def test_program_from_dict_with_FullStateVector_preparation():
+    vector = [0.5, 0.5]
+
+    instructions_dict = {
+        "instructions": [
+            {
+                "type": "FullStateVector",
+                "attributes": {
+                    "constructor_kwargs": {"state_vector": vector},
+                    "modes": [0],
+                },
+            }
+        ]
+    }
+
+    program = pq.Program.from_dict(instructions_dict)
+
+    assert isinstance(program.instructions[0], pq.FullStateVector)
+    assert np.allclose(program.instructions[0].params["state_vector"], vector)
+    assert program.instructions[0].modes == [0]
+
+
+def test_program_from_dict_with_FullDensityMatrix_preparation():
+    matrix = [[1.0, 0.0], [0.0, 0.0]]
+
+    instructions_dict = {
+        "instructions": [
+            {
+                "type": "FullDensityMatrix",
+                "attributes": {
+                    "constructor_kwargs": {"density_matrix": matrix},
+                    "modes": [0],
+                },
+            }
+        ]
+    }
+
+    program = pq.Program.from_dict(instructions_dict)
+
+    assert isinstance(program.instructions[0], pq.FullDensityMatrix)
+    assert np.allclose(program.instructions[0].params["density_matrix"], matrix)
+    assert program.instructions[0].modes == [0]
+
+
 def test_program_from_dict_from_external_instruction():
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):

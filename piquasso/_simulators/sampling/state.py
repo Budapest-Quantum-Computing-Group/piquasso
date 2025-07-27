@@ -16,7 +16,8 @@
 from typing import Optional, List
 import numpy as np
 
-from piquasso._math.fock import cutoff_fock_space_dim
+from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
+from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.linalg import is_unitary
 
 from piquasso.api.config import Config
@@ -78,6 +79,9 @@ class SamplingState(State):
 
         self._occupation_numbers: List = []
         self._coefficients: List = []
+        self._density_kets: List = []
+        self._density_bras: List = []
+        self._density_coefficients: List = []
 
         self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
         """The interferometer matrix corresponding to the circuit."""
@@ -198,6 +202,21 @@ class SamplingState(State):
     @property
     def density_matrix(self) -> np.ndarray:
         """The density matrix of the state in the truncated Fock space."""
+        np = self._connector.np
+
+        if self._density_kets:
+            dim = cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff)
+            density = np.zeros((dim, dim), dtype=self._config.complex_dtype)
+
+            for ket, bra, coeff in zip(
+                self._density_kets, self._density_bras, self._density_coefficients
+            ):
+                index = get_index_in_fock_space(tuple(ket))
+                dual_index = get_index_in_fock_space(tuple(bra))
+                density[index, dual_index] = coeff
+
+            return density
+
         state_vector = self.state_vector
 
         return self._np.outer(state_vector, self._np.conj(state_vector))

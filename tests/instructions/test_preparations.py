@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import pytest
+import numpy as np
 
 import piquasso as pq
 
@@ -30,3 +31,16 @@ def test_StateVector_raises_InvalidState_when_nonintegers_specified():
         "Invalid occupation numbers: occupation_numbers=[1, 1.3, 2.4]\n"
         "Occupation numbers must contain non-negative integers."
     )
+
+
+def test_FullStateVector_stores_state_vector():
+    preparation = pq.FullStateVector(np.array([1.0, 0.0]))
+
+    assert np.allclose(preparation.params["state_vector"], np.array([1.0, 0.0]))
+
+
+def test_FullDensityMatrix_stores_density_matrix():
+    density = np.eye(2)
+    preparation = pq.FullDensityMatrix(density)
+
+    assert np.allclose(preparation.params["density_matrix"], density)

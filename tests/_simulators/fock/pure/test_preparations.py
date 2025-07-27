@@ -155,3 +155,28 @@ def test_state_normalize_after_overflow():
         state.fock_probabilities,
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
     )
+
+
+def test_full_state_vector_preparation():
+    vector = np.array([0.6, 0.8])
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullStateVector(vector)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2))
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.state_vector, vector)
+
+
+def test_full_state_vector_preparation_invalid_shape_raises_InvalidState():
+    vector = np.array([0.6, 0.2, 0.2])
+
+    with pq.Program() as program:
+        pq.Q() | pq.FullStateVector(vector)
+
+    simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState):
+        simulator.execute(program)
