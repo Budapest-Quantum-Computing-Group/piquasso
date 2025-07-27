@@ -52,7 +52,7 @@ class PureFockState(State):
 
     @property
     def state_vector(self):
-        """The state vector of the quantum state.
+        r"""The state vector of the quantum state.
 
         .. warning::
             The primary ordering of the Fock basis is by number of particles, and the
