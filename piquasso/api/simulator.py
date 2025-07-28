@@ -103,7 +103,7 @@ class Simulator(Computer, _mixins.CodeMixin):
                 if mode < 0 or mode >= self.d:
                     allowed_range = f"0-{self.d - 1}" if self.d > 1 else "0"
                     raise InvalidModes(
-                        f"Instruction {instruction} uses mode {mode},"
+                        f"Instruction '{instruction}' addresses mode '{mode}',"
                         f" which is out of range "
                         f"for the simulator with {self.d} modes "
                         f"(allowed range: {allowed_range})."
