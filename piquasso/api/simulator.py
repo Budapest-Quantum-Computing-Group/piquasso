@@ -105,7 +105,7 @@ class Simulator(Computer, _mixins.CodeMixin):
                     raise InvalidModes(
                         f"Instruction '{instruction}' addresses mode '{mode}',"
                         f" which is out of range "
-                        f"for the simulator with {self.d} modes "
+                        f"for the simulator defined on '{self.d}' modes "
                         f"(allowed range: {allowed_range})."
                     )
 
