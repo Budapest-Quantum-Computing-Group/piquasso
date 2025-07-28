@@ -182,7 +182,7 @@ class GaussianState(State):
 
     @property
     def xxpp_covariance_matrix(self) -> np.ndarray:
-        r"""The xxpp-ordered coveriance matrix of the state.
+        r"""The xxpp-ordered covariance matrix of the state.
 
         The xxpp-ordered covariance matrix :math:`\sigma_{xp}` is defined by
 
@@ -284,7 +284,7 @@ class GaussianState(State):
 
     @property
     def xpxp_covariance_matrix(self) -> np.ndarray:
-        r"""The `xpxp`-ordered coveriance matrix of the state.
+        r"""The `xpxp`-ordered covariance matrix of the state.
 
         The `xpxp`-ordered covariance matrix :math:`\sigma` is defined by
 

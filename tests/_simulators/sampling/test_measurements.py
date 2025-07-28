@@ -106,6 +106,58 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
     ), f"Expected same samples, got: {first_sample} & {second_sample}"
 
 
+basis_states = [
+    (0, 1),
+    (1, 0),
+    (2, 0),
+]
+
+
+@pytest.mark.parametrize("input_state", basis_states)
+def test_counts(input_state):
+    shots = 100
+
+    expected = {input_state: shots}
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(input_state)
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=2)
+    res = simulator.execute(program, shots=shots)
+    counts = res.get_counts()
+    assert len(counts) == len(expected)
+    for r, e in zip(counts.items(), expected.items()):
+        assert r[0] == e[0]
+        assert np.isclose(r[1] / shots, e[1] / shots)
+
+
+@pytest.mark.parametrize(
+    "simulator, measurement_class",
+    [
+        (pq.PureFockSimulator, pq.HomodyneMeasurement),
+        (pq.GaussianSimulator, pq.HeterodyneMeasurement),
+    ],
+)
+def test_counts_raises(simulator, measurement_class):
+    shots = 100
+
+    with pq.Program() as program:
+        if simulator == pq.PureFockSimulator:
+            pq.Q() | pq.StateVector((0, 1, 0))
+        else:
+            pq.Q(0) | pq.Fourier()
+            pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0)
+        pq.Q() | measurement_class()
+
+    simulator = simulator(d=3)
+    res = simulator.execute(program, shots=shots)
+    with pytest.raises(
+        NotImplementedError, match="method only supports samples that contain integers"
+    ):
+        res.get_counts()
+
+
 def test_mach_zehnder():
     int_ = np.pi / 3
     ext = np.pi / 4

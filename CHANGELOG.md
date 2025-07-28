@@ -134,7 +134,7 @@
 
 - Python 3.11 support.
 - Purification of Gaussian states.
-- `PureFockState.get_tensor_representation` for embeddng the state vector into
+- `PureFockState.get_tensor_representation` for embedding the state vector into
   a tensor with rank equal to the number of modes.
 - Batch processing of pure Fock states.
 - CVQNN module.
