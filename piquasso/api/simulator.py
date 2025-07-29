@@ -97,7 +97,8 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
-            modes = instruction.modes if instruction.modes else tuple(range(self.d))
+            if not instruction.modes:
+                continue
 
             for mode in modes:
                 if mode < 0 or mode >= self.d:
