@@ -100,14 +100,21 @@ class Simulator(Computer, _mixins.CodeMixin):
             if not instruction.modes:
                 continue
 
-            for mode in modes:
+            for mode in instruction.modes:
                 if mode < 0 or mode >= self.d:
-                    allowed_range = f"0-{self.d - 1}" if self.d > 1 else "0"
+                    if self.d > 1:
+                        valid_indices_message = (
+                            f"Valid mode indices are between '0' and "
+                            f"'{self.d - 1}' (inclusive)."
+                        )
+                    else:
+                        valid_indices_message = "For a single-mode system, "
+                        valid_indices_message += "the only valid mode index is '0'."
                     raise InvalidModes(
                         f"Instruction '{instruction}' addresses mode '{mode}',"
                         f" which is out of range "
-                        f"for the simulator defined on '{self.d}' modes "
-                        f"(allowed range: {allowed_range})."
+                        f"for the simulator defined on '{self.d}' modes. "
+                        f"{valid_indices_message}"
                     )
 
     def _get_calculation(self, instruction: Instruction) -> Callable:

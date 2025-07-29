@@ -286,8 +286,8 @@ def test_program_execution_with_invalid_modes_raises_InvalidModes(
 
     expected_error_message = re.escape(
         "Instruction 'FakeGate(modes=(0, 1))' addresses mode '1', "
-        "which is out of range for the simulator defined on '1' modes "
-        "(allowed range: 0)."
+        "which is out of range for the simulator defined on '1' modes. "
+        "For a single-mode system, the only valid mode index is '0'."
     )
 
     with pytest.raises(pq.api.exceptions.InvalidModes, match=expected_error_message):
