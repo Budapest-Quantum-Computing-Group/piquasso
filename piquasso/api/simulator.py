@@ -108,8 +108,10 @@ class Simulator(Computer, _mixins.CodeMixin):
                             f"'{self.d - 1}' (inclusive)."
                         )
                     else:
-                        valid_indices_message = "For a single-mode system, "
-                        valid_indices_message += "the only valid mode index is '0'."
+                        valid_indices_message = (
+                            "For a single-mode system, "
+                            "the only valid mode index is '0'."
+                        )
                     raise InvalidModes(
                         f"Instruction '{instruction}' addresses mode '{mode}',"
                         f" which is out of range "
