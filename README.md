@@ -6,48 +6,38 @@
   <a
     href="https://app.codecov.io/gh/Budapest-Quantum-Computing-Group/piquasso"
     style="text-decoration: none;"
-  >
-    <img
+  ><img
       alt="Coverage"
       src="https://img.shields.io/codecov/c/github/Budapest-Quantum-Computing-Group/piquasso"
-    />
-  </a>
+    /></a>
   <a
     href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/main/LICENSE.txt"
     style="text-decoration: none;"
-  >
-    <img
+  ><img
       alt="License"
       src="https://img.shields.io/github/license/Budapest-Quantum-Computing-Group/piquasso"
-    />
-  </a>
+    /></a>
   <a
     href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
     style="text-decoration: none;"
-  >
-    <img
+  ><img
       alt="Issues"
       src="https://img.shields.io/github/issues/Budapest-Quantum-Computing-Group/piquasso"
-    />
-  </a>
+    /></a>
   <a
     href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/pulls"
     style="text-decoration: none;"
-  >
-    <img
+  ><img
       alt="Pull requests"
       src="https://img.shields.io/github/issues-pr/Budapest-Quantum-Computing-Group/piquasso"
-    />
-  </a>
+    /></a>
   <a
     href="https://github.com/Budapest-Quantum-Computing-Group/piquasso/actions"
     style="text-decoration: none;"
-  >
-    <img
+  ><img
       alt="Tests"
       src="https://github.com/Budapest-Quantum-Computing-Group/piquasso/actions/workflows/tests.yml/badge.svg"
-    >
-  </a>
+    ></a>
 </p>
 
 <p align="center">
