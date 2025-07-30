@@ -21,7 +21,6 @@ from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 from .state import SamplingState
 from .calculations import (
     state_vector,
-    full_state_vector_instruction,
     full_density_matrix_instruction,
     passive_linear,
     particle_number_measurement,
@@ -61,7 +60,6 @@ class SamplingSimulator(BuiltinSimulator):
 
     Supported preparations:
         :class:`~piquasso.instructions.preparations.StateVector`,
-        :class:`~piquasso.instructions.preparations.FullStateVector`,
         :class:`~piquasso.instructions.preparations.FullDensityMatrix`.
 
     Supported gates:
@@ -81,7 +79,6 @@ class SamplingSimulator(BuiltinSimulator):
 
     _instruction_map = {
         preparations.StateVector: state_vector,
-        preparations.FullStateVector: full_state_vector_instruction,
         preparations.FullDensityMatrix: full_density_matrix_instruction,
         gates.Beamsplitter: passive_linear,
         gates.Beamsplitter5050: passive_linear,

@@ -25,7 +25,6 @@ from .calculations import (
     displacement,
     linear,
     density_matrix_instruction,
-    full_state_vector_instruction,
     full_density_matrix_instruction,
     kerr,
     cross_kerr,
@@ -72,7 +71,6 @@ class FockSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.preparations.Create`,
         :class:`~piquasso.instructions.preparations.Annihilate`,
         :class:`~piquasso.instructions.preparations.DensityMatrix`,
-        :class:`~piquasso.instructions.preparations.FullStateVector`,
         :class:`~piquasso.instructions.preparations.FullDensityMatrix`.
 
     Supported gates:
@@ -106,7 +104,6 @@ class FockSimulator(BuiltinSimulator):
         preparations.Create: create,
         preparations.Annihilate: annihilate,
         preparations.DensityMatrix: density_matrix_instruction,
-        preparations.FullStateVector: full_state_vector_instruction,
         preparations.FullDensityMatrix: full_density_matrix_instruction,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,

@@ -437,25 +437,6 @@ def full_density_matrix_instruction(
     return Result(state=state)
 
 
-def full_state_vector_instruction(
-    state: FockState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's density matrix with the pure state from the given vector."""
-
-    state_vector = instruction.params["state_vector"]
-
-    expected_size = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-
-    if state._config.validate and state_vector.size != expected_size:
-        raise InvalidState(
-            "Invalid state vector shape:\n"
-            f"expected size={expected_size}, got shape={state_vector.shape}"
-        )
-
-    state._density_matrix = np.outer(state_vector, np.conj(state_vector))
-
-    return Result(state=state)
-
 
 def _add_occupation_number_basis(
     state: FockState,
