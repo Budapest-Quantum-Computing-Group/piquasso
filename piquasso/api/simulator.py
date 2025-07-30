@@ -29,6 +29,7 @@ from piquasso.api.exceptions import (
     InvalidInstruction,
     InvalidSimulation,
     InvalidState,
+    InvalidModes,
 )
 from piquasso.api.instruction import (
     Gate,
@@ -93,6 +94,30 @@ class Simulator(Computer, _mixins.CodeMixin):
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
             self._get_calculation(instruction)
+
+    def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
+        for instruction in instructions:
+            if not instruction.modes:
+                continue
+
+            for mode in instruction.modes:
+                if mode < 0 or mode >= self.d:
+                    if self.d > 1:
+                        valid_indices_message = (
+                            f"Valid mode indices are between '0' and "
+                            f"'{self.d - 1}' (inclusive)."
+                        )
+                    else:
+                        valid_indices_message = (
+                            "For a single-mode system, "
+                            "the only valid mode index is '0'."
+                        )
+                    raise InvalidModes(
+                        f"Instruction '{instruction}' addresses mode '{mode}',"
+                        f" which is out of range "
+                        f"for the simulator defined on '{self.d}' modes. "
+                        f"{valid_indices_message}"
+                    )
 
     def _get_calculation(self, instruction: Instruction) -> Callable:
         for instruction_class, calculation in self._instruction_map.items():
@@ -162,6 +187,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def _validate_instructions(self, instructions: List[Instruction]) -> None:
         self._validate_instruction_existence(instructions)
+        self._validate_instruction_modes(instructions)
         self._validate_instruction_order(instructions)
 
     def _validate_state(self, initial_state: State) -> None:

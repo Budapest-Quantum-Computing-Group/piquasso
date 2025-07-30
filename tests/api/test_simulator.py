@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import pytest
+import re
 
 import piquasso as pq
 
@@ -272,6 +273,50 @@ def test_program_execution_with_initial_state_of_wrong_no_of_modes_raises_Invali
 
     with pytest.raises(pq.api.exceptions.InvalidState, match=expected_error_message):
         two_mode_simulator.execute(program, initial_state=single_mode_initial_state)
+
+
+def test_program_execution_with_invalid_modes_raises_InvalidModes_with_single_mode(
+    FakeSimulator,
+    FakeGate,
+):
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakeGate()
+
+    simulator = FakeSimulator(d=1)
+
+    expected_error_message = re.escape(
+        "Instruction 'FakeGate(modes=(0, 1))' addresses mode '1', "
+        "which is out of range for the simulator defined on '1' modes. "
+        "For a single-mode system, the only valid mode index is '0'."
+    )
+
+    with pytest.raises(pq.api.exceptions.InvalidModes, match=expected_error_message):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.exceptions.InvalidModes, match=expected_error_message):
+        simulator.execute(program)
+
+
+def test_program_execution_with_invalid_modes_raises_InvalidModes_with_multiple_modes(
+    FakeSimulator,
+    FakeGate,
+):
+    with pq.Program() as program:
+        pq.Q(0, 2) | FakeGate()
+
+    simulator = FakeSimulator(d=2)
+
+    expected_error_message = re.escape(
+        "Instruction 'FakeGate(modes=(0, 2))' addresses mode '2', "
+        "which is out of range for the simulator defined on '2' modes. "
+        "Valid mode indices are between '0' and '1' (inclusive)."
+    )
+
+    with pytest.raises(pq.api.exceptions.InvalidModes, match=expected_error_message):
+        simulator.validate(program)
+
+    with pytest.raises(pq.api.exceptions.InvalidModes, match=expected_error_message):
+        simulator.execute(program)
 
 
 def test_Config_override(FakeSimulator, FakeConfig):
