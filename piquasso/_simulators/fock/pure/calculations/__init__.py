@@ -63,6 +63,7 @@ from piquasso.api.connector import BaseConnector
 def particle_number_measurement(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
+    print("in here - PNR pure fock calculations init")
     reduced_state = state.reduced(instruction.modes)
 
     probability_map = reduced_state.fock_probabilities_map
