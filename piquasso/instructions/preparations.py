@@ -236,7 +236,9 @@ class StateVector(Preparation, _mixins.WeightMixin):
             )
 
         if fock_amplitude_map is not None:
-            if not all_natural(occupation for occupation in fock_amplitude_map.keys()):
+            if not all(
+                all_natural(occupation) for occupation in fock_amplitude_map.keys()
+            ):
                 raise InvalidState(
                     f"Invalid occupation numbers in "
                     f"fock_amplitude_map: {fock_amplitude_map}\n"
