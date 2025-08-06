@@ -22,7 +22,7 @@ be placed at the beginning of the Piquasso program.
 """
 
 
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Tuple, Optional
 
 import numpy as np
 
@@ -187,8 +187,8 @@ class StateVector(Preparation, _mixins.WeightMixin):
 
     def __init__(
         self,
-        occupation_numbers: Iterable[int] = None,
-        fock_amplitude_map: Dict[Tuple[int, ...], complex] = None,
+        occupation_numbers: Optional[Iterable[int]] = None,
+        fock_amplitude_map: Optional[Dict[Tuple[int, ...], complex]] = None,
         coefficient: complex = 1.0,
     ) -> None:
         """
