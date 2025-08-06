@@ -437,7 +437,6 @@ def full_density_matrix_instruction(
     return Result(state=state)
 
 
-
 def _add_occupation_number_basis(
     state: FockState,
     *,

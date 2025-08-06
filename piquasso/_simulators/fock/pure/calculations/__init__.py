@@ -412,7 +412,7 @@ def linear(
 def state_vector_instruction(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
-    
+
     if "occupation_numbers" in instruction._all_params:
         _add_occupation_number_basis(
             state=state,
@@ -422,7 +422,9 @@ def state_vector_instruction(
         )
 
     elif "fock_amplitude_map" in instruction._all_params:
-        for occupation_numbers, amplitude in instruction._all_params["fock_amplitude_map"].items():
+        for occupation_numbers, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
             _add_occupation_number_basis(
                 state=state,
                 coefficient=instruction._all_params["coefficient"] * amplitude,
@@ -431,6 +433,7 @@ def state_vector_instruction(
             )
 
     return Result(state=state)
+
 
 def _add_occupation_number_basis(  # type: ignore
     state: PureFockState,

@@ -186,13 +186,16 @@ class StateVector(Preparation, _mixins.WeightMixin):
     """
 
     def __init__(
-        self, occupation_numbers: Iterable[int]=None, fock_amplitude_map:Dict[Tuple[int, ...], complex]=None, coefficient: complex = 1.0
+        self,
+        occupation_numbers: Iterable[int] = None,
+        fock_amplitude_map: Dict[Tuple[int, ...], complex] = None,
+        coefficient: complex = 1.0,
     ) -> None:
         """
         Args:
             occupation_numbers (Iterable[int], optional): The occupation numbers.
-            fock_amplitude_map (Dict[Tuple[int, ...], complex], optional): A mapping of occupation
-                numbers to their corresponding amplitudes.
+            fock_amplitude_map (Dict[Tuple[int, ...], complex], optional):
+                A mapping of occupation numbers to their corresponding amplitudes.
             coefficient (complex, optional):
                 The coefficient of the occupation number. Defaults to :math:`1.0`.
 
@@ -211,16 +214,18 @@ class StateVector(Preparation, _mixins.WeightMixin):
             raise InvalidParameter(
                 "Either 'occupation_numbers' or 'fock_amplitude_map' must be provided."
             )
-        
+
         if occupation_numbers is not None and fock_amplitude_map is not None:
             raise InvalidParameter(
-                "Only one of 'occupation_numbers' or 'fock_amplitude_map' can be provided."
+                "Only one of 'occupation_numbers' or 'fock_amplitude_map' "
+                "can be provided."
             )
 
         if occupation_numbers is not None:
             if not all_natural(occupation_numbers):
                 raise InvalidState(
-                    f"Invalid occupation numbers: occupation_numbers={occupation_numbers}\n"
+                    f"Invalid occupation numbers: "
+                    f"occupation_numbers={occupation_numbers}\n"
                     "Occupation numbers must contain non-negative integers."
                 )
             super().__init__(
@@ -229,11 +234,12 @@ class StateVector(Preparation, _mixins.WeightMixin):
                     coefficient=coefficient,
                 ),
             )
-        
+
         if fock_amplitude_map is not None:
             if not all_natural(occupation for occupation in fock_amplitude_map.keys()):
                 raise InvalidState(
-                    f"Invalid occupation numbers in fock_amplitude_map: {fock_amplitude_map}\n"
+                    f"Invalid occupation numbers in "
+                    f"fock_amplitude_map: {fock_amplitude_map}\n"
                     "Occupation numbers must contain non-negative integers."
                 )
             super().__init__(
@@ -242,8 +248,6 @@ class StateVector(Preparation, _mixins.WeightMixin):
                     coefficient=coefficient,
                 ),
             )
-
-
 
 
 class DensityMatrix(Preparation, _mixins.WeightMixin):
