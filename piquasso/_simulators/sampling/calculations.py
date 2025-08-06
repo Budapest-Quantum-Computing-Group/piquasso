@@ -54,38 +54,6 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
     return Result(state=state)
 
 
-def full_state_vector_instruction(
-    state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's vector with the provided one."""
-
-    np = state._connector.np
-    fallback_np = state._connector.fallback_np
-
-    state_vector = instruction.params["state_vector"]
-
-    expected_size = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-
-    if state._config.validate and state_vector.size != expected_size:
-        raise InvalidState(
-            "Invalid state vector shape:\n"
-            f"expected size={expected_size}, got shape={state_vector.shape}"
-        )
-
-    basis = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
-
-    state._occupation_numbers = []
-    state._coefficients = []
-
-    for index, occupation in enumerate(basis):
-        amplitude = state_vector[index]
-        if not np.isclose(amplitude, 0.0):
-            state._occupation_numbers.append(fallback_np.array(occupation))
-            state._coefficients.append(amplitude)
-
-    return Result(state=state)
-
-
 def full_density_matrix_instruction(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> Result:
