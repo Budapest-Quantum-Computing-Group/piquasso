@@ -38,3 +38,35 @@ def test_StateVector_stores_fock_amplitude_map():
     preparation = pq.StateVector(fock_amplitude_map=amplitude_map)
 
     assert preparation.params["fock_amplitude_map"] == amplitude_map
+
+
+def test_StateVector_raises_InvalidParameter_when_no_arguments():
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
+        pq.StateVector()
+
+    assert error.value.args[0] == (
+        "Either 'occupation_numbers' or 'fock_amplitude_map' must be provided."
+    )
+
+
+def test_StateVector_raises_InvalidParameter_when_both_arguments_given():
+    amplitude_map = {(0,): 1.0}
+
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
+        pq.StateVector([0], fock_amplitude_map=amplitude_map)
+
+    assert error.value.args[0] == (
+        "Only one of 'occupation_numbers' or 'fock_amplitude_map' can be provided."
+    )
+
+
+def test_StateVector_raises_InvalidState_when_fock_amplitude_map_keys_invalid():
+    amplitude_map = {(0, 1.2): 1.0}
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    assert error.value.args[0] == (
+        "Invalid occupation numbers in fock_amplitude_map: {(0, 1.2): 1.0}\n"
+        "Occupation numbers must contain non-negative integers."
+    )
