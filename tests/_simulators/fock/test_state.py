@@ -260,5 +260,3 @@ def test_full_density_matrix_preparation_invalid_shape_raises_InvalidState():
 
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
-
-

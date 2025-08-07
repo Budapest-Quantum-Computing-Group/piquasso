@@ -59,7 +59,8 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
         ].items():
             if state._config.validate and len(occupation_numbers) != state.d:
                 raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' are not well-defined "
+                    f"The occupation numbers '{occupation_numbers}' "
+                    f"are not well-defined "
                     f"on '{state.d}' modes: instruction={instruction}"
                 )
 

@@ -32,6 +32,7 @@ def test_StateVector_raises_InvalidState_when_nonintegers_specified():
         "Occupation numbers must contain non-negative integers."
     )
 
+
 def test_FullDensityMatrix_stores_density_matrix():
     density = np.eye(2)
     preparation = pq.FullDensityMatrix(density)
