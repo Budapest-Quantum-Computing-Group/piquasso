@@ -26,7 +26,6 @@ from piquasso._math.decompositions import euler
 
 from piquasso.api.instruction import Instruction
 from piquasso.api.result import Result
-from piquasso.api.exceptions import InvalidState
 
 from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.fock import (
@@ -37,7 +36,6 @@ from piquasso._math.fock import (
     get_single_mode_squeezing_operator,
     get_single_mode_cubic_phase_operator,
     get_fock_space_basis,
-    cutoff_fock_space_dim,
 )
 
 from ..calculations import (

@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import pytest
-import numpy as np
 
 import piquasso as pq
 

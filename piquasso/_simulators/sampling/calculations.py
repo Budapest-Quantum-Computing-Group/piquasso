@@ -17,7 +17,6 @@ from typing import Tuple
 
 import numpy as np
 from piquasso._simulators.sampling.state import SamplingState
-from piquasso._math.fock import get_fock_space_basis, cutoff_fock_space_dim
 
 from piquasso.instructions import gates
 
