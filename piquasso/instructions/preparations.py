@@ -22,7 +22,7 @@ be placed at the beginning of the Piquasso program.
 """
 
 
-from typing import Iterable
+from typing import Dict, Iterable, Tuple, Optional
 
 import numpy as np
 
@@ -186,31 +186,70 @@ class StateVector(Preparation, _mixins.WeightMixin):
     """
 
     def __init__(
-        self, occupation_numbers: Iterable[int], coefficient: complex = 1.0
+        self,
+        occupation_numbers: Optional[Iterable[int]] = None,
+        fock_amplitude_map: Optional[Dict[Tuple[int, ...], complex]] = None,
+        coefficient: complex = 1.0,
     ) -> None:
         """
         Args:
-            occupation_numbers (Iterable[int]): The occupation numbers.
+            occupation_numbers (Iterable[int], optional): The occupation numbers.
+            fock_amplitude_map (Dict[Tuple[int, ...], complex], optional):
+                A mapping of occupation numbers to their corresponding amplitudes.
             coefficient (complex, optional):
                 The coefficient of the occupation number. Defaults to :math:`1.0`.
 
         Raises:
+            InvalidParameter:
+                If neither `occupation_numbers` nor `fock_amplitude_map` is provided.
+            InvalidParameter:
+                If both `occupation_numbers` and `fock_amplitude_map` are provided.
             InvalidState:
                 If the specified occupation numbers are not all natural numbers.
+            InvalidState:
+                If the keys in `fock_amplitude_map` are not all natural numbers.
         """
 
-        if not all_natural(occupation_numbers):
-            raise InvalidState(
-                f"Invalid occupation numbers: occupation_numbers={occupation_numbers}\n"
-                "Occupation numbers must contain non-negative integers."
+        if occupation_numbers is None and fock_amplitude_map is None:
+            raise InvalidParameter(
+                "Either 'occupation_numbers' or 'fock_amplitude_map' must be provided."
             )
 
-        super().__init__(
-            params=dict(
-                occupation_numbers=tuple(occupation_numbers),
-                coefficient=coefficient,
-            ),
-        )
+        if occupation_numbers is not None and fock_amplitude_map is not None:
+            raise InvalidParameter(
+                "Only one of 'occupation_numbers' or 'fock_amplitude_map' "
+                "can be provided."
+            )
+
+        if occupation_numbers is not None:
+            if not all_natural(occupation_numbers):
+                raise InvalidState(
+                    f"Invalid occupation numbers: "
+                    f"occupation_numbers={occupation_numbers}\n"
+                    "Occupation numbers must contain non-negative integers."
+                )
+            super().__init__(
+                params=dict(
+                    occupation_numbers=tuple(occupation_numbers),
+                    coefficient=coefficient,
+                ),
+            )
+
+        if fock_amplitude_map is not None:
+            if not all(
+                all_natural(occupation) for occupation in fock_amplitude_map.keys()
+            ):
+                raise InvalidState(
+                    f"Invalid occupation numbers in "
+                    f"fock_amplitude_map: {fock_amplitude_map}\n"
+                    "Occupation numbers must contain non-negative integers."
+                )
+            super().__init__(
+                params=dict(
+                    fock_amplitude_map=fock_amplitude_map,
+                    coefficient=coefficient,
+                ),
+            )
 
 
 class DensityMatrix(Preparation, _mixins.WeightMixin):
@@ -309,43 +348,3 @@ class Annihilate(Preparation):
 
     def __init__(self) -> None:
         pass
-
-
-class FullStateVector(Preparation):
-    r"""State preparation from an entire state vector.
-
-    Example usage::
-
-        with pq.Program() as program:
-            pq.Q() | pq.FullStateVector(np.array([1.0, 0.0, 0.0, 0.0]))
-
-    """
-
-    def __init__(self, state_vector: np.ndarray) -> None:
-        """Store the provided state vector.
-
-        Args:
-            state_vector (numpy.ndarray): The full state vector.
-        """
-
-        super().__init__(params=dict(state_vector=state_vector))
-
-
-class FullDensityMatrix(Preparation):
-    r"""State preparation from an entire density matrix.
-
-    Example usage::
-
-        with pq.Program() as program:
-            pq.Q() | pq.FullDensityMatrix(np.eye(4))
-
-    """
-
-    def __init__(self, density_matrix: np.ndarray) -> None:
-        """Store the provided density matrix.
-
-        Args:
-            density_matrix (numpy.ndarray): The full density matrix.
-        """
-
-        super().__init__(params=dict(density_matrix=density_matrix))

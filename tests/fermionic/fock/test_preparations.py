@@ -68,3 +68,36 @@ def test_StateVector_raises_InvalidParameter_for_invalid_occupation_numbers(conn
         "instruction="
         "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1, 2))"
     )
+
+
+@for_all_connectors
+def test_state_vector_with_fock_amplitude_map_preparation(connector):
+    amplitude_map = {(0,): 0.6, (1,): 0.8}
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    simulator = pq.fermionic.PureFockSimulator(d=1, connector=connector)
+
+    state = simulator.execute(program).state
+
+    assert np.allclose(state.state_vector, np.array([0.6, 0.8]))
+
+
+@for_all_connectors
+def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(connector):
+    amplitude_map = {(0, 1): 0.6}
+
+    simulator = pq.fermionic.PureFockSimulator(d=1, connector=connector)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
+        simulator.execute(program)
+
+    assert error.value.args[0] == (
+        "Invalid initial state specified: "
+        "instruction="
+        "StateVector(fock_amplitude_map={(0, 1): 0.6}, coefficient=1.0, modes=(0,))"
+    )

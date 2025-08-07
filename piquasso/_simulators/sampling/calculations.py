@@ -17,7 +17,6 @@ from typing import Tuple
 
 import numpy as np
 from piquasso._simulators.sampling.state import SamplingState
-from piquasso._math.fock import get_fock_space_basis, cutoff_fock_space_dim
 
 from piquasso.instructions import gates
 
@@ -40,84 +39,32 @@ from .utils import (
 
 def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     coefficient = instruction._all_params["coefficient"]
-    occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    if state._config.validate and len(occupation_numbers) != state.d:
-        raise InvalidState(
-            f"The occupation numbers '{occupation_numbers}' are not well-defined "
-            f"on '{state.d}' modes: instruction={instruction}"
-        )
+    if "occupation_numbers" in instruction._all_params:
+        occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
-    state._coefficients.append(coefficient)
+        if state._config.validate and len(occupation_numbers) != state.d:
+            raise InvalidState(
+                f"The occupation numbers '{occupation_numbers}' are not well-defined "
+                f"on '{state.d}' modes: instruction={instruction}"
+            )
 
-    return Result(state=state)
+        state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+        state._coefficients.append(coefficient)
 
+    elif "fock_amplitude_map" in instruction._all_params:
+        for occupation_numbers, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
+            if state._config.validate and len(occupation_numbers) != state.d:
+                raise InvalidState(
+                    f"The occupation numbers '{occupation_numbers}' "
+                    f"are not well-defined "
+                    f"on '{state.d}' modes: instruction={instruction}"
+                )
 
-def full_state_vector_instruction(
-    state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's vector with the provided one."""
-
-    np = state._connector.np
-    fallback_np = state._connector.fallback_np
-
-    state_vector = instruction.params["state_vector"]
-
-    expected_size = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-
-    if state._config.validate and state_vector.size != expected_size:
-        raise InvalidState(
-            "Invalid state vector shape:\n"
-            f"expected size={expected_size}, got shape={state_vector.shape}"
-        )
-
-    basis = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
-
-    state._occupation_numbers = []
-    state._coefficients = []
-
-    for index, occupation in enumerate(basis):
-        amplitude = state_vector[index]
-        if not np.isclose(amplitude, 0.0):
-            state._occupation_numbers.append(fallback_np.array(occupation))
-            state._coefficients.append(amplitude)
-
-    return Result(state=state)
-
-
-def full_density_matrix_instruction(
-    state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's density matrix with the provided one."""
-
-    np = state._connector.np
-    fallback_np = state._connector.fallback_np
-
-    density_matrix = instruction.params["density_matrix"]
-
-    expected_dim = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-    expected_shape = (expected_dim, expected_dim)
-
-    if state._config.validate and density_matrix.shape != expected_shape:
-        raise InvalidState(
-            "Invalid density matrix shape:\n"
-            f"expected={expected_shape}, got={density_matrix.shape}"
-        )
-
-    basis = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
-
-    state._density_kets = []
-    state._density_bras = []
-    state._density_coefficients = []
-
-    for i, ket in enumerate(basis):
-        for j, bra in enumerate(basis):
-            coefficient = density_matrix[i, j]
-            if not np.isclose(coefficient, 0.0):
-                state._density_kets.append(fallback_np.array(ket))
-                state._density_bras.append(fallback_np.array(bra))
-                state._density_coefficients.append(coefficient)
+            state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+            state._coefficients.append(coefficient * amplitude)
 
     return Result(state=state)
 

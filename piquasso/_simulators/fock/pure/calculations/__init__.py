@@ -58,8 +58,6 @@ from piquasso.instructions import gates
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.connector import BaseConnector
-from piquasso.api.exceptions import InvalidState
-from piquasso._math.fock import cutoff_fock_space_dim
 
 
 def particle_number_measurement(
@@ -414,31 +412,25 @@ def linear(
 def state_vector_instruction(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
-    _add_occupation_number_basis(
-        state=state,
-        **instruction._all_params,
-        modes=instruction.modes,
-    )
 
-    return Result(state=state)
-
-
-def full_state_vector_instruction(
-    state: PureFockState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's vector with the provided one."""
-
-    state_vector = instruction.params["state_vector"]
-
-    expected_size = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-
-    if state._config.validate and state_vector.size != expected_size:
-        raise InvalidState(
-            "Invalid state vector shape:\n"
-            f"expected size={expected_size}, got shape={state_vector.shape}"
+    if "occupation_numbers" in instruction._all_params:
+        _add_occupation_number_basis(
+            state=state,
+            coefficient=instruction._all_params["coefficient"],
+            occupation_numbers=instruction._all_params["occupation_numbers"],
+            modes=instruction.modes,
         )
 
-    state.state_vector = state_vector
+    elif "fock_amplitude_map" in instruction._all_params:
+        for occupation_numbers, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
+            _add_occupation_number_basis(
+                state=state,
+                coefficient=instruction._all_params["coefficient"] * amplitude,
+                occupation_numbers=occupation_numbers,
+                modes=instruction.modes,
+            )
 
     return Result(state=state)
 

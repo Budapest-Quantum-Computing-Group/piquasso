@@ -17,7 +17,6 @@ from .state import PureFockState
 
 from .calculations import (
     state_vector_instruction,
-    full_state_vector_instruction,
     passive_linear,
     beamsplitter5050,
     kerr,
@@ -85,7 +84,6 @@ class PureFockSimulator(BuiltinSimulator):
          :class:`~piquasso.instructions.preparations.Create`,
          :class:`~piquasso.instructions.preparations.Annihilate`,
          :class:`~piquasso.instructions.preparations.StateVector`,
-         :class:`~piquasso.instructions.preparations.FullStateVector`.
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`,
@@ -120,7 +118,6 @@ class PureFockSimulator(BuiltinSimulator):
         preparations.Create: create,
         preparations.Annihilate: annihilate,
         preparations.StateVector: state_vector_instruction,
-        preparations.FullStateVector: full_state_vector_instruction,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,
         gates.Beamsplitter5050: beamsplitter5050,
