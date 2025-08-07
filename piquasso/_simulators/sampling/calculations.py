@@ -40,16 +40,31 @@ from .utils import (
 
 def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
     coefficient = instruction._all_params["coefficient"]
-    occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    if state._config.validate and len(occupation_numbers) != state.d:
-        raise InvalidState(
-            f"The occupation numbers '{occupation_numbers}' are not well-defined "
-            f"on '{state.d}' modes: instruction={instruction}"
-        )
+    if "occupation_numbers" in instruction._all_params:
+        occupation_numbers = instruction._all_params["occupation_numbers"]
 
-    state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
-    state._coefficients.append(coefficient)
+        if state._config.validate and len(occupation_numbers) != state.d:
+            raise InvalidState(
+                f"The occupation numbers '{occupation_numbers}' are not well-defined "
+                f"on '{state.d}' modes: instruction={instruction}"
+            )
+
+        state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+        state._coefficients.append(coefficient)
+
+    elif "fock_amplitude_map" in instruction._all_params:
+        for occupation_numbers, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
+            if state._config.validate and len(occupation_numbers) != state.d:
+                raise InvalidState(
+                    f"The occupation numbers '{occupation_numbers}' are not well-defined "
+                    f"on '{state.d}' modes: instruction={instruction}"
+                )
+
+            state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+            state._coefficients.append(coefficient * amplitude)
 
     return Result(state=state)
 
