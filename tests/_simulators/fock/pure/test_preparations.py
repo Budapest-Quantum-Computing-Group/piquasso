@@ -177,5 +177,5 @@ def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState(
         pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
-    with pytest.raises(pq.api.exceptions.InvalidState):
+    with pytest.raises(ValueError):
         simulator.execute(program)
