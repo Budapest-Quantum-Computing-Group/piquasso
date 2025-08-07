@@ -32,15 +32,16 @@ def test_StateVector_raises_InvalidState_when_nonintegers_specified():
         "Occupation numbers must contain non-negative integers."
     )
 
-
-def test_FullStateVector_stores_state_vector():
-    preparation = pq.FullStateVector(np.array([1.0, 0.0]))
-
-    assert np.allclose(preparation.params["state_vector"], np.array([1.0, 0.0]))
-
-
 def test_FullDensityMatrix_stores_density_matrix():
     density = np.eye(2)
     preparation = pq.FullDensityMatrix(density)
 
     assert np.allclose(preparation.params["density_matrix"], density)
+
+
+def test_StateVector_stores_fock_amplitude_map():
+    amplitude_map = {(0,): 1.0, (1,): 0.0}
+
+    preparation = pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    assert preparation.params["fock_amplitude_map"] == amplitude_map
