@@ -101,4 +101,3 @@ def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(conn
         "instruction="
         "StateVector(fock_amplitude_map={(0, 1): 0.6}, coefficient=1.0, modes=(0,))"
     )
-

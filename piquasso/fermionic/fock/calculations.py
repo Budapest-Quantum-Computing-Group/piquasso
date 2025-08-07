@@ -60,9 +60,7 @@ def state_vector(
 
         index = get_fock_space_index(occupation_numbers)
 
-        state._state_vector = connector.assign(
-            state._state_vector, index, coefficient
-        )
+        state._state_vector = connector.assign(state._state_vector, index, coefficient)
 
     elif "fock_amplitude_map" in instruction._all_params:
         for occupation, amplitude in instruction._all_params[
