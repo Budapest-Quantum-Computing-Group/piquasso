@@ -399,28 +399,3 @@ def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState(
 
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
-
-
-def test_full_density_matrix_preparation_sampling():
-    matrix = np.array([[0.5, 0.5], [0.5, 0.5]])
-
-    with pq.Program() as program:
-        pq.Q() | pq.FullDensityMatrix(matrix)
-
-    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
-
-    state = simulator.execute(program).state
-
-    assert np.allclose(state.density_matrix, matrix)
-
-
-def test_full_density_matrix_preparation_invalid_shape_raises_InvalidState():
-    matrix = np.zeros((3, 3))
-
-    with pq.Program() as program:
-        pq.Q() | pq.FullDensityMatrix(matrix)
-
-    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
-
-    with pytest.raises(pq.api.exceptions.InvalidState):
-        simulator.execute(program)

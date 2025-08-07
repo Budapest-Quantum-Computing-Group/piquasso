@@ -416,27 +416,6 @@ def density_matrix_instruction(
     return Result(state=state)
 
 
-def full_density_matrix_instruction(
-    state: FockState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's density matrix with the provided one."""
-
-    density_matrix = instruction.params["density_matrix"]
-
-    expected_dim = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-    expected_shape = (expected_dim, expected_dim)
-
-    if state._config.validate and density_matrix.shape != expected_shape:
-        raise InvalidState(
-            "Invalid density matrix shape:\n"
-            f"expected={expected_shape}, got={density_matrix.shape}"
-        )
-
-    state._density_matrix = density_matrix
-
-    return Result(state=state)
-
-
 def _add_occupation_number_basis(
     state: FockState,
     *,

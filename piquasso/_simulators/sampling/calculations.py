@@ -70,42 +70,6 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
     return Result(state=state)
 
 
-def full_density_matrix_instruction(
-    state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
-    """Replace the state's density matrix with the provided one."""
-
-    np = state._connector.np
-    fallback_np = state._connector.fallback_np
-
-    density_matrix = instruction.params["density_matrix"]
-
-    expected_dim = cutoff_fock_space_dim(d=state.d, cutoff=state._config.cutoff)
-    expected_shape = (expected_dim, expected_dim)
-
-    if state._config.validate and density_matrix.shape != expected_shape:
-        raise InvalidState(
-            "Invalid density matrix shape:\n"
-            f"expected={expected_shape}, got={density_matrix.shape}"
-        )
-
-    basis = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
-
-    state._density_kets = []
-    state._density_bras = []
-    state._density_coefficients = []
-
-    for i, ket in enumerate(basis):
-        for j, bra in enumerate(basis):
-            coefficient = density_matrix[i, j]
-            if not np.isclose(coefficient, 0.0):
-                state._density_kets.append(fallback_np.array(ket))
-                state._density_bras.append(fallback_np.array(bra))
-                state._density_coefficients.append(coefficient)
-
-    return Result(state=state)
-
-
 def passive_linear(
     state: SamplingState, instruction: gates._PassiveLinearGate, shots: int
 ) -> Result:

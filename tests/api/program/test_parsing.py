@@ -150,28 +150,6 @@ def test_program_from_dict_with_StateVector_fock_amplitude_map_preparation():
     assert program.instructions[0].modes == [0]
 
 
-def test_program_from_dict_with_FullDensityMatrix_preparation():
-    matrix = [[1.0, 0.0], [0.0, 0.0]]
-
-    instructions_dict = {
-        "instructions": [
-            {
-                "type": "FullDensityMatrix",
-                "attributes": {
-                    "constructor_kwargs": {"density_matrix": matrix},
-                    "modes": [0],
-                },
-            }
-        ]
-    }
-
-    program = pq.Program.from_dict(instructions_dict)
-
-    assert isinstance(program.instructions[0], pq.FullDensityMatrix)
-    assert np.allclose(program.instructions[0].params["density_matrix"], matrix)
-    assert program.instructions[0].modes == [0]
-
-
 def test_program_from_dict_from_external_instruction():
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):

@@ -33,13 +33,6 @@ def test_StateVector_raises_InvalidState_when_nonintegers_specified():
     )
 
 
-def test_FullDensityMatrix_stores_density_matrix():
-    density = np.eye(2)
-    preparation = pq.FullDensityMatrix(density)
-
-    assert np.allclose(preparation.params["density_matrix"], density)
-
-
 def test_StateVector_stores_fock_amplitude_map():
     amplitude_map = {(0,): 1.0, (1,): 0.0}
 

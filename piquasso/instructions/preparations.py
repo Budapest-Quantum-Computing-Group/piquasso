@@ -348,23 +348,3 @@ class Annihilate(Preparation):
 
     def __init__(self) -> None:
         pass
-
-
-class FullDensityMatrix(Preparation):
-    r"""State preparation from an entire density matrix.
-
-    Example usage::
-
-        with pq.Program() as program:
-            pq.Q() | pq.FullDensityMatrix(np.eye(4))
-
-    """
-
-    def __init__(self, density_matrix: np.ndarray) -> None:
-        """Store the provided density matrix.
-
-        Args:
-            density_matrix (numpy.ndarray): The full density matrix.
-        """
-
-        super().__init__(params=dict(density_matrix=density_matrix))
