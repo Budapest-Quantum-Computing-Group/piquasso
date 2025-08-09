@@ -85,6 +85,30 @@ def test_state_vector_with_fock_amplitude_map_preparation(connector):
 
 
 @for_all_connectors
+def test_state_vector_with_fock_amplitude_map_and_coefficient(connector):
+    amplitude_map = {(0,): 0.6, (1,): 0.8}
+    coefficient = 1 / np.sqrt(2)
+
+    with pq.Program() as program_with_mul:
+        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map) * coefficient
+
+    with pq.Program() as program_with_param:
+        pq.Q() | pq.StateVector(
+            fock_amplitude_map=amplitude_map, coefficient=coefficient
+        )
+
+    simulator = pq.fermionic.PureFockSimulator(d=1, connector=connector)
+
+    state_with_mul = simulator.execute(program_with_mul).state
+    state_with_param = simulator.execute(program_with_param).state
+
+    expected = coefficient * np.array([0.6, 0.8])
+
+    assert np.allclose(state_with_mul.state_vector, expected)
+    assert np.allclose(state_with_param.state_vector, expected)
+
+
+@for_all_connectors
 def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(connector):
     amplitude_map = {(0, 1): 0.6}
 
