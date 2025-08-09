@@ -436,7 +436,9 @@ def state_vector_instruction(
             "fock_amplitude_map"
         ].items():
             if state._config.validate:
-                expected_length = len(instruction.modes) if instruction.modes else state.d
+                expected_length = (
+                    len(instruction.modes) if instruction.modes else state.d
+                )
                 if len(occupation_numbers) != expected_length:
                     raise InvalidState(
                         f"The occupation numbers '{occupation_numbers}' are not well-defined "
