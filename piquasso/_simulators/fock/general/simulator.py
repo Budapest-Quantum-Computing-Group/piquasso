@@ -65,7 +65,7 @@ class FockSimulator(BuiltinSimulator):
         simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=7))
         result = simulator.execute(program)
 
-     Supported preparations:
+    Supported preparations:
         :class:`~piquasso.instructions.preparations.Vacuum`,
         :class:`~piquasso.instructions.preparations.Create`,
         :class:`~piquasso.instructions.preparations.Annihilate`,

@@ -79,11 +79,11 @@ class PureFockSimulator(BuiltinSimulator):
         simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7))
         result = simulator.execute(program)
 
-     Supported preparations:
-         :class:`~piquasso.instructions.preparations.Vacuum`,
-         :class:`~piquasso.instructions.preparations.Create`,
-         :class:`~piquasso.instructions.preparations.Annihilate`,
-         :class:`~piquasso.instructions.preparations.StateVector`,
+    Supported preparations:
+        :class:`~piquasso.instructions.preparations.Vacuum`,
+        :class:`~piquasso.instructions.preparations.Create`,
+        :class:`~piquasso.instructions.preparations.Annihilate`,
+        :class:`~piquasso.instructions.preparations.StateVector`.
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`,
