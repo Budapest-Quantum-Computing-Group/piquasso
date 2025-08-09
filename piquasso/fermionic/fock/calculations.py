@@ -47,18 +47,41 @@ def state_vector(
     fallback_np = connector.fallback_np
 
     coefficient = instruction._all_params["coefficient"]
-    occupation_numbers = fallback_np.array(
-        instruction._all_params["occupation_numbers"]
-    )
 
-    if state._config.validate and not all_zero_or_one(occupation_numbers):
-        raise InvalidParameter(
-            f"Invalid initial state specified: instruction={instruction}"
+    if "occupation_numbers" in instruction._all_params:
+        occupation_numbers = fallback_np.array(
+            instruction._all_params["occupation_numbers"]
         )
 
-    index = get_fock_space_index(occupation_numbers)
+        if state._config.validate and not all_zero_or_one(occupation_numbers):
+            raise InvalidParameter(
+                f"Invalid initial state specified: instruction={instruction}"
+            )
 
-    state._state_vector = connector.assign(state._state_vector, index, coefficient)
+        index = get_fock_space_index(occupation_numbers)
+
+        state._state_vector = connector.assign(state._state_vector, index, coefficient)
+
+    elif "fock_amplitude_map" in instruction._all_params:
+        for occupation, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
+            occ_numbers = fallback_np.array(occupation)
+
+            if state._config.validate and (
+                len(occ_numbers) != state._d or not all_zero_or_one(occ_numbers)
+            ):
+                raise InvalidParameter(
+                    f"Invalid initial state specified: instruction={instruction}"
+                )
+
+            index = get_fock_space_index(occ_numbers)
+
+            state._state_vector = connector.assign(
+                state._state_vector,
+                index,
+                coefficient * amplitude,
+            )
 
     return Result(state=state)
 

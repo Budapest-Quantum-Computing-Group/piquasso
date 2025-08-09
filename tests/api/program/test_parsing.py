@@ -128,6 +128,28 @@ def test_program_from_dict_with_DensityMatrix_preparation():
     assert program.instructions[2].modes == [0]
 
 
+def test_program_from_dict_with_StateVector_fock_amplitude_map_preparation():
+    amplitude_map = {(0,): 0.5, (1,): 0.5}
+
+    instructions_dict = {
+        "instructions": [
+            {
+                "type": "StateVector",
+                "attributes": {
+                    "constructor_kwargs": {"fock_amplitude_map": amplitude_map},
+                    "modes": [0],
+                },
+            }
+        ]
+    }
+
+    program = pq.Program.from_dict(instructions_dict)
+
+    assert isinstance(program.instructions[0], pq.StateVector)
+    assert program.instructions[0].params["fock_amplitude_map"] == amplitude_map
+    assert program.instructions[0].modes == [0]
+
+
 def test_program_from_dict_from_external_instruction():
     class FakeInstruction(pq.Instruction):
         def __init__(self, first_param, second_param):
