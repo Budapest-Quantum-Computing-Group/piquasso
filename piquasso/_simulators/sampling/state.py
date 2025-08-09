@@ -198,7 +198,6 @@ class SamplingState(State):
     @property
     def density_matrix(self) -> np.ndarray:
         """The density matrix of the state in the truncated Fock space."""
-
         state_vector = self.state_vector
 
         return self._np.outer(state_vector, self._np.conj(state_vector))
