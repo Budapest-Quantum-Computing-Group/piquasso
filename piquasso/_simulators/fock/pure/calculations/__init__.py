@@ -420,8 +420,9 @@ def state_vector_instruction(
             expected_length = len(instruction.modes) if instruction.modes else state.d
             if len(occupation_numbers) != expected_length:
                 raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' are not well-defined "
-                    f"on '{expected_length}' modes: instruction={instruction}"
+                    f"The occupation numbers '{occupation_numbers}' are "
+                    f"not well-defined on '{expected_length}' modes: "
+                    f"instruction={instruction}"
                 )
 
         _add_occupation_number_basis(
@@ -441,8 +442,9 @@ def state_vector_instruction(
                 )
                 if len(occupation_numbers) != expected_length:
                     raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' are not well-defined "
-                        f"on '{expected_length}' modes: instruction={instruction}"
+                        f"The occupation numbers '{occupation_numbers}' are "
+                        f"not well-defined on '{expected_length}' modes: "
+                        f"instruction={instruction}"
                     )
 
             _add_occupation_number_basis(
