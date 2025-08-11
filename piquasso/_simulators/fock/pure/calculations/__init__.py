@@ -58,6 +58,7 @@ from piquasso.instructions import gates
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.connector import BaseConnector
+from piquasso.api.exceptions import InvalidState
 
 
 def particle_number_measurement(
@@ -412,11 +413,46 @@ def linear(
 def state_vector_instruction(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> Result:
-    _add_occupation_number_basis(
-        state=state,
-        **instruction._all_params,
-        modes=instruction.modes,
-    )
+    if "occupation_numbers" in instruction._all_params:
+        occupation_numbers = instruction._all_params["occupation_numbers"]
+
+        if state._config.validate:
+            expected_length = len(instruction.modes) if instruction.modes else state.d
+            if len(occupation_numbers) != expected_length:
+                raise InvalidState(
+                    f"The occupation numbers '{occupation_numbers}' are "
+                    f"not well-defined on '{expected_length}' modes: "
+                    f"instruction={instruction}"
+                )
+
+        _add_occupation_number_basis(
+            state=state,
+            coefficient=instruction._all_params["coefficient"],
+            occupation_numbers=occupation_numbers,
+            modes=instruction.modes,
+        )
+
+    elif "fock_amplitude_map" in instruction._all_params:
+        for occupation_numbers, amplitude in instruction._all_params[
+            "fock_amplitude_map"
+        ].items():
+            if state._config.validate:
+                expected_length = (
+                    len(instruction.modes) if instruction.modes else state.d
+                )
+                if len(occupation_numbers) != expected_length:
+                    raise InvalidState(
+                        f"The occupation numbers '{occupation_numbers}' are "
+                        f"not well-defined on '{expected_length}' modes: "
+                        f"instruction={instruction}"
+                    )
+
+            _add_occupation_number_basis(
+                state=state,
+                coefficient=instruction._all_params["coefficient"] * amplitude,
+                occupation_numbers=occupation_numbers,
+                modes=instruction.modes,
+            )
 
     return Result(state=state)
 
