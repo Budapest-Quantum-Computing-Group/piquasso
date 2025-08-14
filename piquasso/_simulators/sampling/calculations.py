@@ -149,6 +149,7 @@ def particle_number_measurement(
     algorithm.
     """
 
+    print(type(state))
     if (
         state._config.validate
         and len(state._occupation_numbers) != 1
