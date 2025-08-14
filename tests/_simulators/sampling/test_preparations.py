@@ -93,6 +93,23 @@ def test_state_vector_property_raises_InvalidState_when_cutoff_too_small():
     assert str(required_cutoff) in error.value.args[0]
 
 
+def test_state_vector_with_fock_amplitude_map_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+    fock_amplitude_map = {tuple(occupation_numbers): 1.0}
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map=fock_amplitude_map)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.SamplingSimulator(d=6, config=config)
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
+
+
 def test_interferometer_init():
     with pq.Program() as program:
         pass
