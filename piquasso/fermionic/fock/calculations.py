@@ -15,7 +15,7 @@
 
 from piquasso.api.result import Result
 
-from piquasso.api.exceptions import InvalidParameter
+from piquasso.api.exceptions import InvalidParameter, InvalidState
 
 from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
 
@@ -53,10 +53,20 @@ def state_vector(
             instruction._all_params["occupation_numbers"]
         )
 
-        if state._config.validate and not all_zero_or_one(occupation_numbers):
-            raise InvalidParameter(
-                f"Invalid initial state specified: instruction={instruction}"
-            )
+        if state._config.validate:
+            if not all_zero_or_one(occupation_numbers):
+                raise InvalidParameter(
+                    f"Invalid initial state specified: instruction={instruction}"
+                )
+
+            total = int(fallback_np.sum(occupation_numbers))
+            if total >= state._config.cutoff:
+                required_cutoff = total + 1
+                raise InvalidState(
+                    f"The occupation numbers '{tuple(occupation_numbers.tolist())}' "
+                    f"require a cutoff of at least '{required_cutoff}', but the provided "
+                    f"cutoff is '{state._config.cutoff}': instruction={instruction}"
+                )
 
         index = get_fock_space_index(occupation_numbers)
 
@@ -68,12 +78,20 @@ def state_vector(
         ].items():
             occ_numbers = fallback_np.array(occupation)
 
-            if state._config.validate and (
-                len(occ_numbers) != state._d or not all_zero_or_one(occ_numbers)
-            ):
-                raise InvalidParameter(
-                    f"Invalid initial state specified: instruction={instruction}"
-                )
+            if state._config.validate:
+                if len(occ_numbers) != state._d or not all_zero_or_one(occ_numbers):
+                    raise InvalidParameter(
+                        f"Invalid initial state specified: instruction={instruction}"
+                    )
+
+                total = int(fallback_np.sum(occ_numbers))
+                if total >= state._config.cutoff:
+                    required_cutoff = total + 1
+                    raise InvalidState(
+                        f"The occupation numbers '{tuple(occ_numbers.tolist())}' "
+                        f"require a cutoff of at least '{required_cutoff}', but the provided "
+                        f"cutoff is '{state._config.cutoff}': instruction={instruction}"
+                    )
 
             index = get_fock_space_index(occ_numbers)
 

@@ -425,6 +425,15 @@ def state_vector_instruction(
                     f"instruction={instruction}"
                 )
 
+            total = int(np.sum(occupation_numbers))
+            if total >= state._config.cutoff:
+                required_cutoff = total + 1
+                raise InvalidState(
+                    f"The occupation numbers '{occupation_numbers}' require a cutoff "
+                    f"of at least '{required_cutoff}', but the provided cutoff is "
+                    f"'{state._config.cutoff}': instruction={instruction}"
+                )
+
         _add_occupation_number_basis(
             state=state,
             coefficient=instruction._all_params["coefficient"],
@@ -445,6 +454,15 @@ def state_vector_instruction(
                         f"The occupation numbers '{occupation_numbers}' are "
                         f"not well-defined on '{expected_length}' modes: "
                         f"instruction={instruction}"
+                    )
+
+                total = int(np.sum(occupation_numbers))
+                if total >= state._config.cutoff:
+                    required_cutoff = total + 1
+                    raise InvalidState(
+                        f"The occupation numbers '{occupation_numbers}' require a cutoff "
+                        f"of at least '{required_cutoff}', but the provided cutoff is "
+                        f"'{state._config.cutoff}': instruction={instruction}"
                     )
 
             _add_occupation_number_basis(

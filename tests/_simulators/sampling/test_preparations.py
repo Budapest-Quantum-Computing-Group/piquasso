@@ -60,6 +60,39 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
     )
 
 
+def test_state_vector_raises_InvalidState_when_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.SamplingSimulator(d=6, config=config)
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
+
+
+def test_state_vector_property_raises_InvalidState_when_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+    config = pq.Config(cutoff=4, validate=False)
+    simulator = pq.SamplingSimulator(d=6, config=config)
+    state = simulator.execute(program).state
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        _ = state.state_vector
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
+
+
 def test_interferometer_init():
     with pq.Program() as program:
         pass

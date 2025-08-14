@@ -125,3 +125,44 @@ def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(conn
         "instruction="
         "StateVector(fock_amplitude_map={(0, 1): 0.6}, coefficient=1.0, modes=(0,))"
     )
+
+
+@for_all_connectors
+def test_state_vector_raises_InvalidState_when_cutoff_too_small(connector):
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.fermionic.PureFockSimulator(
+        d=6, config=config, connector=connector
+    )
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
+
+
+@for_all_connectors
+def test_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState(
+    connector,
+):
+    occupation_numbers = (0, 1, 0, 1, 1, 1)
+    amplitude_map = {occupation_numbers: 1.0}
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.fermionic.PureFockSimulator(
+        d=6, config=config, connector=connector
+    )
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
