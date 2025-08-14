@@ -64,8 +64,9 @@ def state_vector(
                 required_cutoff = total + 1
                 raise InvalidState(
                     f"The occupation numbers '{tuple(occupation_numbers.tolist())}' "
-                    f"require a cutoff of at least '{required_cutoff}', but the provided "
-                    f"cutoff is '{state._config.cutoff}': instruction={instruction}"
+                    f"require a cutoff of at least '{required_cutoff}', "
+                    f"but the provided cutoff is "
+                    f"'{state._config.cutoff}': instruction={instruction}"
                 )
 
         index = get_fock_space_index(occupation_numbers)
@@ -88,9 +89,11 @@ def state_vector(
                 if total >= state._config.cutoff:
                     required_cutoff = total + 1
                     raise InvalidState(
-                        f"The occupation numbers '{tuple(occ_numbers.tolist())}' "
-                        f"require a cutoff of at least '{required_cutoff}', but the provided "
-                        f"cutoff is '{state._config.cutoff}': instruction={instruction}"
+                        f"The occupation numbers "
+                        f"'{tuple(occupation_numbers.tolist())}' "
+                        f"require a cutoff of at least '{required_cutoff}', "
+                        f"but the provided cutoff is "
+                        f"'{state._config.cutoff}': instruction={instruction}"
                     )
 
             index = get_fock_space_index(occ_numbers)

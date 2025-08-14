@@ -135,9 +135,7 @@ def test_state_vector_raises_InvalidState_when_cutoff_too_small(connector):
         pq.Q() | pq.StateVector(occupation_numbers)
 
     config = pq.Config(cutoff=4, validate=True)
-    simulator = pq.fermionic.PureFockSimulator(
-        d=6, config=config, connector=connector
-    )
+    simulator = pq.fermionic.PureFockSimulator(d=6, config=config, connector=connector)
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)
@@ -157,9 +155,7 @@ def test_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidSta
         pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
 
     config = pq.Config(cutoff=4, validate=True)
-    simulator = pq.fermionic.PureFockSimulator(
-        d=6, config=config, connector=connector
-    )
+    simulator = pq.fermionic.PureFockSimulator(d=6, config=config, connector=connector)
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)

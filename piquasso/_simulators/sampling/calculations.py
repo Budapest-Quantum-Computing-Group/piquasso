@@ -46,17 +46,17 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
         if state._config.validate:
             if len(occupation_numbers) != state.d:
                 raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' are not well-defined "
-                    f"on '{state.d}' modes: instruction={instruction}"
+                    f"The occupation numbers '{occupation_numbers}' are "
+                    f"not well-defined on '{state.d}' modes: instruction={instruction}"
                 )
 
             total = int(np.sum(occupation_numbers))
             if total >= state._config.cutoff:
                 required_cutoff = total + 1
                 raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' require a cutoff "
-                    f"of at least '{required_cutoff}', but the provided cutoff is "
-                    f"'{state._config.cutoff}': instruction={instruction}"
+                    f"The occupation numbers '{occupation_numbers}' require "
+                    f"a cutoff of at least '{required_cutoff}', but the provided "
+                    f"cutoff is '{state._config.cutoff}': instruction={instruction}"
                 )
 
         state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
@@ -78,8 +78,9 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
                 if total >= state._config.cutoff:
                     required_cutoff = total + 1
                     raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' require a cutoff "
-                        f"of at least '{required_cutoff}', but the provided cutoff is "
+                        f"The occupation numbers '{occupation_numbers}' require "
+                        f"a cutoff of at least '{required_cutoff}', "
+                        f"but the provided cutoff is "
                         f"'{state._config.cutoff}': instruction={instruction}"
                     )
 

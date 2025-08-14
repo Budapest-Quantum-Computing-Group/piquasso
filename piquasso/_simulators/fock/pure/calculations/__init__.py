@@ -460,9 +460,9 @@ def state_vector_instruction(
                 if total >= state._config.cutoff:
                     required_cutoff = total + 1
                     raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' require a cutoff "
-                        f"of at least '{required_cutoff}', but the provided cutoff is "
-                        f"'{state._config.cutoff}': instruction={instruction}"
+                        f"The occupation numbers '{occupation_numbers}' require "
+                        f"a cutoff of at least '{required_cutoff}', but the provided "
+                        f"cutoff is '{state._config.cutoff}': instruction={instruction}"
                     )
 
             _add_occupation_number_basis(
