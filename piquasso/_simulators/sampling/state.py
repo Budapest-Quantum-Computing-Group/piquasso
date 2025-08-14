@@ -165,16 +165,6 @@ class SamplingState(State):
 
         particle_numbers = fallback_np.sum(self._occupation_numbers, axis=1)
 
-        if len(self._occupation_numbers) > 0:
-            max_particles = int(fallback_np.max(particle_numbers))
-            if max_particles >= self._config.cutoff:
-                required_cutoff = max_particles + 1
-                raise InvalidState(
-                    f"The occupation numbers in the state require a cutoff of at least "
-                    f"'{required_cutoff}', but the provided cutoff is "
-                    f"'{self._config.cutoff}'."
-                )
-
         state_vector = np.zeros(
             shape=cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff),
             dtype=self._config.complex_dtype,
