@@ -31,24 +31,8 @@ import piquasso as pq
 SHOTS = 100  # number of shots
 
 
-def get_strawberry_samples(squeezings, unitary):
-    d = len(squeezings)
 
-    sf_program = sf.Program(d)
-    sf_engine = sf.Engine(backend="gaussian")
-
-    with sf_program.context as q:
-        for i in range(d):
-            sf.ops.Sgate(squeezings[i]) | q[i]
-
-        sf.ops.Interferometer(unitary) | tuple(q[i] for i in range(d))
-
-        sf.ops.MeasureFock() | tuple(q[i] for i in range(d))
-
-    return sf_engine.run(sf_program, shots=SHOTS).samples
-
-
-def get_piquasso_samples(squeezings, unitary):
+def get_piquasso_samples(squeezings, unitary, use_dask):
     d = len(squeezings)
 
     with pq.Program() as program:
@@ -59,7 +43,7 @@ def get_piquasso_samples(squeezings, unitary):
         pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.GaussianSimulator(
-        d=d, config=pq.Config(measurement_cutoff=5 + 1, use_dask=True)
+        d=d, config=pq.Config(measurement_cutoff=5 + 1, use_dask=use_dask)
     )
 
     return simulator.execute(program, shots=SHOTS).samples
@@ -74,15 +58,15 @@ if __name__ == "__main__":
     m = 2
     squeezings = np.arcsinh(np.ones(m))
     unitary = unitary_group.rvs(m)
-    get_strawberry_samples(squeezings, unitary)
-    get_piquasso_samples(squeezings, unitary)
+    get_piquasso_samples(squeezings, unitary, use_dask=True)
+    get_piquasso_samples(squeezings, unitary, use_dask=False)
     ####
 
     x = []
-    sf_times = []
+    pq_dask_times = []
     pq_times = []
 
-    for m in range(2, 100):
+    for m in range(25, 26):
         print("m=", m)
         x.append(m)
 
@@ -90,21 +74,21 @@ if __name__ == "__main__":
         unitary = unitary_group.rvs(m)
 
         start_time = time.time()
-        samples = get_strawberry_samples(squeezings, unitary)
+        samples = get_piquasso_samples(squeezings, unitary, use_dask=True)
         runtime = time.time() - start_time
-        print("SF:", runtime)
-        sf_times.append(runtime)
+        print("PQ (dask):", runtime)
+        pq_dask_times.append(runtime)
 
         start_time = time.time()
-        samples = get_piquasso_samples(squeezings, unitary)
+        samples = get_piquasso_samples(squeezings, unitary, use_dask=False)
         runtime = time.time() - start_time
         print("PQ:", runtime)
         pq_times.append(runtime)
 
         with open(FILENAME, "w") as f:
-            json.dump(dict(x=x, pq_times=pq_times, sf_times=sf_times), f, indent=4)
+            json.dump(dict(x=x, pq_times=pq_times, pq_dask_times=pq_dask_times), f, indent=4)
 
-    plt.scatter(x, sf_times, label="Strawberry Fields")
+    plt.scatter(x, pq_dask_times, label="Piquasso (dask)")
     plt.scatter(x, pq_times, label="Piquasso")
 
     plt.yscale("log")
