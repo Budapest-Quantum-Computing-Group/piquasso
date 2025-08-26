@@ -59,6 +59,8 @@ class Simulator(Computer, _mixins.CodeMixin):
         connector: Optional[BaseConnector] = None,
     ) -> None:
         self.d = d
+        self.active_modes = set(range(self.d))
+        self.active_mode_mapping = {v: k for k, v in enumerate(self.active_modes)}
         self.config = config.copy() if config is not None else self._config_class()
         self._connector = connector or self._default_connector_class()
 
@@ -239,10 +241,29 @@ class Simulator(Computer, _mixins.CodeMixin):
         result = Result(state=state)
 
         for instruction in instructions:
-            if not hasattr(instruction, "modes") or instruction.modes is tuple():
-                instruction.modes = tuple(range(self.d))
 
-            print(type(self))
+            if isinstance(instruction, PostSelection):
+                instruction.modes = instruction._all_params['postselect_modes']
+
+            if hasattr(instruction, "modes") and any(m not in self.active_modes for m in instruction.modes):
+                inactive_modes = {m for m in instruction.modes if m not in self.active_modes}
+                raise ValueError(f"Some modes of instruction {instruction} are not active: {inactive_modes}.")
+
+            if not hasattr(instruction, "modes") or instruction.modes is tuple():
+                instruction.modes = tuple(range(len(self.active_modes)))
+
+            original_modes = instruction.modes if isinstance(instruction, Measurement) else None
+            if len(self.active_modes) != max(self.active_modes):
+                # We have measured at least one mode, need to remap the modes
+                print(instruction, self.active_mode_mapping, instruction.modes)
+                instruction.modes = tuple(self.active_mode_mapping[m] for m in instruction.modes)
+
+            if original_modes is not None:
+                for mode in original_modes:
+                    self.active_modes.remove(mode)
+                self.active_mode_mapping = {v: k for k, v in enumerate(self.active_modes)}
+            
+
             calculation = self._get_calculation(instruction)
 
             instruction = self._maybe_postprocess_batch_instruction(instruction)
