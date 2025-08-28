@@ -33,7 +33,7 @@ from typing import Tuple
 import numpy as np
 
 from piquasso.api.exceptions import InvalidParameter
-from piquasso.api.instruction import Measurement
+from piquasso.api.instruction import Measurement, PostSelection
 from piquasso._math.linalg import is_positive_semidefinite
 from piquasso._math.symplectic import symplectic_form
 
@@ -199,7 +199,7 @@ class HeterodyneMeasurement(Measurement):
         )
 
 
-class PostSelectPhotons(Measurement):
+class PostSelectPhotons(PostSelection):
     """Post-selection on detected photon numbers.
 
     Example usage::
@@ -246,7 +246,7 @@ class PostSelectPhotons(Measurement):
         )
 
 
-class ImperfectPostSelectPhotons(Measurement):
+class ImperfectPostSelectPhotons(PostSelection):
     r"""Post-selection on detected photon numbers.
 
     Example usage::
