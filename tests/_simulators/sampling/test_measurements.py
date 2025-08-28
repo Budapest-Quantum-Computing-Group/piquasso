@@ -586,8 +586,8 @@ class TestMultiMeasurements:
 
         assert state == expected_state
 
-    def test_reindexing_for_measurements(self):
-
+    def test_reindexing_for_measurements_explicit_modes(self):
+        """Test a case where internally mode reindexing happens for active modes."""
         with pq.Program() as program:
             pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
             pq.Q() | pq.PostSelectPhotons(postselect_modes=[0, 1], photon_counts=[1, 1])
@@ -595,16 +595,16 @@ class TestMultiMeasurements:
 
         simulator = pq.PureFockSimulator(d=5)
         res = simulator.execute(program, shots=1)
-        assert res.samples == [(1,0)]
+        assert res.samples == [(1, 0)]
 
-    def test_measuring_inactive_raises(self):
-
-        inactive_mode = 0
+    @pytest.mark.paramterize("measured_mode", [0, 1])
+    def test_measuring_inactive_raises(self, measured_mode):
+        """Test that measuring inactive modes raises an error."""
         with pq.Program() as program:
             pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-            pq.Q() | pq.PostSelectPhotons(postselect_modes=[inactive_mode, 1], photon_counts=[1, 1])
-            pq.Q(inactive_mode) | pq.ParticleNumberMeasurement()
+            pq.Q() | pq.PostSelectPhotons(postselect_modes=[0, 1], photon_counts=[1, 1])
+            pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
 
         simulator = pq.PureFockSimulator(d=5)
-        with pytest.raises(ValueError, match=f"are not active { {inactive_mode} }"):
+        with pytest.raises(ValueError, match=f"are not active { {measured_mode} }"):
             simulator.execute(program, shots=1)
