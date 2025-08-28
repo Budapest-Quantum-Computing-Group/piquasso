@@ -597,7 +597,7 @@ class TestMultiMeasurements:
         res = simulator.execute(program, shots=1)
         assert res.samples == [(1, 0)]
 
-    @pytest.mark.paramterize("measured_mode", [0, 1])
+    @pytest.mark.parametrize("measured_mode", [0, 1])
     def test_measuring_inactive_raises(self, measured_mode):
         """Test that measuring inactive modes raises an error."""
         with pq.Program() as program:
@@ -606,5 +606,5 @@ class TestMultiMeasurements:
             pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
 
         simulator = pq.PureFockSimulator(d=5)
-        with pytest.raises(ValueError, match=f"are not active { {measured_mode} }"):
+        with pytest.raises(ValueError, match=f"are not active: { {measured_mode} }"):
             simulator.execute(program, shots=1)
