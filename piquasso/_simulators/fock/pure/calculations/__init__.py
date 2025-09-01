@@ -58,7 +58,7 @@ from piquasso.instructions import gates
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.connector import BaseConnector
-from piquasso.api.exceptions import InvalidState
+from piquasso._math.validations import validate_occupation_numbers
 
 
 def particle_number_measurement(
@@ -418,21 +418,9 @@ def state_vector_instruction(
 
         if state._config.validate:
             expected_length = len(instruction.modes) if instruction.modes else state.d
-            if len(occupation_numbers) != expected_length:
-                raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' are "
-                    f"not well-defined on '{expected_length}' modes: "
-                    f"instruction={instruction}"
-                )
-
-            total = int(np.sum(occupation_numbers))
-            if total >= state._config.cutoff:
-                required_cutoff = total + 1
-                raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' require a cutoff "
-                    f"of at least '{required_cutoff}', but the provided cutoff is "
-                    f"'{state._config.cutoff}': instruction={instruction}"
-                )
+            validate_occupation_numbers(
+                occupation_numbers, expected_length, state._config.cutoff
+            )
 
         _add_occupation_number_basis(
             state=state,
@@ -449,21 +437,9 @@ def state_vector_instruction(
                 expected_length = (
                     len(instruction.modes) if instruction.modes else state.d
                 )
-                if len(occupation_numbers) != expected_length:
-                    raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' are "
-                        f"not well-defined on '{expected_length}' modes: "
-                        f"instruction={instruction}"
-                    )
-
-                total = int(np.sum(occupation_numbers))
-                if total >= state._config.cutoff:
-                    required_cutoff = total + 1
-                    raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' require "
-                        f"a cutoff of at least '{required_cutoff}', but the provided "
-                        f"cutoff is '{state._config.cutoff}': instruction={instruction}"
-                    )
+                validate_occupation_numbers(
+                    occupation_numbers, expected_length, state._config.cutoff
+                )
 
             _add_occupation_number_basis(
                 state=state,

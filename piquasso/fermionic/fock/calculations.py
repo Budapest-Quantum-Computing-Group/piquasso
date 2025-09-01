@@ -15,9 +15,13 @@
 
 from piquasso.api.result import Result
 
-from piquasso.api.exceptions import InvalidParameter, InvalidState
+from piquasso.api.exceptions import InvalidParameter
 
-from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
+from piquasso._math.validations import (
+    all_zero_or_one,
+    are_modes_consecutive,
+    validate_occupation_numbers,
+)
 
 from ._utils import (
     calculate_indices_for_controlled_phase,
@@ -58,16 +62,9 @@ def state_vector(
                 raise InvalidParameter(
                     f"Invalid initial state specified: instruction={instruction}"
                 )
-
-            total = int(fallback_np.sum(occupation_numbers))
-            if total >= state._config.cutoff:
-                required_cutoff = total + 1
-                raise InvalidState(
-                    f"The occupation numbers '{tuple(occupation_numbers.tolist())}' "
-                    f"require a cutoff of at least '{required_cutoff}', "
-                    f"but the provided cutoff is "
-                    f"'{state._config.cutoff}': instruction={instruction}"
-                )
+            validate_occupation_numbers(
+                occupation_numbers, state._d, state._config.cutoff
+            )
 
         index = get_fock_space_index(occupation_numbers)
 
@@ -84,16 +81,7 @@ def state_vector(
                     raise InvalidParameter(
                         f"Invalid initial state specified: instruction={instruction}"
                     )
-
-                total = int(fallback_np.sum(occ_numbers))
-                if total >= state._config.cutoff:
-                    required_cutoff = total + 1
-                    raise InvalidState(
-                        f"The occupation numbers '{tuple(occ_numbers.tolist())}' "
-                        f"require a cutoff of at least '{required_cutoff}', "
-                        f"but the provided cutoff is "
-                        f"'{state._config.cutoff}': instruction={instruction}"
-                    )
+                validate_occupation_numbers(occ_numbers, state._d, state._config.cutoff)
 
             index = get_fock_space_index(occ_numbers)
 

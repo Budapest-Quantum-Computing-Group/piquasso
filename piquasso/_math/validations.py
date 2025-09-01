@@ -17,6 +17,8 @@ from typing import Iterable, Union, Tuple
 
 import numpy as np
 
+from piquasso.api.exceptions import InvalidState
+
 
 def is_natural(number: Union[int, float]) -> bool:
     return bool(np.isclose(number % 1, 0.0) and round(number) >= 0)
@@ -50,3 +52,36 @@ def are_modes_consecutive(modes: Tuple[int, ...]) -> bool:
     expected = np.arange(modes[0], modes[-1] + 1)
 
     return len(modes) == len(expected) and bool(np.all(modes == expected))
+
+
+def validate_occupation_numbers(
+    occupation_numbers: Iterable, d: int, cutoff: int
+) -> None:
+    """Validate occupation numbers for Fock state preparation.
+
+    Args:
+        occupation_numbers: Sequence of occupation numbers to validate.
+        d: The expected number of modes.
+        cutoff: The cutoff dimension for the Fock space.
+
+    Raises:
+        InvalidState: If the length of ``occupation_numbers`` does not match
+            ``d`` or if the total particle number requires a larger cutoff.
+    """
+
+    occupation_numbers = np.array(occupation_numbers)
+
+    if len(occupation_numbers) != d:
+        raise InvalidState(
+            f"The occupation numbers '{tuple(occupation_numbers.tolist())}' are "
+            f"not well-defined on '{d}' modes."
+        )
+
+    total = int(np.sum(occupation_numbers))
+    if total >= cutoff:
+        required_cutoff = total + 1
+        raise InvalidState(
+            f"The occupation numbers '{tuple(occupation_numbers.tolist())}' require "
+            f"a cutoff of at least '{required_cutoff}', but the provided cutoff is "
+            f"'{cutoff}'."
+        )
