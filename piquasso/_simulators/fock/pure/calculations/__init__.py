@@ -419,7 +419,10 @@ def state_vector_instruction(
         if state._config.validate:
             expected_length = len(instruction.modes) if instruction.modes else state.d
             validate_occupation_numbers(
-                occupation_numbers, expected_length, state._config.cutoff
+                occupation_numbers,
+                expected_length,
+                state._config.cutoff,
+                context=f": instruction={instruction}",
             )
 
         _add_occupation_number_basis(
@@ -438,7 +441,10 @@ def state_vector_instruction(
                     len(instruction.modes) if instruction.modes else state.d
                 )
                 validate_occupation_numbers(
-                    occupation_numbers, expected_length, state._config.cutoff
+                    occupation_numbers,
+                    expected_length,
+                    state._config.cutoff,
+                    context=f": instruction={instruction}",
                 )
 
             _add_occupation_number_basis(

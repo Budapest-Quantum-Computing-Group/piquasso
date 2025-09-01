@@ -63,7 +63,10 @@ def state_vector(
                     f"Invalid initial state specified: instruction={instruction}"
                 )
             validate_occupation_numbers(
-                occupation_numbers, state._d, state._config.cutoff
+                occupation_numbers,
+                state._d,
+                state._config.cutoff,
+                context=f": instruction={instruction}",
             )
 
         index = get_fock_space_index(occupation_numbers)
@@ -81,7 +84,12 @@ def state_vector(
                     raise InvalidParameter(
                         f"Invalid initial state specified: instruction={instruction}"
                     )
-                validate_occupation_numbers(occ_numbers, state._d, state._config.cutoff)
+                validate_occupation_numbers(
+                    occ_numbers,
+                    state._d,
+                    state._config.cutoff,
+                    context=f": instruction={instruction}",
+                )
 
             index = get_fock_space_index(occ_numbers)
 

@@ -55,7 +55,7 @@ def are_modes_consecutive(modes: Tuple[int, ...]) -> bool:
 
 
 def validate_occupation_numbers(
-    occupation_numbers: Iterable, d: int, cutoff: int
+    occupation_numbers: Iterable, d: int, cutoff: int, context: str = ""
 ) -> None:
     """Validate occupation numbers for Fock state preparation.
 
@@ -63,25 +63,33 @@ def validate_occupation_numbers(
         occupation_numbers: Sequence of occupation numbers to validate.
         d: The expected number of modes.
         cutoff: The cutoff dimension for the Fock space.
+        context: Optional message appended to raised errors.
 
     Raises:
         InvalidState: If the length of ``occupation_numbers`` does not match
             ``d`` or if the total particle number requires a larger cutoff.
     """
 
-    occupation_numbers = np.array(occupation_numbers)
+    original_occupation_numbers = tuple(occupation_numbers)
+    occupation_numbers = np.array(original_occupation_numbers)
 
     if len(occupation_numbers) != d:
-        raise InvalidState(
-            f"The occupation numbers '{tuple(occupation_numbers.tolist())}' are "
+        message = (
+            f"The occupation numbers '{original_occupation_numbers}' are "
             f"not well-defined on '{d}' modes."
         )
+        if context:
+            message += context
+        raise InvalidState(message)
 
     total = int(np.sum(occupation_numbers))
     if total >= cutoff:
         required_cutoff = total + 1
-        raise InvalidState(
-            f"The occupation numbers '{tuple(occupation_numbers.tolist())}' require "
+        message = (
+            f"The occupation numbers '{original_occupation_numbers}' require "
             f"a cutoff of at least '{required_cutoff}', but the provided cutoff is "
             f"'{cutoff}'."
         )
+        if context:
+            message += context
+        raise InvalidState(message)
