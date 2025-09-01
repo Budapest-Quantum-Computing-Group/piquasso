@@ -19,7 +19,7 @@ import scipy
 import numpy as np
 
 from itertools import repeat
-from functools import lru_cache
+from functools import lru_cache, partial
 
 from scipy.special import factorial
 
@@ -389,27 +389,49 @@ def _get_particle_number_measurement_samples(
     sqrt_cov_1 = S @ np.sqrt(mixed_diag)
     sqrt_cov_2 = np.linalg.cholesky(T + np.identity(2 * d))
 
-    samples = np.empty(shape=(shots, d), dtype=int)
+    _generate_sample_from_seed = partial(
+        _generate_sample,
+        B=B,
+        sqrt_cov_1=sqrt_cov_1,
+        sqrt_cov_2=sqrt_cov_2,
+        mean=normalized_mean,
+        loop_hafnian_batch=reduced_state._connector.loop_hafnian_batch,
+        cutoff=config.measurement_cutoff,
+    )
 
-    for idx in range(shots):
-        sample = _generate_sample(
-            B,
-            sqrt_cov_1,
-            sqrt_cov_2,
-            mean=normalized_mean,
-            connector=reduced_state._connector,
-            config=config,
-        )
+    seed = config.seed_sequence
 
-        samples[idx] = sample
+    if config.use_dask:
+        try:
+            import dask
+        except ImportError:
+            raise ImportError("This feature requires 'dask' to be installed.")
 
-    return samples
+        delayed_func = dask.delayed(_generate_sample_from_seed)
+
+        compute_list = []
+        for idx in range(shots):
+            compute_list.append(delayed_func(seed=seed + idx))
+
+        results = dask.compute(*compute_list)
+
+        return np.vstack(results)
+
+    else:
+        samples = np.empty(shape=(shots, d), dtype=int)
+
+        for idx in range(shots):
+            sample = _generate_sample_from_seed(seed=seed + idx)
+
+            samples[idx] = sample
+
+        return samples
 
 
-def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, connector, config):
+def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, loop_hafnian_batch, cutoff, seed):
     d = len(B)
-    cutoff = config.measurement_cutoff
-    rng = config.rng
+
+    rng = np.random.default_rng(seed)
 
     possible_choices = np.arange(cutoff)
 
@@ -428,9 +450,7 @@ def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, connector, config):
         matrix = B[:mode_p_1, :mode_p_1]
         diagonal = gamma[:mode_p_1]
         partial_sample = sample[:mode_p_1]
-        lhaf_values = connector.loop_hafnian_batch(
-            matrix, diagonal, partial_sample, cutoff
-        )
+        lhaf_values = loop_hafnian_batch(matrix, diagonal, partial_sample, cutoff)
         weights = np.abs(lhaf_values) ** 2 / factorial(possible_choices)
         weights /= np.sum(weights)
 

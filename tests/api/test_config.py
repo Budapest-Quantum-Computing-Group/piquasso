@@ -49,6 +49,7 @@ def test_eq():
         cutoff=6,
         measurement_cutoff=4,
         validate=False,
+        use_dask=True,
     )
 
     assert config1 == config1
@@ -79,6 +80,15 @@ def test_as_code_validate():
     assert default._as_code() == default_2._as_code()
     assert default._as_code() == "pq.Config()"
     assert no_validate_config._as_code() == "pq.Config(validate=False)"
+
+
+def test_as_code_use_dask():
+    default = pq.Config()
+    conf_dont_use_dask = pq.Config(use_dask=False)
+    conf_use_dask = pq.Config(use_dask=True)
+
+    assert conf_dont_use_dask._as_code() == default._as_code()
+    assert conf_use_dask._as_code() == "pq.Config(use_dask=True)"
 
 
 def test_complex_dtype():
