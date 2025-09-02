@@ -134,14 +134,12 @@ html_css_files = ["custom.css"]
 nbsphinx_prompt_width = "0"
 
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base=None) %}
-
 .. note::
     .. raw:: html
 
         <div>
             You can download this notebook
-            <a href="/{{ docname }}" download>here</a>.
+            <a href="{{ env.docname.split('/')|last|e + '.ipynb' }}" download>here</a>.
         </div>
 """  # TODO: get base path.
 
