@@ -15,6 +15,10 @@
 
 import sys
 
+import pytest
+
+import numpy as np
+
 from unittest import mock
 
 
@@ -45,3 +49,33 @@ def test_matplotlib_plot_importerror():
                 positions=[[0, 1], [2, 3]],
                 momentums=[[0, 1], [2, 3]],
             )
+
+
+def test_use_dask_without_dask_raises_ImportError():
+    with mock.patch.dict("sys.modules", {"dask": None}):
+        import piquasso as pq
+
+        A = np.array(
+            [
+                [0, 1, 0, 1, 1],
+                [1, 0, 0, 0, 1],
+                [0, 0, 0, 1, 0],
+                [1, 0, 1, 0, 1],
+                [1, 1, 0, 1, 0],
+            ]
+        )
+
+        with pq.Program() as gaussian_boson_sampling:
+            pq.Q(all) | pq.Graph(A)
+
+            pq.Q(all) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.GaussianSimulator(
+            d=len(A),
+            config=pq.Config(use_dask=True),
+        )
+
+        with pytest.raises(
+            ImportError, match="This feature requires 'dask' to be installed."
+        ):
+            simulator.execute(gaussian_boson_sampling, shots=50)

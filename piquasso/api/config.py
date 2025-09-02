@@ -49,6 +49,9 @@ class Config(_mixins.CodeMixin):
         to only turn it off when necessary. Moreover, it is also not guaranteed that all
         validations are turned off by setting `validate=False` (e.g., specifying invalid
         modes will still yield an error).
+    :ivar use_dask:
+        Use dask for certain computations during the simulation, e.g., for Gaussian
+        Boson Sampling. Defaults to `False`.
     """
 
     def __init__(
@@ -62,6 +65,7 @@ class Config(_mixins.CodeMixin):
         use_torontonian: bool = False,
         cache_size: int = 32,
         validate: bool = True,
+        use_dask: bool = False,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
@@ -74,6 +78,7 @@ class Config(_mixins.CodeMixin):
         self.measurement_cutoff = measurement_cutoff
         self.dtype = np.float64 if dtype is float else dtype
         self.validate = validate
+        self.use_dask = use_dask
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Config):
@@ -87,6 +92,7 @@ class Config(_mixins.CodeMixin):
             and self.measurement_cutoff == other.measurement_cutoff
             and self.dtype == other.dtype
             and self.validate == other.validate
+            and self.use_dask == other.use_dask
         )
 
     def _as_code(self) -> str:
@@ -109,6 +115,8 @@ class Config(_mixins.CodeMixin):
             non_default_params["dtype"] = "np." + self.dtype.__name__
         if self.validate != default_config.validate:
             non_default_params["validate"] = self.validate
+        if self.use_dask != default_config.use_dask:
+            non_default_params["use_dask"] = self.use_dask
 
         if len(non_default_params) == 0:
             return "pq.Config()"

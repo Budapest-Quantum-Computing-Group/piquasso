@@ -47,6 +47,7 @@ Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/m
 tensorflow = ["tensorflow"]
 jax = ["jax[cpu]"]
 matplotlib = ["matplotlib"]
+dask = ["dask"]
 dev = [
   "pytest>=8.0.1,<8.5.0",
   "coverage>=7.6.1,<7.11.0",
