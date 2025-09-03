@@ -59,7 +59,7 @@ import numpy as np
 from piquasso.api.instruction import Gate
 from piquasso.api.exceptions import InvalidParameter
 
-from piquasso._math.linalg import is_square, is_symmetric, is_invertible
+from piquasso._math.linalg import is_square, is_symmetric
 from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
 
 from typing import Optional
@@ -925,12 +925,9 @@ class Graph(Gate):
                 for a mode. Defaults to :math:`1.0`.
         Raises:
             InvalidParameter:
-                If the adjacency matrix is not invertible or not symmetric.
+                If the adjacency matrix is not symmetric.
         """
         self.adjacency_matrix = adjacency_matrix
-
-        if not is_invertible(adjacency_matrix):
-            raise InvalidParameter("The adjacency matrix is not invertible.")
 
         if not is_symmetric(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix should be symmetric.")
