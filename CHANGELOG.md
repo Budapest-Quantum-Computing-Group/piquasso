@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.2.0] - 2025-09-03
+
+### Added
+
+- `Result.get_counts` method for showing repetitions in the obtained samples.
+- `dask` support for Gaussian Boson Sampling.
+- State vector display with occupation numbers using `fock_amplitude_map`.
+
+### Fixed
+
+- Handling number of modes mismatch in `Simulator.execute`.
+- Typos in the documentation corrected.
+- Instruction mode validation improved for caching invalid indices.
+- Jupyter notebook download issue in the documentation.
+- Unnecessary singularity check deleted in `Graph`.
+
+
 ## [6.1.0] - 2025-06-23
 
 ### Added
