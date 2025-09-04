@@ -49,6 +49,15 @@ This document contains the basic tutorials of Piquasso.
       A simple state learning example using JAX and Piquasso.
 
 
+.. grid:: 3
+
+   .. grid-item-card::  Dense k-subgraph problem
+      :link: dense-subgraph-gbs
+      :link-type: doc
+
+      Solve dense k-subgraph problem with Gaussian Boson Sampling.
+
+
 .. toctree::
    :maxdepth: 3
    :hidden:
@@ -59,3 +68,4 @@ This document contains the basic tutorials of Piquasso.
    separating-programs
    cvqnn-with-tensorflow
    jax-example
+   dense-subgraph-gbs
