@@ -375,19 +375,22 @@ def _get_particle_number_measurement_samples(
     normalized_mean = (
         np.sqrt(hbar / hbar_in_calculations) * reduced_state.xxpp_mean_vector
     )
-    S, D = williamson(normalized_cov, connector)
+    try:
+        S, D = williamson(normalized_cov, connector)
 
-    T = S @ S.T
-    mixed_diag = D - 2 * np.identity(len(D)) / 2
-    mixed_diag[mixed_diag < 0.0] = 0.0
+        T = S @ S.T
+        mixed_diag = D - 2 * np.identity(len(D)) / 2
+        mixed_diag[mixed_diag < 0.0] = 0.0
 
-    I = np.identity(d)
-    F = np.block([[I, 1j * I], [I, -1j * I]]) / np.sqrt(2)
-    Q = (F @ T @ F.conj().T + np.identity(2 * d)) / 2
-    B = -np.linalg.inv(Q)[d:, :d]
+        I = np.identity(d)
+        F = np.block([[I, 1j * I], [I, -1j * I]]) / np.sqrt(2)
+        Q = (F @ T @ F.conj().T + np.identity(2 * d)) / 2
+        B = -np.linalg.inv(Q)[d:, :d]
 
-    sqrt_cov_1 = S @ np.sqrt(mixed_diag)
-    sqrt_cov_2 = np.linalg.cholesky(T + np.identity(2 * d))
+        sqrt_cov_1 = S @ np.sqrt(mixed_diag)
+        sqrt_cov_2 = np.linalg.cholesky(T + np.identity(2 * d))
+    except:
+        print("Matrix:", normalized_cov)
 
     _generate_sample_from_seed = partial(
         _generate_sample,
@@ -454,7 +457,10 @@ def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, loop_hafnian_batch, cutoff
         weights = np.abs(lhaf_values) ** 2 / factorial(possible_choices)
         weights /= np.sum(weights)
 
-        sample[mode] = rng.choice(possible_choices, p=weights)
+        try:
+            sample[mode] = rng.choice(possible_choices, p=weights)
+        except:
+            print(lhaf_values)
 
     return sample
 
