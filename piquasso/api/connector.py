@@ -47,6 +47,7 @@ class BaseConnector(abc.ABC):
     forward_pass_np: Any
     range: Any
     sqrtm: Any
+    eigh: Any
     schur: Any
 
     def __deepcopy__(self, memo: Any) -> "BaseConnector":

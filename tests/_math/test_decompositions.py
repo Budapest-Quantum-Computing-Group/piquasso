@@ -141,6 +141,30 @@ def test_takagi_on_complex_symmetric_N_by_N_matrix(
     assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
 
 
+@pytest.mark.parametrize("connector", [NumpyConnector(), lf("tensorflow_connector")])
+def test_takagi_on_adjacency_matrix_with_multiplicity(connector):
+    adjacency_matrix = np.array(
+        [
+            [0, 0, 1, 1, 0, 1, 0, 1],
+            [0, 0, 1, 0, 0, 1, 1, 0],
+            [1, 1, 0, 0, 0, 1, 1, 0],
+            [1, 0, 0, 0, 1, 1, 1, 1],
+            [0, 0, 0, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1],
+            [0, 1, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 1, 1, 1, 1, 0],
+        ],
+        dtype=complex,
+    )
+
+    singular_values, unitary = takagi(adjacency_matrix, connector)
+    assert is_unitary(unitary)
+    assert np.allclose(np.abs(singular_values), singular_values)
+    assert np.allclose(
+        adjacency_matrix, unitary @ np.diag(singular_values) @ unitary.transpose()
+    )
+
+
 @pytest.mark.parametrize("connector", [NumpyConnector(), JaxConnector()])
 def test_williamson_with_identity(connector):
     covariance_matrix = np.identity(4)
