@@ -63,7 +63,18 @@ def takagi(matrix, connector, atol=1e-12):
     for indices in singular_value_multiplicity_indices:
         Z = V[:, indices].transpose() @ W[:, indices]
 
-        diagonal_blocks_for_Q.append(connector.sqrtm(Z))
+        D, Q = connector.schur(Z)
+        diags = np.diag(D)
+
+        # NOTE: It is not mentioned in the cited paper, but it does matter which square
+        # root you take here. If the square root is not the "canonical" one, the
+        # decomposition might not yield the original matrix.
+        angles_mod = np.mod(np.angle(diags), 2 * np.pi)  # phases in [0, 2\pi)
+        sqrt_diags = np.sqrt(np.abs(diags)) * np.exp(1j * angles_mod / 2)
+
+        sqrt_Z = Q @ np.diag(sqrt_diags) @ np.conj(Q).T
+
+        diagonal_blocks_for_Q.append(sqrt_Z)
 
     Q = connector.block_diag(*diagonal_blocks_for_Q)
 
