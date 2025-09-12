@@ -49,8 +49,8 @@ where :math:`f_k` and :math:`f_k^\dagger` denote the Dirac operators.
 :math:`\mathbf{m}` denotes the vector of Majorana operators, i.e.,
 
 .. math::
-
     \mathbf{m} := [x_1, \dots, x_d, p_1, \dots, p_d].
+    :label: majorana
 
 .. automodule:: piquasso.fermionic.instructions
    :members:

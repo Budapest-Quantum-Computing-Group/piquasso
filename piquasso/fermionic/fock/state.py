@@ -19,6 +19,8 @@ from .._utils import (
     get_cutoff_fock_space_dimension,
     get_fock_space_index,
     get_fock_space_basis,
+    get_majorana_operators,
+    fock_to_binary_indices,
 )
 
 from piquasso.api.exceptions import InvalidState
@@ -115,8 +117,107 @@ class PureFockState(State):
             )
 
     @property
-    def density_matrix(self):
+    def density_matrix(self) -> "np.ndarray":
+        """The density matrix of the state.
+
+        .. warning::
+            The primary ordering of the Fock basis is by number of particles, and the
+            secondary is anti-lexicographic.
+
+            Example for 3 modes:
+
+            .. math ::
+
+                \ket{000},
+                \ket{100}, \ket{010}, \ket{001},
+                \ket{200}, \ket{110}, \ket{101}, \ket{020}, \ket{011}, \ket{002}, \dots
+
+            This is in contrast with
+            :meth:`~piquasso.fermionic.gaussian.state.GaussianState.density_matrix`,
+            where the primary ordering is lexicographic.
+
+        Returns:
+            np.ndarray: The density matrix.
+        """
         return self._connector.np.outer(self._state_vector, self._state_vector.conj())
+
+    @property
+    def covariance_matrix(self) -> "np.ndarray":
+        r"""The covariance matrix.
+
+        The covariance matrix is defined by
+
+        .. math::
+
+            \Sigma_{ij} := -i \operatorname{Tr} (\rho [\mathbf{m}_i, \mathbf{m}_j]) / 2,
+
+        where :math:`\mathbf{m}` is defined by Eq. :eq:`majorana`. The covariance matrix
+        is a real-valued, skew-symmetric matrix.
+
+        .. note::
+            The covariance matrix does not fully characterize this state in general,
+            only if it is a Gaussian state. For manipulating Gaussian states, visit
+            :class:`~piquasso.fermionic.gaussian.state.GaussianState`.
+
+        Returns:
+            np.ndarray: The covariance matrix.
+        """
+
+        connector = self._connector
+
+        ms = get_majorana_operators(self.d)
+
+        two_d = 2 * self.d
+
+        covariance_matrix = connector.np.zeros(
+            shape=(two_d, two_d), dtype=self._config.dtype
+        )
+
+        indices = fock_to_binary_indices(self.d)
+
+        state_vector_in_binary_ordering = self._state_vector[indices]
+
+        # TODO: This algorithm can be made much more efficient by avoiding using the
+        # Fock space representation of the Majorana operators.
+        for i in range(two_d):
+            for j in range(two_d):
+                if i == j:
+                    continue
+
+                covariance_matrix = connector.assign(
+                    covariance_matrix,
+                    (i, j),
+                    connector.np.real(
+                        -1j
+                        * state_vector_in_binary_ordering.conj()
+                        @ ms[i]
+                        @ ms[j]
+                        @ state_vector_in_binary_ordering
+                    ),
+                )
+
+        return covariance_matrix
+
+    def _get_nonzero_elements(self):
+        basis = get_fock_space_basis(self.d, self._config.cutoff)
+
+        np = self._connector.np
+        nonzero_indices = np.nonzero(self._state_vector)[0]
+
+        occupation_numbers = basis[nonzero_indices]
+
+        nonzero_elements = self._state_vector[nonzero_indices]
+
+        for index, coefficient in enumerate(nonzero_elements):
+            yield coefficient, tuple(occupation_numbers[index])
+
+    def __str__(self) -> str:
+        return " + ".join(
+            [
+                str(coefficient) + str(tuple(int(x) for x in basis))
+                for coefficient, basis in self._get_nonzero_elements()
+            ]
+        )
 
     def __eq__(self, other):
         if not isinstance(other, PureFockState):

@@ -195,3 +195,21 @@ def test_PureFockState_fock_probabilities_map(connector):
 
     for occupation_number, probability in expected.items():
         assert np.isclose(state.fock_probabilities_map[occupation_number], probability)
+
+
+@for_all_connectors
+def test_PureFockState_str(connector):
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([0, 0]) / 2
+        pq.Q(0, 1) | pq.StateVector([0, 1]) / 2
+        pq.Q(0, 1) | pq.StateVector([1, 0]) / 2
+        pq.Q(0, 1) | pq.StateVector([1, 1]) / 2
+
+    simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
+
+    state = simulator.execute(program).state
+
+    assert (
+        str(state)
+        == "(0.5+0j)(0, 0) + (0.5+0j)(1, 0) + (0.5+0j)(0, 1) + (0.5+0j)(1, 1)"
+    )

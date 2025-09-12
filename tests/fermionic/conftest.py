@@ -46,23 +46,6 @@ def generate_passive_fermionic_gaussian_hamiltonian(generate_hermitian_matrix):
 
 
 @pytest.fixture
-def get_majorana_operators():
-
-    def func(d):
-        fs, fdags = _get_fs_fdags(d)
-
-        ms = []
-
-        for i in range(d):
-            ms.append(fs[i] + fdags[i])
-            ms.append(-1j * (fs[i] - fdags[i]))
-
-        return ms
-
-    return func
-
-
-@pytest.fixture
 def get_ladder_operators():
 
     def func(d):
