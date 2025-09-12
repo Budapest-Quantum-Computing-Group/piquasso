@@ -63,7 +63,11 @@ def takagi(matrix, connector, atol=1e-12):
     for indices in singular_value_multiplicity_indices:
         Z = V[:, indices].transpose() @ W[:, indices]
 
-        diagonal_blocks_for_Q.append(connector.sqrtm(Z))
+        eigvals, eigvecs = connector.eigh(Z)  # NOTE: Z is symmetric
+        sqrt_eigvals = np.sqrt(eigvals + 0.0j)
+        sqrt_Z = eigvecs @ np.diag(sqrt_eigvals) @ connector.inv(eigvecs)
+
+        diagonal_blocks_for_Q.append(sqrt_Z)
 
     Q = connector.block_diag(*diagonal_blocks_for_Q)
 

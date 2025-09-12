@@ -56,6 +56,8 @@ class NumpyConnector(BuiltinConnector):
     calculate_interferometer_on_fermionic_fock_space = instancemethod(
         calculate_interferometer_on_fermionic_fock_space
     )
+    eigh = instancemethod(np.linalg.eigh)
+    inv = instancemethod(np.linalg.inv)
 
     def sqrtm(self, matrix):
         return scipy.linalg.sqrtm(matrix).astype(np.complex128)

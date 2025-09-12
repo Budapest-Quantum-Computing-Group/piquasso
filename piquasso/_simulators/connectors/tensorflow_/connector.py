@@ -250,6 +250,12 @@ class TensorflowConnector(BuiltinConnector):
     def powm(self, matrix, power):
         return self._funm(matrix, partial(self.np.power, x2=power))
 
+    def eigh(self, matrix):
+        return self._tf.linalg.eigh(matrix)
+
+    def inv(self, matrix):
+        return self._tf.linalg.inv(matrix)
+
     def polar(self, matrix, side="right"):
         P = self._tf.linalg.sqrtm(self.np.conj(matrix) @ matrix.T)
         Pinv = self._tf.linalg.inv(P)
