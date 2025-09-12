@@ -202,6 +202,17 @@ def decompose_adjacency_matrix_into_circuit(
 ):
     singular_values, unitary = takagi(adjacency_matrix, connector)
 
+    from piquasso._math.linalg import is_unitary
+    try:
+        assert is_unitary(unitary)
+        assert np.all(singular_values >= 0.0)
+    except:
+        print("decompositions:209")
+        print(adjacency_matrix)
+        print(unitary)
+        print(singular_values)
+        raise
+
     scaling = _get_scaling(singular_values, mean_photon_number, adjacency_matrix)
 
     squeezing_parameters = np.arctanh(scaling * singular_values)
