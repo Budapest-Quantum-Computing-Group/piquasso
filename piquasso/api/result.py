@@ -24,7 +24,9 @@ class Result:
     """Class for collecting results."""
 
     def __init__(
-        self, state: State, samples: Optional[Union[List[Tuple], "np.ndarray"]] = None
+        self,
+        state: Optional[State] = None,
+        samples: Optional[Union[List[Tuple], "np.ndarray"]] = None,
     ) -> None:
         """
         Args:
@@ -32,7 +34,7 @@ class Result:
             samples (list[tuple[int or float]]): The generated samples.
         """
 
-        self.state: State = state
+        self.state = state if state is not None and state.d != 0 else None
         self.samples: Union[List[Tuple], "np.ndarray"] = (
             samples if samples is not None else []
         )

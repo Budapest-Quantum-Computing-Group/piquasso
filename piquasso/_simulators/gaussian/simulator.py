@@ -135,3 +135,9 @@ class GaussianSimulator(BuiltinSimulator):
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [JaxConnector]
+
+    _admissible_measurement_classes = {
+        measurements.HomodyneMeasurement,
+        measurements.HeterodyneMeasurement,
+        measurements.GeneraldyneMeasurement,
+    }

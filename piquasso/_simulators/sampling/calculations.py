@@ -196,7 +196,7 @@ def particle_number_measurement(
             state._config.rng,
         )
 
-    return Result(state=state, samples=list(map(tuple, samples)))
+    return Result(state=None, samples=list(map(tuple, samples)))
 
 
 post_select_photons = pure_fock_post_select_photons
