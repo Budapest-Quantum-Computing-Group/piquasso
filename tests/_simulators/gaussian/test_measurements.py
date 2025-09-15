@@ -53,18 +53,6 @@ def nondisplaced_state(d):
     return state
 
 
-def test_measure_homodyne_zeroes_state_on_measured_modes(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HomodyneMeasurement()
-
-    simulator = pq.GaussianSimulator(d=state.d)
-    state = simulator.execute(program, initial_state=state).state
-    state.validate()
-
-    assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
-
-
 def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     angle = np.pi / 3
 
@@ -83,6 +71,8 @@ def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     ).state
     state_with_rotation.validate()
 
+    assert measured_state.d == 2
+
     assert measured_state == state_with_rotation
 
 
@@ -96,18 +86,6 @@ def test_measure_homodyne_with_multiple_shots(state):
     result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
-
-
-def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HeterodyneMeasurement()
-
-    simulator = pq.GaussianSimulator(d=state.d)
-    state = simulator.execute(program, initial_state=state).state
-    state.validate()
-
-    assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
 
 
 def test_measure_heterodyne_with_multiple_shots(state):
@@ -158,6 +136,65 @@ def test_measure_dyne_with_multiple_shots(state):
     assert len(result.samples) == shots
 
 
+def test_Heterodyne_two_mode_squeezing_post_measurement_state():
+    r"""
+    The xpxp-covariance matrix of a two-mode squeezed state is (with :math:`\hbar = 1`)
+
+    .. math::
+        \sigma = \begin{bmatrix}
+            \cosh(2r) &          & \sinh(2r) &          \\
+                       \cosh(2r) &           -\sinh(2r) \\
+            \sinh(2r) &          & \cosh(2r) &          \\
+                      -\sinh(2r) &            \cosh(2r) \\
+        \end{bmatrix} = \begin{bmatrix}
+            \sigma_{A}  & \sigma_{AB} \\
+            \sigma_{BA} & \sigma_{B}  \\
+        \end{bmatrix}
+
+    and the displacement vector :math:`\mu` is zero.
+
+    According to Section 5.4.5 from Quantum Continuous Variables by Alessio Serafini,
+    the covariance matrix after heterodyne measurement is
+
+    .. math::
+        \sigma' = \sigma_{A} - \sigma_{AB} (\sigma_B + \sigma_m)^{-1} \sigma_{AB}^T
+                = (\cosh(2r) - \frac{\sinh(2r)^2}{\cosh(2r) + 1}) I
+                = I,
+
+    where :math:`\sigma_m = I`, since we are considering heterodyne measurement.
+
+    Similarly, the post-measurement displacement vector is
+
+    .. math::
+        \mu' = \mu_A + \sigma_{AB} (\sigma_B + I)^{-1} (r_m - \mu_B)
+             = \frac{\sinh(2r)}{\cosh(2r) + 1} [(r_m)_1, -(r_m)_2]^T,
+
+    where :math:`r_m` is the measured sample.
+    """
+    r = 0.1
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(r=0.1)
+
+        pq.Q(0) | pq.HeterodyneMeasurement()
+
+    simulator = pq.GaussianSimulator(d=2, config=pq.Config(hbar=1))
+
+    result = simulator.execute(program)
+
+    state = result.state
+
+    assert result.state.d == 1
+    assert np.allclose(state.xpxp_covariance_matrix, np.identity(2))
+
+    sample = result.samples[0]
+
+    assert np.allclose(
+        state.xpxp_mean_vector,
+        np.sinh(2 * r) / (np.cosh(2 * r) + 1) * np.array([sample[0], -sample[1]]),
+    )
+
+
 def test_measure_particle_number_on_one_modes(state):
     with pq.Program() as program:
         pq.Q(0) | pq.ParticleNumberMeasurement()
@@ -186,6 +223,8 @@ def test_measure_particle_number_on_all_modes(state):
     result = simulator.execute(program, initial_state=state)
 
     assert result
+
+    assert result.state is None
 
 
 @pytest.mark.parametrize(
@@ -569,3 +608,86 @@ def test_ThresholdMeasurement_use_torontonian_seeding_float32():
         (0, 0, 0, 0, 0),
         (0, 0, 0, 0, 0),
     ]
+
+
+class TestMidCircuitMeasurements:
+    """Test programs that contain mid-circuit measurements."""
+
+    @pytest.mark.parametrize(
+        "dyne_measurement_class", [pq.HomodyneMeasurement, pq.HeterodyneMeasurement]
+    )
+    @pytest.mark.parametrize(
+        "terminal_measurement_class",
+        [pq.ParticleNumberMeasurement, pq.ThresholdMeasurement],
+    )
+    def test_dyne_and_pnm_threshold_meas(
+        self, dyne_measurement_class, terminal_measurement_class
+    ):
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+            pq.Q(2, 4) | dyne_measurement_class()
+            pq.Q(0) | pq.Squeezing(0.0)
+            pq.Q(0, 3) | terminal_measurement_class()
+
+        simulator = pq.GaussianSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        samples = res.samples[0]
+        for i in range(4):
+            assert not np.isclose(samples[i], 0)
+        for i in range(4, 6):
+            assert np.isclose(samples[i], 0)
+
+    def test_generaldyne_and_pnm(self):
+        detection_covariance = np.array(
+            [
+                [2, 0],
+                [0, 0.5],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+            pq.Q(2) | pq.GeneraldyneMeasurement(detection_covariance)
+
+            pq.Q(0) | pq.Squeezing(0.0)
+            pq.Q(0, 3) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.GaussianSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        samples = res.samples[0]
+        for i in range(2):
+            assert not np.isclose(samples[i], 0)
+        for i in range(2, 4):
+            assert np.isclose(samples[i], 0)
+
+    @pytest.mark.parametrize("measured_mode", [0, 1])
+    @pytest.mark.parametrize(
+        "dyne_measurement_class", [pq.HomodyneMeasurement, pq.HeterodyneMeasurement]
+    )
+    def test_measuring_inactive_raises(self, measured_mode, dyne_measurement_class):
+        """Test that measuring inactive modes raises an error."""
+        with pq.Program() as program:
+            pq.Q(0, 1) | dyne_measurement_class()
+            pq.Q(0) | pq.Squeezing(0.0)
+            pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.GaussianSimulator(d=5)
+        with pytest.raises(ValueError, match=f"are not active: {{{measured_mode}}}"):
+            simulator.execute(program, shots=1)
+
+    def test_mid_circuit_not_allowed(self):
+        """
+        Test that an error is raised for mid-circuit measurements that are not allowed.
+        """
+        with pq.Program() as program:
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.GaussianSimulator(d=5)
+        with pytest.raises(
+            pq.api.exceptions.InvalidSimulation,
+            match="not allowed as a mid-circuit measurement",
+        ):
+            simulator.execute(program, shots=1)

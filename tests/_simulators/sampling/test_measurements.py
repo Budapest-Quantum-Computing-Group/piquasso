@@ -211,8 +211,6 @@ def test_uniform_loss():
         for i in range(d):
             pq.Q(i) | pq.Loss(transmissivity=0.9)
 
-        pq.Q() | pq.ParticleNumberMeasurement()
-
     simulator = pq.SamplingSimulator(d=d)
     state = simulator.execute(program, shots=1).state
 
@@ -500,3 +498,27 @@ def test_post_select_random_unitary():
     state.validate()
 
     assert state.d == d - len(postselect_modes)
+
+
+class TestMidCircuitMeasurements:
+    """Test programs that contain mid-circuit measurements."""
+
+    def test_mid_circuit_not_allowed(self):
+        """
+        Test that an error is raised for mid-circuit measurements that are not allowed.
+        """
+        d = 3
+
+        interferometer_matrix = unitary_group.rvs(d)
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(all) | pq.Interferometer(interferometer_matrix)
+            pq.Q(2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5)
+        with pytest.raises(
+            pq.api.exceptions.InvalidSimulation,
+            match="not allowed as a mid-circuit measurement",
+        ):
+            simulator.execute(program, shots=1)

@@ -238,11 +238,6 @@ def generaldyne_measurement(
     # NOTE: We choose the last sample for multiple shots.
     sample = samples[-1]
 
-    d = len(state)
-
-    auxiliary_modes = state._get_auxiliary_modes(modes)
-    outer_indices = _map_modes_to_xpxp_indices(auxiliary_modes)
-
     evolved_state = _get_generaldyne_evolved_state(
         state,
         sample,
@@ -250,18 +245,7 @@ def generaldyne_measurement(
         detection_covariance,
     )
 
-    evolved_mean = np.zeros(2 * d)
-    evolved_mean[outer_indices] = evolved_state.xpxp_mean_vector
-
-    evolved_cov = np.identity(2 * d) * state._config.hbar
-    evolved_cov[np.ix_(outer_indices, outer_indices)] = (
-        evolved_state.xpxp_covariance_matrix
-    )
-
-    state.xpxp_mean_vector = evolved_mean
-    state.xpxp_covariance_matrix = evolved_cov
-
-    return Result(state=state, samples=list(map(tuple, list(samples))))
+    return Result(state=evolved_state, samples=list(map(tuple, list(samples))))
 
 
 def _get_generaldyne_samples(state, modes, shots, detection_covariance):
@@ -350,7 +334,7 @@ def particle_number_measurement(
 ) -> Result:
     samples = _get_particle_number_measurement_samples(state, instruction, shots)
 
-    return Result(state=state, samples=samples)
+    return Result(state=None, samples=samples)
 
 
 def _get_particle_number_measurement_samples(
@@ -478,7 +462,7 @@ def threshold_measurement(
     else:
         samples = _generate_threshold_samples_using_hafnian(state, instruction, shots)
 
-    return Result(state=state, samples=samples)
+    return Result(state=None, samples=samples)
 
 
 def _generate_threshold_samples_using_torontonian(state, instruction, shots):
@@ -564,9 +548,7 @@ def homodyne_measurement(
 
     _apply_passive_linear(state, phaseshift, modes=modes)
 
-    result = generaldyne_measurement(state, instruction, shots)
-
-    return Result(state=state, samples=result.samples)
+    return generaldyne_measurement(state, instruction, shots)
 
 
 def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result:

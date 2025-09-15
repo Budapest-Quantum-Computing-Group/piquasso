@@ -132,7 +132,7 @@ def homodyne_measurement(
             uniforms,
         )
 
-    return Result(state=state, samples=sqrt_hbar * samples)
+    return Result(state=None, samples=sqrt_hbar * samples)
 
 
 def _do_sample_homodyne_multimodes(

@@ -21,8 +21,6 @@ from ...calculations import get_projection_operator_indices
 
 from ..state import PureFockState
 
-from piquasso.api.connector import BaseConnector
-
 
 def project_to_subspace(
     state: PureFockState,
@@ -30,24 +28,31 @@ def project_to_subspace(
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
     normalization: float,
-    connector: BaseConnector,
-) -> None:
-    projected_state_vector = _get_projected_state_vector(
-        state=state, subspace_basis=subspace_basis, modes=modes, connector=connector
+) -> PureFockState:
+    remaining_state_vector = normalization * _get_remaining_state_vector(
+        state=state,
+        subspace_basis=subspace_basis,
+        modes=modes,
     )
 
-    state.state_vector = projected_state_vector * normalization
+    config_copy = state._config.copy()
+
+    config_copy.cutoff -= sum(subspace_basis)
+
+    new_state = PureFockState(
+        d=state.d - len(subspace_basis), connector=state._connector, config=config_copy
+    )
+
+    new_state.state_vector = remaining_state_vector
+
+    return new_state
 
 
-def _get_projected_state_vector(
+def _get_remaining_state_vector(
     state: PureFockState,
-    *,
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
-    connector: BaseConnector,
 ) -> np.ndarray:
-    new_state_vector = state._get_empty()
-
     index = get_projection_operator_indices(
         state.d,
         state._config.cutoff,
@@ -55,8 +60,4 @@ def _get_projected_state_vector(
         subspace_basis,
     )
 
-    new_state_vector = connector.assign(
-        new_state_vector, index, state.state_vector[index]
-    )
-
-    return new_state_vector
+    return state.state_vector[index]
