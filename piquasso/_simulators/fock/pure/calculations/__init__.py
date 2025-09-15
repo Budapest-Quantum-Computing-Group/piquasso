@@ -79,15 +79,14 @@ def particle_number_measurement(
 
     normalization = _get_normalization(probability_map, sample)
 
-    project_to_subspace(
+    new_state = project_to_subspace(
         state=state,
         subspace_basis=sample,
         modes=instruction.modes,
         normalization=normalization,
-        connector=state._connector,
     )
 
-    return Result(state=state, samples=samples)
+    return Result(state=new_state, samples=samples)
 
 
 def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result:

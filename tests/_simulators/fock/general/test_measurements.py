@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import numpy as np
+import pytest
 
 import piquasso as pq
 
@@ -35,9 +36,7 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    config = pq.Config(cutoff=3)
-
-    simulator = pq.FockSimulator(d=3, config=config)
+    simulator = pq.FockSimulator(d=3, config=pq.Config(cutoff=3))
 
     result = simulator.execute(program)
 
@@ -47,28 +46,22 @@ def test_measure_particle_number_on_one_mode():
     assert sample == (1,) or sample == (2,)
 
     if sample == (1,):
-        expected_simulator = pq.FockSimulator(
-            d=3,
-            config=config,
-        )
+        expected_simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=2))
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                1 / 3 * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
-                4j * pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 1, 1)),
-                -2j * pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)),
-                -4j * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 0, 1)),
-                2 / 3 * pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
-                2j * pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)),
+                1 / 3 * pq.DensityMatrix(ket=(0, 0), bra=(0, 0)),
+                4j * pq.DensityMatrix(ket=(0, 0), bra=(0, 1)),
+                -2j * pq.DensityMatrix(ket=(0, 0), bra=(1, 0)),
+                -4j * pq.DensityMatrix(ket=(0, 1), bra=(0, 0)),
+                2 / 3 * pq.DensityMatrix(ket=(0, 1), bra=(0, 1)),
+                2j * pq.DensityMatrix(ket=(1, 0), bra=(0, 0)),
             ]
         ).state
 
     elif sample == (2,):
-        expected_simulator = pq.FockSimulator(
-            d=3,
-            config=config,
-        )
+        expected_simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=1))
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
+            instructions=[pq.DensityMatrix(ket=(0, 0), bra=(0, 0))]
         ).state
 
     assert result.state == expected_state
@@ -103,27 +96,27 @@ def test_measure_particle_number_on_two_modes():
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
+        expected_simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=2))
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
-                pq.DensityMatrix(ket=(0, 0, 1), bra=(1, 0, 1)) * (-6j),
-                pq.DensityMatrix(ket=(1, 0, 1), bra=(0, 0, 1)) * 6j,
+                pq.DensityMatrix(ket=(0,), bra=(0,)),
+                pq.DensityMatrix(ket=(0,), bra=(1,)) * (-6j),
+                pq.DensityMatrix(ket=(1,), bra=(0,)) * 6j,
             ]
         ).state
 
     elif sample == (1, 1):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
+        expected_simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=1))
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                pq.DensityMatrix(ket=(0, 1, 1), bra=(0, 1, 1)),
+                pq.DensityMatrix(ket=(0,), bra=(0,)),
             ]
         ).state
 
     elif sample == (0, 2):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
+        expected_simulator = pq.FockSimulator(d=1, config=pq.Config(cutoff=1))
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.DensityMatrix(ket=(0, 0, 2), bra=(0, 0, 2))]
+            instructions=[pq.DensityMatrix(ket=(0,), bra=(0,))]
         ).state
 
     assert result.state == expected_state
@@ -150,36 +143,10 @@ def test_measure_particle_number_on_all_modes():
 
     result = simulator.execute(program)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
-
     sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (0, 0, 1) or sample == (1, 0, 0)
 
-    if sample == (0, 0, 0):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0)),
-            ]
-        ).state
-
-    elif sample == (0, 0, 1):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.DensityMatrix(ket=(0, 0, 1), bra=(0, 0, 1)),
-            ]
-        ).state
-
-    elif sample == (1, 0, 0):
-        expected_simulator = pq.FockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.DensityMatrix(ket=(1, 0, 0), bra=(1, 0, 0)),
-            ]
-        ).state
-
-    assert result.state == expected_state
+    assert result.state is None
 
 
 def test_measure_particle_number_with_multiple_shots():
@@ -203,5 +170,25 @@ def test_measure_particle_number_with_multiple_shots():
 
     result = simulator.execute(program, shots)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
     assert len(result.samples) == shots
+
+
+class TestMidCircuitMeasurements:
+    """Test programs that contain mid-circuit measurements."""
+
+    def test_mid_circuit_not_allowed(self):
+        """
+        Test that an error is raised for mid-circuit measurements that are not allowed.
+        """
+        with pq.Program() as program:
+            pq.Q() | pq.DensityMatrix(ket=(0, 0, 0), bra=(0, 0, 0))
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.FockSimulator(d=5)
+        with pytest.raises(
+            pq.api.exceptions.InvalidSimulation,
+            match="not allowed as a mid-circuit measurement",
+        ):
+            simulator.execute(program, shots=1)
