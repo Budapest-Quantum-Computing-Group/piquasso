@@ -202,3 +202,36 @@ def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState(
     simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
+
+
+def test_state_vector_raises_InvalidState_when_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.PureFockSimulator(d=6, config=config)
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
+
+
+def test_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState():
+    occupation_numbers = (0, 1, 0, 1, 1, 1)
+    amplitude_map = {occupation_numbers: 1.0}
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+
+    config = pq.Config(cutoff=4, validate=True)
+    simulator = pq.PureFockSimulator(d=6, config=config)
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    required_cutoff = sum(occupation_numbers) + 1
+    assert str(required_cutoff) in error.value.args[0]
