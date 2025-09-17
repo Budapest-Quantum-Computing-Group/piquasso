@@ -19,6 +19,7 @@ import piquasso as pq
 
 
 def test_measure_particle_number_on_one_mode():
+    cutoff = 3
     with pq.Program() as program:
         pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(2 / 6)
 
@@ -27,7 +28,7 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.PureFockSimulator(d=3)
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=cutoff))
 
     result = simulator.execute(program)
 
@@ -37,24 +38,29 @@ def test_measure_particle_number_on_one_mode():
     assert sample == (1,) or sample == (2,)
 
     if sample == (1,):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=cutoff - 1)
+        )
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                0.5773502691896258 * pq.StateVector([0, 0, 1]),
-                0.816496580927726 * pq.StateVector([0, 1, 1]),
+                0.5773502691896258 * pq.StateVector([0, 0]),
+                0.816496580927726 * pq.StateVector([0, 1]),
             ]
         ).state
 
     elif sample == (2,):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 2])]
+            instructions=[pq.StateVector([0, 0])]
         ).state
 
     assert result.state == expected_state
 
 
 def test_measure_particle_number_on_two_modes():
+    cutoff = 3
     with pq.Program() as program:
         pq.Q(1, 2) | pq.StateVector([1, 1]) * np.sqrt(2 / 6)
         pq.Q(1, 2) | pq.StateVector([0, 1]) * np.sqrt(1 / 6)
@@ -62,7 +68,7 @@ def test_measure_particle_number_on_two_modes():
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.PureFockSimulator(d=3)
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=cutoff))
 
     result = simulator.execute(program)
 
@@ -72,21 +78,27 @@ def test_measure_particle_number_on_two_modes():
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 1)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 1])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     elif sample == (1, 1):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 1, 1])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     elif sample == (0, 2):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 2])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     assert result.state == expected_state
@@ -106,36 +118,10 @@ def test_measure_particle_number_on_all_modes():
 
     result = simulator.execute(program)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
-
     sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
 
-    if sample == (0, 0, 0):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([0, 0, 0]),
-            ],
-        ).state
-
-    elif sample == (0, 0, 1):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([0, 0, 1]),
-            ]
-        ).state
-
-    elif sample == (1, 0, 0):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([1, 0, 0]),
-            ],
-        ).state
-
-    assert result.state == expected_state
+    assert result.state is None
 
 
 def test_measure_particle_number_with_multiple_shots():
@@ -155,7 +141,6 @@ def test_measure_particle_number_with_multiple_shots():
 
     result = simulator.execute(program, shots)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
     assert len(result.samples) == shots
 
 
@@ -321,3 +306,55 @@ def test_HomodyneMeasurement_different_hbar_values():
     samples_hbar_3 = simulator_hbar_3.execute(program, shots).samples
 
     assert np.allclose(samples_hbar_2 / np.sqrt(2), samples_hbar_3 / np.sqrt(3))
+
+
+def test_ParticleNumberMeasurement_resulting_state():
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1])
+
+        pq.Q() | pq.Beamsplitter5050()
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program)
+
+    assert result.state.d == 1
+    assert np.isclose(sum(result.state.fock_probabilities), 1)
+
+
+def test_mid_circuit_ParticleNumberMeasurement_with_PureFockSimulator():
+    simulator = pq.PureFockSimulator(d=4, config=pq.Config(cutoff=3, seed_sequence=123))
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1, 1, 0])
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+        pq.Q(1) | pq.ParticleNumberMeasurement()
+
+        pq.Q(2, 3) | pq.Beamsplitter5050()
+
+        pq.Q(2) | pq.ParticleNumberMeasurement()
+        pq.Q(3) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program, shots=10)
+
+    assert np.allclose(
+        result.samples,
+        [
+            [0, 0, 1, 1],
+            [1, 0, 1, 0],
+            [1, 0, 0, 1],
+            [0, 0, 1, 1],
+            [1, 0, 0, 1],
+            [1, 0, 0, 1],
+            [0, 2, 0, 0],
+            [1, 1, 0, 0],
+            [0, 2, 0, 0],
+            [0, 0, 2, 0],
+        ],
+    )
