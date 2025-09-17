@@ -261,6 +261,14 @@ class TensorflowConnector(BuiltinConnector):
 
         return U, P
 
+    def schur(self, matrix):
+        # HACK: Lazy Schur decomposition, only works for normal matrices
+        _, vecs = self._tf.linalg.eig(matrix)
+        Q, _ = self._tf.linalg.qr(vecs)
+        D = self._tf.linalg.adjoint(Q) @ matrix @ Q
+
+        return D, Q
+
     def svd(self, matrix):
         # NOTE: Tensorflow 2.0 SVD has different return tuple.
 
