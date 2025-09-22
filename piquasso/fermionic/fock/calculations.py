@@ -17,7 +17,11 @@ from piquasso.api.result import Result
 
 from piquasso.api.exceptions import InvalidParameter
 
-from piquasso._math.validations import all_zero_or_one, are_modes_consecutive
+from piquasso._math.validations import (
+    all_zero_or_one,
+    are_modes_consecutive,
+    validate_occupation_numbers,
+)
 
 from ._utils import (
     calculate_indices_for_controlled_phase,
@@ -53,9 +57,16 @@ def state_vector(
             instruction._all_params["occupation_numbers"]
         )
 
-        if state._config.validate and not all_zero_or_one(occupation_numbers):
-            raise InvalidParameter(
-                f"Invalid initial state specified: instruction={instruction}"
+        if state._config.validate:
+            if not all_zero_or_one(occupation_numbers):
+                raise InvalidParameter(
+                    f"Invalid initial state specified: instruction={instruction}"
+                )
+            validate_occupation_numbers(
+                occupation_numbers,
+                state._d,
+                state._config.cutoff,
+                context=f": instruction={instruction}",
             )
 
         index = get_fock_space_index(occupation_numbers)
@@ -68,11 +79,16 @@ def state_vector(
         ].items():
             occ_numbers = fallback_np.array(occupation)
 
-            if state._config.validate and (
-                len(occ_numbers) != state._d or not all_zero_or_one(occ_numbers)
-            ):
-                raise InvalidParameter(
-                    f"Invalid initial state specified: instruction={instruction}"
+            if state._config.validate:
+                if len(occ_numbers) != state._d or not all_zero_or_one(occ_numbers):
+                    raise InvalidParameter(
+                        f"Invalid initial state specified: instruction={instruction}"
+                    )
+                validate_occupation_numbers(
+                    occ_numbers,
+                    state._d,
+                    state._config.cutoff,
+                    context=f": instruction={instruction}",
                 )
 
             index = get_fock_space_index(occ_numbers)
