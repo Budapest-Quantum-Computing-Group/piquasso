@@ -215,9 +215,7 @@ class PostSelectPhotons(Measurement):
             pq.Q(0, 1) | pq.Beamsplitter(1.1437)
             pq.Q(1, 2) | pq.Beamsplitter(-np.pi / 8)
 
-            pq.Q(all) | pq.PostSelectPhotons(
-                postselect_modes=(1, 2), photon_counts=(1, 0)
-            )
+            pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
         simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
 
@@ -232,17 +230,16 @@ class PostSelectPhotons(Measurement):
     """
 
     def __init__(
-        self, postselect_modes: Tuple[int, ...], photon_counts: Tuple[int, ...]
+        self, photon_counts: Tuple[int, ...]
     ):
         """
         Args:
-            postselect_modes (Tuple[int, ...]): The modes to post-select on.
             photon_counts (Tuple[int, ...]):
                 The desired photon numbers on the specified modes.
         """
 
         super().__init__(
-            params=dict(postselect_modes=postselect_modes, photon_counts=photon_counts)
+            params=dict(photon_counts=photon_counts)
         )
 
 
@@ -270,8 +267,8 @@ class ImperfectPostSelectPhotons(Measurement):
             pq.Q(0, 1) | pq.Beamsplitter(1.1437)
             pq.Q(1, 2) | pq.Beamsplitter(-np.pi / 8)
 
-            pq.Q(all) | pq.ImperfectPostSelectPhotons(
-                postselect_modes=(1, 2), photon_counts=(1, 0),
+            pq.Q(1, 2) | pq.ImperfectPostSelectPhotons(
+                photon_counts=(1, 0),
                 detector_efficiency_matrix=P,
             )
 
@@ -295,21 +292,18 @@ class ImperfectPostSelectPhotons(Measurement):
 
     def __init__(
         self,
-        postselect_modes: Tuple[int, ...],
         photon_counts: Tuple[int, ...],
         detector_efficiency_matrix: "np.ndarray",
     ):
         """_summary_
 
         Args:
-            postselect_modes (Tuple[int, ...]): The modes to post-select on.
             photon_counts (Tuple[int, ...]):
                 The desired photon numbers on the specified modes.
             detector_efficiency_matrix (np.ndarray): Detector efficiency matrix.
         """
         super().__init__(
             params=dict(
-                postselect_modes=postselect_modes,
                 photon_counts=photon_counts,
                 detector_efficiency_matrix=detector_efficiency_matrix,
             )

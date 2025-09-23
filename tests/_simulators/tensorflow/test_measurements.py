@@ -42,9 +42,7 @@ def test_PostSelectPhotons_gradient(tf):
 
             pq.Q(all) | interferometer
 
-            pq.Q(all) | pq.PostSelectPhotons(
-                postselect_modes=(1, 2), photon_counts=(1, 0)
-            )
+            pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
         simulator = pq.PureFockSimulator(
             d=3, config=pq.Config(cutoff=4), connector=connector
@@ -110,8 +108,7 @@ def test_ImperfectPostSelectPhotons_gradient(tf):
 
             pq.Q(all) | interferometer
 
-            pq.Q(all) | pq.ImperfectPostSelectPhotons(
-                postselect_modes=(1, 2),
+            pq.Q(1, 2) | pq.ImperfectPostSelectPhotons(
                 photon_counts=(1, 0),
                 detector_efficiency_matrix=np.array(
                     [
