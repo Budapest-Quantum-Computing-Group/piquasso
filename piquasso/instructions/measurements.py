@@ -229,18 +229,14 @@ class PostSelectPhotons(Measurement):
         then the resulting state will be defined on a system with `k` modes less.
     """
 
-    def __init__(
-        self, photon_counts: Tuple[int, ...]
-    ):
+    def __init__(self, photon_counts: Tuple[int, ...]):
         """
         Args:
             photon_counts (Tuple[int, ...]):
                 The desired photon numbers on the specified modes.
         """
 
-        super().__init__(
-            params=dict(photon_counts=photon_counts)
-        )
+        super().__init__(params=dict(photon_counts=photon_counts))
 
 
 class ImperfectPostSelectPhotons(Measurement):
