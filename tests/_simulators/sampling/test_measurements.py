@@ -490,9 +490,7 @@ def test_post_select_random_unitary():
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
-        pq.Q(all) | pq.PostSelectPhotons(
-            postselect_modes=postselect_modes, photon_counts=(1, 0)
-        )
+        pq.Q(*postselect_modes) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
     simulator = pq.SamplingSimulator(d=d, config=pq.Config(cutoff=4))
 

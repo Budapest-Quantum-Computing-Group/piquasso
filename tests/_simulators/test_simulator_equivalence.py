@@ -1851,7 +1851,7 @@ def test_post_select_NS_gate(SimulatorClass):
 
         pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
 
-        pq.Q(all) | pq.PostSelectPhotons(postselect_modes=(1, 2), photon_counts=(1, 0))
+        pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
     simulator = SimulatorClass(d=d, config=pq.Config(cutoff=4))
 
@@ -1895,9 +1895,7 @@ def test_post_select_random_unitary(SimulatorClass):
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
-        pq.Q(all) | pq.PostSelectPhotons(
-            postselect_modes=postselect_modes, photon_counts=(1, 0)
-        )
+        pq.Q(*postselect_modes) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
     simulator = SimulatorClass(d=d, config=pq.Config(cutoff=4))
 
@@ -1953,9 +1951,7 @@ def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
 
         pq.Q(all) | conditional_sign_flip
 
-        pq.Q(all) | pq.PostSelectPhotons(
-            postselect_modes=ancilla_modes, photon_counts=ancilla_state * 2
-        )
+        pq.Q(*ancilla_modes) | pq.PostSelectPhotons(photon_counts=ancilla_state * 2)
 
     simulator = SimulatorClass(d=8, config=pq.Config(cutoff=5))
 
@@ -2011,8 +2007,7 @@ def test_ImperfectPostSelectPhotons(SimulatorClass):
         pq.Q() | pq.StateVector([1, 1, 0, 1, 0]) * coeffs[3]
         pq.Q() | pq.StateVector([3, 0, 0, 0, 0]) * coeffs[4]
 
-        pq.Q() | pq.ImperfectPostSelectPhotons(
-            postselect_modes=(2, 4),
+        pq.Q(2, 4) | pq.ImperfectPostSelectPhotons(
             photon_counts=(0, 1),
             detector_efficiency_matrix=detector_efficiency_matrix,
         )
@@ -2063,8 +2058,7 @@ def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
     with pq.Program() as imperfect_photon_detection_program:
         pq.Q(all) | preparation
 
-        pq.Q(all) | pq.ImperfectPostSelectPhotons(
-            postselect_modes=(1, 2),
+        pq.Q(1, 2) | pq.ImperfectPostSelectPhotons(
             photon_counts=(1, 0),
             detector_efficiency_matrix=trivial_detector_efficiency_matrix,
         )
@@ -2072,7 +2066,7 @@ def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
     with pq.Program() as perfect_photon_detection_program:
         pq.Q(all) | preparation
 
-        pq.Q(all) | pq.PostSelectPhotons(postselect_modes=(1, 2), photon_counts=(1, 0))
+        pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
     simulator = SimulatorClass(d=d, config=pq.Config(cutoff=4))
 
@@ -2123,8 +2117,7 @@ def test_NS_gate_with_ImperfectPostSelectPhotons(SimulatorClass):
 
         pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
 
-        pq.Q(all) | pq.ImperfectPostSelectPhotons(
-            postselect_modes=(1, 2),
+        pq.Q(1, 2) | pq.ImperfectPostSelectPhotons(
             photon_counts=(1, 0),
             detector_efficiency_matrix=detector_efficiency_matrix,
         )
