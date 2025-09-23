@@ -147,8 +147,7 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
 
             pq.Q(all) | interferometer
 
-            pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0)
-            )
+            pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
         simulator = SimulatorClass(d=3, config=pq.Config(cutoff=4), connector=connector)
 
