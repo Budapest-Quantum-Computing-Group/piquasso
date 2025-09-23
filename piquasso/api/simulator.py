@@ -267,7 +267,11 @@ class Simulator(Computer, _mixins.CodeMixin):
             calculation = self._get_calculation(instruction)
 
             instruction = self._maybe_postprocess_batch_instruction(instruction)
-            result = calculation(result.state, instruction, shots)
+            new_result = calculation(result.state, instruction, shots)
+            # if result.samples and new_result.samples:
+            new_result.samples = result.samples + new_result.samples
+
+            result = new_result
             if isinstance(instruction, PostSelection):
                 self.d = result.state.d
 
