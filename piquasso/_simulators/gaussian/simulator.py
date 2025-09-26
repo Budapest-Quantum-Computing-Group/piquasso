@@ -13,9 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
-
+from piquasso.api.instruction import (
+    Instruction,
+    Measurement,
+)
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 
 from .state import GaussianState
@@ -33,7 +37,6 @@ from .calculations import (
     threshold_measurement,
     deterministic_gaussian_channel,
 )
-
 
 class GaussianSimulator(BuiltinSimulator):
     """Performs photonic simulations using Gaussian representation.
@@ -135,3 +138,12 @@ class GaussianSimulator(BuiltinSimulator):
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [JaxConnector]
+
+
+    def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
+        super()._validate_instruction_order(instructions)
+
+        instruction_category_projection = list(
+            map(self._to_instruction_category, instructions)
+        )
+        measurement_count = instruction_category_projection.count(Measurement)

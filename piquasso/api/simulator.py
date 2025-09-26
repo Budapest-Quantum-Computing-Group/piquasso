@@ -35,6 +35,7 @@ from piquasso.api.instruction import (
     Gate,
     Instruction,
     Measurement,
+    PostSelection,
     Preparation,
     BatchInstruction,
 )
@@ -43,6 +44,7 @@ from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 
 from .computer import Computer
 
+all_instruction_categories = [Preparation, Gate, Measurement]
 
 class Simulator(Computer, _mixins.CodeMixin):
     """Base class for all simulators defined in Piquasso."""
@@ -58,6 +60,8 @@ class Simulator(Computer, _mixins.CodeMixin):
         connector: Optional[BaseConnector] = None,
     ) -> None:
         self.d = d
+        self.active_modes = set(range(self.d))
+        self.active_mode_mapping = {v: k for k, v in enumerate(self.active_modes)}
         self.config = config.copy() if config is not None else self._config_class()
         self._connector = connector or self._default_connector_class()
 
@@ -135,33 +139,28 @@ class Simulator(Computer, _mixins.CodeMixin):
             + "."
         )
 
+    @staticmethod
+    def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
+        
+        for instruction_category in all_instruction_categories:
+            if isinstance(instruction, instruction_category):
+                return instruction_category
+
+        raise InvalidInstruction(
+            f"\n"
+            f"The instruction is not a subclass of the following classes:\n"
+            f"{all_instruction_categories}.\n"
+            f"Make sure that all your instructions are subclassed properly from "
+            f"the above classes.\n"
+            f"instruction={instruction}."
+        )
+
     def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
-        all_instruction_categories = [Preparation, Gate, Measurement]
-
-        def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
-            for instruction_category in all_instruction_categories:
-                if isinstance(instruction, instruction_category):
-                    return instruction_category
-
-            raise InvalidInstruction(
-                f"\n"
-                f"The instruction is not a subclass of the following classes:\n"
-                f"{all_instruction_categories}.\n"
-                f"Make sure that all your instructions are subclassed properly from "
-                f"the above classes.\n"
-                f"instruction={instruction}."
-            )
-
         instruction_category_projection = list(
-            map(_to_instruction_category, instructions)
+            map(self._to_instruction_category, instructions)
         )
 
         measurement_count = instruction_category_projection.count(Measurement)
-
-        if measurement_count not in (0, 1):
-            raise InvalidSimulation(
-                "Up to one measurement could be registered for simulations."
-            )
 
         if (
             measurement_count == 1
@@ -268,14 +267,39 @@ class Simulator(Computer, _mixins.CodeMixin):
         result = Result(state=state)
 
         for instruction in instructions:
+
+            if isinstance(instruction, PostSelection):
+                instruction.modes = instruction._all_params['postselect_modes']
+
+            if hasattr(instruction, "modes") and any(m not in self.active_modes for m in instruction.modes):
+                inactive_modes = {m for m in instruction.modes if m not in self.active_modes}
+                raise ValueError(f"Some modes of instruction {instruction} are not active: {inactive_modes}.")
+
             if not hasattr(instruction, "modes") or instruction.modes is tuple():
-                instruction.modes = tuple(range(self.d))
+                instruction.modes = tuple(range(len(self.active_modes)))
+
+            original_modes = instruction.modes if isinstance(instruction, Measurement) else None
+            if len(self.active_modes) != max(self.active_modes):
+                # We have measured at least one mode, need to remap the modes
+                print(instruction, self.active_mode_mapping, instruction.modes)
+                instruction.modes = tuple(self.active_mode_mapping[m] for m in instruction.modes)
+
+            if original_modes is not None:
+                for mode in original_modes:
+                    self.active_modes.remove(mode)
+                self.active_mode_mapping = {v: k for k, v in enumerate(self.active_modes)}
+            
 
             calculation = self._get_calculation(instruction)
 
             instruction = self._maybe_postprocess_batch_instruction(instruction)
+            new_result = calculation(result.state, instruction, shots)
+            # if result.samples and new_result.samples:
+            new_result.samples = result.samples + new_result.samples
 
-            result = calculation(result.state, instruction, shots)
+            result = new_result
+            if isinstance(instruction, PostSelection):
+                self.d = result.state.d
 
         return result
 
