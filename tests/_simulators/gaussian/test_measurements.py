@@ -53,18 +53,6 @@ def nondisplaced_state(d):
     return state
 
 
-def test_measure_homodyne_zeroes_state_on_measured_modes(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HomodyneMeasurement()
-
-    simulator = pq.GaussianSimulator(d=state.d)
-    state = simulator.execute(program, initial_state=state).state
-    state.validate()
-
-    assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
-
-
 def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     angle = np.pi / 3
 
@@ -83,6 +71,8 @@ def test_measure_homodyne_with_angle_does_not_alter_the_state(state):
     ).state
     state_with_rotation.validate()
 
+    assert measured_state.d == 2
+
     assert measured_state == state_with_rotation
 
 
@@ -96,18 +86,6 @@ def test_measure_homodyne_with_multiple_shots(state):
     result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
-
-
-def test_measure_heterodyne_zeroes_state_on_measured_modes(state):
-    with pq.Program() as program:
-        pq.Q(0) | pq.HeterodyneMeasurement()
-
-    simulator = pq.GaussianSimulator(d=state.d)
-    state = simulator.execute(program, initial_state=state).state
-    state.validate()
-
-    assert state.xpxp_mean_vector[0] == 0
-    assert state.xpxp_covariance_matrix[0][0] == state._config.hbar
 
 
 def test_measure_heterodyne_with_multiple_shots(state):
@@ -186,6 +164,8 @@ def test_measure_particle_number_on_all_modes(state):
     result = simulator.execute(program, initial_state=state)
 
     assert result
+
+    assert result.state is None
 
 
 @pytest.mark.parametrize(

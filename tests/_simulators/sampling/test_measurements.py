@@ -211,8 +211,6 @@ def test_uniform_loss():
         for i in range(d):
             pq.Q(i) | pq.Loss(transmissivity=0.9)
 
-        pq.Q() | pq.ParticleNumberMeasurement()
-
     simulator = pq.SamplingSimulator(d=d)
     state = simulator.execute(program, shots=1).state
 
