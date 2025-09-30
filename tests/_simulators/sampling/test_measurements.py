@@ -502,3 +502,108 @@ def test_post_select_random_unitary():
     state.validate()
 
     assert state.d == d - len(postselect_modes)
+
+class TestMultiMeasurements:
+    """Test programs that contain multiple measurement instructions."""
+
+    def test_post_select_and_pnm(self):
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(3, 4) | pq.PostSelectPhotons(photon_counts=[0, 0])
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        assert res.samples == [(1,1,1)]
+        assert len(res.state.fock_amplitudes_map) == 1
+        assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
+        assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]
+
+
+    def test_post_select_and_pnm_invalid_modes(self):
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(3, 4) | pq.PostSelectPhotons(photon_counts=[0, 0])
+            pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        assert res.samples == [(1,1,1)]
+        assert len(res.state.fock_amplitudes_map) == 1
+        assert list(res.state.fock_amplitudes_map.keys()) == [(1, 1, 1)]
+        assert list(res.state.fock_amplitudes_map.values()) == [(1+0j)]
+
+        
+    @pytest.mark.parametrize(
+        "SimulatorClass",
+        [pq.PureFockSimulator, pq.SamplingSimulator],
+    )
+    def test_imperfect_post_select_and_pnm(self, SimulatorClass):
+        d = 6
+        cutoff = 4
+
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 0.2, 0.1],
+                [0.0, 0.8, 0.2],
+                [0.0, 0.0, 0.7],
+            ]
+        )
+
+        coeffs = np.sqrt([0.1, 0.3, 0.4, 0.05, 0.1, 0.05])
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 0, 0, 2, 1, 1]) * coeffs[0]
+            pq.Q() | pq.StateVector([0, 0, 2, 0, 1, 1]) * coeffs[1]
+            pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1]) * coeffs[2]
+            pq.Q() | pq.StateVector([1, 1, 0, 1, 0, 1]) * coeffs[3]
+            pq.Q() | pq.StateVector([3, 0, 0, 0, 0, 1]) * coeffs[4]
+
+            pq.Q(2, 4) | pq.ImperfectPostSelectPhotons(
+                photon_counts=(0, 1),
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+            pq.Q(5) | pq.ParticleNumberMeasurement()
+            
+
+        simulator = SimulatorClass(d=d, config=pq.Config(cutoff=cutoff))
+
+        state = simulator.execute(program).state
+
+        with pq.Program() as expected_program:
+            pq.Q() | pq.DensityMatrix((0, 1, 1, 0), (0, 1, 1, 0)) * 0.32 + pq.DensityMatrix((0, 0, 0, 1), (0, 0, 0, 1))
+            pq.Q() | pq.DensityMatrix((0, 1, 1, 0), (0, 0, 2, 0)) * 0.16 + pq.DensityMatrix((0, 0, 0, 1), (0, 0, 0, 1))
+            pq.Q() | pq.DensityMatrix((0, 0, 2, 0), (0, 1, 1, 0)) * 0.16 + pq.DensityMatrix((0, 0, 0, 1), (0, 0, 0, 1))
+            pq.Q() | pq.DensityMatrix((0, 0, 2, 0), (0, 0, 2, 0)) * 0.08 + pq.DensityMatrix((0, 0, 0, 1), (0, 0, 0, 1))
+            pq.Q(5) | pq.ParticleNumberMeasurement()
+
+        expected_simulator = pq.FockSimulator(d=d, config=pq.Config(cutoff=4))
+
+        expected_state = expected_simulator.execute(expected_program).state
+
+        assert state == expected_state
+
+    def test_reindexing_for_measurements_explicit_modes(self):
+        """Test a case where internally mode reindexing happens for active modes."""
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(2, 4) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        assert res.samples == [(1, 0)]
+
+    @pytest.mark.parametrize("measured_mode", [0, 1])
+    def test_measuring_inactive_raises(self, measured_mode):
+        """Test that measuring inactive modes raises an error."""
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        with pytest.raises(ValueError, match=f"are not active: { {measured_mode} }"):
+            simulator.execute(program, shots=1)
