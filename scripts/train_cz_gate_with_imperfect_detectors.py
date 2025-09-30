@@ -125,10 +125,9 @@ def _calculate_loss(
             pq.StateVector(state_11 + ancilla_state, coefficient=state_vector[3]),
             pq.Interferometer(interferometer),
             pq.ImperfectPostSelectPhotons(
-                postselect_modes=ancilla_modes,
                 photon_counts=ancilla_state,
                 detector_efficiency_matrix=P,
-            ),
+            ).on_modes(ancilla_modes),
         ]
     )
 

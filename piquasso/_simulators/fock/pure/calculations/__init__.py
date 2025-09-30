@@ -58,7 +58,7 @@ from piquasso.instructions import gates
 from piquasso.api.result import Result
 from piquasso.api.instruction import Instruction
 from piquasso.api.connector import BaseConnector
-from piquasso.api.exceptions import InvalidState
+from piquasso._math.validations import validate_occupation_numbers
 
 
 def particle_number_measurement(
@@ -418,12 +418,12 @@ def state_vector_instruction(
 
         if state._config.validate:
             expected_length = len(instruction.modes) if instruction.modes else state.d
-            if len(occupation_numbers) != expected_length:
-                raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' are "
-                    f"not well-defined on '{expected_length}' modes: "
-                    f"instruction={instruction}"
-                )
+            validate_occupation_numbers(
+                occupation_numbers,
+                expected_length,
+                state._config.cutoff,
+                context=f": instruction={instruction}",
+            )
 
         _add_occupation_number_basis(
             state=state,
@@ -440,12 +440,12 @@ def state_vector_instruction(
                 expected_length = (
                     len(instruction.modes) if instruction.modes else state.d
                 )
-                if len(occupation_numbers) != expected_length:
-                    raise InvalidState(
-                        f"The occupation numbers '{occupation_numbers}' are "
-                        f"not well-defined on '{expected_length}' modes: "
-                        f"instruction={instruction}"
-                    )
+                validate_occupation_numbers(
+                    occupation_numbers,
+                    expected_length,
+                    state._config.cutoff,
+                    context=f": instruction={instruction}",
+                )
 
             _add_occupation_number_basis(
                 state=state,

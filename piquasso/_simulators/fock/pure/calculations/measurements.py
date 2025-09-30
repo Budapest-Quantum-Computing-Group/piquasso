@@ -28,7 +28,7 @@ def post_select_photons(
 ) -> Result:
     connector = state._connector
 
-    postselect_modes = instruction.params["postselect_modes"]
+    postselect_modes = instruction.modes
 
     photon_counts = instruction.params["photon_counts"]
 
@@ -58,7 +58,7 @@ def imperfect_post_select_photons(
 ) -> Result:
     np = state._connector.np
 
-    postselect_modes = instruction.params["postselect_modes"]
+    postselect_modes = instruction.modes
 
     photon_counts = instruction.params["photon_counts"]
 
