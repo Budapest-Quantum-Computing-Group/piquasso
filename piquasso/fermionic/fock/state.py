@@ -118,7 +118,7 @@ class PureFockState(State):
 
     @property
     def density_matrix(self) -> "np.ndarray":
-        """The density matrix of the state.
+        r"""The density matrix of the state.
 
         .. warning::
             The primary ordering of the Fock basis is by number of particles, and the
