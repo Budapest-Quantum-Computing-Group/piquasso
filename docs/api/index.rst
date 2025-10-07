@@ -13,6 +13,7 @@ The API reference of Piquasso.
    state
    instruction
    result
+   branch
    exceptions
    computer
    connector

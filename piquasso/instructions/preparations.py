@@ -48,7 +48,7 @@ class Vacuum(Preparation):
     """
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
 
 class Mean(Preparation):
@@ -325,7 +325,7 @@ class Create(Preparation):
     """
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
 
 class Annihilate(Preparation):
@@ -347,4 +347,4 @@ class Annihilate(Preparation):
     """
 
     def __init__(self) -> None:
-        pass
+        super().__init__()

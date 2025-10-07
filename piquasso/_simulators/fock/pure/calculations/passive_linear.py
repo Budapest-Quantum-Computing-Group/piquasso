@@ -31,12 +31,12 @@ from ...calculations import (
 )
 from piquasso.instructions import gates
 
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 
 
 def passive_linear(
     state: PureFockState, instruction: gates._PassiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     connector = state._connector
 
     interferometer: np.ndarray = instruction._get_passive_block(
@@ -45,7 +45,7 @@ def passive_linear(
 
     _apply_passive_linear(state, interferometer, instruction.modes, connector)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_passive_linear(state, interferometer, modes, connector):
@@ -379,10 +379,10 @@ def _calculate_beamsplitter5050_on_fock_space(cutoff):
 
 def beamsplitter5050(
     state: PureFockState, instruction: gates._PassiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     _apply_beamsplitter5050(state, instruction.modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_beamsplitter5050(state, modes):

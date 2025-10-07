@@ -13,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
+
+from fractions import Fraction
+
 from piquasso.instructions.measurements import HomodyneMeasurement
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.exceptions import NotImplementedCalculation
 
 from piquasso._math.fock import get_fock_space_basis
@@ -35,7 +39,7 @@ hermite = lru_cache(maxsize=None)(hermite)
 
 def homodyne_measurement(
     state: PureFockState, instruction: HomodyneMeasurement, shots: int
-) -> Result:
+) -> List[Branch]:
     modes = instruction.modes
 
     phi = instruction.params["phi"]
@@ -132,7 +136,12 @@ def homodyne_measurement(
             uniforms,
         )
 
-    return Result(state=None, samples=sqrt_hbar * samples)
+    scaled_samples = sqrt_hbar * samples
+
+    return [
+        Branch(state=None, outcome=outcome, frequency=Fraction(1, shots))
+        for outcome in scaled_samples
+    ]
 
 
 def _do_sample_homodyne_multimodes(

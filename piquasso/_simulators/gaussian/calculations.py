@@ -18,6 +18,8 @@ from typing import Tuple, List
 import scipy
 import numpy as np
 
+from fractions import Fraction
+
 from itertools import repeat
 from functools import lru_cache, partial
 
@@ -31,7 +33,7 @@ from .probabilities import (
 
 from piquasso.instructions import gates
 
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 from piquasso.api.exceptions import InvalidInstruction
 
@@ -44,7 +46,7 @@ from piquasso._math.decompositions import (
 
 def passive_linear(
     state: GaussianState, instruction: gates._PassiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     modes = instruction.modes
     passive_block: np.ndarray = instruction._get_passive_block(
         state._connector, state._config
@@ -52,7 +54,7 @@ def passive_linear(
 
     _apply_passive_linear(state, passive_block, modes=modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_passive_linear(state, passive_block, modes):
@@ -108,7 +110,7 @@ def _apply_passive_linear_to_auxiliary_modes(
 
 def linear(
     state: GaussianState, instruction: gates._ActiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     modes = instruction.modes
     passive_block: np.ndarray = instruction._get_passive_block(
         state._connector, state._config
@@ -119,7 +121,7 @@ def linear(
 
     _apply_linear(state, passive_block, active_block, modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_linear(state, passive_block, active_block, modes):
@@ -205,7 +207,9 @@ def _apply_linear_to_auxiliary_modes(
     state._G = connector.assign(state._G, assign_index, state._G[modes, :].transpose())
 
 
-def displacement(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def displacement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> List[Branch]:
     connector = state._connector
     np = connector.np
 
@@ -219,12 +223,12 @@ def displacement(state: GaussianState, instruction: Instruction, shots: int) -> 
         state._m, indices, state._m[indices] + r * np.exp(1j * phi)
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def generaldyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     modes = instruction.modes
     detection_covariance = instruction._all_params["detection_covariance"]
 
@@ -235,17 +239,23 @@ def generaldyne_measurement(
         detection_covariance,
     )
 
-    # NOTE: We choose the last sample for multiple shots.
-    sample = samples[-1]
+    branches = []
 
-    evolved_state = _get_generaldyne_evolved_state(
-        state,
-        sample,
-        modes,
-        detection_covariance,
-    )
+    for sample in samples:
+        evolved_state = _get_generaldyne_evolved_state(
+            state,
+            sample,
+            modes,
+            detection_covariance,
+        )
 
-    return Result(state=evolved_state, samples=list(map(tuple, list(samples))))
+        branch = Branch(
+            frequency=Fraction(1, shots), state=evolved_state, outcome=sample
+        )
+
+        branches.append(branch)
+
+    return branches
 
 
 def _get_generaldyne_samples(state, modes, shots, detection_covariance):
@@ -331,10 +341,13 @@ def particle_number_measurement(
     state: GaussianState,
     instruction: Instruction,
     shots: int,
-) -> Result:
+) -> List[Branch]:
     samples = _get_particle_number_measurement_samples(state, instruction, shots)
 
-    return Result(state=None, samples=samples)
+    return [
+        Branch(state=None, outcome=outcome, frequency=Fraction(1, shots))
+        for outcome in samples
+    ]
 
 
 def _get_particle_number_measurement_samples(
@@ -445,7 +458,7 @@ def _generate_sample(B, sqrt_cov_1, sqrt_cov_2, mean, loop_hafnian_batch, cutoff
 
 def threshold_measurement(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     """
     NOTE: The same logic is used here, as for the particle number measurement.
     However, at threshold measurement there is no sense of measurement cutoff,
@@ -462,7 +475,10 @@ def threshold_measurement(
     else:
         samples = _generate_threshold_samples_using_hafnian(state, instruction, shots)
 
-    return Result(state=None, samples=samples)
+    return [
+        Branch(state=None, outcome=outcome, frequency=Fraction(1, shots))
+        for outcome in samples
+    ]
 
 
 def _generate_threshold_samples_using_torontonian(state, instruction, shots):
@@ -539,7 +555,7 @@ def _generate_threshold_samples_using_hafnian(state, instruction, shots):
 
 def homodyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     phi = instruction._all_params["phi"]
 
     modes = instruction.modes
@@ -551,27 +567,29 @@ def homodyne_measurement(
     return generaldyne_measurement(state, instruction, shots)
 
 
-def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> List[Branch]:
     state.reset()
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def mean(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def mean(state: GaussianState, instruction: Instruction, shots: int) -> List[Branch]:
     state.xpxp_mean_vector = instruction._all_params["mean"] * np.sqrt(
         state._config.hbar
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def covariance(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def covariance(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> List[Branch]:
     state.xpxp_covariance_matrix = instruction._all_params["cov"] * state._config.hbar
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def graph(state: GaussianState, instruction: Instruction, shots: int) -> List[Branch]:
     """
     TODO: Find a better solution for multiple operations.
     """
@@ -591,12 +609,12 @@ def graph(state: GaussianState, instruction: Instruction, shots: int) -> Result:
 
     _apply_passive_linear(state, interferometer, instruction.modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def deterministic_gaussian_channel(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     X = instruction._all_params["X"]
     Y = instruction._all_params["Y"] * state._config.hbar
     modes = instruction.modes
@@ -624,4 +642,4 @@ def deterministic_gaussian_channel(
         embedded_X @ covariance_matrix @ embedded_X.T + embedded_Y
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]

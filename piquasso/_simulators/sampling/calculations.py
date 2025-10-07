@@ -13,15 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
+
+from fractions import Fraction
+
 from piquasso._simulators.sampling.state import SamplingState
 
 from piquasso.instructions import gates
 
 from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 
 from piquasso._simulators.fock.pure.calculations import (
@@ -35,9 +38,12 @@ from .utils import (
     generate_uniform_lossy_samples,
     generate_lossy_samples,
 )
+from piquasso._utils import get_counts
 
 
-def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> Result:
+def state_vector(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> List[Branch]:
     coefficient = instruction._all_params["coefficient"]
 
     if "occupation_numbers" in instruction._all_params:
@@ -66,12 +72,12 @@ def state_vector(state: SamplingState, instruction: Instruction, shots: int) -> 
             state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
             state._coefficients.append(coefficient * amplitude)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def passive_linear(
     state: SamplingState, instruction: gates._PassiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     r"""Applies an interferometer to the circuit.
 
     This can be interpreted as placing another interferometer in the network, just
@@ -87,7 +93,7 @@ def passive_linear(
         modes=instruction.modes,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_matrix_on_modes(
@@ -104,7 +110,7 @@ def _apply_matrix_on_modes(
     state.interferometer = embedded @ state.interferometer
 
 
-def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
+def loss(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
@@ -113,12 +119,12 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> Result:
         modes=instruction.modes,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def lossy_interferometer(
     state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
@@ -127,12 +133,12 @@ def lossy_interferometer(
         modes=instruction.modes,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def particle_number_measurement(
     state: SamplingState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     """
     Simulates a boson sampling using generalized Clifford & Clifford algorithm
     from [Brod, Oszmaniec 2020] see
@@ -196,7 +202,14 @@ def particle_number_measurement(
             state._config.rng,
         )
 
-    return Result(state=None, samples=list(map(tuple, samples)))
+    binned_samples = get_counts(samples)
+
+    branches = [
+        Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
+        for outcome, multiplicity in binned_samples.items()
+    ]
+
+    return branches
 
 
 post_select_photons = pure_fock_post_select_photons

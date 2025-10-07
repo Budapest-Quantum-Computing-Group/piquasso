@@ -13,36 +13,110 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Optional, Union
+import random
 
-from piquasso.api.state import State
+from typing import List, Tuple, Union, Optional
 
 import numpy as np
 
+from .branch import Branch
+from .config import Config
+from .state import State
+from .exceptions import NotImplementedCalculation
+
 
 class Result:
-    """Class for collecting results."""
+    r"""Collects the results of a quantum computation.
 
-    def __init__(
-        self,
-        state: Optional[State] = None,
-        samples: Optional[Union[List[Tuple], "np.ndarray"]] = None,
-    ) -> None:
+    The `Result` class contains the results of a quantum computation. If no measurements
+    were performed, then it contains the final quantum state, accessible through the
+    property :meth:`state`. If measurements were performed, then it contains the
+    measurement outcomes (samples), accessible through the property :meth:`samples`.
+    Also, the post-measurement quantum states are stored in the :meth:`branches`
+    property, containing a list of :class:`~piquasso.api.branch.Branch` instances.
+    """
+
+    def __init__(self, branches: List[Branch], config: Config, shots: int):
         """
         Args:
-            state (State): The resulting simulated state.
-            samples (list[tuple[int or float]]): The generated samples.
+            branches: The branches containing all the simulation results.
+            config: The config object.
+            shots: The number of times the circuit was executed.
         """
 
-        self.state = state if state is not None and state.d != 0 else None
-        self.samples: Union[List[Tuple], "np.ndarray"] = (
-            samples if samples is not None else []
-        )
+        self._branches = branches
+        self._config = config
+        self._shots = shots
 
     def __repr__(self) -> str:
-        return f"Result(samples={self.samples}, state={self.state})"
+        return f"Result(branches={self.branches}, config={self._config}, shots={self._shots})"  # noqa: E501
+
+    @property
+    def branches(self) -> List[Branch]:
+        """Returns the list of branches obtained in the calculation.
+
+        The :class:`~piquasso.api.branch.Branch` instances contain the post-measurement
+        quantum states, the corresponding measurement outcomes (samples), and their
+        frequencies, i.e., how many times the outcome appeared divided by the total
+        number of shots.
+
+        Returns:
+            List[Branch]: The list of branches containing the post-measurement states,
+            samples, and their frequencies.
+        """
+
+        return self._branches
+
+    @property
+    def state(self) -> Optional[State]:
+        """The resulting quantum state."""
+        if len(self.branches) == 1:
+            return self.branches[0].state
+
+        raise NotImplementedCalculation(
+            "This feature is not yet implemented. However, you can access the "
+            "post-measurement state in the `Result.branches` attribute."
+        )
+
+    @property
+    def samples(self) -> List[Tuple[Union[int, float], ...]]:
+        """The list of measurement outcomes.
+
+        A measurement outcome (or sample) is a tuple of integers or floating point
+        numbers, depending on the type of measurements used. A sample is sorted by the
+        ordering of the measurements in the executed program.
+
+        Note, that a sample can contain both integers and floats at the same type, e.g.,
+        both :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`
+        and :class:`~piquasso.instructions.measurements.HomodyneMeasurement` is used.
+        """
+
+        _samples = []
+
+        for branch in self.branches:
+            _samples.extend(
+                [tuple(branch.outcome)] * int(branch.frequency * self._shots)
+            )
+
+        # NOTE: the samples need to be shuffled with the same seed to ensure
+        # consistency.
+        r = random.Random(self._config.seed_sequence)
+        r.shuffle(_samples)
+
+        return _samples
 
     def get_counts(self) -> dict:
+        """Returns the samples binned according to their frequency.
+
+        Raises:
+            NotImplementedError: If the samples contain non-integer data.
+
+        Returns:
+            dict:
+                The binned samples in a dictionary format, where the keys are the
+                samples and the values are the number of occurrences.
+        """
+
         if (
             isinstance(self.samples, np.ndarray)
             and self.samples.dtype not in (np.int32, np.int64)
@@ -52,13 +126,11 @@ class Result:
                 "integers (e.g., samples from 'ParticleNumberMeasurement')."
             )
 
-        counts_dct = {}
-        for sample in self.samples:
-            if sample not in counts_dct:
-                counts_dct[sample] = 1
-            else:
-                counts_dct[sample] += 1
-        return counts_dct
+        ret = {}
+        for branch in self.branches:
+            ret[branch.outcome] = int(branch.frequency * self._shots)
+
+        return ret
 
     def to_subgraph_nodes(self) -> List[List[int]]:
         """Convert samples to subgraph modes.

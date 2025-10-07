@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 
 from piquasso.api.exceptions import InvalidParameter
 
@@ -38,6 +38,7 @@ from .state import PureFockState
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing import List
     from piquasso.instructions.preparations import StateVector
     from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
     from piquasso.fermionic.instructions import ControlledPhase, IsingXX
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
 
 def state_vector(
     state: PureFockState, instruction: "StateVector", shots: int
-) -> Result:
+) -> "List[Branch]":
     connector = state._connector
 
     fallback_np = connector.fallback_np
@@ -99,12 +100,12 @@ def state_vector(
                 coefficient * amplitude,
             )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def passive_linear(
     state: PureFockState, instruction: "_PassiveLinearGate", shots: int
-) -> Result:
+) -> "List[Branch]":
     connector = state._connector
     config = state._config
 
@@ -127,10 +128,12 @@ def passive_linear(
         config.cutoff,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def squeezing2(state: PureFockState, instruction: "Squeezing2", shots: int) -> Result:
+def squeezing2(
+    state: PureFockState, instruction: "Squeezing2", shots: int
+) -> "List[Branch]":
     connector = state._connector
     config = state._config
 
@@ -178,12 +181,12 @@ def squeezing2(state: PureFockState, instruction: "Squeezing2", shots: int) -> R
 
         index = next_second_quantized(index)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def controlled_phase(
     state: PureFockState, instruction: "ControlledPhase", shots: int
-) -> Result:
+) -> "List[Branch]":
     connector = state._connector
 
     modes = instruction.modes
@@ -203,10 +206,12 @@ def controlled_phase(
         state._state_vector, indices, rotation * state._state_vector[indices]
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def ising_XX(state: PureFockState, instruction: "IsingXX", shots: int) -> Result:
+def ising_XX(
+    state: PureFockState, instruction: "IsingXX", shots: int
+) -> "List[Branch]":
     connector = state._connector
     np = connector.np
 
@@ -226,4 +231,4 @@ def ising_XX(state: PureFockState, instruction: "IsingXX", shots: int) -> Result
         final = cos_phi * initial + i_sin_phi * np.flip(initial)
         state._state_vector = connector.assign(state._state_vector, index, final)
 
-    return Result(state=state)
+    return [Branch(state=state)]

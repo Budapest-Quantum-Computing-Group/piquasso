@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Instruction
 
@@ -35,20 +35,24 @@ import typing
 
 if typing.TYPE_CHECKING:
     import numpy as np
-    from typing import Tuple
+    from typing import Tuple, List
 
 
-def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def vacuum(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Branch]":
     """Sets the vacuum state."""
 
     np = state._connector.np
 
     state._set_occupation_numbers(np.zeros(state.d, dtype=state._config.dtype))
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def state_vector(state: GaussianState, instruction: Instruction, shots: int) -> Result:
+def state_vector(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Branch]":
     """Sets an arbitrary occupation number state."""
 
     fallback_np = state._connector.fallback_np
@@ -70,20 +74,20 @@ def state_vector(state: GaussianState, instruction: Instruction, shots: int) -> 
 
     state._set_occupation_numbers(occupation_numbers)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def parent_hamiltonian(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> "List[Branch]":
     state._set_parent_hamiltonian(instruction.params["hamiltonian"])
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def gaussian_hamiltonian(
     state: GaussianState, instruction: Instruction, shots: int
-) -> Result:
+) -> "List[Branch]":
     hamiltonian = instruction.params["hamiltonian"]
     modes = instruction.modes
 
@@ -92,7 +96,7 @@ def gaussian_hamiltonian(
 
     evolved_state = _do_apply_gaussian_hamiltonian(state, h, modes)
 
-    return Result(state=evolved_state)
+    return [Branch(state=evolved_state)]
 
 
 def _transform_to_majorana_basis(H, connector):
@@ -172,7 +176,7 @@ def _do_apply_gaussian_hamiltonian(
 
 def passive_linear_gate(
     state: GaussianState, instruction: _PassiveLinearGate, shots: int
-) -> Result:
+) -> "List[Branch]":
     r"""Applies a passive linear gate to a fermionic Gaussian state.
 
     The transformation is equivalent to
@@ -213,10 +217,12 @@ def passive_linear_gate(
         state._E, select_rows, unitary.conj() @ state._E[select_rows]
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def squeezing2(state: GaussianState, instruction: Squeezing2, shots: int) -> Result:
+def squeezing2(
+    state: GaussianState, instruction: Squeezing2, shots: int
+) -> "List[Branch]":
     connector = state._connector
     np = connector.np
     complex_dtype = state._D.dtype
@@ -245,10 +251,10 @@ def squeezing2(state: GaussianState, instruction: Squeezing2, shots: int) -> Res
 
     evolved_state = _do_apply_gaussian_hamiltonian(state, h, modes)
 
-    return Result(state=evolved_state)
+    return [Branch(state=evolved_state)]
 
 
-def ising_XX(state: GaussianState, instruction: IsingXX, shots: int) -> Result:
+def ising_XX(state: GaussianState, instruction: IsingXX, shots: int) -> "List[Branch]":
     phi = instruction.params["phi"]
 
     connector = state._connector
@@ -264,4 +270,4 @@ def ising_XX(state: GaussianState, instruction: IsingXX, shots: int) -> Result:
 
     evolved_state = _do_apply_gaussian_hamiltonian(state, h, modes)
 
-    return Result(state=evolved_state)
+    return [Branch(state=evolved_state)]
