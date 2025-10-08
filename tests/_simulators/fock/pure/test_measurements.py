@@ -14,11 +14,13 @@
 # limitations under the License.
 
 import numpy as np
+import pytest
 
 import piquasso as pq
 
 
 def test_measure_particle_number_on_one_mode():
+    cutoff = 3
     with pq.Program() as program:
         pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(2 / 6)
 
@@ -27,7 +29,7 @@ def test_measure_particle_number_on_one_mode():
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.PureFockSimulator(d=3)
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=cutoff))
 
     result = simulator.execute(program)
 
@@ -37,24 +39,29 @@ def test_measure_particle_number_on_one_mode():
     assert sample == (1,) or sample == (2,)
 
     if sample == (1,):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=cutoff - 1)
+        )
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                0.5773502691896258 * pq.StateVector([0, 0, 1]),
-                0.816496580927726 * pq.StateVector([0, 1, 1]),
+                0.5773502691896258 * pq.StateVector([0, 0]),
+                0.816496580927726 * pq.StateVector([0, 1]),
             ]
         ).state
 
     elif sample == (2,):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=2, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 2])]
+            instructions=[pq.StateVector([0, 0])]
         ).state
 
     assert result.state == expected_state
 
 
 def test_measure_particle_number_on_two_modes():
+    cutoff = 3
     with pq.Program() as program:
         pq.Q(1, 2) | pq.StateVector([1, 1]) * np.sqrt(2 / 6)
         pq.Q(1, 2) | pq.StateVector([0, 1]) * np.sqrt(1 / 6)
@@ -62,7 +69,7 @@ def test_measure_particle_number_on_two_modes():
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.PureFockSimulator(d=3)
+    simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=cutoff))
 
     result = simulator.execute(program)
 
@@ -72,21 +79,27 @@ def test_measure_particle_number_on_two_modes():
     assert sample == (0, 1) or sample == (1, 1) or sample == (0, 2)
 
     if sample == (0, 1):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 1)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 1])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     elif sample == (1, 1):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 1, 1])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     elif sample == (0, 2):
-        expected_simulator = pq.PureFockSimulator(d=3)
+        expected_simulator = pq.PureFockSimulator(
+            d=1, config=pq.Config(cutoff=cutoff - 2)
+        )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0, 2])]
+            instructions=[pq.StateVector([0])]
         ).state
 
     assert result.state == expected_state
@@ -106,36 +119,10 @@ def test_measure_particle_number_on_all_modes():
 
     result = simulator.execute(program)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
-
     sample = result.samples[0]
     assert sample == (0, 0, 0) or sample == (1, 0, 0) or sample == (0, 0, 1)
 
-    if sample == (0, 0, 0):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([0, 0, 0]),
-            ],
-        ).state
-
-    elif sample == (0, 0, 1):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([0, 0, 1]),
-            ]
-        ).state
-
-    elif sample == (1, 0, 0):
-        expected_simulator = pq.PureFockSimulator(d=3, config=config)
-        expected_state = expected_simulator.execute_instructions(
-            instructions=[
-                pq.StateVector([1, 0, 0]),
-            ],
-        ).state
-
-    assert result.state == expected_state
+    assert result.state is None
 
 
 def test_measure_particle_number_with_multiple_shots():
@@ -155,7 +142,6 @@ def test_measure_particle_number_with_multiple_shots():
 
     result = simulator.execute(program, shots)
 
-    assert np.isclose(sum(result.state.fock_probabilities), 1)
     assert len(result.samples) == shots
 
 
@@ -321,3 +307,154 @@ def test_HomodyneMeasurement_different_hbar_values():
     samples_hbar_3 = simulator_hbar_3.execute(program, shots).samples
 
     assert np.allclose(samples_hbar_2 / np.sqrt(2), samples_hbar_3 / np.sqrt(3))
+
+
+def test_ParticleNumberMeasurement_resulting_state():
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1])
+
+        pq.Q() | pq.Beamsplitter5050()
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program)
+
+    assert result.state.d == 1
+    assert np.isclose(sum(result.state.fock_probabilities), 1)
+
+
+class TestMidCircuitMeasurements:
+    """Test programs that contain mid-circuit measurements."""
+
+    def test_multi_ParticleNumberMeasurement_in_one_program(self):
+        simulator = pq.PureFockSimulator(
+            d=4, config=pq.Config(cutoff=3, seed_sequence=123)
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 1, 0])
+
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.ParticleNumberMeasurement()
+
+            pq.Q(1, 2) | pq.Beamsplitter5050()
+            pq.Q(1) | pq.ParticleNumberMeasurement()
+
+            pq.Q(2, 3) | pq.Beamsplitter5050()
+
+            pq.Q(2) | pq.ParticleNumberMeasurement()
+            pq.Q(3) | pq.ParticleNumberMeasurement()
+
+        result = simulator.execute(program, shots=10)
+
+        assert np.allclose(
+            result.samples,
+            [
+                [0, 0, 1, 1],
+                [1, 0, 1, 0],
+                [1, 0, 0, 1],
+                [0, 0, 1, 1],
+                [1, 0, 0, 1],
+                [1, 0, 0, 1],
+                [0, 2, 0, 0],
+                [1, 1, 0, 0],
+                [0, 2, 0, 0],
+                [0, 0, 2, 0],
+            ],
+        )
+
+    @pytest.mark.parametrize("input_modes", [[], [0, 1, 2]])
+    @pytest.mark.parametrize(
+        "res_samples", [[1, 0, 1], [0, 0, 1], [1, 1, 0], [2, 0, 1]]
+    )
+    def test_post_select_and_pnm(self, input_modes, res_samples):
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector(
+                [res_samples[0], res_samples[1], res_samples[2], 0, 0]
+            )
+            pq.Q(3, 4) | pq.PostSelectPhotons(photon_counts=[0, 0])
+            pq.Q(0) | pq.Squeezing(0.0)
+            pq.Q(*input_modes) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        res = simulator.execute(program, shots=1)
+        assert res.samples == [res_samples]
+
+    def test_imperfect_post_select_and_pnm(self):
+        d = 7
+        cutoff = 7
+
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 0.2, 0.1],
+                [0.0, 0.8, 0.2],
+                [0.0, 0.0, 0.7],
+            ]
+        )
+
+        coeffs = np.sqrt([0.1, 0.3, 0.4, 0.05, 0.1, 0.05])
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 0, 0, 2, 1, 1, 2]) * coeffs[0]
+            pq.Q() | pq.StateVector([0, 0, 2, 0, 1, 1, 2]) * coeffs[1]
+            pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1, 2]) * coeffs[2]
+            pq.Q() | pq.StateVector([1, 1, 0, 1, 0, 1, 2]) * coeffs[3]
+            pq.Q() | pq.StateVector([3, 0, 0, 0, 0, 1, 2]) * coeffs[4]
+
+            pq.Q(5, 6) | pq.ParticleNumberMeasurement()
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(2, 4) | pq.ImperfectPostSelectPhotons(
+                photon_counts=(0, 1),
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
+
+        samples = simulator.execute(program).samples
+        assert samples == [[1, 2]]
+
+    @pytest.mark.parametrize("res_samples", [[1, 0], [0, 1], [3, 0], [0, 3]])
+    def test_reindexing_for_measurements_explicit_modes(self, res_samples):
+        """Test a case where internally mode reindexing happens for active modes."""
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, res_samples[0], 0, res_samples[1]])
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(2, 4) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5, config=pq.Config(cutoff=6))
+        res = simulator.execute(program, shots=1)
+        assert res.samples == [res_samples]
+
+    @pytest.mark.parametrize("measured_mode", [0, 1])
+    def test_measuring_inactive_raises(self, measured_mode):
+        """Test that measuring inactive modes raises an error."""
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        with pytest.raises(ValueError, match=f"are not active: {{{measured_mode}}}"):
+            simulator.execute(program, shots=1)
+
+    def test_mid_circuit_not_allowed(self):
+        """
+        Test that an error is raised for mid-circuit measurements that are not allowed.
+        """
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1) | pq.HomodyneMeasurement()
+            pq.Q(2) | pq.Squeezing(0.0)
+            pq.Q(2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(d=5)
+        with pytest.raises(
+            pq.api.exceptions.InvalidSimulation,
+            match="not allowed as a mid-circuit measurement",
+        ):
+            simulator.execute(program, shots=1)

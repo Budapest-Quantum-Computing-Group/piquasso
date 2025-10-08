@@ -14,8 +14,9 @@
 # limitations under the License.
 
 import abc
+import numpy as np
 
-from typing import Optional, List, Type, Dict, Callable
+from typing import Optional, List, Type, Dict, Callable, Tuple
 
 from piquasso.core import _mixins
 
@@ -26,20 +27,16 @@ from piquasso.api.program import Program
 from piquasso.api.connector import BaseConnector
 from piquasso.api.exceptions import (
     InvalidParameter,
-    InvalidInstruction,
     InvalidSimulation,
     InvalidState,
     InvalidModes,
 )
 from piquasso.api.instruction import (
-    Gate,
     Instruction,
     Measurement,
     Preparation,
     BatchInstruction,
 )
-
-from piquasso._math.lists import is_ordered_sublist, deduplicate_neighbours
 
 from .computer import Computer
 
@@ -50,6 +47,7 @@ class Simulator(Computer, _mixins.CodeMixin):
     _state_class: Type[State]
     _config_class: Type[Config] = Config
     _default_connector_class: Type[BaseConnector]
+    _measurement_classes_allowed_mid_circuit: Tuple[Type[Measurement], ...] = tuple()
 
     def __init__(
         self,
@@ -135,62 +133,49 @@ class Simulator(Computer, _mixins.CodeMixin):
             + "."
         )
 
+    def _validate_preparations_at_beginning(self, instructions):
+        for index, instruction in enumerate(instructions):
+            if isinstance(instruction, Preparation):
+                previous_instuctions = instructions[:index]
+
+                if any(
+                    not isinstance(previous_instruction, Preparation)
+                    for previous_instruction in previous_instuctions
+                ):
+                    raise InvalidSimulation(
+                        f"Preparations should only be registered at the beginning of a "
+                        f"program: instruction={instruction}."
+                    )
+
+    def _validate_measurements_at_end(self, instructions):
+        for index, instruction in enumerate(instructions):
+            is_measurement = isinstance(instruction, Measurement)
+
+            if (
+                is_measurement
+                and index != len(instructions) - 1
+                and not isinstance(
+                    instruction, self._measurement_classes_allowed_mid_circuit
+                )
+            ):
+                raise InvalidSimulation(
+                    f"Measurement {instruction} is not allowed as a mid-circuit "
+                    f"measurement for this simulator."
+                    f"Allowed mid-circuit measurement classes:"
+                    f"{self._measurement_classes_allowed_mid_circuit}."
+                )
+
     def _validate_instruction_order(self, instructions: List[Instruction]) -> None:
-        all_instruction_categories = [Preparation, Gate, Measurement]
+        self._validate_preparations_at_beginning(instructions)
 
-        def _to_instruction_category(instruction: Instruction) -> Type[Instruction]:
-            for instruction_category in all_instruction_categories:
-                if isinstance(instruction, instruction_category):
-                    return instruction_category
-
-            raise InvalidInstruction(
-                f"\n"
-                f"The instruction is not a subclass of the following classes:\n"
-                f"{all_instruction_categories}.\n"
-                f"Make sure that all your instructions are subclassed properly from "
-                f"the above classes.\n"
-                f"instruction={instruction}."
-            )
-
-        instruction_category_projection = list(
-            map(_to_instruction_category, instructions)
-        )
-
-        measurement_count = instruction_category_projection.count(Measurement)
-
-        if measurement_count not in (0, 1):
-            raise InvalidSimulation(
-                "Up to one measurement could be registered for simulations."
-            )
-
-        if (
-            measurement_count == 1
-            and instruction_category_projection[-1] != Measurement
-        ):
-            raise InvalidSimulation(
-                "Measurement should be registered only at the end of a program during "
-                f"simulation: measurement={instruction_category_projection[-1]}."
-            )
-
-        current_instruction_categories_in_order = deduplicate_neighbours(
-            instruction_category_projection,
-        )
-
-        if not is_ordered_sublist(
-            current_instruction_categories_in_order,
-            all_instruction_categories,
-        ):
-            raise InvalidSimulation(
-                "The simulator could only execute instructions in the "
-                "preparation-gate-measurement order."
-            )
+        self._validate_measurements_at_end(instructions)
 
     def _validate_instructions(self, instructions: List[Instruction]) -> None:
         self._validate_instruction_existence(instructions)
         self._validate_instruction_modes(instructions)
         self._validate_instruction_order(instructions)
 
-    def _validate_state(self, initial_state: State) -> None:
+    def _validate_initial_state(self, initial_state: State) -> None:
         if not isinstance(initial_state, self._state_class):
             raise InvalidState(
                 f"Initial state is specified with type '{type(initial_state)}', but it "
@@ -227,6 +212,84 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         return instruction
 
+    def _is_instruction_list_multi_measurement(self, instructions):
+        count = 0
+
+        for instruction in instructions:
+            if isinstance(instruction, Measurement):
+                count += 1
+                if count > 1:
+                    return True
+
+        return False
+
+    @staticmethod
+    def _remap_modes(active_modes, modes_to_remap):
+        return tuple(active_modes.index(mode) for mode in modes_to_remap)
+
+    @staticmethod
+    def _remap_modes_inverse(active_modes, modes_to_remap):
+        return tuple(active_modes[mode] for mode in modes_to_remap)
+
+    @staticmethod
+    def _delete_modes_from_active(active_modes, modes):
+        return tuple(
+            mode
+            for mode in active_modes
+            if mode not in Simulator._remap_modes_inverse(active_modes, modes)
+        )
+
+    def _execute_multi_measurement_instructions(self, state, instructions, shots):
+        samples = []
+
+        for _ in range(shots):
+            active_modes = tuple(range(self.d))
+
+            result = Result(state=state.copy())
+
+            samples_for_this_shot = []
+
+            for instruction_orig in instructions:
+                instruction = instruction_orig.copy()
+
+                if not hasattr(instruction, "modes") or instruction.modes is tuple():
+                    instruction.modes = active_modes
+
+                if any(m not in active_modes for m in instruction.modes):
+                    inactive_modes = {
+                        m for m in instruction.modes if m not in active_modes
+                    }
+                    raise ValueError(
+                        f"Some modes of instruction {instruction} are not active: "
+                        f"{inactive_modes}."
+                    )
+
+                instruction.modes = Simulator._remap_modes(
+                    active_modes, instruction.modes
+                )
+
+                calculation = self._get_calculation(instruction)
+
+                instruction = self._maybe_postprocess_batch_instruction(instruction)
+
+                result = calculation(result.state, instruction, shots=1)
+
+                if (
+                    isinstance(result.samples, np.ndarray)
+                    and result.samples.size > 0
+                    or result.samples
+                ):
+                    samples_for_this_shot.extend(result.samples[0])
+
+                if isinstance(instruction, Measurement):
+                    active_modes = Simulator._delete_modes_from_active(
+                        active_modes, instruction.modes
+                    )
+
+            samples.append(samples_for_this_shot)
+
+        return Result(samples=samples, state=result.state)
+
     def execute_instructions(
         self,
         instructions: List[Instruction],
@@ -260,10 +323,17 @@ class Simulator(Computer, _mixins.CodeMixin):
         self._validate_instructions(instructions)
 
         if initial_state is not None:
-            self._validate_state(initial_state)
+            self._validate_initial_state(initial_state)
             state = initial_state.copy()
         else:
             state = self.create_initial_state()
+
+        is_multi_measurement = self._is_instruction_list_multi_measurement(instructions)
+
+        if is_multi_measurement:
+            return self._execute_multi_measurement_instructions(
+                state, instructions, shots
+            )
 
         result = Result(state=state)
 

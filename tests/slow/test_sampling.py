@@ -27,13 +27,16 @@ def test_gaussian_boson_sampling_chi_square_hypothesis_test():
     d = 3
     shots = 10000
 
-    with pq.Program() as gaussian_boson_sampling:
+    with pq.Program() as preparation:
         for i in range(d):
             pq.Q(i) | pq.Squeezing(np.random.rand() * 0.1) | pq.Displacement(
                 np.random.normal(loc=0.0, scale=0.5)
             )
 
         pq.Q(all) | pq.Interferometer(unitary_group.rvs(d))
+
+    with pq.Program() as gaussian_boson_sampling:
+        pq.Q(all) | preparation
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
@@ -44,9 +47,8 @@ def test_gaussian_boson_sampling_chi_square_hypothesis_test():
             measurement_cutoff=10,
         ),
     )
-    result = simulator.execute(gaussian_boson_sampling, shots=shots)
-    samples = result.samples
-    state = result.state
+    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+    state = simulator.execute(preparation).state
 
     samples_as_list = [tuple(x) for x in samples]
 
@@ -75,13 +77,16 @@ def test_threshold_gaussian_boson_sampling_chi_square_hypothesis_test():
     d = 3
     shots = 10000
 
-    with pq.Program() as gaussian_boson_sampling:
+    with pq.Program() as preparation:
         for i in range(d):
             pq.Q(i) | pq.Squeezing(np.random.rand() * 0.1) | pq.Displacement(
                 np.random.normal(loc=0.0, scale=0.5)
             )
 
         pq.Q(all) | pq.Interferometer(unitary_group.rvs(d))
+
+    with pq.Program() as gaussian_boson_sampling:
+        pq.Q(all) | preparation
 
         pq.Q(all) | pq.ThresholdMeasurement()
 
@@ -92,9 +97,8 @@ def test_threshold_gaussian_boson_sampling_chi_square_hypothesis_test():
             measurement_cutoff=10,
         ),
     )
-    result = simulator.execute(gaussian_boson_sampling, shots=shots)
-    samples = result.samples
-    state = result.state
+    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+    state = simulator.execute(preparation).state
 
     samples_as_list = [tuple(x) for x in samples]
 
@@ -123,13 +127,16 @@ def test_threshold_gaussian_boson_sampling_torontonian_chi_square_hypothesis_tes
     d = 3
     shots = 10000
 
-    with pq.Program() as gaussian_boson_sampling:
+    with pq.Program() as preparation:
         for i in range(d):
             pq.Q(i) | pq.Squeezing(np.random.rand() * 0.1) | pq.Displacement(
                 np.random.normal(loc=0.0, scale=0.5)
             )
 
         pq.Q(all) | pq.Interferometer(unitary_group.rvs(d))
+
+    with pq.Program() as gaussian_boson_sampling:
+        pq.Q(all) | preparation
 
         pq.Q(all) | pq.ThresholdMeasurement()
 
@@ -141,9 +148,8 @@ def test_threshold_gaussian_boson_sampling_torontonian_chi_square_hypothesis_tes
             use_torontonian=True,
         ),
     )
-    result = simulator.execute(gaussian_boson_sampling, shots=shots)
-    samples = result.samples
-    state = result.state
+    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+    state = simulator.execute(preparation).state
 
     samples_as_list = [tuple(x) for x in samples]
 

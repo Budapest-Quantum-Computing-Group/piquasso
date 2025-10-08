@@ -142,14 +142,14 @@ def particle_number_measurement(
 
     normalization = _get_normalization(probability_map, sample)
 
-    _project_to_subspace(
+    new_state = _project_to_subspace(
         state=state,
         subspace_basis=sample,
         modes=instruction.modes,
         normalization=normalization,
     )
 
-    return Result(state=state, samples=samples)
+    return Result(state=new_state, samples=samples)
 
 
 def _get_normalization(
@@ -164,30 +164,35 @@ def _project_to_subspace(
     subspace_basis: Tuple[int, ...],
     modes: Tuple[int, ...],
     normalization: float,
-) -> None:
-    projected_density_matrix = _get_projected_density_matrix(
+) -> FockState:
+    remaining_density_matrix = _get_remaining_density_matrix(
         state=state,
         subspace_basis=subspace_basis,
         modes=modes,
     )
 
-    state._density_matrix = projected_density_matrix * normalization
+    config_copy = state._config.copy()
+    config_copy.cutoff -= sum(subspace_basis)
+
+    new_state = FockState(
+        d=state.d - len(modes), connector=state._connector, config=config_copy
+    )
+
+    new_state._density_matrix = remaining_density_matrix * normalization
+
+    return new_state
 
 
-def _get_projected_density_matrix(
+def _get_remaining_density_matrix(
     state: FockState, *, subspace_basis: Tuple[int, ...], modes: Tuple[int, ...]
 ) -> np.ndarray:
-    new_density_matrix = state._get_empty()
-
     index = get_projection_operator_indices(
         state.d, state._config.cutoff, modes, subspace_basis
     )
 
     operator_index = np.ix_(index, index)
 
-    new_density_matrix[operator_index] = state._density_matrix[operator_index]
-
-    return new_density_matrix
+    return state._density_matrix[operator_index]
 
 
 def create(state: FockState, instruction: Instruction, shots: int) -> Result:

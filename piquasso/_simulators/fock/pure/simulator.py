@@ -146,3 +146,8 @@ class PureFockSimulator(BuiltinSimulator):
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [TensorflowConnector, JaxConnector]
+
+    _measurement_classes_allowed_mid_circuit = (
+        measurements.ParticleNumberMeasurement,
+        measurements.PostSelectPhotons,
+    )
