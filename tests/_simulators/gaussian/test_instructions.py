@@ -243,6 +243,37 @@ def test_two_mode_squeezing(state, gaussian_state_assets):
     assert state == expected_state
 
 
+def test_Squeezing2_and_Squeezing_equivalence():
+    r = 4
+    phi = np.pi / 3
+
+    with pq.Program() as tms_program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(0.1)
+
+        pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
+
+    with pq.Program() as sms_program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(0.1)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=-np.pi / 4)
+
+        pq.Q(0) | pq.Squeezing(r=r, phi=np.pi + phi)
+        pq.Q(1) | pq.Squeezing(r=r, phi=phi)
+
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    simulator = pq.GaussianSimulator(d=2)
+
+    tms_state = simulator.execute(tms_program).state
+    sms_state = simulator.execute(sms_program).state
+
+    assert tms_state == sms_state
+
+
 def test_controlled_X_gate(state, gaussian_state_assets):
     s = 2
 
