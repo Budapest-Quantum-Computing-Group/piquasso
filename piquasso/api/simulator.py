@@ -51,7 +51,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def __init__(
         self,
-        d: int,
+        d: Optional[int] = None,
         config: Optional[Config] = None,
         connector: Optional[BaseConnector] = None,
     ) -> None:
@@ -65,15 +65,30 @@ class Simulator(Computer, _mixins.CodeMixin):
         """The map which associates an `Instruction` to a calculation function."""
 
     def _as_code(self):
+        if self.d is None:
+            d_param = ""
+        else:
+            d_param = f"d={self.d}"
+
         if self.config == Config():
-            return f"pq.{self.__class__.__name__}(d={self.d})"
+            if d_param:
+                return f"pq.{self.__class__.__name__}({d_param})"
+            else:
+                return f"pq.{self.__class__.__name__}()"
 
         four_spaces = " " * 4
-        return (
-            f"pq.{self.__class__.__name__}(\n"
-            f"{four_spaces}d={self.d}, config={self.config._as_code()}\n"
-            ")"
-        )
+        if d_param:
+            return (
+                f"pq.{self.__class__.__name__}(\n"
+                f"{four_spaces}{d_param}, config={self.config._as_code()}\n"
+                ")"
+            )
+        else:
+            return (
+                f"pq.{self.__class__.__name__}(\n"
+                f"{four_spaces}config={self.config._as_code()}\n"
+                ")"
+            )
 
     def create_initial_state(self):
         """Creates an initial state with no instructions executed.
@@ -94,6 +109,10 @@ class Simulator(Computer, _mixins.CodeMixin):
             self._get_calculation(instruction)
 
     def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
+        # Skip mode validation if d is not set (will be inferred later)
+        if self.d is None:
+            return
+
         for instruction in instructions:
             if not instruction.modes:
                 continue
@@ -322,6 +341,13 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         self._validate_instructions(instructions)
 
+        # Ensure d is set before creating initial state
+        if self.d is None:
+            raise InvalidSimulation(
+                "Cannot execute instructions: the number of modes (d) is not set. "
+                "This should have been inferred from the program in the execute method."
+            )
+
         if initial_state is not None:
             self._validate_initial_state(initial_state)
             state = initial_state.copy()
@@ -364,12 +390,26 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         Raises:
             InvalidParameter: When `shots` is not a positive integer.
+            InvalidSimulation: When the number of modes cannot be inferred from the
+                program and `d` was not provided during simulator initialization.
 
         Returns:
             Result:
                 The result of the simulation containing the resulting state and samples
                 if any measurement is specified in `program`.
         """
+
+        # Infer d from program if not explicitly set
+        if self.d is None:
+            inferred_d = program.get_number_of_modes()
+            if inferred_d is None:
+                raise InvalidSimulation(
+                    "Cannot infer the number of modes from the program. "
+                    "Please provide the 'd' parameter when creating the simulator, "
+                    "or ensure that at least one instruction in the program "
+                    "specifies modes explicitly."
+                )
+            self.d = inferred_d
 
         instructions: List[Instruction] = program.instructions
 
