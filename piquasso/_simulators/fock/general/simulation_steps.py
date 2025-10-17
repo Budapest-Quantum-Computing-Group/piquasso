@@ -42,7 +42,7 @@ from piquasso._math.fock import (
     get_fock_space_basis,
 )
 
-from ..calculations import (
+from ..simulation_steps import (
     calculate_state_index_matrix_list,
     calculate_interferometer_helper_indices,
     calculate_index_list_for_appling_interferometer,

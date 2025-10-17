@@ -15,7 +15,7 @@
 
 from .state import PureFockState
 
-from .calculations import (
+from .simulation_steps import (
     state_vector_instruction,
     passive_linear,
     beamsplitter5050,
@@ -36,7 +36,7 @@ from .calculations import (
     homodyne_measurement,
 )
 
-from ..calculations import attenuator
+from ..simulation_steps import attenuator
 
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import (

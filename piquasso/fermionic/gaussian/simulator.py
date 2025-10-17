@@ -17,7 +17,7 @@ from piquasso.instructions import gates, preparations
 
 from ..instructions import GaussianHamiltonian, ParentHamiltonian, IsingXX
 
-from .calculations import (
+from .simulation_steps import (
     state_vector,
     vacuum,
     parent_hamiltonian,

@@ -25,7 +25,7 @@ from scipy.special import factorial, comb
 from piquasso.api.connector import BaseConnector
 
 from ..state import PureFockState
-from ...calculations import (
+from ...simulation_steps import (
     calculate_interferometer_helper_indices,
     calculate_index_list_for_appling_interferometer,
 )

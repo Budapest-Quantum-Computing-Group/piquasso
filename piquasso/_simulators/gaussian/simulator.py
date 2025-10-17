@@ -19,7 +19,7 @@ from piquasso.instructions import preparations, gates, measurements, channels
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 
 from .state import GaussianState
-from .calculations import (
+from .simulation_steps import (
     passive_linear,
     linear,
     displacement,

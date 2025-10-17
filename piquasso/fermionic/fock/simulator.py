@@ -16,7 +16,7 @@
 from piquasso.instructions import gates, preparations
 from .state import PureFockState
 
-from .calculations import (
+from .simulation_steps import (
     passive_linear,
     state_vector,
     squeezing2,

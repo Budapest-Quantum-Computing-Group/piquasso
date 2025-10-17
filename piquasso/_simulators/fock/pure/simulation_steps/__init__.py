@@ -39,7 +39,7 @@ from fractions import Fraction
 from .passive_linear import _apply_passive_linear
 from .utils import project_to_subspace
 
-from ...calculations import calculate_state_index_matrix_list
+from ...simulation_steps import calculate_state_index_matrix_list
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState

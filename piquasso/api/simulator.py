@@ -93,7 +93,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
-            self._get_calculation(instruction)
+            self._get_simulation_step(instruction)
 
     def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
@@ -119,10 +119,10 @@ class Simulator(Computer, _mixins.CodeMixin):
                         f"{valid_indices_message}"
                     )
 
-    def _get_calculation(self, instruction: Instruction) -> Callable:
-        for instruction_class, calculation in self._instruction_map.items():
+    def _get_simulation_step(self, instruction: Instruction) -> Callable:
+        for instruction_class, simulation_step in self._instruction_map.items():
             if type(instruction) is instruction_class:
-                return calculation
+                return simulation_step
 
         raise InvalidSimulation(
             "\n"
@@ -231,14 +231,14 @@ class Simulator(Computer, _mixins.CodeMixin):
         )
 
     def _apply_instruction_to_branches(self, branches, instruction, shots):
-        calculation = self._get_calculation(instruction)
+        simulation_step = self._get_simulation_step(instruction)
 
         instruction = self._maybe_postprocess_batch_instruction(instruction)
 
         new_branches = []
 
         for branch in branches:
-            subbranches = calculation(
+            subbranches = simulation_step(
                 branch.state, instruction, shots=int(branch.frequency * shots)
             )
 
