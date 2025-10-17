@@ -557,6 +557,13 @@ class Squeezing2(_ActiveLinearGate):
         S_{12} (z) \ket{11} &= \cos (r/2) \ket{11} + e^{-i \phi} \sin (r/2) \ket{00},
 
     where :math:`z = r e^{i \phi}`.
+
+    .. note::
+
+        This gate is equivalent to
+
+        .. math::
+            S_{ij} (z) = B_{ij}(\pi/4, 0) [S_i(-z) \otimes S_j(z)] B_{ij}(-\pi/4, 0).
     """
 
     NUMBER_OF_MODES = 2
