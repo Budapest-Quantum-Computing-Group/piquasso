@@ -156,6 +156,34 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
+    def get_number_of_modes(self) -> Optional[int]:
+        """Infer the number of modes from the program instructions.
+
+        This method determines the minimum number of modes required to execute
+        the program by finding the maximum mode index used across all instructions.
+
+        Returns:
+            Optional[int]: The inferred number of modes (maximum mode index + 1),
+                or None if no instructions with modes are present.
+
+        Example::
+
+            with pq.Program() as program:
+                pq.Q(0, 1) | pq.StateVector((2, 0))
+                pq.Q(0, 1) | pq.Beamsplitter5050()
+
+            d = program.get_number_of_modes()  # Returns 2
+        """
+        max_mode = -1
+
+        for instruction in self.instructions:
+            if hasattr(instruction, "modes") and instruction.modes:
+                for mode in instruction.modes:
+                    if isinstance(mode, int) and mode > max_mode:
+                        max_mode = mode
+
+        return max_mode + 1 if max_mode >= 0 else None
+
     def _as_code(self) -> str:
         """Export the :class:`Program` instance as Python code."""
 

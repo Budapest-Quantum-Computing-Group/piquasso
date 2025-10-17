@@ -29,7 +29,7 @@ class BuiltinSimulator(Simulator):
 
     def __init__(
         self,
-        d: int,
+        d: Optional[int] = None,
         config: Optional[Config] = None,
         connector: Optional[BaseConnector] = None,
     ) -> None:
