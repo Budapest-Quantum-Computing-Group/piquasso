@@ -19,7 +19,7 @@ from piquasso.instructions import preparations, gates, measurements, channels
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 
 from .state import SamplingState
-from .calculations import (
+from .simulation_steps import (
     state_vector,
     passive_linear,
     particle_number_measurement,
