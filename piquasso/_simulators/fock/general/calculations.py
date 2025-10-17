@@ -18,6 +18,8 @@ from typing import Tuple, Mapping, List
 import random
 import numpy as np
 
+from fractions import Fraction
+
 from .state import FockState
 
 from piquasso.instructions import gates
@@ -25,7 +27,9 @@ from piquasso.instructions import gates
 from piquasso._math.decompositions import euler
 
 from piquasso.api.instruction import Instruction
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
+
+from piquasso._utils import get_counts
 
 from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.fock import (
@@ -46,22 +50,22 @@ from ..calculations import (
 )
 
 
-def vacuum(state: FockState, instruction: Instruction, shots: int) -> Result:
+def vacuum(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     state.reset()
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def passive_linear(
     state: FockState, instruction: gates._PassiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     operator: np.ndarray = instruction._get_passive_block(
         state._connector, state._config
     )
 
     _apply_passive_linear(state, operator, instruction.modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_passive_linear(state, interferometer, modes):
@@ -126,7 +130,7 @@ def _get_interferometer_on_fock_space(interferometer, cutoff, connector):
 
 def particle_number_measurement(
     state: FockState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     reduced_state = state.reduced(instruction.modes)
 
     probability_map = reduced_state.fock_probabilities_map
@@ -137,19 +141,25 @@ def particle_number_measurement(
         k=shots,
     )
 
-    # NOTE: We choose the last sample for multiple shots.
-    sample = samples[-1]
+    binned_samples = get_counts(samples)
 
-    normalization = _get_normalization(probability_map, sample)
+    branches = []
 
-    new_state = _project_to_subspace(
-        state=state,
-        subspace_basis=sample,
-        modes=instruction.modes,
-        normalization=normalization,
-    )
+    for sample, multiplicity in binned_samples.items():
+        normalization = _get_normalization(probability_map, sample)
 
-    return Result(state=new_state, samples=samples)
+        new_state = _project_to_subspace(
+            state=state,
+            subspace_basis=sample,
+            modes=instruction.modes,
+            normalization=normalization,
+        )
+
+        branch = Branch(new_state, sample, Fraction(multiplicity, shots))
+
+        branches.append(branch)
+
+    return branches
 
 
 def _get_normalization(
@@ -195,7 +205,7 @@ def _get_remaining_density_matrix(
     return state._density_matrix[operator_index]
 
 
-def create(state: FockState, instruction: Instruction, shots: int) -> Result:
+def create(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     operator = get_creation_operator(
@@ -204,10 +214,10 @@ def create(state: FockState, instruction: Instruction, shots: int) -> Result:
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result:
+def annihilate(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     operator = get_annihilation_operator(
@@ -216,10 +226,10 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> Result
 
     state._density_matrix = operator @ state._density_matrix @ operator.transpose()
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
+def kerr(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     xi = instruction._all_params["xi"]
@@ -234,10 +244,10 @@ def kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
 
         state._density_matrix[index] *= coefficient
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Result:
+def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     gamma = instruction._all_params["gamma"]
 
     matrix = get_single_mode_cubic_phase_operator(
@@ -248,7 +258,7 @@ def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> Resul
     )
     _apply_active_gate_matrix_to_state(state, matrix, instruction.modes[0])
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_active_gate_matrix_to_state(
@@ -317,7 +327,7 @@ def _calculate_density_matrix_after_apply_active_gate(
     return new_density_matrix
 
 
-def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result:
+def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     modes = instruction.modes
@@ -335,10 +345,12 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> Result
 
         state._density_matrix[index] *= coefficient
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def displacement(state: FockState, instruction: Instruction, shots: int) -> Result:
+def displacement(
+    state: FockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
     mode = instruction.modes[0]
@@ -353,10 +365,10 @@ def displacement(state: FockState, instruction: Instruction, shots: int) -> Resu
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
+def squeezing(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     r = instruction._all_params["r"]
     phi = instruction._all_params["phi"]
     mode = instruction.modes[0]
@@ -371,12 +383,12 @@ def squeezing(state: FockState, instruction: Instruction, shots: int) -> Result:
 
     _apply_active_gate_matrix_to_state(state, matrix, mode=mode)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def linear(
     state: FockState, instruction: gates._ActiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     connector = state._connector
     modes = instruction.modes
 
@@ -408,15 +420,15 @@ def linear(
 
     _apply_passive_linear(state, unitary_last, modes)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def density_matrix_instruction(
     state: FockState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     _add_occupation_number_basis(state, **instruction.params)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _add_occupation_number_basis(

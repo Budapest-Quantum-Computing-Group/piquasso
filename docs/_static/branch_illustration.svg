@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 34.107975 31.343666"
+   height="31.343666mm"
+   width="34.107975mm">
+  <defs
+     id="defs2">
+    <marker
+       style="overflow:visible"
+       id="Arrow1Mstart"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(0.4,0,0,0.4,4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1022" />
+    </marker>
+    <marker
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker1438"
+       style="overflow:visible">
+      <path
+         id="path1436"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker1386"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1384" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Mend"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1025" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lend"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1019" />
+    </marker>
+    <path
+       id="MJX-6-NCM-N-31"
+       d="M 269,666 C 228,624 168,603 89,603 v -39 c 52,0 95,8 128,24 V 82 c 0,-18 -4,-30 -13,-35 -9,-5 -34,-8 -74,-8 H 95 V 0 c 25,2 79,3 162,3 83,0 137,-1 162,-3 v 39 h -35 c -41,0 -66,3 -74,8 -8,5 -13,17 -13,35 v 554 c 0,24 -2,30 -28,30 z" />
+    <path
+       id="MJX-7-NCM-I-1D45D"
+       d="m 355,442 c -44,0 -86,-23 -127,-69 -11,46 -42,69 -91,69 -41,0 -71,-33 -92,-98 -10,-33 -15,-52 -15,-58 0,-9 5,-14 16,-14 5,0 8,1 11,3 5,9 8,16 9,23 18,76 41,114 68,114 18,0 27,-14 27,-41 0,-15 -2,-32 -7,-50 L 44,-118 c -9,-33 -10,-37 -49,-37 -18,0 -27,-8 -27,-23 0,-11 6,-16 17,-16 15,0 67,3 82,3 19,0 79,-3 98,-3 15,0 22,8 22,24 0,10 -9,15 -28,15 -18,0 -45,-1 -45,11 0,13 41,170 45,187 20,-37 50,-56 90,-56 65,0 122,33 172,100 46,61 69,126 69,193 0,87 -52,162 -135,162 m -3,-30 c 39,0 59,-30 59,-89 0,-27 -6,-63 -17,-108 C 371,128 342,71 307,42 286,25 267,16 248,16 c -29,0 -49,13 -60,40 -9,21 -14,36 -14,44 l 51,209 c 5,22 23,45 51,68 28,23 53,35 76,35 z" />
+    <path
+       id="MJX-8-NCM-N-31"
+       d="M 269,666 C 228,624 168,603 89,603 v -39 c 52,0 95,8 128,24 V 82 c 0,-18 -4,-30 -13,-35 -9,-5 -34,-8 -74,-8 H 95 V 0 c 25,2 79,3 162,3 83,0 137,-1 162,-3 v 39 h -35 c -41,0 -66,3 -74,8 -8,5 -13,17 -13,35 v 554 c 0,24 -2,30 -28,30 z" />
+    <path
+       id="MJX-8-NCM-N-2212"
+       d="M 698,270 H 80 c -16,0 -24,-7 -24,-20 0,-13 8,-20 24,-20 h 618 c 16,0 24,7 24,20 0,12 -12,20 -24,20 z" />
+    <path
+       id="MJX-8-NCM-I-1D45D"
+       d="m 355,442 c -44,0 -86,-23 -127,-69 -11,46 -42,69 -91,69 -41,0 -71,-33 -92,-98 -10,-33 -15,-52 -15,-58 0,-9 5,-14 16,-14 5,0 8,1 11,3 5,9 8,16 9,23 18,76 41,114 68,114 18,0 27,-14 27,-41 0,-15 -2,-32 -7,-50 L 44,-118 c -9,-33 -10,-37 -49,-37 -18,0 -27,-8 -27,-23 0,-11 6,-16 17,-16 15,0 67,3 82,3 19,0 79,-3 98,-3 15,0 22,8 22,24 0,10 -9,15 -28,15 -18,0 -45,-1 -45,11 0,13 41,170 45,187 20,-37 50,-56 90,-56 65,0 122,33 172,100 46,61 69,126 69,193 0,87 -52,162 -135,162 m -3,-30 c 39,0 59,-30 59,-89 0,-27 -6,-63 -17,-108 C 371,128 342,71 307,42 286,25 267,16 248,16 c -29,0 -49,13 -60,40 -9,21 -14,36 -14,44 l 51,209 c 5,22 23,45 51,68 28,23 53,35 76,35 z" />
+    <path
+       id="MJX-13-NCM-N-6D"
+       d="m 315,413 c 46,0 69,-35 69,-106 V 79 c 0,-19 -3,-31 -10,-35 -7,-4 -30,-6 -67,-6 V 0 L 423,3 538,0 v 38 c -37,0 -59,2 -66,6 -7,4 -11,16 -11,35 v 180 c 0,80 52,154 129,154 47,0 70,-35 70,-106 V 79 c 0,-19 -4,-31 -11,-35 -7,-4 -30,-6 -67,-6 V 0 L 698,3 813,0 v 38 c -32,0 -53,1 -63,4 -10,3 -14,10 -14,22 v 187 c 0,47 -2,80 -5,99 -10,61 -55,92 -134,92 -63,0 -110,-29 -142,-88 -14,59 -58,88 -133,88 -63,0 -111,-30 -143,-90 v 90 L 32,431 v -38 c 36,0 58,-3 66,-9 8,-6 11,-19 11,-42 V 79 C 109,60 105,48 98,44 91,40 69,38 32,38 V 0 L 148,3 263,0 v 38 c -37,0 -60,2 -67,6 -7,4 -11,16 -11,35 v 180 c 0,81 53,154 130,154 z" />
+    <path
+       id="MJX-13-NCM-N-65"
+       d="M 415,251 C 415,366 348,448 236,448 176,448 126,425 85,378 47,334 28,281 28,220 28,157 49,104 91,58 c 42,-46 94,-69 156,-69 57,0 101,20 131,59 25,33 37,57 37,73 0,10 -6,15 -17,15 -8,0 -13,-5 -16,-16 -22,-66 -65,-99 -129,-99 -45,0 -80,21 -107,64 -19,31 -28,78 -29,142 h 270 c 22,0 28,2 28,24 m -89,98 c 11,-33 16,-65 16,-94 H 118 c 3,66 20,111 50,134 25,20 47,30 68,30 45,0 75,-23 90,-70 z" />
+    <path
+       id="MJX-13-NCM-N-61"
+       d="m 483,91 v 59 H 451 V 91 c 0,-39 -11,-59 -32,-59 -20,0 -32,25 -32,45 v 197 c 0,35 -4,61 -11,79 -24,59 -93,95 -163,95 -77,0 -153,-43 -153,-115 0,-33 17,-50 50,-50 33,0 49,16 49,49 0,29 -15,46 -46,49 22,25 55,38 98,38 62,0 100,-57 100,-122 V 264 C 233,259 174,247 133,228 66,197 32,154 32,97 32,71 42,49 61,32 93,3 137,-11 193,-11 c 59,0 101,25 127,76 7,-38 35,-71 78,-71 53,0 85,42 85,97 M 200,18 c -46,0 -84,34 -84,80 0,93 97,133 195,138 V 141 C 311,74 267,18 200,18 Z" />
+    <path
+       id="MJX-13-NCM-N-73"
+       d="m 360,130 c 0,76 -52,124 -155,144 -47,9 -77,20 -93,31 -16,11 -24,27 -24,46 0,47 35,70 105,70 68,0 105,-38 110,-115 1,-8 6,-12 16,-12 11,0 17,9 17,27 v 99 c 0,19 -5,28 -15,28 -11,0 -26,-18 -36,-26 -25,17 -56,26 -92,26 -89,0 -160,-40 -160,-125 0,-34 14,-63 43,-86 35,-29 68,-35 131,-46 65,-13 98,-42 98,-87 C 305,47 270,18 199,18 130,18 86,64 67,155 64,168 59,175 50,175 39,175 33,165 33,146 V 17 c 0,-19 5,-28 15,-28 3,0 8,3 16,10 18,16 10,13 28,31 29,-27 65,-41 107,-41 95,0 161,49 161,141 z" />
+    <path
+       id="MJX-13-NCM-N-75"
+       d="m 267,18 c -69,0 -82,29 -82,94 V 442 L 32,431 v -38 c 39,0 62,-4 68,-11 6,-7 9,-32 9,-76 V 159 c 0,-39 3,-69 10,-92 15,-52 70,-78 143,-78 54,0 95,25 123,76 V -11 L 535,0 v 38 c -36,0 -57,2 -65,8 -8,6 -12,20 -12,43 V 442 L 306,431 v -38 c 35,0 56,-3 64,-9 8,-6 12,-19 12,-42 V 167 C 382,88 340,18 267,18 Z" />
+    <path
+       id="MJX-13-NCM-N-72"
+       d="m 364,378 c 0,39 -37,64 -76,64 -51,0 -90,-30 -116,-91 v 91 L 28,431 v -38 c 35,0 56,-3 64,-9 8,-6 12,-19 12,-42 V 79 C 104,60 101,48 94,44 87,40 65,38 28,38 V 0 l 115,3 c 42,1 85,0 128,-3 v 38 h -24 c -33,0 -54,3 -61,8 -7,5 -10,17 -10,35 v 151 c 0,43 8,82 23,115 20,43 49,65 88,66 -10,-10 -15,-22 -15,-36 0,-31 15,-46 46,-46 27,0 46,21 46,47 z" />
+    <path
+       id="MJX-13-NCM-N-6E"
+       d="m 314,413 c 45,0 68,-35 68,-106 V 79 c 0,-19 -3,-31 -10,-35 -7,-4 -29,-6 -66,-6 V 0 L 421,3 535,0 v 38 c -32,0 -53,1 -63,4 -10,3 -14,10 -14,22 v 187 c 0,47 -1,80 -4,99 -10,61 -55,92 -134,92 -63,0 -110,-30 -141,-90 v 90 L 32,431 v -38 c 36,0 58,-3 66,-9 8,-6 11,-19 11,-42 V 79 C 109,60 105,48 98,44 91,40 69,38 32,38 V 0 L 147,3 261,0 v 38 c -37,0 -58,2 -65,6 -7,4 -11,16 -11,35 v 180 c 0,81 51,154 129,154 z" />
+    <path
+       id="MJX-13-NCM-N-74"
+       d="m 332,126 v 60 H 300 V 128 C 300,78 282,22 238,22 197,22 177,56 177,124 v 271 h 139 v 38 H 177 V 615 H 145 C 144,582 141,553 134,527 117,461 78,427 19,424 v -29 h 83 V 126 c 0,-59 18,-97 53,-116 27,-14 52,-21 77,-21 66,0 100,66 100,137 z" />
+    <path
+       id="MJX-17-NCM-I-1D45D"
+       d="m 355,442 c -44,0 -86,-23 -127,-69 -11,46 -42,69 -91,69 -41,0 -71,-33 -92,-98 -10,-33 -15,-52 -15,-58 0,-9 5,-14 16,-14 5,0 8,1 11,3 5,9 8,16 9,23 18,76 41,114 68,114 18,0 27,-14 27,-41 0,-15 -2,-32 -7,-50 L 44,-118 c -9,-33 -10,-37 -49,-37 -18,0 -27,-8 -27,-23 0,-11 6,-16 17,-16 15,0 67,3 82,3 19,0 79,-3 98,-3 15,0 22,8 22,24 0,10 -9,15 -28,15 -18,0 -45,-1 -45,11 0,13 41,170 45,187 20,-37 50,-56 90,-56 65,0 122,33 172,100 46,61 69,126 69,193 0,87 -52,162 -135,162 m -3,-30 c 39,0 59,-30 59,-89 0,-27 -6,-63 -17,-108 C 371,128 342,71 307,42 286,25 267,16 248,16 c -29,0 -49,13 -60,40 -9,21 -14,36 -14,44 l 51,209 c 5,22 23,45 51,68 28,23 53,35 76,35 z" />
+    <path
+       id="MJX-17-NCM-N-30"
+       d="m 249,-22 c 141,0 211,114 211,342 0,153 -32,255 -95,305 -35,27 -74,41 -115,41 C 109,666 39,551 39,320 39,136 88,-22 249,-22 m 112,546 c 7,-35 10,-99 10,-192 0,-92 -4,-160 -11,-204 C 347,48 310,8 249,8 c -23,0 -46,9 -67,26 -27,23 -43,70 -50,142 -3,25 -4,77 -4,156 0,87 3,148 8,181 9,55 27,90 55,105 22,12 41,18 58,18 65,0 101,-53 112,-112 z" />
+    <path
+       id="MJX-18-NCM-I-1D45D"
+       d="m 355,442 c -44,0 -86,-23 -127,-69 -11,46 -42,69 -91,69 -41,0 -71,-33 -92,-98 -10,-33 -15,-52 -15,-58 0,-9 5,-14 16,-14 5,0 8,1 11,3 5,9 8,16 9,23 18,76 41,114 68,114 18,0 27,-14 27,-41 0,-15 -2,-32 -7,-50 L 44,-118 c -9,-33 -10,-37 -49,-37 -18,0 -27,-8 -27,-23 0,-11 6,-16 17,-16 15,0 67,3 82,3 19,0 79,-3 98,-3 15,0 22,8 22,24 0,10 -9,15 -28,15 -18,0 -45,-1 -45,11 0,13 41,170 45,187 20,-37 50,-56 90,-56 65,0 122,33 172,100 46,61 69,126 69,193 0,87 -52,162 -135,162 m -3,-30 c 39,0 59,-30 59,-89 0,-27 -6,-63 -17,-108 C 371,128 342,71 307,42 286,25 267,16 248,16 c -29,0 -49,13 -60,40 -9,21 -14,36 -14,44 l 51,209 c 5,22 23,45 51,68 28,23 53,35 76,35 z" />
+    <path
+       id="MJX-18-NCM-N-31"
+       d="M 269,666 C 228,624 168,603 89,603 v -39 c 52,0 95,8 128,24 V 82 c 0,-18 -4,-30 -13,-35 -9,-5 -34,-8 -74,-8 H 95 V 0 c 25,2 79,3 162,3 83,0 137,-1 162,-3 v 39 h -35 c -41,0 -66,3 -74,8 -8,5 -13,17 -13,35 v 554 c 0,24 -2,30 -28,30 z" />
+    <path
+       id="MJX-22-NCM-N-7C"
+       d="m 139,-250 c 13,0 20,8 20,24 v 952 c 0,16 -7,24 -20,24 -13,0 -20,-8 -20,-24 v -952 c 0,-16 7,-24 20,-24 z" />
+    <path
+       id="MJX-22-NCM-I-1D713"
+       d="m 534,393 c 0,-9 5,-19 16,-30 23,-22 35,-49 35,-81 0,-29 -9,-60 -28,-95 C 522,120 476,72 421,43 388,26 355,18 322,17 l 162,646 c 2,9 3,14 3,16 0,10 -5,15 -16,15 -5,0 -8,-1 -11,-3 -4,-8 -6,-15 -7,-20 L 290,19 c -71,9 -106,45 -106,107 0,27 18,88 53,183 7,20 11,37 11,50 0,50 -35,85 -85,85 -45,0 -79,-25 -104,-75 -20,-40 -30,-67 -30,-81 0,-9 5,-14 16,-14 13,0 15,6 19,20 23,80 55,120 96,120 14,0 21,-9 21,-27 0,-16 -7,-44 -22,-84 -32,-85 -48,-141 -48,-169 0,-87 57,-135 171,-144 -8,-35 -15,-64 -21,-86 -15,-57 -23,-89 -23,-96 3,-8 4,-13 17,-13 l 10,4 c 6,16 11,31 14,44 l 36,144 c 82,1 154,37 216,108 33,37 57,77 73,120 21,55 31,107 31,156 0,49 -16,73 -47,73 -26,0 -54,-25 -54,-51 z" />
+    <path
+       id="MJX-22-NCM-N-30"
+       d="m 249,-22 c 141,0 211,114 211,342 0,153 -32,255 -95,305 -35,27 -74,41 -115,41 C 109,666 39,551 39,320 39,136 88,-22 249,-22 m 112,546 c 7,-35 10,-99 10,-192 0,-92 -4,-160 -11,-204 C 347,48 310,8 249,8 c -23,0 -46,9 -67,26 -27,23 -43,70 -50,142 -3,25 -4,77 -4,156 0,87 3,148 8,181 9,55 27,90 55,105 22,12 41,18 58,18 65,0 101,-53 112,-112 z" />
+    <path
+       id="MJX-22-NCM-N-27E9"
+       d="m 278,242 c 1,2 1,5 1,8 0,3 0,6 -1,8 L 98,735 c -4,10 -11,15 -22,15 -15,0 -23,-8 -23,-24 0,-3 0,-6 1,-8 L 231,250 54,-217 c -1,-2 -1,-5 -1,-9 0,-16 8,-24 23,-24 11,0 18,5 22,15 z" />
+    <path
+       id="MJX-23-NCM-N-7C"
+       d="m 139,-250 c 13,0 20,8 20,24 v 952 c 0,16 -7,24 -20,24 -13,0 -20,-8 -20,-24 v -952 c 0,-16 7,-24 20,-24 z" />
+    <path
+       id="MJX-23-NCM-I-1D713"
+       d="m 534,393 c 0,-9 5,-19 16,-30 23,-22 35,-49 35,-81 0,-29 -9,-60 -28,-95 C 522,120 476,72 421,43 388,26 355,18 322,17 l 162,646 c 2,9 3,14 3,16 0,10 -5,15 -16,15 -5,0 -8,-1 -11,-3 -4,-8 -6,-15 -7,-20 L 290,19 c -71,9 -106,45 -106,107 0,27 18,88 53,183 7,20 11,37 11,50 0,50 -35,85 -85,85 -45,0 -79,-25 -104,-75 -20,-40 -30,-67 -30,-81 0,-9 5,-14 16,-14 13,0 15,6 19,20 23,80 55,120 96,120 14,0 21,-9 21,-27 0,-16 -7,-44 -22,-84 -32,-85 -48,-141 -48,-169 0,-87 57,-135 171,-144 -8,-35 -15,-64 -21,-86 -15,-57 -23,-89 -23,-96 3,-8 4,-13 17,-13 l 10,4 c 6,16 11,31 14,44 l 36,144 c 82,1 154,37 216,108 33,37 57,77 73,120 21,55 31,107 31,156 0,49 -16,73 -47,73 -26,0 -54,-25 -54,-51 z" />
+    <path
+       id="MJX-23-NCM-N-31"
+       d="M 269,666 C 228,624 168,603 89,603 v -39 c 52,0 95,8 128,24 V 82 c 0,-18 -4,-30 -13,-35 -9,-5 -34,-8 -74,-8 H 95 V 0 c 25,2 79,3 162,3 83,0 137,-1 162,-3 v 39 h -35 c -41,0 -66,3 -74,8 -8,5 -13,17 -13,35 v 554 c 0,24 -2,30 -28,30 z" />
+    <path
+       id="MJX-23-NCM-N-27E9"
+       d="m 278,242 c 1,2 1,5 1,8 0,3 0,6 -1,8 L 98,735 c -4,10 -11,15 -22,15 -15,0 -23,-8 -23,-24 0,-3 0,-6 1,-8 L 231,250 54,-217 c -1,-2 -1,-5 -1,-9 0,-16 8,-24 23,-24 11,0 18,5 22,15 z" />
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(-91.914027,-21.326327)"
+     id="layer1">
+    <path
+       id="path817"
+       d="M 112.44792,23.15625 V 36.385418"
+       style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#marker1386)" />
+    <path
+       id="path821"
+       d="m 104.51042,46.968751 7.9375,-10.583333 7.9375,10.583332"
+       style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Mstart);marker-end:url(#marker1438)" />
+    <circle
+       r="0.66145831"
+       cy="36.606014"
+       cx="112.44052"
+       id="path845"
+       style="opacity:1;fill:#000000;fill-opacity:1;stroke:#0b0000;stroke-width:0;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.0047879,0,0,-0.0047879,113.21617,30.750992)"
+       id="g871">
+      <g
+         data-mml-node="math"
+         data-latex="1"
+         data-semantic-structure="0"
+         id="g869">
+        <g
+           data-mml-node="mn"
+           data-latex="1"
+           data-semantic-type="number"
+           data-semantic-role="integer"
+           data-semantic-font="normal"
+           data-semantic-annotation="clearspeak:simple;nemeth:number;depth:1"
+           data-semantic-id="0"
+           data-semantic-attributes="latex:1"
+           aria-level="0"
+           data-speech-node="true"
+           id="g867">
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="31"
+             xlink:href="#MJX-6-NCM-N-31"
+             id="use865" />
+        </g>
+      </g>
+    </g>
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.0047888,0,0,-0.0047888,104.23746,41.671087)"
+       id="g893">
+      <g
+         data-mml-node="math"
+         data-latex="p"
+         data-semantic-structure="0"
+         id="g891">
+        <g
+           data-mml-node="mi"
+           data-latex="p"
+           data-semantic-type="identifier"
+           data-semantic-role="latinletter"
+           data-semantic-font="italic"
+           data-semantic-annotation="clearspeak:simple;nemeth:number;depth:1"
+           data-semantic-id="0"
+           data-semantic-attributes="latex:p"
+           aria-level="0"
+           data-speech-node="true"
+           id="g889" />
+      </g>
+    </g>
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.0032029,0,0,-0.0032029,91.811534,30.289261)"
+       id="g982">
+      <g
+         data-mml-node="math"
+         data-latex="\text{measurement}"
+         data-semantic-structure="0"
+         id="g980">
+        <g
+           data-mml-node="mtext"
+           data-latex="\text{measurement}"
+           data-semantic-type="text"
+           data-semantic-role="unknown"
+           data-semantic-font="normal"
+           data-semantic-annotation="clearspeak:unit;nemeth:number;depth:1"
+           data-semantic-id="0"
+           data-semantic-attributes="latex:\text{measurement}"
+           aria-level="0"
+           data-speech-node="true"
+           id="g978">
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="6D"
+             xlink:href="#MJX-13-NCM-N-6D"
+             id="use956" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="65"
+             xlink:href="#MJX-13-NCM-N-65"
+             transform="translate(833)"
+             id="use958" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="61"
+             xlink:href="#MJX-13-NCM-N-61"
+             transform="translate(1277)"
+             id="use960" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="73"
+             xlink:href="#MJX-13-NCM-N-73"
+             transform="translate(1777)"
+             id="use962" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="75"
+             xlink:href="#MJX-13-NCM-N-75"
+             transform="translate(2171)"
+             id="use964" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="72"
+             xlink:href="#MJX-13-NCM-N-72"
+             transform="translate(2727)"
+             id="use966" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="65"
+             xlink:href="#MJX-13-NCM-N-65"
+             transform="translate(3119)"
+             id="use968" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="6D"
+             xlink:href="#MJX-13-NCM-N-6D"
+             transform="translate(3563)"
+             id="use970" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="65"
+             xlink:href="#MJX-13-NCM-N-65"
+             transform="translate(4396)"
+             id="use972" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="6E"
+             xlink:href="#MJX-13-NCM-N-6E"
+             transform="translate(4840)"
+             id="use974" />
+          <use
+             height="100%"
+             width="100%"
+             y="0"
+             x="0"
+             data-c="74"
+             xlink:href="#MJX-13-NCM-N-74"
+             transform="translate(5396)"
+             id="use976" />
+        </g>
+      </g>
+    </g>
+    <path
+       id="path1014"
+       d="m 101.34423,31.234202 10.06425,4.820484"
+       style="fill:none;stroke:#000000;stroke-width:0.15875;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend)" />
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.00478912,0,0,-0.00478912,102.76103,41.498433)"
+       id="g1566">
+      <g
+         data-mml-node="math"
+         data-latex="p_0"
+         data-semantic-structure="(2 0 1)"
+         id="g1564">
+        <g
+           data-mml-node="msub"
+           data-latex="p_0 "
+           data-semantic-type="subscript"
+           data-semantic-role="latinletter"
+           data-semantic-annotation="depth:1"
+           data-semantic-id="2"
+           data-semantic-children="0,1"
+           data-semantic-attributes="latex:p_0"
+           data-semantic-owns="0 1"
+           aria-level="0"
+           data-speech-node="true"
+           id="g1562">
+          <g
+             data-mml-node="mi"
+             data-latex="p"
+             data-semantic-type="identifier"
+             data-semantic-role="latinletter"
+             data-semantic-font="italic"
+             data-semantic-annotation="clearspeak:simple;nemeth:number;depth:2"
+             data-semantic-id="0"
+             data-semantic-parent="2"
+             data-semantic-attributes="latex:p"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1556">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="1D45D"
+               xlink:href="#MJX-17-NCM-I-1D45D"
+               id="use1554" />
+          </g>
+          <g
+             data-mml-node="mn"
+             transform="matrix(0.707,0,0,0.707,536,-150)"
+             data-latex="0"
+             data-semantic-type="number"
+             data-semantic-role="integer"
+             data-semantic-font="normal"
+             data-semantic-annotation="clearspeak:simple;depth:2"
+             data-semantic-id="1"
+             data-semantic-parent="2"
+             data-semantic-attributes="latex:0"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1560">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="30"
+               xlink:href="#MJX-17-NCM-N-30"
+               id="use1558" />
+          </g>
+        </g>
+      </g>
+    </g>
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.00478912,0,0,-0.00478912,118.09123,41.572923)"
+       id="g1599">
+      <g
+         data-mml-node="math"
+         data-latex="p_1"
+         data-semantic-structure="(2 0 1)"
+         id="g1597">
+        <g
+           data-mml-node="msub"
+           data-latex="p_1 "
+           data-semantic-type="subscript"
+           data-semantic-role="latinletter"
+           data-semantic-annotation="depth:1"
+           data-semantic-id="2"
+           data-semantic-children="0,1"
+           data-semantic-attributes="latex:p_1"
+           data-semantic-owns="0 1"
+           aria-level="0"
+           data-speech-node="true"
+           id="g1595">
+          <g
+             data-mml-node="mi"
+             data-latex="p"
+             data-semantic-type="identifier"
+             data-semantic-role="latinletter"
+             data-semantic-font="italic"
+             data-semantic-annotation="clearspeak:simple;nemeth:number;depth:2"
+             data-semantic-id="0"
+             data-semantic-parent="2"
+             data-semantic-attributes="latex:p"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1589">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="1D45D"
+               xlink:href="#MJX-18-NCM-I-1D45D"
+               id="use1587" />
+          </g>
+          <g
+             data-mml-node="mn"
+             transform="matrix(0.707,0,0,0.707,536,-150)"
+             data-latex="1"
+             data-semantic-type="number"
+             data-semantic-role="integer"
+             data-semantic-font="normal"
+             data-semantic-annotation="clearspeak:simple;depth:2"
+             data-semantic-id="1"
+             data-semantic-parent="2"
+             data-semantic-attributes="latex:1"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1593">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="31"
+               xlink:href="#MJX-18-NCM-N-31"
+               id="use1591" />
+          </g>
+        </g>
+      </g>
+    </g>
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.0047879,0,0,-0.0047879,99.249008,51.473017)"
+       id="g1648">
+      <g
+         data-mml-node="math"
+         data-latex="\ket{\psi_0}"
+         data-semantic-structure="(5 0 (3 1 2) 4)"
+         id="g1646">
+        <g
+           data-mml-node="TeXAtom"
+           data-mjx-texclass="ORD"
+           data-latex="{\vert {\psi_0 } \rangle}"
+           data-semantic-type="punctuated"
+           data-semantic-role="sequence"
+           data-semantic-annotation="depth:1"
+           data-semantic-id="5"
+           data-semantic-children="0,3,4"
+           data-semantic-content="0,4"
+           data-semantic-attributes="latex:\ket{\psi_0};texclass:ORD"
+           data-semantic-owns="0 3 4"
+           aria-level="0"
+           data-speech-node="true"
+           id="g1644">
+          <g
+             data-mml-node="mo"
+             data-mjx-texclass="ORD"
+             data-latex="\vert"
+             data-semantic-type="punctuation"
+             data-semantic-role="vbar"
+             data-semantic-annotation="nemeth:number;depth:2"
+             data-semantic-id="0"
+             data-semantic-parent="5"
+             data-semantic-attributes="latex:\vert;texclass:ORD"
+             data-semantic-operator="punctuated"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1626">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="7C"
+               xlink:href="#MJX-22-NCM-N-7C"
+               id="use1624" />
+          </g>
+          <g
+             data-mml-node="TeXAtom"
+             data-mjx-texclass="ORD"
+             data-latex="{\psi_0}"
+             transform="translate(278)"
+             id="g1638">
+            <g
+               data-mml-node="msub"
+               data-latex="\psi_0"
+               data-semantic-type="subscript"
+               data-semantic-role="greekletter"
+               data-semantic-annotation="depth:2"
+               data-semantic-id="3"
+               data-semantic-children="1,2"
+               data-semantic-parent="5"
+               data-semantic-attributes="latex:{\psi_0};texclass:ORD"
+               data-semantic-owns="1 2"
+               aria-level="1"
+               data-speech-node="true"
+               id="g1636">
+              <g
+                 data-mml-node="mi"
+                 data-latex="\psi"
+                 data-semantic-type="identifier"
+                 data-semantic-role="greekletter"
+                 data-semantic-font="italic"
+                 data-semantic-annotation="clearspeak:simple;nemeth:number;depth:3"
+                 data-semantic-id="1"
+                 data-semantic-parent="3"
+                 data-semantic-attributes="latex:\psi"
+                 aria-level="2"
+                 data-speech-node="true"
+                 id="g1630">
+                <use
+                   height="100%"
+                   width="100%"
+                   y="0"
+                   x="0"
+                   data-c="1D713"
+                   xlink:href="#MJX-22-NCM-I-1D713"
+                   id="use1628" />
+              </g>
+              <g
+                 data-mml-node="mn"
+                 transform="matrix(0.707,0,0,0.707,684,-150)"
+                 data-latex="0"
+                 data-semantic-type="number"
+                 data-semantic-role="integer"
+                 data-semantic-font="normal"
+                 data-semantic-annotation="clearspeak:simple;depth:3"
+                 data-semantic-id="2"
+                 data-semantic-parent="3"
+                 data-semantic-attributes="latex:0"
+                 aria-level="2"
+                 data-speech-node="true"
+                 id="g1634">
+                <use
+                   height="100%"
+                   width="100%"
+                   y="0"
+                   x="0"
+                   data-c="30"
+                   xlink:href="#MJX-22-NCM-N-30"
+                   id="use1632" />
+              </g>
+            </g>
+          </g>
+          <g
+             data-mml-node="mo"
+             data-latex="\rangle"
+             data-semantic-type="punctuation"
+             data-semantic-role="closefence"
+             data-semantic-annotation="nemeth:number;depth:2"
+             data-semantic-id="4"
+             data-semantic-parent="5"
+             data-semantic-attributes="latex:\rangle"
+             data-semantic-operator="punctuated"
+             aria-level="1"
+             data-speech-node="true"
+             transform="translate(1365.6)"
+             id="g1642">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="27E9"
+               xlink:href="#MJX-22-NCM-N-27E9"
+               id="use1640" />
+          </g>
+        </g>
+      </g>
+    </g>
+    <g
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       transform="matrix(0.0047879,0,0,-0.0047879,118.14782,51.458332)"
+       id="g1703">
+      <g
+         data-mml-node="math"
+         data-latex="\ket{\psi_1}"
+         data-semantic-structure="(5 0 (3 1 2) 4)"
+         id="g1701">
+        <g
+           data-mml-node="TeXAtom"
+           data-mjx-texclass="ORD"
+           data-latex="{\vert {\psi_1 } \rangle}"
+           data-semantic-type="punctuated"
+           data-semantic-role="sequence"
+           data-semantic-annotation="depth:1"
+           data-semantic-id="5"
+           data-semantic-children="0,3,4"
+           data-semantic-content="0,4"
+           data-semantic-attributes="latex:\ket{\psi_1};texclass:ORD"
+           data-semantic-owns="0 3 4"
+           aria-level="0"
+           data-speech-node="true"
+           id="g1699">
+          <g
+             data-mml-node="mo"
+             data-mjx-texclass="ORD"
+             data-latex="\vert"
+             data-semantic-type="punctuation"
+             data-semantic-role="vbar"
+             data-semantic-annotation="nemeth:number;depth:2"
+             data-semantic-id="0"
+             data-semantic-parent="5"
+             data-semantic-attributes="latex:\vert;texclass:ORD"
+             data-semantic-operator="punctuated"
+             aria-level="1"
+             data-speech-node="true"
+             id="g1681">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="7C"
+               xlink:href="#MJX-23-NCM-N-7C"
+               id="use1679" />
+          </g>
+          <g
+             data-mml-node="TeXAtom"
+             data-mjx-texclass="ORD"
+             data-latex="{\psi_1}"
+             transform="translate(278)"
+             id="g1693">
+            <g
+               data-mml-node="msub"
+               data-latex="\psi_1"
+               data-semantic-type="subscript"
+               data-semantic-role="greekletter"
+               data-semantic-annotation="depth:2"
+               data-semantic-id="3"
+               data-semantic-children="1,2"
+               data-semantic-parent="5"
+               data-semantic-attributes="latex:{\psi_1};texclass:ORD"
+               data-semantic-owns="1 2"
+               aria-level="1"
+               data-speech-node="true"
+               id="g1691">
+              <g
+                 data-mml-node="mi"
+                 data-latex="\psi"
+                 data-semantic-type="identifier"
+                 data-semantic-role="greekletter"
+                 data-semantic-font="italic"
+                 data-semantic-annotation="clearspeak:simple;nemeth:number;depth:3"
+                 data-semantic-id="1"
+                 data-semantic-parent="3"
+                 data-semantic-attributes="latex:\psi"
+                 aria-level="2"
+                 data-speech-node="true"
+                 id="g1685">
+                <use
+                   height="100%"
+                   width="100%"
+                   y="0"
+                   x="0"
+                   data-c="1D713"
+                   xlink:href="#MJX-23-NCM-I-1D713"
+                   id="use1683" />
+              </g>
+              <g
+                 data-mml-node="mn"
+                 transform="matrix(0.707,0,0,0.707,684,-150)"
+                 data-latex="1"
+                 data-semantic-type="number"
+                 data-semantic-role="integer"
+                 data-semantic-font="normal"
+                 data-semantic-annotation="clearspeak:simple;depth:3"
+                 data-semantic-id="2"
+                 data-semantic-parent="3"
+                 data-semantic-attributes="latex:1"
+                 aria-level="2"
+                 data-speech-node="true"
+                 id="g1689">
+                <use
+                   height="100%"
+                   width="100%"
+                   y="0"
+                   x="0"
+                   data-c="31"
+                   xlink:href="#MJX-23-NCM-N-31"
+                   id="use1687" />
+              </g>
+            </g>
+          </g>
+          <g
+             data-mml-node="mo"
+             data-latex="\rangle"
+             data-semantic-type="punctuation"
+             data-semantic-role="closefence"
+             data-semantic-annotation="nemeth:number;depth:2"
+             data-semantic-id="4"
+             data-semantic-parent="5"
+             data-semantic-attributes="latex:\rangle"
+             data-semantic-operator="punctuated"
+             aria-level="1"
+             data-speech-node="true"
+             transform="translate(1365.6)"
+             id="g1697">
+            <use
+               height="100%"
+               width="100%"
+               y="0"
+               x="0"
+               data-c="27E9"
+               xlink:href="#MJX-23-NCM-N-27E9"
+               id="use1695" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

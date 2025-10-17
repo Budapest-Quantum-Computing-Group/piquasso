@@ -86,7 +86,7 @@ def test_multiple_mode_multiple_instructionregistry(FakeGate):
     assert program.instructions[4].params == {"param": 9}
 
 
-def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
+def test_instruction_registration_with_no_modes_is_NOT_resolved_to_all_modes(
     FakeGate,
     FakeSimulator,
 ):
@@ -94,12 +94,12 @@ def test_instruction_registration_with_no_modes_is_resolved_to_all_modes(
         pq.Q() | FakeGate(param="some-parameter")
 
     simulator = FakeSimulator(d=42)
-    state = simulator.execute(program).state
+    simulator.execute(program)
 
-    assert program.instructions[0].modes == tuple(range(state.d))
+    assert program.instructions[0].modes == tuple()
 
 
-def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes(
+def test_instruction_registration_with_all_keyword_is_NOT_resolved_to_all_modes(
     FakeGate,
     FakeSimulator,
 ):
@@ -107,6 +107,6 @@ def test_instruction_registration_with_all_keyword_is_resolved_to_all_modes(
         pq.Q(all) | FakeGate(param="some-parameter")
 
     simulator = FakeSimulator(d=42)
-    state = simulator.execute(program).state
+    simulator.execute(program)
 
-    assert program.instructions[0].modes == tuple(range(state.d))
+    assert program.instructions[0].modes == tuple()

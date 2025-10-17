@@ -104,7 +104,7 @@ def FakeSimulator(
     FakeState, FakeConfig, FakePreparation, FakeGate, FakeMeasurement, FakeConnector
 ):
     def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
-        return pq.api.result.Result(state=state)
+        return [pq.api.branch.Branch(state=state)]
 
     class FakeSimulator(pq.Simulator):
         _state_class = FakeState

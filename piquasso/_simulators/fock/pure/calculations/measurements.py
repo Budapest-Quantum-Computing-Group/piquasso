@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
+
 from piquasso.instructions.measurements import PostSelectPhotons
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._simulators.fock.calculations import get_projection_operator_indices
@@ -25,7 +27,7 @@ from ..state import PureFockState
 
 def post_select_photons(
     state: PureFockState, instruction: PostSelectPhotons, shots: int
-) -> Result:
+) -> List[Branch]:
     connector = state._connector
 
     postselect_modes = instruction.modes
@@ -50,12 +52,12 @@ def post_select_photons(
         new_state.state_vector, small_index, state.state_vector[index]
     )
 
-    return Result(state=new_state)
+    return [Branch(state=new_state)]
 
 
 def imperfect_post_select_photons(
     state: PureFockState, instruction: PostSelectPhotons, shots: int
-) -> Result:
+) -> List[Branch]:
     np = state._connector.np
 
     postselect_modes = instruction.modes
@@ -98,4 +100,4 @@ def imperfect_post_select_photons(
             state_vector, np.conj(state_vector)
         )
 
-    return Result(state=new_state)
+    return [Branch(state=new_state)]

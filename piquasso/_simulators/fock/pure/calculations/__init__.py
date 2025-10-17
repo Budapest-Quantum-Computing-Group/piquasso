@@ -29,10 +29,12 @@ __all__ = [
     "homodyne_measurement",
 ]
 
-from typing import Optional, Tuple, Mapping
+from typing import Optional, Tuple, Mapping, List
 
 import random
 import numpy as np
+
+from fractions import Fraction
 
 from .passive_linear import _apply_passive_linear
 from .utils import project_to_subspace
@@ -55,15 +57,16 @@ from piquasso._math.fock import (
 
 from piquasso.instructions import gates
 
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 from piquasso.api.connector import BaseConnector
 from piquasso._math.validations import validate_occupation_numbers
+from piquasso._utils import get_counts
 
 
 def particle_number_measurement(
     state: PureFockState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     reduced_state = state.reduced(instruction.modes)
 
     probability_map = reduced_state.fock_probabilities_map
@@ -74,25 +77,31 @@ def particle_number_measurement(
         k=shots,
     )
 
-    # NOTE: We choose the last sample for multiple shots.
-    sample = samples[-1]
+    binned_samples = get_counts(samples)
 
-    normalization = _get_normalization(probability_map, sample)
+    branches = []
 
-    new_state = project_to_subspace(
-        state=state,
-        subspace_basis=sample,
-        modes=instruction.modes,
-        normalization=normalization,
-    )
+    for sample, multiplicity in binned_samples.items():
+        normalization = _get_normalization(probability_map, sample)
 
-    return Result(state=new_state, samples=samples)
+        new_state = project_to_subspace(
+            state=state,
+            subspace_basis=sample,
+            modes=instruction.modes,
+            normalization=normalization,
+        )
+
+        branch = Branch(new_state, sample, frequency=Fraction(multiplicity, shots))
+
+        branches.append(branch)
+
+    return branches
 
 
-def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def vacuum(state: PureFockState, instruction: Instruction, shots: int) -> List[Branch]:
     state.reset()
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _get_normalization(
@@ -229,7 +238,7 @@ def _create_linear_active_gate_gradient_function(
     return linear_active_gate_gradient
 
 
-def create(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def create(state: PureFockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     operator = get_creation_operator(
@@ -238,10 +247,12 @@ def create(state: PureFockState, instruction: Instruction, shots: int) -> Result
 
     state.state_vector = operator @ state.state_vector
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def annihilate(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     operator = get_annihilation_operator(
@@ -250,10 +261,10 @@ def annihilate(state: PureFockState, instruction: Instruction, shots: int) -> Re
 
     state.state_vector = operator @ state.state_vector
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def kerr(state: PureFockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     xi = instruction._all_params["xi"]
@@ -266,10 +277,12 @@ def kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
     # NOTE: Transposition is done here in order to work with batch processing.
     state.state_vector = (coefficients * state.state_vector.T).T
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def cross_kerr(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     np = state._connector.np
@@ -282,10 +295,12 @@ def cross_kerr(state: PureFockState, instruction: Instruction, shots: int) -> Re
             state.state_vector, index, state.state_vector[index] * coefficient
         )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def displacement(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def displacement(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     connector = state._connector
 
     r = instruction._all_params["r"]
@@ -312,7 +327,7 @@ def displacement(state: PureFockState, instruction: Instruction, shots: int) -> 
         connector,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _apply_squeezing(state, r, phi, mode):
@@ -340,7 +355,9 @@ def _apply_squeezing(state, r, phi, mode):
     )
 
 
-def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def squeezing(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     _apply_squeezing(
         state,
         r=instruction._all_params["r"],
@@ -348,10 +365,12 @@ def squeezing(state: PureFockState, instruction: Instruction, shots: int) -> Res
         mode=instruction.modes[0],
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
-def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def cubic_phase(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     connector = state._connector
 
     gamma = instruction._all_params["gamma"]
@@ -376,12 +395,12 @@ def cubic_phase(state: PureFockState, instruction: Instruction, shots: int) -> R
         connector,
     )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def linear(
     state: PureFockState, instruction: gates._ActiveLinearGate, shots: int
-) -> Result:
+) -> List[Branch]:
     connector = state._connector
     modes = instruction.modes
 
@@ -406,12 +425,12 @@ def linear(
 
     _apply_passive_linear(state, unitary_last, modes, connector)
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def state_vector_instruction(
     state: PureFockState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     if "occupation_numbers" in instruction._all_params:
         occupation_numbers = instruction._all_params["occupation_numbers"]
 
@@ -453,7 +472,7 @@ def state_vector_instruction(
                 modes=instruction.modes,
             )
 
-    return Result(state=state)
+    return [Branch(state=state)]
 
 
 def _add_occupation_number_basis(  # type: ignore
@@ -474,7 +493,9 @@ def _add_occupation_number_basis(  # type: ignore
     state.state_vector = state._connector.assign(state.state_vector, index, coefficient)
 
 
-def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) -> Result:
+def batch_prepare(
+    state: PureFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
     execute = instruction._all_params["execute"]
 
@@ -488,12 +509,12 @@ def batch_prepare(state: PureFockState, instruction: Instruction, shots: int) ->
 
     batch_state._apply_separate_state_vectors(state_vectors)
 
-    return Result(state=batch_state)
+    return [Branch(state=batch_state)]
 
 
 def batch_apply(
     state: BatchPureFockState, instruction: Instruction, shots: int
-) -> Result:
+) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
     execute = instruction._all_params["execute"]
 
@@ -514,4 +535,4 @@ def batch_apply(
 
     state._apply_separate_state_vectors(resulting_state_vectors)
 
-    return Result(state=state)
+    return [Branch(state=state)]

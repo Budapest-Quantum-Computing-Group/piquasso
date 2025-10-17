@@ -13,17 +13,140 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import piquasso as pq
 
 from piquasso.api.result import Result
+from piquasso.api.branch import Branch
+
+from fractions import Fraction
+
+
+def test_Result_branches(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=Fraction(498, 1000))
+    branch2 = Branch(state=state2, outcome=(1,), frequency=Fraction(502, 1000))
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=1000)
+
+    assert result.branches == [branch1, branch2]
+
+
+def test_Result_state_with_single_branch(FakeState):
+    state = FakeState(d=3, connector=pq.NumpyConnector())
+
+    branch = Branch(state=state, outcome=(0,), frequency=1000)
+
+    branches = [branch]
+
+    result = Result(branches=branches, config=pq.Config(), shots=1000)
+
+    assert result.state is state
+
+
+def test_Result_state_raises_NotImplementedCalculation_for_multiple_branches(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=Fraction(498, 1000))
+    branch2 = Branch(state=state2, outcome=(1,), frequency=Fraction(502, 1000))
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=1000)
+
+    with pytest.raises(
+        pq.api.exceptions.NotImplementedCalculation,
+        match=(
+            "This feature is not yet implemented. However, you can access the "
+            "post-measurement state in the `Result.branches` attribute."
+        ),
+    ):
+        _ = result.state
+
+
+def test_Result_samples(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    shots = 1000
+
+    f0 = Fraction(498, 1000)
+    f1 = Fraction(502, 1000)
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1,), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=shots)
+
+    samples = result.samples
+
+    assert samples.count((0,)) == int(f0 * shots)
+    assert samples.count((1,)) == int(f1 * shots)
+
+
+def test_Result_get_counts(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    shots = 1000
+
+    f0 = Fraction(498, 1000)
+    f1 = Fraction(502, 1000)
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1,), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=shots)
+
+    counts = result.get_counts()
+
+    assert counts == {(0,): int(f0 * shots), (1,): int(f1 * shots)}
+
+
+def test_Result_to_subgraph_nodes(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    shots = 2
+
+    f0 = Fraction(1, 2)
+    f1 = Fraction(1, 2)
+
+    branch1 = Branch(state=state1, outcome=(0, 1, 1), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1, 2, 0), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=shots)
+
+    nodes = result.to_subgraph_nodes()
+
+    assert [1, 2] in nodes
+    assert [0, 1, 1] in nodes
 
 
 def test_Result_repr(FakeState):
-    result = Result(
-        state=FakeState(d=3, connector=pq.NumpyConnector()), samples=[1, 2, 3]
-    )
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=498)
+    branch2 = Branch(state=state2, outcome=(1,), frequency=502)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=1000)
 
     assert (
         repr(result)
-        == "Result(samples=[1, 2, 3], state=FakeState(d=3, config=Config(), connector=NumpyConnector()))"  # noqa: E501
+        == "Result(branches=[Branch(state=FakeState(d=3, config=Config(), connector=NumpyConnector()), outcome=(0,), frequency=498), Branch(state=FakeState(d=3, config=Config(), connector=NumpyConnector()), outcome=(1,), frequency=502)], config=Config(), shots=1000)"  # noqa: E501
     )

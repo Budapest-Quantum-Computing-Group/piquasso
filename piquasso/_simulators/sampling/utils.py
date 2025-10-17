@@ -170,7 +170,7 @@ def generate_lossy_samples(
     for output_state in expanded_samples:
         while len(output_state) > len(input_state):
             output_state = np.delete(output_state, len(output_state) - 1)
-        samples.append(output_state)
+        samples.append(tuple(output_state))
 
     return samples
 
@@ -204,7 +204,7 @@ def _generate_samples(input, shots, permanent, interferometer, sample_generator,
             first_quantized_input,
             rng=rng,
         )
-        samples.append(sample)
+        samples.append(tuple(sample))
 
     return samples
 

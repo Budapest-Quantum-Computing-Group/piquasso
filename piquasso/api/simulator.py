@@ -14,12 +14,14 @@
 # limitations under the License.
 
 import abc
-import numpy as np
 
 from typing import Optional, List, Type, Dict, Callable, Tuple
 
+from fractions import Fraction
+
 from piquasso.core import _mixins
 
+from piquasso.api.branch import Branch
 from piquasso.api.result import Result
 from piquasso.api.state import State
 from piquasso.api.config import Config
@@ -212,17 +214,6 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         return instruction
 
-    def _is_instruction_list_multi_measurement(self, instructions):
-        count = 0
-
-        for instruction in instructions:
-            if isinstance(instruction, Measurement):
-                count += 1
-                if count > 1:
-                    return True
-
-        return False
-
     @staticmethod
     def _remap_modes(active_modes, modes_to_remap):
         return tuple(active_modes.index(mode) for mode in modes_to_remap)
@@ -239,56 +230,60 @@ class Simulator(Computer, _mixins.CodeMixin):
             if mode not in Simulator._remap_modes_inverse(active_modes, modes)
         )
 
-    def _execute_multi_measurement_instructions(self, state, instructions, shots):
-        samples = []
+    def _apply_instruction_to_branches(self, branches, instruction, shots):
+        calculation = self._get_calculation(instruction)
 
-        for _ in range(shots):
-            active_modes = tuple(range(self.d))
+        instruction = self._maybe_postprocess_batch_instruction(instruction)
 
-            result = Result(state=state.copy())
+        new_branches = []
 
-            samples_for_this_shot = []
+        for branch in branches:
+            subbranches = calculation(
+                branch.state, instruction, shots=int(branch.frequency * shots)
+            )
 
-            for instruction_orig in instructions:
-                instruction = instruction_orig.copy()
+            for subbranch in subbranches:
+                # NOTE: This updates the branches with the previous outcome, and the
+                # frequency with the frequencies of previous measurements, as the
+                # branches returned by the calculation only contain the outcome and
+                # frequency corresponding to the current measurement.
+                subbranch.outcome = tuple([*branch.outcome, *subbranch.outcome])
+                subbranch.frequency *= branch.frequency
 
-                if not hasattr(instruction, "modes") or instruction.modes is tuple():
-                    instruction.modes = active_modes
+            new_branches.extend(subbranches)
 
-                if any(m not in active_modes for m in instruction.modes):
-                    inactive_modes = {
-                        m for m in instruction.modes if m not in active_modes
-                    }
-                    raise ValueError(
-                        f"Some modes of instruction {instruction} are not active: "
-                        f"{inactive_modes}."
-                    )
+        return new_branches
 
-                instruction.modes = Simulator._remap_modes(
+    def _do_execute_instructions(self, state, instructions, shots):
+        branches = [Branch(state=state, frequency=Fraction(1))]
+
+        active_modes = tuple(range(self.d))
+
+        for instruction in instructions:
+            original_modes = instruction.modes
+
+            if not hasattr(instruction, "modes") or instruction.modes is tuple():
+                instruction.modes = active_modes
+
+            if any(m not in active_modes for m in instruction.modes):
+                inactive_modes = {m for m in instruction.modes if m not in active_modes}
+                raise ValueError(
+                    f"Some modes of instruction {instruction} are not active: "
+                    f"{inactive_modes}."
+                )
+
+            instruction.modes = Simulator._remap_modes(active_modes, instruction.modes)
+
+            branches = self._apply_instruction_to_branches(branches, instruction, shots)
+
+            if isinstance(instruction, Measurement):
+                active_modes = Simulator._delete_modes_from_active(
                     active_modes, instruction.modes
                 )
 
-                calculation = self._get_calculation(instruction)
+            instruction._modes = original_modes
 
-                instruction = self._maybe_postprocess_batch_instruction(instruction)
-
-                result = calculation(result.state, instruction, shots=1)
-
-                if (
-                    isinstance(result.samples, np.ndarray)
-                    and result.samples.size > 0
-                    or result.samples
-                ):
-                    samples_for_this_shot.extend(result.samples[0])
-
-                if isinstance(instruction, Measurement):
-                    active_modes = Simulator._delete_modes_from_active(
-                        active_modes, instruction.modes
-                    )
-
-            samples.append(samples_for_this_shot)
-
-        return Result(samples=samples, state=result.state)
+        return Result(config=self.config, branches=branches, shots=shots)
 
     def execute_instructions(
         self,
@@ -328,26 +323,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         else:
             state = self.create_initial_state()
 
-        is_multi_measurement = self._is_instruction_list_multi_measurement(instructions)
-
-        if is_multi_measurement:
-            return self._execute_multi_measurement_instructions(
-                state, instructions, shots
-            )
-
-        result = Result(state=state)
-
-        for instruction in instructions:
-            if not hasattr(instruction, "modes") or instruction.modes is tuple():
-                instruction.modes = tuple(range(self.d))
-
-            calculation = self._get_calculation(instruction)
-
-            instruction = self._maybe_postprocess_batch_instruction(instruction)
-
-            result = calculation(result.state, instruction, shots)
-
-        return result
+        return self._do_execute_instructions(state, instructions, shots)
 
     def execute(
         self, program: Program, shots: int = 1, initial_state: Optional[State] = None

@@ -25,7 +25,7 @@ from functools import lru_cache
 from .state import BaseFockState
 
 from piquasso.api.instruction import Instruction
-from piquasso.api.result import Result
+from piquasso.api.branch import Branch
 from piquasso.api.exceptions import InvalidInstruction, InvalidParameter
 
 from piquasso._math.fock import (
@@ -43,7 +43,9 @@ from piquasso._math.indices import (
 )
 
 
-def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Result:
+def attenuator(
+    state: BaseFockState, instruction: Instruction, shots: int
+) -> List[Branch]:
     r"""
     Performs the deterministic loss or attenuation channel :math:`C` according to the
     equation
@@ -107,7 +109,7 @@ def attenuator(state: BaseFockState, instruction: Instruction, shots: int) -> Re
 
     new_state._density_matrix = new_density_matrix
 
-    return Result(state=new_state)
+    return [Branch(state=new_state)]
 
 
 @nb.njit(cache=True)
