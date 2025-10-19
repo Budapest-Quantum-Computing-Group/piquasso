@@ -28,3 +28,48 @@ def test_program_repr():
     program = pq.Program()
 
     assert repr(program) == "Program(instructions=[])"
+
+
+def test_program_get_number_of_modes_with_two_modes():
+    """Test that get_number_of_modes correctly infers d=2."""
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector((2, 0))
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+
+    assert program.get_number_of_modes() == 2
+
+
+def test_program_get_number_of_modes_with_single_mode():
+    """Test that get_number_of_modes correctly infers d=1."""
+    with pq.Program() as program:
+        pq.Q(0) | pq.StateVector((2,))
+
+    assert program.get_number_of_modes() == 1
+
+
+def test_program_get_number_of_modes_with_sparse_modes():
+    """Test that get_number_of_modes infers based on max mode index."""
+    with pq.Program() as program:
+        pq.Q(0, 2, 5) | pq.StateVector((1, 0, 1))
+
+    # Mode 5 is the highest, so we need d=6
+    assert program.get_number_of_modes() == 6
+
+
+def test_program_get_number_of_modes_empty_program():
+    """Test that get_number_of_modes returns None for empty program."""
+    with pq.Program() as program:
+        pass
+
+    assert program.get_number_of_modes() is None
+
+
+def test_program_get_number_of_modes_with_multiple_instructions():
+    """Test that get_number_of_modes considers all instructions."""
+    with pq.Program() as program:
+        pq.Q(0) | pq.StateVector((1,))
+        pq.Q(1) | pq.StateVector((1,))
+        pq.Q(2, 3) | pq.Beamsplitter5050()
+
+    # Mode 3 is the highest, so we need d=4
+    assert program.get_number_of_modes() == 4

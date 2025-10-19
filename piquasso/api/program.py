@@ -179,7 +179,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         for instruction in self.instructions:
             if hasattr(instruction, "modes") and instruction.modes:
                 for mode in instruction.modes:
-                    if isinstance(mode, int) and mode > max_mode:
+                    if mode > max_mode:
                         max_mode = mode
 
         return max_mode + 1 if max_mode >= 0 else None

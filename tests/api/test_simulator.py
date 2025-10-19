@@ -335,3 +335,108 @@ def test_Simulator_repr(FakeSimulator):
         repr(FakeSimulator(d=3))
         == "FakeSimulator(d=3, config=Config(), connector=FakeConnector())"
     )
+
+
+def test_simulator_without_d_parameter_infers_from_program(
+    FakeSimulator, FakePreparation, FakeGate
+):
+    """Test that simulator can infer d from program when not provided."""
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(0, 1) | FakeGate()
+
+    simulator = FakeSimulator()  # No d parameter!
+    result = simulator.execute(program)
+
+    assert result.state.d == 2
+    assert simulator.d == 2
+
+
+def test_simulator_with_explicit_d_still_works(
+    FakeSimulator, FakePreparation, FakeGate
+):
+    """Test backward compatibility: explicit d parameter still works."""
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(0, 1) | FakeGate()
+
+    simulator = FakeSimulator(d=2)
+    result = simulator.execute(program)
+
+    assert result.state.d == 2
+    assert simulator.d == 2
+
+
+def test_simulator_infers_with_sparse_modes(FakeSimulator, FakePreparation):
+    """Test that simulator correctly infers d with non-contiguous mode indices."""
+    with pq.Program() as program:
+        pq.Q(0, 2) | FakePreparation()
+
+    simulator = FakeSimulator()
+    result = simulator.execute(program)
+
+    # Mode 2 is used, so d should be at least 3
+    assert result.state.d == 3
+    assert simulator.d == 3
+
+
+def test_simulator_without_d_and_empty_program_raises_error(FakeSimulator):
+    """Test that simulator raises error when d cannot be inferred."""
+    with pq.Program() as program:
+        pass
+
+    simulator = FakeSimulator()
+
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as exc_info:
+        simulator.execute(program)
+
+    assert "Cannot infer the number of modes" in str(exc_info.value)
+
+
+def test_simulator_d_is_inferred_during_execution(FakeSimulator, FakePreparation):
+    """Test that d is inferred during execute, not before."""
+    simulator = FakeSimulator()
+    assert simulator.d is None
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+
+    simulator.execute(program)
+    assert simulator.d == 2
+
+
+def test_simulator_can_execute_multiple_programs_with_same_d(
+    FakeSimulator, FakePreparation
+):
+    """Test that simulator with inferred d can execute multiple programs."""
+    simulator = FakeSimulator()
+
+    # First program
+    with pq.Program() as program1:
+        pq.Q(0, 1) | FakePreparation()
+
+    result1 = simulator.execute(program1)
+    assert result1.state.d == 2
+
+    # Second program with same d
+    with pq.Program() as program2:
+        pq.Q(0, 1) | FakePreparation()
+
+    result2 = simulator.execute(program2)
+    assert result2.state.d == 2
+
+
+def test_simulator_execute_instructions_without_program_raises_error(
+    FakeSimulator, FakePreparation
+):
+    """Test that execute_instructions requires d to be set or program to be provided."""
+    simulator = FakeSimulator()
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+
+    # execute_instructions without d and without program should fail
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as exc_info:
+        simulator.execute_instructions(program.instructions)
+
+    assert "Cannot infer the number of modes" in str(exc_info.value)

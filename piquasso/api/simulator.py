@@ -109,9 +109,8 @@ class Simulator(Computer, _mixins.CodeMixin):
             self._get_calculation(instruction)
 
     def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
-        # Skip mode validation if d is not set (will be inferred later)
-        if self.d is None:
-            return
+        # At this point, d must be set (either explicitly or inferred)
+        assert self.d is not None, "d must be set before validation"
 
         for instruction in instructions:
             if not instruction.modes:
@@ -314,6 +313,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         instructions: List[Instruction],
         initial_state: Optional[State] = None,
         shots: int = 1,
+        program: Optional[Program] = None,
     ) -> Result:
         """Executes the specified instruction list.
 
@@ -324,9 +324,14 @@ class Simulator(Computer, _mixins.CodeMixin):
                 :meth:`create_initial_state`.
             shots (int, optional):
                 The number of times the program should be execute. Defaults to 1.
+            program (Program, optional):
+                The program containing the instructions. Used for mode inference when
+                `d` is not set. Defaults to None.
 
         Raises:
             InvalidParameter: When `shots` is not a positive integer.
+            InvalidSimulation: When the number of modes cannot be inferred and `d` was
+                not provided during simulator initialization.
 
         Returns:
             Result:
@@ -339,14 +344,26 @@ class Simulator(Computer, _mixins.CodeMixin):
                 f"The number of shots should be a positive integer: shots={shots}."
             )
 
-        self._validate_instructions(instructions)
-
-        # Ensure d is set before creating initial state
+        # Infer d from program if not explicitly set
         if self.d is None:
-            raise InvalidSimulation(
-                "Cannot execute instructions: the number of modes (d) is not set. "
-                "This should have been inferred from the program in the execute method."
-            )
+            if program is None:
+                raise InvalidSimulation(
+                    "Cannot infer the number of modes: program not provided. "
+                    "Please provide the 'd' parameter when creating the "
+                    "simulator, or use execute() method with a Program instead "
+                    "of execute_instructions()."
+                )
+            inferred_d = program.get_number_of_modes()
+            if inferred_d is None:
+                raise InvalidSimulation(
+                    "Cannot infer the number of modes from the program. "
+                    "Please provide the 'd' parameter when creating the simulator, "
+                    "or ensure that at least one instruction in the program "
+                    "specifies modes explicitly."
+                )
+            self.d = inferred_d
+
+        self._validate_instructions(instructions)
 
         if initial_state is not None:
             self._validate_initial_state(initial_state)
@@ -399,22 +416,10 @@ class Simulator(Computer, _mixins.CodeMixin):
                 if any measurement is specified in `program`.
         """
 
-        # Infer d from program if not explicitly set
-        if self.d is None:
-            inferred_d = program.get_number_of_modes()
-            if inferred_d is None:
-                raise InvalidSimulation(
-                    "Cannot infer the number of modes from the program. "
-                    "Please provide the 'd' parameter when creating the simulator, "
-                    "or ensure that at least one instruction in the program "
-                    "specifies modes explicitly."
-                )
-            self.d = inferred_d
-
         instructions: List[Instruction] = program.instructions
 
         return self.execute_instructions(
-            instructions, initial_state=initial_state, shots=shots
+            instructions, initial_state=initial_state, shots=shots, program=program
         )
 
     def __repr__(self) -> str:
