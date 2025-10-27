@@ -238,6 +238,10 @@ class Simulator(Computer, _mixins.CodeMixin):
         new_branches = []
 
         for branch in branches:
+            if not instruction._is_condition_met(branch.outcome):
+                new_branches.append(branch)
+                continue
+
             subbranches = simulation_step(
                 branch.state, instruction, shots=int(branch.frequency * shots)
             )
