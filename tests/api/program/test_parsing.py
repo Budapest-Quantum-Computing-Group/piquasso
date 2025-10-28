@@ -160,14 +160,19 @@ def test_program_from_dict_from_external_instruction():
                 ),
             )
 
+    first_param_value_1 = 123
+    second_param_value_1 = 234
+    first_param_value_2 = 42
+    second_param_value_2 = 21
+
     instructions_dict = {
         "instructions": [
             {
                 "type": "FakeInstruction",
                 "attributes": {
                     "constructor_kwargs": {
-                        "first_param": "first_param_value",
-                        "second_param": "second_param_value",
+                        "first_param": first_param_value_1,
+                        "second_param": second_param_value_1,
                     },
                     "modes": ["some", "modes"],
                 },
@@ -176,8 +181,8 @@ def test_program_from_dict_from_external_instruction():
                 "type": "FakeInstruction",
                 "attributes": {
                     "constructor_kwargs": {
-                        "first_param": "2nd_instructions_1st_param_value",
-                        "second_param": "2nd_instructions_2nd_param_value",
+                        "first_param": first_param_value_2,
+                        "second_param": second_param_value_2,
                     },
                     "modes": ["some", "other", "modes"],
                 },
@@ -189,14 +194,14 @@ def test_program_from_dict_from_external_instruction():
 
     assert isinstance(program.instructions[0], FakeInstruction)
     assert program.instructions[0].params == {
-        "first_param": "first_param_value",
-        "second_param": "second_param_value",
+        "first_param": first_param_value_1,
+        "second_param": second_param_value_1,
     }
     assert program.instructions[0].modes == ["some", "modes"]
 
     assert isinstance(program.instructions[1], FakeInstruction)
     assert program.instructions[1].params == {
-        "first_param": "2nd_instructions_1st_param_value",
-        "second_param": "2nd_instructions_2nd_param_value",
+        "first_param": first_param_value_2,
+        "second_param": second_param_value_2,
     }
     assert program.instructions[1].modes == ["some", "other", "modes"]
