@@ -151,3 +151,8 @@ class PureFockSimulator(BuiltinSimulator):
         measurements.ParticleNumberMeasurement,
         measurements.PostSelectPhotons,
     )
+
+    _measurement_classes_allowed_with_shots_none = (
+        measurements.ParticleNumberMeasurement,
+        measurements.PostSelectPhotons,
+    )

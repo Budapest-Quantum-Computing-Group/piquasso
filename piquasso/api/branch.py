@@ -40,6 +40,10 @@ class Branch:
     performed, which is an approximation of the probability of observing this
     outcome.
 
+    If the simulation was run with `shots=None`, indicating that the exact probability
+    distribution was calculated instead of sampling, the frequency corresponds to the
+    exact probability of the outcome.
+
     The data in the branch is illustrated as follows. Consider the following setup,
     where a measurement is performed with two possible outcomes, 0 and 1:
 

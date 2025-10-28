@@ -484,3 +484,77 @@ def test_create_initial_state_without_d_raises_InvalidParameter(FakeSimulator):
         "Please provide 'd' when creating the simulator, or pass 'd' as an argument "
         "to 'create_initial_state'."
     )
+
+
+def test_shots_none_with_measurement_allowed(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    class MeasurementAllowedWithShotsNone(FakeMeasurement):
+        pass
+
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | MeasurementAllowedWithShotsNone()
+
+    class SimulatorWithMeasurementAllowedWithShotsNone(FakeSimulator):
+        _instruction_map = {
+            **FakeSimulator._instruction_map,
+            MeasurementAllowedWithShotsNone: lambda state, instruction, shots: [],
+        }
+
+        _measurement_classes_allowed_with_shots_none = (
+            MeasurementAllowedWithShotsNone,
+        )
+
+    simulator = SimulatorWithMeasurementAllowedWithShotsNone(d=1)
+
+    result = simulator.execute(program, shots=None)
+
+    assert isinstance(result, pq.api.result.Result)
+
+
+def test_shots_none_with_measurement_not_allowed_raises_InvalidParameter(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(
+        pq.api.exceptions.InvalidParameter,
+        match=(
+            "The measurement 'FakeMeasurement' instruction does not support "
+            "'shots=None' using 'FakeSimulator'."
+        ),
+    ):
+        simulator.execute(program, shots=None)
+
+
+def test_shots_with_invalid_value_raises_InvalidParameter(
+    FakeSimulator,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate()
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(
+        pq.api.exceptions.InvalidParameter,
+        match="The number of shots should be a positive integer or 'None': shots=0.",
+    ):
+        simulator.execute(program, shots=0)

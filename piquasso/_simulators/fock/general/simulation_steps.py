@@ -15,10 +15,7 @@
 
 from typing import Tuple, Mapping, List
 
-import random
 import numpy as np
-
-from fractions import Fraction
 
 from .state import FockState
 
@@ -29,7 +26,7 @@ from piquasso._math.decompositions import euler
 from piquasso.api.instruction import Instruction
 from piquasso.api.branch import Branch
 
-from piquasso._utils import get_counts
+from piquasso._utils import sample_from_probability_map
 
 from piquasso._math.indices import get_index_in_fock_space
 from piquasso._math.fock import (
@@ -135,17 +132,11 @@ def particle_number_measurement(
 
     probability_map = reduced_state.fock_probabilities_map
 
-    samples = random.choices(
-        population=list(probability_map.keys()),
-        weights=list(probability_map.values()),
-        k=shots,
-    )
-
-    binned_samples = get_counts(samples)
+    frequency_map = sample_from_probability_map(probability_map, shots)
 
     branches = []
 
-    for sample, multiplicity in binned_samples.items():
+    for sample, frequency in frequency_map.items():
         normalization = _get_normalization(probability_map, sample)
 
         new_state = _project_to_subspace(
@@ -155,7 +146,7 @@ def particle_number_measurement(
             normalization=normalization,
         )
 
-        branch = Branch(new_state, sample, Fraction(multiplicity, shots))
+        branch = Branch(new_state, sample, frequency)
 
         branches.append(branch)
 
