@@ -17,7 +17,7 @@ from typing import Tuple
 
 import numpy as np
 
-from ...calculations import get_projection_operator_indices
+from ...simulation_steps import get_projection_operator_indices
 
 from ..state import PureFockState
 

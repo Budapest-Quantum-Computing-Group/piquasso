@@ -19,7 +19,7 @@ from piquasso.instructions.measurements import PostSelectPhotons
 from piquasso.api.branch import Branch
 
 from piquasso._math.fock import get_fock_space_basis
-from piquasso._simulators.fock.calculations import get_projection_operator_indices
+from piquasso._simulators.fock.simulation_steps import get_projection_operator_indices
 from piquasso._simulators.fock.general.state import FockState
 
 from ..state import PureFockState
