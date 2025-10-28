@@ -91,7 +91,7 @@ def test_instruction_registration_with_no_modes_is_NOT_resolved_to_all_modes(
     FakeSimulator,
 ):
     with pq.Program() as program:
-        pq.Q() | FakeGate(param="some-parameter")
+        pq.Q() | FakeGate(param=21)
 
     simulator = FakeSimulator(d=42)
     simulator.execute(program)
@@ -104,7 +104,7 @@ def test_instruction_registration_with_all_keyword_is_NOT_resolved_to_all_modes(
     FakeSimulator,
 ):
     with pq.Program() as program:
-        pq.Q(all) | FakeGate(param="some-parameter")
+        pq.Q(all) | FakeGate(param=21)
 
     simulator = FakeSimulator(d=42)
     simulator.execute(program)
