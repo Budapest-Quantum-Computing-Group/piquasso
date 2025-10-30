@@ -109,3 +109,23 @@ class TestDualRailConverter:
         converter = DualRailConverter()
         with pytest.raises(ValueError, match=f"Unsupported instruction '{gate_name}' in the quantum circuit."):
             converter._convert_from_qiskit_qc(qc)
+
+
+class TestIntegrationWithSimulator:
+    """Tests the integration with the Simulator class."""
+
+    def test_simulator_integration(self):
+        """Tests that a Qiskit circuit can be executed."""
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.h(1)
+        qc.cz(0, 1)
+        qc.measure([0, 1], [0, 1])
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=6, config=config, connector=connector)
+        res = simulator.execute(qc, shots=shots)

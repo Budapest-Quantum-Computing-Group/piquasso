@@ -327,70 +327,6 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         return self._do_execute_instructions(state, instructions, shots)
 
-    @staticmethod
-    def bosonic_hadamard(mode1, mode2):
-        instructions = []
-        instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
-        instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
-        return instructions
-
-    @staticmethod
-    def cz_on_two_bosonic_qubits(modes):
-        """Note: requires two auxiliary modes with one photon each."""
-        
-        # Knill's notation
-        cz_beamsplitter_first_theta_value = 54.74 / 180 * np.pi
-        cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
-
-        instructions = []
-
-        instructions.append(pq.Phaseshifter(np.pi).on_modes(modes[0]))
-        instructions.append(pq.Phaseshifter(np.pi).on_modes(modes[1]))
-
-        instructions.append(
-            pq.Beamsplitter(cz_beamsplitter_first_theta_value).on_modes(modes[0], modes[2])
-        )
-        instructions.append(
-            pq.Beamsplitter(cz_beamsplitter_first_theta_value).on_modes(modes[1], modes[3])
-        )
-        instructions.append(
-            pq.Beamsplitter(-1 * cz_beamsplitter_first_theta_value).on_modes(modes[0], modes[1])
-        )
-        instructions.append(
-            pq.Beamsplitter(cz_beamsplitter_second_theta_value).on_modes(modes[2], modes[3])
-        )
-        instructions.append(
-            pq.PostSelectPhotons(
-                photon_counts=[1, 1],
-            ).on_modes(modes[2], modes[3])
-        )
-        return instructions
-
-    def _convert_from_qiskit_qc(self, qc: "QuantumCircuit") -> Program:
-        instructions = []
-
-        num_bosonic_qubits = 2
-
-        aux_modes = [4, 5]
-        op_dict = {
-            "h": self.bosonic_hadamard,
-            "cz": self.cz_on_two_bosonic_qubits,
-            "m": lambda modes: [pq.ParticleNumberMeasurement().on_modes(*modes)],
-        }
-        for instruction, qargs, cargs in qc.data:
-            if instruction.name == "h":
-                for qarg in qargs:
-                    pq_instruction = self.bosonic_hadamard(qarg.index, qarg.index + num_bosonic_qubits)
-                    instructions.append(pq_instruction)
-            elif instruction.name == "cz":
-                qarg_indices = [qarg.index for qarg in qargs]
-                pq_instruction = self.cz_on_two_bosonic_qubits(qarg_indices + aux_modes)
-                instructions.append(pq_instruction)
-            elif instruction.name == "m":
-                pq_instruction = pq.ParticleNumberMeasurement().on_modes(*[qarg.index for qarg in qargs])
-                instructions.append(pq_instruction)
-        return Program(instructions=instructions)
-
     def execute(
         self, program: Program, shots: int = 1, initial_state: Optional[State] = None
     ) -> Result:
@@ -415,8 +351,11 @@ class Simulator(Computer, _mixins.CodeMixin):
         if not isinstance(program, Program):
 
             from qiskit import QuantumCircuit
-            if not isinstance(program, QuantumCircuit):
-                program = self._convert_from_qiskit_qc(program)
+            if isinstance(program, QuantumCircuit):
+                from piquasso.core._dual_rail_encoding import DualRailConverter
+                converter = DualRailConverter()
+                program = converter._convert_from_qiskit_qc(program)
+                print(program.instructions)
             else:
                 raise ValueError(
                     "The 'program' parameter should be of type "
