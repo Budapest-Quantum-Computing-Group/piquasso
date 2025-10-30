@@ -355,7 +355,6 @@ class Simulator(Computer, _mixins.CodeMixin):
                 from piquasso.core._dual_rail_encoding import DualRailConverter
                 converter = DualRailConverter()
                 program = converter._convert_from_qiskit_qc(program)
-                print(program.instructions)
             else:
                 raise ValueError(
                     "The 'program' parameter should be of type "
