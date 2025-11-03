@@ -18,6 +18,8 @@ import re
 
 import piquasso as pq
 
+from unittest.mock import Mock
+
 
 def test_correctly_defined_program_executes_without_exception(
     FakeSimulator,
@@ -335,3 +337,56 @@ def test_Simulator_repr(FakeSimulator):
         repr(FakeSimulator(d=3))
         == "FakeSimulator(d=3, config=Config(), connector=FakeConnector())"
     )
+
+
+def test_conditional_instruction_execution(
+    FakeState,
+    FakeConfig,
+    FakeConnector,
+    FakePreparation,
+    FakeGate,
+    FakeMeasurement,
+):
+    def fake_calculation(state, instruction, shots):
+        return [pq.api.branch.Branch(state=state)]
+
+    class FakeSimulator(pq.Simulator):
+        _state_class = FakeState
+
+        _config_class = FakeConfig
+
+        _instruction_map = {
+            FakePreparation: fake_calculation,
+            FakeGate: Mock(
+                return_value=[
+                    pq.api.branch.Branch(
+                        state=FakeState(1, FakeConnector(), FakeConfig())
+                    )
+                ]
+            ),
+            FakeMeasurement: fake_calculation,
+        }
+
+        _default_connector_class = FakeConnector
+
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate().when(lambda x: True)
+        pq.Q() | FakeMeasurement()
+
+    simulator = FakeSimulator(d=1)
+
+    simulator.validate(program)
+    simulator.execute(program)
+
+    FakeSimulator._instruction_map[FakeGate].assert_called_once()
+
+    with pq.Program() as new_program:
+        pq.Q() | FakePreparation()
+        pq.Q() | FakeGate().when(lambda x: False)
+        pq.Q() | FakeMeasurement()
+
+    simulator.validate(new_program)
+    simulator.execute(new_program)
+
+    FakeSimulator._instruction_map[FakeGate].assert_called_once()

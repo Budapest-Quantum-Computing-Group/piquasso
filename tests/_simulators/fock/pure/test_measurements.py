@@ -458,3 +458,30 @@ class TestMidCircuitMeasurements:
             match="not allowed as a mid-circuit measurement",
         ):
             simulator.execute(program, shots=1)
+
+
+def test_conditional_squeezing():
+    r = 0.2
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 2),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 2),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r=r).on_modes(0).when(lambda x: x[-1] == 2),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7, seed_sequence=123))
+
+    result = simulator.execute(program, shots=10)
+
+    expected_squeezed_state = result.branches[1].state
+
+    actual_squeezed_state = (
+        pq.PureFockSimulator(d=1, config=pq.Config(cutoff=5))
+        .execute_instructions([pq.Vacuum(), pq.Squeezing(r=r)])
+        .state
+    )
+
+    assert expected_squeezed_state == actual_squeezed_state
