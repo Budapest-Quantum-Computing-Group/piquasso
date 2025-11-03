@@ -20,7 +20,7 @@ import numpy as np
 
 from .mode import Q
 from piquasso.core import _mixins
-from piquasso.api.exceptions import PiquassoException, InvalidProgram
+from piquasso.api.exceptions import PiquassoException, InvalidProgram, InvalidParameter
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -32,30 +32,65 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     Args:
         params: Mapping of parameters specified by the users.
-        extra_params: Mapping of extra parameters, typically calculated ones.
     """
 
     NUMBER_OF_MODES: Optional[int] = None
 
     _subclasses: Dict[str, Type["Instruction"]] = {}
 
-    def __init__(
-        self, *, params: Optional[dict] = None, extra_params: Optional[dict] = None
-    ) -> None:
+    def __init__(self, *, params: Optional[dict] = None) -> None:
         self._params: dict = params or dict()
 
-        self._extra_params: dict = extra_params or dict()
-
         self._condition: Optional[Callable] = None
+
+        is_unresolved = callable
+        self._unresolved_params = {
+            name: param for name, param in self._params.items() if is_unresolved(param)
+        }
+
+        if self._is_resolved():
+            self._validate()
+
+    def _validate(self):
+        pass
 
     @property
     def params(self) -> dict:
         """The parameters of the instruction as a `dict`."""
         return self._params
 
+    def _get_computed_params(self) -> dict:
+        return dict()
+
     @property
     def _all_params(self) -> dict:
-        return {**self._params, **self._extra_params}
+        return {**self._params, **self._get_computed_params()}
+
+    def _is_resolved(self):
+        return self._unresolved_params == dict()
+
+    def _resolve_params(self, outcomes):
+        _resolved_params = {}
+
+        for name, unresolved_param in self._unresolved_params.items():
+            try:
+                resolved_param = unresolved_param(outcomes)
+            except Exception as e:
+                raise InvalidParameter(
+                    f"An error occurred when resolving the parameter "
+                    f"'{name}' for the instruction '{self}': {e}\n"
+                    f"Make sure that the parameter is a callable that takes the "
+                    f"tuple of measurement outcomes and returns a float."
+                ) from e
+
+            _resolved_params[name] = resolved_param
+
+        self._params.update(_resolved_params)
+
+        self._validate()
+
+    def _unresolve_params(self):
+        self._params.update(self._unresolved_params)
 
     @property
     def modes(self) -> Tuple[int, ...]:
@@ -294,6 +329,8 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
 class BatchInstruction(Instruction):
     """Base class to control batch processing."""
+
+    _execute: Callable
 
 
 class Preparation(Instruction):

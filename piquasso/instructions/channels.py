@@ -70,6 +70,12 @@ class DeterministicGaussianChannel(Gate):
             InvalidParameter: If the specified 'X' and/or 'Y' matrices are invalid.
         """
 
+        super().__init__(params=dict(X=X, Y=Y))
+
+    def _validate(self):
+        X = self.params["X"]
+        Y = self.params["Y"]
+
         if not is_real_2n_by_2n(X):
             raise InvalidParameter(
                 f"The parameter 'X' must be a real 2n-by-2n matrix: X={X}"
@@ -95,8 +101,6 @@ class DeterministicGaussianChannel(Gate):
                 "The matrices 'X' and 'Y' does not satisfy the inequality "
                 "corresponding to Gaussian channels."
             )
-
-        super().__init__(params=dict(X=X, Y=Y))
 
 
 class Attenuator(Gate):
@@ -131,21 +135,28 @@ class Attenuator(Gate):
         Raises:
             InvalidParameter: If the specified mean thermal excitation is not positive.
         """
+        super().__init__(
+            params=dict(theta=theta, mean_thermal_excitation=mean_thermal_excitation),
+        )
 
+    def _validate(self):
+        mean_thermal_excitation = self.params["mean_thermal_excitation"]
         if mean_thermal_excitation < 0:
             raise InvalidParameter(
                 "The parameter 'mean_thermal_excitation' must be a positive real "
                 f"number: mean_thermal_excitation={mean_thermal_excitation}"
             )
 
-        X = np.cos(theta) * np.identity(2)
+    def _get_computed_params(self) -> dict:
+        X = np.cos(self.params["theta"]) * np.identity(2)
 
-        Y = (np.sin(theta) ** 2) * (2 * mean_thermal_excitation + 1) * np.identity(2)
-
-        super().__init__(
-            params=dict(theta=theta, mean_thermal_excitation=mean_thermal_excitation),
-            extra_params=dict(X=X, Y=Y),
+        Y = (
+            (np.sin(self.params["theta"]) ** 2)
+            * (2 * self.params["mean_thermal_excitation"] + 1)
+            * np.identity(2)
         )
+
+        return dict(X=X, Y=Y)
 
 
 class Loss(Gate):
