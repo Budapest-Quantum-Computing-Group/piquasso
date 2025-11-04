@@ -376,3 +376,31 @@ def test_conditioned_instruction_code_generation_lambda_function():
         ),
     ):
         pq.as_code(program, simulator, shots=10)
+
+
+def test_code_generation_with_undefined_d():
+    with pq.Program() as program:
+        pq.Q(0) | pq.Fourier()
+        pq.Q(2, 3) | pq.Beamsplitter(theta=1, phi=0)
+
+    simulator = pq.FockSimulator()
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q(0) | pq.Fourier()
+    pq.Q(2, 3) | pq.Beamsplitter(theta=1, phi=0)
+
+simulator = pq.{pq.FockSimulator.__name__}()
+
+result = simulator.execute(program, shots=10)
+"""
+    )

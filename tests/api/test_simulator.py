@@ -390,3 +390,97 @@ def test_conditional_instruction_execution(
     simulator.execute(new_program)
 
     FakeSimulator._instruction_map[FakeGate].assert_called_once()
+
+
+def test_simulator_without_d_parameter_infers_from_program(
+    FakeSimulator, FakePreparation, FakeGate
+):
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(0, 1) | FakeGate()
+
+    simulator = FakeSimulator()
+    result = simulator.execute(program)
+
+    assert result.state.d == 2
+    assert simulator.d is None
+
+    with pq.Program() as another_program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(2, 3) | FakeGate()
+
+    another_result = simulator.execute(another_program)
+
+    assert another_result.state.d == 4
+    assert simulator.d is None
+
+
+def test_simulator_with_d_parameter_uses_given_d(
+    FakeSimulator, FakePreparation, FakeGate
+):
+    with pq.Program() as program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(0, 1) | FakeGate()
+
+    simulator = FakeSimulator(d=5)
+    result = simulator.execute(program)
+
+    assert result.state.d == 5
+    assert simulator.d == 5
+
+
+def test_simulator_execution_without_d_parameter_and_no_modes_instructions_raises_InvalidSimulation(  # noqa: E501
+    FakeSimulator,
+    FakePreparation,
+):
+    with pq.Program() as program:
+        pq.Q() | FakePreparation()
+
+    simulator = FakeSimulator()
+
+    with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
+        simulator.execute(program)
+
+    error_message = error.value.args[0]
+
+    assert (
+        error_message
+        == "The number of modes could not be inferred from the instructions, and 'd' "
+        "was not specified during simulator initialization. Please provide the number "
+        "of modes 'd' when creating the simulator, or ensure that the instructions "
+        "address specific modes."
+    )
+
+
+def test_create_initial_state(FakeSimulator, FakeState):
+    simulator = FakeSimulator(d=3)
+
+    initial_state = simulator.create_initial_state()
+
+    assert isinstance(initial_state, FakeState)
+    assert initial_state.d == 3
+
+
+def test_create_initial_state_with_d_parameter(FakeSimulator, FakeState):
+    simulator = FakeSimulator()
+
+    initial_state = simulator.create_initial_state(d=4)
+
+    assert isinstance(initial_state, FakeState)
+    assert initial_state.d == 4
+
+
+def test_create_initial_state_without_d_raises_InvalidParameter(FakeSimulator):
+    simulator = FakeSimulator()
+
+    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
+        simulator.create_initial_state()
+
+    error_message = error.value.args[0]
+
+    assert (
+        error_message
+        == "The number of modes 'd' must be specified to create the initial state. "
+        "Please provide 'd' when creating the simulator, or pass 'd' as an argument "
+        "to 'create_initial_state'."
+    )

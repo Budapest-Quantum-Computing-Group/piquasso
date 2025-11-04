@@ -43,6 +43,32 @@ from piquasso.api.instruction import (
 from .computer import Computer
 
 
+def _infer_number_of_modes_from_instructions(
+    instructions: List[Instruction],
+) -> Optional[int]:
+    r"""Infer the number of modes from the list of instructions, if possible.
+
+    Inference is only possible when there is at least one instruction where modes
+    are specified (and is not `None`). For example, in the following program, inference
+    is not possible:
+
+    .. code-block::
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+            pq.Q() | pq.ParticleNumberMeasurement()
+    """
+
+    number_of_modes = None
+
+    for instruction in instructions:
+        modes = getattr(instruction, "modes", None)
+        if modes and (not number_of_modes or max(modes) > number_of_modes):
+            number_of_modes = max(modes) + 1
+
+    return number_of_modes
+
+
 class Simulator(Computer, _mixins.CodeMixin):
     """Base class for all simulators defined in Piquasso."""
 
@@ -53,7 +79,7 @@ class Simulator(Computer, _mixins.CodeMixin):
 
     def __init__(
         self,
-        d: int,
+        d: Optional[int] = None,
         config: Optional[Config] = None,
         connector: Optional[BaseConnector] = None,
     ) -> None:
@@ -67,17 +93,39 @@ class Simulator(Computer, _mixins.CodeMixin):
         """The map which associates an `Instruction` to a calculation function."""
 
     def _as_code(self):
-        if self.config == Config():
-            return f"pq.{self.__class__.__name__}(d={self.d})"
-
-        four_spaces = " " * 4
-        return (
-            f"pq.{self.__class__.__name__}(\n"
-            f"{four_spaces}d={self.d}, config={self.config._as_code()}\n"
-            ")"
+        # TODO: in the next line, it should be 'self._config_class()' instead of
+        # 'Config()'.
+        config_string = (
+            "" if self.config == Config() else f"config={self.config._as_code()}"
         )
+        d_string = "" if self.d is None else f"d={self.d}"
 
-    def create_initial_state(self):
+        pq_simulator_string = f"pq.{self.__class__.__name__}"
+
+        separator = ", "
+        body_string = separator.join(x for x in [d_string, config_string] if x)
+
+        if config_string and d_string:
+            four_spaces = " " * 4
+
+            return f"{pq_simulator_string}(\n{four_spaces}{body_string}\n)"
+
+        return f"{pq_simulator_string}({body_string})"
+
+    def _try_to_infer_d_from_instructions(self, instructions: List[Instruction]) -> int:
+        d = self.d or _infer_number_of_modes_from_instructions(instructions)
+
+        if d is None:
+            raise InvalidSimulation(
+                "The number of modes could not be inferred from the instructions, "
+                "and 'd' was not specified during simulator initialization. "
+                "Please provide the number of modes 'd' when creating the simulator, "
+                "or ensure that the instructions address specific modes."
+            )
+
+        return d
+
+    def create_initial_state(self, d=None):
         """Creates an initial state with no instructions executed.
 
         Note:
@@ -87,25 +135,34 @@ class Simulator(Computer, _mixins.CodeMixin):
             State: The initial state of the simulation.
         """
 
-        return self._state_class(
-            d=self.d, connector=self._connector, config=self.config
-        )
+        d = d or self.d
+
+        if d is None:
+            raise InvalidParameter(
+                "The number of modes 'd' must be specified to create the initial "
+                "state. Please provide 'd' when creating the simulator, or pass 'd' "
+                "as an argument to 'create_initial_state'."
+            )
+
+        return self._state_class(d=d, connector=self._connector, config=self.config)
 
     def _validate_instruction_existence(self, instructions: List[Instruction]) -> None:
         for instruction in instructions:
             self._get_simulation_step(instruction)
 
-    def _validate_instruction_modes(self, instructions: List[Instruction]) -> None:
+    def _validate_instruction_modes(
+        self, instructions: List[Instruction], d: int
+    ) -> None:
         for instruction in instructions:
             if not instruction.modes:
                 continue
 
             for mode in instruction.modes:
-                if mode < 0 or mode >= self.d:
-                    if self.d > 1:
+                if mode < 0 or mode >= d:
+                    if d > 1:
                         valid_indices_message = (
                             f"Valid mode indices are between '0' and "
-                            f"'{self.d - 1}' (inclusive)."
+                            f"'{d - 1}' (inclusive)."
                         )
                     else:
                         valid_indices_message = (
@@ -115,7 +172,7 @@ class Simulator(Computer, _mixins.CodeMixin):
                     raise InvalidModes(
                         f"Instruction '{instruction}' addresses mode '{mode}',"
                         f" which is out of range "
-                        f"for the simulator defined on '{self.d}' modes. "
+                        f"for the simulator defined on '{d}' modes. "
                         f"{valid_indices_message}"
                     )
 
@@ -172,22 +229,22 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         self._validate_measurements_at_end(instructions)
 
-    def _validate_instructions(self, instructions: List[Instruction]) -> None:
+    def _validate_instructions(self, instructions: List[Instruction], d: int) -> None:
         self._validate_instruction_existence(instructions)
-        self._validate_instruction_modes(instructions)
+        self._validate_instruction_modes(instructions, d)
         self._validate_instruction_order(instructions)
 
-    def _validate_initial_state(self, initial_state: State) -> None:
+    def _validate_initial_state(self, initial_state: State, d: int) -> None:
         if not isinstance(initial_state, self._state_class):
             raise InvalidState(
                 f"Initial state is specified with type '{type(initial_state)}', but it "
                 f"should be {self._state_class} for this simulator."
             )
 
-        if initial_state.d != self.d:
+        if initial_state.d != d:
             raise InvalidState(
                 f"Mismatch in number of specified modes: According to the simulator, "
-                f"the number of modes should be '{self.d}', but the specified "
+                f"the number of modes should be '{d}', but the specified "
                 f"'initial_state' is defined on '{initial_state.d}' modes."
             )
 
@@ -204,7 +261,9 @@ class Simulator(Computer, _mixins.CodeMixin):
             program (Program): The program to validate.
         """
 
-        self._validate_instructions(program.instructions)
+        d = self._try_to_infer_d_from_instructions(program.instructions)
+
+        self._validate_instructions(program.instructions, d)
 
     def _maybe_postprocess_batch_instruction(
         self, instruction: Instruction
@@ -258,10 +317,10 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         return new_branches
 
-    def _do_execute_instructions(self, state, instructions, shots):
+    def _do_execute_instructions(self, state, instructions, shots, d):
         branches = [Branch(state=state, frequency=Fraction(1))]
 
-        active_modes = tuple(range(self.d))
+        active_modes = tuple(range(d))
 
         for instruction in instructions:
             original_modes = instruction.modes
@@ -307,6 +366,8 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         Raises:
             InvalidParameter: When `shots` is not a positive integer.
+            InvalidSimulation: When the number of modes cannot be inferred and `d` was
+                not provided during simulator initialization.
 
         Returns:
             Result:
@@ -319,15 +380,17 @@ class Simulator(Computer, _mixins.CodeMixin):
                 f"The number of shots should be a positive integer: shots={shots}."
             )
 
-        self._validate_instructions(instructions)
+        d = self._try_to_infer_d_from_instructions(instructions)
+
+        self._validate_instructions(instructions, d)
 
         if initial_state is not None:
-            self._validate_initial_state(initial_state)
+            self._validate_initial_state(initial_state, d)
             state = initial_state.copy()
         else:
-            state = self.create_initial_state()
+            state = self.create_initial_state(d)
 
-        return self._do_execute_instructions(state, instructions, shots)
+        return self._do_execute_instructions(state, instructions, shots, d)
 
     def execute(
         self, program: Program, shots: int = 1, initial_state: Optional[State] = None
@@ -358,4 +421,6 @@ class Simulator(Computer, _mixins.CodeMixin):
         )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(d={self.d}, config={self.config}, connector={self._connector})"  # noqa: E501
+        d_string = "" if self.d is None else f"d={self.d}, "
+
+        return f"{self.__class__.__name__}({d_string}config={self.config}, connector={self._connector})"  # noqa: E501
