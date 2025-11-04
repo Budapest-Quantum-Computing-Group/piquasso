@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.core._dual_rail_encoding import DualRailConverter
+from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit_qc
 from qiskit import QuantumCircuit
 import piquasso as pq
 import numpy as np
 import pytest
 
-class TestDualRailConverter:
-    """Tests for the DualRailConverter class."""
+class TestDualRailEncoding:
+    """Tests for the dual rail encoding functions."""
 
-    def test_convert_from_qiskit_qc(self):
+    def test_dual_rail_encode_from_qiskit_qc(self):
         """Tests the conversion from a Qiskit QuantumCircuit to a Piquasso Program with dual-rail encoding."""
         qc = QuantumCircuit(2, 2)
         qc.h(0)
@@ -30,8 +30,7 @@ class TestDualRailConverter:
         qc.cz(0, 1)
         qc.measure([0, 1], [0, 1])
 
-        converter = DualRailConverter()
-        prog = converter._convert_from_qiskit_qc(qc)
+        prog = dual_rail_encode_from_qiskit_qc(qc)
 
         assert len(prog.instructions) == 15
 
@@ -121,9 +120,8 @@ class TestDualRailConverter:
         qc = QuantumCircuit(2)
         gate_name = unsupported_gate_data[0]
         getattr(qc, gate_name)(*unsupported_gate_data[1])
-        converter = DualRailConverter()
         with pytest.raises(ValueError, match=f"Unsupported instruction '{gate_name}' in the quantum circuit."):
-            converter._convert_from_qiskit_qc(qc)
+            dual_rail_encode_from_qiskit_qc(qc)
 
 
 class TestIntegrationWithSimulator:
@@ -143,4 +141,6 @@ class TestIntegrationWithSimulator:
         shots = 1000
 
         simulator = pq.PureFockSimulator(d=6, config=config, connector=connector)
-        res = simulator.execute(qc, shots=shots)
+
+        prog = dual_rail_encode_from_qiskit_qc(qc)
+        res = simulator.execute(prog, shots=shots)

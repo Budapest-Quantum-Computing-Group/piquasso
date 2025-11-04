@@ -349,15 +349,13 @@ class Simulator(Computer, _mixins.CodeMixin):
                 if any measurement is specified in `program`.
         """
         if not isinstance(program, Program):
-
-            from qiskit import QuantumCircuit
-            if isinstance(program, QuantumCircuit):
+            if "qiskit" in type(program).__module__:
                 from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit_qc
                 program = dual_rail_encode_from_qiskit_qc(program)
             else:
                 raise ValueError(
-                    "The 'program' parameter should be of type "
-                    f"'piquasso.api.program.Program', but it is of type "
+                    "The 'program' argument should be a Piquasso program "
+                    f"or a Qiskit QuantumCircuit, but it is of type "
                     f"'{type(program)}'."
                 )
 
