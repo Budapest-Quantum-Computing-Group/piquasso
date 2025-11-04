@@ -352,9 +352,8 @@ class Simulator(Computer, _mixins.CodeMixin):
 
             from qiskit import QuantumCircuit
             if isinstance(program, QuantumCircuit):
-                from piquasso.core._dual_rail_encoding import DualRailConverter
-                converter = DualRailConverter()
-                program = converter._convert_from_qiskit_qc(program)
+                from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit_qc
+                program = dual_rail_encode_from_qiskit_qc(program)
             else:
                 raise ValueError(
                     "The 'program' parameter should be of type "
