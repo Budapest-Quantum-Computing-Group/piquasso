@@ -65,7 +65,7 @@ class DualRailConverter:
         num_cz = 0
         for instruction in qc.data:
             if instruction.name not in ["h", "cz", "measure"]:
-                raise ValueError(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
+                raise InvalidProgram(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
             if instruction.name == "cz":
                 num_cz += 1
 
@@ -73,11 +73,11 @@ class DualRailConverter:
 
         # |0> = [0, 1]
         # |1> = [1, 0]
-        modes_with_one_photon = [i for i in range(0, num_bosonic_qubits * 2, 2)]
-        modes_with_zero_photon = [i for i in range(1, num_bosonic_qubits * 2 + 1, 2)]
+        modes_with_one_photon = list(range(0, num_bosonic_qubits * 2, 2))
+        modes_with_zero_photon = list(range(1, num_bosonic_qubits * 2 + 1, 2))
 
         num_aux_needed = num_cz * 2
-        aux_modes = [i for i in range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed)]
+        aux_modes = list(range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed))
         instructions = []
     
         modes_with_one_photon = modes_with_one_photon + aux_modes
