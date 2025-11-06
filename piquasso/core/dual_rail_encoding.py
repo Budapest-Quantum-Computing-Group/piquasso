@@ -16,10 +16,32 @@
 import piquasso as pq
 import numpy as np
 
+def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
+    """Prepares a bosonic qubits in the specified basis states.
+
+    The following encoding is being used:
+
+          |0> = [0, 1]
+          |1> = [1, 0]
+
+    Args:
+        all_modes: All the modes to first prepare in the vacuum state.
+        modes_with_one_photon: The modes where a single photon is created.
+
+    Returns:
+        A list of Piquasso instructions to prepare the bosonic qubit.
+    """
+    instructions = []
+    if all_modes:
+        instructions.append(pq.Vacuum().on_modes(*all_modes))
+    if modes_with_one_photon:
+        instructions.append(pq.Create().on_modes(*modes_with_one_photon))
+    return instructions
+
 def bosonic_hadamard(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
-    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
 def cz_on_two_bosonic_qubits(modes):
@@ -66,18 +88,18 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
 
     # |0> = [0, 1]
     # |1> = [1, 0]
-    modes_with_one_photon = [i for i in range(0, num_bosonic_qubits * 2, 2)]
-    modes_with_zero_photon = [i for i in range(1, num_bosonic_qubits * 2 + 1, 2)]
-
+    modes_with_one_photon = list(range(0, num_bosonic_qubits * 2, 2))
     num_aux_needed = num_cz * 2
-    aux_modes = [i for i in range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed)]
+    aux_modes = list(range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed))
+
+    all_modes = list(range(num_bosonic_qubits * 2)) + aux_modes
+
     instructions = []
 
     modes_with_one_photon = modes_with_one_photon + aux_modes
-    preparations = [
-        pq.Create().on_modes(*modes_with_one_photon),
-        pq.Vacuum().on_modes(*modes_with_zero_photon)
-    ]
+
+    preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+
     instructions.extend(preparations)
 
     cz_idx = 0
@@ -85,7 +107,7 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
         qubit_indices = [qc.find_bit(q).index for q in instruction.qubits]
         if instruction.name == "h":
             qubit = qubit_indices[0]
-            pq_instruction = bosonic_hadamard(qubit, qubit + num_bosonic_qubits)
+            pq_instruction = bosonic_hadamard(2 * qubit, 2 * qubit + 1)
             instructions.extend(pq_instruction)
         elif instruction.name == "cz":
             mode_indices = [q * 2 for q in qubit_indices]
@@ -98,14 +120,14 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
             instructions.append(pq_instruction)
     return pq.Program(instructions=instructions)
 
-def dual_rail_encode_from_qiskit_qc(quantum_circuit: "QuantumCircuit") -> pq.Program:
+def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
     try:
         import qiskit
     except ImportError as e:
         raise ImportError("Qiskit package is not installed.") from e
     if not isinstance(quantum_circuit, qiskit.QuantumCircuit):
         raise TypeError(
-            "The input argument to the dual_rail_encode_from_qiskit_qc function should " \
+            "The input argument to the dual_rail_encode_from_qiskit function should " \
             f"be a Qiskit QuantumCircuit, but it is of type '{type(quantum_circuit)}'."
         )
     return _encode_dual_rail_from_qiskit(quantum_circuit)

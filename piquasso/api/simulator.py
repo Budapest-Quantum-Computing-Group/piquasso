@@ -350,8 +350,8 @@ class Simulator(Computer, _mixins.CodeMixin):
         """
         if not isinstance(program, Program):
             if "qiskit" in type(program).__module__:
-                from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit_qc
-                program = dual_rail_encode_from_qiskit_qc(program)
+                from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit
+                program = dual_rail_encode_from_qiskit(program)
             else:
                 raise ValueError(
                     "The 'program' argument should be a Piquasso program "

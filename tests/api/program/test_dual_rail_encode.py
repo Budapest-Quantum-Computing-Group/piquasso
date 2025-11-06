@@ -13,46 +13,147 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit_qc
+from piquasso.core.dual_rail_encoding import bosonic_hadamard, cz_on_two_bosonic_qubits, dual_rail_encode_from_qiskit, prep_bosonic_qubits
 from qiskit import QuantumCircuit
 import piquasso as pq
 import numpy as np
 import pytest
 
+class TestDualRailEncodingInstructions:
+    """Tests for the instructions used for dual rail encoding."""
+
+    def test_prep_bosonic_qubit_instructions(self):
+        """Tests the bosonic qubit preparation instruction."""
+        all_modes = [0, 1]
+        modes_with_one_photon = [0]
+        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+        assert len(instructions) == 2
+
+        vacuum = instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photon = instructions[1]
+        assert isinstance(create_photon, pq.Create)
+        assert create_photon.modes == (0,)
+
+    @pytest.mark.parametrize("all_modes, modes_with_one_photon, expected_to_have_amplitude",
+                             [
+                                 ([0, 1], [1], (0, 1)),
+                                 ([0, 1, 2, 3], [1, 3], (0, 1, 0, 1)),
+                             ])
+    def test_prep_bosonic_qubits_amplitudes(self, all_modes, modes_with_one_photon, expected_to_have_amplitude):
+        """Tests the amplitudes after bosonic qubit preparations."""
+        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+        assert len(instructions) == 2
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+
+        prog = pq.Program(instructions=instructions)
+        res = simulator.execute(prog, shots=shots)
+        assert len(res.branches) == 1
+
+        ampl_map = res.branches[0].state.fock_amplitudes_map
+        assert len(ampl_map) == 1
+        assert ampl_map[expected_to_have_amplitude] == 1
+
+    @pytest.mark.parametrize("modes_with_one_photon, expected_amplitudes",
+        [([1], (1 / np.sqrt(2), 1 / np.sqrt(2))),
+        ([0], (1 / np.sqrt(2), -1 / np.sqrt(2))),
+    ])
+    def test_bosonic_hadamard_amplitudes(self, modes_with_one_photon, expected_amplitudes):
+        """Tests the bosonic Hadamard gate implementation."""
+        all_modes = [0, 1]
+        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+        instructions.extend(bosonic_hadamard(*all_modes))
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+
+        prog = pq.Program(instructions=instructions)
+        res = simulator.execute(prog, shots=shots)
+        amplitudes = res.branches[0].state.fock_amplitudes_map
+        assert len(amplitudes) == 2
+        zero_state = (0, 1)
+        one_state = (1, 0)
+        assert np.isclose(amplitudes[zero_state], expected_amplitudes[0])
+        assert np.isclose(amplitudes[one_state], expected_amplitudes[1])
+
 class TestDualRailEncoding:
     """Tests for the dual rail encoding functions."""
 
-    def test_dual_rail_encode_from_qiskit_qc(self):
-        """Tests the conversion from a Qiskit QuantumCircuit to a Piquasso Program with dual-rail encoding."""
-        qc = QuantumCircuit(2, 2)
+    def test_one_hadamard_one_measure(self):
+        """Tests converting one circuit with Hadamard and measurement."""
+        qc = QuantumCircuit(1, 1)
         qc.h(0)
-        qc.h(1)
-        qc.cz(0, 1)
-        qc.measure([0, 1], [0, 1])
+        qc.measure([0], [0])
 
-        prog = dual_rail_encode_from_qiskit_qc(qc)
+        prog = dual_rail_encode_from_qiskit(qc)
 
-        assert len(prog.instructions) == 15
-
-        create_photons = prog.instructions[0]
-        assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (0, 2, 4, 5)
-
-        vacuum = prog.instructions[1]
+        assert len(prog.instructions) == 5
+        vacuum = prog.instructions[0]
         assert isinstance(vacuum, pq.Vacuum)
-        assert vacuum.modes == (1, 3)
+        assert vacuum.modes == (0, 1)
 
-        # Check 1. Hadamard dual-rail encoded implementations
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        # Check Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
         assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (0, 2)
+        assert hadamard_1.modes == (0, 1)
         assert np.isclose(hadamard_1.params["theta"], np.pi/4)
         assert np.isclose(hadamard_1.params["phi"], 0)
 
         hadamard_2 = prog.instructions[3]
         assert isinstance(hadamard_2, pq.Phaseshifter)
         assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (2,)
+        assert hadamard_2.modes == (1,)
+
+        measurement = prog.instructions[4]
+        assert isinstance(measurement, pq.ParticleNumberMeasurement)
+        assert measurement.modes == (0, 1)
+
+    def test_two_hadamards_and_cz(self):
+        """Tests converting a circuit with two Hadamards and a CZ gate."""
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.h(1)
+        qc.cz(0, 1)
+        qc.measure([0, 1], [0, 1])
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 15
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1, 2, 3, 4, 5)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0, 2, 4, 5)
+
+        # Check 1. Hadamard dual-rail encoded implementations
+        hadamard_1 = prog.instructions[2]
+        assert isinstance(hadamard_1, pq.Beamsplitter)
+        assert hadamard_1.modes == (0, 1)
+        assert np.isclose(hadamard_1.params["theta"], np.pi/4)
+        assert np.isclose(hadamard_1.params["phi"], 0)
+
+        hadamard_2 = prog.instructions[3]
+        assert isinstance(hadamard_2, pq.Phaseshifter)
+        assert np.isclose(hadamard_2.params["phi"], np.pi)
+        assert hadamard_2.modes == (1,)
 
         # Check 2. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[4]
@@ -121,7 +222,7 @@ class TestDualRailEncoding:
         gate_name = unsupported_gate_data[0]
         getattr(qc, gate_name)(*unsupported_gate_data[1])
         with pytest.raises(ValueError, match=f"Unsupported instruction '{gate_name}' in the quantum circuit."):
-            dual_rail_encode_from_qiskit_qc(qc)
+            dual_rail_encode_from_qiskit(qc)
 
 
 class TestIntegrationWithSimulator:
@@ -142,5 +243,5 @@ class TestIntegrationWithSimulator:
 
         simulator = pq.PureFockSimulator(d=6, config=config, connector=connector)
 
-        prog = dual_rail_encode_from_qiskit_qc(qc)
+        prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
