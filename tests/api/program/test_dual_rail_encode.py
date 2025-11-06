@@ -245,4 +245,15 @@ class TestIntegrationWithSimulator:
 
         prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
-        print(res)
+
+        assert len(res.branches) == 4
+
+        outcomes = [
+            (1, 0, 1, 0),
+            (1, 0, 0, 1),
+            (0, 1, 1, 0),
+            (0, 1, 0, 1),
+        ]
+        for branch in res.branches:
+            assert branch.outcome in outcomes
+            assert np.isclose(branch.frequency, 0.25, atol=0.05)
