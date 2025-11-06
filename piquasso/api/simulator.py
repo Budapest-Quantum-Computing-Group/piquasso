@@ -21,8 +21,6 @@ from fractions import Fraction
 
 from piquasso.core import _mixins
 
-import numpy as np
-import piquasso as pq
 from piquasso.api.branch import Branch
 from piquasso.api.result import Result
 from piquasso.api.state import State
@@ -348,17 +346,6 @@ class Simulator(Computer, _mixins.CodeMixin):
                 The result of the simulation containing the resulting state and samples
                 if any measurement is specified in `program`.
         """
-        if not isinstance(program, Program):
-            if "qiskit" in type(program).__module__:
-                from piquasso.core.dual_rail_encoding import dual_rail_encode_from_qiskit
-                program = dual_rail_encode_from_qiskit(program)
-            else:
-                raise ValueError(
-                    "The 'program' argument should be a Piquasso program "
-                    f"or a Qiskit QuantumCircuit, but it is of type "
-                    f"'{type(program)}'."
-                )
-
 
         instructions: List[Instruction] = program.instructions
 
