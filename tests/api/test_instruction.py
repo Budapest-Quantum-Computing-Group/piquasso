@@ -23,6 +23,8 @@ import piquasso as pq
 
 from piquasso.api.exceptions import PiquassoException
 
+from unittest.mock import Mock
+
 
 def test_registering_instruction_by_subclassing():
     class OtherBeamsplitter(pq.Instruction):
@@ -153,4 +155,108 @@ def test_instruction_condition_evaluation_with_exception_raises_piquasso_excepti
         f"instruction '{instruction}': division by zero\nMake sure that the condition "
         f"is a callable that takes the tuple of measurement outcomes and returns a "
         f"boolean."
+    )
+
+
+def test_instruction_unresolved_parameter(FakeState, FakeConfig, FakeConnector):
+    class FakeMeasurement(pq.Measurement):
+        pass
+
+    def fake_measurement(state: FakeState, instruction: pq.Instruction, shots: int):
+        return [
+            pq.api.branch.Branch(state=state, frequency=Fraction(3, 10), outcome=(0,)),
+            pq.api.branch.Branch(state=state, frequency=Fraction(7, 10), outcome=(1,)),
+        ]
+
+    class CustomInstruction(pq.Instruction):
+        def __init__(self, param):
+            super().__init__(params=dict(param=param))
+
+    zero_branch_state = Mock()
+    one_branch_state = Mock()
+
+    def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
+        if instruction.params["param"] == 0:
+            return [pq.api.branch.Branch(state=zero_branch_state)]
+        else:
+            return [pq.api.branch.Branch(state=one_branch_state)]
+
+    class FakeSimulator(pq.Simulator):
+        _state_class = FakeState
+
+        _config_class = FakeConfig
+
+        _instruction_map = {
+            CustomInstruction: fake_calculation,
+            FakeMeasurement: fake_measurement,
+        }
+
+        _default_connector_class = FakeConnector
+
+        _measurement_classes_allowed_mid_circuit = FakeMeasurement
+
+    instruction = CustomInstruction(param=lambda outcomes: outcomes[-1])
+
+    simulator = FakeSimulator(d=1)
+
+    result = simulator.execute_instructions([FakeMeasurement(), instruction], shots=10)
+
+    for branch in result.branches:
+        if branch.outcome == (0,):
+            assert branch.state == zero_branch_state
+        elif branch.outcome == (1,):
+            assert branch.state == one_branch_state
+
+
+def test_instruction_faulty_unresolved_parameter_raises_InvalidParameter(
+    FakeState, FakeConfig, FakeConnector
+):
+    class FakeMeasurement(pq.Measurement):
+        pass
+
+    def fake_measurement(state: FakeState, instruction: pq.Instruction, shots: int):
+        return [
+            pq.api.branch.Branch(state=state, frequency=Fraction(3, 10), outcome=(0,)),
+            pq.api.branch.Branch(state=state, frequency=Fraction(7, 10), outcome=(1,)),
+        ]
+
+    class CustomInstruction(pq.Instruction):
+        def __init__(self, param):
+            super().__init__(params=dict(param=param))
+
+    zero_branch_state = Mock()
+    one_branch_state = Mock()
+
+    def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
+        if instruction.params["param"] == 0:
+            return [pq.api.branch.Branch(state=zero_branch_state)]
+        else:
+            return [pq.api.branch.Branch(state=one_branch_state)]
+
+    class FakeSimulator(pq.Simulator):
+        _state_class = FakeState
+
+        _config_class = FakeConfig
+
+        _instruction_map = {
+            CustomInstruction: fake_calculation,
+            FakeMeasurement: fake_measurement,
+        }
+
+        _default_connector_class = FakeConnector
+
+        _measurement_classes_allowed_mid_circuit = FakeMeasurement
+
+    instruction = CustomInstruction(param=lambda outcomes: outcomes[-1] / 0)
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(PiquassoException) as exc:
+        simulator.execute_instructions([FakeMeasurement(), instruction], shots=10)
+
+    assert exc.value.args[0] == (
+        f"An error occurred when resolving the parameter 'param' for the instruction "
+        f"'{instruction}': division by zero\n"
+        "Make sure that the parameter is a callable that takes the tuple of "
+        "measurement outcomes and returns a float."
     )

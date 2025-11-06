@@ -272,7 +272,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         self, instruction: Instruction
     ) -> Instruction:
         if isinstance(instruction, BatchInstruction):
-            instruction._extra_params["execute"] = self.execute
+            instruction._execute = self.execute
 
         return instruction
 
@@ -297,6 +297,8 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         instruction = self._maybe_postprocess_batch_instruction(instruction)
 
+        is_instruction_resolved = instruction._is_resolved()
+
         new_branches = []
 
         if (
@@ -316,6 +318,9 @@ class Simulator(Computer, _mixins.CodeMixin):
                 new_branches.append(branch)
                 continue
 
+            if not is_instruction_resolved:
+                instruction._resolve_params(outcomes=branch.outcome)
+
             current_shots = int(branch.frequency * shots) if shots is not None else None
 
             subbranches = simulation_step(
@@ -333,6 +338,9 @@ class Simulator(Computer, _mixins.CodeMixin):
                 subbranch.frequency *= branch.frequency
 
             new_branches.extend(subbranches)
+
+            if not is_instruction_resolved:
+                instruction._unresolve_params()
 
         return new_branches
 

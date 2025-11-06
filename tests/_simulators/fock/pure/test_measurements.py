@@ -508,3 +508,41 @@ def test_conditional_squeezing():
     )
 
     assert expected_squeezed_state == actual_squeezed_state
+
+
+def test_unresolved_squeezing():
+    def f(x):
+        return 0.01 * x[-1] ** 2
+
+    cutoff = 7
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 3),
+            pq.StateVector([1, 1]) * np.sqrt(1 / 3),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r=f).on_modes(0),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(
+        d=2, config=pq.Config(cutoff=cutoff, seed_sequence=123)
+    )
+
+    result = simulator.execute(program, shots=10)
+
+    for branch in result.branches:
+        expected_state = (
+            pq.PureFockSimulator(
+                d=1, config=pq.Config(cutoff=cutoff - branch.outcome[0])
+            )
+            .execute_instructions(
+                [
+                    pq.StateVector([2 - branch.outcome[0]]),
+                    pq.Squeezing(r=f(branch.outcome)),
+                ]
+            )
+            .state
+        )
+        assert branch.state == expected_state

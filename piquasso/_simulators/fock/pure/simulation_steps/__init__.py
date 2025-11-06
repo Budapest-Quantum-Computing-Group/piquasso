@@ -55,7 +55,7 @@ from piquasso._math.fock import (
 from piquasso.instructions import gates
 
 from piquasso.api.branch import Branch
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Instruction, BatchInstruction
 from piquasso.api.connector import BaseConnector
 from piquasso._math.validations import validate_occupation_numbers
 from piquasso._utils import sample_from_probability_map
@@ -485,10 +485,10 @@ def _add_occupation_number_basis(  # type: ignore
 
 
 def batch_prepare(
-    state: PureFockState, instruction: Instruction, shots: int
+    state: PureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
-    execute = instruction._all_params["execute"]
+    execute = instruction._execute
 
     state_vectors = [
         execute(subprogram, shots).state.state_vector for subprogram in subprograms
@@ -504,10 +504,10 @@ def batch_prepare(
 
 
 def batch_apply(
-    state: BatchPureFockState, instruction: Instruction, shots: int
+    state: BatchPureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
-    execute = instruction._all_params["execute"]
+    execute = instruction._execute
 
     d = state.d
     connector = state._connector

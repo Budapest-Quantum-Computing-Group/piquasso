@@ -154,18 +154,24 @@ class Thermal(Preparation):
         Raises:
             InvalidParameter: If the mean photon numbers are not positive real numbers.
         """
+
+        super().__init__(params=dict(mean_photon_numbers=mean_photon_numbers))
+
+    def _validate(self):
+        mean_photon_numbers = self.params["mean_photon_numbers"]
+
         if not all_real_and_positive(mean_photon_numbers):
             raise InvalidParameter(
                 "The mean photon numbers must be positive real numbers: "
                 f"mean_photon_numbers: {mean_photon_numbers}"
             )
 
+    def _get_computed_params(self) -> dict:
+        mean_photon_numbers = self.params["mean_photon_numbers"]
+
         cov = np.diag(2 * np.repeat(np.array(mean_photon_numbers), 2) + 1)
 
-        super().__init__(
-            params=dict(mean_photon_numbers=mean_photon_numbers),
-            extra_params=dict(cov=cov),
-        )
+        return dict(cov=cov)
 
 
 class StateVector(Preparation, _mixins.WeightMixin):
