@@ -51,6 +51,20 @@ def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
         instructions.append(pq.Create().on_modes(*modes_with_one_photon))
     return instructions
 
+def phase_gate_bosonic(theta, mode):
+    """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: The phase angle.
+        mode: The first mode of the bosonic qubit (the second mode is mode + 1).
+    Returns:
+        A list of Piquasso instructions implementing the phase gate.
+    """
+    instructions = []
+    if not np.isclose(theta, 0.0):
+        instructions.append(pq.Phaseshifter(theta).on_modes(mode))
+    return instructions
+
 def bosonic_hadamard(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
@@ -89,10 +103,12 @@ def cz_on_two_bosonic_qubits(modes):
     return instructions
 
 def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
-    # TODO: Validate qc such that it is only MBQC with H and CZ gates (for now)
+
+    supported_instructions = {"h", "cz", "p", "measure"}
+
     num_cz = 0
     for instruction in qc.data:
-        if instruction.name not in ["h", "cz", "measure"]:
+        if instruction.name not in supported_instructions:
             raise ValueError(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
         if instruction.name == "cz":
             num_cz += 1
@@ -128,6 +144,9 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
             pq_instruction = cz_on_two_bosonic_qubits(mode_indices + aux_modes_this_cz)
             instructions.extend(pq_instruction)
             cz_idx += 1
+        elif instruction.name == "p":
+            mode = qubit_indices[0]
+            instructions.extend(phase_gate_bosonic(instruction.params, mode))
         elif instruction.name == "measure":
             pq_instruction = pq.ParticleNumberMeasurement().on_modes(2 * qubit_indices[0], 2 * qubit_indices[0] + 1)
             instructions.append(pq_instruction)

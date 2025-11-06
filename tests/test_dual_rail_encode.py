@@ -123,6 +123,28 @@ class TestDualRailEncoding:
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
         assert measurement.modes == (0, 1)
 
+    def test_phase_gate(self):
+        """Tests converting a circuit with a phase gate."""
+        qc = QuantumCircuit(1, 1)
+        qc.p(np.pi, 0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 3
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        phase_shift = prog.instructions[2]
+        assert isinstance(phase_shift, pq.Phaseshifter)
+        assert np.isclose(phase_shift.params["phi"], np.pi)
+        assert phase_shift.modes == (0,)
+
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
         qc = QuantumCircuit(2, 2)
