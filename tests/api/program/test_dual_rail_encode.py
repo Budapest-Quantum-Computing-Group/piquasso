@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.core.dual_rail_encoding import bosonic_hadamard, cz_on_two_bosonic_qubits, dual_rail_encode_from_qiskit, prep_bosonic_qubits
+from piquasso.core.dual_rail_encoding import bosonic_hadamard, dual_rail_encode_from_qiskit, prep_bosonic_qubits
 from qiskit import QuantumCircuit
 import piquasso as pq
 import numpy as np
@@ -117,7 +117,7 @@ class TestDualRailEncoding:
         hadamard_2 = prog.instructions[3]
         assert isinstance(hadamard_2, pq.Phaseshifter)
         assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (1,)
+        assert hadamard_2.modes == (0,)
 
         measurement = prog.instructions[4]
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
@@ -153,18 +153,18 @@ class TestDualRailEncoding:
         hadamard_2 = prog.instructions[3]
         assert isinstance(hadamard_2, pq.Phaseshifter)
         assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (1,)
+        assert hadamard_2.modes == (0,)
 
         # Check 2. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[4]
         assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (1, 3)
+        assert hadamard_1.modes == (2, 3)
         assert np.isclose(hadamard_1.params["theta"], np.pi/4)
         assert np.isclose(hadamard_1.params["phi"], 0)
 
         hadamard_2 = prog.instructions[5]
         assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert hadamard_2.modes == (3,)
+        assert hadamard_2.modes == (2,)
         assert np.isclose(hadamard_2.params["phi"], np.pi)
         
         # Check CZ dual-rail encoded implementations
@@ -245,3 +245,4 @@ class TestIntegrationWithSimulator:
 
         prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
+        print(res)
