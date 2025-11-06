@@ -59,6 +59,20 @@ class Result:
         return f"Result(branches={self.branches}, config={self._config}, shots={self._shots})"  # noqa: E501
 
     @property
+    def outcome_map(self) -> dict:
+        """Returns a mapping from measurement outcomes to their frequencies and states.
+
+        Returns:
+            dict: A dictionary where the keys are the measurement outcomes, and the
+                values are dictionaries containing the frequency and the
+                post-measurement state corresponding to the outcome.
+        """
+        return {
+            branch.outcome: {"frequency": branch.frequency, "state": branch.state}
+            for branch in self.branches
+        }
+
+    @property
     def branches(self) -> List[Branch]:
         """Returns the list of branches obtained in the calculation.
 

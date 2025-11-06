@@ -202,3 +202,25 @@ def test_Result_get_counts_with_shots_None(FakeState):
         ),
     ):
         _ = result.get_counts()
+
+
+def test_result_outcome_map(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    f0 = 1 / 3
+    f1 = 2 / 3
+
+    branch1 = Branch(state=state1, outcome=(0, 1), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1, 0), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=None)
+
+    outcome_map = result.outcome_map
+
+    assert outcome_map == {
+        (0, 1): {"frequency": f0, "state": state1},
+        (1, 0): {"frequency": f1, "state": state2},
+    }
