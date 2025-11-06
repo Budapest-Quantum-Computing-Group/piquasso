@@ -1,5 +1,146 @@
 # Changelog
 
+## [7.0.0] - 2025-11-07
+
+### Added
+
+- `covariance_matrix` property for `fermionic.PureFockState`.
+- Validation for input occupation numbers in `StateVector`.
+- Tutorial for finding dense k-subgraphs using Gaussian Boson Sampling.
+- Support for mid-circuit measurements in a Piquasso program. Simple example:
+  ```py
+  import numpy as np
+  import piquasso as pq
+
+  with pq.Program() as program:
+      # Initialize all modes in the vacuum state.
+      pq.Q() | pq.Vacuum()
+
+      # Apply a two-mode squeezing gate between modes 0 and 1.
+      # The squeezing parameter r = log(1 + sqrt(2)) maximizes the probability of
+      # detecting 1.
+      pq.Q(0, 1) | pq.Squeezing2(r=np.log(1 + np.sqrt(2)))
+
+      # Postselect on detecting exactly one photon in mode 1.
+      # This heralds a single-photon–like non-Gaussian state on mode 0.
+      pq.Q(1) | pq.PostSelectPhotons((1,))
+
+      # Mix mode 0 (heralded state) and mode 2 (vacuum) on a 50:50 beamsplitter.
+      pq.Q(0, 2) | pq.Beamsplitter5050()
+
+  # Run the program on a 3-mode Fock simulator (cutoff auto-defaults, can be set via Config).
+  result = pq.PureFockSimulator(d=3).execute(program)
+  ```
+- Conditional instruction execution via the `Instruction.when(<condition>)` method.
+  Simple example:
+  ```py
+  import numpy as np
+  import piquasso as pq
+
+  with pq.Program() as program:
+      # Start in |1,0,0>
+      pq.Q(0, 1, 2) | pq.StateVector((1, 0, 0))
+
+      # Split the photon between modes 0 and 1
+      pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi/4)
+
+      # Mid-circuit photon detection on mode 0
+      pq.Q(0) | pq.ParticleNumberMeasurement()
+
+      # Adaptive router: if we detected 0 on mode 0, swap mode 1 to mode 2
+      pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi/2).when(
+          lambda outcomes: outcomes[-1] == 0
+      )
+
+      # Final photon detection on remaining modes
+      pq.Q(1, 2) | pq.ParticleNumberMeasurement()
+
+  res = pq.PureFockSimulator(d=3).execute(program, shots=20)
+  ```
+- Automatic inference of number of modes. Example:
+  ```py
+  import piquasso as pq
+
+  with pq.Program() as program:
+      pq.Q(0, 1) | pq.StateVector((2, 0))
+      pq.Q(0, 1) | pq.Beamsplitter5050()
+
+  simulator = pq.PureFockSimulator()  # Number of modes not specified!
+
+  result = simulator.execute(program)
+  ```
+- Acquire exact probability distributions with the `shots=None` setting.
+- Runtime resolution of instruction parameters, as demonstrated by the following
+  simple example:
+  ```py
+  import numpy as np
+  import piquasso as pq
+
+  # Create a program with explicit instruction list.
+  program = pq.Program(
+      instructions=[
+          # Prepare a superposition of three two-mode Fock states:
+          # |0,2>, |1,1>, and |2,0>, each with equal amplitude.
+          pq.StateVector([0, 2]) * np.sqrt(1 / 3),
+          pq.StateVector([1, 1]) * np.sqrt(1 / 3),
+          pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+          # Measure photon number on mode 1 (mid-circuit measurement).
+          pq.ParticleNumberMeasurement().on_modes(1),
+          # Apply an unresolved squeezing gate on mode 0.
+          # The squeezing parameter r is determined *at runtime*
+          # from the measurement outcome (x[-1] = last outcome value).
+          pq.Squeezing(r=lambda x: 0.1 * x[-1] ** 2).on_modes(0),
+      ]
+  )
+
+  # Run the program on a 2-mode Fock simulator for 10 random measurement shots.
+  result = pq.PureFockSimulator(d=2).execute(program, shots=10)
+  ```
+- `piquasso.dual_rail_encoding` module. Simple example usage:
+  ```py
+  from piquasso.dual_rail_encoding import dual_rail_encode_from_qiskit
+  from qiskit import QuantumCircuit
+  import piquasso as pq
+  import numpy as np
+
+  qc = QuantumCircuit(2, 2)
+  qc.h(0)
+  qc.h(1)
+  qc.cz(0, 1)
+  qc.measure([0, 1], [0, 1])
+
+  simulator = pq.PureFockSimulator(config=pq.Config(cutoff=8))
+
+  program = dual_rail_encode_from_qiskit(qc)
+  result = simulator.execute(program, shots=1000)
+  ```
+
+### Fixed
+
+- `sqrtm` changed behavior in SciPy version 1.16, which cause the Takagi decomposition
+  to fail in rare cases, therefore, the algorithm got rewritten to be more robust.
+
+### Breaking changes
+
+- Remove `postselect_modes` input argument for `PostSelectPhotons`, `pq.Q`/`on_modes`
+  to be used instead.
+- `ParticleNumberMeasurement` now returns the unmeasured reduced state of the
+  post-measurement state in the `Result` object.
+- The following measurements no longer return a state object in the `Result` object
+  (corresponding to the pre-measurement state), but `None` instead:
+  - `HomodyneMeasurement` on `PureFockSimulator`;
+  - `ParticleNumberMeasurement`, `ThresholdMeasurement` on `GaussianSimulator`;
+  - `ParticleNumberMeasurement` on `SamplingSimulator`.
+- A calculation function (which has to be registered in `_instruction_map`) now needs
+  to return with a list of `Branch` objects, instead of a single `Result` object. This
+  is only relevant for a user using the API directly.
+- During execution, the list of instructions were modified previously for resolving
+  `modes`, when it is not specified. With this change, the `modes` parameter for each
+  instruction is left untouched.
+- The list of samples got a fixed type `List[Tuple[Union[int, float],...]]` (previously
+  one could get numpy arrays as well).
+
+
 ## [6.2.0] - 2025-09-03
 
 ### Added

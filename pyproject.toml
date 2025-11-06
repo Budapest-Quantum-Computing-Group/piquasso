@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "piquasso"
-version = "6.2.0"
+version = "7.0.0"
 description = "A Photonic Quantum Computer Simulator written in Python and C++."
 readme = "README.md"
 license = { file = "LICENSE.txt" }
