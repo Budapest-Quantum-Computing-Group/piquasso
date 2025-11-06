@@ -325,6 +325,29 @@ def test_ParticleNumberMeasurement_resulting_state():
     assert np.isclose(sum(result.state.fock_probabilities), 1)
 
 
+def test_ParticleNumberMeasurement_shots_None():
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    p = 1 / np.pi
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) * np.sqrt(p)
+        pq.Q() | pq.StateVector([1, 0]) * np.sqrt(1 - p)
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program, shots=None)
+
+    branches = result.branches
+    assert len(branches) == 2
+
+    assert branches[0].outcome == (0,)
+    assert np.isclose(branches[0].frequency, p)
+
+    assert branches[1].outcome == (1,)
+    assert np.isclose(branches[1].frequency, 1 - p)
+
+
 class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 

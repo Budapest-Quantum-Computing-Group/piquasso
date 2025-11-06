@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 import pytest
 
 import piquasso as pq
@@ -150,3 +152,53 @@ def test_Result_repr(FakeState):
         repr(result)
         == "Result(branches=[Branch(state=FakeState(d=3, config=Config(), connector=NumpyConnector()), outcome=(0,), frequency=498), Branch(state=FakeState(d=3, config=Config(), connector=NumpyConnector()), outcome=(1,), frequency=502)], config=Config(), shots=1000)"  # noqa: E501
     )
+
+
+def test_Result_samples_with_shots_None(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    f0 = 1 / 3
+    f1 = 2 / 3
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1,), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=None)
+
+    with pytest.raises(
+        pq.api.exceptions.NotImplementedCalculation,
+        match=re.escape(
+            "The 'Result.samples' property is not available with the exact probability "
+            "distribution (i.e., when 'shots=None' is used in the simulation). Please "
+            "execute the program with a finite number of shots to obtain samples."
+        ),
+    ):
+        _ = result.samples
+
+
+def test_Result_get_counts_with_shots_None(FakeState):
+    state1 = FakeState(d=3, connector=pq.NumpyConnector())
+    state2 = FakeState(d=3, connector=pq.NumpyConnector())
+
+    f0 = 1 / 3
+    f1 = 2 / 3
+
+    branch1 = Branch(state=state1, outcome=(0,), frequency=f0)
+    branch2 = Branch(state=state2, outcome=(1,), frequency=f1)
+
+    branches = [branch1, branch2]
+
+    result = Result(branches=branches, config=pq.Config(), shots=None)
+
+    with pytest.raises(
+        pq.api.exceptions.NotImplementedCalculation,
+        match=re.escape(
+            "The 'Result.samples' property is not available with the exact probability "
+            "distribution (i.e., when 'shots=None' is used in the simulation). Please "
+            "execute the program with a finite number of shots to obtain samples."
+        ),
+    ):
+        _ = result.get_counts()

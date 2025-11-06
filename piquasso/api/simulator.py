@@ -15,7 +15,7 @@
 
 import abc
 
-from typing import Optional, List, Type, Dict, Callable, Tuple
+from typing import Optional, List, Type, Dict, Callable, Tuple, Union
 
 from fractions import Fraction
 
@@ -76,6 +76,9 @@ class Simulator(Computer, _mixins.CodeMixin):
     _config_class: Type[Config] = Config
     _default_connector_class: Type[BaseConnector]
     _measurement_classes_allowed_mid_circuit: Tuple[Type[Measurement], ...] = tuple()
+    _measurement_classes_allowed_with_shots_none: Tuple[Type[Measurement], ...] = (
+        tuple()
+    )
 
     def __init__(
         self,
@@ -296,13 +299,29 @@ class Simulator(Computer, _mixins.CodeMixin):
 
         new_branches = []
 
+        if (
+            isinstance(instruction, Measurement)
+            and shots is None
+            and not isinstance(
+                instruction, self._measurement_classes_allowed_with_shots_none
+            )
+        ):
+            raise InvalidParameter(
+                f"The measurement '{type(instruction).__name__}' instruction does not "
+                f"support 'shots=None' using '{self.__class__.__name__}'."
+            )
+
         for branch in branches:
             if not instruction._is_condition_met(branch.outcome):
                 new_branches.append(branch)
                 continue
 
+            current_shots = int(branch.frequency * shots) if shots is not None else None
+
             subbranches = simulation_step(
-                branch.state, instruction, shots=int(branch.frequency * shots)
+                branch.state,
+                instruction,
+                shots=current_shots,
             )
 
             for subbranch in subbranches:
@@ -352,7 +371,7 @@ class Simulator(Computer, _mixins.CodeMixin):
         self,
         instructions: List[Instruction],
         initial_state: Optional[State] = None,
-        shots: int = 1,
+        shots: Union[int, None] = 1,
     ) -> Result:
         """Executes the specified instruction list.
 
@@ -362,10 +381,12 @@ class Simulator(Computer, _mixins.CodeMixin):
                 A state to execute the instructions on. Defaults to the state created by
                 :meth:`create_initial_state`.
             shots (int, optional):
-                The number of times the program should be execute. Defaults to 1.
+                The number of times the program should be execute. If it is `None`, the
+                simulator will execute the program once, returning the exact probability
+                distribution instead of samples. Defaults to 1.
 
         Raises:
-            InvalidParameter: When `shots` is not a positive integer.
+            InvalidParameter: When `shots` is not a positive integer or not `None`.
             InvalidSimulation: When the number of modes cannot be inferred and `d` was
                 not provided during simulator initialization.
 
@@ -375,9 +396,12 @@ class Simulator(Computer, _mixins.CodeMixin):
                 if any measurement is specified in `instructions`.
         """
 
-        if not isinstance(shots, int) or shots < 1:
+        is_shots_positive_integer = isinstance(shots, int) and shots > 0
+
+        if not is_shots_positive_integer and shots is not None:
             raise InvalidParameter(
-                f"The number of shots should be a positive integer: shots={shots}."
+                f"The number of shots should be a positive integer or 'None': "
+                f"shots={shots}."
             )
 
         d = self._try_to_infer_d_from_instructions(instructions)
@@ -393,7 +417,10 @@ class Simulator(Computer, _mixins.CodeMixin):
         return self._do_execute_instructions(state, instructions, shots, d)
 
     def execute(
-        self, program: Program, shots: int = 1, initial_state: Optional[State] = None
+        self,
+        program: Program,
+        shots: Union[int, None] = 1,
+        initial_state: Optional[State] = None,
     ) -> Result:
         """Executes the specified program.
 
@@ -403,10 +430,12 @@ class Simulator(Computer, _mixins.CodeMixin):
                 A state to execute the instructions on. Defaults to the state created by
                 :meth:`create_initial_state`.
             shots (int, optional):
-                The number of times the program should execute. Defaults to 1.
+                The number of times the program should execute. If it is `None`, the
+                simulator will execute the program once, returning the exact probability
+                distribution instead of samples. Defaults to 1.
 
         Raises:
-            InvalidParameter: When `shots` is not a positive integer.
+            InvalidParameter: When `shots` is not a positive integer or not `None`.
 
         Returns:
             Result:

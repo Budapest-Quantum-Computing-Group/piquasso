@@ -173,6 +173,29 @@ def test_measure_particle_number_with_multiple_shots():
     assert len(result.samples) == shots
 
 
+def test_ParticleNumberMeasurement_shots_None():
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    p = 1 / np.pi
+
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=[0, 1], bra=[0, 1]) * p
+        pq.Q() | pq.DensityMatrix(ket=[1, 0], bra=[1, 0]) * (1 - p)
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program, shots=None)
+
+    branches = result.branches
+    assert len(branches) == 2
+
+    assert branches[0].outcome == (0,)
+    assert np.isclose(branches[0].frequency, p)
+
+    assert branches[1].outcome == (1,)
+    assert np.isclose(branches[1].frequency, 1 - p)
+
+
 class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 

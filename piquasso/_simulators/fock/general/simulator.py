@@ -125,3 +125,7 @@ class FockSimulator(BuiltinSimulator):
     _state_class = FockState
 
     _default_connector_class = NumpyConnector
+
+    _measurement_classes_allowed_with_shots_none = (
+        measurements.ParticleNumberMeasurement,
+    )
