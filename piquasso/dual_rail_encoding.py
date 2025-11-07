@@ -51,6 +51,25 @@ def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
         instructions.append(pq.Create().on_modes(*modes_with_one_photon))
     return instructions
 
+def paulix_bosonic(mode1, mode2):
+    """Applies a Pauli-X gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        mode: The mode of the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(np.pi / 2).on_modes(mode1, mode2))
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
+    return instructions
+
+def pauliz_bosonic(mode1, mode2):
+    """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        mode: The mode of the bosonic qubit.
+    """
+    return phase_gate_bosonic(np.pi, mode1)
+
 def phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
 
@@ -65,7 +84,7 @@ def phase_gate_bosonic(theta, mode):
         instructions.append(pq.Phaseshifter(theta).on_modes(mode))
     return instructions
 
-def bosonic_hadamard(mode1, mode2):
+def hadamard_bosonic(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
@@ -136,7 +155,15 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
         qubit_indices = [qc.find_bit(q).index for q in instruction.qubits]
         if instruction.name == "h":
             qubit = qubit_indices[0]
-            pq_instruction = bosonic_hadamard(2 * qubit, 2 * qubit + 1)
+            pq_instruction = hadamard_bosonic(2 * qubit, 2 * qubit + 1)
+            instructions.extend(pq_instruction)
+        elif instruction.name == "x":
+            qubit = qubit_indices[0]
+            pq_instruction = paulix_bosonic(2 * qubit, 2 * qubit + 1)
+            instructions.extend(pq_instruction)
+        elif instruction.name == "z":
+            qubit = qubit_indices[0]
+            pq_instruction = pauliz_bosonic(2 * qubit, 2 * qubit + 1)
             instructions.extend(pq_instruction)
         elif instruction.name == "cz":
             mode_indices = [q * 2 for q in qubit_indices]
@@ -150,6 +177,8 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
         elif instruction.name == "measure":
             pq_instruction = pq.ParticleNumberMeasurement().on_modes(2 * qubit_indices[0], 2 * qubit_indices[0] + 1)
             instructions.append(pq_instruction)
+        elif instruction.name == "if_else":
+            raise ValueError("Conditional operations are not supported in dual-rail encoding.")
     return pq.Program(instructions=instructions)
 
 def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
