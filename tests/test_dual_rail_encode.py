@@ -328,6 +328,29 @@ class TestIntegrationWithSimulator:
             assert branch.outcome in outcomes
             assert np.isclose(branch.frequency, 0.25, atol=0.05)
 
+    def test_conditional_paulix(self):
+        """Tests that a Qiskit circuit can be executed."""
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0], [0])
+        with qc.if_test((0, 0)):
+            qc.x(1)
+
+        qc.measure([1], [1])
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=4, config=config, connector=connector)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert len(res.branches) == 1
+        assert res.branches[0].outcome in (1, 0, 0, 1)
+        assert np.isclose(branch.frequency, 0.25, atol=0.05)
+
 raw_samples1 = [
     (0, 1),
     (1, 0),

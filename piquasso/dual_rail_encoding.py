@@ -121,17 +121,8 @@ def cz_on_two_bosonic_qubits(modes):
     )
     return instructions
 
-def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
-
-    supported_instructions = {"h", "cz", "p", "measure"}
-
-    num_cz = 0
-    for instruction in qc.data:
-        if instruction.name not in supported_instructions:
-            raise ValueError(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
-        if instruction.name == "cz":
-            num_cz += 1
-
+def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit", with_state_prep=True) ->  pq.Program:
+    num_cz = sum(1 for instruction in qc.data if instruction.name == "cz")
     num_bosonic_qubits = qc.num_qubits
 
     # |0> = [0, 1]
@@ -145,10 +136,9 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
     instructions = []
 
     modes_with_one_photon = modes_with_one_photon + aux_modes
-
-    preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-
-    instructions.extend(preparations)
+    if with_state_prep:
+        preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+        instructions.extend(preparations)
 
     cz_idx = 0
     for instruction in qc.data:
@@ -178,8 +168,16 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
             pq_instruction = pq.ParticleNumberMeasurement().on_modes(2 * qubit_indices[0], 2 * qubit_indices[0] + 1)
             instructions.append(pq_instruction)
         elif instruction.name == "if_else":
-            raise ValueError("Conditional operations are not supported in dual-rail encoding.")
-    return pq.Program(instructions=instructions)
+            true_branch_instructions = instruction.operation.params[0]
+
+            cond = instruction.operation.condition
+            condition = lambda outcomes: outcomes[cond[0]._index] == cond[1]
+            encoded_true_branch_instructions = _encode_dual_rail_from_qiskit(true_branch_instructions, with_state_prep=False)
+            for instr in encoded_true_branch_instructions:
+                instructions.append(instr.when(condition))
+        else:
+            raise ValueError(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
+    return instructions
 
 def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
     try:
@@ -191,7 +189,8 @@ def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Progra
             "The input argument to the dual_rail_encode_from_qiskit function should " \
             f"be a Qiskit QuantumCircuit, but it is of type '{type(quantum_circuit)}'."
         )
-    return _encode_dual_rail_from_qiskit(quantum_circuit)
+    instructions = _encode_dual_rail_from_qiskit(quantum_circuit)
+    return pq.Program(instructions=instructions)
 
 def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]:
     """Post-processes the raw samples from dual-rail encoded bosonic qubits.
