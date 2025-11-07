@@ -13,29 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+r"""Dual-rail encoding utilities for bosonic qubits.
+
+This module provides functions to encode qubit circuits defined in Qiskit into dual-rail
+bosonic qubit Piquasso programs.
+
+For the dual-rail encoding, the following convention is used:
+
+.. math::
+    |0\rangle_{\text{qubit}} = \ket{0, 1}_{\text{qumodes}} \\
+    |1\rangle_{\text{qubit}} = \ket{1, 0}_{\text{qumodes}}
+"""
+
 import piquasso as pq
 import numpy as np
 
-# Encoding used
-# --------------
-#
-# Dual-rail encoding of a single bosonic qubit into two bosonic modes:
-#
-# |0> = |0, 1>
-# |1> = |1, 0>
-#
-# where |n, m> denotes n photons in the first mode and m photons in the second mode and
-# the left-hand side of each equation corresponds to the bosonic qubit states.
 zero_bosonic_qubit_state = [0, 1]
 one_bosonic_qubit_state = [1, 0]
 
 def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
-    """Prepares a bosonic qubits in the specified basis states.
+    r"""Prepares a bosonic qubits in the specified basis states.
 
-    The following encoding is being used:
+    The following dual-rail encoding convention is being used:
 
-          |0> = [0, 1]
-          |1> = [1, 0]
+    .. math::
+          |0\rangle_{\text{qubit}} = \ket{0, 1}_{\text{qumodes}} \\
+          |1\rangle_{\text{qubit}} = \ket{1, 0}_{\text{qumodes}}
 
     Args:
         all_modes: All the modes to first prepare in the vacuum state.
