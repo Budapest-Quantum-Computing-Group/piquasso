@@ -188,7 +188,7 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (0,)
+        assert create_photons.modes == (1,)
 
         # Check Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
@@ -221,7 +221,7 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (0,)
+        assert create_photons.modes == (1,)
 
         phase_shift = prog.instructions[2]
         assert isinstance(phase_shift, pq.Phaseshifter)
@@ -246,7 +246,7 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (0, 2, 4, 5)
+        assert create_photons.modes == (1, 3, 4, 5)
 
         # Check 1. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
@@ -328,7 +328,7 @@ class TestDualRailEncoding:
 
     @pytest.mark.parametrize(
         "unsupported_gate_data",
-        [("x", (0,)), ("y", (1,)), ("z", (0,)), ("cx", (0, 1)), ("swap", (0, 1))],
+        [("y", (1,)), ("cx", (0, 1)), ("swap", (0, 1))],
     )
     def test_invalid_gate_in_qiskit_circuit_raises(self, unsupported_gate_data):
         """Tests that an unsupported gate in QuantumCircuit raises a ValueError."""

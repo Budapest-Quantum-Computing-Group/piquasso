@@ -217,14 +217,15 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:  # noqa: 
     for instr_qiskit in qc.data:
         qubit_indices = [qc.find_bit(q).index for q in instr_qiskit.qubits]
 
-        qubit = qubit_indices[0]
-        mode1 = 2 * qubit
-        mode2 = 2 * qubit + 1
-
         if instr_qiskit.name == "cz":
+            mode1 = 2 * qubit_indices[0]
+            mode2 = 2 * qubit_indices[1]
             aux_modes = [aux_modes_all[cz_idx * 2], aux_modes_all[cz_idx * 2 + 1]]
             cz_idx += 1
         else:
+            qubit = qubit_indices[0]
+            mode1 = 2 * qubit
+            mode2 = 2 * qubit + 1
             aux_modes = []
         mapped_instructions = _map_qiskit_instr_to_pq(
             instr_qiskit, mode1, mode2, aux_modes
