@@ -38,7 +38,7 @@ _zero_bosonic_qubit_state = [0, 1]
 _one_bosonic_qubit_state = [1, 0]
 
 
-def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
+def _prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
     r"""Prepares a bosonic qubits in the specified basis states.
 
     The following dual-rail encoding convention is being used:
@@ -216,7 +216,7 @@ def _encode_dual_rail_from_qiskit(qc):
     instructions = []
 
     modes_with_one_photon = modes_with_one_photon + aux_modes_all
-    preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+    preparations = _prep_bosonic_qubits(all_modes, modes_with_one_photon)
     instructions.extend(preparations)
 
     cz_idx = 0

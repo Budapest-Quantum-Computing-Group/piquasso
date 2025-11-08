@@ -15,63 +15,12 @@
 
 from piquasso.dual_rail_encoding import (
     dual_rail_encode_from_qiskit,
-    prep_bosonic_qubits,
     get_bosonic_qubit_samples,
 )
 from qiskit import QuantumCircuit
 import piquasso as pq
 import numpy as np
 import pytest
-
-
-class TestDualRailEncodingInstructions:
-    """Tests for the instructions used for dual rail encoding."""
-
-    def test_prep_bosonic_qubit_instructions(self):
-        """Tests the bosonic qubit preparation instruction."""
-        all_modes = [0, 1]
-        modes_with_one_photon = [0]
-        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        assert len(instructions) == 2
-
-        vacuum = instructions[0]
-        assert isinstance(vacuum, pq.Vacuum)
-        assert vacuum.modes == (0, 1)
-
-        create_photon = instructions[1]
-        assert isinstance(create_photon, pq.Create)
-        assert create_photon.modes == (0,)
-
-    @pytest.mark.parametrize(
-        "all_modes, modes_with_one_photon, expected_to_have_amplitude",
-        [
-            ([0, 1], [1], (0, 1)),
-            ([0, 1, 2, 3], [1, 3], (0, 1, 0, 1)),
-        ],
-    )
-    def test_prep_bosonic_qubits_amplitudes(
-        self, all_modes, modes_with_one_photon, expected_to_have_amplitude
-    ):
-        """Tests the amplitudes after bosonic qubit preparations."""
-        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        assert len(instructions) == 2
-
-        connector = pq.NumpyConnector()
-        cutoff = 8
-        config = pq.Config(cutoff=cutoff)
-        shots = 1000
-
-        simulator = pq.PureFockSimulator(
-            d=len(all_modes), config=config, connector=connector
-        )
-
-        prog = pq.Program(instructions=instructions)
-        res = simulator.execute(prog, shots=shots)
-        assert len(res.branches) == 1
-
-        ampl_map = res.branches[0].state.fock_amplitudes_map
-        assert len(ampl_map) == 1
-        assert ampl_map[expected_to_have_amplitude] == 1
 
 
 class TestDualRailEncoding:
