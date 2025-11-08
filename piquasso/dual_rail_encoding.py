@@ -29,16 +29,18 @@ For the dual-rail encoding, the following convention is used:
 import piquasso as pq
 import numpy as np
 
-import typing
+from typing import TYPE_CHECKING, List
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
 _zero_bosonic_qubit_state = [0, 1]
 _one_bosonic_qubit_state = [1, 0]
 
 
-def _prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
+def _prep_bosonic_qubits(
+    all_modes: List[int], modes_with_one_photon: List[int]
+) -> List[pq.Instruction]:
     r"""Prepares a bosonic qubits in the specified basis states.
 
     The following dual-rail encoding convention is being used:
@@ -263,7 +265,7 @@ def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Progra
     return pq.Program(instructions=instructions)
 
 
-def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]:
+def get_bosonic_qubit_samples(raw_samples_for_modes: List[tuple]) -> List[tuple]:
     """Post-processes the raw samples from dual-rail encoded bosonic qubits.
 
     Args:
