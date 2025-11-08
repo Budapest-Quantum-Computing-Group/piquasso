@@ -57,7 +57,7 @@ def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
     return instructions
 
 
-def paulix_bosonic(mode1, mode2):
+def _paulix_bosonic(mode1, mode2):
     """Applies a Pauli-X gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
@@ -69,16 +69,16 @@ def paulix_bosonic(mode1, mode2):
     return instructions
 
 
-def pauliz_bosonic(mode1, mode2):
+def _pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
         mode: The mode of the bosonic qubit.
     """
-    return phase_gate_bosonic(np.pi, mode1)
+    return _phase_gate_bosonic(np.pi, mode1)
 
 
-def phase_gate_bosonic(theta, mode):
+def _phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
@@ -93,14 +93,14 @@ def phase_gate_bosonic(theta, mode):
     return instructions
 
 
-def hadamard_bosonic(mode1, mode2):
+def _hadamard_bosonic(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
 
-def cz_on_two_bosonic_qubits(modes):
+def _cz_on_two_bosonic_qubits(modes):
     """Note: requires two auxiliary modes with one photon each."""
 
     # Knill's notation
@@ -154,19 +154,19 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
     instruction_name = qiskit_instruction.name
     instructions = []
     if instruction_name == "h":
-        pq_instruction = hadamard_bosonic(mode1, mode2)
+        pq_instruction = _hadamard_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "x":
-        pq_instruction = paulix_bosonic(mode1, mode2)
+        pq_instruction = _paulix_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "z":
-        pq_instruction = pauliz_bosonic(mode1, mode2)
+        pq_instruction = _pauliz_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "cz":
-        pq_instruction = cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
+        pq_instruction = _cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "p":
-        instructions.extend(phase_gate_bosonic(qiskit_instruction.params, mode1))
+        instructions.extend(_phase_gate_bosonic(qiskit_instruction.params, mode1))
     elif instruction_name == "measure":
         pq_instruction = pq.ParticleNumberMeasurement().on_modes(mode1, mode2)
         instructions.append(pq_instruction)

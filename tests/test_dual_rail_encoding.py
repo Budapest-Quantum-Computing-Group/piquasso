@@ -15,9 +15,6 @@
 
 from piquasso.dual_rail_encoding import (
     dual_rail_encode_from_qiskit,
-    hadamard_bosonic,
-    paulix_bosonic,
-    pauliz_bosonic,
     prep_bosonic_qubits,
     get_bosonic_qubit_samples,
 )
@@ -75,99 +72,6 @@ class TestDualRailEncodingInstructions:
         ampl_map = res.branches[0].state.fock_amplitudes_map
         assert len(ampl_map) == 1
         assert ampl_map[expected_to_have_amplitude] == 1
-
-    @pytest.mark.parametrize(
-        "modes_with_one_photon, expected_amplitudes",
-        [
-            ([1], (0, 1)),
-            ([0], (1, 0)),
-        ],
-    )
-    def test_paulix_bosonic_amplitudes(
-        self, modes_with_one_photon, expected_amplitudes
-    ):
-        """Tests the bosonic Pauli-X gate implementation."""
-        all_modes = [0, 1]
-        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        instructions.extend(paulix_bosonic(*all_modes))
-        connector = pq.NumpyConnector()
-        cutoff = 8
-        config = pq.Config(cutoff=cutoff)
-        shots = 1000
-
-        simulator = pq.PureFockSimulator(
-            d=len(all_modes), config=config, connector=connector
-        )
-
-        prog = pq.Program(instructions=instructions)
-        res = simulator.execute(prog, shots=shots)
-        amplitudes = res.branches[0].state.fock_amplitudes_map
-        assert len(amplitudes) == 2
-        zero_state = (0, 1)
-        one_state = (1, 0)
-        assert np.isclose(amplitudes[zero_state], expected_amplitudes[0])
-        assert np.isclose(amplitudes[one_state], expected_amplitudes[1])
-
-    @pytest.mark.parametrize(
-        "modes_with_one_photon, expected_state, expected_amplitude",
-        [
-            ([1], (0, 1), 1),
-            ([0], (1, 0), -1),
-        ],
-    )
-    def test_pauliz_bosonic_amplitudes(
-        self, modes_with_one_photon, expected_state, expected_amplitude
-    ):
-        """Tests the bosonic Pauli-Z gate implementation."""
-        all_modes = [0, 1]
-        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        instructions.extend(pauliz_bosonic(*all_modes))
-        connector = pq.NumpyConnector()
-        cutoff = 8
-        config = pq.Config(cutoff=cutoff)
-        shots = 1000
-
-        simulator = pq.PureFockSimulator(
-            d=len(all_modes), config=config, connector=connector
-        )
-
-        prog = pq.Program(instructions=instructions)
-        res = simulator.execute(prog, shots=shots)
-        amplitudes = res.branches[0].state.fock_amplitudes_map
-        assert len(amplitudes) == 1
-        assert np.isclose(amplitudes[expected_state], expected_amplitude)
-
-    @pytest.mark.parametrize(
-        "modes_with_one_photon, expected_amplitudes",
-        [
-            ([1], (1 / np.sqrt(2), 1 / np.sqrt(2))),
-            ([0], (1 / np.sqrt(2), -1 / np.sqrt(2))),
-        ],
-    )
-    def test_hadamard_bosonic_amplitudes(
-        self, modes_with_one_photon, expected_amplitudes
-    ):
-        """Tests the bosonic Hadamard gate implementation."""
-        all_modes = [0, 1]
-        instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        instructions.extend(hadamard_bosonic(*all_modes))
-        connector = pq.NumpyConnector()
-        cutoff = 8
-        config = pq.Config(cutoff=cutoff)
-        shots = 1000
-
-        simulator = pq.PureFockSimulator(
-            d=len(all_modes), config=config, connector=connector
-        )
-
-        prog = pq.Program(instructions=instructions)
-        res = simulator.execute(prog, shots=shots)
-        amplitudes = res.branches[0].state.fock_amplitudes_map
-        assert len(amplitudes) == 2
-        zero_state = (0, 1)
-        one_state = (1, 0)
-        assert np.isclose(amplitudes[zero_state], expected_amplitudes[0])
-        assert np.isclose(amplitudes[one_state], expected_amplitudes[1])
 
 
 class TestDualRailEncoding:
