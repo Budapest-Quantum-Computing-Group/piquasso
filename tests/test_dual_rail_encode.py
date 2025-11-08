@@ -328,13 +328,18 @@ class TestIntegrationWithSimulator:
             assert branch.outcome in outcomes
             assert np.isclose(branch.frequency, 0.25, atol=0.05)
 
-    def test_conditional_paulix(self):
-        """Tests that a Qiskit circuit can be executed."""
+    @pytest.mark.parametrize("one_state, expected_outcome",
+                             [(False, (0, 1, 1, 0)),
+                              (True, (1, 0, 1, 0))
+                             ])
+    def test_conditional_paulix(self, one_state, expected_outcome):
+        """Tests that a Qiskit PauliX gate can be conditioned on measurement outcomes."""
         qc = QuantumCircuit(2, 2)
+        if one_state:
+            qc.x(0)
         qc.measure([0], [0])
-        with qc.if_test((0, 0)):
+        with qc.if_test((0, 0 if not one_state else 1)):
             qc.x(1)
-
         qc.measure([1], [1])
 
         connector = pq.NumpyConnector()
@@ -348,8 +353,39 @@ class TestIntegrationWithSimulator:
         res = simulator.execute(prog, shots=shots)
 
         assert len(res.branches) == 1
-        assert res.branches[0].outcome in (1, 0, 0, 1)
-        assert np.isclose(branch.frequency, 0.25, atol=0.05)
+        assert res.branches[0].outcome == expected_outcome
+        assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
+
+
+    @pytest.mark.parametrize("one_state, expected_outcome",
+                             [(False, (0, 1, 1, 0)),
+                              (True, (1, 0, 1, 0))
+                             ])
+    def test_conditional_pauliz(self, one_state, expected_outcome):
+        """Tests that a Qiskit PauliX gate can be conditioned on measurement outcomes."""
+        qc = QuantumCircuit(2, 2)
+        if one_state:
+            qc.x(0)
+        qc.measure([0], [0])
+        with qc.if_test((0, 0 if not one_state else 1)):
+            qc.h(1)
+            qc.z(1)
+            qc.h(1)
+        qc.measure([1], [1])
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=4, config=config, connector=connector)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert len(res.branches) == 1
+        assert res.branches[0].outcome == expected_outcome
+        assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
 
 raw_samples1 = [
     (0, 1),

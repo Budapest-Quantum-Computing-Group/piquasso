@@ -125,62 +125,88 @@ def cz_on_two_bosonic_qubits(modes):
     )
     return instructions
 
-def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit", with_state_prep=True) ->  pq.Program:
+def _get_condition_function(qubit_index, measurement_value):
+    """Returns a condition function for conditional operations based on measurement outcomes.
+
+    This function converts the qubit index to the corresponding dual-rail mode indices and checks
+    the measurement outcomes of those modes to determine the qubit measurement outcome.
+    """
+    def condition(outcomes):
+        two_mode_outcomes = [(outcomes[qubit_index * 2], outcomes[qubit_index * 2 + 1])]
+        qubit_outcome = get_bosonic_qubit_samples(two_mode_outcomes)[0][0]
+        return qubit_outcome == measurement_value
+    return condition
+
+def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
+    instruction_name = qiskit_instruction.name
+    instructions = []
+    if instruction_name == "h":
+        pq_instruction = hadamard_bosonic(mode1, mode2)
+        instructions.extend(pq_instruction)
+    elif instruction_name == "x":
+        pq_instruction = paulix_bosonic(mode1, mode2)
+        instructions.extend(pq_instruction)
+    elif instruction_name == "z":
+        pq_instruction = pauliz_bosonic(mode1, mode2)
+        instructions.extend(pq_instruction)
+    elif instruction_name == "cz":
+        pq_instruction = cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
+        instructions.extend(pq_instruction)
+    elif instruction_name == "p":
+        instructions.extend(phase_gate_bosonic(qiskit_instruction.params, mode1))
+    elif instruction_name == "measure":
+        pq_instruction = pq.ParticleNumberMeasurement().on_modes(mode1, mode2)
+        instructions.append(pq_instruction)
+    elif instruction_name == "if_else":
+        true_branch_instructions = qiskit_instruction.operation.params[0]
+
+        cond = qiskit_instruction.operation.condition
+
+        condition = _get_condition_function(cond[0]._index, cond[1])
+        for inner_instr_qiskit in true_branch_instructions:
+            instr_list = _map_qiskit_instr_to_pq(inner_instr_qiskit, mode1, mode2, aux_modes)
+            for instr in instr_list:
+                instructions.append(instr.when(condition))
+    else:
+        raise ValueError(f"Unsupported instruction '{instruction_name}' in the quantum circuit.")
+    return instructions
+
+def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
     num_cz = sum(1 for instruction in qc.data if instruction.name == "cz")
     num_bosonic_qubits = qc.num_qubits
 
     # |0> = [0, 1]
     # |1> = [1, 0]
-    modes_with_one_photon = list(range(0, num_bosonic_qubits * 2, 2))
-    num_aux_needed = num_cz * 2
-    aux_modes = list(range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed))
 
-    all_modes = list(range(num_bosonic_qubits * 2)) + aux_modes
+    idx_one_photon = np.where(np.array(zero_bosonic_qubit_state) == 1)[0][0]
+    modes_with_one_photon = list(range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2))
+    num_aux_needed = num_cz * 2
+    aux_modes_all = list(range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed))
+
+    all_modes = list(range(num_bosonic_qubits * 2)) + aux_modes_all
 
     instructions = []
 
-    modes_with_one_photon = modes_with_one_photon + aux_modes
-    if with_state_prep:
-        preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
-        instructions.extend(preparations)
+    modes_with_one_photon = modes_with_one_photon + aux_modes_all
+    preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+    instructions.extend(preparations)
 
     cz_idx = 0
-    for instruction in qc.data:
-        qubit_indices = [qc.find_bit(q).index for q in instruction.qubits]
-        if instruction.name == "h":
-            qubit = qubit_indices[0]
-            pq_instruction = hadamard_bosonic(2 * qubit, 2 * qubit + 1)
-            instructions.extend(pq_instruction)
-        elif instruction.name == "x":
-            qubit = qubit_indices[0]
-            pq_instruction = paulix_bosonic(2 * qubit, 2 * qubit + 1)
-            instructions.extend(pq_instruction)
-        elif instruction.name == "z":
-            qubit = qubit_indices[0]
-            pq_instruction = pauliz_bosonic(2 * qubit, 2 * qubit + 1)
-            instructions.extend(pq_instruction)
-        elif instruction.name == "cz":
-            mode_indices = [q * 2 for q in qubit_indices]
-            aux_modes_this_cz = [aux_modes[cz_idx * 2], aux_modes[cz_idx * 2 + 1]]
-            pq_instruction = cz_on_two_bosonic_qubits(mode_indices + aux_modes_this_cz)
-            instructions.extend(pq_instruction)
-            cz_idx += 1
-        elif instruction.name == "p":
-            mode = qubit_indices[0]
-            instructions.extend(phase_gate_bosonic(instruction.params, mode))
-        elif instruction.name == "measure":
-            pq_instruction = pq.ParticleNumberMeasurement().on_modes(2 * qubit_indices[0], 2 * qubit_indices[0] + 1)
-            instructions.append(pq_instruction)
-        elif instruction.name == "if_else":
-            true_branch_instructions = instruction.operation.params[0]
+    for instr_qiskit in qc.data:
+        qubit_indices = [qc.find_bit(q).index for q in instr_qiskit.qubits]
 
-            cond = instruction.operation.condition
-            condition = lambda outcomes: outcomes[cond[0]._index] == cond[1]
-            encoded_true_branch_instructions = _encode_dual_rail_from_qiskit(true_branch_instructions, with_state_prep=False)
-            for instr in encoded_true_branch_instructions:
-                instructions.append(instr.when(condition))
+        qubit = qubit_indices[0]
+        mode1 = 2 * qubit
+        mode2 = 2 * qubit + 1
+
+        if instr_qiskit.name == "cz":
+            aux_modes = [aux_modes_all[cz_idx * 2], aux_modes_all[cz_idx * 2 + 1]]
+            cz_idx += 1
         else:
-            raise ValueError(f"Unsupported instruction '{instruction.name}' in the quantum circuit.")
+            aux_modes = []
+        mapped_instructions = _map_qiskit_instr_to_pq(instr_qiskit, mode1, mode2, aux_modes)
+        instructions.extend(mapped_instructions)
+
     return instructions
 
 def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
