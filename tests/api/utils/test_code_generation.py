@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
+import pytest
+
 import numpy as np
 import piquasso as pq
 
@@ -340,6 +344,62 @@ with pq.Program() as program:
     pq.Q(1) | pq.CubicPhase(gamma=0.2)
 
 simulator = pq.{pq.FockSimulator.__name__}(d=2)
+
+result = simulator.execute(program, shots=10)
+"""
+    )
+
+
+def test_conditioned_instruction_code_generation_lambda_function():
+    condition_func = lambda x: x[1] == 0  # noqa: E731
+
+    with pq.Program() as program:
+        pq.Vacuum() | pq.Q()
+
+        pq.Q(0) | pq.Squeezing(r=0.5, phi=0)
+        pq.Q(1) | pq.Squeezing(r=0.5, phi=0)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=1, phi=0.7853981633974483)
+
+        pq.Q(0) | pq.Fourier()
+        pq.Q(1) | pq.Fourier()
+
+        pq.Q(1) | pq.ParticleNumberMeasurement().on_modes(1)
+        pq.Q(0) | pq.Squeezing(r=0.7).on_modes(0).when(condition_func)
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(seed_sequence=1, cutoff=7))
+
+    with pytest.raises(
+        pq.api.exceptions.PiquassoException,
+        match=re.escape(
+            f"Cannot convert a conditioned instruction to code. instruction: "
+            f"Squeezing(r=0.7, phi=0.0, modes=(0,), condition={condition_func})"
+        ),
+    ):
+        pq.as_code(program, simulator, shots=10)
+
+
+def test_code_generation_with_undefined_d():
+    with pq.Program() as program:
+        pq.Q(0) | pq.Fourier()
+        pq.Q(2, 3) | pq.Beamsplitter(theta=1, phi=0)
+
+    simulator = pq.FockSimulator()
+
+    code = pq.as_code(program, simulator, shots=10)
+    code_is_executable(code)
+
+    assert (
+        code
+        == f"""\
+import numpy as np
+import piquasso as pq
+
+
+with pq.Program() as program:
+    pq.Q(0) | pq.Fourier()
+    pq.Q(2, 3) | pq.Beamsplitter(theta=1, phi=0)
+
+simulator = pq.{pq.FockSimulator.__name__}()
 
 result = simulator.execute(program, shots=10)
 """

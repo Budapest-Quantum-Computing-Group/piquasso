@@ -27,7 +27,7 @@ from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
 from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 
-from piquasso._simulators.fock.pure.calculations import (
+from piquasso._simulators.fock.pure.simulation_steps import (
     post_select_photons as pure_fock_post_select_photons,
     imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
 )

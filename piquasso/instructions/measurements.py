@@ -126,6 +126,15 @@ class GeneraldyneMeasurement(Measurement):
             )
         )
 
+    def _validate(self):
+        detection_covariance = self.params["detection_covariance"]
+
+        if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
+            raise InvalidParameter(
+                "The parameter 'detection_covariance' is invalid, since it doesn't "
+                "fulfill the Robertson-Schrödinger uncertainty relation."
+            )
+
 
 class HomodyneMeasurement(Measurement):
     r"""Homodyne measurement.
@@ -159,18 +168,16 @@ class HomodyneMeasurement(Measurement):
                 :class:`HeterodyneMeasurement`.
         """
 
-        super().__init__(
-            params=dict(
-                phi=phi,
-                z=z,
-            ),
-            extra_params=dict(
-                detection_covariance=np.array(
-                    [
-                        [z**2, 0],
-                        [0, (1 / z) ** 2],
-                    ]
-                ),
+        super().__init__(params=dict(phi=phi, z=z))
+
+    def _get_computed_params(self) -> dict:
+        z = self.params["z"]
+        return dict(
+            detection_covariance=np.array(
+                [
+                    [z**2, 0],
+                    [0, (1 / z) ** 2],
+                ]
             ),
         )
 
@@ -192,11 +199,10 @@ class HeterodyneMeasurement(Measurement):
     """
 
     def __init__(self) -> None:
-        super().__init__(
-            extra_params=dict(
-                detection_covariance=np.identity(2),
-            ),
-        )
+        super().__init__()
+
+    def _get_computed_params(self) -> dict:
+        return dict(detection_covariance=np.identity(2))
 
 
 class PostSelectPhotons(Measurement):

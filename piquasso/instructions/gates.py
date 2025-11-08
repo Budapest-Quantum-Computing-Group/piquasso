@@ -127,12 +127,15 @@ class Interferometer(_PassiveLinearGate):
     """
 
     def __init__(self, matrix: np.ndarray) -> None:
+        super().__init__(params=dict(matrix=matrix))
+
+    def _validate(self):
+        matrix = self.params["matrix"]
+
         if not is_square(matrix):
             raise InvalidParameter(
                 "The interferometer matrix should be a square matrix."
             )
-
-        super().__init__(params=dict(matrix=matrix))
 
     def _get_passive_block(self, connector, config):
         return self._params["matrix"]
@@ -412,6 +415,12 @@ class GaussianTransform(_ActiveLinearGate):
         Raises:
             InvalidParameters: Raised if the parameters do not form a symplectic matrix.
         """
+        super().__init__(params=dict(passive=passive, active=active))
+
+    def _validate(self):
+        active = self.params["active"]
+        passive = self.params["passive"]
+
         if not is_symplectic(
             np.block([[passive, active], [active.conj(), passive.conj()]]),
             form_func=complex_symplectic_form,
@@ -420,8 +429,6 @@ class GaussianTransform(_ActiveLinearGate):
                 "The input parameters for instruction 'GaussianTransform' do not form "
                 "a symplectic matrix."
             )
-
-        super().__init__(params=dict(passive=passive, active=active))
 
     def _get_passive_block(self, connector, config):
         return self._params["passive"]
@@ -787,7 +794,10 @@ class PositionDisplacement(Gate):
         Args:
             x (float): The position displacement.
         """
-        super().__init__(params=dict(x=x), extra_params=dict(r=x, phi=0.0))
+        super().__init__(params=dict(x=x))
+
+    def _get_computed_params(self) -> dict:
+        return dict(r=self.params["x"], phi=0.0)
 
 
 class MomentumDisplacement(Gate):
@@ -804,7 +814,10 @@ class MomentumDisplacement(Gate):
         Args:
             p (float): The momentum displacement.
         """
-        super().__init__(params=dict(p=p), extra_params=dict(r=p, phi=np.pi / 2))
+        super().__init__(params=dict(p=p))
+
+    def _get_computed_params(self) -> dict:
+        return dict(r=self.params["p"], phi=np.pi / 2)
 
 
 class CubicPhase(Gate):
@@ -934,14 +947,15 @@ class Graph(Gate):
             InvalidParameter:
                 If the adjacency matrix is not symmetric.
         """
-        self.adjacency_matrix = adjacency_matrix
-
-        if not is_symmetric(adjacency_matrix):
-            raise InvalidParameter("The adjacency matrix should be symmetric.")
-
         super().__init__(
             params=dict(
                 adjacency_matrix=adjacency_matrix,
                 mean_photon_number=mean_photon_number,
             ),
         )
+
+    def _validate(self):
+        adjacency_matrix = self.params["adjacency_matrix"]
+
+        if not is_symmetric(adjacency_matrix):
+            raise InvalidParameter("The adjacency matrix should be symmetric.")

@@ -14,13 +14,13 @@
 # limitations under the License.
 
 import typing
-from typing import Optional, Tuple, Any, Type, Dict
+from typing import Optional, Tuple, Any, Type, Dict, Callable, Union
 
 import numpy as np
 
 from .mode import Q
 from piquasso.core import _mixins
-from piquasso.api.exceptions import PiquassoException, InvalidProgram
+from piquasso.api.exceptions import PiquassoException, InvalidProgram, InvalidParameter
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
@@ -32,28 +32,65 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
     Args:
         params: Mapping of parameters specified by the users.
-        extra_params: Mapping of extra parameters, typically calculated ones.
     """
 
     NUMBER_OF_MODES: Optional[int] = None
 
     _subclasses: Dict[str, Type["Instruction"]] = {}
 
-    def __init__(
-        self, *, params: Optional[dict] = None, extra_params: Optional[dict] = None
-    ) -> None:
+    def __init__(self, *, params: Optional[dict] = None) -> None:
         self._params: dict = params or dict()
 
-        self._extra_params: dict = extra_params or dict()
+        self._condition: Optional[Callable] = None
+
+        is_unresolved = callable
+        self._unresolved_params = {
+            name: param for name, param in self._params.items() if is_unresolved(param)
+        }
+
+        if self._is_resolved():
+            self._validate()
+
+    def _validate(self):
+        pass
 
     @property
     def params(self) -> dict:
         """The parameters of the instruction as a `dict`."""
         return self._params
 
+    def _get_computed_params(self) -> dict:
+        return dict()
+
     @property
     def _all_params(self) -> dict:
-        return {**self._params, **self._extra_params}
+        return {**self._params, **self._get_computed_params()}
+
+    def _is_resolved(self):
+        return self._unresolved_params == dict()
+
+    def _resolve_params(self, outcomes):
+        _resolved_params = {}
+
+        for name, unresolved_param in self._unresolved_params.items():
+            try:
+                resolved_param = unresolved_param(outcomes)
+            except Exception as e:
+                raise InvalidParameter(
+                    f"An error occurred when resolving the parameter "
+                    f"'{name}' for the instruction '{self}': {e}\n"
+                    f"Make sure that the parameter is a callable that takes the "
+                    f"tuple of measurement outcomes and returns a float."
+                ) from e
+
+            _resolved_params[name] = resolved_param
+
+        self._params.update(_resolved_params)
+
+        self._validate()
+
+    def _unresolve_params(self):
+        self._params.update(self._unresolved_params)
 
     @property
     def modes(self) -> Tuple[int, ...]:
@@ -64,6 +101,11 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     def modes(self, value: Tuple[int, ...]) -> None:
         self._validate_modes(value)
         self._modes = value
+
+    @property
+    def condition(self) -> Optional[Callable]:
+        """The condition associated with the instruction."""
+        return self._condition
 
     def _as_code(self) -> str:
         if hasattr(self, "modes"):
@@ -82,6 +124,12 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
             )
         else:
             params_string = ""
+
+        if self._condition is not None:
+            raise PiquassoException(
+                f"Cannot convert a conditioned instruction to code. "
+                f"instruction: {self}"
+            )
 
         return f"pq.Q({mode_string}) | pq.{self.__class__.__name__}({params_string})"
 
@@ -180,9 +228,14 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         else:
             params = ""
 
+        if self._condition:
+            condition = f", condition={self._condition}"
+        else:
+            condition = ""
+
         classname = self.__class__.__name__
 
-        return f"{classname}({params}{modes})"
+        return f"{classname}({params}{modes}{condition})"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Instruction):
@@ -204,9 +257,80 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 f"{self.NUMBER_OF_MODES}'."
             )
 
+    def when(self, condition: Callable) -> "Instruction":
+        """Makes the execution of the instruction conditional on a callable object.
+
+        The callable object takes a single argument - the tuple of measurement outcomes
+        - and returns a boolean indicating whether the condition evaluates to ``True``.
+        The condition must be met for the instruction to be executed.
+
+        The measurement outcomes are provided as a tuple, in the order which the
+        measurements are defined. For example, `x[0]` refers to the first outcome, and
+        `x[-1]` to the last outcome.
+
+        Example usage::
+            with pq.Program() as program:
+                pq.Q(0, 1) | pq.StateVector([0, 2]) * np.sqrt(1 / 2)
+                pq.Q(0, 1) | pq.StateVector([2, 0]) * np.sqrt(1 / 2)
+
+                pq.Q(1)    | pq.ParticleNumberMeasurement().on_modes(1)
+                pq.Q(0)    | pq.Squeezing(r=r).on_modes(0).when(lambda x: x[-1] == 2)
+
+                pq.Q(0, 1) | pq.Beamsplitter5050().when(lambda x: x[0] > 0)
+
+        Raises:
+            PiquassoException:
+                If the instruction is already conditioned on another callable, or if the
+                provided condition is not callable.
+
+        Args:
+            condition (Callable):
+                A callable that takes the measurement outcomes and returns a boolean.
+        """
+        if self._condition is not None:
+            raise PiquassoException(
+                f"The instruction '{self}' is already conditioned on "
+                f"'{self._condition}'."
+            )
+
+        if not callable(condition):
+            raise PiquassoException(
+                f"The condition '{condition}' needs to be a callable that takes the "
+                f"measurement outcomes and returns a boolean."
+            )
+
+        self._condition = condition
+
+        return self
+
+    def _is_condition_met(self, outcomes: Tuple[Union[int, float], ...]) -> bool:
+        """Checks if the condition associated with the instruction is met.
+
+        Raises:
+            PiquassoException:
+                If an error occurs when evaluating the condition.
+
+        Returns:
+            bool: True if the condition is met, False otherwise.
+        """
+        if not self._condition:
+            return True
+
+        try:
+            return self._condition(outcomes)
+        except Exception as e:
+            raise PiquassoException(
+                f"An error occurred when evaluating the condition '{self._condition}' "
+                f"for the instruction '{self}': {e}\n"
+                f"Make sure that the condition is a callable that takes the "
+                f"tuple of measurement outcomes and returns a boolean."
+            ) from e
+
 
 class BatchInstruction(Instruction):
     """Base class to control batch processing."""
+
+    _execute: Callable
 
 
 class Preparation(Instruction):

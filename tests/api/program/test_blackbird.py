@@ -68,7 +68,8 @@ def test_loads_blackbird_parses_operations_with_classes_registered_separately():
         """
 
     class Beamsplitter(pq.Instruction):
-        pass
+        def __init__(self, theta: float = np.pi / 4, phi: float = 0.0) -> None:
+            super().__init__(params={"theta": theta, "phi": phi})
 
     program = pq.Program()
 

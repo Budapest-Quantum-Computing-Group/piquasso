@@ -15,7 +15,7 @@
 
 from .state import PureFockState
 
-from .calculations import (
+from .simulation_steps import (
     state_vector_instruction,
     passive_linear,
     beamsplitter5050,
@@ -36,7 +36,7 @@ from .calculations import (
     homodyne_measurement,
 )
 
-from ..calculations import attenuator
+from ..simulation_steps import attenuator
 
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import (
@@ -148,6 +148,11 @@ class PureFockSimulator(BuiltinSimulator):
     _extra_builtin_connectors = [TensorflowConnector, JaxConnector]
 
     _measurement_classes_allowed_mid_circuit = (
+        measurements.ParticleNumberMeasurement,
+        measurements.PostSelectPhotons,
+    )
+
+    _measurement_classes_allowed_with_shots_none = (
         measurements.ParticleNumberMeasurement,
         measurements.PostSelectPhotons,
     )

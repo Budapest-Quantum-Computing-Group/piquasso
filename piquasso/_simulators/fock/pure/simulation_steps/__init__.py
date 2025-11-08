@@ -31,15 +31,12 @@ __all__ = [
 
 from typing import Optional, Tuple, Mapping, List
 
-import random
 import numpy as np
-
-from fractions import Fraction
 
 from .passive_linear import _apply_passive_linear
 from .utils import project_to_subspace
 
-from ...calculations import calculate_state_index_matrix_list
+from ...simulation_steps import calculate_state_index_matrix_list
 
 from ..state import PureFockState
 from ..batch_state import BatchPureFockState
@@ -58,10 +55,10 @@ from piquasso._math.fock import (
 from piquasso.instructions import gates
 
 from piquasso.api.branch import Branch
-from piquasso.api.instruction import Instruction
+from piquasso.api.instruction import Instruction, BatchInstruction
 from piquasso.api.connector import BaseConnector
 from piquasso._math.validations import validate_occupation_numbers
-from piquasso._utils import get_counts
+from piquasso._utils import sample_from_probability_map
 
 
 def particle_number_measurement(
@@ -71,17 +68,11 @@ def particle_number_measurement(
 
     probability_map = reduced_state.fock_probabilities_map
 
-    samples = random.choices(
-        population=list(probability_map.keys()),
-        weights=list(probability_map.values()),
-        k=shots,
-    )
-
-    binned_samples = get_counts(samples)
+    frequency_map = sample_from_probability_map(probability_map, shots)
 
     branches = []
 
-    for sample, multiplicity in binned_samples.items():
+    for sample, frequency in frequency_map.items():
         normalization = _get_normalization(probability_map, sample)
 
         new_state = project_to_subspace(
@@ -91,7 +82,7 @@ def particle_number_measurement(
             normalization=normalization,
         )
 
-        branch = Branch(new_state, sample, frequency=Fraction(multiplicity, shots))
+        branch = Branch(new_state, sample, frequency=frequency)
 
         branches.append(branch)
 
@@ -494,10 +485,10 @@ def _add_occupation_number_basis(  # type: ignore
 
 
 def batch_prepare(
-    state: PureFockState, instruction: Instruction, shots: int
+    state: PureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
-    execute = instruction._all_params["execute"]
+    execute = instruction._execute
 
     state_vectors = [
         execute(subprogram, shots).state.state_vector for subprogram in subprograms
@@ -513,10 +504,10 @@ def batch_prepare(
 
 
 def batch_apply(
-    state: BatchPureFockState, instruction: Instruction, shots: int
+    state: BatchPureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
     subprograms = instruction._all_params["subprograms"]
-    execute = instruction._all_params["execute"]
+    execute = instruction._execute
 
     d = state.d
     connector = state._connector

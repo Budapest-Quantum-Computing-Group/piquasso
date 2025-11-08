@@ -19,7 +19,7 @@ from piquasso.instructions import preparations, gates, measurements, channels
 from piquasso._simulators.connectors import NumpyConnector
 
 from .state import FockState
-from .calculations import (
+from .simulation_steps import (
     passive_linear,
     squeezing,
     displacement,
@@ -34,7 +34,7 @@ from .calculations import (
     annihilate,
 )
 
-from ..calculations import attenuator
+from ..simulation_steps import attenuator
 
 
 class FockSimulator(BuiltinSimulator):
@@ -125,3 +125,7 @@ class FockSimulator(BuiltinSimulator):
     _state_class = FockState
 
     _default_connector_class = NumpyConnector
+
+    _measurement_classes_allowed_with_shots_none = (
+        measurements.ParticleNumberMeasurement,
+    )

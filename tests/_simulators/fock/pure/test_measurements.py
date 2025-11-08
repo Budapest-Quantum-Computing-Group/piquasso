@@ -325,6 +325,29 @@ def test_ParticleNumberMeasurement_resulting_state():
     assert np.isclose(sum(result.state.fock_probabilities), 1)
 
 
+def test_ParticleNumberMeasurement_shots_None():
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+
+    p = 1 / np.pi
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1]) * np.sqrt(p)
+        pq.Q() | pq.StateVector([1, 0]) * np.sqrt(1 - p)
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    result = simulator.execute(program, shots=None)
+
+    branches = result.branches
+    assert len(branches) == 2
+
+    assert branches[0].outcome == (0,)
+    assert np.isclose(branches[0].frequency, p)
+
+    assert branches[1].outcome == (1,)
+    assert np.isclose(branches[1].frequency, 1 - p)
+
+
 class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 
@@ -458,3 +481,68 @@ class TestMidCircuitMeasurements:
             match="not allowed as a mid-circuit measurement",
         ):
             simulator.execute(program, shots=1)
+
+
+def test_conditional_squeezing():
+    r = 0.2
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 2),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 2),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r=r).on_modes(0).when(lambda x: x[-1] == 2),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7, seed_sequence=123))
+
+    result = simulator.execute(program, shots=10)
+
+    expected_squeezed_state = result.branches[1].state
+
+    actual_squeezed_state = (
+        pq.PureFockSimulator(d=1, config=pq.Config(cutoff=5))
+        .execute_instructions([pq.Vacuum(), pq.Squeezing(r=r)])
+        .state
+    )
+
+    assert expected_squeezed_state == actual_squeezed_state
+
+
+def test_unresolved_squeezing():
+    def f(x):
+        return 0.01 * x[-1] ** 2
+
+    cutoff = 7
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 3),
+            pq.StateVector([1, 1]) * np.sqrt(1 / 3),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r=f).on_modes(0),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(
+        d=2, config=pq.Config(cutoff=cutoff, seed_sequence=123)
+    )
+
+    result = simulator.execute(program, shots=10)
+
+    for branch in result.branches:
+        expected_state = (
+            pq.PureFockSimulator(
+                d=1, config=pq.Config(cutoff=cutoff - branch.outcome[0])
+            )
+            .execute_instructions(
+                [
+                    pq.StateVector([2 - branch.outcome[0]]),
+                    pq.Squeezing(r=f(branch.outcome)),
+                ]
+            )
+            .state
+        )
+        assert branch.state == expected_state

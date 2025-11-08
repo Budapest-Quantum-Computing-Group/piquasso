@@ -15,7 +15,7 @@
 
 import random
 
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, cast
 
 import numpy as np
 
@@ -34,14 +34,21 @@ class Result:
     measurement outcomes (samples), accessible through the property :meth:`samples`.
     Also, the post-measurement quantum states are stored in the :meth:`branches`
     property, containing a list of :class:`~piquasso.api.branch.Branch` instances.
+
+    If the program was executed with a finite number of shots, then the samples can be
+    accessed through the :meth:`samples` property. If the program was executed with
+    `shots=None`, then the exact probability distribution was calculated, and the
+    :meth:`samples` property is not available. In this case, the post-measurement states
+    and their probabilities can be accessed through the :meth:`branches` property.
     """
 
-    def __init__(self, branches: List[Branch], config: Config, shots: int):
+    def __init__(self, branches: List[Branch], config: Config, shots: Union[int, None]):
         """
         Args:
             branches: The branches containing all the simulation results.
             config: The config object.
-            shots: The number of times the circuit was executed.
+            shots: The number of times the circuit was executed. If it is `None`, the
+                exact probability distribution was calculated, instead of samples.
         """
 
         self._branches = branches
@@ -58,7 +65,8 @@ class Result:
         The :class:`~piquasso.api.branch.Branch` instances contain the post-measurement
         quantum states, the corresponding measurement outcomes (samples), and their
         frequencies, i.e., how many times the outcome appeared divided by the total
-        number of shots.
+        number of shots. If the program was executed with `shots=None`, then the
+        frequency corresponds to the exact probability of the outcome.
 
         Returns:
             List[Branch]: The list of branches containing the post-measurement states,
@@ -91,12 +99,20 @@ class Result:
         and :class:`~piquasso.instructions.measurements.HomodyneMeasurement` is used.
         """
 
+        if self._shots is None:
+            raise NotImplementedCalculation(
+                "The 'Result.samples' property is not available with the exact "
+                "probability distribution (i.e., when 'shots=None' is used in the "
+                "simulation). Please execute the program with a finite number of shots "
+                "to obtain samples."
+            )
+
+        shots = cast(int, self._shots)
+
         _samples = []
 
         for branch in self.branches:
-            _samples.extend(
-                [tuple(branch.outcome)] * int(branch.frequency * self._shots)
-            )
+            _samples.extend([tuple(branch.outcome)] * int(branch.frequency * shots))
 
         # NOTE: the samples need to be shuffled with the same seed to ensure
         # consistency.
@@ -126,9 +142,11 @@ class Result:
                 "integers (e.g., samples from 'ParticleNumberMeasurement')."
             )
 
+        shots = cast(int, self._shots)
+
         ret = {}
         for branch in self.branches:
-            ret[branch.outcome] = int(branch.frequency * self._shots)
+            ret[branch.outcome] = int(branch.frequency * shots)
 
         return ret
 
