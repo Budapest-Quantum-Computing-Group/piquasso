@@ -235,7 +235,9 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:  # noqa: 
     return instructions
 
 
-def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:  # noqa: F821, E501
+def dual_rail_encode_from_qiskit(
+    quantum_circuit: "QuantumCircuit",  # noqa: F821
+) -> pq.Program:
     try:
         import qiskit
     except ImportError as e:
