@@ -136,6 +136,7 @@ If you are doing research using Piquasso, please cite us as follows:
    advanced/connectors
    advanced/decompositions
    advanced/cvqnn
+   advanced/dual_rail_encoding
 
 .. toctree::
    :hidden:
