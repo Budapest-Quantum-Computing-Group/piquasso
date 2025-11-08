@@ -226,7 +226,7 @@ class TestIntegrationWithSimulator:
         ]
         for branch in res.branches:
             assert branch.outcome in outcomes
-            assert np.isclose(branch.frequency, 0.25, atol=0.05)
+            assert np.isclose(float(branch.frequency), 0.25, atol=0.05)
 
     @pytest.mark.parametrize(
         "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
@@ -253,7 +253,7 @@ class TestIntegrationWithSimulator:
 
         assert len(res.branches) == 1
         assert res.branches[0].outcome == expected_outcome
-        assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
+        assert np.isclose(float(res.branches[0].frequency), 1, atol=0.05)
 
     @pytest.mark.parametrize(
         "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
@@ -282,7 +282,7 @@ class TestIntegrationWithSimulator:
 
         assert len(res.branches) == 1
         assert res.branches[0].outcome == expected_outcome
-        assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
+        assert np.isclose(float(res.branches[0].frequency), 1, atol=0.05)
 
 
 raw_samples1 = [
