@@ -35,6 +35,8 @@ from piquasso.api.computer import Computer
 from piquasso.api.simulator import Simulator
 from piquasso.api.utils import as_code
 
+from piquasso import dual_rail_encoding
+
 from piquasso._simulators.sampling import SamplingState, SamplingSimulator
 
 from piquasso._simulators.gaussian import GaussianState, GaussianSimulator
@@ -182,6 +184,7 @@ __all__ = [
     "BatchPrepare",
     "BatchApply",
     # Modules
+    "dual_rail_encoding",
     "cvqnn",
     "fermionic",
 ]

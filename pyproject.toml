@@ -44,6 +44,7 @@ Issues = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
 Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+qiskit = ["qiskit"]
 tensorflow = ["tensorflow"]
 jax = ["jax[cpu]"]
 matplotlib = ["matplotlib"]
