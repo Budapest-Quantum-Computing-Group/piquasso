@@ -29,6 +29,11 @@ For the dual-rail encoding, the following convention is used:
 import piquasso as pq
 import numpy as np
 
+import typing
+
+if typing.TYPE_CHECKING:
+    from qiskit import QuantumCircuit
+
 _zero_bosonic_qubit_state = [0, 1]
 _one_bosonic_qubit_state = [1, 0]
 
@@ -236,9 +241,7 @@ def _encode_dual_rail_from_qiskit(qc):
     return instructions
 
 
-def dual_rail_encode_from_qiskit(
-    quantum_circuit,
-):
+def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
     """Encodes a Qiskit QuantumCircuit into a dual-rail bosonic qubit Piquasso program.
 
     Args:
