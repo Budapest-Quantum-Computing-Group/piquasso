@@ -13,11 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.dual_rail_encoding import dual_rail_encode_from_qiskit, hadamard_bosonic, paulix_bosonic, pauliz_bosonic, prep_bosonic_qubits, get_bosonic_qubit_samples
+from piquasso.dual_rail_encoding import (
+    dual_rail_encode_from_qiskit,
+    hadamard_bosonic,
+    paulix_bosonic,
+    pauliz_bosonic,
+    prep_bosonic_qubits,
+    get_bosonic_qubit_samples,
+)
 from qiskit import QuantumCircuit
 import piquasso as pq
 import numpy as np
 import pytest
+
 
 class TestDualRailEncodingInstructions:
     """Tests for the instructions used for dual rail encoding."""
@@ -37,12 +45,16 @@ class TestDualRailEncodingInstructions:
         assert isinstance(create_photon, pq.Create)
         assert create_photon.modes == (0,)
 
-    @pytest.mark.parametrize("all_modes, modes_with_one_photon, expected_to_have_amplitude",
-                             [
-                                 ([0, 1], [1], (0, 1)),
-                                 ([0, 1, 2, 3], [1, 3], (0, 1, 0, 1)),
-                             ])
-    def test_prep_bosonic_qubits_amplitudes(self, all_modes, modes_with_one_photon, expected_to_have_amplitude):
+    @pytest.mark.parametrize(
+        "all_modes, modes_with_one_photon, expected_to_have_amplitude",
+        [
+            ([0, 1], [1], (0, 1)),
+            ([0, 1, 2, 3], [1, 3], (0, 1, 0, 1)),
+        ],
+    )
+    def test_prep_bosonic_qubits_amplitudes(
+        self, all_modes, modes_with_one_photon, expected_to_have_amplitude
+    ):
         """Tests the amplitudes after bosonic qubit preparations."""
         instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
         assert len(instructions) == 2
@@ -52,7 +64,9 @@ class TestDualRailEncodingInstructions:
         config = pq.Config(cutoff=cutoff)
         shots = 1000
 
-        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+        simulator = pq.PureFockSimulator(
+            d=len(all_modes), config=config, connector=connector
+        )
 
         prog = pq.Program(instructions=instructions)
         res = simulator.execute(prog, shots=shots)
@@ -62,11 +76,16 @@ class TestDualRailEncodingInstructions:
         assert len(ampl_map) == 1
         assert ampl_map[expected_to_have_amplitude] == 1
 
-    @pytest.mark.parametrize("modes_with_one_photon, expected_amplitudes",
-        [([1], (0, 1)),
-        ([0], (1, 0)),
-    ])
-    def test_paulix_bosonic_amplitudes(self, modes_with_one_photon, expected_amplitudes):
+    @pytest.mark.parametrize(
+        "modes_with_one_photon, expected_amplitudes",
+        [
+            ([1], (0, 1)),
+            ([0], (1, 0)),
+        ],
+    )
+    def test_paulix_bosonic_amplitudes(
+        self, modes_with_one_photon, expected_amplitudes
+    ):
         """Tests the bosonic Pauli-X gate implementation."""
         all_modes = [0, 1]
         instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
@@ -76,7 +95,9 @@ class TestDualRailEncodingInstructions:
         config = pq.Config(cutoff=cutoff)
         shots = 1000
 
-        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+        simulator = pq.PureFockSimulator(
+            d=len(all_modes), config=config, connector=connector
+        )
 
         prog = pq.Program(instructions=instructions)
         res = simulator.execute(prog, shots=shots)
@@ -87,12 +108,16 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(amplitudes[zero_state], expected_amplitudes[0])
         assert np.isclose(amplitudes[one_state], expected_amplitudes[1])
 
-
-    @pytest.mark.parametrize("modes_with_one_photon, expected_state, expected_amplitude",
-        [([1], (0, 1), 1),
-        ([0], (1, 0), -1),
-    ])
-    def test_pauliz_bosonic_amplitudes(self, modes_with_one_photon, expected_state, expected_amplitude):
+    @pytest.mark.parametrize(
+        "modes_with_one_photon, expected_state, expected_amplitude",
+        [
+            ([1], (0, 1), 1),
+            ([0], (1, 0), -1),
+        ],
+    )
+    def test_pauliz_bosonic_amplitudes(
+        self, modes_with_one_photon, expected_state, expected_amplitude
+    ):
         """Tests the bosonic Pauli-Z gate implementation."""
         all_modes = [0, 1]
         instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
@@ -102,7 +127,9 @@ class TestDualRailEncodingInstructions:
         config = pq.Config(cutoff=cutoff)
         shots = 1000
 
-        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+        simulator = pq.PureFockSimulator(
+            d=len(all_modes), config=config, connector=connector
+        )
 
         prog = pq.Program(instructions=instructions)
         res = simulator.execute(prog, shots=shots)
@@ -110,11 +137,16 @@ class TestDualRailEncodingInstructions:
         assert len(amplitudes) == 1
         assert np.isclose(amplitudes[expected_state], expected_amplitude)
 
-    @pytest.mark.parametrize("modes_with_one_photon, expected_amplitudes",
-        [([1], (1 / np.sqrt(2), 1 / np.sqrt(2))),
-        ([0], (1 / np.sqrt(2), -1 / np.sqrt(2))),
-    ])
-    def test_hadamard_bosonic_amplitudes(self, modes_with_one_photon, expected_amplitudes):
+    @pytest.mark.parametrize(
+        "modes_with_one_photon, expected_amplitudes",
+        [
+            ([1], (1 / np.sqrt(2), 1 / np.sqrt(2))),
+            ([0], (1 / np.sqrt(2), -1 / np.sqrt(2))),
+        ],
+    )
+    def test_hadamard_bosonic_amplitudes(
+        self, modes_with_one_photon, expected_amplitudes
+    ):
         """Tests the bosonic Hadamard gate implementation."""
         all_modes = [0, 1]
         instructions = prep_bosonic_qubits(all_modes, modes_with_one_photon)
@@ -124,7 +156,9 @@ class TestDualRailEncodingInstructions:
         config = pq.Config(cutoff=cutoff)
         shots = 1000
 
-        simulator = pq.PureFockSimulator(d=len(all_modes), config=config, connector=connector)
+        simulator = pq.PureFockSimulator(
+            d=len(all_modes), config=config, connector=connector
+        )
 
         prog = pq.Program(instructions=instructions)
         res = simulator.execute(prog, shots=shots)
@@ -134,6 +168,7 @@ class TestDualRailEncodingInstructions:
         one_state = (1, 0)
         assert np.isclose(amplitudes[zero_state], expected_amplitudes[0])
         assert np.isclose(amplitudes[one_state], expected_amplitudes[1])
+
 
 class TestDualRailEncoding:
     """Tests for the dual rail encoding functions."""
@@ -159,7 +194,7 @@ class TestDualRailEncoding:
         hadamard_1 = prog.instructions[2]
         assert isinstance(hadamard_1, pq.Beamsplitter)
         assert hadamard_1.modes == (0, 1)
-        assert np.isclose(hadamard_1.params["theta"], np.pi/4)
+        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
         assert np.isclose(hadamard_1.params["phi"], 0)
 
         hadamard_2 = prog.instructions[3]
@@ -217,7 +252,7 @@ class TestDualRailEncoding:
         hadamard_1 = prog.instructions[2]
         assert isinstance(hadamard_1, pq.Beamsplitter)
         assert hadamard_1.modes == (0, 1)
-        assert np.isclose(hadamard_1.params["theta"], np.pi/4)
+        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
         assert np.isclose(hadamard_1.params["phi"], 0)
 
         hadamard_2 = prog.instructions[3]
@@ -229,14 +264,14 @@ class TestDualRailEncoding:
         hadamard_1 = prog.instructions[4]
         assert isinstance(hadamard_1, pq.Beamsplitter)
         assert hadamard_1.modes == (2, 3)
-        assert np.isclose(hadamard_1.params["theta"], np.pi/4)
+        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
         assert np.isclose(hadamard_1.params["phi"], 0)
 
         hadamard_2 = prog.instructions[5]
         assert isinstance(hadamard_2, pq.Phaseshifter)
         assert hadamard_2.modes == (2,)
         assert np.isclose(hadamard_2.params["phi"], np.pi)
-        
+
         # Check CZ dual-rail encoded implementations
         phase_shifter1 = prog.instructions[6]
         assert isinstance(phase_shifter1, pq.Phaseshifter)
@@ -250,26 +285,34 @@ class TestDualRailEncoding:
         cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
 
         bosonic_cz_indices = [0, 2, 4, 5]
-        first_bs_gate =  prog.instructions[8]
+        first_bs_gate = prog.instructions[8]
         assert isinstance(first_bs_gate, pq.Beamsplitter)
         assert first_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[2])
-        assert np.isclose(first_bs_gate.params["theta"], cz_beamsplitter_first_theta_value)
+        assert np.isclose(
+            first_bs_gate.params["theta"], cz_beamsplitter_first_theta_value
+        )
 
-        sec_bs_gate =  prog.instructions[9]
+        sec_bs_gate = prog.instructions[9]
         assert isinstance(sec_bs_gate, pq.Beamsplitter)
         assert sec_bs_gate.modes == (bosonic_cz_indices[1], bosonic_cz_indices[3])
-        assert np.isclose(sec_bs_gate.params["theta"], cz_beamsplitter_first_theta_value)
+        assert np.isclose(
+            sec_bs_gate.params["theta"], cz_beamsplitter_first_theta_value
+        )
 
-        third_bs_gate =  prog.instructions[10]
+        third_bs_gate = prog.instructions[10]
         assert isinstance(third_bs_gate, pq.Beamsplitter)
         assert third_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[1])
-        assert np.isclose(third_bs_gate.params["theta"], -1*cz_beamsplitter_first_theta_value)
+        assert np.isclose(
+            third_bs_gate.params["theta"], -1 * cz_beamsplitter_first_theta_value
+        )
 
-        fourth_bs_gate =  prog.instructions[11]
+        fourth_bs_gate = prog.instructions[11]
         assert isinstance(fourth_bs_gate, pq.Beamsplitter)
         assert fourth_bs_gate.modes == (bosonic_cz_indices[2], bosonic_cz_indices[3])
-        assert np.isclose(fourth_bs_gate.params["theta"], cz_beamsplitter_second_theta_value)
-        
+        assert np.isclose(
+            fourth_bs_gate.params["theta"], cz_beamsplitter_second_theta_value
+        )
+
         post_selection = prog.instructions[12]
         assert isinstance(post_selection, pq.PostSelectPhotons)
         assert post_selection.params["photon_counts"] == [1, 1]
@@ -283,15 +326,19 @@ class TestDualRailEncoding:
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
         assert measurement.modes == (2, 3)
 
-    @pytest.mark.parametrize("unsupported_gate_data",
-                             [("x",(0,)), ("y", (1,)), ("z", (0,)), ("cx", (0,1)), ("swap", (0,1))]
-                             )
+    @pytest.mark.parametrize(
+        "unsupported_gate_data",
+        [("x", (0,)), ("y", (1,)), ("z", (0,)), ("cx", (0, 1)), ("swap", (0, 1))],
+    )
     def test_invalid_gate_in_qiskit_circuit_raises(self, unsupported_gate_data):
-        """Tests that an unsupported gate in the Qiskit QuantumCircuit raises a ValueError."""
+        """Tests that an unsupported gate in QuantumCircuit raises a ValueError."""
         qc = QuantumCircuit(2)
         gate_name = unsupported_gate_data[0]
         getattr(qc, gate_name)(*unsupported_gate_data[1])
-        with pytest.raises(ValueError, match=f"Unsupported instruction '{gate_name}' in the quantum circuit."):
+        with pytest.raises(
+            ValueError,
+            match=f"Unsupported instruction '{gate_name}' in the quantum circuit.",
+        ):
             dual_rail_encode_from_qiskit(qc)
 
 
@@ -328,12 +375,11 @@ class TestIntegrationWithSimulator:
             assert branch.outcome in outcomes
             assert np.isclose(branch.frequency, 0.25, atol=0.05)
 
-    @pytest.mark.parametrize("one_state, expected_outcome",
-                             [(False, (0, 1, 1, 0)),
-                              (True, (1, 0, 1, 0))
-                             ])
+    @pytest.mark.parametrize(
+        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+    )
     def test_conditional_paulix(self, one_state, expected_outcome):
-        """Tests that a Qiskit PauliX gate can be conditioned on measurement outcomes."""
+        """Tests that PauliX gate can be conditioned on measurement outcomes."""
         qc = QuantumCircuit(2, 2)
         if one_state:
             qc.x(0)
@@ -356,13 +402,11 @@ class TestIntegrationWithSimulator:
         assert res.branches[0].outcome == expected_outcome
         assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
 
-
-    @pytest.mark.parametrize("one_state, expected_outcome",
-                             [(False, (0, 1, 1, 0)),
-                              (True, (1, 0, 1, 0))
-                             ])
+    @pytest.mark.parametrize(
+        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+    )
     def test_conditional_pauliz(self, one_state, expected_outcome):
-        """Tests that a Qiskit PauliX gate can be conditioned on measurement outcomes."""
+        """Tests that PauliZ gate can be conditioned on measurement outcomes."""
         qc = QuantumCircuit(2, 2)
         if one_state:
             qc.x(0)
@@ -387,6 +431,7 @@ class TestIntegrationWithSimulator:
         assert res.branches[0].outcome == expected_outcome
         assert np.isclose(res.branches[0].frequency, 1, atol=0.05)
 
+
 raw_samples1 = [
     (0, 1),
     (1, 0),
@@ -399,13 +444,18 @@ raw_samples2 = [
     (1, 0, 1, 0),
 ]
 
+
 class TestPostProcessing:
     """Tests the post-processing of measurement outcomes."""
 
-    @pytest.mark.parametrize("raw_samples, expected_qubit_samples",
-                             [ (raw_samples1, [(0,), (1,)]),
-                               (raw_samples2, [(0,0), (0,1), (1,0), (1,1)])])
+    @pytest.mark.parametrize(
+        "raw_samples, expected_qubit_samples",
+        [
+            (raw_samples1, [(0,), (1,)]),
+            (raw_samples2, [(0, 0), (0, 1), (1, 0), (1, 1)]),
+        ],
+    )
     def test_post_processing(self, raw_samples, expected_qubit_samples):
-        """Tests the post-processing of raw samples from dual-rail encoded bosonic qubits."""
+        """Tests the post-processing from dual-rail encoded bosonic qubits."""
         qubit_samples = get_bosonic_qubit_samples(raw_samples)
         assert qubit_samples == expected_qubit_samples

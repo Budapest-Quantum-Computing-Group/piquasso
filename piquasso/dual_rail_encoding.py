@@ -32,6 +32,7 @@ import numpy as np
 zero_bosonic_qubit_state = [0, 1]
 one_bosonic_qubit_state = [1, 0]
 
+
 def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
     r"""Prepares a bosonic qubits in the specified basis states.
 
@@ -55,6 +56,7 @@ def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
         instructions.append(pq.Create().on_modes(*modes_with_one_photon))
     return instructions
 
+
 def paulix_bosonic(mode1, mode2):
     """Applies a Pauli-X gate on a bosonic qubit encoded in dual-rail format.
 
@@ -66,6 +68,7 @@ def paulix_bosonic(mode1, mode2):
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
+
 def pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
@@ -73,6 +76,7 @@ def pauliz_bosonic(mode1, mode2):
         mode: The mode of the bosonic qubit.
     """
     return phase_gate_bosonic(np.pi, mode1)
+
 
 def phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
@@ -88,15 +92,17 @@ def phase_gate_bosonic(theta, mode):
         instructions.append(pq.Phaseshifter(theta).on_modes(mode))
     return instructions
 
+
 def hadamard_bosonic(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
+
 def cz_on_two_bosonic_qubits(modes):
     """Note: requires two auxiliary modes with one photon each."""
-    
+
     # Knill's notation
     cz_beamsplitter_first_theta_value = 54.74 / 180 * np.pi
     cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
@@ -113,7 +119,9 @@ def cz_on_two_bosonic_qubits(modes):
         pq.Beamsplitter(cz_beamsplitter_first_theta_value).on_modes(modes[1], modes[3])
     )
     instructions.append(
-        pq.Beamsplitter(-1 * cz_beamsplitter_first_theta_value).on_modes(modes[0], modes[1])
+        pq.Beamsplitter(-1 * cz_beamsplitter_first_theta_value).on_modes(
+            modes[0], modes[1]
+        )
     )
     instructions.append(
         pq.Beamsplitter(cz_beamsplitter_second_theta_value).on_modes(modes[2], modes[3])
@@ -125,17 +133,22 @@ def cz_on_two_bosonic_qubits(modes):
     )
     return instructions
 
-def _get_condition_function(qubit_index, measurement_value):
-    """Returns a condition function for conditional operations based on measurement outcomes.
 
-    This function converts the qubit index to the corresponding dual-rail mode indices and checks
-    the measurement outcomes of those modes to determine the qubit measurement outcome.
+def _get_condition_function(qubit_index, measurement_value):
+    """Returns a condition for conditional operations based on measurement outcomes.
+
+    This function converts the qubit index to the corresponding dual-rail mode
+    indices and checks the measurement outcomes of those modes to determine the
+    qubit measurement outcome.
     """
+
     def condition(outcomes):
         two_mode_outcomes = [(outcomes[qubit_index * 2], outcomes[qubit_index * 2 + 1])]
         qubit_outcome = get_bosonic_qubit_samples(two_mode_outcomes)[0][0]
         return qubit_outcome == measurement_value
+
     return condition
+
 
 def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
     instruction_name = qiskit_instruction.name
@@ -164,14 +177,19 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
 
         condition = _get_condition_function(cond[0]._index, cond[1])
         for inner_instr_qiskit in true_branch_instructions:
-            instr_list = _map_qiskit_instr_to_pq(inner_instr_qiskit, mode1, mode2, aux_modes)
+            instr_list = _map_qiskit_instr_to_pq(
+                inner_instr_qiskit, mode1, mode2, aux_modes
+            )
             for instr in instr_list:
                 instructions.append(instr.when(condition))
     else:
-        raise ValueError(f"Unsupported instruction '{instruction_name}' in the quantum circuit.")
+        raise ValueError(
+            f"Unsupported instruction '{instruction_name}' in the quantum circuit."
+        )
     return instructions
 
-def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
+
+def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:
     num_cz = sum(1 for instruction in qc.data if instruction.name == "cz")
     num_bosonic_qubits = qc.num_qubits
 
@@ -179,9 +197,13 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
     # |1> = [1, 0]
 
     idx_one_photon = np.where(np.array(zero_bosonic_qubit_state) == 1)[0][0]
-    modes_with_one_photon = list(range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2))
+    modes_with_one_photon = list(
+        range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2)
+    )
     num_aux_needed = num_cz * 2
-    aux_modes_all = list(range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed))
+    aux_modes_all = list(
+        range(num_bosonic_qubits * 2, num_bosonic_qubits * 2 + num_aux_needed)
+    )
 
     all_modes = list(range(num_bosonic_qubits * 2)) + aux_modes_all
 
@@ -204,10 +226,13 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") ->  pq.Program:
             cz_idx += 1
         else:
             aux_modes = []
-        mapped_instructions = _map_qiskit_instr_to_pq(instr_qiskit, mode1, mode2, aux_modes)
+        mapped_instructions = _map_qiskit_instr_to_pq(
+            instr_qiskit, mode1, mode2, aux_modes
+        )
         instructions.extend(mapped_instructions)
 
     return instructions
+
 
 def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
     try:
@@ -216,11 +241,12 @@ def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Progra
         raise ImportError("Qiskit package is not installed.") from e
     if not isinstance(quantum_circuit, qiskit.QuantumCircuit):
         raise TypeError(
-            "The input argument to the dual_rail_encode_from_qiskit function should " \
+            "The input argument to the dual_rail_encode_from_qiskit function should "
             f"be a Qiskit QuantumCircuit, but it is of type '{type(quantum_circuit)}'."
         )
     instructions = _encode_dual_rail_from_qiskit(quantum_circuit)
     return pq.Program(instructions=instructions)
+
 
 def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]:
     """Post-processes the raw samples from dual-rail encoded bosonic qubits.
@@ -234,7 +260,7 @@ def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]
     if not any(len(samples) // 2 != 0 for samples in raw_samples_for_modes):
         raise ValueError(
             "The input raw_samples_for_modes should be a list of tuples, "
-            f"where each tuple contains an outcome for each measured mode."
+            "where each tuple contains an outcome for each measured mode."
         )
     all_qubit_samples = []
     for samples_this_shot in raw_samples_for_modes:
@@ -246,7 +272,9 @@ def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]
             elif two_modes_outcome == one_bosonic_qubit_state:
                 qubit_samples.append(1)
             else:
-                raise ValueError(f"Unexpected outcomes: {two_modes_outcome} for modes: {i}, {i+1}.")
+                raise ValueError(
+                    f"Unexpected outcomes: {two_modes_outcome} for modes: {i}, {i+1}."
+                )
 
         all_qubit_samples.append(tuple(qubit_samples))
     return all_qubit_samples
