@@ -33,7 +33,7 @@ zero_bosonic_qubit_state = [0, 1]
 one_bosonic_qubit_state = [1, 0]
 
 
-def prep_bosonic_qubits(all_modes, modes_with_one_photon) -> list:
+def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
     r"""Prepares a bosonic qubits in the specified basis states.
 
     The following dual-rail encoding convention is being used:
@@ -189,7 +189,8 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
     return instructions
 
 
-def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:  # noqa: F821
+def _encode_dual_rail_from_qiskit(qc):
+    """The function to encode a QuantumCircuit into dual-rail instructions."""
     num_cz = sum(1 for instruction in qc.data if instruction.name == "cz")
     num_bosonic_qubits = qc.num_qubits
 
@@ -236,13 +237,21 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:  # noqa: 
 
 
 def dual_rail_encode_from_qiskit(
-    quantum_circuit: "QuantumCircuit",  # noqa: F821
-) -> pq.Program:
+    quantum_circuit,
+):
+    """Encodes a Qiskit QuantumCircuit into a dual-rail bosonic qubit Piquasso program.
+
+    Args:
+        quantum_circuit: The Qiskit QuantumCircuit to be encoded.
+
+    Returns:
+        A Piquasso Program representing the dual-rail encoded bosonic qubit circuit.
+    """
     try:
-        import qiskit
+        from qiskit import QuantumCircuit
     except ImportError as e:
         raise ImportError("Qiskit package is not installed.") from e
-    if not isinstance(quantum_circuit, qiskit.QuantumCircuit):
+    if not isinstance(quantum_circuit, QuantumCircuit):
         raise TypeError(
             "The input argument to the dual_rail_encode_from_qiskit function should "
             f"be a Qiskit QuantumCircuit, but it is of type '{type(quantum_circuit)}'."
