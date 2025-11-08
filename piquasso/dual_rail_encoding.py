@@ -29,8 +29,8 @@ For the dual-rail encoding, the following convention is used:
 import piquasso as pq
 import numpy as np
 
-zero_bosonic_qubit_state = [0, 1]
-one_bosonic_qubit_state = [1, 0]
+_zero_bosonic_qubit_state = [0, 1]
+_one_bosonic_qubit_state = [1, 0]
 
 
 def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
@@ -197,7 +197,7 @@ def _encode_dual_rail_from_qiskit(qc):
     # |0> = [0, 1]
     # |1> = [1, 0]
 
-    idx_one_photon = np.where(np.array(zero_bosonic_qubit_state) == 1)[0][0]
+    idx_one_photon = np.where(np.array(_zero_bosonic_qubit_state) == 1)[0][0]
     modes_with_one_photon = list(
         range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2)
     )
@@ -279,9 +279,9 @@ def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]
         qubit_samples = []
         for i in range(0, len(samples_this_shot), 2):
             two_modes_outcome = [samples_this_shot[i], samples_this_shot[i + 1]]
-            if two_modes_outcome == zero_bosonic_qubit_state:
+            if two_modes_outcome == _zero_bosonic_qubit_state:
                 qubit_samples.append(0)
-            elif two_modes_outcome == one_bosonic_qubit_state:
+            elif two_modes_outcome == _one_bosonic_qubit_state:
                 qubit_samples.append(1)
             else:
                 raise ValueError(
