@@ -189,7 +189,7 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
     return instructions
 
 
-def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:
+def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:  # noqa: F821
     num_cz = sum(1 for instruction in qc.data if instruction.name == "cz")
     num_bosonic_qubits = qc.num_qubits
 
@@ -234,7 +234,7 @@ def _encode_dual_rail_from_qiskit(qc: "QuantumCircuit") -> pq.Program:
     return instructions
 
 
-def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
+def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:  # noqa: F821, E501
     try:
         import qiskit
     except ImportError as e:
