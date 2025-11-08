@@ -29,11 +29,18 @@ For the dual-rail encoding, the following convention is used:
 import piquasso as pq
 import numpy as np
 
-zero_bosonic_qubit_state = [0, 1]
-one_bosonic_qubit_state = [1, 0]
+from typing import TYPE_CHECKING, List
+
+if TYPE_CHECKING:
+    from qiskit import QuantumCircuit
+
+_zero_bosonic_qubit_state = [0, 1]
+_one_bosonic_qubit_state = [1, 0]
 
 
-def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
+def _prep_bosonic_qubits(
+    all_modes: List[int], modes_with_one_photon: List[int]
+) -> List[pq.Instruction]:
     r"""Prepares a bosonic qubits in the specified basis states.
 
     The following dual-rail encoding convention is being used:
@@ -57,7 +64,7 @@ def prep_bosonic_qubits(all_modes: list, modes_with_one_photon: list) -> list:
     return instructions
 
 
-def paulix_bosonic(mode1, mode2):
+def _paulix_bosonic(mode1, mode2):
     """Applies a Pauli-X gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
@@ -69,16 +76,16 @@ def paulix_bosonic(mode1, mode2):
     return instructions
 
 
-def pauliz_bosonic(mode1, mode2):
+def _pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
         mode: The mode of the bosonic qubit.
     """
-    return phase_gate_bosonic(np.pi, mode1)
+    return _phase_gate_bosonic(np.pi, mode1)
 
 
-def phase_gate_bosonic(theta, mode):
+def _phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
@@ -93,14 +100,14 @@ def phase_gate_bosonic(theta, mode):
     return instructions
 
 
-def hadamard_bosonic(mode1, mode2):
+def _hadamard_bosonic(mode1, mode2):
     instructions = []
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
 
-def cz_on_two_bosonic_qubits(modes):
+def _cz_on_two_bosonic_qubits(modes):
     """Note: requires two auxiliary modes with one photon each."""
 
     # Knill's notation
@@ -154,19 +161,19 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
     instruction_name = qiskit_instruction.name
     instructions = []
     if instruction_name == "h":
-        pq_instruction = hadamard_bosonic(mode1, mode2)
+        pq_instruction = _hadamard_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "x":
-        pq_instruction = paulix_bosonic(mode1, mode2)
+        pq_instruction = _paulix_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "z":
-        pq_instruction = pauliz_bosonic(mode1, mode2)
+        pq_instruction = _pauliz_bosonic(mode1, mode2)
         instructions.extend(pq_instruction)
     elif instruction_name == "cz":
-        pq_instruction = cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
+        pq_instruction = _cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "p":
-        instructions.extend(phase_gate_bosonic(qiskit_instruction.params, mode1))
+        instructions.extend(_phase_gate_bosonic(qiskit_instruction.params, mode1))
     elif instruction_name == "measure":
         pq_instruction = pq.ParticleNumberMeasurement().on_modes(mode1, mode2)
         instructions.append(pq_instruction)
@@ -197,7 +204,7 @@ def _encode_dual_rail_from_qiskit(qc):
     # |0> = [0, 1]
     # |1> = [1, 0]
 
-    idx_one_photon = np.where(np.array(zero_bosonic_qubit_state) == 1)[0][0]
+    idx_one_photon = np.where(np.array(_zero_bosonic_qubit_state) == 1)[0][0]
     modes_with_one_photon = list(
         range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2)
     )
@@ -211,7 +218,7 @@ def _encode_dual_rail_from_qiskit(qc):
     instructions = []
 
     modes_with_one_photon = modes_with_one_photon + aux_modes_all
-    preparations = prep_bosonic_qubits(all_modes, modes_with_one_photon)
+    preparations = _prep_bosonic_qubits(all_modes, modes_with_one_photon)
     instructions.extend(preparations)
 
     cz_idx = 0
@@ -236,9 +243,7 @@ def _encode_dual_rail_from_qiskit(qc):
     return instructions
 
 
-def dual_rail_encode_from_qiskit(
-    quantum_circuit,
-):
+def dual_rail_encode_from_qiskit(quantum_circuit: "QuantumCircuit") -> pq.Program:
     """Encodes a Qiskit QuantumCircuit into a dual-rail bosonic qubit Piquasso program.
 
     Args:
@@ -260,7 +265,7 @@ def dual_rail_encode_from_qiskit(
     return pq.Program(instructions=instructions)
 
 
-def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]:
+def get_bosonic_qubit_samples(raw_samples_for_modes: List[tuple]) -> List[tuple]:
     """Post-processes the raw samples from dual-rail encoded bosonic qubits.
 
     Args:
@@ -279,9 +284,9 @@ def get_bosonic_qubit_samples(raw_samples_for_modes: list[tuple]) -> list[tuple]
         qubit_samples = []
         for i in range(0, len(samples_this_shot), 2):
             two_modes_outcome = [samples_this_shot[i], samples_this_shot[i + 1]]
-            if two_modes_outcome == zero_bosonic_qubit_state:
+            if two_modes_outcome == _zero_bosonic_qubit_state:
                 qubit_samples.append(0)
-            elif two_modes_outcome == one_bosonic_qubit_state:
+            elif two_modes_outcome == _one_bosonic_qubit_state:
                 qubit_samples.append(1)
             else:
                 raise ValueError(
