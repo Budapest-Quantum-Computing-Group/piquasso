@@ -88,7 +88,7 @@ def test_instruction_when_called_twice_raises_exception():
         instruction.when(lambda_func)
 
 
-def test_instruction_when_with_non_callable_raises_exception():
+def test_instruction_when_with_expression_string():
     class CustomInstruction(pq.Instruction):
         pass
 
@@ -96,14 +96,10 @@ def test_instruction_when_with_non_callable_raises_exception():
 
     non_callable_condition = "x[0] == 1"
 
-    with pytest.raises(
-        PiquassoException,
-        match=re.escape(
-            "The condition 'x[0] == 1' needs to be a callable that takes the "
-            "measurement outcomes and returns a boolean."
-        ),
-    ):
-        instruction.when(non_callable_condition)
+    instruction = instruction.when(non_callable_condition)
+
+    assert instruction.condition is not None
+    assert str(instruction.condition) == non_callable_condition
 
 
 def test_instruction_condition_evaluation_with_exception_raises_piquasso_exception(
@@ -154,7 +150,56 @@ def test_instruction_condition_evaluation_with_exception_raises_piquasso_excepti
         f"An error occurred when evaluating the condition '{faulty_condition}' for the "
         f"instruction '{instruction}': division by zero\nMake sure that the condition "
         f"is a callable that takes the tuple of measurement outcomes and returns a "
-        f"boolean."
+        f"boolean, OR an expression string, which can be evaluated to a boolean."
+    )
+
+
+def test_instruction_condition_expression_evaluation_with_exception_raises_piquasso_exception(  # noqa: E501
+    FakeState, FakeConfig, FakeConnector
+):
+    class FakeMeasurement(pq.Measurement):
+        pass
+
+    def fake_measurement(state: FakeState, instruction: pq.Instruction, shots: int):
+        return [
+            pq.api.branch.Branch(state=state, frequency=Fraction(3, 10), outcome=(0,)),
+            pq.api.branch.Branch(state=state, frequency=Fraction(7, 10), outcome=(1,)),
+        ]
+
+    class CustomInstruction(pq.Instruction):
+        pass
+
+    def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
+        return [pq.api.branch.Branch(state=state)]
+
+    class FakeSimulator(pq.Simulator):
+        _state_class = FakeState
+
+        _config_class = FakeConfig
+
+        _instruction_map = {
+            CustomInstruction: fake_calculation,
+            FakeMeasurement: fake_measurement,
+        }
+
+        _default_connector_class = FakeConnector
+
+        _measurement_classes_allowed_mid_circuit = FakeMeasurement
+
+    instruction = CustomInstruction()
+
+    simulator = FakeSimulator(d=1)
+
+    instruction = instruction.when("x[0] / 0 == 1")
+
+    with pytest.raises(PiquassoException) as exc:
+        simulator.execute_instructions([FakeMeasurement(), instruction], shots=10)
+
+    assert exc.value.args[0] == (
+        f"An error occurred when evaluating the condition 'x[0] / 0 == 1' for the "
+        f"instruction '{instruction}': division by zero\nMake sure that the condition "
+        f"is a callable that takes the tuple of measurement outcomes and returns a "
+        f"boolean, OR an expression string, which can be evaluated to a boolean."
     )
 
 
@@ -258,5 +303,61 @@ def test_instruction_faulty_unresolved_parameter_raises_InvalidParameter(
         f"An error occurred when resolving the parameter 'param' for the instruction "
         f"'{instruction}': division by zero\n"
         "Make sure that the parameter is a callable that takes the tuple of "
-        "measurement outcomes and returns a float."
+        "measurement outcomes and returns a float, OR an expression string, which can "
+        "be evaluated to a float."
+    )
+
+
+def test_instruction_faulty_unresolved_expression_parameter_raises_InvalidParameter(
+    FakeState, FakeConfig, FakeConnector
+):
+    class FakeMeasurement(pq.Measurement):
+        pass
+
+    def fake_measurement(state: FakeState, instruction: pq.Instruction, shots: int):
+        return [
+            pq.api.branch.Branch(state=state, frequency=Fraction(3, 10), outcome=(0,)),
+            pq.api.branch.Branch(state=state, frequency=Fraction(7, 10), outcome=(1,)),
+        ]
+
+    class CustomInstruction(pq.Instruction):
+        def __init__(self, param):
+            super().__init__(params=dict(param=param))
+
+    zero_branch_state = Mock()
+    one_branch_state = Mock()
+
+    def fake_calculation(state: FakeState, instruction: pq.Instruction, shots: int):
+        if instruction.params["param"] == 0:
+            return [pq.api.branch.Branch(state=zero_branch_state)]
+        else:
+            return [pq.api.branch.Branch(state=one_branch_state)]
+
+    class FakeSimulator(pq.Simulator):
+        _state_class = FakeState
+
+        _config_class = FakeConfig
+
+        _instruction_map = {
+            CustomInstruction: fake_calculation,
+            FakeMeasurement: fake_measurement,
+        }
+
+        _default_connector_class = FakeConnector
+
+        _measurement_classes_allowed_mid_circuit = FakeMeasurement
+
+    instruction = CustomInstruction(param="x[-1] / 0")
+
+    simulator = FakeSimulator(d=1)
+
+    with pytest.raises(PiquassoException) as exc:
+        simulator.execute_instructions([FakeMeasurement(), instruction], shots=10)
+
+    assert exc.value.args[0] == (
+        f"An error occurred when resolving the parameter 'param' for the instruction "
+        f"'{instruction}': division by zero\n"
+        "Make sure that the parameter is a callable that takes the tuple of "
+        "measurement outcomes and returns a float, OR an expression string, which can "
+        "be evaluated to a float."
     )
