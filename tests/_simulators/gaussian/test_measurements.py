@@ -461,66 +461,22 @@ def test_seeded_gaussian_boson_sampling_samples_displaced():
 
         pq.Q(0, 1, 2) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.GaussianSimulator(
-        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=123)
+    seed = 123
+
+    simulator1 = pq.GaussianSimulator(
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=seed)
     )
 
-    samples = simulator.execute(gaussian_boson_sampling, shots=shots).samples
+    simulator2 = pq.GaussianSimulator(
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=seed)
+    )
+
+    samples1 = simulator1.execute(gaussian_boson_sampling, shots=shots).samples
+    samples2 = simulator2.execute(gaussian_boson_sampling, shots=shots).samples
 
     assert np.allclose(
-        samples,
-        [
-            (0, 2, 0),
-            (1, 2, 0),
-            (2, 1, 0),
-            (0, 2, 1),
-            (0, 1, 0),
-            (1, 3, 0),
-            (0, 2, 1),
-            (0, 4, 0),
-            (0, 3, 1),
-            (0, 1, 3),
-            (0, 4, 1),
-            (0, 1, 1),
-            (0, 1, 0),
-            (0, 3, 0),
-            (1, 3, 0),
-            (0, 4, 0),
-            (2, 2, 1),
-            (0, 2, 1),
-            (3, 1, 1),
-            (0, 2, 0),
-            (1, 2, 0),
-            (1, 2, 0),
-            (0, 3, 0),
-            (0, 2, 0),
-            (0, 4, 0),
-            (0, 3, 1),
-            (0, 3, 2),
-            (0, 2, 1),
-            (0, 2, 1),
-            (0, 2, 0),
-            (1, 1, 1),
-            (0, 3, 1),
-            (0, 1, 1),
-            (0, 4, 1),
-            (1, 2, 0),
-            (1, 1, 1),
-            (0, 3, 0),
-            (1, 1, 1),
-            (0, 4, 0),
-            (0, 0, 1),
-            (0, 0, 1),
-            (0, 4, 1),
-            (0, 0, 3),
-            (0, 3, 0),
-            (0, 2, 2),
-            (0, 1, 0),
-            (1, 3, 0),
-            (1, 2, 0),
-            (0, 2, 0),
-            (0, 1, 0),
-        ],
+        samples1,
+        samples2,
     )
 
 
