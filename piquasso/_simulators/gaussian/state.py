@@ -122,9 +122,6 @@ class GaussianState(State):
         self._validate_cov(self.xpxp_covariance_matrix, self.d)
 
     def _validate_mean(self, mean: np.ndarray, d: int) -> None:
-        if not self._config.validate:
-            return
-
         expected_shape = (2 * d,)
 
         if not mean.shape == expected_shape:
@@ -133,10 +130,7 @@ class GaussianState(State):
                 f"expected={expected_shape}, actual={mean.shape}."
             )
 
-    def _validate_cov(self, cov: np.ndarray, d: int) -> None:
-        if not self._config.validate:
-            return
-
+    def _validate_cov_shape(self, cov: np.ndarray, d: int) -> None:
         expected_shape = (2 * d,) * 2
 
         if not cov.shape == expected_shape:
@@ -144,6 +138,9 @@ class GaussianState(State):
                 f"Invalid 'cov' matrix shape; "
                 f"expected={expected_shape}, actual={cov.shape}."
             )
+
+    def _validate_cov(self, cov: np.ndarray, d: int) -> None:
+        self._validate_cov_shape(cov, d)
 
         if not is_symmetric(cov):
             raise InvalidState("The covariance matrix is not symmetric.")
@@ -276,7 +273,8 @@ class GaussianState(State):
     def xpxp_mean_vector(self, value: np.ndarray) -> None:
         np = self._connector.np
 
-        self._validate_mean(value, self.d)
+        if self._config.validate:
+            self._validate_mean(value, self.d)
 
         m = (value[::2] + 1j * value[1::2]) / np.sqrt(2 * self._config.hbar)
 
@@ -314,7 +312,10 @@ class GaussianState(State):
 
         d = self.d
 
-        self._validate_cov(new_cov, d)
+        if self._can_validate_variable(new_cov):
+            self._validate_cov(new_cov, d)
+        elif self._config.validate:
+            self._validate_cov_shape(new_cov, d)
 
         indices = xpxp_to_xxpp_indices(self.d)
 
@@ -802,7 +803,7 @@ class GaussianState(State):
 
         np = self._connector.np
 
-        if self._config.validate and not is_symmetric(A):
+        if self._can_validate_variable(A) and not is_symmetric(A):
             raise InvalidParameter("The specified matrix is not symmetric.")
 
         state = self.rotated(phi)

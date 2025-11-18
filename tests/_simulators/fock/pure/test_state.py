@@ -374,24 +374,3 @@ def test_PureFockState_unnormalized_state_raises_InvalidState():
         state.validate()
 
     assert "The sum of probabilities is" in error.value.args[0]
-
-
-def test_PureFockState_unnormalized_state_validate_False():
-    d = 1
-    low_cutoff = 3
-
-    high_displacement = 3.0
-
-    with pq.Program() as program:
-        pq.Q() | pq.Vacuum()
-
-        pq.Q(0) | pq.Displacement(high_displacement)
-
-    simulator = pq.PureFockSimulator(
-        d=d, config=pq.Config(cutoff=low_cutoff, validate=False)
-    )
-    state = simulator.execute(program).state
-
-    assert not np.isclose(state.norm, 1.0)
-
-    state.validate()

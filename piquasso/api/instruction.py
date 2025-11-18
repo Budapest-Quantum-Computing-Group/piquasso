@@ -24,6 +24,7 @@ from piquasso.api.exceptions import PiquassoException, InvalidProgram, InvalidPa
 
 if typing.TYPE_CHECKING:
     from piquasso.api.program import Program
+    from piquasso.api.connector import BaseConnector
 
 
 class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
@@ -48,10 +49,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
             name: param for name, param in self._params.items() if is_unresolved(param)
         }
 
-        if self._is_resolved():
-            self._validate()
-
-    def _validate(self):
+    def _validate(self, connector: "BaseConnector") -> None:
         pass
 
     @property
@@ -86,8 +84,6 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
             _resolved_params[name] = resolved_param
 
         self._params.update(_resolved_params)
-
-        self._validate()
 
     def _unresolve_params(self):
         self._params.update(self._unresolved_params)

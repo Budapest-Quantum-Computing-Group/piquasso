@@ -16,7 +16,7 @@
 import numpy as np
 
 from functools import partial
-
+from typing import Any
 from ..connector import BuiltinConnector
 
 
@@ -107,6 +107,21 @@ class TensorflowConnector(BuiltinConnector):
         self.sqrtm = tf.linalg.sqrtm
 
         self.range = tf.range
+
+    def is_abstract(self, value: Any) -> bool:
+        """Determines whether the given value is abstract (a tensor with unknown value)
+        or concrete (has a known value).
+
+        Args:
+            value: The value to be checked.
+
+        Returns:
+            bool: `True` if the value is abstract, `False` if it is concrete
+        """
+        from tensorflow.python.framework.ops import EagerTensor
+
+        tf = self._tf
+        return not isinstance(tf.convert_to_tensor(value), EagerTensor)
 
     @property
     def _custom_gradient_enabled(self):

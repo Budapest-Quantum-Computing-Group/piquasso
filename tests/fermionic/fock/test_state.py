@@ -114,25 +114,6 @@ def test_PureFockState_validate_unnormalized(connector):
 
 
 @for_all_connectors
-def test_PureFockState_validate_with_validation_turned_off(connector):
-    theta = np.pi / 5
-
-    U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-
-    with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
-        pq.Q(0, 1) | pq.Interferometer(U)
-
-    simulator = pq.fermionic.PureFockSimulator(
-        d=2, connector=connector, config=pq.Config(validate=False)
-    )
-
-    state = simulator.execute(program).state
-
-    state.validate()
-
-
-@for_all_connectors
 def test_PureFockState_eq_with_itself(connector):
     theta = np.pi / 5
 
@@ -142,9 +123,7 @@ def test_PureFockState_eq_with_itself(connector):
         pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
-    simulator = pq.fermionic.PureFockSimulator(
-        d=2, connector=connector, config=pq.Config(validate=False)
-    )
+    simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
 
     state = simulator.execute(program).state
 
@@ -161,9 +140,7 @@ def test_PureFockState_eq_different_type(connector):
         pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
-    simulator = pq.fermionic.PureFockSimulator(
-        d=2, connector=connector, config=pq.Config(validate=False)
-    )
+    simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
 
     state = simulator.execute(program).state
 

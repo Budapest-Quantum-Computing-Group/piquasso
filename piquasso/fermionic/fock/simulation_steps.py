@@ -111,7 +111,7 @@ def passive_linear(
 
     modes = instruction.modes
 
-    if config.validate and not are_modes_consecutive(modes):
+    if state._config.validate and not are_modes_consecutive(modes):
         raise InvalidParameter(f"Specified modes must be consecutive: modes={modes}")
 
     unitary = instruction._get_passive_block(connector, config)
@@ -135,7 +135,6 @@ def squeezing2(
     state: PureFockState, instruction: "Squeezing2", shots: int
 ) -> "List[Branch]":
     connector = state._connector
-    config = state._config
 
     modes = instruction.modes
 
@@ -145,7 +144,7 @@ def squeezing2(
     np = connector.np
     fallback_np = connector.fallback_np
 
-    if config.validate and not are_modes_consecutive(modes):
+    if state._config.validate and not are_modes_consecutive(modes):
         raise InvalidParameter(f"Specified modes must be consecutive: modes={modes}")
 
     r = instruction.params["r"]

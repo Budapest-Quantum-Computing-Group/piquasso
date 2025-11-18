@@ -28,6 +28,7 @@ from piquasso._math.validations import all_in_interval
 
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Gate
+from piquasso.api.connector import BaseConnector
 
 
 class DeterministicGaussianChannel(Gate):
@@ -72,9 +73,12 @@ class DeterministicGaussianChannel(Gate):
 
         super().__init__(params=dict(X=X, Y=Y))
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         X = self.params["X"]
         Y = self.params["Y"]
+
+        if connector.is_abstract(X) or connector.is_abstract(Y):
+            return
 
         if not is_real_2n_by_2n(X):
             raise InvalidParameter(
@@ -139,8 +143,12 @@ class Attenuator(Gate):
             params=dict(theta=theta, mean_thermal_excitation=mean_thermal_excitation),
         )
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         mean_thermal_excitation = self.params["mean_thermal_excitation"]
+
+        if connector.is_abstract(mean_thermal_excitation):
+            return
+
         if mean_thermal_excitation < 0:
             raise InvalidParameter(
                 "The parameter 'mean_thermal_excitation' must be a positive real "
