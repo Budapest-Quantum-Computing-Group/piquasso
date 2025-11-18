@@ -258,7 +258,7 @@ def annihilate(
 def kerr(state: PureFockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
-    xi = instruction._all_params["xi"]
+    xi = instruction._get_all_params(state._connector)["xi"]
     np = state._np
 
     mode = instruction.modes[0]
@@ -279,7 +279,7 @@ def cross_kerr(
     np = state._connector.np
 
     modes = instruction.modes
-    xi = instruction._all_params["xi"]
+    xi = instruction._get_all_params(state._connector)["xi"]
     for index, basis in enumerate(space):
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
         state.state_vector = state._connector.assign(
@@ -294,8 +294,8 @@ def displacement(
 ) -> List[Branch]:
     connector = state._connector
 
-    r = instruction._all_params["r"]
-    phi = instruction._all_params["phi"]
+    r = instruction._get_all_params(state._connector)["r"]
+    phi = instruction._get_all_params(state._connector)["phi"]
 
     wrapped_get_matrix = connector.decorator(get_single_mode_displacement_operator)
 
@@ -351,8 +351,8 @@ def squeezing(
 ) -> List[Branch]:
     _apply_squeezing(
         state,
-        r=instruction._all_params["r"],
-        phi=instruction._all_params["phi"],
+        r=instruction._get_all_params(state._connector)["r"],
+        phi=instruction._get_all_params(state._connector)["phi"],
         mode=instruction.modes[0],
     )
 
@@ -364,7 +364,7 @@ def cubic_phase(
 ) -> List[Branch]:
     connector = state._connector
 
-    gamma = instruction._all_params["gamma"]
+    gamma = instruction._get_all_params(state._connector)["gamma"]
 
     wrapped_get_matrix = connector.decorator(get_single_mode_cubic_phase_operator)
 
@@ -422,8 +422,10 @@ def linear(
 def state_vector_instruction(
     state: PureFockState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    if "occupation_numbers" in instruction._all_params:
-        occupation_numbers = instruction._all_params["occupation_numbers"]
+    if "occupation_numbers" in instruction._get_all_params(state._connector):
+        occupation_numbers = instruction._get_all_params(state._connector)[
+            "occupation_numbers"
+        ]
 
         if state._config.validate:
             expected_length = len(instruction.modes) if instruction.modes else state.d
@@ -436,15 +438,15 @@ def state_vector_instruction(
 
         _add_occupation_number_basis(
             state=state,
-            coefficient=instruction._all_params["coefficient"],
+            coefficient=instruction._get_all_params(state._connector)["coefficient"],
             occupation_numbers=occupation_numbers,
             modes=instruction.modes,
         )
 
-    elif "fock_amplitude_map" in instruction._all_params:
-        for occupation_numbers, amplitude in instruction._all_params[
-            "fock_amplitude_map"
-        ].items():
+    elif "fock_amplitude_map" in instruction._get_all_params(state._connector):
+        for occupation_numbers, amplitude in instruction._get_all_params(
+            state._connector
+        )["fock_amplitude_map"].items():
             if state._config.validate:
                 expected_length = (
                     len(instruction.modes) if instruction.modes else state.d
@@ -458,7 +460,8 @@ def state_vector_instruction(
 
             _add_occupation_number_basis(
                 state=state,
-                coefficient=instruction._all_params["coefficient"] * amplitude,
+                coefficient=instruction._get_all_params(state._connector)["coefficient"]
+                * amplitude,
                 occupation_numbers=occupation_numbers,
                 modes=instruction.modes,
             )
@@ -487,7 +490,7 @@ def _add_occupation_number_basis(  # type: ignore
 def batch_prepare(
     state: PureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
-    subprograms = instruction._all_params["subprograms"]
+    subprograms = instruction._get_all_params(state._connector)["subprograms"]
     execute = instruction._execute
 
     state_vectors = [
@@ -506,7 +509,7 @@ def batch_prepare(
 def batch_apply(
     state: BatchPureFockState, instruction: BatchInstruction, shots: int
 ) -> List[Branch]:
-    subprograms = instruction._all_params["subprograms"]
+    subprograms = instruction._get_all_params(state._connector)["subprograms"]
     execute = instruction._execute
 
     d = state.d
