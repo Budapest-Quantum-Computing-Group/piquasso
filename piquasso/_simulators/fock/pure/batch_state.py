@@ -107,15 +107,14 @@ class BatchPureFockState(PureFockState):
     def normalize(self) -> None:
         norms = self.norm
 
-        if self._config.validate and any(np.isclose(norm, 0) for norm in norms):
+        if self._can_validate_variable(norms[0]) and any(
+            np.isclose(norm, 0) for norm in norms
+        ):
             raise InvalidState("The norm of a state in the batch is 0.")
 
         self.state_vector = self.state_vector / self._np.sqrt(norms)
 
     def validate(self) -> None:
-        if not self._config.validate:
-            return
-
         if not all(np.isclose(norm, 1.0) for norm in self.norm):
             raise InvalidState(
                 "The sum of probabilities is not close to 1.0 for at least one state "

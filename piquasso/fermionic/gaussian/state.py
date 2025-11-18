@@ -123,7 +123,8 @@ class GaussianState(State):
         self._D = D_plus_E_over_2 + D_minus_E_over_2
         self._E = D_plus_E_over_2 - D_minus_E_over_2
 
-        self.validate()
+        if self._can_validate_variable(self._D):
+            self.validate()
 
     @property
     def correlation_matrix(self):
@@ -159,7 +160,8 @@ class GaussianState(State):
         d = self.d
         self._D = input_correlation_matrix[:d, :d]
         self._E = input_correlation_matrix[:d, d:]
-        self.validate()
+        if self._can_validate_variable(self._D):
+            self.validate()
 
     @property
     def maj_correlation_matrix(self):
@@ -191,9 +193,6 @@ class GaussianState(State):
         ) / 2
 
     def validate(self):
-        if not self._config.validate:
-            return
-
         d = self.d
 
         np = self._connector.fallback_np
@@ -267,7 +266,7 @@ class GaussianState(State):
     def _set_parent_hamiltonian(self, parent_hamiltonian):
         """Constructs the Gaussian state using its parent Hamiltonian."""
 
-        if self._config.validate:
+        if self._can_validate_variable(parent_hamiltonian):
             validate_fermionic_gaussian_hamiltonian(parent_hamiltonian)
 
         d = len(parent_hamiltonian) // 2
@@ -306,7 +305,7 @@ class GaussianState(State):
         np = self._connector.np
 
         if (
-            self._config.validate
+            self._can_validate_variable(self.correlation_matrix)
             and np.linalg.matrix_rank(self.correlation_matrix) != 2 * self.d
         ):
             raise PiquassoException(

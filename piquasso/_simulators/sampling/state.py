@@ -92,8 +92,6 @@ class SamplingState(State):
             InvalidState: If the interferometer matrix is non-unitary, or the input
                 state is invalid.
         """
-        if not self._config.validate:
-            return
 
         if not is_unitary(self.interferometer):
             raise InvalidState("The interferometer matrix is not unitary.")
@@ -101,8 +99,8 @@ class SamplingState(State):
         for occupation_number in self._occupation_numbers:
             if len(occupation_number) != self.d:
                 raise InvalidState(
-                    f"The occupation number '{occupation_number}' is not well-defined "
-                    f"on '{self.d}' modes."
+                    f"The occupation number '{occupation_number}' is not "
+                    f"well-defined on '{self.d}' modes."
                 )
 
         norm = self.norm
