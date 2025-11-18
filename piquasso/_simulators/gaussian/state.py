@@ -1202,3 +1202,44 @@ class GaussianState(State):
         purification.xpxp_mean_vector = np.concatenate([mean] * 2)
 
         return purification
+
+    def get_parity_operator_expectation_value(self) -> float:
+        r"""Expectation value of the parity operator.
+
+        The parity operator :math:`\hat{\Pi}` is defined as
+
+        .. math::
+            \hat{\Pi} = \exp \left(
+                i \pi \sum_{i=1}^{d} a_i^\dagger a_i
+            \right),
+
+        where :math:`a_i`, :math:`a_i^\dagger` are the annihilation and creation
+        operators respectively, and :math:`d` is the number of modes.
+
+        The expectation value of the parity operator can be calculated for Gaussian
+        states by the following formula:
+
+        .. math::
+            \langle \hat{\Pi} \rangle
+                = \frac{
+                    \exp \left(
+                        - \mu^\dagger \sigma^{-1} \mu
+                    \right)
+                }{
+                    \sqrt{\det \sigma}
+                },
+        where :math:`\mu` is the mean vector :attr:`complex_displacement` and
+        :math:`\sigma` is the covariance matrix :attr:`complex_covariance`.
+
+        Returns:
+            float: The expectation value of the parity operator.
+        """
+
+        np = self._connector.np
+        mean = self.complex_displacement
+        cov = self.complex_covariance
+
+        exponent = -np.conj(mean) @ np.linalg.inv(cov) @ mean
+        denominator = np.sqrt(np.linalg.det(cov))
+
+        return np.real(np.exp(exponent) / denominator)
