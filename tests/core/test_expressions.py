@@ -56,6 +56,7 @@ def test_invalid_expression_raises_exception():
     "src,x,expected",
     [
         ("1 + 2 * 3", (), 7),
+        ("1 + (2 * 3)", (), 7),
         ("(1 + 2) * 3", (), 9),
         ("2 ** 3 ** 2", (), 512),  # right-associative
         ("2 ** (3 ** 2)", (), 512),
