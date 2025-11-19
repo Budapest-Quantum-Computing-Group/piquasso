@@ -66,6 +66,7 @@ def test_invalid_expression_raises_exception():
         ("not False", (), True),
         ("1 < 2 < 3", (), True),  # chained comparison
         ("1 < 2 > 3", (), False),
+        ("1 > 2 or False", (), False),
         ("x[0] + x[1]", (3, 4), 7),
         ("x[-1]", (1, 2, 3), 3),
         ("x[1:4]", (0, 1, 2, 3, 4), (1, 2, 3)),  # slicing returns same type as seq
