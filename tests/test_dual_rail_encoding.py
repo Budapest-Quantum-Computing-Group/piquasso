@@ -181,7 +181,7 @@ class TestDualRailEncoding:
 
     @pytest.mark.parametrize(
         "unsupported_gate_data",
-        [("y", (1,)), ("cx", (0, 1)), ("swap", (0, 1))],
+        [("y", (1,)), ("swap", (0, 1))],
     )
     def test_invalid_gate_in_qiskit_circuit_raises(self, unsupported_gate_data):
         """Tests that an unsupported gate in QuantumCircuit raises a ValueError."""
@@ -198,8 +198,38 @@ class TestDualRailEncoding:
 class TestIntegrationWithSimulator:
     """Tests the integration with the Simulator class."""
 
-    def test_simulator_integration(self):
-        """Tests that a Qiskit circuit can be executed."""
+    def test_simulator_integration_cz_hadamard(self):
+        """Tests that a Qiskit circuit with H and CZ can be executed."""
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.h(1)
+        qc.cz(0, 1)
+        qc.measure([0, 1], [0, 1])
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=6, config=config, connector=connector)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert len(res.branches) == 4
+
+        outcomes = [
+            (1, 0, 1, 0),
+            (1, 0, 0, 1),
+            (0, 1, 1, 0),
+            (0, 1, 0, 1),
+        ]
+        for branch in res.branches:
+            assert branch.outcome in outcomes
+            assert np.isclose(float(branch.frequency), 0.25, atol=0.05)
+
+    def test_simulator_integration_cnot_hadamard(self):
+        """Tests that a Qiskit circuit with H and CNOT can be executed."""
         qc = QuantumCircuit(2, 2)
         qc.h(0)
         qc.h(1)
