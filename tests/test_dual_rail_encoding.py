@@ -179,7 +179,6 @@ class TestDualRailEncoding:
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
         assert measurement.modes == (2, 3)
 
-
     def test_cnot_instructions(self):
         """Tests converting a circuit with a CNOT gate."""
         qc = QuantumCircuit(2, 2)
@@ -256,7 +255,6 @@ class TestDualRailEncoding:
         assert post_selection.params["photon_counts"] == [1, 1]
         assert post_selection.modes == (bosonic_cz_indices[2], bosonic_cz_indices[3])
 
-
         # Check 2. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[11]
         assert isinstance(hadamard_1, pq.Beamsplitter)
@@ -326,13 +324,15 @@ class TestIntegrationWithSimulator:
             assert branch.outcome in outcomes
             assert np.isclose(float(branch.frequency), 0.25, atol=0.05)
 
-    @pytest.mark.parametrize("input_state, expected_state",
-                             [
-                                 ((0, 1, 0, 1), (0, 1, 0, 1)),
-                                 ((0, 1, 1, 0), (0, 1, 1, 0)),
-                                 ((1, 0, 0, 1), (1, 0, 1, 0)),
-                                 ((1, 0, 1, 0), (1, 0, 0, 1)),
-                             ])
+    @pytest.mark.parametrize(
+        "input_state, expected_state",
+        [
+            ((0, 1, 0, 1), (0, 1, 0, 1)),
+            ((0, 1, 1, 0), (0, 1, 1, 0)),
+            ((1, 0, 0, 1), (1, 0, 1, 0)),
+            ((1, 0, 1, 0), (1, 0, 0, 1)),
+        ],
+    )
     def test_simulator_integration_cnot(self, input_state, expected_state):
         """Tests that a Qiskit circuit with H and CNOT can be executed."""
         qc = QuantumCircuit(2, 2)
@@ -352,7 +352,7 @@ class TestIntegrationWithSimulator:
         prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
         fock_amplitudes_map = res.state.fock_amplitudes_map
-        for k,v in fock_amplitudes_map.items():
+        for k, v in fock_amplitudes_map.items():
             if k != expected_state:
                 assert np.isclose(fock_amplitudes_map[k], 0, atol=10e-4)
             else:

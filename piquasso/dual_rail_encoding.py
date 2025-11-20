@@ -140,6 +140,7 @@ def _cz_on_two_bosonic_qubits(modes):
     )
     return instructions
 
+
 def _cnot_on_two_bosonic_qubits(modes):
     """Note: requires two auxiliary modes with one photon each."""
     instructions = []
@@ -150,7 +151,7 @@ def _cnot_on_two_bosonic_qubits(modes):
     # Extract the two data modes and two aux modes
     cz_modes = [modes[0], modes[2], modes[4], modes[5]]
     CZ_instruction = _cz_on_two_bosonic_qubits(cz_modes)
-    
+
     # Apply Hadamard on the control bosonic qubit
     H_instruction_2 = _hadamard_bosonic(modes[2], modes[3])
 
@@ -158,6 +159,7 @@ def _cnot_on_two_bosonic_qubits(modes):
     instructions.extend(CZ_instruction)
     instructions.extend(H_instruction_2)
     return instructions
+
 
 def _get_condition_function(qubit_index, measurement_value):
     """Returns a condition for conditional operations based on measurement outcomes.
@@ -205,9 +207,7 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
 
         condition = _get_condition_function(cond[0]._index, cond[1])
         for inner_instr_qiskit in true_branch_instructions:
-            instr_list = _map_qiskit_instr_to_pq(
-                inner_instr_qiskit, modes, aux_modes
-            )
+            instr_list = _map_qiskit_instr_to_pq(inner_instr_qiskit, modes, aux_modes)
             for instr in instr_list:
                 instructions.append(instr.when(condition))
     else:
@@ -250,20 +250,19 @@ def _encode_dual_rail_from_qiskit(qc):
             if instr_qiskit.name == "cz":
                 modes = [2 * qubit_indices[0], 2 * qubit_indices[1]]
             else:
-                modes = [2 * qubit_indices[0],
-                     2 * qubit_indices[0] + 1,
-                     2 * qubit_indices[1],
-                     2 * qubit_indices[1] + 1
-                     ]
+                modes = [
+                    2 * qubit_indices[0],
+                    2 * qubit_indices[0] + 1,
+                    2 * qubit_indices[1],
+                    2 * qubit_indices[1] + 1,
+                ]
             aux_modes = [aux_modes_all[cz_idx * 2], aux_modes_all[cz_idx * 2 + 1]]
             cz_idx += 1
         else:
             qubit = qubit_indices[0]
             modes = [2 * qubit, 2 * qubit + 1]
             aux_modes = []
-        mapped_instructions = _map_qiskit_instr_to_pq(
-            instr_qiskit, modes, aux_modes
-        )
+        mapped_instructions = _map_qiskit_instr_to_pq(instr_qiskit, modes, aux_modes)
         instructions.extend(mapped_instructions)
 
     return instructions
