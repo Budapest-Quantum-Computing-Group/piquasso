@@ -140,6 +140,14 @@ def _cz_on_two_bosonic_qubits(modes):
     )
     return instructions
 
+def _cnot_on_two_bosonic_qubits(modes):
+    """Note: requires two auxiliary modes with one photon each."""
+    instructions = []
+    H_instruction_1 = _hadamard_bosonic(modes[0], modes[1])
+    CZ_instruction = _cz_on_two_bosonic_qubits(modes)
+    H_instruction_2 = _hadamard_bosonic(modes[0], modes[1])
+    instructions.extend([H_instruction_1, CZ_instruction, H_instruction_2])
+    return instructions
 
 def _get_condition_function(qubit_index, measurement_value):
     """Returns a condition for conditional operations based on measurement outcomes.
@@ -171,6 +179,9 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, mode1, mode2, aux_modes):
         instructions.extend(pq_instruction)
     elif instruction_name == "cz":
         pq_instruction = _cz_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
+        instructions.extend(pq_instruction)
+    elif instruction_name == "cnot":
+        pq_instruction = _cnot_on_two_bosonic_qubits([mode1, mode2] + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params, mode1))
