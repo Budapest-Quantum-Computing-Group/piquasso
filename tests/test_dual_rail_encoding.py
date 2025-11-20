@@ -179,6 +179,104 @@ class TestDualRailEncoding:
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
         assert measurement.modes == (2, 3)
 
+
+    def test_cnot_instructions(self):
+        """Tests converting a circuit with a CNOT gate."""
+        qc = QuantumCircuit(2, 2)
+        qc.cx(0, 1)
+        qc.measure([0, 1], [0, 1])
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 15
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1, 2, 3, 4, 5)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (1, 3, 4, 5)
+
+        # Check 1. Hadamard dual-rail encoded implementations
+        hadamard_1 = prog.instructions[2]
+        assert isinstance(hadamard_1, pq.Beamsplitter)
+        assert hadamard_1.modes == (2, 3)
+        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_1.params["phi"], 0)
+
+        hadamard_2 = prog.instructions[3]
+        assert isinstance(hadamard_2, pq.Phaseshifter)
+        assert np.isclose(hadamard_2.params["phi"], np.pi)
+        assert hadamard_2.modes == (2,)
+
+        # Check CZ dual-rail encoded implementations
+        phase_shifter1 = prog.instructions[4]
+        assert isinstance(phase_shifter1, pq.Phaseshifter)
+        assert np.isclose(phase_shifter1.params["phi"], np.pi)
+
+        phase_shifter2 = prog.instructions[5]
+        assert isinstance(phase_shifter2, pq.Phaseshifter)
+        assert np.isclose(phase_shifter2.params["phi"], np.pi)
+
+        cz_beamsplitter_first_theta_value = 54.74 / 180 * np.pi
+        cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
+
+        bosonic_cz_indices = [0, 2, 4, 5]
+        first_bs_gate = prog.instructions[6]
+        assert isinstance(first_bs_gate, pq.Beamsplitter)
+        assert first_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[2])
+        assert np.isclose(
+            first_bs_gate.params["theta"], cz_beamsplitter_first_theta_value
+        )
+
+        sec_bs_gate = prog.instructions[7]
+        assert isinstance(sec_bs_gate, pq.Beamsplitter)
+        assert sec_bs_gate.modes == (bosonic_cz_indices[1], bosonic_cz_indices[3])
+        assert np.isclose(
+            sec_bs_gate.params["theta"], cz_beamsplitter_first_theta_value
+        )
+
+        third_bs_gate = prog.instructions[8]
+        assert isinstance(third_bs_gate, pq.Beamsplitter)
+        assert third_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[1])
+        assert np.isclose(
+            third_bs_gate.params["theta"], -1 * cz_beamsplitter_first_theta_value
+        )
+
+        fourth_bs_gate = prog.instructions[9]
+        assert isinstance(fourth_bs_gate, pq.Beamsplitter)
+        assert fourth_bs_gate.modes == (bosonic_cz_indices[2], bosonic_cz_indices[3])
+        assert np.isclose(
+            fourth_bs_gate.params["theta"], cz_beamsplitter_second_theta_value
+        )
+
+        post_selection = prog.instructions[10]
+        assert isinstance(post_selection, pq.PostSelectPhotons)
+        assert post_selection.params["photon_counts"] == [1, 1]
+        assert post_selection.modes == (bosonic_cz_indices[2], bosonic_cz_indices[3])
+
+
+        # Check 2. Hadamard dual-rail encoded implementations
+        hadamard_1 = prog.instructions[11]
+        assert isinstance(hadamard_1, pq.Beamsplitter)
+        assert hadamard_1.modes == (2, 3)
+        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_1.params["phi"], 0)
+
+        hadamard_2 = prog.instructions[12]
+        assert isinstance(hadamard_2, pq.Phaseshifter)
+        assert hadamard_2.modes == (2,)
+        assert np.isclose(hadamard_2.params["phi"], np.pi)
+
+        measurement = prog.instructions[13]
+        assert isinstance(measurement, pq.ParticleNumberMeasurement)
+        assert measurement.modes == (0, 1)
+
+        measurement = prog.instructions[14]
+        assert isinstance(measurement, pq.ParticleNumberMeasurement)
+        assert measurement.modes == (2, 3)
+
     @pytest.mark.parametrize(
         "unsupported_gate_data",
         [("y", (1,)), ("swap", (0, 1))],
@@ -228,13 +326,21 @@ class TestIntegrationWithSimulator:
             assert branch.outcome in outcomes
             assert np.isclose(float(branch.frequency), 0.25, atol=0.05)
 
-    def test_simulator_integration_cnot_hadamard(self):
+    @pytest.mark.parametrize("input_state, expected_state",
+                             [
+                                 ((0, 1, 0, 1), (0, 1, 0, 1)),
+                                 ((0, 1, 1, 0), (0, 1, 1, 0)),
+                                 ((1, 0, 0, 1), (1, 0, 1, 0)),
+                                 ((1, 0, 1, 0), (1, 0, 0, 1)),
+                             ])
+    def test_simulator_integration_cnot(self, input_state, expected_state):
         """Tests that a Qiskit circuit with H and CNOT can be executed."""
         qc = QuantumCircuit(2, 2)
-        qc.h(0)
-        qc.h(1)
-        qc.cz(0, 1)
-        qc.measure([0, 1], [0, 1])
+        if input_state[0]:
+            qc.x(0)
+        if input_state[2]:
+            qc.x(1)
+        qc.cx(0, 1)
 
         connector = pq.NumpyConnector()
         cutoff = 8
@@ -245,18 +351,12 @@ class TestIntegrationWithSimulator:
 
         prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
-
-        assert len(res.branches) == 4
-
-        outcomes = [
-            (1, 0, 1, 0),
-            (1, 0, 0, 1),
-            (0, 1, 1, 0),
-            (0, 1, 0, 1),
-        ]
-        for branch in res.branches:
-            assert branch.outcome in outcomes
-            assert np.isclose(float(branch.frequency), 0.25, atol=0.05)
+        fock_amplitudes_map = res.state.fock_amplitudes_map
+        for k,v in fock_amplitudes_map.items():
+            if k != expected_state:
+                assert np.isclose(fock_amplitudes_map[k], 0, atol=10e-4)
+            else:
+                assert not np.isclose(fock_amplitudes_map[k], 0)
 
     @pytest.mark.parametrize(
         "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]

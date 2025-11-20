@@ -143,9 +143,17 @@ def _cz_on_two_bosonic_qubits(modes):
 def _cnot_on_two_bosonic_qubits(modes):
     """Note: requires two auxiliary modes with one photon each."""
     instructions = []
-    H_instruction_1 = _hadamard_bosonic(modes[0], modes[1])
-    CZ_instruction = _cz_on_two_bosonic_qubits(modes)
-    H_instruction_2 = _hadamard_bosonic(modes[0], modes[1])
+
+    # Apply Hadamard on the control bosonic qubit
+    H_instruction_1 = _hadamard_bosonic(modes[2], modes[3])
+
+    # Extract the two data modes and two aux modes
+    cz_modes = [modes[0], modes[2], modes[4], modes[5]]
+    CZ_instruction = _cz_on_two_bosonic_qubits(cz_modes)
+    
+    # Apply Hadamard on the control bosonic qubit
+    H_instruction_2 = _hadamard_bosonic(modes[2], modes[3])
+
     instructions.extend(H_instruction_1)
     instructions.extend(CZ_instruction)
     instructions.extend(H_instruction_2)
@@ -180,10 +188,10 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         pq_instruction = _pauliz_bosonic(modes[0], modes[1])
         instructions.extend(pq_instruction)
     elif instruction_name == "cz":
-        pq_instruction = _cz_on_two_bosonic_qubits([modes[0], modes[1]] + aux_modes)
+        pq_instruction = _cz_on_two_bosonic_qubits(modes + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "cx":
-        pq_instruction = _cnot_on_two_bosonic_qubits([modes[0], modes[1]] + aux_modes)
+        pq_instruction = _cnot_on_two_bosonic_qubits(modes + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params, modes[0]))
