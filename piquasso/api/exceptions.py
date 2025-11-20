@@ -48,3 +48,7 @@ class NotImplementedCalculation(PiquassoException):
 
 class CVQNNException(PiquassoException):
     """Exception raised from the `cvqnn` module."""
+
+
+class InvalidExpression(PiquassoException):
+    """Raised when an invalid expression is being created or used."""
