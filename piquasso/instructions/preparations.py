@@ -29,6 +29,7 @@ import numpy as np
 from piquasso.core import _mixins
 from piquasso.api.instruction import Preparation
 from piquasso.api.exceptions import InvalidParameter, InvalidState
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.validations import all_natural, all_real_and_positive
 
@@ -157,8 +158,11 @@ class Thermal(Preparation):
 
         super().__init__(params=dict(mean_photon_numbers=mean_photon_numbers))
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         mean_photon_numbers = self.params["mean_photon_numbers"]
+
+        if connector.is_abstract(mean_photon_numbers):
+            return
 
         if not all_real_and_positive(mean_photon_numbers):
             raise InvalidParameter(

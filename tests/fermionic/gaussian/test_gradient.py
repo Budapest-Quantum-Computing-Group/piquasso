@@ -29,9 +29,7 @@ def test_Beamsplitter_mean_particle_numbers_grad():
 
             pq.Q() | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.fermionic.GaussianSimulator(
-            d=2, connector=connector, config=pq.Config(validate=False)
-        )
+        simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
 
         state = simulator.execute(program).state
 
@@ -59,9 +57,7 @@ def test_Beamsplitter_mean_particle_numbers_jacrev():
 
             pq.Q() | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.fermionic.GaussianSimulator(
-            d=2, connector=connector, config=pq.Config(validate=False)
-        )
+        simulator = pq.fermionic.GaussianSimulator(d=2, connector=connector)
 
         state = simulator.execute(program).state
 

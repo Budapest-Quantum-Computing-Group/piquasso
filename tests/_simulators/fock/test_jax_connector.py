@@ -43,7 +43,12 @@ def unimport_jax():
     """
 
     if "jax" in sys.modules:
+        jax = sys.modules["jax"]
         del sys.modules["jax"]
+
+    yield
+
+    sys.modules["jax"] = jax
 
 
 def test_jaxConnector_imports_jax_if_installed():

@@ -66,7 +66,9 @@ def attenuator(
 
     mean_thermal_excitation = instruction._all_params["mean_thermal_excitation"]
 
-    if state._config.validate and not np.isclose(mean_thermal_excitation, 0.0):
+    if state._can_validate_variable(mean_thermal_excitation) and not np.isclose(
+        mean_thermal_excitation, 0.0
+    ):
         raise InvalidParameter(
             "Non-zero mean thermal excitation is not supported in this backend. "
             f"mean_thermal_excitation={mean_thermal_excitation}"

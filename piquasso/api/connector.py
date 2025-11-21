@@ -61,6 +61,17 @@ class BaseConnector(abc.ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
+    def is_abstract(self, value: Any) -> bool:
+        """Checks whether a value is abstract in the given framework.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            bool: Whether the value is abstract.
+        """
+        return False
+
     @abc.abstractmethod
     def preprocess_input_for_custom_gradient(self, value):
         """

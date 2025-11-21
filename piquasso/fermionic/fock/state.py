@@ -103,9 +103,6 @@ class PureFockState(State):
         return self._connector.np.abs(self._state_vector[index]) ** 2
 
     def validate(self):
-        if not self._config.validate:
-            return
-
         np = self._connector.np
 
         norm = self.norm
