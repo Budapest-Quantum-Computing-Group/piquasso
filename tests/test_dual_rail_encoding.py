@@ -74,12 +74,12 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (1,)
+        assert create_photons.modes == (0,)
 
         phase_shift = prog.instructions[2]
         assert isinstance(phase_shift, pq.Phaseshifter)
         assert np.isclose(phase_shift.params["phi"], np.pi)
-        assert phase_shift.modes == (0,)
+        assert phase_shift.modes == (1,)
 
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
@@ -293,6 +293,26 @@ class TestDualRailEncoding:
 
 class TestIntegrationWithSimulator:
     """Tests the integration with the Simulator class."""
+
+    @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
+    def test_phase_gate(self, angle):
+        """Tests that a Qiskit circuit with a phase gate executes as expected."""
+        qc = QuantumCircuit(1, 1)
+        qc.x(0)
+        qc.p(angle, 0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j*angle))
 
     def test_simulator_integration_cz_hadamard(self):
         """Tests that a Qiskit circuit with H and CZ can be executed."""
