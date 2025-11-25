@@ -57,12 +57,11 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         """The parameters of the instruction as a `dict`."""
         return self._params
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: "BaseConnector") -> dict:
         return dict()
 
-    @property
-    def _all_params(self) -> dict:
-        return {**self._params, **self._get_computed_params()}
+    def _get_all_params(self, connector: "BaseConnector") -> dict:
+        return {**self._params, **self._get_computed_params(connector)}
 
     def _is_resolved(self):
         return self._unresolved_params == dict()

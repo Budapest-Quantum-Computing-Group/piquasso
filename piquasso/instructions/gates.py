@@ -803,7 +803,7 @@ class PositionDisplacement(Gate):
         """
         super().__init__(params=dict(x=x))
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
         return dict(r=self.params["x"], phi=0.0)
 
 
@@ -823,7 +823,8 @@ class MomentumDisplacement(Gate):
         """
         super().__init__(params=dict(p=p))
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
+        np = connector.np
         return dict(r=self.params["p"], phi=np.pi / 2)
 
 

@@ -223,7 +223,7 @@ def annihilate(state: FockState, instruction: Instruction, shots: int) -> List[B
 def kerr(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
-    xi = instruction._all_params["xi"]
+    xi = instruction._get_all_params(state._connector)["xi"]
 
     mode = instruction.modes[0]
 
@@ -239,7 +239,7 @@ def kerr(state: FockState, instruction: Instruction, shots: int) -> List[Branch]
 
 
 def cubic_phase(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
-    gamma = instruction._all_params["gamma"]
+    gamma = instruction._get_all_params(state._connector)["gamma"]
 
     matrix = get_single_mode_cubic_phase_operator(
         gamma=gamma,
@@ -322,7 +322,7 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> List[B
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 
     modes = instruction.modes
-    xi = instruction._all_params["xi"]
+    xi = instruction._get_all_params(state._connector)["xi"]
 
     for index, (basis, dual_basis) in operator_basis(space):
         coefficient = np.exp(
@@ -342,8 +342,8 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> List[B
 def displacement(
     state: FockState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    r = instruction._all_params["r"]
-    phi = instruction._all_params["phi"]
+    r = instruction._get_all_params(state._connector)["r"]
+    phi = instruction._get_all_params(state._connector)["phi"]
     mode = instruction.modes[0]
 
     matrix = get_single_mode_displacement_operator(
@@ -360,8 +360,8 @@ def displacement(
 
 
 def squeezing(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
-    r = instruction._all_params["r"]
-    phi = instruction._all_params["phi"]
+    r = instruction._get_all_params(state._connector)["r"]
+    phi = instruction._get_all_params(state._connector)["phi"]
     mode = instruction.modes[0]
 
     matrix = get_single_mode_squeezing_operator(

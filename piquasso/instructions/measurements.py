@@ -174,7 +174,8 @@ class HomodyneMeasurement(Measurement):
 
         super().__init__(params=dict(phi=phi, z=z))
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
+        np = connector.np
         z = self.params["z"]
         return dict(
             detection_covariance=np.array(
@@ -205,7 +206,8 @@ class HeterodyneMeasurement(Measurement):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
+        np = connector.np
         return dict(detection_covariance=np.identity(2))
 
 
