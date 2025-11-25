@@ -19,7 +19,7 @@ from typing import Optional, Tuple, Any, Type, Dict, Callable, Union
 import numpy as np
 
 from .mode import Q
-from piquasso.core import _mixins
+from piquasso.core import _mixins, _expressions
 from piquasso.api.exceptions import PiquassoException, InvalidProgram, InvalidParameter
 
 if typing.TYPE_CHECKING:
@@ -44,10 +44,19 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         self._condition: Optional[Callable] = None
 
-        is_unresolved = callable
-        self._unresolved_params = {
-            name: param for name, param in self._params.items() if is_unresolved(param)
+        self._unresolved_params = self._get_unresolved_params(self._params)
+
+    @staticmethod
+    def _get_unresolved_params(params: dict) -> dict:
+        callable_params = {
+            name: param for name, param in params.items() if callable(param)
         }
+        str_params = {
+            name: _expressions.Expression(param)
+            for name, param in params.items()
+            if isinstance(param, str)
+        }
+        return {**callable_params, **str_params}
 
     def _validate(self, connector: "BaseConnector") -> None:
         pass
@@ -78,7 +87,8 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                     f"An error occurred when resolving the parameter "
                     f"'{name}' for the instruction '{self}': {e}\n"
                     f"Make sure that the parameter is a callable that takes the "
-                    f"tuple of measurement outcomes and returns a float."
+                    f"tuple of measurement outcomes and returns a float, OR an "
+                    f"expression string, which can be evaluated to a float."
                 ) from e
 
             _resolved_params[name] = resolved_param
@@ -253,7 +263,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 f"{self.NUMBER_OF_MODES}'."
             )
 
-    def when(self, condition: Callable) -> "Instruction":
+    def when(self, condition: Union[Callable, str]) -> "Instruction":
         """Makes the execution of the instruction conditional on a callable object.
 
         The callable object takes a single argument - the tuple of measurement outcomes
@@ -274,13 +284,32 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
                 pq.Q(0, 1) | pq.Beamsplitter5050().when(lambda x: x[0] > 0)
 
+        The following example uses an expression string as a condition::
+            with pq.Program() as program:
+                pq.Q(0, 1) | pq.StateVector([0, 2]) * np.sqrt(1 / 2)
+                pq.Q(0, 1) | pq.StateVector([2, 0]) * np.sqrt(1 / 2)
+
+                pq.Q(1)    | pq.ParticleNumberMeasurement().on_modes(1)
+                pq.Q(0)    | pq.Squeezing(r=r).on_modes(0).when("x[-1] == 2")
+
+                pq.Q(0, 1) | pq.Beamsplitter5050().when("x[0] > 0")
+
+        For specifying expressions strings, the following operators are supported:
+            - Arithmetic operators: `+`, `-`, `*`, `/`, `**`, `%`, `^`
+            - Comparison operators: `==`, `!=`, `<`, `<=`, `>`, `>=`
+            - Boolean operators: `and`, `or`, `not`
+            - Parentheses for grouping: `()`
+
+        The expression can use the variable `x`, which represents the tuple of
+        measurement outcomes.
+
         Raises:
             PiquassoException:
                 If the instruction is already conditioned on another callable, or if the
                 provided condition is not callable.
 
         Args:
-            condition (Callable):
+            condition (Callable or str):
                 A callable that takes the measurement outcomes and returns a boolean.
         """
         if self._condition is not None:
@@ -289,13 +318,15 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 f"'{self._condition}'."
             )
 
-        if not callable(condition):
+        if isinstance(condition, str):
+            self._condition = _expressions.Expression(condition)
+        elif callable(condition):
+            self._condition = condition
+        else:
             raise PiquassoException(
-                f"The condition '{condition}' needs to be a callable that takes the "
-                f"measurement outcomes and returns a boolean."
+                f"The condition '{condition}' needs to be a callable or expression "
+                f"string that takes the measurement outcomes and returns a boolean."
             )
-
-        self._condition = condition
 
         return self
 
@@ -319,7 +350,8 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
                 f"An error occurred when evaluating the condition '{self._condition}' "
                 f"for the instruction '{self}': {e}\n"
                 f"Make sure that the condition is a callable that takes the "
-                f"tuple of measurement outcomes and returns a boolean."
+                f"tuple of measurement outcomes and returns a boolean, OR an "
+                f"expression string, which can be evaluated to a boolean."
             ) from e
 
 
