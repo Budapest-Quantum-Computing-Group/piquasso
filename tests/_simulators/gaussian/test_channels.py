@@ -94,8 +94,12 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_X():
         ]
     )
 
+    simulator = pq.GaussianSimulator(d=2)
+
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.DeterministicGaussianChannel(X=invalid_X, Y=Y)
+        simulator.execute_instructions(
+            [pq.DeterministicGaussianChannel(X=invalid_X, Y=Y)]
+        )
 
     assert "The parameter 'X' must be a real 2n-by-2n matrix:" in error.value.args[0]
 
@@ -116,8 +120,12 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_Y():
         ]
     )
 
+    simulator = pq.GaussianSimulator(d=2)
+
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.DeterministicGaussianChannel(X=X, Y=invalid_Y)
+        simulator.execute_instructions(
+            [pq.DeterministicGaussianChannel(X=X, Y=invalid_Y)]
+        )
 
     assert "The parameter 'Y' must be a real 2n-by-2n matrix:" in error.value.args[0]
 
@@ -129,8 +137,10 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_incompatible_s
     X = generate_symmetric_matrix(2)
     Y = generate_symmetric_matrix(4)
 
+    simulator = pq.GaussianSimulator(d=2)
+
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.DeterministicGaussianChannel(X=X, Y=Y)
+        simulator.execute_instructions([pq.DeterministicGaussianChannel(X=X, Y=Y)])
 
     assert "The shape of matrices 'X' and 'Y' should be equal:" in error.value.args[0]
 
@@ -150,8 +160,10 @@ def test_DeterministicGaussianChannel_raises_InvalidParameter_for_invalid_X_and_
         ]
     )
 
+    simulator = pq.GaussianSimulator(d=2)
+
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.DeterministicGaussianChannel(X=X, Y=Y)
+        simulator.execute_instructions([pq.DeterministicGaussianChannel(X=X, Y=Y)])
 
     assert (
         "The matrices 'X' and 'Y' does not satisfy the inequality corresponding to "
@@ -267,9 +279,15 @@ def test_Attenuator_raises_InvalidParameter_for_negative_thermal_exciations():
     theta = np.pi / 6
     invalid_mean_thermal_excitation = -1
 
+    simulator = pq.GaussianSimulator(d=1)
+
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.Attenuator(
-            theta=theta, mean_thermal_excitation=invalid_mean_thermal_excitation
+        simulator.execute_instructions(
+            [
+                pq.Attenuator(
+                    theta=theta, mean_thermal_excitation=invalid_mean_thermal_excitation
+                )
+            ]
         )
 
     assert (

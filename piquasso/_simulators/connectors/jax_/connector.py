@@ -16,7 +16,7 @@
 import numpy as np
 
 from functools import partial
-
+from typing import Any
 from ..connector import BuiltinConnector
 
 
@@ -97,6 +97,18 @@ class JaxConnector(BuiltinConnector):
         self._jax = jax
         self.fallback_np = np
         self.forward_pass_np = jnp
+
+    def is_abstract(self, value: Any) -> bool:
+        """Determines whether the given value is abstract (a tracer) or concrete (has a
+        known value).
+
+        Args:
+            value: The value to be checked.
+
+        Returns:
+            bool: `True` if the value is abstract, `False` if it is concrete
+        """
+        return isinstance(value, self._jax.core.Tracer)
 
     def preprocess_input_for_custom_gradient(self, value):
         return value

@@ -58,7 +58,9 @@ def state_vector(
     fallback_np = state._connector.fallback_np
 
     coefficient = instruction._all_params["coefficient"]
-    if state._config.validate and not fallback_np.isclose(coefficient, 1.0):
+    if state._can_validate_variable(coefficient) and not fallback_np.isclose(
+        coefficient, 1.0
+    ):
         raise InvalidParameter(
             "Only 1.0 is permitted as coefficient for the state vector."
         )
