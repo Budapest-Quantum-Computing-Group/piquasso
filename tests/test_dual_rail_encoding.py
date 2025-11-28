@@ -316,11 +316,13 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], 1)
 
-    @pytest.mark.parametrize("input_state, expected_coeffs", 
-                             [
-                                ((1, 0), (1, 0)),
-                                ((0, 1), (0, -1)),
-                             ])
+    @pytest.mark.parametrize(
+        "input_state, expected_coeffs",
+        [
+            ((1, 0), (1, 0)),
+            ((0, 1), (0, -1)),
+        ],
+    )
     def test_pauliz(self, input_state, expected_coeffs):
         """Tests that PauliZ gate can executed."""
         qc = QuantumCircuit(1, 1)
@@ -341,11 +343,13 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected_coeffs[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeffs[1])
 
-    @pytest.mark.parametrize("input_state, expected_coeff", 
-                             [
-                                ((1, 0), 1),
-                                ((0, 1), -1),
-                             ])
+    @pytest.mark.parametrize(
+        "input_state, expected_coeff",
+        [
+            ((1, 0), 1),
+            ((0, 1), -1),
+        ],
+    )
     def test_hadamard(self, input_state, expected_coeff):
         """Tests that H gate can executed."""
         qc = QuantumCircuit(1, 1)
@@ -365,9 +369,9 @@ class TestIntegrationWithSimulator:
 
         assert len(res.state.fock_amplitudes_map) == 2
 
-        expr = 1/np.sqrt(2)
+        expr = 1 / np.sqrt(2)
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expr)
-        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeff*expr)
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeff * expr)
 
     @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
     def test_phase_gate(self, angle):
@@ -387,7 +391,7 @@ class TestIntegrationWithSimulator:
         res = simulator.execute(prog, shots=shots)
 
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
-        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j*angle))
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j * angle))
 
     def test_simulator_integration_cz_hadamard(self):
         """Tests that a Qiskit circuit with H and CZ can be executed."""
