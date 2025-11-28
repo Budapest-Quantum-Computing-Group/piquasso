@@ -22,8 +22,8 @@ bosonic qubit Piquasso programs.
 For the dual-rail encoding, the following convention is used:
 
 .. math::
-    |0\rangle_{\text{qubit}} = \ket{0, 1}_{\text{qumodes}} \\
-    |1\rangle_{\text{qubit}} = \ket{1, 0}_{\text{qumodes}}
+    |0\rangle_{\text{qubit}} = \ket{1, 0}_{\text{qumodes}} \\
+    |1\rangle_{\text{qubit}} = \ket{0, 1}_{\text{qumodes}}
 """
 
 import piquasso as pq
@@ -34,20 +34,14 @@ from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
-_zero_bosonic_qubit_state = [0, 1]
-_one_bosonic_qubit_state = [1, 0]
+_zero_bosonic_qubit_state = [1, 0]
+_one_bosonic_qubit_state = [0, 1]
 
 
 def _prep_bosonic_qubits(
     all_modes: List[int], modes_with_one_photon: List[int]
 ) -> List[pq.Instruction]:
     r"""Prepares a bosonic qubits in the specified basis states.
-
-    The following dual-rail encoding convention is being used:
-
-    .. math::
-          |0\rangle_{\text{qubit}} = \ket{0, 1}_{\text{qumodes}} \\
-          |1\rangle_{\text{qubit}} = \ket{1, 0}_{\text{qumodes}}
 
     Args:
         all_modes: All the modes to first prepare in the vacuum state.
@@ -71,8 +65,8 @@ def _paulix_bosonic(mode1, mode2):
         mode: The mode of the bosonic qubit.
     """
     instructions = []
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
     instructions.append(pq.Beamsplitter(np.pi / 2).on_modes(mode1, mode2))
-    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
 
@@ -82,7 +76,7 @@ def _pauliz_bosonic(mode1, mode2):
     Args:
         mode: The mode of the bosonic qubit.
     """
-    return _phase_gate_bosonic(np.pi, mode1)
+    return _phase_gate_bosonic(np.pi, mode2)
 
 
 def _phase_gate_bosonic(theta, mode):
@@ -91,6 +85,7 @@ def _phase_gate_bosonic(theta, mode):
     Args:
         theta: The phase angle.
         mode: The first mode of the bosonic qubit (the second mode is mode + 1).
+
     Returns:
         A list of Piquasso instructions implementing the phase gate.
     """
@@ -102,8 +97,8 @@ def _phase_gate_bosonic(theta, mode):
 
 def _hadamard_bosonic(mode1, mode2):
     instructions = []
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
-    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode1))
     return instructions
 
 
@@ -149,7 +144,7 @@ def _cnot_on_two_bosonic_qubits(modes):
     H_instruction_1 = _hadamard_bosonic(modes[2], modes[3])
 
     # Extract the two data modes and two aux modes
-    cz_modes = [modes[0], modes[2], modes[4], modes[5]]
+    cz_modes = [modes[1], modes[3], modes[4], modes[5]]
     CZ_instruction = _cz_on_two_bosonic_qubits(cz_modes)
 
     # Apply Hadamard on the control bosonic qubit
@@ -196,7 +191,7 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         pq_instruction = _cnot_on_two_bosonic_qubits(modes + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "p":
-        instructions.extend(_phase_gate_bosonic(qiskit_instruction.params, modes[0]))
+        instructions.extend(_phase_gate_bosonic(qiskit_instruction.params[0], modes[1]))
     elif instruction_name == "measure":
         pq_instruction = pq.ParticleNumberMeasurement().on_modes(modes[0], modes[1])
         instructions.append(pq_instruction)
@@ -222,9 +217,6 @@ def _encode_dual_rail_from_qiskit(qc):
     num_cz = sum(1 for instruction in qc.data if instruction.name in ("cz", "cx"))
     num_bosonic_qubits = qc.num_qubits
 
-    # |0> = [0, 1]
-    # |1> = [1, 0]
-
     idx_one_photon = np.where(np.array(_zero_bosonic_qubit_state) == 1)[0][0]
     modes_with_one_photon = list(
         range(idx_one_photon, num_bosonic_qubits * 2 + idx_one_photon, 2)
@@ -248,7 +240,7 @@ def _encode_dual_rail_from_qiskit(qc):
 
         if instr_qiskit.name in ("cz", "cx"):
             if instr_qiskit.name == "cz":
-                modes = [2 * qubit_indices[0], 2 * qubit_indices[1]]
+                modes = [2 * qubit_indices[0] + 1, 2 * qubit_indices[1] + 1]
             else:
                 modes = [
                     2 * qubit_indices[0],
