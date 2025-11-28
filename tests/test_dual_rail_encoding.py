@@ -431,9 +431,9 @@ class TestIntegrationWithSimulator:
     def test_simulator_integration_cnot(self, input_state, expected_state):
         """Tests that a Qiskit circuit with H and CNOT can be executed."""
         qc = QuantumCircuit(2, 2)
-        if input_state[0]:
+        if input_state[1]:
             qc.x(0)
-        if input_state[2]:
+        if input_state[3]:
             qc.x(1)
         qc.cx(0, 1)
 
@@ -447,16 +447,14 @@ class TestIntegrationWithSimulator:
         prog = dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
         fock_amplitudes_map = res.state.fock_amplitudes_map
-        print(fock_amplitudes_map)
         for k, v in fock_amplitudes_map.items():
             if k != expected_state:
                 assert np.isclose(fock_amplitudes_map[k], 0, atol=10e-4)
             else:
-                print(k)
                 assert not np.isclose(fock_amplitudes_map[k], 0)
 
     @pytest.mark.parametrize(
-        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+        "one_state, expected_outcome", [(False, (1, 0, 0, 1)), (True, (0, 1, 0, 1))]
     )
     def test_conditional_paulix(self, one_state, expected_outcome):
         """Tests that PauliX gate can be conditioned on measurement outcomes."""
@@ -483,7 +481,7 @@ class TestIntegrationWithSimulator:
         assert np.isclose(float(res.branches[0].frequency), 1, atol=0.05)
 
     @pytest.mark.parametrize(
-        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+        "one_state, expected_outcome", [(False, (1, 0, 0, 1)), (True, (0, 1, 0, 1))]
     )
     def test_conditional_pauliz(self, one_state, expected_outcome):
         """Tests that PauliZ gate can be conditioned on measurement outcomes."""
@@ -513,15 +511,15 @@ class TestIntegrationWithSimulator:
 
 
 raw_samples1 = [
-    (0, 1),
     (1, 0),
+    (0, 1),
 ]
 
 raw_samples2 = [
-    (0, 1, 0, 1),
-    (0, 1, 1, 0),
-    (1, 0, 0, 1),
     (1, 0, 1, 0),
+    (1, 0, 0, 1),
+    (0, 1, 1, 0),
+    (0, 1, 0, 1),
 ]
 
 
