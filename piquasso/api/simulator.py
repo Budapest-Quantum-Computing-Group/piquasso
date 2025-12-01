@@ -321,6 +321,9 @@ class Simulator(Computer, _mixins.CodeMixin):
             if not is_instruction_resolved:
                 instruction._resolve_params(outcomes=branch.outcome)
 
+            if self.config.validate:
+                instruction._validate(self._connector)
+
             current_shots = int(branch.frequency * shots) if shots is not None else None
 
             subbranches = simulation_step(

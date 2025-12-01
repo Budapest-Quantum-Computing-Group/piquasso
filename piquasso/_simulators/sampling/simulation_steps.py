@@ -48,7 +48,6 @@ def state_vector(
 
     if "occupation_numbers" in instruction._all_params:
         occupation_numbers = instruction._all_params["occupation_numbers"]
-
         if state._config.validate and len(occupation_numbers) != state.d:
             raise InvalidState(
                 f"The occupation numbers '{occupation_numbers}' are not well-defined "
@@ -62,6 +61,7 @@ def state_vector(
         for occupation_numbers, amplitude in instruction._all_params[
             "fock_amplitude_map"
         ].items():
+
             if state._config.validate and len(occupation_numbers) != state.d:
                 raise InvalidState(
                     f"The occupation numbers '{occupation_numbers}' "
@@ -156,7 +156,7 @@ def particle_number_measurement(
     """
 
     if (
-        state._config.validate
+        state._can_validate_variable(state._coefficients[0])
         and len(state._occupation_numbers) != 1
         and not np.isclose(state._coefficients[0], 1.0)
     ):

@@ -176,8 +176,13 @@ def test_state_initialization_with_nonpositive_covariance():
 def test_Thermal_with_negative_mean_photon_numbers_raises_InvalidParameter():
     mean_photon_numbers = np.array([-1, 1])
 
-    with pytest.raises(InvalidParameter):
+    with pq.Program() as program:
         pq.Q() | pq.Thermal(mean_photon_numbers)
+
+    simulator = pq.GaussianSimulator(d=2)
+
+    with pytest.raises(InvalidParameter):
+        simulator.execute(program)
 
 
 def test_vacuum_resets_the_state(state):

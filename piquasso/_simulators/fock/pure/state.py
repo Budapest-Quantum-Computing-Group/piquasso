@@ -189,7 +189,7 @@ class PureFockState(BaseFockState):
     def normalize(self) -> None:
         norm = self.norm
 
-        if self._config.validate and np.isclose(norm, 0):
+        if self._can_validate_variable(norm) and np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
         self.state_vector = self.state_vector / self._np.sqrt(norm)
@@ -201,9 +201,6 @@ class PureFockState(BaseFockState):
             InvalidState:
                 Raised, if the norm of the state vector is not close to 1.0.
         """
-        if not self._config.validate:
-            return
-
         sum_of_probabilities = sum(self.fock_probabilities)
 
         if not self._np.isclose(sum_of_probabilities, 1.0):

@@ -214,7 +214,7 @@ class FockState(BaseFockState):
         """
         norm = self.norm
 
-        if self._config.validate and np.isclose(norm, 0):
+        if self._can_validate_variable(norm) and np.isclose(norm, 0):
             raise InvalidState("The norm of the state is 0.")
 
         self._density_matrix = self._density_matrix / self.norm
@@ -227,9 +227,6 @@ class FockState(BaseFockState):
                 Raised, if the density matrix is not positive semidefinite, not
                 self-adjoint or the trace of the density matrix is not 1.
         """
-        if not self._config.validate:
-            return
-
         if not is_selfadjoint(self._density_matrix):
             raise InvalidState(
                 "The density matrix is not self-adjoint:\n"

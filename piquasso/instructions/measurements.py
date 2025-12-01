@@ -34,6 +34,7 @@ import numpy as np
 
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Measurement
+from piquasso.api.connector import BaseConnector
 from piquasso._math.linalg import is_positive_semidefinite
 from piquasso._math.symplectic import symplectic_form
 
@@ -126,8 +127,11 @@ class GeneraldyneMeasurement(Measurement):
             )
         )
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         detection_covariance = self.params["detection_covariance"]
+
+        if connector.is_abstract(detection_covariance):
+            return
 
         if not is_positive_semidefinite(detection_covariance + 1j * symplectic_form(1)):
             raise InvalidParameter(

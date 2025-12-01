@@ -58,6 +58,7 @@ import numpy as np
 
 from piquasso.api.instruction import Gate
 from piquasso.api.exceptions import InvalidParameter
+from piquasso.api.connector import BaseConnector
 
 from piquasso._math.linalg import is_square, is_symmetric
 from piquasso._math.symplectic import complex_symplectic_form, is_symplectic
@@ -129,8 +130,11 @@ class Interferometer(_PassiveLinearGate):
     def __init__(self, matrix: np.ndarray) -> None:
         super().__init__(params=dict(matrix=matrix))
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         matrix = self.params["matrix"]
+
+        if connector.is_abstract(matrix):
+            return
 
         if not is_square(matrix):
             raise InvalidParameter(
@@ -417,9 +421,12 @@ class GaussianTransform(_ActiveLinearGate):
         """
         super().__init__(params=dict(passive=passive, active=active))
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         active = self.params["active"]
         passive = self.params["passive"]
+
+        if connector.is_abstract(active) or connector.is_abstract(passive):
+            return
 
         if not is_symplectic(
             np.block([[passive, active], [active.conj(), passive.conj()]]),
@@ -954,8 +961,11 @@ class Graph(Gate):
             ),
         )
 
-    def _validate(self):
+    def _validate(self, connector: BaseConnector) -> None:
         adjacency_matrix = self.params["adjacency_matrix"]
+
+        if connector.is_abstract(adjacency_matrix):
+            return
 
         if not is_symmetric(adjacency_matrix):
             raise InvalidParameter("The adjacency matrix should be symmetric.")

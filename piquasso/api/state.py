@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Type, Optional
+from typing import Any, Tuple, Type, Optional
 
 import abc
 import copy
@@ -101,3 +101,6 @@ class State(abc.ABC):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(d={self.d}, config={self._config}, connector={self._connector})"  # noqa: E501
+
+    def _can_validate_variable(self, value: Any) -> bool:
+        return self._config.validate and not self._connector.is_abstract(value)

@@ -499,11 +499,15 @@ def test_GaussianTransform_raises_InvalidParameter_for_nonsymplectic_matrix():
 
     zero_matrix = np.zeros(shape=(d,) * 2)
 
-    with pq.Program():
+    with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-        with pytest.raises(pq.api.exceptions.InvalidParameter):
-            pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
+        pq.Q(all) | pq.GaussianTransform(passive=zero_matrix, active=zero_matrix)
+
+    simulator = pq.GaussianSimulator(d=d)
+
+    with pytest.raises(pq.api.exceptions.InvalidParameter):
+        simulator.execute(program)
 
 
 def test_graph_embedding(state):
