@@ -104,6 +104,21 @@ def _rx_bosonic(theta, mode1, mode2):
     return instructions
 
 
+def _ry_bosonic(theta, mode1, mode2):
+    """Applies a PauliX-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: The phase angle.
+        mode: The first mode of the bosonic qubit (the second mode is mode + 1).
+
+    Returns:
+        A list of Piquasso instructions implementing the phase gate.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(theta / 2, 0).on_modes(mode1, mode2))
+    return instructions
+
+
 def _phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
 
@@ -220,6 +235,8 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         instructions.extend(pq_instruction)
     elif instruction_name == "rx":
         instructions.extend(_rx_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
+    elif instruction_name == "ry":
+        instructions.extend(_ry_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params[0], modes[1]))
     elif instruction_name == "measure":

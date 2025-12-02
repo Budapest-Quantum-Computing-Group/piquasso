@@ -182,6 +182,33 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(beamsplitter.params["theta"], theta / 2)
         assert np.isclose(beamsplitter.params["phi"], -np.pi / 2)
 
+
+
+    def test_ry(self):
+        """Tests converting a circuit with an Y-rotation gate."""
+        qc = QuantumCircuit(1, 1)
+
+        theta = np.pi
+        qc.ry(theta, 0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 3
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        beamsplitter = prog.instructions[2]
+        assert isinstance(beamsplitter, pq.Beamsplitter)
+        assert beamsplitter.modes == (0, 1)
+        assert np.isclose(beamsplitter.params["theta"], theta / 2)
+        assert np.isclose(beamsplitter.params["phi"], 0)
+
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
         qc = QuantumCircuit(2, 2)
@@ -528,7 +555,7 @@ class TestIntegrationWithSimulator:
     @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
     @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
     def test_rx(self, angle, input_state):
-        """Tests that a Qiskit circuit with a phase gate executes as expected."""
+        """Tests a Qiskit circuit with an X-rotation gate."""
         rx = np.array([[np.cos(angle / 2), -1j * np.sin(angle / 2)],
                        [-1j * np.sin(angle / 2), np.cos(angle / 2)]])
         qc = QuantumCircuit(1, 1)
@@ -547,6 +574,32 @@ class TestIntegrationWithSimulator:
         res = simulator.execute(prog, shots=shots)
 
         expected = rx @ input_state
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
+
+
+    @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
+    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    def test_ry(self, angle, input_state):
+        """Tests a Qiskit circuit with a Y-rotation gate."""
+        ry = np.array([[np.cos(angle / 2), -1 * np.sin(angle / 2)],
+                       [np.sin(angle / 2), np.cos(angle / 2)]])
+        qc = QuantumCircuit(1, 1)
+        if input_state[1]:
+            qc.x(0)
+        qc.ry(angle, 0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        expected = ry @ input_state
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
 
