@@ -70,6 +70,17 @@ def _paulix_bosonic(mode1, mode2):
     return instructions
 
 
+def _pauliy_bosonic(mode1, mode2):
+    """Applies a Pauli-Y gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        mode: The mode of the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(-np.pi / 2, np.pi / 2).on_modes(mode1, mode2))
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
+    return instructions
+
 def _pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
@@ -180,6 +191,9 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         instructions.extend(pq_instruction)
     elif instruction_name == "x":
         pq_instruction = _paulix_bosonic(modes[0], modes[1])
+        instructions.extend(pq_instruction)
+    elif instruction_name == "y":
+        pq_instruction = _pauliy_bosonic(modes[0], modes[1])
         instructions.extend(pq_instruction)
     elif instruction_name == "z":
         pq_instruction = _pauliz_bosonic(modes[0], modes[1])

@@ -23,8 +23,84 @@ import numpy as np
 import pytest
 
 
-class TestDualRailEncoding:
+class TestDualRailEncodingInstructions:
     """Tests for the dual rail encoding functions."""
+
+    def test_paulix(self):
+        """Tests converting one circuit with PauliX."""
+        qc = QuantumCircuit(1, 1)
+        qc.x(0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 4
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        paulix_1 = prog.instructions[2]
+        assert isinstance(paulix_1, pq.Phaseshifter)
+        assert np.isclose(paulix_1.params["phi"], np.pi)
+        assert paulix_1.modes == (1,)
+
+        paulix_2 = prog.instructions[3]
+        assert isinstance(paulix_2, pq.Beamsplitter)
+        assert paulix_2.modes == (0, 1)
+        assert np.isclose(paulix_2.params["theta"], np.pi / 2)
+        assert np.isclose(paulix_2.params["phi"], 0)
+
+    def test_pauliy(self):
+        """Tests converting one circuit with PauliY."""
+        qc = QuantumCircuit(1, 1)
+        qc.y(0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 4
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        pauliy_1 = prog.instructions[2]
+        assert isinstance(pauliy_1, pq.Beamsplitter)
+        assert pauliy_1.modes == (0, 1)
+        assert np.isclose(pauliy_1.params["theta"], -np.pi / 2)
+        assert np.isclose(pauliy_1.params["phi"], np.pi / 2)
+
+        pauliy_2 = prog.instructions[3]
+        assert isinstance(pauliy_2, pq.Phaseshifter)
+        assert np.isclose(pauliy_2.params["phi"], np.pi)
+        assert pauliy_2.modes == (1,)
+
+    def test_pauliz(self):
+        """Tests converting a circuit with a PauliZ."""
+        qc = QuantumCircuit(1, 1)
+        qc.z(0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 3
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        phase_shift = prog.instructions[2]
+        assert isinstance(phase_shift, pq.Phaseshifter)
+        assert np.isclose(phase_shift.params["phi"], np.pi)
+        assert phase_shift.modes == (1,)
 
     def test_one_hadamard_one_measure(self):
         """Tests converting one circuit with Hadamard and measurement."""
@@ -315,6 +391,34 @@ class TestIntegrationWithSimulator:
         assert len(res.state.fock_amplitudes_map) == 2
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], 1)
+
+
+    @pytest.mark.parametrize(
+        "input_state, expected_coeffs",
+        [
+            ((1, 0), (0, 1j)),
+            ((0, 1), (-1j, 0)),
+        ],
+    )
+    def test_pauliy(self, input_state, expected_coeffs):
+        """Tests that PauliY gate can executed."""
+        qc = QuantumCircuit(1, 1)
+        if input_state[1]:
+            qc.x(0)
+        qc.y(0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected_coeffs[0])
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeffs[1])
 
     @pytest.mark.parametrize(
         "input_state, expected_coeffs",
