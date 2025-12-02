@@ -497,6 +497,33 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j * angle))
 
+
+    
+    @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
+    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    def test_rx(self, angle, input_state):
+        """Tests that a Qiskit circuit with a phase gate executes as expected."""
+        rx = np.array([[np.cos(angle / 2), -1j * np.sin(angle / 2)],
+                       [-1j * np.sin(angle / 2), np.cos(angle / 2)]])
+        qc = QuantumCircuit(1, 1)
+        if input_state[1]:
+            qc.x(0)
+        qc.rx(angle, 0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        expected = rx @ input_state
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
+
     def test_simulator_integration_cz_hadamard(self):
         """Tests that a Qiskit circuit with H and CZ can be executed."""
         qc = QuantumCircuit(2, 2)
