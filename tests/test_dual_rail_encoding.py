@@ -156,6 +156,32 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(phase_shift.params["phi"], np.pi)
         assert phase_shift.modes == (1,)
 
+
+    def test_rx(self):
+        """Tests converting a circuit with an X-rotation gate."""
+        qc = QuantumCircuit(1, 1)
+
+        theta = np.pi
+        qc.rx(theta, 0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 3
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        beamsplitter = prog.instructions[2]
+        assert isinstance(beamsplitter, pq.Beamsplitter)
+        assert beamsplitter.modes == (0, 1)
+        assert np.isclose(beamsplitter.params["theta"], theta / 2)
+        assert np.isclose(beamsplitter.params["phi"], -np.pi / 2)
+
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
         qc = QuantumCircuit(2, 2)
