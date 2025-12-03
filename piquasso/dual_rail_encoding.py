@@ -89,6 +89,7 @@ def _pauliy_bosonic(mode1, mode2):
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
     return instructions
 
+
 def _pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
@@ -100,6 +101,7 @@ def _pauliz_bosonic(mode1, mode2):
         A list of Piquasso instructions to apply the gate to the bosonic qubit.
     """
     return _phase_gate_bosonic(np.pi, mode2)
+
 
 def _rx_bosonic(theta, mode1, mode2):
     """Applies a PauliX-rotation gate on a bosonic qubit encoded in dual-rail format.
@@ -145,8 +147,8 @@ def _rz_bosonic(theta, mode1, mode2):
         A list of Piquasso instructions to apply the gate to the bosonic qubit.
     """
     instructions = []
-    instructions.append(pq.Phaseshifter(-1/2*theta).on_modes(mode1))
-    instructions.append(pq.Phaseshifter(1/2*theta).on_modes(mode2))
+    instructions.append(pq.Phaseshifter(-1 / 2 * theta).on_modes(mode1))
+    instructions.append(pq.Phaseshifter(1 / 2 * theta).on_modes(mode2))
     return instructions
 
 
@@ -294,11 +296,17 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         pq_instruction = _cnot_on_two_bosonic_qubits(modes + aux_modes)
         instructions.extend(pq_instruction)
     elif instruction_name == "rx":
-        instructions.extend(_rx_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
+        instructions.extend(
+            _rx_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
     elif instruction_name == "ry":
-        instructions.extend(_ry_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
+        instructions.extend(
+            _ry_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
     elif instruction_name == "rz":
-        instructions.extend(_rz_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
+        instructions.extend(
+            _rz_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
     elif instruction_name == "u":
         instructions.extend(_u3_bosonic(*qiskit_instruction.params, *modes))
     elif instruction_name == "p":

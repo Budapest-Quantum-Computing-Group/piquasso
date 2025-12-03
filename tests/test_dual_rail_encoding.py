@@ -156,7 +156,6 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(phase_shift.params["phi"], np.pi)
         assert phase_shift.modes == (1,)
 
-
     def test_rx(self):
         """Tests converting a circuit with an X-rotation gate."""
         qc = QuantumCircuit(1, 1)
@@ -181,7 +180,6 @@ class TestDualRailEncodingInstructions:
         assert beamsplitter.modes == (0, 1)
         assert np.isclose(beamsplitter.params["theta"], theta / 2)
         assert np.isclose(beamsplitter.params["phi"], -np.pi / 2)
-
 
     def test_ry(self):
         """Tests converting a circuit with an Y-rotation gate."""
@@ -208,7 +206,6 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(beamsplitter.params["theta"], theta / 2)
         assert np.isclose(beamsplitter.params["phi"], 0)
 
-
     def test_rz(self):
         """Tests converting a circuit with an Z-rotation gate."""
         qc = QuantumCircuit(1, 1)
@@ -230,22 +227,21 @@ class TestDualRailEncodingInstructions:
 
         phase_shift_1 = prog.instructions[2]
         assert isinstance(phase_shift_1, pq.Phaseshifter)
-        assert np.isclose(phase_shift_1.params["phi"], -1/2*theta)
+        assert np.isclose(phase_shift_1.params["phi"], -1 / 2 * theta)
         assert phase_shift_1.modes == (0,)
 
         phase_shift_2 = prog.instructions[3]
         assert isinstance(phase_shift_2, pq.Phaseshifter)
-        assert np.isclose(phase_shift_2.params["phi"], 1/2*theta)
+        assert np.isclose(phase_shift_2.params["phi"], 1 / 2 * theta)
         assert phase_shift_2.modes == (1,)
-
 
     def test_u3(self):
         """Tests converting a circuit with a U3 gate."""
         qc = QuantumCircuit(1, 1)
 
-        theta = np.pi/3
-        phi = np.pi/3
-        lam = np.pi/3
+        theta = np.pi / 3
+        phi = np.pi / 3
+        lam = np.pi / 3
         qc.u(theta, phi, lam, 0)
 
         prog = dual_rail_encode_from_qiskit(qc)
@@ -512,7 +508,6 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], 1)
 
-
     @pytest.mark.parametrize(
         "input_state, expected_coeffs",
         [
@@ -617,14 +612,16 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j * angle))
 
-
-    
     @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
-    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    @pytest.mark.parametrize("input_state", ((1, 0), (0, 1)))
     def test_rx(self, angle, input_state):
         """Tests a Qiskit circuit with an X-rotation gate."""
-        rx = np.array([[np.cos(angle / 2), -1j * np.sin(angle / 2)],
-                       [-1j * np.sin(angle / 2), np.cos(angle / 2)]])
+        rx = np.array(
+            [
+                [np.cos(angle / 2), -1j * np.sin(angle / 2)],
+                [-1j * np.sin(angle / 2), np.cos(angle / 2)],
+            ]
+        )
         qc = QuantumCircuit(1, 1)
         if input_state[1]:
             qc.x(0)
@@ -644,13 +641,16 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
 
-
     @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
-    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    @pytest.mark.parametrize("input_state", ((1, 0), (0, 1)))
     def test_ry(self, angle, input_state):
         """Tests a Qiskit circuit with a Y-rotation gate."""
-        ry = np.array([[np.cos(angle / 2), -1 * np.sin(angle / 2)],
-                       [np.sin(angle / 2), np.cos(angle / 2)]])
+        ry = np.array(
+            [
+                [np.cos(angle / 2), -1 * np.sin(angle / 2)],
+                [np.sin(angle / 2), np.cos(angle / 2)],
+            ]
+        )
         qc = QuantumCircuit(1, 1)
         if input_state[1]:
             qc.x(0)
@@ -670,13 +670,12 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
 
-
     @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
-    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    @pytest.mark.parametrize("input_state", ((1, 0), (0, 1)))
     def test_rz(self, angle, input_state):
         """Tests a Qiskit circuit with a Z-rotation gate."""
-        hadamard = 1/np.sqrt(2)*np.array([[1, 1], [1, -1]])
-        rz = np.array([[np.exp(-1j*angle/2), 0], [0, np.exp(1j*angle/2)]])
+        hadamard = 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]])
+        rz = np.array([[np.exp(-1j * angle / 2), 0], [0, np.exp(1j * angle / 2)]])
         qc = QuantumCircuit(1, 1)
 
         if input_state[1]:
@@ -698,21 +697,22 @@ class TestIntegrationWithSimulator:
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
 
-
     @pytest.mark.parametrize("theta", np.linspace(0, np.pi, 3))
     @pytest.mark.parametrize("phi", np.linspace(0, np.pi, 3))
     @pytest.mark.parametrize("lam", np.linspace(0, np.pi, 3))
-    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    @pytest.mark.parametrize("input_state", ((1, 0), (0, 1)))
     @pytest.mark.parametrize("apply_hadamard", (True, False))
     def test_u3(self, theta, phi, lam, input_state, apply_hadamard):
         """Tests a Qiskit circuit with a Z-rotation gate."""
-        hadamard = 1/np.sqrt(2)*np.array([[1, 1], [1, -1]])
+        hadamard = 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]])
         c = np.cos(theta / 2)
         s = np.sin(theta / 2)
-        u3 = np.array([
-            [c, -s * np.exp(1j * lam)],
-            [s * np.exp(1j * phi), c * np.exp(1j * (phi + lam))],
-        ])
+        u3 = np.array(
+            [
+                [c, -s * np.exp(1j * lam)],
+                [s * np.exp(1j * phi), c * np.exp(1j * (phi + lam))],
+            ]
+        )
         qc = QuantumCircuit(1, 1)
 
         if input_state[1]:
