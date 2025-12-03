@@ -233,10 +233,48 @@ class TestDualRailEncodingInstructions:
         assert np.isclose(phase_shift_1.params["phi"], -1/2*theta)
         assert phase_shift_1.modes == (0,)
 
-        phase_shift_1 = prog.instructions[3]
+        phase_shift_2 = prog.instructions[3]
+        assert isinstance(phase_shift_2, pq.Phaseshifter)
+        assert np.isclose(phase_shift_2.params["phi"], 1/2*theta)
+        assert phase_shift_2.modes == (1,)
+
+
+    def test_u3(self):
+        """Tests converting a circuit with a U3 gate."""
+        qc = QuantumCircuit(1, 1)
+
+        theta = np.pi/3
+        phi = np.pi/3
+        lam = np.pi/3
+        qc.u(theta, phi, lam, 0)
+
+        prog = dual_rail_encode_from_qiskit(qc)
+
+        assert len(prog.instructions) == 5
+
+        vacuum = prog.instructions[0]
+        assert isinstance(vacuum, pq.Vacuum)
+        assert vacuum.modes == (0, 1)
+
+        create_photons = prog.instructions[1]
+        assert isinstance(create_photons, pq.Create)
+        assert create_photons.modes == (0,)
+
+        phase_shift_1 = prog.instructions[2]
         assert isinstance(phase_shift_1, pq.Phaseshifter)
-        assert np.isclose(phase_shift_1.params["phi"], 1/2*theta)
+        assert np.isclose(phase_shift_1.params["phi"], lam)
         assert phase_shift_1.modes == (1,)
+
+        beamsplitter = prog.instructions[3]
+        assert isinstance(beamsplitter, pq.Beamsplitter)
+        assert beamsplitter.modes == (0, 1)
+        assert np.isclose(beamsplitter.params["theta"], theta / 2)
+        assert np.isclose(beamsplitter.params["phi"], 0)
+
+        phase_shift_2 = prog.instructions[4]
+        assert isinstance(phase_shift_2, pq.Phaseshifter)
+        assert np.isclose(phase_shift_2.params["phi"], phi)
+        assert phase_shift_2.modes == (1,)
 
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
@@ -438,7 +476,7 @@ class TestDualRailEncodingInstructions:
 
     @pytest.mark.parametrize(
         "unsupported_gate_data",
-        [("y", (1,)), ("swap", (0, 1))],
+        [("swap", (0, 1))],
     )
     def test_invalid_gate_in_qiskit_circuit_raises(self, unsupported_gate_data):
         """Tests that an unsupported gate in QuantumCircuit raises a ValueError."""
@@ -637,10 +675,13 @@ class TestIntegrationWithSimulator:
     @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
     def test_rz(self, angle, input_state):
         """Tests a Qiskit circuit with a Z-rotation gate."""
+        hadamard = 1/np.sqrt(2)*np.array([[1, 1], [1, -1]])
         rz = np.array([[np.exp(-1j*angle/2), 0], [0, np.exp(1j*angle/2)]])
         qc = QuantumCircuit(1, 1)
+
         if input_state[1]:
             qc.x(0)
+        qc.h(0)
         qc.rz(angle, 0)
 
         connector = pq.NumpyConnector()
@@ -653,7 +694,48 @@ class TestIntegrationWithSimulator:
         prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
         res = simulator.execute(prog, shots=shots)
 
-        expected = rz @ input_state
+        expected = rz @ hadamard @ input_state
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
+
+
+    @pytest.mark.parametrize("theta", np.linspace(0, np.pi, 3))
+    @pytest.mark.parametrize("phi", np.linspace(0, np.pi, 3))
+    @pytest.mark.parametrize("lam", np.linspace(0, np.pi, 3))
+    @pytest.mark.parametrize("input_state", ((1, 0),(0, 1)))
+    @pytest.mark.parametrize("apply_hadamard", (True, False))
+    def test_u3(self, theta, phi, lam, input_state, apply_hadamard):
+        """Tests a Qiskit circuit with a Z-rotation gate."""
+        hadamard = 1/np.sqrt(2)*np.array([[1, 1], [1, -1]])
+        c = np.cos(theta / 2)
+        s = np.sin(theta / 2)
+        u3 = np.array([
+            [c, -s * np.exp(1j * lam)],
+            [s * np.exp(1j * phi), c * np.exp(1j * (phi + lam))],
+        ])
+        qc = QuantumCircuit(1, 1)
+
+        if input_state[1]:
+            qc.x(0)
+        if apply_hadamard:
+            qc.h(0)
+        qc.u(theta, phi, lam, 0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        if apply_hadamard:
+            expected = u3 @ hadamard @ input_state
+        else:
+            expected = u3 @ input_state
+
         assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected[0])
         assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected[1])
 

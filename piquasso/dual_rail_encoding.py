@@ -150,6 +150,26 @@ def _rz_bosonic(theta, mode1, mode2):
     return instructions
 
 
+def _u3_bosonic(theta, phi, lam, mode1, mode2):
+    """Applies a U3-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: polar angle
+        phi: azimuthal angle
+        lam: quantum phase
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Phaseshifter(lam).on_modes(mode2))
+    instructions.append(pq.Beamsplitter(theta / 2, 0).on_modes(mode1, mode2))
+    instructions.append(pq.Phaseshifter(phi).on_modes(mode2))
+    return instructions
+
+
 def _phase_gate_bosonic(theta, mode):
     """Applies a phase gate on a bosonic qubit encoded in dual-rail format.
 
@@ -279,6 +299,8 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         instructions.extend(_ry_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
     elif instruction_name == "rz":
         instructions.extend(_rz_bosonic(qiskit_instruction.params[0], modes[0], modes[1]))
+    elif instruction_name == "u":
+        instructions.extend(_u3_bosonic(*qiskit_instruction.params, *modes))
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params[0], modes[1]))
     elif instruction_name == "measure":
