@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
 import piquasso as pq
 
@@ -235,3 +237,22 @@ BSgate(0.7853981633974483, 0.0) | [0, 1]
         blackbird_code = f.read()
 
     assert blackbird_code.strip() == expected_blackbird_code.strip()
+
+
+def test_to_blackbird_raises_for_unsupported_instruction():
+    program = pq.Program()
+
+    class CustomInstruction(pq.Instruction):
+        def __init__(self, param: float) -> None:
+            super().__init__(params={"param": param})
+
+    with program:
+        pq.Q(0) | CustomInstruction(param=1.0)
+
+    with pytest.raises(pq.PiquassoException) as e:
+        _ = program.to_blackbird_code()
+
+    assert (
+        str(e.value)
+        == "Instruction CustomInstruction cannot be exported to Blackbird format."
+    )

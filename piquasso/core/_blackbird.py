@@ -80,6 +80,9 @@ def export_instructions(instructions: List[Instruction]) -> bb.BlackbirdProgram:
     ]
 
     blackbird_program = bb.BlackbirdProgram(name="Exported Piquasso program")
+    # The BlackbirdProgram class does not provide a public API for setting operations.
+    # Direct assignment to the private attribute _operations is necessary and has been
+    # verified to be safe for the current version of the blackbird library.
     blackbird_program._operations = blackbird_operations
     if instructions:
         blackbird_program._modes = (
@@ -145,8 +148,10 @@ def _piquasso_instruction_to_blackbird_operation(
     bb_op_name = _PQ_TO_BB_MAP.get(instruction.__class__.__name__)
     if bb_op_name is None:
         raise PiquassoException(
-            f"Instruction {instruction.__class__.__name__} cannot be exported to Blackbird format."
+            f"Instruction {instruction.__class__.__name__} cannot be exported to "
+            f"Blackbird format."
         )
+
     operation: Dict[str, object] = {
         "op": bb_op_name,
         "args": list(instruction.params.values()),
