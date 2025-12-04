@@ -307,7 +307,7 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
         instructions.extend(
             _rz_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
         )
-    elif instruction_name == "u":
+    elif instruction_name == "u" or instruction_name == "u3":
         instructions.extend(_u3_bosonic(*qiskit_instruction.params, *modes))
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params[0], modes[1]))
