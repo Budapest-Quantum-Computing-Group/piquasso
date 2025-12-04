@@ -483,7 +483,7 @@ class TestMidCircuitMeasurements:
             simulator.execute(program, shots=1)
 
 
-def test_conditional_squeezing():
+def test_conditional_squeezing_with_function():
     r = 0.2
 
     program = pq.Program(
@@ -510,7 +510,34 @@ def test_conditional_squeezing():
     assert expected_squeezed_state == actual_squeezed_state
 
 
-def test_unresolved_squeezing():
+def test_conditional_squeezing_with_expression():
+    r = 0.2
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 2),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 2),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r=r).on_modes(0).when("x[-1] == 2"),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=7, seed_sequence=123))
+
+    result = simulator.execute(program, shots=10)
+
+    expected_squeezed_state = result.branches[1].state
+
+    actual_squeezed_state = (
+        pq.PureFockSimulator(d=1, config=pq.Config(cutoff=5))
+        .execute_instructions([pq.Vacuum(), pq.Squeezing(r=r)])
+        .state
+    )
+
+    assert expected_squeezed_state == actual_squeezed_state
+
+
+def test_unresolved_squeezing_with_function():
     def f(x):
         return 0.01 * x[-1] ** 2
 
@@ -541,6 +568,41 @@ def test_unresolved_squeezing():
                 [
                     pq.StateVector([2 - branch.outcome[0]]),
                     pq.Squeezing(r=f(branch.outcome)),
+                ]
+            )
+            .state
+        )
+        assert branch.state == expected_state
+
+
+def test_unresolved_squeezing_with_expression():
+    cutoff = 7
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector([0, 2]) * np.sqrt(1 / 3),
+            pq.StateVector([1, 1]) * np.sqrt(1 / 3),
+            pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+            pq.ParticleNumberMeasurement().on_modes(1),
+            pq.Squeezing(r="0.01 * x[-1] ** 2").on_modes(0),
+        ]
+    )
+
+    simulator = pq.PureFockSimulator(
+        d=2, config=pq.Config(cutoff=cutoff, seed_sequence=123)
+    )
+
+    result = simulator.execute(program, shots=10)
+
+    for branch in result.branches:
+        expected_state = (
+            pq.PureFockSimulator(
+                d=1, config=pq.Config(cutoff=cutoff - branch.outcome[0])
+            )
+            .execute_instructions(
+                [
+                    pq.StateVector([2 - branch.outcome[0]]),
+                    pq.Squeezing(r=0.01 * branch.outcome[-1] ** 2),
                 ]
             )
             .state
