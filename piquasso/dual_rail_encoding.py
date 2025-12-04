@@ -62,7 +62,11 @@ def _paulix_bosonic(mode1, mode2):
     """Applies a Pauli-X gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
-        mode: The mode of the bosonic qubit.
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
     """
     instructions = []
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
@@ -70,13 +74,102 @@ def _paulix_bosonic(mode1, mode2):
     return instructions
 
 
+def _pauliy_bosonic(mode1, mode2):
+    """Applies a Pauli-Y gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(-np.pi / 2, np.pi / 2).on_modes(mode1, mode2))
+    instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
+    return instructions
+
+
 def _pauliz_bosonic(mode1, mode2):
     """Applies a Pauli-Z gate on a bosonic qubit encoded in dual-rail format.
 
     Args:
-        mode: The mode of the bosonic qubit.
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
     """
     return _phase_gate_bosonic(np.pi, mode2)
+
+
+def _rx_bosonic(theta, mode1, mode2):
+    """Applies a PauliX-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: The rotation angle.
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(theta / 2, -np.pi / 2).on_modes(mode1, mode2))
+    return instructions
+
+
+def _ry_bosonic(theta, mode1, mode2):
+    """Applies a PauliY-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: The rotation angle.
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Beamsplitter(theta / 2, 0).on_modes(mode1, mode2))
+    return instructions
+
+
+def _rz_bosonic(theta, mode1, mode2):
+    """Applies a PauliZ-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: The rotation angle.
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Phaseshifter(-1 / 2 * theta).on_modes(mode1))
+    instructions.append(pq.Phaseshifter(1 / 2 * theta).on_modes(mode2))
+    return instructions
+
+
+def _u3_bosonic(theta, phi, lam, mode1, mode2):
+    """Applies a U3-rotation gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        theta: polar angle
+        phi: azimuthal angle
+        lam: quantum phase
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
+    instructions = []
+    instructions.append(pq.Phaseshifter(lam).on_modes(mode2))
+    instructions.append(pq.Beamsplitter(theta / 2, 0).on_modes(mode1, mode2))
+    instructions.append(pq.Phaseshifter(phi).on_modes(mode2))
+    return instructions
 
 
 def _phase_gate_bosonic(theta, mode):
@@ -96,6 +189,15 @@ def _phase_gate_bosonic(theta, mode):
 
 
 def _hadamard_bosonic(mode1, mode2):
+    """Applies a Hadamard gate on a bosonic qubit encoded in dual-rail format.
+
+    Args:
+        mode1: The first mode of the bosonic qubit.
+        mode2: The second mode of the bosonic qubit.
+
+    Returns:
+        A list of Piquasso instructions to apply the gate to the bosonic qubit.
+    """
     instructions = []
     instructions.append(pq.Phaseshifter(np.pi).on_modes(mode2))
     instructions.append(pq.Beamsplitter(np.pi / 4).on_modes(mode1, mode2))
@@ -181,6 +283,9 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
     elif instruction_name == "x":
         pq_instruction = _paulix_bosonic(modes[0], modes[1])
         instructions.extend(pq_instruction)
+    elif instruction_name == "y":
+        pq_instruction = _pauliy_bosonic(modes[0], modes[1])
+        instructions.extend(pq_instruction)
     elif instruction_name == "z":
         pq_instruction = _pauliz_bosonic(modes[0], modes[1])
         instructions.extend(pq_instruction)
@@ -190,6 +295,20 @@ def _map_qiskit_instr_to_pq(qiskit_instruction, modes, aux_modes):
     elif instruction_name == "cx":
         pq_instruction = _cnot_on_two_bosonic_qubits(modes + aux_modes)
         instructions.extend(pq_instruction)
+    elif instruction_name == "rx":
+        instructions.extend(
+            _rx_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
+    elif instruction_name == "ry":
+        instructions.extend(
+            _ry_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
+    elif instruction_name == "rz":
+        instructions.extend(
+            _rz_bosonic(qiskit_instruction.params[0], modes[0], modes[1])
+        )
+    elif instruction_name == "u" or instruction_name == "u3":
+        instructions.extend(_u3_bosonic(*qiskit_instruction.params, *modes))
     elif instruction_name == "p":
         instructions.extend(_phase_gate_bosonic(qiskit_instruction.params[0], modes[1]))
     elif instruction_name == "measure":
