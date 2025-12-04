@@ -157,8 +157,7 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
     def save_as_blackbird_code(self, filename: str) -> None:
-        """
-        Dumps the :attr:`instructions` to a Blackbird file (.xbb).
+        """Dumps the :attr:`instructions` to a Blackbird file (``.xbb``).
 
         Args:
             filename (str):
