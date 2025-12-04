@@ -81,9 +81,12 @@ def export_instructions(instructions: List[Instruction]) -> bb.BlackbirdProgram:
 
     blackbird_program = bb.BlackbirdProgram(name="Exported Piquasso program")
     blackbird_program._operations = blackbird_operations
-    blackbird_program._modes = (
-        max(mode for instruction in instructions for mode in instruction.modes) + 1
-    )
+    if instructions:
+        blackbird_program._modes = (
+            max(mode for instruction in instructions for mode in instruction.modes) + 1
+        )
+    else:
+        blackbird_program._modes = 0
 
     return blackbird_program
 
