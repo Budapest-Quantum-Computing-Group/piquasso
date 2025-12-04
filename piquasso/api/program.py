@@ -167,8 +167,8 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         blackbird_program = _blackbird.export_instructions(self.instructions)
 
-        blackbird.dump(blackbird_program, open(filename, "w"))
-
+        with open(filename, "w") as f:
+            blackbird.dump(blackbird_program, f)
     def to_blackbird_code(self) -> str:
         """
         Dumps the :attr:`instructions` as a string representing a
