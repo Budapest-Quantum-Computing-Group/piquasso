@@ -249,7 +249,7 @@ def test_to_blackbird_raises_for_unsupported_instruction():
     with program:
         pq.Q(0) | CustomInstruction(param=1.0)
 
-    with pytest.raises(pq.PiquassoException) as e:
+    with pytest.raises(pq.api.exceptions.PiquassoException) as e:
         _ = program.to_blackbird_code()
 
     assert (
