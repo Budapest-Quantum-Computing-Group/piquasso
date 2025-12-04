@@ -20,6 +20,8 @@ from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 
 from .state import SamplingState
 from .simulation_steps import (
+    vacuum,
+    create,
     state_vector,
     passive_linear,
     particle_number_measurement,
@@ -76,6 +78,8 @@ class SamplingSimulator(BuiltinSimulator):
     """
 
     _instruction_map = {
+        preparations.Vacuum: vacuum,
+        preparations.Create: create,
         preparations.StateVector: state_vector,
         gates.Beamsplitter: passive_linear,
         gates.Beamsplitter5050: passive_linear,

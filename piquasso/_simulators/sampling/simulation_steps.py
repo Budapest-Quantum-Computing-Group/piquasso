@@ -41,6 +41,22 @@ from .utils import (
 from piquasso._utils import get_counts
 
 
+def vacuum(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
+    state._occupation_numbers.append(np.zeros(state.d, dtype=int))
+    state._coefficients.append(1.0)
+
+    return [Branch(state=state)]
+
+
+def create(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
+    modes = instruction.modes
+
+    for i in range(len(state._occupation_numbers)):
+        state._occupation_numbers[i][modes,] += 1
+
+    return [Branch(state=state)]
+
+
 def state_vector(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> List[Branch]:
