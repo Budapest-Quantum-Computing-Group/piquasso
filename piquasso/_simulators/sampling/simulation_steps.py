@@ -60,10 +60,12 @@ def create(state: SamplingState, instruction: Instruction, shots: int) -> List[B
 def state_vector(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    coefficient = instruction._all_params["coefficient"]
+    coefficient = instruction._get_all_params(state._connector)["coefficient"]
 
-    if "occupation_numbers" in instruction._all_params:
-        occupation_numbers = instruction._all_params["occupation_numbers"]
+    if "occupation_numbers" in instruction._get_all_params(state._connector):
+        occupation_numbers = instruction._get_all_params(state._connector)[
+            "occupation_numbers"
+        ]
         if state._config.validate and len(occupation_numbers) != state.d:
             raise InvalidState(
                 f"The occupation numbers '{occupation_numbers}' are not well-defined "
@@ -73,10 +75,10 @@ def state_vector(
         state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
         state._coefficients.append(coefficient)
 
-    elif "fock_amplitude_map" in instruction._all_params:
-        for occupation_numbers, amplitude in instruction._all_params[
-            "fock_amplitude_map"
-        ].items():
+    elif "fock_amplitude_map" in instruction._get_all_params(state._connector):
+        for occupation_numbers, amplitude in instruction._get_all_params(
+            state._connector
+        )["fock_amplitude_map"].items():
 
             if state._config.validate and len(occupation_numbers) != state.d:
                 raise InvalidState(
@@ -131,7 +133,9 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> List[Bra
 
     _apply_matrix_on_modes(
         state=state,
-        matrix=np.array([[instruction._all_params["transmissivity"]]]),
+        matrix=np.array(
+            [[instruction._get_all_params(state._connector)["transmissivity"]]]
+        ),
         modes=instruction.modes,
     )
 
@@ -145,7 +149,7 @@ def lossy_interferometer(
 
     _apply_matrix_on_modes(
         state=state,
-        matrix=instruction._all_params["matrix"],
+        matrix=instruction._get_all_params(state._connector)["matrix"],
         modes=instruction.modes,
     )
 

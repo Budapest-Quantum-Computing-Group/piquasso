@@ -214,8 +214,8 @@ def displacement(
     np = connector.np
 
     modes = instruction.modes
-    r = instruction._all_params["r"]
-    phi = instruction._all_params["phi"]
+    r = instruction._get_all_params(state._connector)["r"]
+    phi = instruction._get_all_params(state._connector)["phi"]
 
     indices = np.ix_(np.array(modes))
 
@@ -230,7 +230,9 @@ def generaldyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     modes = instruction.modes
-    detection_covariance = instruction._all_params["detection_covariance"]
+    detection_covariance = instruction._get_all_params(state._connector)[
+        "detection_covariance"
+    ]
 
     samples = _get_generaldyne_samples(
         state,
@@ -556,7 +558,7 @@ def _generate_threshold_samples_using_hafnian(state, instruction, shots):
 def homodyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    phi = instruction._all_params["phi"]
+    phi = instruction._get_all_params(state._connector)["phi"]
 
     modes = instruction.modes
 
@@ -574,9 +576,9 @@ def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> List[B
 
 
 def mean(state: GaussianState, instruction: Instruction, shots: int) -> List[Branch]:
-    state.xpxp_mean_vector = instruction._all_params["mean"] * np.sqrt(
-        state._config.hbar
-    )
+    state.xpxp_mean_vector = instruction._get_all_params(state._connector)[
+        "mean"
+    ] * np.sqrt(state._config.hbar)
 
     return [Branch(state=state)]
 
@@ -584,7 +586,9 @@ def mean(state: GaussianState, instruction: Instruction, shots: int) -> List[Bra
 def covariance(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    state.xpxp_covariance_matrix = instruction._all_params["cov"] * state._config.hbar
+    state.xpxp_covariance_matrix = (
+        instruction._get_all_params(state._connector)["cov"] * state._config.hbar
+    )
 
     return [Branch(state=state)]
 
@@ -615,8 +619,8 @@ def graph(state: GaussianState, instruction: Instruction, shots: int) -> List[Br
 def deterministic_gaussian_channel(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    X = instruction._all_params["X"]
-    Y = instruction._all_params["Y"] * state._config.hbar
+    X = instruction._get_all_params(state._connector)["X"]
+    Y = instruction._get_all_params(state._connector)["Y"] * state._config.hbar
     modes = instruction.modes
 
     if state._config.validate and len(X) != 2 * len(modes) or len(Y) != 2 * len(modes):

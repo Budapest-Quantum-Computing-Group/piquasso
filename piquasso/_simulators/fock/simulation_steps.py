@@ -64,7 +64,9 @@ def attenuator(
             f"modes: instruction={instruction}"
         )
 
-    mean_thermal_excitation = instruction._all_params["mean_thermal_excitation"]
+    mean_thermal_excitation = instruction._get_all_params(state._connector)[
+        "mean_thermal_excitation"
+    ]
 
     if state._can_validate_variable(mean_thermal_excitation) and not np.isclose(
         mean_thermal_excitation, 0.0
@@ -74,7 +76,7 @@ def attenuator(
             f"mean_thermal_excitation={mean_thermal_excitation}"
         )
 
-    theta = instruction._all_params["theta"]
+    theta = instruction._get_all_params(state._connector)["theta"]
 
     space = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
 

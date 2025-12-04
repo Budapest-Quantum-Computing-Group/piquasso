@@ -155,7 +155,9 @@ class Attenuator(Gate):
                 f"number: mean_thermal_excitation={mean_thermal_excitation}"
             )
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
+        np = connector.np
+
         X = np.cos(self.params["theta"]) * np.identity(2)
 
         Y = (

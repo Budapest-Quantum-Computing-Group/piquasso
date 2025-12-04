@@ -57,7 +57,7 @@ def state_vector(
 
     fallback_np = state._connector.fallback_np
 
-    coefficient = instruction._all_params["coefficient"]
+    coefficient = instruction._get_all_params(state._connector)["coefficient"]
     if state._can_validate_variable(coefficient) and not fallback_np.isclose(
         coefficient, 1.0
     ):
@@ -66,7 +66,7 @@ def state_vector(
         )
 
     occupation_numbers = fallback_np.array(
-        instruction._all_params["occupation_numbers"]
+        instruction._get_all_params(state._connector)["occupation_numbers"]
     )
 
     if state._config.validate and not all_zero_or_one(occupation_numbers):

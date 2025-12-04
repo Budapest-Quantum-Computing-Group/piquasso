@@ -170,7 +170,8 @@ class Thermal(Preparation):
                 f"mean_photon_numbers: {mean_photon_numbers}"
             )
 
-    def _get_computed_params(self) -> dict:
+    def _get_computed_params(self, connector: BaseConnector) -> dict:
+        np = connector.np
         mean_photon_numbers = self.params["mean_photon_numbers"]
 
         cov = np.diag(2 * np.repeat(np.array(mean_photon_numbers), 2) + 1)

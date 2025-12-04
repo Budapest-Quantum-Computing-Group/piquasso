@@ -51,11 +51,11 @@ def state_vector(
 
     fallback_np = connector.fallback_np
 
-    coefficient = instruction._all_params["coefficient"]
+    coefficient = instruction._get_all_params(state._connector)["coefficient"]
 
-    if "occupation_numbers" in instruction._all_params:
+    if "occupation_numbers" in instruction._get_all_params(state._connector):
         occupation_numbers = fallback_np.array(
-            instruction._all_params["occupation_numbers"]
+            instruction._get_all_params(state._connector)["occupation_numbers"]
         )
 
         if state._config.validate:
@@ -74,8 +74,8 @@ def state_vector(
 
         state._state_vector = connector.assign(state._state_vector, index, coefficient)
 
-    elif "fock_amplitude_map" in instruction._all_params:
-        for occupation, amplitude in instruction._all_params[
+    elif "fock_amplitude_map" in instruction._get_all_params(state._connector):
+        for occupation, amplitude in instruction._get_all_params(state._connector)[
             "fock_amplitude_map"
         ].items():
             occ_numbers = fallback_np.array(occupation)
