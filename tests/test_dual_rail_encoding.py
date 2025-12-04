@@ -41,19 +41,18 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (1,)
+        assert create_photons.modes == (0,)
 
-        # Check Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
-        assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (0, 1)
-        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
-        assert np.isclose(hadamard_1.params["phi"], 0)
+        assert isinstance(hadamard_1, pq.Phaseshifter)
+        assert np.isclose(hadamard_1.params["phi"], np.pi)
+        assert hadamard_1.modes == (1,)
 
         hadamard_2 = prog.instructions[3]
-        assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (0,)
+        assert isinstance(hadamard_2, pq.Beamsplitter)
+        assert hadamard_2.modes == (0, 1)
+        assert np.isclose(hadamard_2.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_2.params["phi"], 0)
 
         measurement = prog.instructions[4]
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
@@ -74,12 +73,12 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (1,)
+        assert create_photons.modes == (0,)
 
         phase_shift = prog.instructions[2]
         assert isinstance(phase_shift, pq.Phaseshifter)
         assert np.isclose(phase_shift.params["phi"], np.pi)
-        assert phase_shift.modes == (0,)
+        assert phase_shift.modes == (1,)
 
     def test_two_hadamards_and_cz(self):
         """Tests converting a circuit with two Hadamards and a CZ gate."""
@@ -99,45 +98,47 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (1, 3, 4, 5)
+        assert create_photons.modes == (0, 2, 4, 5)
 
         # Check 1. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
-        assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (0, 1)
-        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
-        assert np.isclose(hadamard_1.params["phi"], 0)
+        assert isinstance(hadamard_1, pq.Phaseshifter)
+        assert np.isclose(hadamard_1.params["phi"], np.pi)
+        assert hadamard_1.modes == (1,)
 
         hadamard_2 = prog.instructions[3]
-        assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (0,)
+        assert isinstance(hadamard_2, pq.Beamsplitter)
+        assert hadamard_2.modes == (0, 1)
+        assert np.isclose(hadamard_2.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_2.params["phi"], 0)
 
         # Check 2. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[4]
-        assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (2, 3)
-        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
-        assert np.isclose(hadamard_1.params["phi"], 0)
+        assert isinstance(hadamard_1, pq.Phaseshifter)
+        assert np.isclose(hadamard_1.params["phi"], np.pi)
+        assert hadamard_1.modes == (3,)
 
         hadamard_2 = prog.instructions[5]
-        assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert hadamard_2.modes == (2,)
-        assert np.isclose(hadamard_2.params["phi"], np.pi)
+        assert isinstance(hadamard_2, pq.Beamsplitter)
+        assert hadamard_2.modes == (2, 3)
+        assert np.isclose(hadamard_2.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_2.params["phi"], 0)
 
         # Check CZ dual-rail encoded implementations
         phase_shifter1 = prog.instructions[6]
         assert isinstance(phase_shifter1, pq.Phaseshifter)
         assert np.isclose(phase_shifter1.params["phi"], np.pi)
+        assert phase_shifter1.modes == (1,)
 
         phase_shifter2 = prog.instructions[7]
         assert isinstance(phase_shifter2, pq.Phaseshifter)
         assert np.isclose(phase_shifter2.params["phi"], np.pi)
+        assert phase_shifter2.modes == (3,)
 
         cz_beamsplitter_first_theta_value = 54.74 / 180 * np.pi
         cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
 
-        bosonic_cz_indices = [0, 2, 4, 5]
+        bosonic_cz_indices = [1, 3, 4, 5]
         first_bs_gate = prog.instructions[8]
         assert isinstance(first_bs_gate, pq.Beamsplitter)
         assert first_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[2])
@@ -195,33 +196,35 @@ class TestDualRailEncoding:
 
         create_photons = prog.instructions[1]
         assert isinstance(create_photons, pq.Create)
-        assert create_photons.modes == (1, 3, 4, 5)
+        assert create_photons.modes == (0, 2, 4, 5)
 
         # Check 1. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[2]
-        assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (2, 3)
-        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
-        assert np.isclose(hadamard_1.params["phi"], 0)
+        assert isinstance(hadamard_1, pq.Phaseshifter)
+        assert np.isclose(hadamard_1.params["phi"], np.pi)
+        assert hadamard_1.modes == (3,)
 
         hadamard_2 = prog.instructions[3]
-        assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert np.isclose(hadamard_2.params["phi"], np.pi)
-        assert hadamard_2.modes == (2,)
+        assert isinstance(hadamard_2, pq.Beamsplitter)
+        assert hadamard_2.modes == (2, 3)
+        assert np.isclose(hadamard_2.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_2.params["phi"], 0)
 
         # Check CZ dual-rail encoded implementations
         phase_shifter1 = prog.instructions[4]
         assert isinstance(phase_shifter1, pq.Phaseshifter)
         assert np.isclose(phase_shifter1.params["phi"], np.pi)
+        assert phase_shifter1.modes == (1,)
 
         phase_shifter2 = prog.instructions[5]
         assert isinstance(phase_shifter2, pq.Phaseshifter)
         assert np.isclose(phase_shifter2.params["phi"], np.pi)
+        assert phase_shifter2.modes == (3,)
 
         cz_beamsplitter_first_theta_value = 54.74 / 180 * np.pi
         cz_beamsplitter_second_theta_value = 17.63 / 180 * np.pi
 
-        bosonic_cz_indices = [0, 2, 4, 5]
+        bosonic_cz_indices = [1, 3, 4, 5]
         first_bs_gate = prog.instructions[6]
         assert isinstance(first_bs_gate, pq.Beamsplitter)
         assert first_bs_gate.modes == (bosonic_cz_indices[0], bosonic_cz_indices[2])
@@ -257,15 +260,15 @@ class TestDualRailEncoding:
 
         # Check 2. Hadamard dual-rail encoded implementations
         hadamard_1 = prog.instructions[11]
-        assert isinstance(hadamard_1, pq.Beamsplitter)
-        assert hadamard_1.modes == (2, 3)
-        assert np.isclose(hadamard_1.params["theta"], np.pi / 4)
-        assert np.isclose(hadamard_1.params["phi"], 0)
+        assert isinstance(hadamard_1, pq.Phaseshifter)
+        assert np.isclose(hadamard_1.params["phi"], np.pi)
+        assert hadamard_1.modes == (3,)
 
         hadamard_2 = prog.instructions[12]
-        assert isinstance(hadamard_2, pq.Phaseshifter)
-        assert hadamard_2.modes == (2,)
-        assert np.isclose(hadamard_2.params["phi"], np.pi)
+        assert isinstance(hadamard_2, pq.Beamsplitter)
+        assert hadamard_2.modes == (2, 3)
+        assert np.isclose(hadamard_2.params["theta"], np.pi / 4)
+        assert np.isclose(hadamard_2.params["phi"], 0)
 
         measurement = prog.instructions[13]
         assert isinstance(measurement, pq.ParticleNumberMeasurement)
@@ -293,6 +296,102 @@ class TestDualRailEncoding:
 
 class TestIntegrationWithSimulator:
     """Tests the integration with the Simulator class."""
+
+    def test_paulix(self):
+        """Tests that PauliX gate can executed."""
+        qc = QuantumCircuit(1, 1)
+        qc.x(0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert len(res.state.fock_amplitudes_map) == 2
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], 1)
+
+    @pytest.mark.parametrize(
+        "input_state, expected_coeffs",
+        [
+            ((1, 0), (1, 0)),
+            ((0, 1), (0, -1)),
+        ],
+    )
+    def test_pauliz(self, input_state, expected_coeffs):
+        """Tests that PauliZ gate can executed."""
+        qc = QuantumCircuit(1, 1)
+        if input_state[1]:
+            qc.x(0)
+        qc.z(0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expected_coeffs[0])
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeffs[1])
+
+    @pytest.mark.parametrize(
+        "input_state, expected_coeff",
+        [
+            ((1, 0), 1),
+            ((0, 1), -1),
+        ],
+    )
+    def test_hadamard(self, input_state, expected_coeff):
+        """Tests that H gate can executed."""
+        qc = QuantumCircuit(1, 1)
+        if input_state[1]:
+            qc.x(0)
+        qc.h(0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert len(res.state.fock_amplitudes_map) == 2
+
+        expr = 1 / np.sqrt(2)
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], expr)
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], expected_coeff * expr)
+
+    @pytest.mark.parametrize("angle", np.linspace(0, np.pi, 4))
+    def test_phase_gate(self, angle):
+        """Tests that a Qiskit circuit with a phase gate executes as expected."""
+        qc = QuantumCircuit(1, 1)
+        qc.x(0)
+        qc.p(angle, 0)
+
+        connector = pq.NumpyConnector()
+        cutoff = 8
+        config = pq.Config(cutoff=cutoff)
+        shots = 1000
+
+        simulator = pq.PureFockSimulator(d=2, config=config, connector=connector)
+
+        prog = pq.dual_rail_encoding.dual_rail_encode_from_qiskit(qc)
+        res = simulator.execute(prog, shots=shots)
+
+        assert np.isclose(res.state.fock_amplitudes_map[(1, 0)], 0)
+        assert np.isclose(res.state.fock_amplitudes_map[(0, 1)], np.exp(1j * angle))
 
     def test_simulator_integration_cz_hadamard(self):
         """Tests that a Qiskit circuit with H and CZ can be executed."""
@@ -327,18 +426,18 @@ class TestIntegrationWithSimulator:
     @pytest.mark.parametrize(
         "input_state, expected_state",
         [
-            ((0, 1, 0, 1), (0, 1, 0, 1)),
-            ((0, 1, 1, 0), (0, 1, 1, 0)),
-            ((1, 0, 0, 1), (1, 0, 1, 0)),
-            ((1, 0, 1, 0), (1, 0, 0, 1)),
+            ((1, 0, 1, 0), (1, 0, 1, 0)),
+            ((1, 0, 0, 1), (1, 0, 0, 1)),
+            ((0, 1, 1, 0), (0, 1, 0, 1)),
+            ((0, 1, 0, 1), (0, 1, 1, 0)),
         ],
     )
     def test_simulator_integration_cnot(self, input_state, expected_state):
         """Tests that a Qiskit circuit with H and CNOT can be executed."""
         qc = QuantumCircuit(2, 2)
-        if input_state[0]:
+        if input_state[1]:
             qc.x(0)
-        if input_state[2]:
+        if input_state[3]:
             qc.x(1)
         qc.cx(0, 1)
 
@@ -359,7 +458,7 @@ class TestIntegrationWithSimulator:
                 assert not np.isclose(fock_amplitudes_map[k], 0)
 
     @pytest.mark.parametrize(
-        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+        "one_state, expected_outcome", [(False, (1, 0, 0, 1)), (True, (0, 1, 0, 1))]
     )
     def test_conditional_paulix(self, one_state, expected_outcome):
         """Tests that PauliX gate can be conditioned on measurement outcomes."""
@@ -386,7 +485,7 @@ class TestIntegrationWithSimulator:
         assert np.isclose(float(res.branches[0].frequency), 1, atol=0.05)
 
     @pytest.mark.parametrize(
-        "one_state, expected_outcome", [(False, (0, 1, 1, 0)), (True, (1, 0, 1, 0))]
+        "one_state, expected_outcome", [(False, (1, 0, 0, 1)), (True, (0, 1, 0, 1))]
     )
     def test_conditional_pauliz(self, one_state, expected_outcome):
         """Tests that PauliZ gate can be conditioned on measurement outcomes."""
@@ -416,15 +515,15 @@ class TestIntegrationWithSimulator:
 
 
 raw_samples1 = [
-    (0, 1),
     (1, 0),
+    (0, 1),
 ]
 
 raw_samples2 = [
-    (0, 1, 0, 1),
-    (0, 1, 1, 0),
-    (1, 0, 0, 1),
     (1, 0, 1, 0),
+    (1, 0, 0, 1),
+    (0, 1, 1, 0),
+    (0, 1, 0, 1),
 ]
 
 
