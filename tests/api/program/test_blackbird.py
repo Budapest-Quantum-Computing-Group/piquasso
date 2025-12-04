@@ -206,9 +206,9 @@ Vgate(0.5) | 1
     assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
     assert program.instructions[2] == pq.CubicPhase(gamma=0.5).on_modes(1)
 
-    regenrated_blackbird_code = program.to_blackbird_code()
+    regenerated_blackbird_code = program.to_blackbird_code()
 
-    assert regenrated_blackbird_code.strip() == blackbird_code.strip().replace(
+    assert regenerated_blackbird_code.strip() == blackbird_code.strip().replace(
         "StateTeleportation", "Exported Piquasso program"
     )
 
