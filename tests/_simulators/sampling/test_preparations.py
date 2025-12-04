@@ -412,3 +412,44 @@ def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState(
 
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
+
+
+def test_Vacuum():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.SamplingSimulator(d=3)
+
+    state = simulator.execute(program).state
+
+    assert len(state._occupation_numbers) == 1
+    assert np.allclose(state._occupation_numbers[0], np.zeros(state.d, dtype=int))
+    assert np.allclose(state._coefficients[0], 1.0)
+
+
+def test_Create_on_single_mode():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Create()
+
+    simulator = pq.SamplingSimulator(d=3)
+
+    state = simulator.execute(program).state
+
+    assert len(state._occupation_numbers) == 1
+    assert np.allclose(state._occupation_numbers[0], np.array([0, 1, 0]))
+    assert np.allclose(state._coefficients[0], 1.0)
+
+
+def test_Create_on_multiple_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 2) | pq.Create()
+
+    simulator = pq.SamplingSimulator(d=4)
+
+    state = simulator.execute(program).state
+
+    assert len(state._occupation_numbers) == 1
+    assert np.allclose(state._occupation_numbers[0], np.array([1, 0, 1, 0]))
+    assert np.allclose(state._coefficients[0], 1.0)
