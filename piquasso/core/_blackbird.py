@@ -142,8 +142,13 @@ def _get_instruction_params(
 def _piquasso_instruction_to_blackbird_operation(
     instruction: Instruction,
 ) -> Dict[str, object]:
+    bb_op_name = _PQ_TO_BB_MAP.get(instruction.__class__.__name__)
+    if bb_op_name is None:
+        raise PiquassoException(
+            f"Instruction {instruction.__class__.__name__} cannot be exported to Blackbird format."
+        )
     operation: Dict[str, object] = {
-        "op": _PQ_TO_BB_MAP.get(instruction.__class__.__name__),
+        "op": bb_op_name,
         "args": list(instruction.params.values()),
         "kwargs": {},
         "modes": list(instruction.modes),
