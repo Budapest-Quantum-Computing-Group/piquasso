@@ -15,12 +15,33 @@
 
 import inspect
 from collections import OrderedDict
-from typing import List, Mapping, Optional, Type
+from typing import List, Type, Dict
 
 import blackbird as bb
 
 from ..api.instruction import Instruction
 from ..api.exceptions import PiquassoException
+
+
+_BB_TO_PQ_MAP = {
+    "Dgate": "Displacement",
+    "Xgate": "PositionDisplacement",
+    "Zgate": "MomentumDisplacement",
+    "Sgate": "Squeezing",
+    "Pgate": "QuadraticPhase",
+    "Kgate": "Kerr",
+    "Rgate": "Phaseshifter",
+    "BSgate": "Beamsplitter",
+    "MZgate": "MachZehnder",
+    "S2gate": "Squeezing2",
+    "CXgate": "ControlledX",
+    "CZgate": "ControlledZ",
+    "CKgate": "CrossKerr",
+    "Vgate": "CubicPhase",
+    "Fouriergate": "Fourier",
+}
+
+_PQ_TO_BB_MAP = {v: k for k, v in _BB_TO_PQ_MAP.items()}
 
 
 def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instruction]:
@@ -33,36 +54,55 @@ def load_instructions(blackbird_program: bb.BlackbirdProgram) -> List[Instructio
             The Blackbird program to use.
     """
 
-    instruction_map = {
-        "Dgate": Instruction.get_subclass("Displacement"),
-        "Xgate": Instruction.get_subclass("PositionDisplacement"),
-        "Zgate": Instruction.get_subclass("MomentumDisplacement"),
-        "Sgate": Instruction.get_subclass("Squeezing"),
-        "Pgate": Instruction.get_subclass("QuadraticPhase"),
-        "Kgate": Instruction.get_subclass("Kerr"),
-        "Rgate": Instruction.get_subclass("Phaseshifter"),
-        "BSgate": Instruction.get_subclass("Beamsplitter"),
-        "MZgate": Instruction.get_subclass("MachZehnder"),
-        "S2gate": Instruction.get_subclass("Squeezing2"),
-        "CXgate": Instruction.get_subclass("ControlledX"),
-        "CZgate": Instruction.get_subclass("ControlledZ"),
-        "CKgate": Instruction.get_subclass("CrossKerr"),
-        "Vgate": Instruction.get_subclass("CubicPhase"),
-        "Fouriergate": Instruction.get_subclass("Fourier"),
-    }
-
     return [
-        _blackbird_operation_to_instruction(instruction_map, operation)
+        _blackbird_operation_to_instruction(operation)
         for operation in blackbird_program.operations
     ]
 
 
+def export_instructions(instructions: List[Instruction]) -> bb.BlackbirdProgram:
+    """
+    Exports a list of :class:`~piquasso.api.instruction.Instruction` to a
+    :class:`~blackbird.program.BlackbirdProgram`.
+
+    Args:
+        instructions (List[~piquasso.api.instruction.Instruction]):
+            The list of instructions to export.
+
+    Returns:
+        ~blackbird.program.BlackbirdProgram:
+            The exported Blackbird program.
+    """
+
+    blackbird_operations = [
+        _piquasso_instruction_to_blackbird_operation(instruction)
+        for instruction in instructions
+    ]
+
+    blackbird_program = bb.BlackbirdProgram(name="Exported Piquasso program")
+    # The BlackbirdProgram class does not provide a public API for setting operations.
+    # Direct assignment to the private attribute _operations is necessary and has been
+    # verified to be safe for the current version of the blackbird library.
+    blackbird_program._operations = blackbird_operations
+    if instructions:
+        blackbird_program._modes = (
+            max(mode for instruction in instructions for mode in instruction.modes) + 1
+        )
+    else:
+        blackbird_program._modes = 0
+
+    return blackbird_program
+
+
 def _blackbird_operation_to_instruction(
-    instruction_map: Mapping[str, Optional[Type[Instruction]]],
     blackbird_operation: dict,
 ) -> Instruction:
     op = blackbird_operation["op"]
-    pq_instruction_class = instruction_map.get(op)
+    pq_instruction_name = _BB_TO_PQ_MAP.get(op)
+
+    pq_instruction_class = (
+        Instruction.get_subclass(pq_instruction_name) if pq_instruction_name else None
+    )
 
     if pq_instruction_class is None:
         raise PiquassoException(f"Operation {op} is not implemented in piquasso.")
@@ -100,3 +140,23 @@ def _get_instruction_params(
         instruction_params[pq_param_name] = bb_param
 
     return instruction_params
+
+
+def _piquasso_instruction_to_blackbird_operation(
+    instruction: Instruction,
+) -> Dict[str, object]:
+    bb_op_name = _PQ_TO_BB_MAP.get(instruction.__class__.__name__)
+    if bb_op_name is None:
+        raise PiquassoException(
+            f"Instruction {instruction.__class__.__name__} cannot be exported to "
+            f"Blackbird format."
+        )
+
+    operation: Dict[str, object] = {
+        "op": bb_op_name,
+        "args": list(instruction.params.values()),
+        "kwargs": {},
+        "modes": list(instruction.modes),
+    }
+
+    return operation

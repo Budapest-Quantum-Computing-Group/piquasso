@@ -156,6 +156,32 @@ class Program(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         self.instructions.extend(_blackbird.load_instructions(blackbird_program))
 
+    def save_as_blackbird_code(self, filename: str) -> None:
+        """Dumps the :attr:`instructions` to a Blackbird file (``.xbb``).
+
+        Args:
+            filename (str):
+                Location where to save the Blackbird program (.xbb).
+        """
+
+        blackbird_program = _blackbird.export_instructions(self.instructions)
+
+        with open(filename, "w") as f:
+            blackbird.dump(blackbird_program, f)
+
+    def to_blackbird_code(self) -> str:
+        """
+        Dumps the :attr:`instructions` as a string representing a
+        :class:`~blackbird.program.BlackbirdProgram`.
+
+        Returns:
+            str: String containing a valid Blackbird program.
+        """
+
+        blackbird_program = _blackbird.export_instructions(self.instructions)
+
+        return blackbird.dumps(blackbird_program)
+
     def _as_code(self) -> str:
         """Export the :class:`Program` instance as Python code."""
 

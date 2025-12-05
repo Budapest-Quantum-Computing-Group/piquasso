@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import numpy as np
 import piquasso as pq
 
@@ -164,3 +166,93 @@ def test_load_blackbird_from_file_with_execution(gaussian_state_assets, tmpdir):
     expected_state = gaussian_state_assets.load()
 
     assert state == expected_state
+
+
+def test_to_blackbird_code():
+    program = pq.Program()
+
+    with program:
+        pq.Q(0) | pq.Squeezing(r=0.5)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+
+    blackbird_code = program.to_blackbird_code()
+
+    expected_blackbird_code = """name Exported Piquasso program
+version 1.0
+
+Sgate(0.5, 0.0) | 0
+BSgate(0.7853981633974483, 0.0) | [0, 1]
+"""
+    assert blackbird_code.strip() == expected_blackbird_code.strip()
+
+
+def test_loads_blackbird_to_blackbird_code_roundtrip():
+    blackbird_code = """name StateTeleportation
+version 1.0
+
+BSgate(0.7853981633974483, 0) | [1, 2]
+Rgate(0.7853981633974483) | 1
+Vgate(0.5) | 1
+"""
+
+    program = pq.Program()
+
+    program.loads_blackbird(blackbird_code)
+
+    assert len(program.instructions) == 3
+
+    assert program.instructions[0] == pq.Beamsplitter(
+        theta=np.pi / 4, phi=0.0
+    ).on_modes(1, 2)
+    assert program.instructions[1] == pq.Phaseshifter(phi=np.pi / 4).on_modes(1)
+    assert program.instructions[2] == pq.CubicPhase(gamma=0.5).on_modes(1)
+
+    regenerated_blackbird_code = program.to_blackbird_code()
+
+    assert regenerated_blackbird_code.strip() == blackbird_code.strip().replace(
+        "StateTeleportation", "Exported Piquasso program"
+    )
+
+
+def test_save_as_blackbird_code_to_file(tmpdir):
+    program = pq.Program()
+
+    with program:
+        pq.Q(0) | pq.Squeezing(r=0.5)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
+
+    blackbird_file = tmpdir.join("exported-blackbird-code.xbb")
+
+    program.save_as_blackbird_code(blackbird_file.strpath)
+
+    expected_blackbird_code = """name Exported Piquasso program
+version 1.0
+
+Sgate(0.5, 0.0) | 0
+BSgate(0.7853981633974483, 0.0) | [0, 1]
+"""
+    with open(blackbird_file.strpath, "r") as f:
+        blackbird_code = f.read()
+
+    assert blackbird_code.strip() == expected_blackbird_code.strip()
+
+
+def test_to_blackbird_raises_for_unsupported_instruction():
+    program = pq.Program()
+
+    class CustomInstruction(pq.Instruction):
+        def __init__(self, param: float) -> None:
+            super().__init__(params={"param": param})
+
+    with program:
+        pq.Q(0) | CustomInstruction(param=1.0)
+
+    with pytest.raises(pq.api.exceptions.PiquassoException) as e:
+        _ = program.to_blackbird_code()
+
+    assert (
+        str(e.value)
+        == "Instruction CustomInstruction cannot be exported to Blackbird format."
+    )
