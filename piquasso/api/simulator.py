@@ -63,7 +63,7 @@ def _infer_number_of_modes_from_instructions(
 
     for instruction in instructions:
         modes = getattr(instruction, "modes", None)
-        if modes and (not number_of_modes or max(modes) > (number_of_modes - 1)):
+        if modes and (not number_of_modes or max(modes) >= number_of_modes):
             number_of_modes = max(modes) + 1
 
     return number_of_modes
