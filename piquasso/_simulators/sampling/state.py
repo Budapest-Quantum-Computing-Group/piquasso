@@ -22,7 +22,7 @@ from piquasso._math.linalg import is_unitary
 from piquasso.api.config import Config
 from piquasso.api.exceptions import InvalidState
 from piquasso.api.state import State
-from piquasso.api.exceptions import PiquassoException
+from piquasso.api.exceptions import PiquassoException, NotImplementedCalculation
 from piquasso.api.connector import BaseConnector
 
 from .utils import (
@@ -156,6 +156,13 @@ class SamplingState(State):
         This implementation follows Algorithm 1 (`SLOS_full`) from
         `Strong Simulation of Linear Optical Processes <https://arxiv.org/pdf/2206.10549>`_.
         """  # noqa: E501
+
+        if self.is_lossy:
+            raise NotImplementedCalculation(
+                "This property is not implemented for lossy states. If you need it, "
+                "please create an issue at "
+                "https://github.com/Quantum-Computing-Group/Piquasso/issues."
+            )
 
         connector = self._connector
         np = connector.np
