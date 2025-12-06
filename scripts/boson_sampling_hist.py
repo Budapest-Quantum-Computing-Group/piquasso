@@ -51,18 +51,24 @@ if __name__ == "__main__":
 
     N = 10000
 
-    program = pq.Program(
-        instructions=[
-            pq.StateVector(input_state),
-            pq.Interferometer(unitary),
-            *[pq.Loss(loss_transmittance).on_modes(i) for i in range(d)],
-            pq.ParticleNumberMeasurement(),
-        ]
-    )
+    instructions = [
+        pq.StateVector(input_state),
+        pq.Interferometer(unitary),
+        *[pq.Loss(loss_transmittance).on_modes(i) for i in range(d)],
+        pq.ParticleNumberMeasurement(),
+    ]
+
+    program = pq.Program(instructions=instructions)
 
     simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(seed_sequence=42))
 
     samples = [tuple(sample) for sample in simulator.execute(program, shots=N).samples]
 
+    state = simulator.execute_instructions(instructions[:-1]).state
+
     for partition in partitions(d, n):
-        print(partition, samples.count(tuple(partition)))
+        print(
+            partition,
+            samples.count(tuple(partition)),
+            state.get_particle_detection_probability(partition) * N,
+        )

@@ -48,6 +48,30 @@ py::object create_numpy_scalar(TScalar input)
     return py::array_t<TScalar>({}, {}, ptr, free_when_done);
 }
 
+
+/**
+ * Create a numpy vector from a C++ native data type.
+ *
+ * Source: https://stackoverflow.com/a/44682603
+ */
+template <typename TScalar>
+py::object create_numpy_vector(Vector<TScalar> input)
+{
+    auto size = input.size();
+    TScalar *ptr = new TScalar[size];
+    for (size_t i = 0; i < size; i++) {
+        ptr[i] = input[i];
+    }
+
+    py::capsule free_when_done(ptr, [](void *f)
+    {
+        TScalar *ptr = reinterpret_cast<TScalar *>(f);
+        delete[] ptr;
+    });
+
+    return py::array_t<TScalar>({size}, {sizeof(TScalar)}, ptr, free_when_done);
+}
+
 /**
  * Creates a Matrix from a numpy array with shared memory.
  */

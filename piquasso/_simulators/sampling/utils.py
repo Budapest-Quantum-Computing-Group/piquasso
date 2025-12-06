@@ -18,7 +18,6 @@ from scipy.special import factorial
 
 from functools import partial
 
-
 from piquasso._math.combinatorics import partitions
 
 """
@@ -95,7 +94,9 @@ def calculate_inner_product(interferometer, input, output, connector):
     )
 
 
-def generate_lossless_samples(input, shots, permanent, interferometer, rng):
+def generate_samples(
+    input, shots, calculate_permanent_laplace, interferometer, rng, reject_condition
+):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
     https://arxiv.org/abs/1706.01260.
@@ -103,52 +104,34 @@ def generate_lossless_samples(input, shots, permanent, interferometer, rng):
     Args:
         input: The input Fock basis state.
         shots: Number of samples to be generated.
-        permanent: Permanent calculator function, already containing
-            the unitary matrix corresponding to the interferometer.
+        calculate_permanent_laplace: Function to calculate the permanent submatrices
+            according to the Laplace expansion.
+        interferometer: The interferometer matrix.
         rng: Random number generator.
 
     Returns:
         The generated samples.
     """
 
-    return _generate_samples(
-        input,
-        shots,
-        permanent,
-        sample_generator=_generate_lossless_sample,
-        interferometer=interferometer,
-        rng=rng,
-    )
-
-
-def generate_uniform_lossy_samples(
-    input, shots, permanent, interferometer, transmissivity, rng
-):
-    """
-    Basically the same algorithm as in `generate_lossless_samples`, but rejects
-    particles according to the uniform `transmissivity` specified.
-    """
-    sample_generator = partial(
-        _generate_uniform_lossy_sample, transmissivity=transmissivity
-    )
+    sample_generator = partial(_generate_sample, reject_condition=reject_condition)
 
     return _generate_samples(
         input,
         shots,
-        permanent,
-        interferometer=interferometer,
+        calculate_permanent_laplace,
         sample_generator=sample_generator,
+        interferometer=interferometer,
         rng=rng,
     )
 
 
 def generate_lossy_samples(
-    input_state, samples_number, permanent, interferometer_svd, rng
+    input_state, samples_number, calculate_permanent_laplace, interferometer_svd, rng
 ):
     """
-    Basically the same algorithm as in `generate_lossless_samples`, but doubles the
-    system size and embeds the input state and the input matrix in order to simulate
-    non-uniform losses characterized by the singular values in `interferometer_svd`.
+    Basically the same algorithm as in `generate_samples`, but doubles the system size
+    and embeds the input state and the input matrix in order to simulate non-uniform
+    losses characterized by the singular values in `interferometer_svd`.
     """
     expanded_matrix = _prepare_interferometer_matrix_in_expanded_space(
         interferometer_svd
@@ -160,8 +143,13 @@ def generate_lossy_samples(
         2 * len(input_state),
     )
 
-    expanded_samples = generate_lossless_samples(
-        expanded_state, samples_number, permanent, expanded_matrix, rng
+    expanded_samples = generate_samples(
+        expanded_state,
+        samples_number,
+        calculate_permanent_laplace,
+        expanded_matrix,
+        rng,
+        reject_condition=lambda: False,
     )
 
     # Trim output state
@@ -187,7 +175,9 @@ def _get_first_quantized(occupation_numbers):
     return first_quantized
 
 
-def _generate_samples(input, shots, permanent, interferometer, sample_generator, rng):
+def _generate_samples(
+    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng
+):
     d = len(input)
     n = np.sum(input)
 
@@ -199,7 +189,7 @@ def _generate_samples(input, shots, permanent, interferometer, sample_generator,
         sample = sample_generator(
             d,
             n,
-            permanent,
+            calculate_permanent_laplace,
             interferometer,
             first_quantized_input,
             rng=rng,
@@ -220,8 +210,14 @@ def _grow_current_input(current_input, to_shrink, rng):
     return current_input, to_shrink
 
 
-def _generate_lossless_sample(
-    d, n, permanent, interferometer, first_quantized_input, rng
+def _generate_sample(
+    d,
+    n,
+    calculate_permanent_laplace,
+    interferometer,
+    first_quantized_input,
+    rng,
+    reject_condition,
 ):
     sample = np.zeros(d, dtype=int)
 
@@ -229,36 +225,14 @@ def _generate_lossless_sample(
     to_shrink = np.copy(first_quantized_input)
 
     for _ in range(1, n + 1):
-        current_input, to_shrink = _grow_current_input(current_input, to_shrink, rng)
-
-        pmf = _calculate_pmf(current_input, sample, permanent, interferometer)
-
-        index = _sample_from_pmf(pmf, rng)
-
-        sample[index] += 1
-
-    return sample
-
-
-def _generate_uniform_lossy_sample(
-    d, n, permanent, interferometer, first_quantized_input, transmissivity, rng
-):
-    sample = np.zeros(d, dtype=int)
-
-    number_of_particle_to_sample = 0
-
-    current_input = np.zeros(d, dtype=int)
-    to_shrink = np.copy(first_quantized_input)
-
-    for _ in range(1, n + 1):
-        if rng.uniform() > transmissivity:
+        if reject_condition():
             continue
-        else:
-            number_of_particle_to_sample += 1
 
         current_input, to_shrink = _grow_current_input(current_input, to_shrink, rng)
 
-        pmf = _calculate_pmf(current_input, sample, permanent, interferometer)
+        pmf = _calculate_pmf(
+            current_input, sample, calculate_permanent_laplace, interferometer
+        )
 
         index = _sample_from_pmf(pmf, rng)
 
@@ -271,32 +245,26 @@ def _filter_zeros(matrix, input_state, output_state):
     nonzero_input_indices = input_state > 0
     nonzero_output_indices = output_state > 0
 
-    new_input_state = input_state[input_state > 0]
-    new_output_state = output_state[output_state > 0]
+    new_input_state = input_state[nonzero_input_indices]
+    new_output_state = output_state[nonzero_output_indices]
 
     new_matrix = matrix[np.ix_(nonzero_output_indices, nonzero_input_indices)]
 
     return new_matrix, new_input_state, new_output_state
 
 
-def _calculate_pmf(input_state, sample, calculate_permanent, interferometer):
+def _calculate_pmf(input_state, sample, calculate_permanent_laplace, interferometer):
     d = len(sample)
     pmf = np.empty(d, dtype=np.float64)
 
     nonzero_indices = np.arange(d)[input_state > 0]
 
-    partial_permanents = np.zeros(len(nonzero_indices), dtype=interferometer.dtype)
-
-    for idx, nonzero_idx in enumerate(nonzero_indices):
-        input_state_subtracted = input_state.copy()
-        input_state_subtracted[nonzero_idx] -= 1
-
-        filtered_interferometer, filtered_input_state, filtered_output_state = (
-            _filter_zeros(interferometer, input_state_subtracted, sample)
-        )
-        partial_permanents[idx] = calculate_permanent(
-            filtered_interferometer, filtered_output_state, filtered_input_state
-        )
+    filtered_interferometer, filtered_input_state, filtered_output_state = (
+        _filter_zeros(interferometer, input_state, sample)
+    )
+    partial_permanents = calculate_permanent_laplace(
+        filtered_interferometer, filtered_output_state, filtered_input_state
+    )
 
     normalization = 0.0
     for idx in range(d):

@@ -291,3 +291,25 @@ class BaseConnector(abc.ABC):
         self, representations, state_vector, modes, d, cutoff
     ):
         """Applies a passive linear gate to a state vector expressed in the Fock basis."""  # noqa: E501
+
+    @abc.abstractmethod
+    def permanent_laplace(
+        self, matrix: numpy.ndarray, rows: Tuple[int, ...], cols: Tuple[int, ...]
+    ) -> numpy.ndarray:
+        """Calculates the permanent of a matrix corresponding to the Laplace expansion.
+
+        Here, the sum of `rows` is equal to the sum of `cols` plus one, and all the
+        permanents corresponding to the row multiplicities given by `rows` and column
+        multiplicities given by `cols` minus one from each column are calculated.
+
+        Args:
+            matrix (numpy.ndarray): The input matrix.
+            rows (Tuple[int, ...]): Multiplicity vector specifying how many times each
+                row is repeated (i.e., the row multiplicities).
+            cols (Tuple[int, ...]): Multiplicity vector specifying how many times each
+                column is repeated (i.e., the column multiplicities).
+
+        Returns:
+            numpy.ndarray: The permanents of the submatrices corresponding to the
+                Laplace expansion.
+        """

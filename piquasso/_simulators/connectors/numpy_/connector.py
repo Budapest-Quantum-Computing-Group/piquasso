@@ -17,7 +17,10 @@ import scipy
 
 import numpy as np
 
-from piquasso._math.permanent import permanent as permanent_with_reduction
+from piquasso._math.permanent import (
+    permanent as permanent_with_reduction,
+    permanent_laplace,
+)
 from piquasso._math.hafnian import (
     hafnian_with_reduction,
     loop_hafnian_with_reduction,
@@ -47,6 +50,7 @@ class NumpyConnector(BuiltinConnector):
     svd = instancemethod(np.linalg.svd)
     schur = instancemethod(scipy.linalg.schur)
     permanent = instancemethod(permanent_with_reduction)
+    permanent_laplace = instancemethod(permanent_laplace)
     hafnian = instancemethod(hafnian_with_reduction)
     loop_hafnian = instancemethod(loop_hafnian_with_reduction)
     loop_hafnian_batch = instancemethod(loop_hafnian_with_reduction_batch)

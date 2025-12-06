@@ -6,7 +6,7 @@ target_link_libraries(torontonian PUBLIC torontonianboost looptorontonianboost)
 
 target_link_libraries(pfaffian PUBLIC pfaffianboost)
 
-target_link_libraries(permanent PUBLIC permanentboost)
+target_link_libraries(permanent PUBLIC permanentboost permanentlaplaceboost)
 
 install(
     TARGETS torontonian pfaffian permanent
