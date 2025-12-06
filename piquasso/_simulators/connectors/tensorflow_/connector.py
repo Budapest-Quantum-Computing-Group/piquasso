@@ -361,7 +361,10 @@ class TensorflowConnector(BuiltinConnector):
 
         return _TrivialTraceType(self)
 
-    def permanent(self, matrix, rows, columns):
+    def permanent(self, matrix, rows, cols):
+        raise NotImplementedError()
+
+    def permanent_laplace(self, matrix, rows, cols):
         raise NotImplementedError()
 
     def hafnian(self, matrix, reduce_on):

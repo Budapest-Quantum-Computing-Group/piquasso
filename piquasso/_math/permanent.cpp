@@ -19,6 +19,7 @@
 
 #include "numpy_utils.hpp"
 #include "permanent.hpp"
+#include "permanent_laplace.hpp"
 
 namespace py = pybind11;
 
@@ -39,11 +40,32 @@ py::object permanent_np(
     return create_numpy_scalar(result);
 }
 
-const char* permanent_docstring = R""""(
-Calculates the permanent of a matrix.
+template <typename TScalar>
+py::object permanent_laplace_np(
+    py::array_t<std::complex<TScalar>, py::array::c_style> matrix,
+    py::array_t<int, py::array::c_style | py::array::forcecast> row_mult_arr,
+    py::array_t<int, py::array::c_style | py::array::forcecast> col_mult_arr
+)
+{
+    Matrix<std::complex<TScalar>> native_matrix = numpy_to_matrix(matrix);
 
-This function is based on the Parlett-Reid algorithm described in the following paper: https://arxiv.org/abs/1102.3440
-    ...
+    Vector<int> row_mult = numpy_to_vector(row_mult_arr);
+    Vector<int> col_mult = numpy_to_vector(col_mult_arr);
+
+    Vector<std::complex<TScalar>> result = permanent_laplace_cpp(native_matrix, row_mult, col_mult);
+
+    return create_numpy_vector(result);
+}
+
+const char* permanent_docstring = R""""(
+Calculates the permanent of a matrix, based on Eq. (8) of
+https://arxiv.org/abs/2309.07027.
+)"""";
+
+const char* permanent_laplace_docstring = R""""(
+Calculates the permanents of the submatrices corresponding to the Laplace expansion,
+corresponding to Eq. (8) of https://arxiv.org/abs/2309.07027 and
+Lemma 1 of https://arxiv.org/abs/2005.04214.
 )"""";
 
 PYBIND11_MODULE(permanent, m)
@@ -52,6 +74,12 @@ PYBIND11_MODULE(permanent, m)
         py::arg("matrix"), py::arg("rows"), py::arg("cols")
     );
     m.def("permanent", &permanent_np<double>, permanent_docstring,
+        py::arg("matrix"), py::arg("rows"), py::arg("cols")
+    );
+    m.def("permanent_laplace", &permanent_laplace_np<float>, permanent_laplace_docstring,
+        py::arg("matrix"), py::arg("rows"), py::arg("cols")
+    );
+    m.def("permanent_laplace", &permanent_laplace_np<double>, permanent_laplace_docstring,
         py::arg("matrix"), py::arg("rows"), py::arg("cols")
     );
 }

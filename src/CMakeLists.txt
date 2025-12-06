@@ -35,16 +35,27 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.hpp
 )
 
+add_library(
+    permanentlaplaceboost
+    STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/permanent_laplace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/permanent_laplace.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/n_aryGrayCodeCounter.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils.hpp
+)
+
 target_include_directories(torontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(looptorontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pfaffianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(permanentboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(permanentlaplaceboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # Source: https://cliutils.gitlab.io/modern-cmake/chapters/packages/OpenMP.html
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(permanentboost PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(permanentlaplaceboost PUBLIC OpenMP::OpenMP_CXX)
 else()
     # This could happen, because Apple disabled openmp in clang.
     # One could install it via brew, but it would only works on the machine where it

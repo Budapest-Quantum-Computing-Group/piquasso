@@ -157,6 +157,9 @@ class JaxConnector(BuiltinConnector):
 
         return permanent_with_reduction(*args, **kwargs)
 
+    def permanent_laplace(self, matrix, rows, cols):
+        raise NotImplementedError()
+
     def hafnian(self, matrix, reduce_on):
         raise NotImplementedError()
 

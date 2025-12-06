@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 from typing import Tuple, List
 
 import numpy as np
@@ -34,8 +35,7 @@ from piquasso._simulators.fock.pure.simulation_steps import (
 
 
 from .utils import (
-    generate_lossless_samples,
-    generate_uniform_lossy_samples,
+    generate_samples,
     generate_lossy_samples,
 )
 from piquasso._utils import get_counts
@@ -191,36 +191,36 @@ def particle_number_measurement(
 
     interferometer_svd = np.linalg.svd(state.interferometer)
 
+    rng = state._config.rng
+
     singular_values = interferometer_svd[1]
 
     if not state.is_lossy:
-        samples = generate_lossless_samples(
-            initial_state,
-            shots,
-            state._connector.permanent,
-            state.interferometer,
-            state._config.rng,
+        partial_generate_samples = partial(
+            generate_samples,
+            interferometer=state.interferometer,
+            reject_condition=lambda: False,
         )
     elif np.all(np.isclose(singular_values, singular_values[0])):
         uniform_transmission_probability = singular_values[0] ** 2
 
-        samples = generate_uniform_lossy_samples(
-            initial_state,
-            shots,
-            state._connector.permanent,
-            state.interferometer,
-            uniform_transmission_probability,
-            state._config.rng,
+        partial_generate_samples = partial(
+            generate_samples,
+            interferometer=state.interferometer,
+            reject_condition=lambda: rng.uniform() > uniform_transmission_probability,
+        )
+    else:
+        partial_generate_samples = partial(
+            generate_lossy_samples,
+            interferometer_svd=interferometer_svd,
         )
 
-    else:
-        samples = generate_lossy_samples(
-            initial_state,
-            shots,
-            state._connector.permanent,
-            interferometer_svd,
-            state._config.rng,
-        )
+    samples = partial_generate_samples(
+        initial_state,
+        shots,
+        calculate_permanent_laplace=state._connector.permanent_laplace,
+        rng=rng,
+    )
 
     binned_samples = get_counts(samples)
 
