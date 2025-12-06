@@ -155,6 +155,9 @@ class SamplingState(State):
 
         This implementation follows Algorithm 1 (`SLOS_full`) from
         `Strong Simulation of Linear Optical Processes <https://arxiv.org/pdf/2206.10549>`_.
+
+        Raises:
+            NotImplementedCalculation: If the state is lossy.
         """  # noqa: E501
 
         if self.is_lossy:
