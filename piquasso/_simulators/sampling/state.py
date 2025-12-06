@@ -161,7 +161,7 @@ class SamplingState(State):
             raise NotImplementedCalculation(
                 "This property is not implemented for lossy states. If you need it, "
                 "please create an issue at "
-                "https://github.com/Quantum-Computing-Group/Piquasso/issues."
+                "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues."
             )
 
         connector = self._connector
