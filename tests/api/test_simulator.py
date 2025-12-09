@@ -414,6 +414,15 @@ def test_simulator_without_d_parameter_infers_from_program(
     assert another_result.state.d == 4
     assert simulator.d is None
 
+    with pq.Program() as another_program:
+        pq.Q(0, 1) | FakePreparation()
+        pq.Q(1, 2) | FakeGate()
+
+    another_result = simulator.execute(another_program)
+
+    assert another_result.state.d == 3
+    assert simulator.d is None
+
 
 def test_simulator_with_d_parameter_uses_given_d(
     FakeSimulator, FakePreparation, FakeGate
