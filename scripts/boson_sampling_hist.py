@@ -67,8 +67,6 @@ if __name__ == "__main__":
     state = simulator.execute_instructions(instructions[:-1]).state
 
     for partition in partitions(d, n):
-        print(
-            partition,
-            samples.count(tuple(partition)),
-            state.get_particle_detection_probability(partition) * N,
-        )
+        state_probability = state.get_particle_detection_probability(partition)
+        expected_count = state_probability * N
+        print(partition, samples.count(tuple(partition)), expected_count)

@@ -52,6 +52,9 @@ class Config(_mixins.CodeMixin):
     :ivar use_dask:
         Use dask for certain computations during the simulation, e.g., for Gaussian
         Boson Sampling. Defaults to `False`.
+    :ivar max_sample_generation_trials:
+        The maximum number of trials for sample generation, e.g., during postselection.
+        Defaults to `1000`.
     """
 
     def __init__(
@@ -66,6 +69,7 @@ class Config(_mixins.CodeMixin):
         cache_size: int = 32,
         validate: bool = True,
         use_dask: bool = False,
+        max_sample_generation_trials: int = 1000,
     ):
         self._original_seed_sequence = seed_sequence
         self.seed_sequence = seed_sequence or int.from_bytes(
@@ -79,6 +83,7 @@ class Config(_mixins.CodeMixin):
         self.dtype = np.float64 if dtype is float else dtype
         self.validate = validate
         self.use_dask = use_dask
+        self.max_sample_generation_trials = max_sample_generation_trials
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Config):
@@ -93,6 +98,7 @@ class Config(_mixins.CodeMixin):
             and self.dtype == other.dtype
             and self.validate == other.validate
             and self.use_dask == other.use_dask
+            and self.max_sample_generation_trials == other.max_sample_generation_trials
         )
 
     def _as_code(self) -> str:
@@ -117,6 +123,13 @@ class Config(_mixins.CodeMixin):
             non_default_params["validate"] = self.validate
         if self.use_dask != default_config.use_dask:
             non_default_params["use_dask"] = self.use_dask
+        if (
+            self.max_sample_generation_trials
+            != default_config.max_sample_generation_trials
+        ):
+            non_default_params["max_sample_generation_trials"] = (
+                self.max_sample_generation_trials
+            )
 
         if len(non_default_params) == 0:
             return "pq.Config()"

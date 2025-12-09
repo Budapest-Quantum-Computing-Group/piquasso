@@ -29,10 +29,8 @@ from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 
 from piquasso._simulators.fock.pure.simulation_steps import (
-    post_select_photons as pure_fock_post_select_photons,
     imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
 )
-
 
 from .utils import (
     generate_samples,
@@ -123,7 +121,11 @@ def _apply_matrix_on_modes(
 
     embedded = np.identity(len(state.interferometer), dtype=state._config.complex_dtype)
 
-    embedded = connector.assign(embedded, fallback_np.ix_(modes, modes), matrix)
+    actual_modes = fallback_np.array(state._get_active_modes())[modes,]
+
+    embedded = connector.assign(
+        embedded, fallback_np.ix_(actual_modes, actual_modes), matrix
+    )
 
     state.interferometer = embedded @ state.interferometer
 
@@ -195,6 +197,12 @@ def particle_number_measurement(
 
     singular_values = interferometer_svd[1]
 
+    postselect_data = (
+        state._get_postselected_modes(),
+        state._get_postselected_photons(),
+        state._config.max_sample_generation_trials,
+    )
+
     if not state.is_lossy:
         partial_generate_samples = partial(
             generate_samples,
@@ -220,6 +228,7 @@ def particle_number_measurement(
         shots,
         calculate_permanent_laplace=state._connector.permanent_laplace,
         rng=rng,
+        postselect_data=postselect_data,
     )
 
     binned_samples = get_counts(samples)
@@ -232,5 +241,16 @@ def particle_number_measurement(
     return branches
 
 
-post_select_photons = pure_fock_post_select_photons
+def post_select_photons(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> List[Branch]:
+    modes = instruction.modes
+
+    photon_counts = instruction.params["photon_counts"]
+
+    state._set_postselection(modes, photon_counts)
+
+    return [Branch(state=state)]
+
+
 imperfect_post_select_photons = pure_fock_imperfect_post_select_photons
