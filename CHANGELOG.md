@@ -1,5 +1,61 @@
 # Changelog
 
+## [7.1.0] - 2025-12-10
+
+### Added
+
+- `Result.outcome_map`, which returns a mapping from measurement outcomes to
+  their frequencies and states.
+- Extended gate support in `piquasso.dual_rail_encoding`.
+- Support for `Vacuum` and `Create` in `SamplingSimulator` (previously one could
+  only use `StateVector` for preparing initial states).
+- Support for using expressions instead of lambda functions to specify conditions
+  and runtime resolution of instruction parameters. Example:
+  ```py
+  import numpy as np
+  import piquasso as pq
+
+  # Create a program with explicit instruction list.
+  program = pq.Program(
+      instructions=[
+          # Prepare a superposition of three two-mode Fock states:
+          # |0,2>, |1,1>, and |2,0>, each with equal amplitude.
+          pq.StateVector([0, 2]) * np.sqrt(1 / 3),
+          pq.StateVector([1, 1]) * np.sqrt(1 / 3),
+          pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+          # Measure photon number on mode 1 (mid-circuit measurement).
+          pq.ParticleNumberMeasurement().on_modes(1),
+          # Apply an unresolved squeezing gate on mode 0.
+          # The squeezing parameter r is determined *at runtime*
+          # from the measurement outcome (x[-1] = last outcome value).
+          pq.Squeezing(r="0.1 * x[-1] ** 2").on_modes(0),
+      ]
+  )
+
+  # Run the program on a 2-mode Fock simulator for 10 random measurement shots.
+  result = pq.PureFockSimulator(d=2).execute(program, shots=10)
+  ```
+- Support for exporting blackbird code through `Program.to_blackbird_code` and
+  `Program.save_as_blackbird_code`.
+- More extensive support for postselecting photon numbers in `SamplingSimulator`.
+
+### Fixed
+
+- Inferring the number of modes from the instructions was faulty in the previous
+  version (where it was introduced), but has been fixed in this patch.
+
+### Minor changes
+
+- Instruction validation is moved to happen runtime, i.e., at `Simulator.execute`
+  or `Simulator.execute_instructions`. With this, a more comprehensive
+  differentiability support can be enabled. Also, it is not required to set
+  `validate=False` in `Config` when the user wants to JIT-compile Piquasso code
+  with JAX.
+- In the `dual_rail_encoding` module, the representation of a qubit is changed.
+  In the current version, a qubit $\ket{0}_{\text{qubit}}$ state is represented by
+  $\ket{1,0}_{\text{qumode}}$, whereas previously it was $\ket{0,1}_{\text{qumode}}$.
+
+
 ## [7.0.0] - 2025-11-07
 
 ### Added
