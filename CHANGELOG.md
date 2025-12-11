@@ -42,7 +42,7 @@
 ### Fixed
 
 - Inferring the number of modes from the instructions was faulty in the previous
-  version (where it was introduced), but has been fixed in this patch.
+  version (where it was introduced), but has been fixed in this version.
 
 ### Minor changes
 
