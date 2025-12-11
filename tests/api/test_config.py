@@ -101,6 +101,15 @@ def test_complex_dtype():
     assert conf_f.complex_dtype == np.complex128
 
 
+def test_max_sample_generation_trials():
+    default = pq.Config()
+    custom = pq.Config(max_sample_generation_trials=5000)
+
+    assert default.max_sample_generation_trials == 1000
+    assert custom.max_sample_generation_trials == 5000
+    assert custom._as_code() == "pq.Config(max_sample_generation_trials=5000)"
+
+
 def test_Config_rng_is_shallow_copied():
     config = pq.Config(seed_sequence=123)
 

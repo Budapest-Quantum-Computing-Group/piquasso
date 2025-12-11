@@ -18,7 +18,9 @@ from scipy.special import factorial
 
 from functools import partial
 
-from piquasso._math.combinatorics import partitions
+from piquasso.api.exceptions import InvalidSimulation
+
+from piquasso._math.combinatorics import partitions, partitions_bounded_k
 
 """
 This is a contribution from `theboss`, see https://github.com/Tomev-CTP/theboss.
@@ -29,20 +31,62 @@ The original code has been re-implemented and adapted to Piquasso.
 __author__ = "Tomasz Rybotycki"
 
 
-def calculate_state_vector(interferometer, initial_state, config, connector):
+def calculate_state_vector(
+    interferometer,
+    initial_state,
+    postselect_data,
+    config,
+    connector,
+):
     """Calculate the state vector on the particle subspace defined by ``initial_state``.
 
     This implementation follows Algorithm 1 (``SLOS_full``) from
     `Strong Simulation of Linear Optical Processes`.
+
+    The algorithm is modified by pruning to account for postselection on certain modes.
     """
 
     np = connector.np
     fallback_np = connector.fallback_np
 
+    is_postselected = len(postselect_data[0]) > 0
+
     d = len(initial_state)
     n = int(fallback_np.sum(initial_state))
 
-    bases = [partitions(boxes=d, particles=k) for k in range(n + 1)]
+    if is_postselected:
+        """
+        The idea is the following:
+
+        Let's say that we want to do a full state vector simulation on 3 modes for 4
+        photons, but we only want the components in the state vector for which the
+        particle number in the last two modes are, e.g., (1, 1). So, for us, all the
+        interesting Fock basis states are |2, 0, 1, 1>, |1, 1, 1, 1>, |0, 2, 1, 1>. In
+        the k_limit=0 case, the `partitions_bounded_k` function calculates these.
+
+        However, let's say that you're calculating the state vector with SLOS, meaning
+        that you are calculating the state vector particle-by-particle. Then of course,
+        you cannot have a transition, e.g., |2, 1, 0, 0> -> |x, y, 1, 1> (where x+y=2),
+        so you would like to disregard |2, 1, 0, 0>, but for example |1, 1, 0, 1> would
+        be fine. More specifically, the condition is to let the difference on the
+        postselected modes be up to some number k_limit, where we will set k_limit
+        according to the number of particles we still need to add to the state vector
+        (because they could end up in the postselected modes still).
+        """
+        postselect_modes, postselect_photons = postselect_data
+        bases = [
+            partitions_bounded_k(
+                boxes=d,
+                particles=k,
+                constrained_boxes=postselect_modes,
+                max_per_box=postselect_photons,
+                k_limit=(n - k),
+            )
+            for k in range(n + 1)
+        ]
+    else:
+        bases = [partitions(boxes=d, particles=k) for k in range(n + 1)]
+
     index_maps = [{tuple(basis[i]): i for i in range(len(basis))} for basis in bases]
 
     sigma = fallback_np.zeros(d, dtype=int)
@@ -60,6 +104,7 @@ def calculate_state_vector(interferometer, initial_state, config, connector):
     for k in range(n):
         sigma_k = schedule_sigma[k]
         p = schedule_mode[k]
+        index_map = index_maps[k + 1]
         UF_next = np.zeros(len(bases[k + 1]), dtype=config.complex_dtype)
 
         for idx_t, t in enumerate(bases[k]):
@@ -69,7 +114,11 @@ def calculate_state_vector(interferometer, initial_state, config, connector):
                 t_i = t[i]
                 new_t = t.copy()
                 new_t[i] += 1
-                index_new = index_maps[k + 1][tuple(new_t)]
+                tuple_new_t = tuple(new_t)
+                if tuple_new_t not in index_map:
+                    continue
+
+                index_new = index_map[tuple_new_t]
 
                 factor = fallback_np.sqrt((t_i + 1) / (sigma_k[p] + 1))
 
@@ -95,7 +144,13 @@ def calculate_inner_product(interferometer, input, output, connector):
 
 
 def generate_samples(
-    input, shots, calculate_permanent_laplace, interferometer, rng, reject_condition
+    input,
+    shots,
+    calculate_permanent_laplace,
+    interferometer,
+    rng,
+    reject_condition,
+    postselect_data,
 ):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
@@ -108,12 +163,28 @@ def generate_samples(
             according to the Laplace expansion.
         interferometer: The interferometer matrix.
         rng: Random number generator.
+        reject_condition: A callable that returns True if a particle should be rejected
+            during the sample generation.
+        postselect_data: A tuple containing postselection information:
+            - postselect_modes: Tuple of modes where postselection is applied.
+            - postselect_photons: Tuple of number of photons to postselect in the
+              corresponding modes.
+            - max_sample_generation_trials: Maximum number of trials to generate a valid
+              sample, to avoid infinite loops in case the postselection conditions are
+              too strict.
 
     Returns:
         The generated samples.
     """
 
-    sample_generator = partial(_generate_sample, reject_condition=reject_condition)
+    if len(postselect_data[0]) > 0:
+        sample_generator = partial(
+            _generate_sample_with_postselect,
+            reject_condition=reject_condition,
+            postselect_data=postselect_data,
+        )
+    else:
+        sample_generator = partial(_generate_sample, reject_condition=reject_condition)
 
     return _generate_samples(
         input,
@@ -126,7 +197,12 @@ def generate_samples(
 
 
 def generate_lossy_samples(
-    input_state, samples_number, calculate_permanent_laplace, interferometer_svd, rng
+    input_state,
+    samples_number,
+    calculate_permanent_laplace,
+    interferometer_svd,
+    rng,
+    postselect_data,
 ):
     """
     Basically the same algorithm as in `generate_samples`, but doubles the system size
@@ -139,9 +215,7 @@ def generate_lossy_samples(
 
     expansion_zeros = np.zeros_like(input_state, dtype=int)
     expanded_state = np.vstack([input_state, expansion_zeros])
-    expanded_state = expanded_state.reshape(
-        2 * len(input_state),
-    )
+    expanded_state = expanded_state.reshape(2 * len(input_state))
 
     expanded_samples = generate_samples(
         expanded_state,
@@ -150,15 +224,11 @@ def generate_lossy_samples(
         expanded_matrix,
         rng,
         reject_condition=lambda: False,
+        postselect_data=postselect_data,
     )
 
     # Trim output state
-    samples = []
-
-    for output_state in expanded_samples:
-        while len(output_state) > len(input_state):
-            output_state = np.delete(output_state, len(output_state) - 1)
-        samples.append(tuple(output_state))
+    samples = [x[: len(input_state)] for x in expanded_samples]
 
     return samples
 
@@ -239,6 +309,90 @@ def _generate_sample(
         sample[index] += 1
 
     return sample
+
+
+def _generate_sample_with_postselect(
+    d,
+    n,
+    calculate_permanent_laplace,
+    interferometer,
+    first_quantized_input,
+    rng,
+    reject_condition,
+    postselect_data,
+):
+    """
+    This is a modified version of `_generate_sample` that accounts for postselection.
+
+    The postselection is defined by `postselect_data`, which is a tuple containing:
+    - postselect_modes: List of modes where postselection is applied.
+    - postselect_photons: List of number of photons to postselect in the corresponding
+      modes.
+    - max_sample_generation_trials: Maximum number of trials to generate a valid sample,
+      to avoid infinite loops in case the postselection conditions are too strict.
+    """
+    postselect_modes, postselect_photons, max_sample_generation_trials = postselect_data
+
+    retry = True
+    trial_count = 0
+    photons_needed_orig = np.sum(postselect_photons)
+
+    current_input = np.empty(d, dtype=int)
+
+    sample = np.empty(d, dtype=int)
+
+    while retry:
+        trial_count += 1
+
+        if trial_count > max_sample_generation_trials:
+            raise InvalidSimulation(
+                "Too many trials during sample generation. "
+                "The specified postselection criteria may be very highly unlikely. "
+                "Aborting. "
+                "To increase the limit, set Config.max_sample_generation_trials "
+                f"to a higher value. Current value: {max_sample_generation_trials}."
+            )
+
+        current_input[:] = 0
+        sample[:] = 0
+
+        photons_needed = photons_needed_orig
+
+        diff = np.copy(postselect_photons)
+
+        to_shrink = np.copy(first_quantized_input)
+
+        for k in range(1, n + 1):
+            if reject_condition():
+                continue
+
+            current_input, to_shrink = _grow_current_input(
+                current_input, to_shrink, rng
+            )
+
+            pmf = _calculate_pmf(
+                current_input, sample, calculate_permanent_laplace, interferometer
+            )
+
+            index = _sample_from_pmf(pmf, rng)
+
+            sample[index] += 1
+
+            if index in postselect_modes:
+                photons_needed -= 1
+                diff[postselect_modes.index(index)] -= 1
+
+                if np.any(diff < 0):
+                    break
+
+            if photons_needed > n - k:
+                break
+
+        else:
+            retry = False
+
+    trimmed_sample = np.delete(sample, postselect_modes)
+    return trimmed_sample
 
 
 def _filter_zeros(matrix, input_state, output_state):

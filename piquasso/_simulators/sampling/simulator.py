@@ -33,10 +33,14 @@ from .simulation_steps import (
 
 
 class SamplingSimulator(BuiltinSimulator):
-    """Performs photonic simulations using Fock representation with pure states.
+    r"""A simulator dedicated for Boson Sampling (or related) simulations.
+
+    Generally, this simulator can be used to simulate passive linear optical circuits
+    with Fock state inputs, photon number measurements, and photon losses.
 
     The simulation (when executed) results in an instance of
-    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    :class:`~piquasso._simulators.sampling.state.SamplingState` or with the samples
+    generated from it (see :class:`~piquasso.api.result.Result`).
 
     Example usage::
 
@@ -99,3 +103,5 @@ class SamplingSimulator(BuiltinSimulator):
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [JaxConnector]
+
+    _measurement_classes_allowed_mid_circuit = (measurements.PostSelectPhotons,)

@@ -16,6 +16,8 @@
 import numpy as np
 import pytest
 
+import re
+
 from scipy.stats import unitary_group
 
 import piquasso as pq
@@ -497,13 +499,202 @@ def test_post_select_random_unitary():
     state.normalize()
     state.validate()
 
+    assert isinstance(state, pq.SamplingState)
     assert state.d == d - len(postselect_modes)
+
+
+def test_PostSelectPhotons_state_vector():
+    with pq.Program() as program_without_postselection:
+        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+    with pq.Program() as program_with_postselection:
+        pq.Q() | program_without_postselection
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
+
+    simulator = pq.SamplingSimulator(d=3)
+    state = simulator.execute(program_without_postselection).state
+    postselected_state = simulator.execute(program_with_postselection).state
+
+    assert state.d == 3
+    assert postselected_state.d == 1
+
+    state_vector_map = state.state_vector_map
+    for occupation_number, coeff in postselected_state.state_vector_map.items():
+        assert np.isclose(state_vector_map[(1, 0, occupation_number[0])], coeff)
+
+
+@pytest.mark.monkey
+def test_PostSelectPhotons_state_vector_random():
+    interferometer_matrix = unitary_group.rvs(3, random_state=42)
+
+    with pq.Program() as program_without_postselection:
+        pq.Q(0, 1, 2) | pq.StateVector([1, 0, 1])
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+
+    with pq.Program() as program_with_postselection:
+        pq.Q() | program_without_postselection
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
+
+    simulator = pq.SamplingSimulator()
+    state = simulator.execute(program_without_postselection).state
+    postselected_state = simulator.execute(program_with_postselection).state
+
+    state_vector_map = state.state_vector_map
+    for occupation_number, coeff in postselected_state.state_vector_map.items():
+        assert np.isclose(state_vector_map[(1, 0, occupation_number[0])], coeff)
+
+
+def test_PostSelectPhotons_state_vector_with_more_photons():
+    photon_counts = [2, 2]
+
+    with pq.Program() as program_without_postselection:
+        pq.Q(0, 1, 2, 3, 4) | pq.StateVector([1, 0, 1, 2, 1])
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+
+    with pq.Program() as program_with_postselection:
+        pq.Q() | program_without_postselection
+        pq.Q(1, 3) | pq.PostSelectPhotons(photon_counts)
+
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=6))
+    postselected_state = simulator.execute(program_with_postselection).state
+    state = simulator.execute(program_without_postselection).state
+
+    postselected_state_vector_map = postselected_state.state_vector_map
+    state_vector_map = state.state_vector_map
+    for occupation_number, coeff in postselected_state_vector_map.items():
+        index = (
+            occupation_number[0],
+            photon_counts[0],
+            occupation_number[1],
+            photon_counts[1],
+            occupation_number[2],
+        )
+        assert np.isclose(state_vector_map[index], coeff)
+
+
+@pytest.mark.monkey
+def test_PostSelectPhotons_state_vector_with_more_photons_random():
+    photon_counts = [2, 2]
+
+    with pq.Program() as program_without_postselection:
+        pq.Q(0, 1, 2, 3, 4) | pq.StateVector([1, 0, 1, 2, 1])
+
+        pq.Q(all) | pq.Interferometer(unitary_group.rvs(5))
+
+    with pq.Program() as program_with_postselection:
+        pq.Q() | program_without_postselection
+        pq.Q(1, 3) | pq.PostSelectPhotons(photon_counts)
+
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=6))
+    postselected_state = simulator.execute(program_with_postselection).state
+    state = simulator.execute(program_without_postselection).state
+
+    postselected_state_vector_map = postselected_state.state_vector_map
+    state_vector_map = state.state_vector_map
+    for occupation_number, coeff in postselected_state_vector_map.items():
+        index = (
+            occupation_number[0],
+            photon_counts[0],
+            occupation_number[1],
+            photon_counts[1],
+            occupation_number[2],
+        )
+        assert np.isclose(state_vector_map[index], coeff)
+
+
+def test_PostSelectPhotons_get_particle_detection_probability():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(1, 2) | pq.Beamsplitter5050()
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
+
+    simulator = pq.SamplingSimulator()
+    state = simulator.execute(program).state
+
+    probability = state.get_particle_detection_probability((1,))
+
+    assert np.isclose(probability, 0.25)
+
+
+@pytest.mark.monkey
+def test_multiple_overlapping_PostSelectPhotons_raise_ValueError():
+    interferometer_matrix = unitary_group.rvs(3, random_state=42)
+
+    with pq.Program() as program:
+        pq.Q(0, 1, 2) | pq.StateVector([2, 0, 1])
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
+        pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=[0, 1])
+
+    simulator = pq.SamplingSimulator()
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Some modes of instruction "
+            "PostSelectPhotons(photon_counts=[0, 1], modes=(1, 2)) "
+            "are not active: {1}."
+        ),
+    ):
+        simulator.execute(program)
+
+
+@pytest.mark.monkey
+def test_multiple_non_overlapping_PostSelectPhotons_no_error():
+    interferometer_matrix = unitary_group.rvs(4, random_state=42)
+
+    with pq.Program() as program_1:
+        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 1, 1])
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+        pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+        pq.Q(1) | pq.PostSelectPhotons(photon_counts=[2])
+
+    with pq.Program() as program_2:
+        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 1, 1])
+        pq.Q(all) | pq.Interferometer(interferometer_matrix)
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 2])
+
+    simulator = pq.SamplingSimulator()
+
+    state_1 = simulator.execute(program_1).state
+    state_2 = simulator.execute(program_2).state
+
+    assert state_1.d == state_2.d == 2
+    assert state_1 == state_2
+
+
+def test_PostSelectPhotons_no_infinite_loop_via_max_sample_generation_trials():
+    with pq.Program() as program:
+        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 2, 0])
+        pq.Q(0, 1) | pq.Beamsplitter5050()
+        pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[3, 0])
+        pq.Q(2, 3) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(
+        config=pq.Config(max_sample_generation_trials=10),
+    )
+
+    with pytest.raises(
+        pq.api.exceptions.InvalidSimulation,
+        match=(
+            "Too many trials during sample generation. The specified postselection "
+            "criteria may be very highly unlikely. Aborting. To increase the limit, "
+            "set Config.max_sample_generation_trials to a higher value. "
+            "Current value: 10."
+        ),
+    ):
+        simulator.execute(program, shots=1)
 
 
 class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 
-    def test_mid_circuit_not_allowed(self):
+    @pytest.mark.monkey
+    def test_ParticleNumberMeasurement_mid_circuit_not_allowed(self):
         """
         Test that an error is raised for mid-circuit measurements that are not allowed.
         """
@@ -512,9 +703,8 @@ class TestMidCircuitMeasurements:
         interferometer_matrix = unitary_group.rvs(d)
         with pq.Program() as program:
             pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
-            pq.Q(all) | pq.Interferometer(interferometer_matrix)
             pq.Q(2) | pq.ParticleNumberMeasurement()
+            pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
         simulator = pq.SamplingSimulator(d=5)
         with pytest.raises(
@@ -522,3 +712,137 @@ class TestMidCircuitMeasurements:
             match="not allowed as a mid-circuit measurement",
         ):
             simulator.execute(program, shots=1)
+
+    @pytest.mark.monkey
+    def test_PostSelectPhotons_mid_circuit_allowed(self):
+        """
+        Test that no error is raised for mid-circuit PostSelectPhotons measurements.
+        """
+
+        interferometer_matrix = unitary_group.rvs(5, random_state=220)
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(all) | pq.Interferometer(interferometer_matrix)
+            pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
+            pq.Q(all) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5)
+        samples = simulator.execute(program, shots=20).samples
+
+        for sample in samples:
+            assert sum(sample) == 1
+
+    @pytest.mark.monkey
+    def test_PostSelectPhotons_mid_circuit_bigger(self):
+        input_state = np.array([2, 1, 3, 1, 1], dtype=int)
+
+        d = len(input_state)
+
+        unitary = unitary_group.rvs(d, random_state=320)
+
+        program = pq.Program(
+            instructions=[
+                pq.StateVector(input_state),
+                pq.Interferometer(unitary),
+                pq.PostSelectPhotons(photon_counts=[1, 2]).on_modes(0, 2),
+                pq.ParticleNumberMeasurement(),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        for sample in samples:
+            assert sum(sample) == sum(input_state) - 3
+
+    @pytest.mark.monkey
+    def test_PostSelectPhotons_mid_circuit_with_uniform_losses(self):
+        input_state = np.array([1, 1, 1, 1], dtype=int)
+
+        d = len(input_state)
+
+        unitary = unitary_group.rvs(d, random_state=14)
+
+        program = pq.Program(
+            instructions=[
+                pq.StateVector(input_state),
+                pq.Interferometer(unitary),
+                pq.LossyInterferometer(unitary @ np.diag([0.9] * d) @ unitary.conj().T),
+                pq.PostSelectPhotons(photon_counts=[1, 1]).on_modes(0, 2),
+                pq.ParticleNumberMeasurement(),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        for sample in samples:
+            assert sum(sample) <= sum(input_state) - 2
+
+    def test_PostSelectPhotons_mid_circuit_with_generic_losses(self):
+        input_state = np.array([1, 1, 1, 1], dtype=int)
+
+        d = len(input_state)
+
+        program = pq.Program(
+            instructions=[
+                pq.StateVector(input_state),
+                pq.Beamsplitter5050().on_modes(0, 1),
+                pq.Beamsplitter5050().on_modes(1, 2),
+                pq.Beamsplitter5050().on_modes(2, 3),
+                pq.Loss(0.9).on_modes(0),
+                pq.Loss(0.8).on_modes(1),
+                pq.Loss(0.7).on_modes(2),
+                pq.Loss(0.6).on_modes(3),
+                pq.PostSelectPhotons(photon_counts=[1, 1]).on_modes(0, 2),
+                pq.ParticleNumberMeasurement(),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        for sample in samples:
+            assert sum(sample) <= sum(input_state) - 2
+
+    def test_PostSelectPhotons_mid_circuit_invalid_modes_raises(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(1, 2) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+
+        simulator = pq.SamplingSimulator()
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Some modes of instruction Beamsplitter5050(modes=(0, 1)) "
+                "are not active: {0}."
+            ),
+        ):
+            simulator.execute(program, shots=1)
+
+    def test_PostSelectPhotons_deferred_measurement_principle(self):
+        with pq.Program() as program_1:
+            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(1, 2) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+
+        with pq.Program() as program_2:
+            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+            pq.Q(1, 2) | pq.Beamsplitter5050()
+
+        simulator = pq.SamplingSimulator()
+        state_1 = simulator.execute(program_1).state
+        state_2 = simulator.execute(program_2).state
+
+        assert state_1 == state_2
+
+        assert np.allclose(state_1.state_vector, state_2.state_vector)

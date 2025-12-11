@@ -1976,10 +1976,12 @@ def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
         for input_state, coeff in zip(states, expected_coefficients):
             pq.Q(all) | pq.StateVector(input_state) * coeff
 
-    expectation_simulator = SimulatorClass(d=4, config=pq.Config(cutoff=5))
+    expectation_simulator = SimulatorClass(
+        d=4, config=pq.Config(cutoff=final_state._config.cutoff)
+    )
     expected_state = expectation_simulator.execute(expectation_program).state
 
-    assert np.allclose(expected_state.density_matrix, final_state.density_matrix)
+    assert np.allclose(expected_state.state_vector, final_state.state_vector)
 
 
 @pytest.mark.parametrize(
@@ -2086,7 +2088,9 @@ def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
 
     assert np.isclose(imperfect_state.get_purity(), 1.0)
 
-    assert np.allclose(imperfect_state.density_matrix, perfect_state.density_matrix)
+    assert np.allclose(
+        imperfect_state.density_matrix[:3, :3], perfect_state.density_matrix[:3, :3]
+    )
 
 
 @pytest.mark.parametrize(
@@ -2214,3 +2218,76 @@ def test_variance_photon_number_equivalence(SimulatorClass):
     state = simulator.execute(program).state
 
     assert np.allclose(state.variance_photon_number(), 0.030268090551006963)
+
+
+def test_PostSelectPhotons_with_SamplingSimulator_and_PureFockSimulator_equivalence():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 6)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 5)
+        pq.Q(2, 3) | pq.Beamsplitter(theta=np.pi / 6, phi=np.pi / 4)
+
+        pq.Q(2, 3) | pq.PostSelectPhotons(photon_counts=(1, 0))
+
+    # NOTE: cutoff for SamplingSimulator must be larger than that for PureFockSimulator,
+    # because SamplingSimulator decreases the cutoff internally to account for
+    # the photons being postselected, while PureFockSimulator does not.
+    sampling_simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=5))
+    sampling_state = sampling_simulator.execute(program).state
+
+    pure_fock_simulator = pq.PureFockSimulator(d=4, config=pq.Config(cutoff=4))
+    pure_fock_state = pure_fock_simulator.execute(program).state
+
+    assert pure_fock_state == sampling_state.to_pure_fock_state()
+
+
+@pytest.mark.parametrize(
+    "SimulatorClass",
+    (
+        pq.PureFockSimulator,
+        pq.SamplingSimulator,
+    ),
+)
+def test_PostSelectPhotons_fock_probabilities_map_equivalence(SimulatorClass):
+    input_state = [1, 1, 1, 0]
+
+    program = pq.Program(
+        instructions=[
+            pq.StateVector(input_state),
+            pq.Beamsplitter(theta=np.pi / 5).on_modes(0, 1),
+            pq.Beamsplitter5050().on_modes(1, 2),
+            pq.Beamsplitter(theta=np.pi / 3).on_modes(2, 3),
+            pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+        ]
+    )
+
+    simulator = SimulatorClass(config=pq.Config(cutoff=4))
+
+    result = simulator.execute(program)
+
+    state = result.state
+
+    probabilities_map = state.fock_probabilities_map
+
+    expected_probabilities_map = {
+        (0, 0, 0): 0.0,
+        (1, 0, 0): 0.0,
+        (0, 1, 0): 0.0,
+        (0, 0, 1): 0.0,
+        (2, 0, 0): 0.04774575140626312,
+        (1, 1, 0): 0.0,
+        (1, 0, 1): 0.0,
+        (0, 2, 0): 0.0029841094628914482,
+        (0, 1, 1): 0.017904656777348676,
+        (0, 0, 2): 0.026856985166023015,
+    }
+
+    for occupation_numbers, expected_probability in expected_probabilities_map.items():
+        assert np.isclose(probabilities_map[occupation_numbers], expected_probability)
+
+    assert np.isclose(state.get_purity(), 1.0)
+
+    state.normalize()
+
+    assert np.isclose(np.sum(state.fock_probabilities), 1.0)
