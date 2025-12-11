@@ -43,6 +43,7 @@
 
 - Inferring the number of modes from the instructions was faulty in the previous
   version (where it was introduced), but has been fixed in this version.
+- How the Phaseshift gate is converted from Qiskit in the dual-rail encoding module.
 
 ### Minor changes
 
