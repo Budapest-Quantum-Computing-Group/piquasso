@@ -79,7 +79,7 @@ def export_instructions(instructions: List[Instruction]) -> bb.BlackbirdProgram:
         for instruction in instructions
     ]
 
-    blackbird_program = bb.BlackbirdProgram(name="Exported Piquasso program")
+    blackbird_program = bb.BlackbirdProgram(name="exported_piquasso_program")
     # The BlackbirdProgram class does not provide a public API for setting operations.
     # Direct assignment to the private attribute _operations is necessary and has been
     # verified to be safe for the current version of the blackbird library.
