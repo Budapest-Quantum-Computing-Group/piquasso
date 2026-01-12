@@ -16,6 +16,8 @@
 import pytest
 import numpy as np
 
+import jax
+
 from scipy.linalg import polar, coshm, sinhm, block_diag
 from scipy.special import factorial2
 
@@ -1433,3 +1435,127 @@ def test_get_xp_string_moment_hbar_dependence():
     value2 = state2.get_xp_string_moment(indices)
 
     assert np.isclose(value1 * np.sqrt(hbar_2 / hbar_1) ** len(indices), value2)
+
+
+def test_GaussianState_get_parity_operator_expectation_value_on_vacuum():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    parity_expectation_value = state.get_parity_operator_expectation_value()
+
+    assert np.isclose(parity_expectation_value, 1.0)
+
+
+def test_GaussianState_get_parity_operator_expectation_value():
+    r"""
+    The parity operator expectation value is just
+
+    .. math::
+        \mathrm{Tr}(\hat{\rho} \hat{\Pi}) = 1 / \sqrt{\det \sigma} = 1,
+
+    for :math:`\hat{\rho}` being a centered pure Gaussian state with covariance matrix
+    :math:`\sigma`.
+    """
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+        pq.Q(1) | pq.Squeezing(r=0.05)
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7)
+
+    simulator = pq.GaussianSimulator(d=2)
+    state = simulator.execute(program).state
+
+    parity_expectation_value = state.get_parity_operator_expectation_value()
+
+    assert np.isclose(parity_expectation_value, 1.0)
+
+
+def test_GaussianState_get_parity_operator_expectation_value_displaced():
+    r"""
+    We can calculate for :math:`\hat{\rho} = \ketbra{\alpha}` being a displaced vacuum
+    state that
+
+    .. math::
+        \langle \hat{\Pi} \rangle_{\hat{\rho}}
+            = \bra{\alpha} \hat{\Pi} \ket{\alpha}.
+
+    Using the fact that :math:`\hat{\Pi} \ket{\alpha} = \ket{-\alpha}`, we have
+    .. math::
+        \langle \hat{\Pi} \rangle_{\hat{\rho}}
+            = \bra{\alpha} -\alpha \rangle
+            = e^{-2 |\alpha|^2}.
+    """
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+        pq.Q(0) | pq.Displacement(r=0.2, phi=np.pi / 4)
+
+    simulator = pq.GaussianSimulator()
+    state = simulator.execute(program).state
+
+    parity_expectation_value = state.get_parity_operator_expectation_value()
+
+    assert np.isclose(parity_expectation_value, np.exp(-2 * 0.2**2))
+
+
+def test_GaussianState_get_parity_operator_expectation_value_on_thermal_state():
+    r"""
+    For a thermal state with mean photon number :math:`\bar{n}`, we have
+
+    .. math::
+        \langle \hat{\Pi} \rangle
+            = 1 / (1 + 2 \bar{n}).
+    """
+
+    nth = 0.7
+
+    with pq.Program() as program:
+        pq.Q() | pq.Thermal([nth])
+
+    simulator = pq.GaussianSimulator(d=1)
+    state = simulator.execute(program).state
+
+    parity_expectation_value = state.get_parity_operator_expectation_value()
+
+    assert np.isclose(parity_expectation_value, 1 / (1 + 2 * nth))
+
+
+def test_GaussianState_get_parity_operator_expectation_value_gradient():
+    def get_parity_expectation_value(r):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r)
+
+        simulator = pq.GaussianSimulator(connector=pq.JaxConnector())
+        state = simulator.execute(program).state
+
+        return state.get_parity_operator_expectation_value()
+
+    r = 0.2
+    gradient = jax.grad(get_parity_expectation_value)(r)
+
+    assert np.isclose(gradient, -4 * r * np.exp(-2 * r**2))
+
+
+def test_GaussianState_get_parity_operator_expectation_value_gradient_thermal():
+    def get_parity_expectation_value(nth):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Thermal([nth])
+
+        simulator = pq.GaussianSimulator(connector=pq.JaxConnector())
+        state = simulator.execute(program).state
+
+        return state.get_parity_operator_expectation_value()
+
+    nth = 0.2
+    gradient = jax.grad(get_parity_expectation_value)(nth)
+
+    assert np.isclose(gradient, -2 / (1 + 2 * nth) ** 2)
