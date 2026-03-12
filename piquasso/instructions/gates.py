@@ -903,6 +903,37 @@ class Kerr(Gate):
         super().__init__(params=dict(xi=xi))
 
 
+class SNAP(Gate):
+    r"""Selective Number-dependent Arbitrary Phase (SNAP) gate.
+
+    The definition of the SNAP gate is
+
+    .. math::
+        \operatorname{SNAP}(\vec{\theta}) =
+            \sum_{n=0}^\infty e^{i \theta_n} |n\rangle \langle n|,
+
+    where :math:`\vec{\theta} = (\theta_0, \theta_1, \dots)` is a vector of angles.
+    The SNAP gate transforms the annihilation operator as
+
+    .. math::
+        \operatorname{SNAP}^\dagger(\vec{\theta}) a \operatorname{SNAP}(\vec{\theta}) =
+            \sum_{n=0}^\infty e^{i (\theta_n - \theta_{n+1})} |n\rangle \langle n| a.
+
+    Note:
+        This is a non-linear gate, therefore it could not be used with
+        :class:`~piquasso._simulators.gaussian.state.GaussianState`.
+    """
+
+    NUMBER_OF_MODES = 1
+
+    def __init__(self, theta: np.ndarray) -> None:
+        """
+        Args:
+            theta (numpy.ndarray): A vector of angles.
+        """
+        super().__init__(params=dict(theta=theta))
+
+
 class CrossKerr(Gate):
     r"""Cross-Kerr gate.
 
