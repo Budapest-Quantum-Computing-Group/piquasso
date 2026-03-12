@@ -20,7 +20,7 @@ This document contains the basic tutorials of Piquasso.
 
 
    .. grid-item-card::  Boson Sampling as an accelerator
-      :link: boson-sampling-hw-accelerator
+      :link: boson-sampling-mc-integral
       :link-type: doc
 
       Using Boson Sampling to accelerate Monte Carlo integration.
@@ -71,7 +71,7 @@ This document contains the basic tutorials of Piquasso.
 
    getting-started
    boson-sampling
-   boson-sampling-hw-accelerator
+   boson-sampling-mc-integral
    gaussian-boson-sampling
    separating-programs
    cvqnn-with-tensorflow
