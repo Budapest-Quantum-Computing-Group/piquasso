@@ -193,7 +193,7 @@ class HeterodyneMeasurement(Measurement):
     The probability density is given by
 
     .. math::
-        p(x_{\phi}) = \frac{1}{\pi} \operatorname{Tr} (
+        p(\alpha) = \frac{1}{\pi} \operatorname{Tr} (
             \rho | \alpha \rangle \langle \alpha |
         ).
 
