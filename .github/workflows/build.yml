@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.20.0
+        uses: pypa/cibuildwheel@v3.4.0
         # NOTE: Although all wheels can be built, they are not tested currently.
         # However, a comment is left for someone in the future trying to solve this.
         #

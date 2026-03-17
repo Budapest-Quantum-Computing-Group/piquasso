@@ -57,6 +57,7 @@ from piquasso.instructions import gates
 from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction, BatchInstruction
 from piquasso.api.connector import BaseConnector
+from piquasso.api.exceptions import InvalidParameter
 from piquasso._math.validations import validate_occupation_numbers
 from piquasso._utils import sample_from_probability_map
 
@@ -282,6 +283,31 @@ def cross_kerr(
     xi = instruction._get_all_params(state._connector)["xi"]
     for index, basis in enumerate(space):
         coefficient = np.exp(1j * xi * basis[modes[0]] * basis[modes[1]])
+        state.state_vector = state._connector.assign(
+            state.state_vector, index, state.state_vector[index] * coefficient
+        )
+
+    return [Branch(state=state)]
+
+
+def snap(state: PureFockState, instruction: Instruction, shots: int) -> List[Branch]:
+    cutoff = state._config.cutoff
+
+    space = get_fock_space_basis(d=state.d, cutoff=cutoff)
+
+    np = state._connector.np
+
+    mode = instruction.modes[0]
+    theta = np.array(instruction._get_all_params(state._connector)["theta"])
+
+    if state._config.validate and len(theta) != cutoff:
+        raise InvalidParameter(
+            f"Length of SNAP parameter must be equal to cutoff: {cutoff},"
+            f" but got {len(theta)}."
+        )
+
+    for index, basis in enumerate(space):
+        coefficient = np.exp(1j * theta[basis[mode]])
         state.state_vector = state._connector.assign(
             state.state_vector, index, state.state_vector[index] * coefficient
         )
