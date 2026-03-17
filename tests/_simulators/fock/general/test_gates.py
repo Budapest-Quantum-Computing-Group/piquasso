@@ -14,8 +14,11 @@
 # limitations under the License.
 
 import numpy as np
+import pytest
 
 import piquasso as pq
+
+from piquasso.api.exceptions import InvalidParameter
 
 
 def test_5050_beamsplitter():
@@ -373,3 +376,49 @@ def test_cubic_phase():
     nonzero_elements = list(state.nonzero_elements)
 
     assert len(nonzero_elements) == 25
+
+
+def test_SNAP_gate():
+    theta = [np.pi / 2, np.pi / 7, 3 * np.pi / 2, np.pi / 5, np.pi / 4]
+    coeffs = [
+        np.sqrt(0.2),
+        np.sqrt(0.1) * np.exp(1j * np.pi / 7),
+        np.sqrt(0.1) * np.exp(1j * np.pi / 7),
+        np.sqrt(0.25),
+        np.sqrt(0.35),
+    ]
+
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix([0, 0], [0, 0]) * coeffs[0]
+        pq.Q() | pq.DensityMatrix([1, 1], [2, 0]) * coeffs[1]
+        pq.Q() | pq.DensityMatrix([2, 0], [1, 1]) * coeffs[2]
+        pq.Q() | pq.DensityMatrix([3, 0], [3, 0]) * coeffs[3]
+        pq.Q() | pq.DensityMatrix([4, 0], [4, 0]) * coeffs[4]
+
+        pq.Q(0) | pq.SNAP(theta=theta)
+
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    for coeff, (basis, dual_basis) in state.nonzero_elements:
+        assert np.isclose(
+            coeff,
+            np.exp(1j * (theta[basis[0]] - theta[dual_basis[0]])) * coeffs[basis[0]],
+        )
+
+
+def test_SNAP_gate_with_incorrect_theta_length_raises_InvalidParameter():
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix([0, 0], [0, 0]) * np.sqrt(0.5)
+        pq.Q() | pq.DensityMatrix([1, 1], [1, 1]) * np.sqrt(0.5)
+
+        pq.Q(0) | pq.SNAP(theta=[np.pi / 2, np.pi / 7])
+
+    simulator = pq.FockSimulator(d=2, config=pq.Config(cutoff=5))
+
+    with pytest.raises(InvalidParameter) as exc_info:
+        simulator.execute(program)
+
+    assert str(exc_info.value) == (
+        "Length of SNAP parameter must be equal to cutoff: 5, but got 2."
+    )

@@ -25,6 +25,7 @@ from piquasso._math.decompositions import euler
 
 from piquasso.api.instruction import Instruction
 from piquasso.api.branch import Branch
+from piquasso.api.exceptions import InvalidParameter
 
 from piquasso._utils import sample_from_probability_map
 
@@ -335,6 +336,29 @@ def cross_kerr(state: FockState, instruction: Instruction, shots: int) -> List[B
         )
 
         state._density_matrix[index] *= coefficient
+
+    return [Branch(state=state)]
+
+
+def snap(state: FockState, instruction: Instruction, shots: int) -> List[Branch]:
+    cutoff = state._config.cutoff
+    space = get_fock_space_basis(d=state.d, cutoff=cutoff)
+
+    mode = instruction.modes[0]
+    theta = instruction._get_all_params(state._connector)["theta"]
+
+    if state._config.validate and len(theta) != cutoff:
+        raise InvalidParameter(
+            f"Length of SNAP parameter must be equal to cutoff: {cutoff},"
+            f" but got {len(theta)}."
+        )
+
+    for index, (basis, dual_basis) in operator_basis(space):
+        coefficient = np.exp(1j * (theta[basis[mode]] - theta[dual_basis[mode]]))
+
+        state._density_matrix = state._connector.assign(
+            state._density_matrix, index, state._density_matrix[index] * coefficient
+        )
 
     return [Branch(state=state)]
 
