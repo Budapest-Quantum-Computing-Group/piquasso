@@ -42,7 +42,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-14, macos-15-intel]
+      include:
+        - os: ubuntu-latest
+          cibw_env_macos: ""
+        - os: windows-latest
+          cibw_env_macos: ""
+        - os: macos-14
+          cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=11.0"
+        - os: macos-15-intel
+          cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=14.0"
 
     steps:
       - uses: actions/checkout@v4
@@ -85,8 +93,9 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
           # pp*: Disable building PyPy wheels on all platforms
-          # cp314t-win*: Thisable free-threaded Python3.14 builds on Windows
+          # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
           CIBW_SKIP: pp* cp314t-win*
+          CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4
         with:
