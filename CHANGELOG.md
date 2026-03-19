@@ -1,5 +1,41 @@
 # Changelog
 
+## [7.2.0] - 2026-03-19
+
+### Added
+
+- SNAP gate support. Example:
+  ```py
+  import numpy as np
+  import piquasso as pq
+
+  snap_angles = [np.pi / 2, np.pi / 7, 3 * np.pi / 2, np.pi / 5, np.pi / 4]
+
+  with pq.Program() as program:
+      pq.Q() | pq.Vacuum()
+      pq.Q(0) | pq.Squeezing(r=0.1) | pq.SNAP(theta=snap_angles)
+      pq.Q(1) | pq.Displacement(0.2)
+
+      pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
+
+  simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=5))
+  state = simulator.execute(program).state
+  ```
+- A tutorial for "Boson Sampling as a hardware accelerator for Monte Carlo integration".
+- Support for Python 3.14.
+- Computing parity operator expectation values of Gaussian states via
+  `GaussianState.get_parity_operator_expectation_value`.
+
+### Fixed
+
+- Blackbird-exported program name was space-separated, which is not accepted by
+  `blackbird` itself, so it got rewritten to be underscore-separated.
+
+### Breaking changes
+
+- Python 3.8 (which reached its EOL in 2024) support is dropped.
+
+
 ## [7.1.0] - 2025-12-12
 
 ### Added
