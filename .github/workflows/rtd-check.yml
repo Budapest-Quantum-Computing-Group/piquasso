@@ -1,0 +1,41 @@
+name: "Read the Docs check"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  rtd_check:
+    runs-on: ubuntu-22.04
+    env:
+      PYTHON_VERSION: "3.12"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Piquasso with documentation dependencies
+      run: |
+        pip install --upgrade --no-cache-dir pip setuptools
+        pip install --upgrade --no-cache-dir sphinx
+        pip install --upgrade --upgrade-strategy only-if-needed --no-cache-dir ".[docs]"
+
+    - name: Compile C++ extension
+      run: |
+        pip install cmake pybind11[global]
+        cmake -B build -DCMAKE_INSTALL_PREFIX=$(pwd)
+        cmake --build build
+        cmake --install build
+
+    - name: Build Sphinx HTML
+      run: |
+        cd docs
+        python -m sphinx -T -b html -d _build/doctrees -D language=en . _build --keep-going
