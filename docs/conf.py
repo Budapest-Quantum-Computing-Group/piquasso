@@ -131,6 +131,9 @@ html_css_files = ["custom.css"]
 
 # NBSPHINX
 
+# Don't execute notebooks - either output is saved or no output
+nbsphinx_execute = "never"
+
 nbsphinx_prompt_width = "0"
 
 nbsphinx_prolog = r"""
