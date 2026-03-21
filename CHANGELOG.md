@@ -1,5 +1,14 @@
 # Changelog
 
+
+## [7.2.1] - 2026-03-21
+
+### Fixed
+
+- The latest tutorial added did not compile in Read the Docs due to wrong kernel
+  specification, which has been fixed in this patch.
+
+
 ## [7.2.0] - 2026-03-19
 
 ### Added
