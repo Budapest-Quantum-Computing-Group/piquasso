@@ -31,6 +31,10 @@ from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
+import jax
+
+from piquasso._math import perm_boost as _perm_boost
+
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
@@ -319,3 +323,22 @@ def PureFockSimulator_with_tensorflow_tf_function(tensorflow_connector_tf_functi
 @pytest.fixture
 def PureFockSimulator_with_jax():
     return partial(pq.PureFockSimulator, connector=pq.JaxConnector())
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--platform", action="store", default="cpu", help="Choose platform: cpu or gpu"
+    )
+
+
+def pytest_configure(config):
+    platform = config.getoption("--platform")
+    jax.config.update("jax_platform_name", platform)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def register_ffi_targets():
+    jax.config.update("jax_enable_x64", True)
+
+    for name, target in _perm_boost.registrations().items():
+        jax.ffi.register_ffi_target(name, target)
