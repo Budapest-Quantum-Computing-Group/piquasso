@@ -13,3 +13,5 @@ install(
     RUNTIME DESTINATION piquasso/_math
     LIBRARY DESTINATION piquasso/_math
 )
+
+add_subdirectory(perm_boost)
