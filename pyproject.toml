@@ -47,6 +47,7 @@ Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/m
 [project.optional-dependencies]
 qiskit = ["qiskit"]
 tensorflow = ["tensorflow"]
+torch = ["torch"]
 jax = ["jax[cpu]"]
 matplotlib = ["matplotlib"]
 dask = ["dask"]
