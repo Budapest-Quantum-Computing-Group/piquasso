@@ -1,0 +1,102 @@
+# Locate the XLA/JAX FFI include directory by querying the target Python.
+#
+# PYTHONPATH must be cleared before invoking Python here. When pip builds with
+# isolation (the default), it sets PYTHONPATH to a temporary environment that
+# contains only the declared build dependencies. Even though Python_EXECUTABLE
+# points to the correct interpreter (e.g. the conda Python), that interpreter
+# would still import from the overridden PYTHONPATH - where JAX is absent -
+# causing the detection to fail silently. Clearing PYTHONPATH lets Python fall
+# back to its own site-packages, where JAX is actually installed.
+#
+# Two API locations are tried because JAX moved ffi to jax.extend.ffi in
+# newer releases (0.4.31+), while older releases expose it as jax.ffi.
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH="
+    ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
+  OUTPUT_VARIABLE JAX_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE JAX_RESULT
+  ERROR_QUIET
+)
+
+if(NOT JAX_RESULT EQUAL 0)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH="
+      ${Python_EXECUTABLE} -c "import jax.extend.ffi; print(jax.extend.ffi.include_dir())"
+    OUTPUT_VARIABLE JAX_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE JAX_RESULT
+    ERROR_QUIET
+  )
+endif()
+
+# perm_boost requires JAX; skip the build gracefully if it is not available.
+if(NOT JAX_RESULT EQUAL 0)
+  message(STATUS "JAX not found, skipping perm_boost build")
+  return()
+endif()
+
+set(PERM_BOOST_SRC ${CMAKE_SOURCE_DIR}/src/perm_boost)
+
+# CPU module: _perm_boost_core
+pybind11_add_module(_perm_boost_core SHARED ${PERM_BOOST_SRC}/perm_boost_core.cpp)
+
+target_include_directories(_perm_boost_core PRIVATE ${PERM_BOOST_SRC})
+# Mark XLA/JAX headers as SYSTEM so their warnings are suppressed
+target_include_directories(_perm_boost_core SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
+
+target_compile_definitions(_perm_boost_core PRIVATE
+    VERSION_INFO="${PROJECT_VERSION}"
+)
+
+# permanent.hpp uses __int128 (GCC extension) and #pragma omp — suppress pedantic
+# and unknown-pragma warnings that Piquasso's global flags would otherwise error on
+target_compile_options(_perm_boost_core PRIVATE
+    -Wno-pedantic
+    -Wno-unknown-pragmas
+    -Wno-unused-variable
+    -Wno-unused-parameter
+    -Wno-sign-compare
+)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    if(APPLE)
+        find_library(OMP_LIB omp HINTS /usr/local/lib /opt/homebrew/lib)
+        if(OMP_LIB)
+            target_link_libraries(_perm_boost_core PRIVATE ${OMP_LIB})
+            target_include_directories(_perm_boost_core PRIVATE /opt/homebrew/include /usr/local/include)
+        endif()
+    else()
+        target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
+    endif()
+endif()
+
+install(
+    TARGETS _perm_boost_core
+    RUNTIME DESTINATION piquasso/_math/perm_boost
+    LIBRARY DESTINATION piquasso/_math/perm_boost
+)
+
+# GPU module: only if CUDA was enabled at the root level
+if(CUDAToolkit_FOUND)
+    pybind11_add_module(_perm_boost_gpu_ops SHARED
+        ${PERM_BOOST_SRC}/kernels.cc.cu
+        ${PERM_BOOST_SRC}/gpu_ops.cc
+    )
+    target_include_directories(_perm_boost_gpu_ops PRIVATE ${PERM_BOOST_SRC})
+    target_include_directories(_perm_boost_gpu_ops SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
+    # CUDA::cudart provides cuda_runtime_api.h for the host-compiled gpu_ops.cc
+    target_link_libraries(_perm_boost_gpu_ops PRIVATE CUDA::cudart)
+    target_compile_options(_perm_boost_gpu_ops PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:-Wno-pedantic -Wno-unknown-pragmas>
+    )
+    set_target_properties(_perm_boost_gpu_ops PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+    )
+    install(
+        TARGETS _perm_boost_gpu_ops
+        RUNTIME DESTINATION piquasso/_math/perm_boost
+        LIBRARY DESTINATION piquasso/_math/perm_boost
+    )
+endif()
