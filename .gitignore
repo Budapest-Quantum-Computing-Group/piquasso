@@ -26,3 +26,4 @@ logdir/
 # Shared libraries
 *.so
 *.pyd
+uv.lock

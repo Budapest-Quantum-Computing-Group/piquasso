@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import numpy as np
 
 from ..connector import BuiltinConnector
@@ -38,12 +37,12 @@ class TorchConnector(BuiltinConnector):
         self.forward_pass_np = np_mock
         self.fallback_np = np  # NOTE(TR): I assume this is the "last resort" numpy.
 
-    def block_diag(self, input):
-        return self.torch.block_diag(input)
+    def block_diag(self, arrs):
+        return self.torch.block_diag(arrs)
 
     def block(self, tensors):
         # Horizontal concatenation
-        rows = [TorchConnector.block(row) for row in tensors]
+        rows = [self.block(row) for row in tensors]
         # Vertical concatenation
         return self.torch.cat(rows, dim=0)
 
@@ -70,7 +69,7 @@ class TorchConnector(BuiltinConnector):
         # NOTE: Based on the TensorflowConnector implementation.
         _, vecs = self.torch.linalg.eig(matrix)
         Q, _ = self.torch.linalg.qr(vecs)
-        D = self.torch.linalg.adjoint(Q) @ matrix @ Q
+        D = self.torch.adjoint(Q) @ matrix @ Q
         return D, Q
 
     def sqrtm(self, A):
@@ -114,6 +113,9 @@ class TorchConnector(BuiltinConnector):
         composite_index = tuple([indices_array[:, i] for i in range(len(shape))])
         embedded_matrix[composite_index] = self.np.array(updates)
         return embedded_matrix
+
+    def preprocess_input_for_custom_gradient(self, value):
+        return value
 
     # NOTE: These two are not implemented in the
     # ``TensorflowConnector``, so I'm also leaving them here.
