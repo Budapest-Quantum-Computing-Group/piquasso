@@ -21,30 +21,40 @@ import torch
 def sum(tensor):
     return torch.sum(tensor)
 
+
 def real(tensor):
     return torch.real(tensor)
 
+
 def array(input):
-    # NOTE(TR): Does it make sense? Seems a little misleading, but the intuition seems correct.
+    # NOTE(TR): Does it make sense? Seems a little misleading,
+    # but the intuition seems correct.
     return torch.Tensor(input)
+
 
 def diag(tensor):
     return torch.diag(tensor)
 
+
 def zeros(size):
     return torch.zeros(size)
+
 
 def conj(input):
     return torch.conj(input)
 
-def allclose(input, other, rtol = 1e-05, atol = 1e-08, equal_nan = False):
+
+def allclose(input, other, rtol=1e-05, atol=1e-08, equal_nan=False):
     return torch.allclose(input, other, rtol, atol, equal_nan)
+
 
 def copy(input):
     return input.detach().clone()
 
+
 def abs(input):
     return torch.abs(input)
+
 
 def outer(v1, v2):
     return torch.outer(v1, v2)

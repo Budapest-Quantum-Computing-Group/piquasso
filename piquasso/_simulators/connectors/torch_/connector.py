@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..connector import BuiltinConnector
 import numpy as np
+
+from ..connector import BuiltinConnector
 
 
 class TorchConnector(BuiltinConnector):
@@ -22,8 +23,8 @@ class TorchConnector(BuiltinConnector):
 
     def __init__(self):
         try:
-            import torch
             import np_mock
+            import torch
         except ImportError:
             raise ImportError(
                 "You have invoked a feature which requires 'torch'.\n"
@@ -31,7 +32,7 @@ class TorchConnector(BuiltinConnector):
                 "\n"
                 "pip install piquasso[torch]"
             )
-        
+
         self.np = np_mock
         self.torch = torch
         self.forward_pass_np = np_mock
@@ -39,14 +40,16 @@ class TorchConnector(BuiltinConnector):
 
     def block_diag(self, input):
         return self.torch.block_diag(input)
-    
+
     def block(self, tensors):
-        rows = [TorchConnector.block(row) for row in tensors]  # Horizontal concatenation
-        return self.torch.cat(rows, dim=0)  # Vertical concatenation
-    
+        # Horizontal concatenation
+        rows = [TorchConnector.block(row) for row in tensors]
+        # Vertical concatenation
+        return self.torch.cat(rows, dim=0)
+
     def _funm(self, matrix, func):
-        """ Helper function for the ``self.logm`` and ``self.expm`` implementation.
-        
+        """Helper function for the ``self.logm`` and ``self.expm`` implementation.
+
         NOTE: This is the same strategy as for the TensorflowConnector."""
         eigenvalues, U = self.torch.linalg.eig(matrix)
 
@@ -59,7 +62,7 @@ class TorchConnector(BuiltinConnector):
 
     def expm(self, matrix):
         return self._funm(matrix, self.torch.exp)
-    
+
     def powm(self, matrix, power):
         return self.torch.linalg.matrix_power(matrix, power)
 
@@ -71,19 +74,20 @@ class TorchConnector(BuiltinConnector):
         return D, Q
 
     def sqrtm(self, A):
-        # TODO(TR): AI-generated! Check if that's correct!     
-        # NOTE: Supposedly mimics TF implementation, and could be slow due to the lack of C++ support.
+        # TODO(TR): AI-generated! Check if that's correct!
+        # NOTE: Supposedly mimics TF implementation, and could be slow due
+        # to the lack of C++ support.
         T, Z = self.schur(A)
-        
+
         n = T.shape[-1]
         R = self.torch.zeros_like(T)
-        
+
         for j in range(n):
             R[j, j] = self.torch.sqrt(T[j, j])
             for i in range(j - 1, -1, -1):
-                s = self.torch.dot(R[i, i+1:j], R[i+1:j, j])
+                s = self.torch.dot(R[i, i + 1 : j], R[i + 1 : j, j])
                 R[i, j] = (T[i, j] - s) / (R[i, i] + R[j, j])
-                
+
         res = Z @ R @ Z.mhr()
         return res
 
@@ -98,10 +102,11 @@ class TorchConnector(BuiltinConnector):
             U = Pinv @ matrix
 
         return U, P
-    
+
     def svd(self, matrix):
-        return self.torch.linalg.svd(matrix)  # NOTE: torch and numpy have matching return order
-    
+        # NOTE: torch and numpy have matching return order
+        return self.torch.linalg.svd(matrix)
+
     def scatter(self, indices, updates, shape):
         # NOTE: Based on the JaxConnector implementation
         embedded_matrix = self.torch.zeros(shape, dtype=updates[0].dtype)
@@ -110,10 +115,11 @@ class TorchConnector(BuiltinConnector):
         embedded_matrix[composite_index] = self.np.array(updates)
         return embedded_matrix
 
-    # NOTE: These two are not implemented in the ``TensorflowConnector``, so I'm also leaving them here.
+    # NOTE: These two are not implemented in the
+    # ``TensorflowConnector``, so I'm also leaving them here.
     # calculate_interferometer_on_fock_space
     # calculate_interferometer_on_fermionic_fock_space
-    
+
     def permanent(self, matrix, rows, cols):
         # NOTE: Same as in TensorflowConnector implementation.
         raise NotImplementedError()
@@ -138,5 +144,3 @@ class TorchConnector(BuiltinConnector):
         array[index] = value
 
         return array
-    
-
