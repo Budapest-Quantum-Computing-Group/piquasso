@@ -22,8 +22,9 @@ class TorchConnector(BuiltinConnector):
 
     def __init__(self):
         try:
-            import np_mock
             import torch
+
+            from .np_mock import MockNumpy
         except ImportError:
             raise ImportError(
                 "You have invoked a feature which requires 'torch'.\n"
@@ -32,9 +33,8 @@ class TorchConnector(BuiltinConnector):
                 "pip install piquasso[torch]"
             )
 
-        self.np = np_mock
+        self.np = self.forward_pass_np = MockNumpy()
         self.torch = torch
-        self.forward_pass_np = np_mock
         self.fallback_np = np  # NOTE(TR): I assume this is the "last resort" numpy.
 
     def block_diag(self, arrs):

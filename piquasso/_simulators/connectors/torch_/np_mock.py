@@ -15,46 +15,31 @@
 
 # This module contains mock-ups used by the TorchConnector.
 
+from typing import Any
+
 import torch
 
 
-def sum(tensor):
-    return torch.sum(tensor)
+class MockNumpy:
+    """A mock-up class implementing torch versions of the
+    functions used by piquasso that can be usually found
+    in numpy. This class will be used by TorchConnector."""
 
+    def __getattribute__(self, name: str, /) -> Any:
+        """
+        NOTE: Created to reduce boilerplate torch calls.
+        """
+        if hasattr(torch, name):
+            return getattr(torch, name)
 
-def real(tensor):
-    return torch.real(tensor)
+        return super().__getattribute__(name)
 
+    @staticmethod
+    def copy(input):
+        return input.detach().clone()
 
-def array(input):
-    # NOTE(TR): Does it make sense? Seems a little misleading,
-    # but the intuition seems correct.
-    return torch.Tensor(input)
-
-
-def diag(tensor):
-    return torch.diag(tensor)
-
-
-def zeros(size):
-    return torch.zeros(size)
-
-
-def conj(input):
-    return torch.conj(input)
-
-
-def allclose(input, other, rtol=1e-05, atol=1e-08, equal_nan=False):
-    return torch.allclose(input, other, rtol, atol, equal_nan)
-
-
-def copy(input):
-    return input.detach().clone()
-
-
-def abs(input):
-    return torch.abs(input)
-
-
-def outer(v1, v2):
-    return torch.outer(v1, v2)
+    @staticmethod
+    def array(input):
+        # NOTE(TR): Does it make sense? Seems a little misleading,
+        # but the intuition seems correct.
+        return torch.Tensor(input)
