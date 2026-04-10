@@ -50,7 +50,8 @@ def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
 
     assert is_unitary(unitary)
     assert np.allclose(connector.np.abs(singular_values), singular_values)
-    # NOTE: We need matmul instead of @, because torch.Tensors do not automatically promote types.
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
     assert np.allclose(
         matrix,
         connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
@@ -73,7 +74,8 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector
 
     assert is_unitary(unitary)
     assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
-    # NOTE: We need matmul instead of @, because torch.Tensors do not automatically promote types.
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
     assert connector.np.allclose(
         matrix,
         connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
@@ -120,7 +122,8 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
 
     assert is_unitary(unitary)
     assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
-    # NOTE: We need matmul instead of @, because torch.Tensors do not automatically promote types.
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
     assert connector.np.allclose(
         matrix,
         connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
