@@ -14,14 +14,12 @@
 # limitations under the License.
 
 import numpy as np
-
 from scipy.optimize import root_scalar
 
 from piquasso._math.symplectic import xp_symplectic_form
 from piquasso._math.transformations import xpxp_to_xxpp_indices
-
-from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.connector import BaseConnector
+from piquasso.api.exceptions import InvalidParameter
 
 
 def takagi(matrix, connector, atol=1e-12):
@@ -61,7 +59,7 @@ def takagi(matrix, connector, atol=1e-12):
     diagonal_blocks_for_Q = []
 
     for indices in singular_value_multiplicity_indices:
-        Z = V[:, indices].transpose() @ W[:, indices]
+        Z = V[:, indices].T @ W[:, indices]
 
         D, Q = connector.schur(Z)
         diags = np.diag(D)

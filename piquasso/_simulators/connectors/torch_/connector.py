@@ -37,8 +37,8 @@ class TorchConnector(BuiltinConnector):
         self.torch = torch
         self.fallback_np = np  # NOTE(TR): I assume this is the "last resort" numpy.
 
-    def block_diag(self, arrs):
-        return self.torch.block_diag(arrs)
+    def block_diag(self, *arrs):
+        return self.torch.block_diag(*arrs)
 
     def block(self, tensors):
         # Horizontal concatenation
@@ -104,7 +104,7 @@ class TorchConnector(BuiltinConnector):
 
     def svd(self, matrix):
         # NOTE: torch and numpy have matching return order
-        return self.torch.linalg.svd(matrix)
+        return self.torch.linalg.svd(matrix, full_matrices=True)
 
     def scatter(self, indices, updates, shape):
         # NOTE: Based on the JaxConnector implementation

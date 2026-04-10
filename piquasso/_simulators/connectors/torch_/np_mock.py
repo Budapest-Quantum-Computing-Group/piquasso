@@ -17,6 +17,7 @@
 
 from typing import Any
 
+import numpy as np
 import torch
 
 
@@ -29,10 +30,14 @@ class MockNumpy:
         """
         NOTE: Created to reduce boilerplate torch calls.
         """
-        if hasattr(torch, name):
-            return getattr(torch, name)
+        try:
+            # Prioritize self implementations.
+            return super().__getattribute__(name)
+        except AttributeError:
+            if hasattr(torch, name):
+                return getattr(torch, name)
 
-        return super().__getattribute__(name)
+            raise
 
     @staticmethod
     def copy(input):
@@ -42,4 +47,25 @@ class MockNumpy:
     def array(input):
         # NOTE(TR): Does it make sense? Seems a little misleading,
         # but the intuition seems correct.
+        if isinstance(input, np.ndarray):
+            return torch.from_numpy(input)
         return torch.Tensor(input)
+
+    @staticmethod
+    def transpose(input):
+        return input.t()
+
+    @staticmethod
+    def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
+        return MockNumpy.array(np.isclose(a, b, rtol, atol, equal_nan))
+
+    @staticmethod
+    def mod(a, b):
+        return torch.remainder(a, b)
+
+    @staticmethod
+    def matmul(a, b):
+        # NOTE: torch.Tensors do not autocast during the multiplication.
+        dtype: torch.dtype = torch.promote_types(a.dtype, b.dtype)
+
+        return a.to(dtype) @ b.to(dtype)
