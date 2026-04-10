@@ -13,27 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
-from pytest_lazy_fixtures import lf
-
 import numpy as np
+import pytest
+from jax import grad
+from pytest_lazy_fixtures import lf
 from scipy.stats import unitary_group
 
 import piquasso as pq
-
-from jax import grad
-
+from piquasso._simulators.connectors.torch_ import TorchConnector
 from piquasso.decompositions.clements import (
     clements,
-    inverse_clements,
-    get_weights_from_decomposition,
     get_decomposition_from_weights,
-    get_weights_from_interferometer,
     get_interferometer_from_weights,
+    get_weights_from_decomposition,
+    get_weights_from_interferometer,
     instructions_from_decomposition,
+    inverse_clements,
 )
-
 
 pytestmark = pytest.mark.monkey
 
@@ -98,9 +94,7 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
         for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-    simulator = pq.PureFockSimulator(
-        d=d, config=pq.Config(cutoff=sum(occupation_numbers) + 1)
-    )
+    simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=sum(occupation_numbers) + 1))
 
     state_with_interferometer = simulator.execute(program_with_interferometer).state
     state_with_decomposition = simulator.execute(program_with_decomposition).state
@@ -187,9 +181,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator(
         pq.Q() | pq.Interferometer(matrix=U)
 
     program_with_decomposition = pq.Program(
-        instructions=[
-            pq.Squeezing(r).on_modes(mode) for mode, r in enumerate(squeezings)
-        ]
+        instructions=[pq.Squeezing(r).on_modes(mode) for mode, r in enumerate(squeezings)]
         + instructions_from_decomposition(decomposition)
     )
 
@@ -221,9 +213,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_with_c
         for mode, r in enumerate(squeezings):
             pq.Q(mode) | pq.Squeezing(r)
 
-        program_with_decomposition.instructions.extend(
-            instructions_from_decomposition(decomposition)
-        )
+        program_with_decomposition.instructions.extend(instructions_from_decomposition(decomposition))
 
     simulator = pq.GaussianSimulator(d=d)
 
@@ -250,9 +240,7 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
 
     with pq.Program() as program_with_decomposition:
         pq.Q() | gaussian_transform
-        program_with_decomposition.instructions.extend(
-            instructions_from_decomposition(decomposition)
-        )
+        program_with_decomposition.instructions.extend(instructions_from_decomposition(decomposition))
 
     simulator = pq.GaussianSimulator(d=d)
 
@@ -263,11 +251,11 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector(), pq.TorchConnector())
 )
 def test_clements_decomposition_roundtrip(connector, dummy_unitary):
     d = 5
-    U = dummy_unitary(d)
+    U = connector.np.array(dummy_unitary(d))
 
     decomposition = clements(U, connector)
 
@@ -277,11 +265,11 @@ def test_clements_decomposition_roundtrip(connector, dummy_unitary):
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector(), pq.TorchConnector())
 )
 def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary):
     d = 6
-    U = dummy_unitary(d)
+    U = connector.np.array(dummy_unitary(d))
 
     decomposition = clements(U, connector)
 
@@ -297,7 +285,7 @@ def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary)
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector(), pq.TorchConnector())
 )
 def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     d = 6
@@ -373,18 +361,14 @@ def test_clements_decomposition_with_JaxConnector(dummy_unitary):
     )
 
 
-def test_clements_decomposition_with_TensorflowConnector_from_weights(
-    dummy_unitary, tf
-):
+def test_clements_decomposition_with_TensorflowConnector_from_weights(dummy_unitary, tf):
     d = 2
     U = dummy_unitary(d)
 
     weights = tf.Variable(get_weights_from_interferometer(U, pq.NumpyConnector()))
 
     with tf.GradientTape() as tape:
-        decomposition = get_decomposition_from_weights(
-            weights, d=d, connector=pq.TensorflowConnector()
-        )
+        decomposition = get_decomposition_from_weights(weights, d=d, connector=pq.TensorflowConnector())
 
     assert len(decomposition.beamsplitters) == 1
     assert len(decomposition.phaseshifters) == 2
@@ -407,9 +391,7 @@ def test_clements_decomposition_with_JaxConnector_from_weights(dummy_unitary):
     connector = pq.JaxConnector()
 
     def get_first_beamsplitter_theta(weights):
-        decomposition = get_decomposition_from_weights(
-            weights, d=d, connector=connector
-        )
+        decomposition = get_decomposition_from_weights(weights, d=d, connector=connector)
 
         first_beamsplitter_theta = decomposition.beamsplitters[0].params[0]
 

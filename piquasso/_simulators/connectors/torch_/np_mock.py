@@ -44,12 +44,12 @@ class MockNumpy:
         return input.detach().clone()
 
     @staticmethod
-    def array(input):
+    def array(input, dtype=torch.float32):
         # NOTE(TR): Does it make sense? Seems a little misleading,
         # but the intuition seems correct.
-        if isinstance(input, np.ndarray):
-            return torch.from_numpy(input)
-        return torch.Tensor(input)
+        if not isinstance(input, np.ndarray):
+            input = np.array(input)
+        return torch.from_numpy(input)
 
     @staticmethod
     def transpose(input):
@@ -73,3 +73,7 @@ class MockNumpy:
     @staticmethod
     def identity(n, dtype=torch.float32):
         return torch.eye(n, dtype=dtype)
+
+    @staticmethod
+    def astype(input, dtype):
+        return input.to(dtype)
