@@ -71,5 +71,5 @@ class MockNumpy:
         return a.to(dtype) @ b.to(dtype)
 
     @staticmethod
-    def identity(n):
-        return torch.eye(n)
+    def identity(n, dtype=torch.float32):
+        return torch.eye(n, dtype=dtype)
