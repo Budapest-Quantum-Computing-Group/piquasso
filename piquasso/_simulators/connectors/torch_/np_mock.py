@@ -69,3 +69,7 @@ class MockNumpy:
         dtype: torch.dtype = torch.promote_types(a.dtype, b.dtype)
 
         return a.to(dtype) @ b.to(dtype)
+
+    @staticmethod
+    def identity(n):
+        return torch.eye(n)
