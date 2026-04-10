@@ -44,12 +44,24 @@ class MockNumpy:
         return input.detach().clone()
 
     @staticmethod
-    def array(input, dtype=torch.float32):
+    def array(input, dtype=None):
         # NOTE(TR): Does it make sense? Seems a little misleading,
         # but the intuition seems correct.
-        if not isinstance(input, np.ndarray):
-            input = np.array(input)
-        return torch.from_numpy(input)
+        #
+        # This method is unreasonably difficult to implement.
+        if isinstance(input, torch.Tensor):
+            return input
+
+        if isinstance(input, np.ndarray):
+            return torch.from_numpy(input)
+
+        try:
+            # 2D list
+            return torch.stack([torch.stack(row) for row in input])
+        except Exception:
+            # Last resort
+            return torch.tensor(input, dtype=dtype)
+            raise
 
     @staticmethod
     def transpose(input):

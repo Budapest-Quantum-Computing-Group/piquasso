@@ -20,7 +20,6 @@ from pytest_lazy_fixtures import lf
 from scipy.stats import unitary_group
 
 import piquasso as pq
-from piquasso._simulators.connectors.torch_ import TorchConnector
 from piquasso.decompositions.clements import (
     clements,
     get_decomposition_from_weights,

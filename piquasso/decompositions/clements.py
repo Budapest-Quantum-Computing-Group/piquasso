@@ -142,7 +142,7 @@ def inverse_clements(decomposition: Decomposition, connector: BaseConnector, dty
     for beamsplitter in decomposition.beamsplitters:
         beamsplitter_matrix = _get_embedded_beamsplitter_matrix(beamsplitter, d, connector, dtype=dtype)
 
-        interferometer = beamsplitter_matrix @ interferometer
+        interferometer = np.matmul(beamsplitter_matrix, interferometer)
 
     phis = np.empty(d, dtype=interferometer.dtype)
 
