@@ -18,87 +18,99 @@
 One can access all the instructions and states from here as attributes.
 """
 
-from piquasso import cvqnn, dual_rail_encoding, fermionic
-from piquasso._simulators.connectors import (
-    JaxConnector,
-    NumpyConnector,
-    TensorflowConnector,
-    TorchConnector,
-)
-from piquasso._simulators.fock import (
-    BatchPureFockState,
-    FockSimulator,
-    FockState,
-    PureFockSimulator,
-    PureFockState,
-)
-from piquasso._simulators.gaussian import GaussianSimulator, GaussianState
-from piquasso._simulators.sampling import SamplingSimulator, SamplingState
-from piquasso.api.computer import Computer
+from piquasso import cvqnn
+from piquasso import fermionic
+
+from piquasso.api.mode import Q
 from piquasso.api.config import Config
 from piquasso.api.instruction import (
-    Gate,
     Instruction,
-    Measurement,
     Preparation,
+    Gate,
+    Measurement,
 )
-from piquasso.api.mode import Q
 from piquasso.api.program import Program
-from piquasso.api.simulator import Simulator
 from piquasso.api.state import State
+from piquasso.api.computer import Computer
+from piquasso.api.simulator import Simulator
 from piquasso.api.utils import as_code
 
-from .instructions.batch import (
-    BatchApply,
-    BatchPrepare,
+from piquasso import dual_rail_encoding
+
+from piquasso._simulators.sampling import SamplingState, SamplingSimulator
+
+from piquasso._simulators.gaussian import GaussianState, GaussianSimulator
+from piquasso._simulators.fock import (
+    FockState,
+    PureFockState,
+    BatchPureFockState,
+    FockSimulator,
+    PureFockSimulator,
 )
+
+from piquasso._simulators.connectors import (
+    NumpyConnector,
+    TensorflowConnector,
+    JaxConnector,
+    TorchConnector,
+)
+
+from .instructions.preparations import (
+    Vacuum,
+    Mean,
+    Covariance,
+    Thermal,
+    StateVector,
+    DensityMatrix,
+    Create,
+    Annihilate,
+)
+
+from .instructions.gates import (
+    GaussianTransform,
+    Phaseshifter,
+    Beamsplitter,
+    Beamsplitter5050,
+    MachZehnder,
+    Fourier,
+    Displacement,
+    PositionDisplacement,
+    MomentumDisplacement,
+    Squeezing,
+    QuadraticPhase,
+    Squeezing2,
+    Kerr,
+    CrossKerr,
+    SNAP,
+    ControlledX,
+    ControlledZ,
+    Interferometer,
+    Graph,
+    CubicPhase,
+)
+
+from .instructions.measurements import (
+    ParticleNumberMeasurement,
+    ThresholdMeasurement,
+    HomodyneMeasurement,
+    HeterodyneMeasurement,
+    GeneraldyneMeasurement,
+    PostSelectPhotons,
+    ImperfectPostSelectPhotons,
+)
+
 from .instructions.channels import (
-    Attenuator,
     DeterministicGaussianChannel,
+    Attenuator,
     Loss,
     LossyInterferometer,
 )
-from .instructions.gates import (
-    SNAP,
-    Beamsplitter,
-    Beamsplitter5050,
-    ControlledX,
-    ControlledZ,
-    CrossKerr,
-    CubicPhase,
-    Displacement,
-    Fourier,
-    GaussianTransform,
-    Graph,
-    Interferometer,
-    Kerr,
-    MachZehnder,
-    MomentumDisplacement,
-    Phaseshifter,
-    PositionDisplacement,
-    QuadraticPhase,
-    Squeezing,
-    Squeezing2,
+
+from .instructions.batch import (
+    BatchPrepare,
+    BatchApply,
 )
-from .instructions.measurements import (
-    GeneraldyneMeasurement,
-    HeterodyneMeasurement,
-    HomodyneMeasurement,
-    ImperfectPostSelectPhotons,
-    ParticleNumberMeasurement,
-    PostSelectPhotons,
-    ThresholdMeasurement,
-)
-from .instructions.preparations import (
-    Annihilate,
-    Covariance,
-    Create,
-    DensityMatrix,
-    Mean,
-    StateVector,
-    Thermal,
-    Vacuum,
-)
+
 
 __all__ = [
     # API
