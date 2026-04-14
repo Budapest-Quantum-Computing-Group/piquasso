@@ -31,9 +31,17 @@ from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
-import jax
-
-from piquasso._math import perm_boost as _perm_boost
+try:
+    import jax
+    try:
+        _jax_ffi = jax.ffi
+    except AttributeError:
+        import jax.extend.ffi as _jax_ffi
+    from piquasso._math import perm_boost as _perm_boost
+    _JAX_PERM_BOOST_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    _JAX_PERM_BOOST_AVAILABLE = False
+    _jax_ffi = None
 
 
 @pytest.fixture(autouse=True)
@@ -332,13 +340,19 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    platform = config.getoption("--platform")
-    jax.config.update("jax_platform_name", platform)
+    if _JAX_PERM_BOOST_AVAILABLE:
+        platform = config.getoption("--platform")
+        try:
+            jax.config.update("jax_platforms", platform)
+        except AttributeError:
+            jax.config.update("jax_platform_name", platform)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def register_ffi_targets():
+    if not _JAX_PERM_BOOST_AVAILABLE:
+        return
     jax.config.update("jax_enable_x64", True)
 
     for name, target in _perm_boost.registrations().items():
-        jax.ffi.register_ffi_target(name, target)
+        _jax_ffi.register_ffi_target(name, target)

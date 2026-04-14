@@ -12,27 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import jax
-import pytest
-
-from piquasso._math import perm_boost as _perm_boost
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--platform", action="store", default="cpu", help="Choose platform: cpu or gpu"
-    )
-
-
-def pytest_configure(config):
-    platform = config.getoption("--platform")
-    jax.config.update("jax_platform_name", platform)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def register_ffi_targets():
-    jax.config.update("jax_enable_x64", True)
-
-    for name, target in _perm_boost.registrations().items():
-        jax.ffi.register_ffi_target(name, target)
