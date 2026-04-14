@@ -59,19 +59,29 @@ target_compile_options(_perm_boost_core PRIVATE
     -Wno-sign-compare
 )
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    if(APPLE)
-        find_library(OMP_LIB omp HINTS /usr/local/lib /opt/homebrew/lib)
-        if(OMP_LIB)
-            target_link_libraries(_perm_boost_core PRIVATE ${OMP_LIB})
-            target_include_directories(_perm_boost_core PRIVATE /opt/homebrew/include /usr/local/include)
-        endif()
-    else()
-        target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
+if(APPLE)
+    # Check if Homebrew's libomp is installed
+    if(EXISTS "/opt/homebrew/opt/libomp")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY "/opt/homebrew/opt/libomp/lib/libomp.dylib")
+    elseif(EXISTS "/usr/local/opt/libomp")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY "/usr/local/opt/libomp/lib/libomp.dylib")
     endif()
 endif()
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+# Both RUNTIME and LIBRARY are specified so the install works on Windows (.dll = RUNTIME) and Linux/macOS (.so = LIBRARY).
 install(
     TARGETS _perm_boost_core
     RUNTIME DESTINATION piquasso/_math/perm_boost
