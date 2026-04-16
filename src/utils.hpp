@@ -17,6 +17,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <cstdint>
 #include <numeric>
 #include <vector>
 
