@@ -1,12 +1,13 @@
 # Locate the XLA/JAX FFI include directory by querying the target Python.
 #
-# PYTHONPATH must be cleared before invoking Python here. When pip builds with
-# isolation (the default), it sets PYTHONPATH to a temporary environment that
-# contains only the declared build dependencies. Even though Python_EXECUTABLE
-# points to the correct interpreter (e.g. the conda Python), that interpreter
-# would still import from the overridden PYTHONPATH - where JAX is absent -
-# causing the detection to fail silently. Clearing PYTHONPATH lets Python fall
-# back to its own site-packages, where JAX is actually installed.
+# JAX is declared in [build-system].requires (pyproject.toml), so pip installs
+# it into the PEP 517 isolated venv before the build starts. Python_EXECUTABLE
+# points to that venv's Python, which has JAX in its own site-packages.
+#
+# PYTHONPATH is cleared defensively: pip may set it to point at the isolated
+# venv's package tree, which can shadow site-packages on some platforms. Clearing
+# it ensures Python_EXECUTABLE falls back to its own site-packages and finds the
+# JAX that was installed there, regardless of any external PYTHONPATH overrides.
 #
 # Two API locations are tried because JAX moved ffi to jax.extend.ffi in
 # newer releases (0.4.31+), while older releases expose it as jax.ffi.

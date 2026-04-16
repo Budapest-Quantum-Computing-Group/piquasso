@@ -26,3 +26,15 @@ logdir/
 # Shared libraries
 *.so
 *.pyd
+
+# CMake build artifacts that leak into wheels when building locally
+# after a manual cmake run (cibuildwheel is unaffected — it uses a clean checkout)
+CMakeFiles/
+CMakeCache.txt
+CMakeInit.txt
+cmake_install.cmake
+build.ninja
+.ninja_deps
+.ninja_log
+.skbuild-info.json
+*.o

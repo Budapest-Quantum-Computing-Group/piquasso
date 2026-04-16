@@ -90,6 +90,16 @@ jobs:
           ## directory
           # CIBW_TEST_COMMAND: "pytest -v --import-mode=importlib {project}/tests"
         env:
+          # libomp is not pre-installed on GitHub's macOS runners; brew installs it
+          # once per platform so CMakeLists.txt can find it at /opt/homebrew/opt/libomp.
+          CIBW_BEFORE_ALL_MACOS: "brew install libomp"
+          # JAX is in [build-system].requires so it lands in the PEP 517 isolated
+          # build environment. CMake (via piquasso/_math/perm_boost/CMakeLists.txt)
+          # queries Python_EXECUTABLE at configure time to find XLA FFI headers;
+          # Python_EXECUTABLE points to the PEP 517 isolated venv's Python, NOT the
+          # outer cibuildwheel Python, so only packages in [build-system].requires are
+          # visible to it. Without JAX there, CMake silently skips the perm_boost build
+          # and _perm_boost_core is absent from the wheel.
           CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
           # pp*: Disable building PyPy wheels on all platforms

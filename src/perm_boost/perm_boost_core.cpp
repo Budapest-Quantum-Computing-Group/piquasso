@@ -5,6 +5,9 @@
 #include <complex>
 #include <cstdint>
 #include <vector>
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <type_traits>
