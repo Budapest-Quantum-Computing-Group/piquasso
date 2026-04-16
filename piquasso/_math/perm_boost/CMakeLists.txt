@@ -39,9 +39,15 @@ endif()
 set(PERM_BOOST_SRC ${CMAKE_SOURCE_DIR}/src/perm_boost)
 
 # CPU module: _perm_boost_core
-pybind11_add_module(_perm_boost_core SHARED ${PERM_BOOST_SRC}/perm_boost_core.cpp)
+pybind11_add_module(_perm_boost_core SHARED
+    ${PERM_BOOST_SRC}/perm_boost_core.cpp
+    ${CMAKE_SOURCE_DIR}/src/permanent.cpp
+)
 
-target_include_directories(_perm_boost_core PRIVATE ${PERM_BOOST_SRC})
+target_include_directories(_perm_boost_core PRIVATE
+    ${PERM_BOOST_SRC}
+    ${CMAKE_SOURCE_DIR}/src
+)
 # Mark XLA/JAX headers as SYSTEM so their warnings are suppressed
 target_include_directories(_perm_boost_core SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
 
@@ -90,6 +96,10 @@ install(
 
 # GPU module: only if CUDA was enabled at the root level
 if(CUDAToolkit_FOUND)
+    # Prevent pybind11 from injecting -flto: with CUDA_SEPARABLE_COMPILATION, LTO causes the
+    # device-link step to emit GCC IR instead of native code, leaving fatbinData undefined at
+    # runtime. Setting this before pybind11_add_module suppresses pybind11::lto entirely.
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     pybind11_add_module(_perm_boost_gpu_ops SHARED
         ${PERM_BOOST_SRC}/kernels.cc.cu
         ${PERM_BOOST_SRC}/gpu_ops.cc
@@ -103,6 +113,10 @@ if(CUDAToolkit_FOUND)
     )
     set_target_properties(_perm_boost_gpu_ops PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON
+        # pybind11_add_module defaults to hidden visibility; with -rdc=true nvcc makes
+        # fatbinData a LOCAL symbol that the device-link step cannot resolve. Override
+        # to default so fat-binary registration symbols remain globally visible.
+        CUDA_VISIBILITY_PRESET default
     )
     install(
         TARGETS _perm_boost_gpu_ops

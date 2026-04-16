@@ -1,4 +1,5 @@
 #include "../matrix.hpp"
+#include "../permanent.hpp"
 #include "permanent.hpp"
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/ffi.h"
@@ -96,7 +97,9 @@ void ComputePermBwd(Matrix<std::complex<double>> &A,
                     std::complex<double> cotangent,
                     std::complex<double> *ct_x)
 {
-  Matrix<std::complex<double>> grad = grad_perm(A, rows, cols);
+  Vector<int> row_vec(rows.size(), rows.data());
+  Vector<int> col_vec(cols.size(), cols.data());
+  Matrix<std::complex<double>> grad = grad_perm(A, row_vec, col_vec);
 
   for (int64_t i = 0; i < static_cast<int64_t>(grad.rows); ++i)
   {

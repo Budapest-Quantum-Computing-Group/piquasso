@@ -54,12 +54,12 @@ PYBIND11_MODULE(_perm_boost_gpu_ops, m)
   
              permanent
       )pbdoc";
-    m.def("foo", []()
+    m.def("registrations", []()
           {
       py::dict registrations;
       registrations["dperm"] = EncapsulateFfiHandler(Perm);
-    registrations["dperm_fwd"] = EncapsulateFfiHandler(PermFwd);
-     registrations["dperm_bwd"] = EncapsulateFfiHandler(PermBwd);
+      registrations["dperm_fwd"] = EncapsulateFfiHandler(PermFwd);
+      registrations["dperm_bwd"] = EncapsulateFfiHandler(PermBwd);
       return registrations; });
     m.attr("__version__") = "dev";
 }
