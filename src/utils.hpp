@@ -21,11 +21,13 @@
 #include <numeric>
 #include <vector>
 
+#ifndef HOST_DEVICE
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
 #define HOST_DEVICE __host__ __device__
 #else
 #define HOST_DEVICE
+#endif
 #endif
 
 /**
@@ -139,7 +141,7 @@ inline int64_t binomialCoeffInt128(int n, int k)
  * @return The sum of the elements in the vector.
  */
 template <typename T>
-int sum(std::vector<T> vec)
+int sum(const std::vector<T> &vec)
 {
     return std::accumulate(vec.begin(), vec.end(), 0);
 }

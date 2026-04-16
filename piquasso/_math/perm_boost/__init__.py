@@ -15,11 +15,6 @@
 
 from ._perm_boost_core import registrations
 
-try:
-    from piquasso._math.perm_boost import _perm_boost_gpu_ops as gpu_ops
-except ImportError:
-    pass
-
 from .permanent import perm
 
-__all__ = ["registrations", "perm"]
+__all__ = ["perm"]

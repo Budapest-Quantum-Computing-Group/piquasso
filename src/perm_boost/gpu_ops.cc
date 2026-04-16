@@ -43,17 +43,7 @@ py::capsule EncapsulateFfiHandler(T *fn)
 
 PYBIND11_MODULE(_perm_boost_gpu_ops, m)
 {
-    m.doc() = R"pbdoc(
-          Permanent calculator plugin
-          -----------------------
-  
-          .. currentmodule:: scikit_build_example
-  
-          .. autosummary::
-             :toctree: _generate
-  
-             permanent
-      )pbdoc";
+    m.doc() = "GPU permanent calculator (XLA FFI, CUDA).";
     m.def("registrations", []()
           {
       py::dict registrations;

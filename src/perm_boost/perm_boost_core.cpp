@@ -10,8 +10,6 @@
 #include <type_traits>
 #include <utility>
 
-#define STRINGIFY(x) #x
-#define MACRO_STRINGIFY(x) STRINGIFY(x)
 
 namespace py = pybind11;
 namespace ffi = xla::ffi;
@@ -70,7 +68,7 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
     return ffi::Error::InvalidArgument("Permanent input must be a matrix");
   }
 
-  std::vector<int> row_mult(rows.typed_data(), rows.typed_data() + n);
+  std::vector<int> row_mult(rows.typed_data(), rows.typed_data() + total_size / n);
   std::vector<int> col_mult(cols.typed_data(), cols.typed_data() + n);
 
   Matrix<std::complex<double>> matrix(total_size / n, n, &(A.typed_data()[0]));
@@ -78,7 +76,12 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
   Vector<int> col_vec(col_mult.size(), col_mult.data());
 
   y->typed_data()[0] = permanent_cpp<double>(matrix, row_vec, col_vec);
-  res->typed_data()[0] = permanent_cpp<double>(matrix, row_vec, col_vec);
+
+  // permanent_cpp mutates its matrix and rows arguments; use fresh copies for res
+  Matrix<std::complex<double>> matrix2(total_size / n, n, &(A.typed_data()[0]));
+  Vector<int> row_vec2(row_mult.size(), row_mult.data());
+  Vector<int> col_vec2(col_mult.size(), col_mult.data());
+  res->typed_data()[0] = permanent_cpp<double>(matrix2, row_vec2, col_vec2);
 
   return ffi::Error::Success();
 }
@@ -172,17 +175,7 @@ py::capsule EncapsulateFfiHandler(T *fn)
 
 PYBIND11_MODULE(_perm_boost_core, m)
 {
-  m.doc() = R"pbdoc(
-        Permanent calculator plugin
-        -----------------------
-
-        .. currentmodule:: scikit_build_example
-
-        .. autosummary::
-           :toctree: _generate
-
-           permanent
-    )pbdoc";
+  m.doc() = "CPU permanent calculator (XLA FFI).";
   m.def("registrations", []()
         {
     py::dict registrations;

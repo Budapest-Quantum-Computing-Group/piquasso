@@ -17,11 +17,13 @@
 #ifndef n_aryGrayCodeCounter_H
 #define n_aryGrayCodeCounter_H
 
+#ifndef HOST_DEVICE
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
 #define HOST_DEVICE __host__ __device__
 #else
 #define HOST_DEVICE
+#endif
 #endif
 
 /**

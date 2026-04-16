@@ -33,15 +33,9 @@ from piquasso._simulators.connectors import NumpyConnector
 
 try:
     import jax
-    try:
-        _jax_ffi = jax.ffi
-    except AttributeError:
-        import jax.extend.ffi as _jax_ffi
-    from piquasso._math import perm_boost as _perm_boost
     _JAX_PERM_BOOST_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     _JAX_PERM_BOOST_AVAILABLE = False
-    _jax_ffi = None
 
 
 @pytest.fixture(autouse=True)
@@ -348,11 +342,3 @@ def pytest_configure(config):
             jax.config.update("jax_platform_name", platform)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def register_ffi_targets():
-    if not _JAX_PERM_BOOST_AVAILABLE:
-        return
-    jax.config.update("jax_enable_x64", True)
-
-    for name, target in _perm_boost.registrations().items():
-        _jax_ffi.register_ffi_target(name, target)
