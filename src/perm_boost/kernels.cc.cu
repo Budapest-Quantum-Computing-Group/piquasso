@@ -1,7 +1,7 @@
 #include "kernels.h"
 #include <cuComplex.h>
-#include "matrix.hpp"
-#include "utils.hpp"
+#include "../matrix.hpp"
+#include "../utils.hpp"
 #include "../n_aryGrayCodeCounter.hpp"
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600

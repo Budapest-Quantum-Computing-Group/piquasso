@@ -1,8 +1,8 @@
 #ifndef PERMANENT_HPP
 #define PERMANENT_HPP
 
-#include "matrix.hpp"
-#include "utils.hpp"
+#include "../matrix.hpp"
+#include "../utils.hpp"
 #include <cmath>
 #include <complex>
 #include <cstdint>

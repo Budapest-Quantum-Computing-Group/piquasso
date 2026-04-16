@@ -1,4 +1,4 @@
-#include "matrix.hpp"
+#include "../matrix.hpp"
 #include "permanent.hpp"
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/ffi.h"
