@@ -30,7 +30,7 @@
  * @returns The permanent of the input matrix
  */
 template <typename TScalar>
-HOST_DEVICE extern std::complex<TScalar> permanent_cpp(
+std::complex<TScalar> permanent_cpp(
     Matrix<std::complex<TScalar>> &matrix, Vector<int> &rows, Vector<int> &cols);
 
 /**
@@ -41,35 +41,7 @@ HOST_DEVICE extern std::complex<TScalar> permanent_cpp(
  * @param cols Column multiplicities.
  * @returns Matrix of partial derivatives of the permanent.
  */
-HOST_DEVICE inline Matrix<std::complex<double>> grad_perm(
-    Matrix<std::complex<double>> &A, Vector<int> &rows, Vector<int> &cols)
-{
-    int n = rows.size();
-
-    Matrix<std::complex<double>> perm_grad(n, n);
-
-    for (int i = 0; i < n; ++i)
-    {
-        for (int j = 0; j < n; ++j)
-        {
-            if (rows[i] == 0 || cols[j] == 0)
-                continue;
-
-            Vector<int> grad_rows = rows.copy();
-            grad_rows[i] -= 1;
-
-            Matrix<std::complex<double>> A_(A);
-
-            Vector<int> grad_cols = cols.copy();
-            grad_cols[j] -= 1;
-
-            perm_grad(i, j) =
-                static_cast<double>(rows[i]) * static_cast<double>(cols[j]) *
-                permanent_cpp<double>(A_, grad_rows, grad_cols);
-        }
-    }
-
-    return perm_grad;
-}
+Matrix<std::complex<double>> grad_perm(
+    Matrix<std::complex<double>> &A, Vector<int> &rows, Vector<int> &cols);
 
 #endif
