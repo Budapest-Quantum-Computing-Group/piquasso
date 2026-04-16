@@ -267,3 +267,34 @@ template std::complex<float> permanent_cpp<float>(
     Matrix<std::complex<float>> &matrix, Vector<int> &rows, Vector<int> &cols);
 template std::complex<double> permanent_cpp<double>(
     Matrix<std::complex<double>> &matrix, Vector<int> &rows, Vector<int> &cols);
+
+Matrix<std::complex<double>> grad_perm(
+    Matrix<std::complex<double>> &A, Vector<int> &rows, Vector<int> &cols)
+{
+    int n = rows.size();
+
+    Matrix<std::complex<double>> perm_grad(n, n);
+
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < n; ++j)
+        {
+            if (rows[i] == 0 || cols[j] == 0)
+                continue;
+
+            Vector<int> grad_rows = rows.copy();
+            grad_rows[i] -= 1;
+
+            Matrix<std::complex<double>> A_(A);
+
+            Vector<int> grad_cols = cols.copy();
+            grad_cols[j] -= 1;
+
+            perm_grad(i, j) =
+                static_cast<double>(rows[i]) * static_cast<double>(cols[j]) *
+                permanent_cpp<double>(A_, grad_rows, grad_cols);
+        }
+    }
+
+    return perm_grad;
+}

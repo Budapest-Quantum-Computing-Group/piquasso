@@ -153,6 +153,14 @@ class JaxConnector(BuiltinConnector):
         return self._scipy.linalg.schur(*args, **kwargs)
 
     def permanent(self, *args, **kwargs):
+        if kwargs.pop("use_perm_boost", False):
+            from piquasso._math.perm_boost.permanent import perm
+
+            matrix, rows, cols = args
+            rows_u64 = self.np.array(rows, dtype=self.np.uint64)
+            cols_u64 = self.np.array(cols, dtype=self.np.uint64)
+            return perm(matrix.astype(self.np.complex128), rows_u64, cols_u64)
+
         from piquasso._math.jax.permanent import permanent_with_reduction
 
         return permanent_with_reduction(*args, **kwargs)
