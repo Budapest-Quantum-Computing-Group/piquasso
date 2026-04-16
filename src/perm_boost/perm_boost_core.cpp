@@ -1,10 +1,10 @@
 #include "../matrix.hpp"
 #include "../permanent.hpp"
-#include "permanent.hpp"
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/ffi.h"
 #include <complex>
 #include <cstdint>
+#include <vector>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <type_traits>
@@ -44,9 +44,10 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
                             &(cols.typed_data()[0]) + n);
 
   Matrix<std::complex<double>> matrix(total_size / n, n, &(A.typed_data()[0]));
+  Vector<int> row_vec(row_mult.size(), row_mult.data());
+  Vector<int> col_vec(col_mult.size(), col_mult.data());
 
-  y->typed_data()[0] =
-      permanent<std::complex<double>, double>(matrix, row_mult, col_mult);
+  y->typed_data()[0] = permanent_cpp<double>(matrix, row_vec, col_vec);
 
   return ffi::Error::Success();
 }
@@ -73,13 +74,11 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
   std::vector<int> col_mult(cols.typed_data(), cols.typed_data() + n);
 
   Matrix<std::complex<double>> matrix(total_size / n, n, &(A.typed_data()[0]));
+  Vector<int> row_vec(row_mult.size(), row_mult.data());
+  Vector<int> col_vec(col_mult.size(), col_mult.data());
 
-  y->typed_data()[0] =
-      permanent<std::complex<double>, double>(matrix, row_mult, col_mult);
-
-  res->typed_data()[0] =
-      permanent<std::complex<double>, double>(matrix, row_mult, col_mult);
-  ;
+  y->typed_data()[0] = permanent_cpp<double>(matrix, row_vec, col_vec);
+  res->typed_data()[0] = permanent_cpp<double>(matrix, row_vec, col_vec);
 
   return ffi::Error::Success();
 }
