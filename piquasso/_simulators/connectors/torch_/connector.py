@@ -24,7 +24,7 @@ class TorchConnector(BuiltinConnector):
         try:
             import torch
 
-            from .np_mock import MockNumpy
+            from .np_adapter import NumpyAdapter
         except ImportError:
             raise ImportError(
                 "You have invoked a feature which requires 'torch'.\n"
@@ -33,7 +33,7 @@ class TorchConnector(BuiltinConnector):
                 "pip install piquasso[torch]"
             )
 
-        self.np = self.forward_pass_np = MockNumpy()
+        self.np = self.forward_pass_np = NumpyAdapter()
         self.torch = torch
         self.fallback_np = np  # NOTE(TR): I assume this is the "last resort" numpy.
 

@@ -33,7 +33,6 @@ for_all_connectors = pytest.mark.parametrize(
 )
 
 
-# NOTE(TR): This had no "lf" in ("tensorflow_connector"). Is that a problem?
 @for_all_connectors
 def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
     matrix = np.array(
@@ -82,7 +81,6 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector
     )
 
 
-# TODO(TR): This had no "lf" in ("tensorflow_connector"). Is that a problem?
 @for_all_connectors
 def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
@@ -105,7 +103,6 @@ def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     )
 
 
-# TODO(TR): This had no "lf" in ("tensorflow_connector"). Is that a problem?
 @for_all_connectors
 def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
@@ -131,7 +128,6 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
 
 
 @pytest.mark.monkey
-# TODO(TR): This had no "lf" in ("tensorflow_connector"). Is that a problem?
 @for_all_connectors
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
     connector,

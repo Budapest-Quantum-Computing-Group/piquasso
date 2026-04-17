@@ -21,7 +21,7 @@ import numpy as np
 import torch
 
 
-class MockNumpy:
+class NumpyAdapter:
     """A mock-up class implementing torch versions of the
     functions used by piquasso that can be usually found
     in numpy. This class will be used by TorchConnector."""
@@ -69,7 +69,7 @@ class MockNumpy:
 
     @staticmethod
     def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
-        return MockNumpy.array(np.isclose(a, b, rtol, atol, equal_nan))
+        return NumpyAdapter.array(np.isclose(a, b, rtol, atol, equal_nan))
 
     @staticmethod
     def mod(a, b):
