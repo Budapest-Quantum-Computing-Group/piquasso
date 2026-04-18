@@ -52,6 +52,7 @@ from piquasso._simulators.connectors import (
     NumpyConnector,
     TensorflowConnector,
     JaxConnector,
+    TorchConnector,
 )
 
 from .instructions.preparations import (
@@ -133,6 +134,7 @@ __all__ = [
     "NumpyConnector",
     "TensorflowConnector",
     "JaxConnector",
+    "TorchConnector",
     # States
     "GaussianState",
     "SamplingState",

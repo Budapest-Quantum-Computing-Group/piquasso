@@ -159,7 +159,9 @@ def apply_fermionic_passive_linear_to_state_vector(
 
     for n, indices in enumerate(index_list):
         new_state_vector = connector.assign(
-            new_state_vector, indices, representations[n] @ state_vector[indices]
+            new_state_vector,
+            indices,
+            connector.np.matmul(representations[n], state_vector[indices]),
         )
 
     return new_state_vector

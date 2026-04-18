@@ -20,7 +20,7 @@ import numpy as np
 import piquasso as pq
 
 for_all_connectors = pytest.mark.parametrize(
-    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+    "connector", [pq.NumpyConnector(), pq.JaxConnector(), pq.TorchConnector()]
 )
 
 
