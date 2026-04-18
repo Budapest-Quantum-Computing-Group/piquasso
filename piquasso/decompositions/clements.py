@@ -340,7 +340,7 @@ def _apply_inverse_beamsplitters(
             _get_embedded_beamsplitter_matrix(operation, d, connector, dtype)
         ).T
 
-        U = U @ beamsplitter
+        U = connector.np.matmul(U, beamsplitter)
 
         operations.append(operation)
 

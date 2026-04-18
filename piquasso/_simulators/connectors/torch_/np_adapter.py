@@ -118,7 +118,34 @@ class NumpyAdapter:
 
     @staticmethod
     def astype(input, dtype):
-        return input.to(dtype)
+        return input.to(translate_dtype(dtype))
+
+    @staticmethod
+    def exp(input):
+        if not isinstance(input, torch.Tensor):
+            input = torch.tensor([input])
+
+            return torch.exp(input)[0]
+
+        return torch.exp(input)
+
+    @staticmethod
+    def sin(input):
+        if not isinstance(input, torch.Tensor):
+            input = torch.tensor([input])
+
+            return torch.sin(input)[0]
+
+        return torch.sin(input)
+
+    @staticmethod
+    def cos(input):
+        if not isinstance(input, torch.Tensor):
+            input = torch.tensor([input])
+
+            return torch.cos(input)[0]
+
+        return torch.cos(input)
 
     @staticmethod
     def zeros(*args, **kwargs):
