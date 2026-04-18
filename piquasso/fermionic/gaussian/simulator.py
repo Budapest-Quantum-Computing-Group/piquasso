@@ -29,7 +29,7 @@ from .simulation_steps import (
 from .state import GaussianState
 
 from piquasso._simulators.simulator import BuiltinSimulator
-from piquasso._simulators.connectors import NumpyConnector, JaxConnector
+from piquasso._simulators.connectors import NumpyConnector, JaxConnector, TorchConnector
 
 
 class GaussianSimulator(BuiltinSimulator):
@@ -80,4 +80,4 @@ class GaussianSimulator(BuiltinSimulator):
 
     _default_connector_class = NumpyConnector
 
-    _extra_builtin_connectors = [JaxConnector]
+    _extra_builtin_connectors = [JaxConnector, TorchConnector]
