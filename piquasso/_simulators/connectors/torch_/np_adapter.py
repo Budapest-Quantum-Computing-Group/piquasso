@@ -21,6 +21,26 @@ import numpy as np
 import torch
 
 
+def translate_dtype(dtype):
+
+    if dtype == np.float32:
+        return torch.float32
+
+    if dtype == np.float64:
+        return torch.float64
+
+    if dtype == np.complex64:
+        return torch.complex64
+
+    if dtype == np.complex128:
+        return torch.complex128
+
+    if dtype == np.int64:
+        return torch.int64
+
+    return dtype
+
+
 class NumpyAdapter:
     """A mock-up class implementing torch versions of the
     functions used by piquasso that can be usually found
@@ -43,6 +63,11 @@ class NumpyAdapter:
     def copy(input):
         return input.detach().clone()
 
+    @property
+    def int64(self):
+        # Not sure if this is needed. Sometimes `fallback_np` uses `np.int64`, but `torch.int64` is not recognized.
+        return np.int64
+
     @staticmethod
     def array(input, dtype=None):
         # NOTE(TR): Does it make sense? Seems a little misleading,
@@ -60,7 +85,7 @@ class NumpyAdapter:
             return torch.stack([torch.stack(row) for row in input])
         except Exception:
             # Last resort
-            return torch.tensor(input, dtype=dtype)
+            return torch.tensor(input, dtype=translate_dtype(dtype))
             raise
 
     @staticmethod
@@ -78,7 +103,12 @@ class NumpyAdapter:
     @staticmethod
     def matmul(a, b):
         # NOTE: torch.Tensors do not autocast during the multiplication.
-        dtype: torch.dtype = torch.promote_types(a.dtype, b.dtype)
+        dtype: torch.dtype = torch.promote_types(
+            translate_dtype(a.dtype), translate_dtype(b.dtype)
+        )
+
+        if isinstance(a, np.ndarray):
+            a = torch.from_numpy(a)
 
         return a.to(dtype) @ b.to(dtype)
 
@@ -89,3 +119,17 @@ class NumpyAdapter:
     @staticmethod
     def astype(input, dtype):
         return input.to(dtype)
+
+    @staticmethod
+    def zeros(*args, **kwargs):
+        if "dtype" in kwargs:
+            kwargs["dtype"] = translate_dtype(kwargs["dtype"])
+
+        if "shape" in kwargs:
+            shape = kwargs.pop("shape")
+
+            return torch.zeros(shape, **kwargs)
+        else:
+            shape = args[0]
+
+        return torch.zeros(shape, **kwargs)
