@@ -1559,3 +1559,236 @@ def test_GaussianState_get_parity_operator_expectation_value_gradient_thermal():
     gradient = jax.grad(get_parity_expectation_value)(nth)
 
     assert np.isclose(gradient, -2 / (1 + 2 * nth) ** 2)
+
+
+class TestGetPhaseshifterExpectationValue:
+    def test_vacuum(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+        simulator = pq.GaussianSimulator(d=1)
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [np.pi / 3]
+        )
+
+        assert np.isclose(phaseshifter_expectation_value, 1.0)
+
+    def test_coherent_state(self):
+        r = 0.2
+        angle = np.pi / 7
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=r, phi=np.pi / 4)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [angle]
+        )
+
+        assert np.isclose(
+            phaseshifter_expectation_value, np.exp(r**2 * (np.exp(1j * angle) - 1))
+        )
+
+    def test_squeezed_state(self):
+        r = 0.2
+        angle = np.pi / 7
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Squeezing(r=r, phi=np.pi / 4)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [angle]
+        )
+
+        assert np.isclose(
+            phaseshifter_expectation_value,
+            1 / np.sqrt(np.cosh(r) ** 2 - np.exp(1j * 2 * angle) * np.sinh(r) ** 2),
+        )
+
+    def test_thermal_state(self):
+        nth = 0.7
+        angle = np.pi / 7
+
+        with pq.Program() as program:
+            pq.Q() | pq.Thermal([nth])
+
+        simulator = pq.GaussianSimulator(d=1)
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [angle]
+        )
+
+        assert np.isclose(
+            phaseshifter_expectation_value, 1 / (1 + nth * (1 - np.exp(1j * angle)))
+        )
+
+    def test_raises_InvalidParameter_when_angles_length_is_incorrect(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+        simulator = pq.GaussianSimulator(d=2)
+        state = simulator.execute(program).state
+
+        with pytest.raises(
+            InvalidParameter, match="The specified angles should have length '2': "
+        ):
+            state.get_phaseshifter_expectation_value([np.pi / 3])
+
+    def test_vs_parity(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=0.13, phi=np.pi / 4)
+            pq.Q(0) | pq.Phaseshifter(np.pi / 5)
+            pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [np.pi]
+        )
+        parity_expectation_value = state.get_parity_operator_expectation_value()
+
+        assert np.isclose(phaseshifter_expectation_value, parity_expectation_value)
+
+    def test_vs_parity_on_multimode(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=0.13, phi=np.pi / 4)
+            pq.Q(0) | pq.Phaseshifter(np.pi / 5)
+            pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+            pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7)
+            pq.Q(1) | pq.Displacement(r=0.2, phi=np.pi / 6)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [np.pi, np.pi]
+        )
+        parity_expectation_value = state.get_parity_operator_expectation_value()
+
+        assert np.isclose(phaseshifter_expectation_value, parity_expectation_value)
+
+    def test_multimode_zero_phaseshifts(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=0.13, phi=np.pi / 4)
+            pq.Q(0) | pq.Phaseshifter(np.pi / 5)
+            pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+            pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7)
+            pq.Q(1) | pq.Displacement(r=0.2, phi=np.pi / 6)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [np.pi / 3, 0]
+        )
+
+        assert np.isclose(
+            phaseshifter_expectation_value,
+            state.reduced(modes=(0,)).get_phaseshifter_expectation_value([np.pi / 3]),
+        )
+
+    def test_multimode_all_zero_phaseshifts(self):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(r=0.13, phi=np.pi / 4)
+            pq.Q(0) | pq.Phaseshifter(np.pi / 5)
+            pq.Q(0) | pq.Squeezing(r=0.1, phi=np.pi / 3)
+
+            pq.Q(0, 1) | pq.Squeezing2(r=0.1, phi=np.pi / 3)
+            pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 7)
+            pq.Q(1) | pq.Displacement(r=0.2, phi=np.pi / 6)
+
+        simulator = pq.GaussianSimulator()
+        state = simulator.execute(program).state
+
+        phaseshifter_expectation_value = state.get_phaseshifter_expectation_value(
+            [0, 0]
+        )
+
+        assert np.isclose(phaseshifter_expectation_value, 1.0)
+
+    def test_jax_gradient(self):
+        connector = pq.JaxConnector()
+
+        @jax.jit
+        def get_phaseshifter_expectation_value(r):
+            with pq.Program() as program:
+                pq.Q() | pq.Vacuum()
+                pq.Q(0) | pq.Displacement(r=r, phi=np.pi / 4)
+
+            simulator = pq.GaussianSimulator(connector=connector)
+            state = simulator.execute(program).state
+            value = state.get_phaseshifter_expectation_value([np.pi])
+
+            return value.real, value.imag
+
+        r = 0.2
+
+        value = get_phaseshifter_expectation_value(r)
+        expected_value = np.exp(-2 * r**2)
+        gradient = jax.jacobian(get_phaseshifter_expectation_value)(r)
+        expected_gradient = -4 * r * np.exp(-2 * r**2)
+
+        assert np.allclose(value, (expected_value.real, expected_value.imag))
+        assert np.allclose(gradient, (expected_gradient.real, expected_gradient.imag))
+
+    def test_jax_gradient_by_phaseshifter_angle(self):
+        r = 0.2
+
+        connector = pq.JaxConnector()
+
+        @jax.jit
+        def get_phaseshifter_expectation_value(angle):
+            with pq.Program() as program:
+                pq.Q() | pq.Vacuum()
+                pq.Q(0) | pq.Squeezing(r=r, phi=np.pi / 4)
+
+            simulator = pq.GaussianSimulator(connector=connector)
+            state = simulator.execute(program).state
+            value = state.get_phaseshifter_expectation_value([angle])
+
+            return value.real, value.imag
+
+        angle = 0.2
+
+        actual_value = get_phaseshifter_expectation_value(angle)
+
+        expected_value = 1 / np.sqrt(
+            np.cosh(r) ** 2 - np.exp(1j * 2 * angle) * np.sinh(r) ** 2
+        )
+
+        gradient = jax.jacobian(get_phaseshifter_expectation_value)(angle)
+
+        expected_gradient = (
+            1j
+            * np.exp(1j * 2 * angle)
+            * np.sinh(r) ** 2
+            / (np.cosh(r) ** 2 - np.exp(1j * 2 * angle) * np.sinh(r) ** 2) ** (3 / 2)
+        )
+
+        assert np.allclose(actual_value, (expected_value.real, expected_value.imag))
+        assert np.allclose(gradient, (expected_gradient.real, expected_gradient.imag))
