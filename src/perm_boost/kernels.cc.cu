@@ -56,13 +56,13 @@ __device__ void atAddComplex(cuDoubleComplex *a, cuDoubleComplex b)
 template <ffi::DataType T>
 std::pair<int64_t, int64_t> get_dims(const ffi::Buffer<T> &buffer)
 {
-  auto dims = buffer.dimensions();
+  auto dims = pq_compat::buffer_dimensions(buffer);
 
   if (dims.size() == 0)
   {
     return std::make_pair(0, 0);
   }
-  return std::make_pair(buffer.element_count(), dims.back());
+  return std::make_pair(pq_compat::buffer_element_count(buffer), dims.back());
 }
 
 __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_t rows_size,
@@ -359,13 +359,15 @@ ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A,
                     ffi::ResultBuffer<ffi::DataType::C128> permanent)
 {
   auto [total_size, n] = get_dims(A);
-  size_t rows_size = rows.element_count();
-  size_t cols_size = cols.element_count();
+  size_t rows_size = static_cast<size_t>(pq_compat::buffer_element_count(rows));
+  size_t cols_size = static_cast<size_t>(pq_compat::buffer_element_count(cols));
 
-  cuDoubleComplex *A_data = reinterpret_cast<cuDoubleComplex *>(A.typed_data());
-  uint64_t *rows_data = rows.typed_data();
-  uint64_t *cols_data = cols.typed_data();
-  cuDoubleComplex *permanent_data = reinterpret_cast<cuDoubleComplex *>(permanent->typed_data());
+  cuDoubleComplex *A_data = reinterpret_cast<cuDoubleComplex *>(
+      pq_compat::buffer_data<ffi::DataType::C128>(A));
+  uint64_t *rows_data = pq_compat::buffer_data<ffi::DataType::U64>(rows);
+  uint64_t *cols_data = pq_compat::buffer_data<ffi::DataType::U64>(cols);
+  cuDoubleComplex *permanent_data = reinterpret_cast<cuDoubleComplex *>(
+      pq_compat::result_buffer_data<ffi::DataType::C128>(permanent));
 
   cudaError_t calc_err = calculatePermanent(stream, A_data, n,
                                             rows_data, rows_size,
@@ -393,17 +395,18 @@ ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> res
                        ffi::Buffer<ffi::DataType::C128> cotangent,
                        ffi::ResultBuffer<ffi::DataType::C128> ct_x)
 {
-  auto A_dims = A.dimensions();
+  auto A_dims = pq_compat::buffer_dimensions(A);
   int64_t ndim = static_cast<int64_t>(A_dims.size());
 
   if (ndim < 2)
   {
-    cudaMemsetAsync(ct_x->typed_data(), 0, sizeof(cuDoubleComplex), stream);
+    cudaMemsetAsync(pq_compat::result_buffer_data<ffi::DataType::C128>(ct_x),
+                    0, sizeof(cuDoubleComplex), stream);
     return ffi::Error::Success();
   }
 
   int64_t n = A_dims[ndim - 1];
-  int64_t batch_size = A.element_count() / (n * n);
+  int64_t batch_size = pq_compat::buffer_element_count(A) / (n * n);
 
   if (n == 0)
   {
@@ -411,11 +414,14 @@ ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> res
     return ffi::Error::Success();
   }
 
-  cuDoubleComplex *A_data = reinterpret_cast<cuDoubleComplex *>(A.typed_data());
-  cuDoubleComplex *ct_x_data = reinterpret_cast<cuDoubleComplex *>(ct_x->typed_data());
-  cuDoubleComplex *cotangent_data = reinterpret_cast<cuDoubleComplex *>(cotangent.typed_data());
-  uint64_t *rows_data = rows.typed_data();
-  uint64_t *cols_data = cols.typed_data();
+  cuDoubleComplex *A_data = reinterpret_cast<cuDoubleComplex *>(
+      pq_compat::buffer_data<ffi::DataType::C128>(A));
+  cuDoubleComplex *ct_x_data = reinterpret_cast<cuDoubleComplex *>(
+      pq_compat::result_buffer_data<ffi::DataType::C128>(ct_x));
+  cuDoubleComplex *cotangent_data = reinterpret_cast<cuDoubleComplex *>(
+      pq_compat::buffer_data<ffi::DataType::C128>(cotangent));
+  uint64_t *rows_data = pq_compat::buffer_data<ffi::DataType::U64>(rows);
+  uint64_t *cols_data = pq_compat::buffer_data<ffi::DataType::U64>(cols);
 
   cudaError_t cuda_err = cudaMemsetAsync(ct_x_data, 0, batch_size * n * n * sizeof(cuDoubleComplex), stream);
   if (cuda_err != cudaSuccess)
@@ -584,8 +590,8 @@ ffi::Error PermFwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A, 
   ffi::Error perm_err = PermImpl(stream, A, rows, cols, y);
 
   cudaError_t cuda_err = cudaMemcpyAsync(
-      reinterpret_cast<cuDoubleComplex *>(res->typed_data()),
-      reinterpret_cast<cuDoubleComplex *>(y->typed_data()),
+      reinterpret_cast<cuDoubleComplex *>(pq_compat::result_buffer_data<ffi::DataType::C128>(res)),
+      reinterpret_cast<cuDoubleComplex *>(pq_compat::result_buffer_data<ffi::DataType::C128>(y)),
       sizeof(cuDoubleComplex),
       cudaMemcpyDeviceToDevice,
       stream);
