@@ -49,7 +49,7 @@ def _ffi_call(target_name, out_type, *args):
     """
     if _ffi_call_new_api:
         return _jax_ffi.ffi_call(target_name, out_type, vmap_method="sequential")(*args)
-    return _jax_ffi.ffi_call(target_name, out_type, *args, vmap_method="sequential")
+    return _jax_ffi.ffi_call(target_name, out_type, *args)
 
 for _name, _target in _registrations().items():
     _jax_ffi.register_ffi_target(_name, _target)

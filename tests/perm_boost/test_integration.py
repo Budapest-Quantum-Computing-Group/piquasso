@@ -59,8 +59,8 @@ def test_permanent_routes_to_perm_boost_when_flag_is_set():
     mock_perm.assert_called_once()
 
 
-def test_permanent_does_not_route_to_perm_boost_by_default():
-    """When use_perm_boost is not passed, perm_boost.perm must NOT be called."""
+def test_permanent_routes_to_perm_boost_by_default():
+    """When use_perm_boost is not passed, perm_boost.perm must be called (default is True)."""
     connector = pq.JaxConnector()
 
     matrix = jnp.array(
@@ -79,7 +79,7 @@ def test_permanent_does_not_route_to_perm_boost_by_default():
     ) as mock_perm:
         connector.permanent(matrix, rows, cols)
 
-    mock_perm.assert_not_called()
+    mock_perm.assert_called_once()
 
 
 def test_perm_boost_permanent_matches_jax_permanent():
