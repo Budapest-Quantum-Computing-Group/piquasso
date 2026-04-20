@@ -1,19 +1,8 @@
-# Locate the XLA/JAX FFI include directory by querying the target Python.
-#
-# JAX is declared in [build-system].requires (pyproject.toml), so pip installs
-# it into the PEP 517 isolated venv before the build starts. Python_EXECUTABLE
-# points to that venv's Python, which has JAX in its own site-packages.
-#
-# PYTHONPATH is cleared defensively: pip may set it to point at the isolated
-# venv's package tree, which can shadow site-packages on some platforms. Clearing
-# it ensures Python_EXECUTABLE falls back to its own site-packages and finds the
-# JAX that was installed there, regardless of any external PYTHONPATH overrides.
-#
-# Two API locations are tried because JAX moved ffi to jax.extend.ffi in
-# newer releases (0.4.31+), while older releases expose it as jax.ffi.
+# Locate the XLA/JAX FFI include directory by querying the build-env Python.
+# JAX is in [build-system].requires so it is always available. Two locations
+# are tried: jax.ffi (≥ 0.6) then jax.extend.ffi (< 0.6).
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH="
-    ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
+  COMMAND ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
   OUTPUT_VARIABLE JAX_INCLUDE_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   RESULT_VARIABLE JAX_RESULT
@@ -22,8 +11,7 @@ execute_process(
 
 if(NOT JAX_RESULT EQUAL 0)
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH="
-      ${Python_EXECUTABLE} -c "import jax.extend.ffi; print(jax.extend.ffi.include_dir())"
+    COMMAND ${Python_EXECUTABLE} -c "import jax.extend.ffi; print(jax.extend.ffi.include_dir())"
     OUTPUT_VARIABLE JAX_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULT_VARIABLE JAX_RESULT

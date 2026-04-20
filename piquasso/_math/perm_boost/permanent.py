@@ -19,14 +19,31 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-try:
-    _jax_ffi = jax.ffi
-except AttributeError:
-    import jax.extend.ffi as _jax_ffi
-
 from ._perm_boost_core import registrations as _registrations
 
 jax.config.update("jax_enable_x64", True)
+
+try:
+    _jax_ffi = jax.ffi
+    _ffi_call_new_api = True   # jax.ffi era: ffi_call(name, out)(args)
+except AttributeError:
+    import jax.extend.ffi as _jax_ffi
+    _ffi_call_new_api = False  # jax.extend.ffi era: ffi_call(name, out, args)
+
+
+def _ffi_call(target_name, out_type, *args):
+    """Compatibility shim for the ffi_call API change between JAX versions.
+
+    jax.extend.ffi (< 0.6): ffi_call(name, out_type, *args) → result
+    jax.ffi        (>= 0.6): ffi_call(name, out_type)(*args) → result
+
+    vmap_method="sequential" is required on JAX >= 0.10 when the function is
+    traced under vmap (e.g. via jax.jacobian); without it JAX raises
+    NotImplementedError at trace time.
+    """
+    if _ffi_call_new_api:
+        return _jax_ffi.ffi_call(target_name, out_type, vmap_method="sequential")(*args)
+    return _jax_ffi.ffi_call(target_name, out_type, *args, vmap_method="sequential")
 
 for _name, _target in _registrations().items():
     _jax_ffi.register_ffi_target(_name, _target)
@@ -69,25 +86,16 @@ def perm(A, rows, cols):
     out_type = jax.ShapeDtypeStruct((), A.dtype)
 
     def impl(target_name):
-        return lambda: _jax_ffi.ffi_call(
-            target_name,
-            out_type,
-            A, rows, cols,
-        )
+        return lambda: _ffi_call(target_name, out_type, A, rows, cols)
 
     return jax.lax.platform_dependent(cpu=impl("perm"), cuda=impl("dperm"))
 
 
 def _perm_fwd(A, rows, cols):
+    out_type = (jax.ShapeDtypeStruct((), A.dtype), jax.ShapeDtypeStruct((), A.dtype))
+
     def impl(target_name):
-        return lambda: _jax_ffi.ffi_call(
-            target_name,
-            (
-                jax.ShapeDtypeStruct((), A.dtype),
-                jax.ShapeDtypeStruct((), A.dtype),
-            ),
-            A, rows, cols,
-        )
+        return lambda: _ffi_call(target_name, out_type, A, rows, cols)
 
     y, res = jax.lax.platform_dependent(
         cpu=impl("perm_fwd"), cuda=impl("dperm_fwd")
@@ -100,7 +108,7 @@ def _perm_bwd(res, ct):
 
     def impl(target_name):
         return lambda: (
-            _jax_ffi.ffi_call(
+            _ffi_call(
                 target_name,
                 jax.ShapeDtypeStruct(A.shape, A.dtype),
                 res, A, rows, cols, ct,
