@@ -13,27 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
-from pytest_lazy_fixtures import lf
-
 import numpy as np
+import pytest
+from jax import grad
+from pytest_lazy_fixtures import lf
 from scipy.stats import unitary_group
 
 import piquasso as pq
-
-from jax import grad
-
 from piquasso.decompositions.clements import (
     clements,
-    inverse_clements,
-    get_weights_from_decomposition,
     get_decomposition_from_weights,
-    get_weights_from_interferometer,
     get_interferometer_from_weights,
+    get_weights_from_decomposition,
+    get_weights_from_interferometer,
     instructions_from_decomposition,
+    inverse_clements,
 )
-
 
 pytestmark = pytest.mark.monkey
 
@@ -263,11 +258,17 @@ def test_instructions_from_decomposition_using_piquasso_GaussianSimulator_random
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector",
+    (
+        pq.NumpyConnector(),
+        lf("tensorflow_connector"),
+        pq.JaxConnector(),
+        pq.TorchConnector(),
+    ),
 )
 def test_clements_decomposition_roundtrip(connector, dummy_unitary):
     d = 5
-    U = dummy_unitary(d)
+    U = connector.np.array(dummy_unitary(d))
 
     decomposition = clements(U, connector)
 
@@ -277,11 +278,17 @@ def test_clements_decomposition_roundtrip(connector, dummy_unitary):
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector",
+    (
+        pq.NumpyConnector(),
+        lf("tensorflow_connector"),
+        pq.JaxConnector(),
+        pq.TorchConnector(),
+    ),
 )
 def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary):
     d = 6
-    U = dummy_unitary(d)
+    U = connector.np.array(dummy_unitary(d))
 
     decomposition = clements(U, connector)
 
@@ -297,7 +304,13 @@ def test_clements_decomposition_roundtrip_with_weights(connector, dummy_unitary)
 
 
 @pytest.mark.parametrize(
-    "connector", (pq.NumpyConnector(), lf("tensorflow_connector"), pq.JaxConnector())
+    "connector",
+    (
+        pq.NumpyConnector(),
+        lf("tensorflow_connector"),
+        pq.JaxConnector(),
+        pq.TorchConnector(),
+    ),
 )
 def test_weigths_to_interferometer_roundtrip(connector, dummy_unitary):
     d = 6

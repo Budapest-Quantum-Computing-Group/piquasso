@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 
 for_all_connectors = pytest.mark.parametrize(
-    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+    "connector", [pq.NumpyConnector(), pq.JaxConnector(), pq.TorchConnector()]
 )
 
 
@@ -149,7 +149,7 @@ def test_Interferometer_subsystem_equivalence(connector, generate_unitary_matrix
 def test_Interferometer_nonconsecutive_ordering_raises_InvalidParameter(connector):
     d = 3
 
-    self_adjoint = np.array(
+    self_adjoint = connector.np.array(
         [
             [1, 2j, 3 + 4j],
             [-2j, 2, 5],

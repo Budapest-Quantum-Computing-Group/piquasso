@@ -25,7 +25,7 @@ from .simulation_steps import (
 )
 
 from piquasso._simulators.simulator import BuiltinSimulator
-from piquasso._simulators.connectors import NumpyConnector, JaxConnector
+from piquasso._simulators.connectors import NumpyConnector, JaxConnector, TorchConnector
 from piquasso.fermionic.instructions import ControlledPhase, IsingXX
 
 
@@ -73,4 +73,4 @@ class PureFockSimulator(BuiltinSimulator):
 
     _default_connector_class = NumpyConnector
 
-    _extra_builtin_connectors = [JaxConnector]
+    _extra_builtin_connectors = [JaxConnector, TorchConnector]
