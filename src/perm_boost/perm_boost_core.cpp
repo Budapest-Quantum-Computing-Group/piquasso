@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+/*
+ * Portions of this file are based on work by Bence Soóki-Tóth, used with
+ * permission and originally made available under the MIT License.
+ *
+ * Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
+ * in photonic quantum computing simulations", Eötvös Loránd University, 2025.
+ */
+
 #include "../matrix.hpp"
 #include "../permanent.hpp"
 #include "xla/ffi/api/c_api.h"

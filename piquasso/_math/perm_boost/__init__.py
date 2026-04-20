@@ -12,6 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Portions of this file are based on work by Bence Soóki-Tóth, used with
+# permission and originally made available under the MIT License.
+#
+# Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
+# in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
 from ._perm_boost_core import registrations
 
