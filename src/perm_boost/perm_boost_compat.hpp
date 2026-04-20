@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Portions of this file are based on work by Bence Soóki-Tóth, used with
- * permission and originally made available under the MIT License.
- *
- * Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
- * in photonic quantum computing simulations", Eötvös Loránd University, 2025.
- */
-
 // Compatibility helpers bridging the old (jaxlib ≤ 0.4.30) and new (jaxlib ≥ 0.4.31)
 // XLA FFI Buffer API.
 //
@@ -33,104 +25,50 @@
 //   NativeType<T>*  typed_data() const;
 //   Dimensions      dimensions() const;
 //   size_t          element_count() const;
+//
+// Detection technique: two overloads accept (buf, int) and (buf, long).
+// Calling with literal 0 (an int) prefers the first; if its decltype return
+// is invalid (SFINAE), the compiler falls back to the second.
 
 #pragma once
 
 #include "xla/ffi/api/ffi.h"
-#include <type_traits>
 #include <cstdint>
 
 namespace pq_compat {
 
 namespace ffi = xla::ffi;
+namespace detail {
 
-// ---------------------------------------------------------------------------
-// buffer_data<dtype>(buf)  →  NativeType<dtype>*
-// ---------------------------------------------------------------------------
+// typed_data() (new) vs .data member (old)
+template<typename B> auto data(const B& b, int)  -> decltype(b.typed_data()) { return b.typed_data(); }
+template<typename B> auto data(const B& b, long)                              { return b.data; }
 
-// Primary template: old API — buf.data is a public typed pointer.
-template <ffi::DataType dtype, typename = void>
-struct BufferDataAccess {
-    static ffi::NativeType<dtype>* get(const ffi::Buffer<dtype>& buf) {
-        return buf.data;
-    }
-};
+// dimensions() method (new) vs .dimensions member (old)
+template<typename B> auto dims(const B& b, int)  -> decltype(b.dimensions())  { return b.dimensions(); }
+template<typename B> auto dims(const B& b, long)                               { return b.dimensions; }
 
-// Specialisation: new API — typed_data() method exists.
-template <ffi::DataType dtype>
-struct BufferDataAccess<dtype,
-    std::void_t<decltype(std::declval<ffi::Buffer<dtype>>().typed_data())>> {
-    static ffi::NativeType<dtype>* get(const ffi::Buffer<dtype>& buf) {
-        return buf.typed_data();
-    }
-};
-
-template <ffi::DataType dtype>
-inline ffi::NativeType<dtype>* buffer_data(const ffi::Buffer<dtype>& buf) {
-    return BufferDataAccess<dtype>::get(buf);
+// element_count() method (new) vs product of .dimensions (old)
+template<typename B> auto   count(const B& b, int)  -> decltype(b.element_count()) { return static_cast<int64_t>(b.element_count()); }
+template<typename B> int64_t count(const B& b, long) {
+    int64_t n = 1;
+    for (int64_t d : b.dimensions) n *= d;
+    return n;
 }
 
-// Convenience for ResultBuffer: Result<Buffer<dtype>> has operator*().
-template <ffi::DataType dtype>
-inline ffi::NativeType<dtype>* result_buffer_data(ffi::ResultBuffer<dtype>& r) {
-    return buffer_data<dtype>(*r);
-}
+} // namespace detail
 
-// ---------------------------------------------------------------------------
-// buffer_dimensions(buf)  →  span-like over const int64_t
-// ---------------------------------------------------------------------------
+template<ffi::DataType dtype>
+auto buffer_data(const ffi::Buffer<dtype>& buf) { return detail::data(buf, 0); }
 
-// Primary template: old API — buf.dimensions is a public Span<const int64_t>.
-template <ffi::DataType dtype, typename = void>
-struct BufferDimsAccess {
-    static auto get(const ffi::Buffer<dtype>& buf)
-        -> decltype(buf.dimensions) {
-        return buf.dimensions;
-    }
-};
+template<ffi::DataType dtype>
+auto buffer_dimensions(const ffi::Buffer<dtype>& buf) { return detail::dims(buf, 0); }
 
-// Specialisation: new API — dimensions() method exists.
-template <ffi::DataType dtype>
-struct BufferDimsAccess<dtype,
-    std::void_t<decltype(std::declval<ffi::Buffer<dtype>>().dimensions())>> {
-    static auto get(const ffi::Buffer<dtype>& buf)
-        -> decltype(buf.dimensions()) {
-        return buf.dimensions();
-    }
-};
+template<ffi::DataType dtype>
+int64_t buffer_element_count(const ffi::Buffer<dtype>& buf) { return detail::count(buf, 0); }
 
-template <ffi::DataType dtype>
-inline auto buffer_dimensions(const ffi::Buffer<dtype>& buf) {
-    return BufferDimsAccess<dtype>::get(buf);
-}
-
-// ---------------------------------------------------------------------------
-// buffer_element_count(buf)  →  int64_t
-// ---------------------------------------------------------------------------
-
-// Primary template: old API — no element_count(); compute from dimensions.
-template <ffi::DataType dtype, typename = void>
-struct BufferElementCountAccess {
-    static int64_t get(const ffi::Buffer<dtype>& buf) {
-        int64_t count = 1;
-        for (int64_t d : buf.dimensions) { count *= d; }
-        return count;
-    }
-};
-
-// Specialisation: new API — element_count() method exists.
-template <ffi::DataType dtype>
-struct BufferElementCountAccess<dtype,
-    std::void_t<decltype(static_cast<int64_t>(
-        std::declval<ffi::Buffer<dtype>>().element_count()))>> {
-    static int64_t get(const ffi::Buffer<dtype>& buf) {
-        return static_cast<int64_t>(buf.element_count());
-    }
-};
-
-template <ffi::DataType dtype>
-inline int64_t buffer_element_count(const ffi::Buffer<dtype>& buf) {
-    return BufferElementCountAccess<dtype>::get(buf);
-}
+// Result<Buffer<dtype>> has operator*() in both APIs.
+template<ffi::DataType dtype>
+auto result_buffer_data(ffi::ResultBuffer<dtype>& r) { return buffer_data<dtype>(*r); }
 
 } // namespace pq_compat
