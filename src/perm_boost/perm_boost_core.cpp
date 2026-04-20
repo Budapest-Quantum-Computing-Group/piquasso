@@ -53,15 +53,15 @@ std::pair<int64_t, int64_t> get_dims(const ffi::Buffer<T> &buffer)
   return std::make_pair(buffer.element_count(), dims.back());
 }
 
-ffi::Error PermanentImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
-                         ffi::Buffer<ffi::U64> cols,
-                         ffi::ResultBuffer<ffi::C128> y)
+ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::DataType::U64> rows,
+                         ffi::Buffer<ffi::DataType::U64> cols,
+                         ffi::ResultBuffer<ffi::DataType::C128> y)
 {
   auto [total_size, n] = get_dims(A);
 
   if (n == 0)
   {
-    return ffi::Error::InvalidArgument("Perm input must be a matrix");
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Perm input must be a matrix");
   }
   std::vector<int> row_mult(&(rows.typed_data()[0]),
                             &(rows.typed_data()[0]) + total_size / n);
@@ -79,20 +79,20 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Permanent, PermanentImpl,
                               ffi::Ffi::Bind()
-                                  .Arg<ffi::Buffer<ffi::C128>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>());
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>());
 
-ffi::Error PermFwdImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
-                       ffi::Buffer<ffi::U64> cols,
-                       ffi::ResultBuffer<ffi::C128> y,
-                       ffi::ResultBuffer<ffi::C128> res)
+ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::DataType::U64> rows,
+                       ffi::Buffer<ffi::DataType::U64> cols,
+                       ffi::ResultBuffer<ffi::DataType::C128> y,
+                       ffi::ResultBuffer<ffi::DataType::C128> res)
 {
   auto [total_size, n] = get_dims(A);
   if (n == 0)
   {
-    return ffi::Error::InvalidArgument("Permanent input must be a matrix");
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Permanent input must be a matrix");
   }
 
   std::vector<int> row_mult(rows.typed_data(), rows.typed_data() + total_size / n);
@@ -115,11 +115,11 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermFwd, PermFwdImpl,
                               ffi::Ffi::Bind()
-                                  .Arg<ffi::Buffer<ffi::C128>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>());
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>());
 
 void ComputePermBwd(Matrix<std::complex<double>> &A,
                     std::vector<int> &rows, std::vector<int> &cols,
@@ -139,17 +139,17 @@ void ComputePermBwd(Matrix<std::complex<double>> &A,
   }
 }
 
-ffi::Error PermBwdImpl(ffi::Buffer<ffi::C128> res, ffi::Buffer<ffi::C128> A,
-                       ffi::Buffer<ffi::U64> rows, ffi::Buffer<ffi::U64> cols,
-                       ffi::Buffer<ffi::C128> cotangent,
-                       ffi::ResultBuffer<ffi::C128> ct_x)
+ffi::Error PermBwdImpl(ffi::Buffer<ffi::DataType::C128> res, ffi::Buffer<ffi::DataType::C128> A,
+                       ffi::Buffer<ffi::DataType::U64> rows, ffi::Buffer<ffi::DataType::U64> cols,
+                       ffi::Buffer<ffi::DataType::C128> cotangent,
+                       ffi::ResultBuffer<ffi::DataType::C128> ct_x)
 {
   auto A_dims = A.dimensions();
   int64_t ndim = static_cast<int64_t>(A_dims.size());
 
   if (ndim < 2)
   {
-    return ffi::Error::InvalidArgument("PermBwd: A must be at least 2D");
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument, "PermBwd: A must be at least 2D");
   }
 
   int64_t n_cols = A_dims[ndim - 1];
@@ -184,12 +184,12 @@ ffi::Error PermBwdImpl(ffi::Buffer<ffi::C128> res, ffi::Buffer<ffi::C128> A,
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermBwd, PermBwdImpl,
                               ffi::Ffi::Bind()
-                                  .Arg<ffi::Buffer<ffi::C128>>() // res
-                                  .Arg<ffi::Buffer<ffi::C128>>() // A
-                                  .Arg<ffi::Buffer<ffi::U64>>()  // rows
-                                  .Arg<ffi::Buffer<ffi::U64>>()  // cols
-                                  .Arg<ffi::Buffer<ffi::C128>>() // cotangent
-                                  .Ret<ffi::Buffer<ffi::C128>>() // ct_x
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>() // res
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>() // A
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()  // rows
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()  // cols
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>() // cotangent
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>() // ct_x
 );
 
 template <typename T>

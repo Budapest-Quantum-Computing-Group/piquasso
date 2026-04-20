@@ -30,31 +30,31 @@ namespace py = pybind11;
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Perm, PermImpl,
                               ffi::Ffi::Bind()
                                   .Ctx<ffi::PlatformStream<cudaStream_t>>() // stream
-                                  .Arg<ffi::Buffer<ffi::C128>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>(),
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),
                               {xla::ffi::Traits::kCmdBufferCompatible}); // cudaGraph enabled
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermFwd, PermFwdImpl,
                               ffi::Ffi::Bind()
                                   .Ctx<ffi::PlatformStream<cudaStream_t>>() // stream
-                                  .Arg<ffi::Buffer<ffi::C128>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Arg<ffi::Buffer<ffi::U64>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>()
-                                  .Ret<ffi::Buffer<ffi::C128>>(),
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>()
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),
                               {xla::ffi::Traits::kCmdBufferCompatible}); // cudaGraph enabled
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermBwd, PermBwdImpl,
                               ffi::Ffi::Bind()
                                   .Ctx<ffi::PlatformStream<cudaStream_t>>() // stream
-                                  .Arg<ffi::Buffer<ffi::C128>>()            // res
-                                  .Arg<ffi::Buffer<ffi::C128>>()            // A
-                                  .Arg<ffi::Buffer<ffi::U64>>()             // rows
-                                  .Arg<ffi::Buffer<ffi::U64>>()             // cols
-                                  .Arg<ffi::Buffer<ffi::C128>>()            // cotangent
-                                  .Ret<ffi::Buffer<ffi::C128>>(),           // ct_x
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // res
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // A
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()             // rows
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()             // cols
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // cotangent
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),           // ct_x
                               {xla::ffi::Traits::kCmdBufferCompatible});    // cudaGraph enabled
 
 template <typename T>

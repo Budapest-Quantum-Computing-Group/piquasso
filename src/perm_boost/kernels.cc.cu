@@ -353,10 +353,10 @@ cudaError_t calculatePermanent(cudaStream_t stream,
   return cudaSuccess;
 }
 
-ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> A,
-                    ffi::Buffer<ffi::U64> rows,
-                    ffi::Buffer<ffi::U64> cols,
-                    ffi::ResultBuffer<ffi::C128> permanent)
+ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A,
+                    ffi::Buffer<ffi::DataType::U64> rows,
+                    ffi::Buffer<ffi::DataType::U64> cols,
+                    ffi::ResultBuffer<ffi::DataType::C128> permanent)
 {
   auto [total_size, n] = get_dims(A);
   size_t rows_size = rows.element_count();
@@ -378,7 +378,7 @@ ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> A,
   }
   else if (calc_err == cudaErrorInvalidValue)
   {
-    return ffi::Error::InvalidArgument(std::string("Invalid input detected during permanent calculation: ") + cudaGetErrorString(calc_err));
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument, std::string("Invalid input detected during permanent calculation: ") + cudaGetErrorString(calc_err));
   }
   else
   {
@@ -386,12 +386,12 @@ ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> A,
   }
 }
 
-ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> res_grad,
-                       ffi::Buffer<ffi::C128> A,
-                       ffi::Buffer<ffi::U64> rows,
-                       ffi::Buffer<ffi::U64> cols,
-                       ffi::Buffer<ffi::C128> cotangent,
-                       ffi::ResultBuffer<ffi::C128> ct_x)
+ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> res_grad,
+                       ffi::Buffer<ffi::DataType::C128> A,
+                       ffi::Buffer<ffi::DataType::U64> rows,
+                       ffi::Buffer<ffi::DataType::U64> cols,
+                       ffi::Buffer<ffi::DataType::C128> cotangent,
+                       ffi::ResultBuffer<ffi::DataType::C128> ct_x)
 {
   auto A_dims = A.dimensions();
   int64_t ndim = static_cast<int64_t>(A_dims.size());
@@ -534,7 +534,7 @@ ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> res_grad,
           cudaFree(d_grad_cols);
           cudaFree(d_entry_result);
           if (sub_perm_cuda_err == cudaErrorInvalidValue)
-            return ffi::Error::InvalidArgument(std::string("Invalid input during sub-permanent calculation: ") + cudaGetErrorString(sub_perm_cuda_err));
+            return ffi::Error(ffi::ErrorCode::kInvalidArgument, std::string("Invalid input during sub-permanent calculation: ") + cudaGetErrorString(sub_perm_cuda_err));
           else
             return ffi::Error::Internal(std::string("CUDA error during sub-permanent calculation: ") + cudaGetErrorString(sub_perm_cuda_err));
         }
@@ -576,10 +576,10 @@ ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> res_grad,
   return ffi::Error::Success();
 }
 
-ffi::Error PermFwdImpl(cudaStream_t stream, ffi::Buffer<ffi::C128> A, ffi::Buffer<ffi::U64> rows,
-                       ffi::Buffer<ffi::U64> cols,
-                       ffi::ResultBuffer<ffi::C128> y,
-                       ffi::ResultBuffer<ffi::C128> res)
+ffi::Error PermFwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::DataType::U64> rows,
+                       ffi::Buffer<ffi::DataType::U64> cols,
+                       ffi::ResultBuffer<ffi::DataType::C128> y,
+                       ffi::ResultBuffer<ffi::DataType::C128> res)
 {
   ffi::Error perm_err = PermImpl(stream, A, rows, cols, y);
 
