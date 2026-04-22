@@ -47,11 +47,11 @@ target_compile_definitions(_perm_boost_core PRIVATE
 # permanent.hpp uses __int128 (GCC extension) and #pragma omp — suppress pedantic
 # and unknown-pragma warnings that Piquasso's global flags would otherwise error on
 target_compile_options(_perm_boost_core PRIVATE
-    -Wno-pedantic
-    -Wno-unknown-pragmas
-    -Wno-unused-variable
-    -Wno-unused-parameter
-    -Wno-sign-compare
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-pedantic>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unknown-pragmas>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-variable>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-sign-compare>
 )
 
 if(APPLE)

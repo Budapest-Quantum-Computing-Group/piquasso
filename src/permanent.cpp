@@ -271,7 +271,7 @@ template std::complex<double> permanent_cpp<double>(
 Matrix<std::complex<double>> grad_perm(
     Matrix<std::complex<double>> &A, Vector<int> &rows, Vector<int> &cols)
 {
-    int n = rows.size();
+    int n = static_cast<int>(rows.size());
 
     Matrix<std::complex<double>> perm_grad(n, n);
 
