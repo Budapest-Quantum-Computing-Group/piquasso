@@ -104,7 +104,8 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
           # pp*: Disable building PyPy wheels on all platforms
           # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
-          CIBW_SKIP: pp* cp314t-win*
+          # *-win32: JAX (build dep for XLA FFI headers) doesn't support 32-bit Windows
+          CIBW_SKIP: pp* cp314t-win* *-win32
           CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4
