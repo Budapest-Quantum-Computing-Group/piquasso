@@ -27,6 +27,7 @@
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/ffi.h"
 #include "perm_boost_compat.hpp"
+#include <algorithm>
 #include <complex>
 #include <cstdint>
 #include <vector>
@@ -64,10 +65,14 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Da
   {
     return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Perm input must be a matrix");
   }
-  std::vector<int> row_mult(pq_compat::buffer_data<ffi::DataType::U64>(rows),
-                            pq_compat::buffer_data<ffi::DataType::U64>(rows) + total_size / n);
-  std::vector<int> col_mult(pq_compat::buffer_data<ffi::DataType::U64>(cols),
-                            pq_compat::buffer_data<ffi::DataType::U64>(cols) + n);
+  auto* rows_raw = pq_compat::buffer_data<ffi::DataType::U64>(rows);
+  auto* cols_raw = pq_compat::buffer_data<ffi::DataType::U64>(cols);
+  std::vector<int> row_mult(total_size / n);
+  std::transform(rows_raw, rows_raw + total_size / n, row_mult.begin(),
+                 [](uint64_t v) { return static_cast<int>(v); });
+  std::vector<int> col_mult(n);
+  std::transform(cols_raw, cols_raw + n, col_mult.begin(),
+                 [](uint64_t v) { return static_cast<int>(v); });
 
   Matrix<std::complex<double>> matrix(total_size / n, n,
                                       pq_compat::buffer_data<ffi::DataType::C128>(A));
@@ -102,8 +107,12 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Data
   auto* cols_ptr = pq_compat::buffer_data<ffi::DataType::U64>(cols);
   auto* A_ptr    = pq_compat::buffer_data<ffi::DataType::C128>(A);
 
-  std::vector<int> row_mult(rows_ptr, rows_ptr + total_size / n);
-  std::vector<int> col_mult(cols_ptr, cols_ptr + n);
+  std::vector<int> row_mult(total_size / n);
+  std::transform(rows_ptr, rows_ptr + total_size / n, row_mult.begin(),
+                 [](uint64_t v) { return static_cast<int>(v); });
+  std::vector<int> col_mult(n);
+  std::transform(cols_ptr, cols_ptr + n, col_mult.begin(),
+                 [](uint64_t v) { return static_cast<int>(v); });
 
   Matrix<std::complex<double>> matrix(total_size / n, n, A_ptr);
   Vector<int> row_vec(row_mult.size(), row_mult.data());
@@ -148,7 +157,7 @@ void ComputePermBwd(Matrix<std::complex<double>> &A,
   }
 }
 
-ffi::Error PermBwdImpl(ffi::Buffer<ffi::DataType::C128> res, ffi::Buffer<ffi::DataType::C128> A,
+ffi::Error PermBwdImpl([[maybe_unused]] ffi::Buffer<ffi::DataType::C128> res, ffi::Buffer<ffi::DataType::C128> A,
                        ffi::Buffer<ffi::DataType::U64> rows, ffi::Buffer<ffi::DataType::U64> cols,
                        ffi::Buffer<ffi::DataType::C128> cotangent,
                        ffi::ResultBuffer<ffi::DataType::C128> ct_x)
@@ -176,14 +185,16 @@ ffi::Error PermBwdImpl(ffi::Buffer<ffi::DataType::C128> res, ffi::Buffer<ffi::Da
 #else
   const int64_t max_threads = 1;
 #endif
-  int64_t n_threads = std::min(max_threads, batch_size);
+  int n_threads = static_cast<int>(std::min(max_threads, batch_size));
 #pragma omp parallel for num_threads(n_threads)
   for (int64_t b = 0; b < batch_size; ++b)
   {
-    std::vector<int> row_mult(rows_ptr + b * n_rows,
-                              rows_ptr + (b + 1) * n_rows);
-    std::vector<int> col_mult(cols_ptr + b * n_cols,
-                              cols_ptr + (b + 1) * n_cols);
+    std::vector<int> row_mult(n_rows);
+    std::transform(rows_ptr + b * n_rows, rows_ptr + (b + 1) * n_rows, row_mult.begin(),
+                   [](uint64_t v) { return static_cast<int>(v); });
+    std::vector<int> col_mult(n_cols);
+    std::transform(cols_ptr + b * n_cols, cols_ptr + (b + 1) * n_cols, col_mult.begin(),
+                   [](uint64_t v) { return static_cast<int>(v); });
 
     Matrix<std::complex<double>> matrix(n_rows, n_cols,
         A_ptr + b * n_rows * n_cols);

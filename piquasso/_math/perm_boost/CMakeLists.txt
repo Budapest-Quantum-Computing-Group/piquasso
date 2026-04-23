@@ -52,6 +52,10 @@ target_compile_options(_perm_boost_core PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-variable>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-sign-compare>
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4002>
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4003>
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4456>
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4715>
 )
 
 if(APPLE)
