@@ -79,3 +79,4 @@ benchmark = [
 [tool.scikit-build]
 cmake.verbose = true
 logging.level = "INFO"
+sdist.exclude = [".github", ".claude"]
