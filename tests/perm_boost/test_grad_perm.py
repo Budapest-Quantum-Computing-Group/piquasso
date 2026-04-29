@@ -30,6 +30,7 @@ def perm_wrapper(permanent_func):
     def wrapper(primal, rows, cols):
         res = permanent_func(primal, rows, cols)
         return res.real, res.imag
+
     return wrapper
 
 
@@ -52,7 +53,9 @@ def test_grad_perm_trivial_case():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(matrix, rows, cols)
 
-    matrix, rows, cols = jax.numpy.array(matrix), jax.numpy.array(rows), jax.numpy.array(cols)
+    matrix = jax.numpy.array(matrix)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(matrix, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -68,7 +71,9 @@ def test_grad_perm_identity():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(matrix, rows, cols)
 
-    matrix, rows, cols = jax.numpy.array(matrix), jax.numpy.array(rows), jax.numpy.array(cols)
+    matrix = jax.numpy.array(matrix)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(matrix, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -84,7 +89,9 @@ def test_grad_perm_single_entry():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(matrix, rows, cols)
 
-    matrix, rows, cols = jax.numpy.array(matrix), jax.numpy.array(rows), jax.numpy.array(cols)
+    matrix = jax.numpy.array(matrix)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(matrix, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -100,7 +107,9 @@ def test_grad_perm_zero_matrix():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(matrix, rows, cols)
 
-    matrix, rows, cols = jax.numpy.array(matrix), jax.numpy.array(rows), jax.numpy.array(cols)
+    matrix = jax.numpy.array(matrix)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(matrix, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -116,7 +125,9 @@ def test_grad_perm_all_ones():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(matrix, rows, cols)
 
-    matrix, rows, cols = jax.numpy.array(matrix), jax.numpy.array(rows), jax.numpy.array(cols)
+    matrix = jax.numpy.array(matrix)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(matrix, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -271,8 +282,12 @@ def test_grad_perm_no_repetition():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(interferometer, input, output)
 
-    interferometer, input, output = jax.numpy.array(interferometer), jax.numpy.array(input), jax.numpy.array(output)
-    expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(interferometer, input, output)
+    interferometer = jax.numpy.array(interferometer)
+    input = jax.numpy.array(input)
+    output = jax.numpy.array(output)
+    expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(
+        interferometer, input, output
+    )
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
 
@@ -336,7 +351,9 @@ def test_grad_perm_4_by_4():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(unitary, rows, cols)
 
-    unitary, rows, cols = jax.numpy.array(unitary), jax.numpy.array(rows), jax.numpy.array(cols)
+    unitary = jax.numpy.array(unitary)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
     expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(unitary, rows, cols)
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
@@ -459,15 +476,19 @@ def test_grad_perm_6_by_6():
     # of the real and imaginary parts separately
     jacobian = jax.jacobian(perm_wrapper(perm))(interferometer, rows, cols)
 
-    interferometer, rows, cols = jax.numpy.array(interferometer), jax.numpy.array(rows), jax.numpy.array(cols)
-    expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(interferometer, rows, cols)
+    interferometer = jax.numpy.array(interferometer)
+    rows = jax.numpy.array(rows)
+    cols = jax.numpy.array(cols)
+    expected = jax.jacobian(perm_wrapper(permanent_with_reduction))(
+        interferometer, rows, cols
+    )
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
 
 
 def test_jacobian_no_holomorphic():
     mat = jax.numpy.array(
-        [[0.5 + 0.j, -0.8660254 + 0.j], [0.8660254 + 0.j, 0.5 + 0.j]],
+        [[0.5 + 0.0j, -0.8660254 + 0.0j], [0.8660254 + 0.0j, 0.5 + 0.0j]],
         dtype=jax.numpy.complex128,
     )
 
@@ -476,8 +497,12 @@ def test_jacobian_no_holomorphic():
 
     jacobian = jax.jacobian(perm_wrapper(perm))(mat, rows, cols)
 
-    real_expected = np.array([[2. + 0.j, 0. + 0.j], [0. + 0.j, 0. + 0.j]], dtype=np.complex128)
+    real_expected = np.array(
+        [[2.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 0.0 + 0.0j]], dtype=np.complex128
+    )
     assert np.allclose(jacobian[0], real_expected)
 
-    imag_expected = np.array([[0. - 2.j, 0. + 0.j], [0. + 0.j, 0. + 0.j]], dtype=np.complex128)
+    imag_expected = np.array(
+        [[0.0 - 2.0j, 0.0 + 0.0j], [0.0 + 0.0j, 0.0 + 0.0j]], dtype=np.complex128
+    )
     assert np.allclose(jacobian[1], imag_expected)

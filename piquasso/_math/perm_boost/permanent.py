@@ -30,10 +30,11 @@ from ._perm_boost_core import registrations as _registrations
 jax.config.update("jax_enable_x64", True)
 
 try:
-    _jax_ffi = jax.ffi
-    _ffi_call_new_api = True   # jax.ffi era: ffi_call(name, out)(args)
+    _jax_ffi = jax.ffi  # type: ignore[attr-defined]
+    _ffi_call_new_api = True  # jax.ffi era: ffi_call(name, out)(args)
 except AttributeError:
-    import jax.extend.ffi as _jax_ffi
+    import jax.extend.ffi as _jax_ffi  # type: ignore[no-redef]
+
     _ffi_call_new_api = False  # jax.extend.ffi era: ffi_call(name, out, args)
 
 
@@ -51,13 +52,15 @@ def _ffi_call(target_name, out_type, *args):
         return _jax_ffi.ffi_call(target_name, out_type, vmap_method="sequential")(*args)
     return _jax_ffi.ffi_call(target_name, out_type, *args)
 
+
 for _name, _target in _registrations().items():
     _jax_ffi.register_ffi_target(_name, _target)
 
 _gpu = False
 
 try:
-    from . import _perm_boost_gpu_ops as _gpu_ops
+    from . import _perm_boost_gpu_ops as _gpu_ops  # type: ignore[attr-defined]
+
     _gpu_targets = _gpu_ops.registrations()
     for _name, _target in _gpu_targets.items():
         _jax_ffi.register_ffi_target(_name, _target, platform="CUDA")
@@ -81,9 +84,7 @@ def perm(A, rows, cols):
     total_out = int(cols.sum())
 
     if total_in != total_out:
-        raise ValueError(
-            f"perm: sum(rows)={total_in} must equal sum(cols)={total_out}"
-        )
+        raise ValueError(f"perm: sum(rows)={total_in} must equal sum(cols)={total_out}")
     if A.dtype != jnp.complex128:
         raise ValueError("perm: A.dtype must be complex128")
     if total_in == 0 and total_out == 0:
@@ -103,9 +104,7 @@ def _perm_fwd(A, rows, cols):
     def impl(target_name):
         return lambda: _ffi_call(target_name, out_type, A, rows, cols)
 
-    y, res = jax.lax.platform_dependent(
-        cpu=impl("perm_fwd"), cuda=impl("dperm_fwd")
-    )
+    y, res = jax.lax.platform_dependent(cpu=impl("perm_fwd"), cuda=impl("dperm_fwd"))
     return y, (res, A, rows, cols)
 
 
@@ -117,15 +116,17 @@ def _perm_bwd(res, ct):
             _ffi_call(
                 target_name,
                 jax.ShapeDtypeStruct(A.shape, A.dtype),
-                res, A, rows, cols, ct,
+                res,
+                A,
+                rows,
+                cols,
+                ct,
             ),
             None,
             None,
         )
 
-    return jax.lax.platform_dependent(
-        cpu=impl("perm_bwd"), cuda=impl("dperm_bwd")
-    )
+    return jax.lax.platform_dependent(cpu=impl("perm_bwd"), cuda=impl("dperm_bwd"))
 
 
 perm.defvjp(_perm_fwd, _perm_bwd)

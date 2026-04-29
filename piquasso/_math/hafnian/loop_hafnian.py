@@ -16,8 +16,6 @@
 import numba as nb
 import numpy as np
 
-from numba import complex128, int64
-
 from piquasso._math.combinatorics import comb
 
 from .powtrace import calculate_power_traces_loop

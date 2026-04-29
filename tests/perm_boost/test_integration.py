@@ -19,13 +19,11 @@
 # Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
-from unittest.mock import patch
-
-
-import jax
 from jax import numpy as jnp
 
 perm_boost = pytest.importorskip(
@@ -33,7 +31,7 @@ perm_boost = pytest.importorskip(
     reason="perm_boost C++ module is not compiled",
 )
 
-import piquasso as pq
+import piquasso as pq  # noqa: E402
 
 
 def test_permanent_routes_to_perm_boost_when_flag_is_set():
@@ -86,9 +84,21 @@ def test_perm_boost_permanent_matches_jax_permanent():
     """permanent(use_perm_boost=True) and permanent() agree on permanent values."""
     matrix = jnp.array(
         [
-            [0.62270314 + 0.55117657j, -0.0258677 - 0.07171713j, 0.09597446 - 0.54168404j],
-            [0.34756795 - 0.29444499j, -0.43514701 + 0.18975153j, 0.71929752 + 0.22304973j],
-            [-0.24500645 - 0.20227626j, -0.45222962 - 0.75121057j, 0.06995606 - 0.3540245j],
+            [
+                0.62270314 + 0.55117657j,
+                -0.0258677 - 0.07171713j,
+                0.09597446 - 0.54168404j,
+            ],
+            [
+                0.34756795 - 0.29444499j,
+                -0.43514701 + 0.18975153j,
+                0.71929752 + 0.22304973j,
+            ],
+            [
+                -0.24500645 - 0.20227626j,
+                -0.45222962 - 0.75121057j,
+                0.06995606 - 0.3540245j,
+            ],
         ],
         dtype=jnp.complex128,
     )
@@ -106,7 +116,8 @@ def test_perm_boost_permanent_matches_jax_permanent():
         rtol=1e-10,
         atol=1e-12,
     ), (
-        f"perm_boost result {result_perm_boost} differs from JAX result {result_default}"
+        f"perm_boost result {result_perm_boost} differs from JAX result "
+        f"{result_default}"
     )
 
 

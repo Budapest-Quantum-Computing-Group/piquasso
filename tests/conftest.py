@@ -33,6 +33,7 @@ from piquasso._simulators.connectors import NumpyConnector
 
 try:
     import jax
+
     _JAX_PERM_BOOST_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     _JAX_PERM_BOOST_AVAILABLE = False
@@ -337,5 +338,3 @@ def pytest_configure(config):
             jax.config.update("jax_platforms", platform)
         except AttributeError:
             jax.config.update("jax_platform_name", platform)
-
-
