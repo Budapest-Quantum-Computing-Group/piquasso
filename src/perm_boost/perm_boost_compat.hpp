@@ -35,40 +35,83 @@
 #include "xla/ffi/api/ffi.h"
 #include <cstdint>
 
-namespace pq_compat {
+namespace pq_compat
+{
 
 namespace ffi = xla::ffi;
-namespace detail {
+
+namespace detail
+{
 
 // typed_data() (new) vs .data member (old)
-template<typename B> auto data(const B& b, int)  -> decltype(b.typed_data()) { return b.typed_data(); }
-template<typename B> auto data(const B& b, long)                              { return b.data; }
-
-// dimensions() method (new) vs .dimensions member (old)
-template<typename B> auto dims(const B& b, int)  -> decltype(b.dimensions())  { return b.dimensions(); }
-template<typename B> auto dims(const B& b, long)                               { return b.dimensions; }
-
-// element_count() method (new) vs product of .dimensions (old)
-template<typename B> auto   count(const B& b, int)  -> decltype(b.element_count()) { return static_cast<int64_t>(b.element_count()); }
-template<typename B> int64_t count(const B& b, long) {
-    int64_t n = 1;
-    for (int64_t d : b.dimensions) n *= d;
-    return n;
+template <typename B>
+auto data(const B& b, int) -> decltype(b.typed_data())
+{
+  return b.typed_data();
 }
 
-} // namespace detail
+template <typename B>
+auto data(const B& b, long)
+{
+  return b.data;
+}
 
-template<ffi::DataType dtype>
-auto buffer_data(const ffi::Buffer<dtype>& buf) { return detail::data(buf, 0); }
+// dimensions() method (new) vs .dimensions member (old)
+template <typename B>
+auto dims(const B& b, int) -> decltype(b.dimensions())
+{
+  return b.dimensions();
+}
 
-template<ffi::DataType dtype>
-auto buffer_dimensions(const ffi::Buffer<dtype>& buf) { return detail::dims(buf, 0); }
+template <typename B>
+auto dims(const B& b, long)
+{
+  return b.dimensions;
+}
 
-template<ffi::DataType dtype>
-int64_t buffer_element_count(const ffi::Buffer<dtype>& buf) { return detail::count(buf, 0); }
+// element_count() method (new) vs product of .dimensions (old)
+template <typename B>
+auto count(const B& b, int) -> decltype(b.element_count())
+{
+  return static_cast<int64_t>(b.element_count());
+}
+
+template <typename B>
+int64_t count(const B& b, long)
+{
+  int64_t n = 1;
+  for (int64_t d : b.dimensions)
+  {
+    n *= d;
+  }
+  return n;
+}
+
+}  // namespace detail
+
+template <ffi::DataType dtype>
+auto buffer_data(const ffi::Buffer<dtype>& buf)
+{
+  return detail::data(buf, 0);
+}
+
+template <ffi::DataType dtype>
+auto buffer_dimensions(const ffi::Buffer<dtype>& buf)
+{
+  return detail::dims(buf, 0);
+}
+
+template <ffi::DataType dtype>
+int64_t buffer_element_count(const ffi::Buffer<dtype>& buf)
+{
+  return detail::count(buf, 0);
+}
 
 // Result<Buffer<dtype>> has operator*() in both APIs.
-template<ffi::DataType dtype>
-auto result_buffer_data(ffi::ResultBuffer<dtype>& r) { return buffer_data<dtype>(*r); }
+template <ffi::DataType dtype>
+auto result_buffer_data(ffi::ResultBuffer<dtype>& r)
+{
+  return buffer_data<dtype>(*r);
+}
 
-} // namespace pq_compat
+}  // namespace pq_compat
