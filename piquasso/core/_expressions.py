@@ -64,6 +64,8 @@ ALLOWED = (
         ast.Constant,
         ast.List,
         ast.Tuple,
+        # optional: for Python < 3.9 subscripts
+        getattr(ast, "Index", object()),
     }
     | set(BINOPS.keys())
     | set(UNARYOPS.keys())
@@ -174,6 +176,9 @@ class Expression:
         if isinstance(node, ast.Subscript):
             seq = self._eval(node.value, x)
             sl = node.slice
+            # Python < 3.9 wraps index in ast.Index
+            if isinstance(sl, getattr(ast, "Index", ())):
+                sl = sl.value  # type: ignore
             if isinstance(sl, ast.Slice):
                 start = self._eval(sl.lower, x) if sl.lower else None
                 stop = self._eval(sl.upper, x) if sl.upper else None
