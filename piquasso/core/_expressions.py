@@ -70,8 +70,6 @@ ALLOWED = (
     | set(BOOLOPS.keys())
     | set(CMPOPS.keys())
 )
-# remove the placeholder object if present
-ALLOWED.discard(object())
 
 
 class Expression:
