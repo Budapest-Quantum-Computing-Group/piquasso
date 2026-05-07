@@ -38,17 +38,18 @@ class BuiltinSimulator(Simulator):
 
         super().__init__(d=d, config=config, connector=connector)
 
-    def _validate_connector(self, connector):
-        if (
-            isinstance(connector, BuiltinConnector)
-            and not isinstance(connector, self._default_connector_class)
-            and not any(
-                [isinstance(connector, cls) for cls in self._extra_builtin_connectors]
-            )
+    @classmethod
+    def _validate_connector(cls, connector):
+        if isinstance(connector, BuiltinConnector) and not isinstance(
+            connector, cls._supported_connector_classes()
         ):
             raise InvalidSimulation(
                 f"The connector '{connector}' is not supported."
                 f"Supported connectors:"
                 "\n"
-                f"{[self._default_connector_class] + self._extra_builtin_connectors}"
+                f"{cls._supported_connector_classes()}"
             )
+
+    @classmethod
+    def _supported_connector_classes(cls):
+        return tuple([cls._default_connector_class] + cls._extra_builtin_connectors)
