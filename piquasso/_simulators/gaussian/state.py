@@ -1243,3 +1243,103 @@ class GaussianState(State):
         denominator = np.sqrt(np.linalg.det(cov))
 
         return np.real(np.exp(exponent) / denominator)
+
+    def get_phaseshifter_expectation_value(self, angles: List[float]) -> complex:
+        r"""Calculates the expectation value of the phaseshifter operator.
+
+        The multimode phaseshifter operator :math:`R(\bm{\phi})` is defined as
+
+        .. math::
+            R(\bm{\phi}) = \exp \left(
+                i \sum_{i=1}^{d} \phi_i a_i^\dagger a_i
+            \right),
+
+        where :math:`a_i`, :math:`a_i^\dagger` are the annihilation and creation
+        operators respectively, :math:`d` is the number of modes and :math:`\phi_i`
+        is the phaseshift applied to the :math:`i`-th mode.
+
+        The expectation value of the phaseshifter operator can be calculated for
+        Gaussian states by the following formula:
+
+        .. math::
+            \mathrm{Tr} [\rho R(\bm{\phi})] =
+                \frac{2^d}{
+                    \prod_{j=1}^d (1- e^{i \phi_j}) \sqrt{
+                        \det{  ( \Sigma + i D(\bm{\phi}) ) }
+                    }
+                } \exp(
+                -
+                \bm{\mu}^\dagger ( \Sigma + i D(\bm{\phi}) )^{-1} \bm{\mu},
+            )
+
+        where
+
+        .. math::
+            D(\bm{\phi}) \coloneqq \mathrm{diag}(\cot(\bm{\phi}/2))^{\oplus 2},
+
+        :math:`\Sigma` is the complex covariance matrix of the Gaussian state
+        :math:`\rho` (see :meth:`complex_covariance`) and :math:`\bm{\mu}` is its
+        complex displacement vector (see :meth:`complex_displacement`).
+
+        Args:
+            angles (list[float]): List of phaseshift angles for each mode.
+
+        Returns:
+            complex: The expectation value of the phaseshifter operator.
+        """
+
+        connector = self._connector
+        np = self._connector.np
+
+        if self._config.validate and len(angles) != self.d:
+            raise InvalidParameter(
+                f"The specified angles should have length '{self.d}': "
+                f"angles='{angles}'."
+            )
+
+        mean = self.complex_displacement
+        cov = self.complex_covariance
+        np_angles = np.array(angles)
+
+        if connector.is_abstract(np_angles):
+            # This is a version which is also good when we cannot inspect the
+            # angles themselves, but is still good with zero angles, which
+            # could cause problems with the original algorithm.
+            z = np.exp(1j * np_angles)
+
+            one_minus_z = np.concatenate([1 - z, 1 - z])
+            one_plus_z = np.concatenate([1 + z, 1 + z])
+
+            A = np.diag(one_minus_z / 2)
+            B = np.diag(one_plus_z / 2)
+
+            M = cov @ A + B
+
+            solved = np.linalg.solve(M, mean)
+            exponent = -(np.conj(mean) @ A @ solved)
+
+            return np.exp(exponent) / np.sqrt(np.linalg.det(M))
+
+        zero_phaseshifts = np.isclose(np.sin(np_angles / 2), 0.0)
+
+        if np.all(zero_phaseshifts):
+            return 1.0 + 0.0j
+
+        if np.any(zero_phaseshifts):
+            reduced_modes = tuple(np.where(~zero_phaseshifts)[0])
+            reduced_state = self.reduced(reduced_modes)
+
+            reduced_angles = np_angles[reduced_modes,]
+
+            return reduced_state.get_phaseshifter_expectation_value(reduced_angles)
+
+        D_phi = np.diag(1 / (np.tan(np_angles / 2)).repeat(2))
+
+        cov_D_phi = (cov + 1j * D_phi) / 2
+
+        exponent = -(np.conj(mean) @ np.linalg.inv(cov_D_phi) @ mean) / 2
+        denominator = np.prod(1 - np.exp(1j * np_angles)) * np.sqrt(
+            np.linalg.det(cov_D_phi)
+        )
+
+        return np.exp(exponent) / denominator
