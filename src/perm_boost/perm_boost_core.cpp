@@ -26,7 +26,6 @@
 #include "../permanent.hpp"
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/ffi.h"
-#include "perm_boost_compat.hpp"
 #include <algorithm>
 #include <complex>
 #include <cstdint>
@@ -46,13 +45,13 @@ namespace ffi = xla::ffi;
 template <ffi::DataType T>
 std::pair<int64_t, int64_t> get_dims(const ffi::Buffer<T> &buffer)
 {
-  auto dims = pq_compat::buffer_dimensions(buffer);
+  auto dims = buffer.dimensions();
 
   if (dims.size() == 0)
   {
     return std::make_pair(0, 0);
   }
-  return std::make_pair(pq_compat::buffer_element_count(buffer), dims.back());
+  return std::make_pair(static_cast<int64_t>(buffer.element_count()), dims.back());
 }
 
 ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::DataType::U64> rows,
@@ -65,8 +64,8 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Da
   {
     return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Perm input must be a matrix");
   }
-  auto* rows_raw = pq_compat::buffer_data<ffi::DataType::U64>(rows);
-  auto* cols_raw = pq_compat::buffer_data<ffi::DataType::U64>(cols);
+  auto* rows_raw = rows.typed_data();
+  auto* cols_raw = cols.typed_data();
   std::vector<int> row_mult(total_size / n);
   std::transform(rows_raw, rows_raw + total_size / n, row_mult.begin(),
                  [](uint64_t v) { return static_cast<int>(v); });
@@ -75,11 +74,11 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Da
                  [](uint64_t v) { return static_cast<int>(v); });
 
   Matrix<std::complex<double>> matrix(total_size / n, n,
-                                      pq_compat::buffer_data<ffi::DataType::C128>(A));
+                                      A.typed_data());
   Vector<int> row_vec(row_mult.size(), row_mult.data());
   Vector<int> col_vec(col_mult.size(), col_mult.data());
 
-  pq_compat::result_buffer_data<ffi::DataType::C128>(y)[0] =
+  (*y).typed_data()[0] =
       permanent_cpp<double>(matrix, row_vec, col_vec);
 
   return ffi::Error::Success();
@@ -103,9 +102,9 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Data
     return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Permanent input must be a matrix");
   }
 
-  auto* rows_ptr = pq_compat::buffer_data<ffi::DataType::U64>(rows);
-  auto* cols_ptr = pq_compat::buffer_data<ffi::DataType::U64>(cols);
-  auto* A_ptr    = pq_compat::buffer_data<ffi::DataType::C128>(A);
+  auto* rows_ptr = rows.typed_data();
+  auto* cols_ptr = cols.typed_data();
+  auto* A_ptr    = A.typed_data();
 
   std::vector<int> row_mult(total_size / n);
   std::transform(rows_ptr, rows_ptr + total_size / n, row_mult.begin(),
@@ -118,14 +117,14 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Data
   Vector<int> row_vec(row_mult.size(), row_mult.data());
   Vector<int> col_vec(col_mult.size(), col_mult.data());
 
-  pq_compat::result_buffer_data<ffi::DataType::C128>(y)[0] =
+  (*y).typed_data()[0] =
       permanent_cpp<double>(matrix, row_vec, col_vec);
 
   // permanent_cpp mutates its matrix and rows arguments; use fresh copies for res
   Matrix<std::complex<double>> matrix2(total_size / n, n, A_ptr);
   Vector<int> row_vec2(row_mult.size(), row_mult.data());
   Vector<int> col_vec2(col_mult.size(), col_mult.data());
-  pq_compat::result_buffer_data<ffi::DataType::C128>(res)[0] =
+  (*res).typed_data()[0] =
       permanent_cpp<double>(matrix2, row_vec2, col_vec2);
 
   return ffi::Error::Success();
@@ -162,7 +161,7 @@ ffi::Error PermBwdImpl([[maybe_unused]] ffi::Buffer<ffi::DataType::C128> res, ff
                        ffi::Buffer<ffi::DataType::C128> cotangent,
                        ffi::ResultBuffer<ffi::DataType::C128> ct_x)
 {
-  auto A_dims = pq_compat::buffer_dimensions(A);
+  auto A_dims = A.dimensions();
   int64_t ndim = static_cast<int64_t>(A_dims.size());
 
   if (ndim < 2)
@@ -172,13 +171,13 @@ ffi::Error PermBwdImpl([[maybe_unused]] ffi::Buffer<ffi::DataType::C128> res, ff
 
   int64_t n_cols = A_dims[ndim - 1];
   int64_t n_rows = A_dims[ndim - 2];
-  int64_t batch_size = pq_compat::buffer_element_count(A) / (n_rows * n_cols);
+  int64_t batch_size = static_cast<int64_t>(A.element_count()) / (n_rows * n_cols);
 
-  auto* rows_ptr     = pq_compat::buffer_data<ffi::DataType::U64>(rows);
-  auto* cols_ptr     = pq_compat::buffer_data<ffi::DataType::U64>(cols);
-  auto* A_ptr        = pq_compat::buffer_data<ffi::DataType::C128>(A);
-  auto* cot_ptr      = pq_compat::buffer_data<ffi::DataType::C128>(cotangent);
-  auto* ct_x_ptr     = pq_compat::result_buffer_data<ffi::DataType::C128>(ct_x);
+  auto* rows_ptr     = rows.typed_data();
+  auto* cols_ptr     = cols.typed_data();
+  auto* A_ptr        = A.typed_data();
+  auto* cot_ptr      = cotangent.typed_data();
+  auto* ct_x_ptr     = (*ct_x).typed_data();
 
 #ifdef _OPENMP
   const int64_t max_threads = omp_get_max_threads();

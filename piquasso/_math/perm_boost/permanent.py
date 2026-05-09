@@ -53,28 +53,8 @@ def _ffi_call(target_name, out_type, *args):
     return _jax_ffi.ffi_call(target_name, out_type, *args)
 
 
-def _register_ffi_target(name, target, platform="cpu"):
-    """Register an XLA FFI target across JAX versions.
-
-    JAX >= 0.4.31 exposes ``register_ffi_target`` on ``jax.ffi`` (or
-    ``jax.extend.ffi`` for some intermediate versions). Older releases
-    (e.g. JAX 0.4.30) require registering via ``jax.lib.xla_client`` with
-    ``api_version=1`` to opt into the new XLA FFI calling convention.
-    """
-    register = getattr(_jax_ffi, "register_ffi_target", None)
-    if register is not None:
-        register(name, target, platform=platform)
-        return
-    from jax.lib import xla_client
-
-    # xla_client.register_custom_call_target uses lowercase platform names.
-    xla_client.register_custom_call_target(
-        name, target, platform=platform.lower(), api_version=1
-    )
-
-
 for _name, _target in _registrations().items():
-    _register_ffi_target(_name, _target)
+    _jax_ffi.register_ffi_target(_name, _target, platform="cpu")
 
 _gpu = False
 
@@ -83,7 +63,7 @@ try:
 
     _gpu_targets = _gpu_ops.registrations()
     for _name, _target in _gpu_targets.items():
-        _register_ffi_target(_name, _target, platform="CUDA")
+        _jax_ffi.register_ffi_target(_name, _target, platform="CUDA")
         _gpu = True
 except (ImportError, AttributeError) as _exc:
     warnings.warn(f"GPU support initialization failed: {_exc}")
