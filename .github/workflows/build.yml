@@ -97,11 +97,11 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
           # pp*: Disable building PyPy wheels on all platforms
           # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
-          # *-win32 / *musllinux* / cp314-macosx_x86_64: jaxlib has no wheels
+          # *-win32 / *musllinux* / cp314*-macosx_x86_64: jaxlib has no wheels
           # for these targets (macOS Intel was dropped from jaxlib around
-          # 0.6.x, but cp314 needs that newer jaxlib), so the PEP 517 build
-          # env cannot resolve our jax/jaxlib build deps.
-          CIBW_SKIP: pp* cp314t-win* *-win32 *musllinux* cp314-macosx_x86_64
+          # 0.6.x, but cp314 / cp314t need that newer jaxlib), so the PEP 517
+          # build env cannot resolve our jax/jaxlib build deps.
+          CIBW_SKIP: pp* cp314t-win* *-win32 *musllinux* cp314*-macosx_x86_64
           CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4
