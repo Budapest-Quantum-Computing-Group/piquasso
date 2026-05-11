@@ -93,19 +93,13 @@ jobs:
           # libomp is not pre-installed on GitHub's macOS runners; brew installs it
           # once per platform so CMakeLists.txt can find it at /opt/homebrew/opt/libomp.
           CIBW_BEFORE_ALL_MACOS: "brew install libomp"
-          # JAX is in [build-system].requires so it lands in the PEP 517 isolated
-          # build environment. CMake (via piquasso/_math/perm_boost/CMakeLists.txt)
-          # queries Python_EXECUTABLE at configure time to find XLA FFI headers;
-          # Python_EXECUTABLE points to the PEP 517 isolated venv's Python, NOT the
-          # outer cibuildwheel Python, so only packages in [build-system].requires are
-          # visible to it. Without JAX there, CMake silently skips the perm_boost build
-          # and _perm_boost_core is absent from the wheel.
           CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
           # pp*: Disable building PyPy wheels on all platforms
           # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
-          # *-win32: JAX (build dep for XLA FFI headers) doesn't support 32-bit Windows
-          CIBW_SKIP: pp* cp314t-win* *-win32
+          # *-win32 / *musllinux*: jaxlib has no wheels for these targets, so
+          # the PEP 517 build env cannot resolve our jax/jaxlib build deps.
+          CIBW_SKIP: pp* cp314t-win* *-win32 *musllinux*
           CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4

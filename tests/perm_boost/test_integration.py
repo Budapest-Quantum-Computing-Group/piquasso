@@ -27,7 +27,7 @@ import pytest
 from jax import numpy as jnp
 
 perm_boost = pytest.importorskip(
-    "piquasso._math.perm_boost",
+    "piquasso.jax_extensions",
     reason="perm_boost C++ module is not compiled",
 )
 
@@ -50,7 +50,7 @@ def test_permanent_routes_to_perm_boost_when_flag_is_set():
     cols = jnp.array([1, 1, 1], dtype=jnp.uint64)
 
     with patch(
-        "piquasso._math.perm_boost.permanent.perm", wraps=perm_boost.perm
+        "piquasso.jax_extensions.permanent.perm", wraps=perm_boost.perm
     ) as mock_perm:
         connector.permanent(matrix, rows, cols, use_perm_boost=True)
 
@@ -73,7 +73,7 @@ def test_permanent_does_not_route_to_perm_boost_by_default():
     cols = jnp.array([1, 1, 1], dtype=jnp.uint64)
 
     with patch(
-        "piquasso._math.perm_boost.permanent.perm", wraps=perm_boost.perm
+        "piquasso.jax_extensions.permanent.perm", wraps=perm_boost.perm
     ) as mock_perm:
         connector.permanent(matrix, rows, cols)
 

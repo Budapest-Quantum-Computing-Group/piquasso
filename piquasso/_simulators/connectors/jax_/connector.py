@@ -154,14 +154,20 @@ class JaxConnector(BuiltinConnector):
 
     def permanent(self, *args, **kwargs):
         if kwargs.pop("use_perm_boost", False):
-            from piquasso._math.perm_boost.permanent import perm
-
-            matrix = args[0]
-            rows = kwargs.pop("rows", args[1] if len(args) > 1 else None)
-            cols = kwargs.pop("cols", args[2] if len(args) > 2 else None)
-            rows_u64 = self.np.array(rows, dtype=self.np.uint64)
-            cols_u64 = self.np.array(cols, dtype=self.np.uint64)
-            return perm(matrix.astype(self.np.complex128), rows_u64, cols_u64)
+            try:
+                from piquasso.jax_extensions.permanent import perm
+            except ImportError:
+                # The C++ extension was not built into this wheel (or its
+                # build-time deps were missing). Fall through to the JAX-only
+                # path so callers requesting use_perm_boost still get a result.
+                pass
+            else:
+                matrix = args[0]
+                rows = kwargs.pop("rows", args[1] if len(args) > 1 else None)
+                cols = kwargs.pop("cols", args[2] if len(args) > 2 else None)
+                rows_u64 = self.np.array(rows, dtype=self.np.uint64)
+                cols_u64 = self.np.array(cols, dtype=self.np.uint64)
+                return perm(matrix.astype(self.np.complex128), rows_u64, cols_u64)
 
         from piquasso._math.jax.permanent import permanent_with_reduction
 

@@ -18,3 +18,11 @@
 #
 # Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
+
+# Skip every perm_boost test if the underlying module cannot be imported.
+# The import of ``piquasso.jax_extensions`` raises ImportError when the
+# C++ extension has not been built.
+try:
+    import piquasso.jax_extensions  # noqa: F401
+except ImportError:
+    collect_ignore_glob = ["test_*.py"]

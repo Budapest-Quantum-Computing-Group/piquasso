@@ -22,7 +22,12 @@
 import numpy as np
 import pytest
 
-from piquasso._math.perm_boost.permanent import perm
+pytest.importorskip(
+    "piquasso.jax_extensions._perm_boost_core",
+    reason="perm_boost C++ extension is not compiled",
+)
+
+from piquasso.jax_extensions.permanent import perm  # noqa: E402
 
 
 def assym_reduce(array, row_reduce_on, col_reduce_on):

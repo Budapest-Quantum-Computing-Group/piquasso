@@ -20,10 +20,16 @@
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
 import numpy as np
+import pytest
 import jax
 
-from piquasso._math.perm_boost.permanent import perm
-from piquasso._math.jax.permanent import permanent_with_reduction
+pytest.importorskip(
+    "piquasso.jax_extensions._perm_boost_core",
+    reason="perm_boost C++ extension is not compiled",
+)
+
+from piquasso.jax_extensions.permanent import perm  # noqa: E402
+from piquasso._math.jax.permanent import permanent_with_reduction  # noqa: E402
 
 
 def perm_wrapper(permanent_func):
