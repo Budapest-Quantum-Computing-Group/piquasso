@@ -62,7 +62,9 @@ ffi::Error PermanentImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Da
 
   if (n == 0)
   {
-    return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Perm input must be a matrix");
+    // Permanent of the empty matrix is 1 by convention.
+    (*y).typed_data()[0] = std::complex<double>(1.0, 0.0);
+    return ffi::Error::Success();
   }
   auto* rows_raw = rows.typed_data();
   auto* cols_raw = cols.typed_data();
@@ -99,7 +101,10 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Data
   auto [total_size, n] = get_dims(A);
   if (n == 0)
   {
-    return ffi::Error(ffi::ErrorCode::kInvalidArgument, "Permanent input must be a matrix");
+    // Permanent of empty matrix is 1; also write 1 to res for the bwd to see.
+    (*y).typed_data()[0] = std::complex<double>(1.0, 0.0);
+    (*res).typed_data()[0] = std::complex<double>(1.0, 0.0);
+    return ffi::Error::Success();
   }
 
   auto* rows_ptr = rows.typed_data();

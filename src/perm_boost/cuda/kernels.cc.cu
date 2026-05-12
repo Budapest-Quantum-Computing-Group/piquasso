@@ -24,9 +24,15 @@
 
 #include "kernels.h"
 #include <cuComplex.h>
+#include <cmath>
 #include "../../matrix.hpp"
 #include "../../utils.hpp"
 #include "../../n_aryGrayCodeCounter.hpp"
+
+// Maximum supported matrix size for the GPU permanent kernel. The kernel
+// uses a stack-allocated colsum[kMaxCols] per thread; raising this beyond
+// 64 increases per-thread stack and likely spills to local memory.
+constexpr int kMaxCols = 64;
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
 __device__ double atomicAdd(double *address, double val)
@@ -94,8 +100,8 @@ __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_
     int binomial_coeff = 1;
     int minus_signs_all = 0;
 
-    cuDoubleComplex colsum[64];
-    for (size_t i = 0; i < cols_size && i < 64; i++)
+    cuDoubleComplex colsum[kMaxCols];
+    for (size_t i = 0; i < cols_size && i < kMaxCols; i++)
     {
       colsum[i] = A(0, i);
     }
@@ -104,7 +110,7 @@ __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_
     {
       int minus_signs = gcode[row];
       int row_mult = rows[row + 1];
-      for (size_t col = 0; col < cols_size && col < 64; col++)
+      for (size_t col = 0; col < cols_size && col < kMaxCols; col++)
       {
         double factor = row_mult - 2.0 * minus_signs;
         cuDoubleComplex scaled = cuCmul(A(row + 1, col),
@@ -121,7 +127,7 @@ __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_
 
     cuDoubleComplex colsum_prod = make_cuDoubleComplex((double)parity, 0.0);
 
-    for (size_t i = 0; i < cols_size && i < 64; i++)
+    for (size_t i = 0; i < cols_size && i < kMaxCols; i++)
     {
       for (size_t j = 0; j < cols[i]; j++)
       {
@@ -145,7 +151,10 @@ __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_
 
       int row_offset = changed_index + 1;
       cuDoubleComplex colsum_prod = make_cuDoubleComplex(parity, 0.0);
-      for (size_t j = 0; j < cols_size; j++)
+      // Guard `j < kMaxCols`: host-side checks reject n > kMaxCols, but the
+      // guard mirrors the other column-loops above to keep colsum[] in bounds
+      // even if the host check is ever bypassed.
+      for (size_t j = 0; j < cols_size && j < kMaxCols; j++)
       {
         colsum[j] = cuCadd(colsum[j], cuCmul(make_cuDoubleComplex((prev_value - value) * 2.0, 0.0), A(row_offset, j)));
         for (size_t k = 0; k < cols[j]; k++)
@@ -164,7 +173,8 @@ __global__ void PermanentKernel(Matrix<cuDoubleComplex> A, uint64_t *rows, size_
       local_result = cuCadd(local_result, colsum_prod);
     }
   }
-  double scale_factor = 1.0 / (1ULL << (sum_rows - 1));
+  // ldexp(1.0, -k) == 2^-k; safe for sum_rows > 64 unlike `1ULL << (sum_rows-1)`.
+  double scale_factor = ldexp(1.0, -(sum_rows - 1));
   local_result = cuCmul(local_result, make_cuDoubleComplex(scale_factor, 0.0));
 
   atAddComplex(result, local_result);
@@ -216,6 +226,14 @@ cudaError_t calculatePermanent(cudaStream_t stream,
   cuda_err = cudaMemsetAsync(permanent_data, 0, sizeof(cuDoubleComplex), stream);
   if (cuda_err != cudaSuccess)
     return cuda_err;
+
+  // All-zero photon-counts: the permanent is 1 by convention. The kernel
+  // path below is skipped (minelem == 0), so we write 1 explicitly here.
+  if (sum_rows == 0)
+  {
+    const cuDoubleComplex one_h = make_cuDoubleComplex(1.0, 0.0);
+    return cudaMemcpy(permanent_data, &one_h, sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+  }
 
   if (h_rows.size() > 0 && minelem != 0)
   {
@@ -292,13 +310,17 @@ cudaError_t calculatePermanent(cudaStream_t stream,
       idx_max *= h_n_ary_limits[i];
     }
 
+    // Soft cap on the inclusion-exclusion enumeration size (Gray-code space).
+    // Beyond this, the kernel takes prohibitively long and risks exhausting
+    // the device. Returning cudaErrorInvalidValue lets PermImpl translate it
+    // to ffi::Error::kInvalidArgument without throwing across the FFI ABI.
     const uint64_t MAX_IDX_MAX = 100000000;
     if (idx_max > MAX_IDX_MAX)
     {
       cudaFree(d_new_matrix);
       cudaFree(d_new_rows);
-      cudaFree(d_n_ary_limits);
-      throw std::runtime_error("Problem too large: idx_max exceeds safe limit.");
+      // d_n_ary_limits is still nullptr here (not yet allocated); cudaFree(nullptr) is a no-op.
+      return cudaErrorInvalidValue;
     }
 
     cuda_err = cudaMalloc(&d_n_ary_limits, n_ary_size * sizeof(int));
@@ -359,6 +381,26 @@ ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A,
                     ffi::ResultBuffer<ffi::DataType::C128> permanent)
 {
   auto [total_size, n] = get_dims(A);
+  if (n > kMaxCols)
+  {
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument,
+                      "GPU permanent supports at most " + std::to_string(kMaxCols) +
+                      " columns; got n=" + std::to_string(n));
+  }
+  cuDoubleComplex *permanent_data = reinterpret_cast<cuDoubleComplex *>(
+      (*permanent).typed_data());
+  if (n == 0)
+  {
+    // Permanent of empty matrix is 1 by convention.
+    const cuDoubleComplex one_h = make_cuDoubleComplex(1.0, 0.0);
+    cudaError_t cuda_err = cudaMemcpy(permanent_data, &one_h,
+                                       sizeof(cuDoubleComplex),
+                                       cudaMemcpyHostToDevice);
+    return cuda_err == cudaSuccess
+               ? ffi::Error::Success()
+               : ffi::Error::Internal(std::string("CUDA memcpy error (n==0): ") +
+                                      cudaGetErrorString(cuda_err));
+  }
   size_t rows_size = static_cast<size_t>(rows.element_count());
   size_t cols_size = static_cast<size_t>(cols.element_count());
 
@@ -366,8 +408,6 @@ ffi::Error PermImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A,
       A.typed_data());
   uint64_t *rows_data = rows.typed_data();
   uint64_t *cols_data = cols.typed_data();
-  cuDoubleComplex *permanent_data = reinterpret_cast<cuDoubleComplex *>(
-      (*permanent).typed_data());
 
   cudaError_t calc_err = calculatePermanent(stream, A_data, n,
                                             rows_data, rows_size,
@@ -410,8 +450,15 @@ ffi::Error PermBwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> res
 
   if (n == 0)
   {
-    // No need to compute anything for empty matrices; the sub-permanent of an empty matrix is 1, but the gradient will be 0 since it will be multiplied by cotangent which is 0 for empty matrices. Just set output to 0 and return.
+    // Sub-permanent of empty matrix is 1; gradient is 0 (cotangent for empty
+    // matrices is 0 anyway). Leave the output buffer as initialized.
     return ffi::Error::Success();
+  }
+  if (n > kMaxCols)
+  {
+    return ffi::Error(ffi::ErrorCode::kInvalidArgument,
+                      "GPU permanent gradient supports at most " + std::to_string(kMaxCols) +
+                      " columns; got n=" + std::to_string(n));
   }
 
   cuDoubleComplex *A_data = reinterpret_cast<cuDoubleComplex *>(
@@ -588,6 +635,8 @@ ffi::Error PermFwdImpl(cudaStream_t stream, ffi::Buffer<ffi::DataType::C128> A, 
                        ffi::ResultBuffer<ffi::DataType::C128> res)
 {
   ffi::Error perm_err = PermImpl(stream, A, rows, cols, y);
+  // If PermImpl failed, y is unspecified; bail out before copying it to res.
+  if (perm_err.failure()) return perm_err;
 
   cudaError_t cuda_err = cudaMemcpyAsync(
       reinterpret_cast<cuDoubleComplex *>((*res).typed_data()),

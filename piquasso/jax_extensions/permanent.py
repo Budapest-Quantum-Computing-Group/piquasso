@@ -19,14 +19,15 @@
 # Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
-from functools import partial
-
 import jax
 import jax.numpy as jnp
 
 from ._perm_boost_core import registrations as _registrations
 
-jax.config.update("jax_enable_x64", True)
+# Note: this extension expects complex128 / uint64 inputs. Callers must enable
+# x64 themselves (jax.config.update("jax_enable_x64", True) or
+# JAX_ENABLE_X64=1); the existing dtype checks below surface a clear error
+# when that hasn't been done.
 
 try:
     _jax_ffi = jax.ffi  # type: ignore[attr-defined]
@@ -69,8 +70,24 @@ except (ImportError, AttributeError):
     _gpu = False
 
 
-@partial(jax.custom_vjp)
+@jax.custom_vjp
+def _perm_impl(A, rows, cols):
+    """Pure-JAX FFI dispatch; trace-safe (no Python value introspection)."""
+    out_type = jax.ShapeDtypeStruct((), A.dtype)
+
+    def impl(target_name):
+        return lambda: _ffi_call(target_name, out_type, A, rows, cols)
+
+    return jax.lax.platform_dependent(cpu=impl("perm"), cuda=impl("dperm"))
+
+
 def perm(A, rows, cols):
+    """Compute the permanent of A with row/column multiplicities rows/cols.
+
+    Trace-safe: works under jax.jit, jax.vmap, jax.grad. Value-based
+    invariants (sum(rows) == sum(cols), all-zero input) are the caller's
+    responsibility -- the FFI side trusts the inputs.
+    """
     if rows.ndim != 1 or cols.ndim != 1:
         raise ValueError("perm: rows and cols must be 1D arrays")
     if rows.dtype not in (jnp.uint32, jnp.uint64) or cols.dtype not in (
@@ -78,23 +95,16 @@ def perm(A, rows, cols):
         jnp.uint64,
     ):
         raise ValueError("perm: rows and cols must be uint32 or uint64")
-
-    total_in = int(rows.sum())
-    total_out = int(cols.sum())
-
-    if total_in != total_out:
-        raise ValueError(f"perm: sum(rows)={total_in} must equal sum(cols)={total_out}")
     if A.dtype != jnp.complex128:
-        raise ValueError("perm: A.dtype must be complex128")
-    if total_in == 0 and total_out == 0:
-        return 1.0
-
-    out_type = jax.ShapeDtypeStruct((), A.dtype)
-
-    def impl(target_name):
-        return lambda: _ffi_call(target_name, out_type, A, rows, cols)
-
-    return jax.lax.platform_dependent(cpu=impl("perm"), cuda=impl("dperm"))
+        raise ValueError("perm: A.dtype must be complex128 (enable x64 via "
+                         "jax.config.update('jax_enable_x64', True))")
+    # Shape consistency: trace-safe (uses static shape, not values).
+    if A.ndim != 2 or rows.shape[0] != A.shape[0] or cols.shape[0] != A.shape[1]:
+        raise ValueError(
+            f"perm: shape mismatch -- A.shape={tuple(A.shape)}, "
+            f"rows.shape={tuple(rows.shape)}, cols.shape={tuple(cols.shape)}"
+        )
+    return _perm_impl(A, rows, cols)
 
 
 def _perm_fwd(A, rows, cols):
@@ -128,4 +138,4 @@ def _perm_bwd(res, ct):
     return jax.lax.platform_dependent(cpu=impl("perm_bwd"), cuda=impl("dperm_bwd"))
 
 
-perm.defvjp(_perm_fwd, _perm_bwd)
+_perm_impl.defvjp(_perm_fwd, _perm_bwd)

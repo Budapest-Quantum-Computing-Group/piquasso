@@ -121,8 +121,13 @@ def test_perm_boost_permanent_matches_jax_permanent():
     )
 
 
-def test_simulator_with_perm_boost_runs_without_errors():
-    """PureFockSimulator with JaxConnector executes successfully."""
+def test_jax_connector_simulator_pipeline_runs_without_errors():
+    """End-to-end smoke test: PureFockSimulator with JaxConnector executes
+    a beamsplitter program. Does NOT exercise the perm_boost FFI path --
+    that's covered by the unit tests above (notably
+    `test_permanent_routes_to_perm_boost_when_flag_is_set` and
+    `test_perm_boost_permanent_matches_jax_permanent`). This test ensures the
+    JaxConnector integration with the simulator stack does not regress."""
     connector = pq.JaxConnector()
 
     simulator = pq.PureFockSimulator(

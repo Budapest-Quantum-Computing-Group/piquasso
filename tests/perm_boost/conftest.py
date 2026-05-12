@@ -21,6 +21,15 @@
 
 import pytest
 
+# perm_boost requires complex128 / uint64 inputs. Enable x64 here for the test
+# session (the library itself no longer flips this global at import time).
+try:
+    import jax
+
+    jax.config.update("jax_enable_x64", True)
+except ImportError:
+    pass
+
 
 # Run after the parent conftest hook so our jax_platforms override sticks.
 @pytest.hookimpl(trylast=True)

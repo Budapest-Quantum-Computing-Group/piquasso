@@ -27,6 +27,9 @@ pytest.importorskip(
     reason="perm_boost C++ extension is not compiled",
 )
 
+import jax  # noqa: E402
+import jax.numpy as jnp  # noqa: E402
+
 from piquasso.jax_extensions.permanent import perm  # noqa: E402
 
 
@@ -80,18 +83,23 @@ def test_permanent_negative_entries():
 
 
 def test_permanent_large_values():
+    # 3x3 matrix of all 1e10; permanent = |S_3| * (1e10)^3 = 6e30.
     matrix = np.full((3, 3), 1e10, dtype=np.complex128)
     input = output = np.ones(3, dtype=np.uint64)
     result = perm(matrix, input, output)
     assert np.isfinite(result)
+    assert np.isclose(complex(result), 6e30, rtol=1e-10)
 
 
 def test_permanent_high_repetition():
+    # rows=[3,0] and cols=[2,1] reduce [[2,3],[4,5]] to a 3x3 matrix where every
+    # row is [2, 2, 3]; permanent of such a matrix is 6 * 2 * 2 * 3 = 72.
     matrix = np.array([[2, 3], [4, 5]], dtype=np.complex128)
     input = np.array([3, 0], dtype=np.uint64)
     output = np.array([2, 1], dtype=np.uint64)
     result = perm(matrix, input, output)
     assert np.isfinite(result)
+    assert np.isclose(complex(result), 72.0)
 
 
 def test_permanent_all_zeros_input_output():
@@ -348,3 +356,43 @@ def test_permanent_asymmetric_matrix():
             ones,
         ),
     )
+
+
+def test_perm_jit_matches_eager():
+    """Regression test: perm() must be jax.jit-compatible.
+
+    Before the refactor that split perm into a thin wrapper around a
+    custom_vjp-decorated _perm_impl, jax.jit(perm) failed with
+    ConcretizationTypeError because the body called int(rows.sum()).
+    """
+    matrix = jnp.array(
+        [[1 + 0.5j, 2 - 0.3j], [3 + 0.1j, 4 + 0.2j]], dtype=jnp.complex128
+    )
+    rows = jnp.array([1, 1], dtype=jnp.uint64)
+    cols = jnp.array([1, 1], dtype=jnp.uint64)
+
+    eager = perm(matrix, rows, cols)
+    jitted = jax.jit(perm)(matrix, rows, cols)
+
+    assert np.isclose(complex(eager), complex(jitted))
+
+
+def test_perm_jit_grad():
+    """jax.jit composed with jax.grad of perm runs end-to-end (catches a
+    regression where either the FFI trace path or the custom_vjp wiring
+    breaks under composition)."""
+    matrix = jnp.array(
+        [[1 + 0.5j, 2 - 0.3j], [3 + 0.1j, 4 + 0.2j]], dtype=jnp.complex128
+    )
+    rows = jnp.array([1, 1], dtype=jnp.uint64)
+    cols = jnp.array([1, 1], dtype=jnp.uint64)
+
+    grad_fn = jax.jit(jax.grad(perm, holomorphic=True))
+    grad = grad_fn(matrix, rows, cols)
+
+    # Permanent of [[a,b],[c,d]] is ad+bc, so d/da = d, d/db = c, d/dc = b, d/dd = a.
+    expected = np.array(
+        [[matrix[1, 1], matrix[1, 0]], [matrix[0, 1], matrix[0, 0]]],
+        dtype=np.complex128,
+    )
+    assert np.allclose(np.asarray(grad), expected)
