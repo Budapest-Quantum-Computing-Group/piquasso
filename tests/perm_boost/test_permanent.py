@@ -378,21 +378,34 @@ def test_perm_jit_matches_eager():
 
 
 def test_perm_jit_grad():
-    """jax.jit composed with jax.grad of perm runs end-to-end (catches a
+    """jax.jit composed with jax.jacobian of perm runs end-to-end (catches a
     regression where either the FFI trace path or the custom_vjp wiring
-    breaks under composition)."""
+    breaks under composition).
+
+    Follows the real/imag-split pattern used in test_grad_perm.py: cross-check
+    the Jacobian of perm against the Jacobian of permanent_with_reduction.
+    No holomorphicity assumption -- the wrapper splits the complex output
+    into real and imaginary parts so jax.jacobian works for any
+    complex-valued function.
+    """
+    from piquasso._math.jax.permanent import permanent_with_reduction
+
     matrix = jnp.array(
         [[1 + 0.5j, 2 - 0.3j], [3 + 0.1j, 4 + 0.2j]], dtype=jnp.complex128
     )
     rows = jnp.array([1, 1], dtype=jnp.uint64)
     cols = jnp.array([1, 1], dtype=jnp.uint64)
 
-    grad_fn = jax.jit(jax.grad(perm, holomorphic=True))
-    grad = grad_fn(matrix, rows, cols)
+    def split_real_imag(fn):
+        def wrapper(A, r, c):
+            res = fn(A, r, c)
+            return res.real, res.imag
+        return wrapper
 
-    # Permanent of [[a,b],[c,d]] is ad+bc, so d/da = d, d/db = c, d/dc = b, d/dd = a.
-    expected = np.array(
-        [[matrix[1, 1], matrix[1, 0]], [matrix[0, 1], matrix[0, 0]]],
-        dtype=np.complex128,
+    jacobian = jax.jit(jax.jacobian(split_real_imag(perm)))(matrix, rows, cols)
+    expected = jax.jacobian(split_real_imag(permanent_with_reduction))(
+        matrix, rows, cols
     )
-    assert np.allclose(np.asarray(grad), expected)
+
+    assert np.allclose(jacobian[0], expected[0])
+    assert np.allclose(jacobian[1], expected[1])
