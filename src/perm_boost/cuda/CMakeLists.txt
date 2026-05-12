@@ -26,8 +26,10 @@ target_include_directories(_perm_boost_gpu_ops PRIVATE
 )
 target_include_directories(_perm_boost_gpu_ops SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
 
-# CUDA::cudart provides cuda_runtime_api.h for the host-compiled gpu_ops.cc
-target_link_libraries(_perm_boost_gpu_ops PRIVATE CUDA::cudart)
+# Static CUDA runtime: makes the resulting .so self-contained so the user
+# does not need a system CUDA install at runtime -- only an NVIDIA driver
+# compatible with CUDA 12.
+target_link_libraries(_perm_boost_gpu_ops PRIVATE CUDA::cudart_static)
 
 target_compile_options(_perm_boost_gpu_ops PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wno-pedantic -Wno-unknown-pragmas>
@@ -40,6 +42,9 @@ set_target_properties(_perm_boost_gpu_ops PROPERTIES
     # Override to default so fat-binary registration symbols remain globally
     # visible.
     CUDA_VISIBILITY_PRESET default
+    # SASS+PTX for Pascal through Hopper; PTX forward-JITs to Blackwell+.
+    # Maxwell (sm_5x) is excluded.
+    CUDA_ARCHITECTURES "60;70;75;80;86;89;90"
 )
 
 install(

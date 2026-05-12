@@ -19,7 +19,6 @@
 # Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
-import warnings
 from functools import partial
 
 import jax
@@ -65,8 +64,8 @@ try:
     for _name, _target in _gpu_targets.items():
         _jax_ffi.register_ffi_target(_name, _target, platform="CUDA")
         _gpu = True
-except (ImportError, AttributeError) as _exc:
-    warnings.warn(f"GPU support initialization failed: {_exc}")
+except (ImportError, AttributeError):
+    # GPU extension absent or unloadable (no CUDA on host); silent fallback.
     _gpu = False
 
 

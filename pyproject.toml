@@ -56,6 +56,7 @@ Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/m
 qiskit = ["qiskit"]
 tensorflow = ["tensorflow"]
 jax = ["jax[cpu]>=0.4.31", "jaxlib>=0.4.31"]
+jax-cuda12 = ["jax[cuda12]>=0.4.31", "jaxlib>=0.4.31"]
 matplotlib = ["matplotlib"]
 dask = ["dask"]
 dev = [
