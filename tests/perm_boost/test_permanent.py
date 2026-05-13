@@ -400,6 +400,7 @@ def test_perm_jit_grad():
         def wrapper(A, r, c):
             res = fn(A, r, c)
             return res.real, res.imag
+
         return wrapper
 
     jacobian = jax.jit(jax.jacobian(split_real_imag(perm)))(matrix, rows, cols)
