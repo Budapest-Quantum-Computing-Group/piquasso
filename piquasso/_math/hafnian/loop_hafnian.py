@@ -16,6 +16,8 @@
 import numba as nb
 import numpy as np
 
+from numba import complex128, int64
+
 from piquasso._math.combinatorics import comb
 
 from .powtrace import calculate_power_traces_loop
@@ -439,7 +441,11 @@ def _calculate_summand(fs, result_size, kept_edges, fact, comb_factor, comb_cach
     return summand
 
 
-@nb.njit(cache=True, parallel=True)
+@nb.njit(
+    complex128[:](complex128[:, :], complex128[:], int64[:], int64),
+    cache=True,
+    parallel=True,
+)
 def loop_hafnian_with_reduction_batch(
     matrix_orig, diagonal_orig, occupation_numbers_orig, cutoff
 ):
@@ -448,7 +454,6 @@ def loop_hafnian_with_reduction_batch(
     Glynn-type iterations with batching, as described in
     https://arxiv.org/abs/2108.01622.
     """
-    occupation_numbers_orig = occupation_numbers_orig.astype(np.int64)
     particle_number_sum = sum(occupation_numbers_orig)
 
     matrix, diagonal, matrix_odd, diagonal_odd, all_edges, all_edges_odd = (
