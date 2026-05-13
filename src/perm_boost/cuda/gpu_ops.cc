@@ -27,14 +27,17 @@
 
 namespace py = pybind11;
 
+// NOTE: the handlers below do not currently claim kCmdBufferCompatible because
+// the implementation still performs synchronous cudaMemcpy and
+// cudaStreamSynchronize calls (see kernels.cc.cu). Reinstating the trait
+// requires converting all host syncs to stream-async equivalents first.
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Perm, PermImpl,
                               ffi::Ffi::Bind()
                                   .Ctx<ffi::PlatformStream<cudaStream_t>>() // stream
                                   .Arg<ffi::Buffer<ffi::DataType::C128>>()
                                   .Arg<ffi::Buffer<ffi::DataType::U64>>()
                                   .Arg<ffi::Buffer<ffi::DataType::U64>>()
-                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),
-                              {xla::ffi::Traits::kCmdBufferCompatible}); // cudaGraph enabled
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>());
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermFwd, PermFwdImpl,
                               ffi::Ffi::Bind()
@@ -43,19 +46,18 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(PermFwd, PermFwdImpl,
                                   .Arg<ffi::Buffer<ffi::DataType::U64>>()
                                   .Arg<ffi::Buffer<ffi::DataType::U64>>()
                                   .Ret<ffi::Buffer<ffi::DataType::C128>>()
-                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),
-                              {xla::ffi::Traits::kCmdBufferCompatible}); // cudaGraph enabled
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>());
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(PermBwd, PermBwdImpl,
                               ffi::Ffi::Bind()
                                   .Ctx<ffi::PlatformStream<cudaStream_t>>() // stream
-                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // res
-                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // A
-                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()             // rows
-                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()             // cols
-                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()            // cotangent
-                                  .Ret<ffi::Buffer<ffi::DataType::C128>>(),           // ct_x
-                              {xla::ffi::Traits::kCmdBufferCompatible});    // cudaGraph enabled
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()  // res
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()  // A
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()   // rows
+                                  .Arg<ffi::Buffer<ffi::DataType::U64>>()   // cols
+                                  .Arg<ffi::Buffer<ffi::DataType::C128>>()  // cotangent
+                                  .Ret<ffi::Buffer<ffi::DataType::C128>>()  // ct_x
+);
 
 template <typename T>
 py::capsule EncapsulateFfiHandler(T *fn)

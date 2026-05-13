@@ -69,7 +69,8 @@ public:
         : length(other.length), data(other.data), owner(other.owner),
             refcount(other.refcount)
     {
-        (*refcount)++;
+        // refcount may be null when copying from a default-constructed Vector.
+        if (refcount) (*refcount)++;
     }
 
     HOST_DEVICE Vector()
@@ -82,7 +83,7 @@ public:
         owner = other.owner;
         refcount = other.refcount;
 
-        (*refcount)++;
+        if (refcount) (*refcount)++;
     }
 
     HOST_DEVICE Vector copy()
@@ -111,6 +112,8 @@ public:
 
     HOST_DEVICE ~Vector()
     {
+        if (!refcount) return; // default-constructed Vector, nothing owned.
+
         bool call_delete = ((*refcount) == 1);
 
         if (call_delete)
@@ -178,7 +181,8 @@ public:
         : rows(matrix.rows), cols(matrix.cols), stride(matrix.stride),
           data(matrix.data), owner(matrix.owner), refcount(matrix.refcount)
     {
-        (*refcount)++;
+        // refcount may be null when copying from a default-constructed Matrix.
+        if (refcount) (*refcount)++;
     }
 
     HOST_DEVICE Matrix()
@@ -194,7 +198,7 @@ public:
         owner = matrix.owner;
         refcount = matrix.refcount;
 
-        (*refcount)++;
+        if (refcount) (*refcount)++;
     }
 
     HOST_DEVICE size_t size()
@@ -213,6 +217,8 @@ public:
 
     HOST_DEVICE ~Matrix()
     {
+        if (!refcount) return; // default-constructed Matrix, nothing owned.
+
         bool call_delete = ((*refcount) == 1);
 
         if (call_delete)

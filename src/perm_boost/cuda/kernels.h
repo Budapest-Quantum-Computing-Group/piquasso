@@ -26,7 +26,6 @@
 #define KERNELS_H_
 
 #include "xla/ffi/api/ffi.h"
-#include "perm_boost_compat.hpp"
 #include <cuda_runtime_api.h>
 
 namespace ffi = xla::ffi;

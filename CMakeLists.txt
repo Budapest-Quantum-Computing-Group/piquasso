@@ -35,3 +35,4 @@ endif()
 
 add_subdirectory(src)
 add_subdirectory(piquasso/_math)
+add_subdirectory(piquasso/jax_extensions)

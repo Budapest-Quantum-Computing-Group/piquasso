@@ -19,8 +19,6 @@
 # Bence Soóki-Tóth. "Efficient calculation of permanent function gradients
 # in photonic quantum computing simulations", Eötvös Loránd University, 2025.
 
-from ._perm_boost_core import registrations
-
 from .permanent import perm
 
 __all__ = ["perm"]

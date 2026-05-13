@@ -1,6 +1,12 @@
+# Build C++/CUDA JAX extensions exposed via piquasso.jax_extensions.*
+#
+# This subdir is only useful when JAX is importable in the build env (its
+# headers ship the XLA FFI public API). When JAX is unavailable we skip
+# silently -- the resulting wheel is leaner but still functional, and at
+# runtime the dispatchers fall back to the JAX-only paths.
+
 # Locate the XLA/JAX FFI include directory by querying the build-env Python.
-# JAX is in [build-system].requires so it is always available. Two locations
-# are tried: jax.ffi (≥ 0.6) then jax.extend.ffi (< 0.6).
+# Two locations are tried: jax.ffi (>= 0.6) then jax.extend.ffi (< 0.6).
 execute_process(
   COMMAND ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
   OUTPUT_VARIABLE JAX_INCLUDE_DIR
@@ -19,9 +25,8 @@ if(NOT JAX_RESULT EQUAL 0)
   )
 endif()
 
-# perm_boost requires JAX; skip the build gracefully if it is not available.
 if(NOT JAX_RESULT EQUAL 0)
-  message(STATUS "JAX not found, skipping perm_boost build")
+  message(STATUS "JAX not found in build env, skipping jax_extensions build")
   return()
 endif()
 
@@ -44,8 +49,9 @@ target_compile_definitions(_perm_boost_core PRIVATE
     VERSION_INFO="${PROJECT_VERSION}"
 )
 
-# permanent.hpp uses __int128 (GCC extension) and #pragma omp — suppress pedantic
-# and unknown-pragma warnings that Piquasso's global flags would otherwise error on
+# permanent.hpp uses __int128 (GCC extension) and #pragma omp -- suppress
+# pedantic and unknown-pragma warnings that Piquasso's global flags would
+# otherwise error on.
 target_compile_options(_perm_boost_core PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-pedantic>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unknown-pragmas>
@@ -80,40 +86,14 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-# Both RUNTIME and LIBRARY are specified so the install works on Windows (.dll = RUNTIME) and Linux/macOS (.so = LIBRARY).
+# Both RUNTIME and LIBRARY are specified so the install works on Windows
+# (.dll = RUNTIME) and Linux/macOS (.so = LIBRARY).
 install(
     TARGETS _perm_boost_core
-    RUNTIME DESTINATION piquasso/_math/perm_boost
-    LIBRARY DESTINATION piquasso/_math/perm_boost
+    RUNTIME DESTINATION piquasso/jax_extensions
+    LIBRARY DESTINATION piquasso/jax_extensions
 )
 
-# GPU module: only if CUDA was enabled at the root level
-if(CUDAToolkit_FOUND)
-    # Prevent pybind11 from injecting -flto: with CUDA_SEPARABLE_COMPILATION, LTO causes the
-    # device-link step to emit GCC IR instead of native code, leaving fatbinData undefined at
-    # runtime. Setting this before pybind11_add_module suppresses pybind11::lto entirely.
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-    pybind11_add_module(_perm_boost_gpu_ops SHARED
-        ${PERM_BOOST_SRC}/kernels.cc.cu
-        ${PERM_BOOST_SRC}/gpu_ops.cc
-    )
-    target_include_directories(_perm_boost_gpu_ops PRIVATE ${PERM_BOOST_SRC})
-    target_include_directories(_perm_boost_gpu_ops SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
-    # CUDA::cudart provides cuda_runtime_api.h for the host-compiled gpu_ops.cc
-    target_link_libraries(_perm_boost_gpu_ops PRIVATE CUDA::cudart)
-    target_compile_options(_perm_boost_gpu_ops PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-Wno-pedantic -Wno-unknown-pragmas>
-    )
-    set_target_properties(_perm_boost_gpu_ops PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
-        # pybind11_add_module defaults to hidden visibility; with -rdc=true nvcc makes
-        # fatbinData a LOCAL symbol that the device-link step cannot resolve. Override
-        # to default so fat-binary registration symbols remain globally visible.
-        CUDA_VISIBILITY_PRESET default
-    )
-    install(
-        TARGETS _perm_boost_gpu_ops
-        RUNTIME DESTINATION piquasso/_math/perm_boost
-        LIBRARY DESTINATION piquasso/_math/perm_boost
-    )
-endif()
+# GPU module: only built when CUDA was enabled at the root level. The CUDA
+# subdir has its own CMakeLists.txt and uses JAX_INCLUDE_DIR set above.
+add_subdirectory(${PERM_BOOST_SRC}/cuda ${CMAKE_BINARY_DIR}/src/perm_boost/cuda)
