@@ -96,8 +96,10 @@ def perm(A, rows, cols):
     ):
         raise ValueError("perm: rows and cols must be uint32 or uint64")
     if A.dtype != jnp.complex128:
-        raise ValueError("perm: A.dtype must be complex128 (enable x64 via "
-                         "jax.config.update('jax_enable_x64', True))")
+        raise ValueError(
+            "perm: A.dtype must be complex128 (enable x64 via "
+            "jax.config.update('jax_enable_x64', True))"
+        )
     # Shape consistency: trace-safe (uses static shape, not values).
     if A.ndim != 2 or rows.shape[0] != A.shape[0] or cols.shape[0] != A.shape[1]:
         raise ValueError(
