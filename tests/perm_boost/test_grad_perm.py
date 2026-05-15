@@ -29,7 +29,7 @@ pytest.importorskip(
 )
 
 from piquasso.jax_extensions.permanent import perm  # noqa: E402
-from piquasso._math.jax.permanent import permanent_with_reduction  # noqa: E402
+from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
 
 
 def perm_wrapper(permanent_func):

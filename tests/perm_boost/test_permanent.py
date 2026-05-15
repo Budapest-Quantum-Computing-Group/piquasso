@@ -388,7 +388,7 @@ def test_perm_jit_grad():
     into real and imaginary parts so jax.jacobian works for any
     complex-valued function.
     """
-    from piquasso._math.jax.permanent import permanent_with_reduction
+    from tests.perm_boost._oracle import permanent_with_reduction
 
     matrix = jnp.array(
         [[1 + 0.5j, 2 - 0.3j], [3 + 0.1j, 4 + 0.2j]], dtype=jnp.complex128

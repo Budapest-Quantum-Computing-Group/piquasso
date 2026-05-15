@@ -2,8 +2,9 @@
 
 Three backends are compared:
 
-* ``piquasso-jax``  -- current Piquasso JAX permanent
-  (:func:`piquasso._math.jax.permanent.permanent_with_reduction`).
+* ``piquasso-jax``  -- the legacy pure-JAX permanent, retained only as a
+  benchmarking baseline (see ``tests/perm_boost/_oracle.py``); production no
+  longer ships this path.
 * ``boost-cpu``     -- perm_boost C++ backend via the JAX FFI
   (:func:`piquasso.jax_extensions.permanent.perm`, dispatched to CPU).
 * ``boost-gpu``     -- the same FFI on CUDA.
@@ -56,7 +57,12 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-from piquasso._math.jax.permanent import permanent_with_reduction  # noqa: E402
+# The legacy pure-JAX permanent now lives next to the perm_boost tests as a
+# cross-validation oracle. Add the repo root so the import works regardless of
+# where the benchmark is invoked from.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
 from piquasso.jax_extensions.permanent import perm as boost_perm  # noqa: E402
 
 
