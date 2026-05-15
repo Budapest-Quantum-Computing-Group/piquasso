@@ -59,9 +59,23 @@ target_compile_definitions(_perm_boost_core PRIVATE
     VERSION_INFO="${PROJECT_VERSION}"
 )
 
-# permanent.hpp uses __int128 (GCC extension) and #pragma omp -- suppress
-# pedantic and unknown-pragma warnings that Piquasso's global flags would
-# otherwise error on.
+# Warning suppressions for permanent.hpp / perm_boost_core.cpp.
+#
+# Piquasso's root CMakeLists.txt sets -Wall -Wextra -Wpedantic -Werror (and
+# /W4 /WX on MSVC). These suppressions are scoped to this target only -- they
+# do NOT relax the policy for the rest of the project.
+#
+# GCC/Clang:
+#   -Wno-pedantic         permanent.hpp uses __int128, a GCC extension
+#   -Wno-unknown-pragmas  #pragma omp under compilers without OpenMP enabled
+#   -Wno-unused-variable
+#   -Wno-unused-parameter pybind11 binding glue declares args it doesn't read
+#   -Wno-sign-compare     loop counters cross signed/unsigned in the kernel
+#
+# MSVC (rough parallels to the above):
+#   /wd4002 /wd4003       macro-arity warnings from the permanent macros
+#   /wd4456               local-shadowing in the inlined kernel
+#   /wd4715               not-all-paths-return in templated specialisations
 target_compile_options(_perm_boost_core PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-pedantic>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unknown-pragmas>
@@ -74,24 +88,36 @@ target_compile_options(_perm_boost_core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/wd4715>
 )
 
-if(APPLE)
-    # Check if Homebrew's libomp is installed
-    if(EXISTS "/opt/homebrew/opt/libomp")
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY "/opt/homebrew/opt/libomp/lib/libomp.dylib")
-    elseif(EXISTS "/usr/local/opt/libomp")
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY "/usr/local/opt/libomp/lib/libomp.dylib")
-    endif()
+# Discovery-first OpenMP. find_package handles Linux, Windows, and any Apple
+# setup with a CMake-aware toolchain (e.g. a brewed GCC, or a user-supplied
+# OpenMP_ROOT / CMAKE_PREFIX_PATH). Only if that fails on Apple do we inject
+# hints for the common Apple-Clang + libomp arrangements -- ordered so the
+# first one that has both headers and the dylib wins.
+find_package(OpenMP)
+
+if(NOT OpenMP_CXX_FOUND AND APPLE)
+    foreach(_prefix
+        "/opt/homebrew/opt/libomp"   # Homebrew on Apple Silicon
+        "/usr/local/opt/libomp"      # Homebrew on Intel
+        "/opt/local")                # MacPorts (libomp port)
+        if(EXISTS "${_prefix}/lib/libomp.dylib" AND
+           EXISTS "${_prefix}/include/omp.h")
+            set(OpenMP_C_FLAGS
+                "-Xpreprocessor -fopenmp -I${_prefix}/include"
+                CACHE STRING "" FORCE)
+            set(OpenMP_CXX_FLAGS
+                "-Xpreprocessor -fopenmp -I${_prefix}/include"
+                CACHE STRING "" FORCE)
+            set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "" FORCE)
+            set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "" FORCE)
+            set(OpenMP_omp_LIBRARY "${_prefix}/lib/libomp.dylib"
+                CACHE FILEPATH "" FORCE)
+            break()
+        endif()
+    endforeach()
+    find_package(OpenMP)
 endif()
 
-find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
 endif()
@@ -104,6 +130,13 @@ install(
     LIBRARY DESTINATION piquasso/jax_extensions
 )
 
-# GPU module: only built when CUDA was enabled at the root level. The CUDA
-# subdir has its own CMakeLists.txt and uses JAX_INCLUDE_DIR set above.
-add_subdirectory(${PERM_BOOST_SRC}/cuda ${CMAKE_BINARY_DIR}/src/perm_boost/cuda)
+# GPU module: only built when CUDA was enabled at the root level. The subdir
+# self-guards on CUDAToolkit_FOUND, but we also gate the add_subdirectory call
+# itself so configuration never traverses into the CUDA tree on systems
+# without a toolkit. JAX_INCLUDE_DIR (set above) is consumed inside.
+if(CUDAToolkit_FOUND)
+    add_subdirectory(
+        ${PERM_BOOST_SRC}/cuda
+        ${CMAKE_BINARY_DIR}/src/perm_boost/cuda
+    )
+endif()
