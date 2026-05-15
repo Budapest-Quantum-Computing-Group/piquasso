@@ -5,11 +5,6 @@
 # silently -- the resulting wheel is leaner but still functional, and at
 # runtime the dispatchers fall back to the JAX-only paths.
 
-# Locate the XLA/JAX FFI include directory. Callers may pre-set JAX_INCLUDE_DIR
-# (e.g. `cmake -DJAX_INCLUDE_DIR=...`) to bypass the Python probe entirely --
-# useful for cross-compilation, conda-build, and CI images where the build-env
-# Python may not match the runtime environment. Otherwise we query the build-env
-# Python, trying jax.ffi (>= 0.6) then jax.extend.ffi (< 0.6) in one call.
 if(NOT DEFINED JAX_INCLUDE_DIR)
   execute_process(
     COMMAND ${Python_EXECUTABLE} -c "
@@ -30,9 +25,6 @@ print(_f.include_dir())
   endif()
 endif()
 
-# Validate that the include dir actually contains the FFI header. Catches slim
-# wheels, stripped installs, or a mis-set -DJAX_INCLUDE_DIR before we hit an
-# opaque compile error later.
 if(NOT EXISTS "${JAX_INCLUDE_DIR}/xla/ffi/api/ffi.h")
   message(STATUS
     "JAX_INCLUDE_DIR=${JAX_INCLUDE_DIR} is missing xla/ffi/api/ffi.h; "
@@ -59,23 +51,9 @@ target_compile_definitions(_perm_boost_core PRIVATE
     VERSION_INFO="${PROJECT_VERSION}"
 )
 
-# Warning suppressions for permanent.hpp / perm_boost_core.cpp.
-#
-# Piquasso's root CMakeLists.txt sets -Wall -Wextra -Wpedantic -Werror (and
-# /W4 /WX on MSVC). These suppressions are scoped to this target only -- they
-# do NOT relax the policy for the rest of the project.
-#
-# GCC/Clang:
-#   -Wno-pedantic         permanent.hpp uses __int128, a GCC extension
-#   -Wno-unknown-pragmas  #pragma omp under compilers without OpenMP enabled
-#   -Wno-unused-variable
-#   -Wno-unused-parameter pybind11 binding glue declares args it doesn't read
-#   -Wno-sign-compare     loop counters cross signed/unsigned in the kernel
-#
-# MSVC (rough parallels to the above):
-#   /wd4002 /wd4003       macro-arity warnings from the permanent macros
-#   /wd4456               local-shadowing in the inlined kernel
-#   /wd4715               not-all-paths-return in templated specialisations
+# permanent.hpp uses __int128 (GCC extension) and #pragma omp -- suppress
+# pedantic and unknown-pragma warnings that Piquasso's global flags would
+# otherwise error on.
 target_compile_options(_perm_boost_core PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-pedantic>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unknown-pragmas>
@@ -88,18 +66,13 @@ target_compile_options(_perm_boost_core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/wd4715>
 )
 
-# Discovery-first OpenMP. find_package handles Linux, Windows, and any Apple
-# setup with a CMake-aware toolchain (e.g. a brewed GCC, or a user-supplied
-# OpenMP_ROOT / CMAKE_PREFIX_PATH). Only if that fails on Apple do we inject
-# hints for the common Apple-Clang + libomp arrangements -- ordered so the
-# first one that has both headers and the dylib wins.
 find_package(OpenMP)
 
 if(NOT OpenMP_CXX_FOUND AND APPLE)
     foreach(_prefix
-        "/opt/homebrew/opt/libomp"   # Homebrew on Apple Silicon
-        "/usr/local/opt/libomp"      # Homebrew on Intel
-        "/opt/local")                # MacPorts (libomp port)
+        "/opt/homebrew/opt/libomp"
+        "/usr/local/opt/libomp"
+        "/opt/local")
         if(EXISTS "${_prefix}/lib/libomp.dylib" AND
            EXISTS "${_prefix}/include/omp.h")
             set(OpenMP_C_FLAGS
@@ -130,10 +103,8 @@ install(
     LIBRARY DESTINATION piquasso/jax_extensions
 )
 
-# GPU module: only built when CUDA was enabled at the root level. The subdir
-# self-guards on CUDAToolkit_FOUND, but we also gate the add_subdirectory call
-# itself so configuration never traverses into the CUDA tree on systems
-# without a toolkit. JAX_INCLUDE_DIR (set above) is consumed inside.
+# GPU module: only built when CUDA was enabled at the root level. The CUDA
+# subdir has its own CMakeLists.txt and uses JAX_INCLUDE_DIR set above.
 if(CUDAToolkit_FOUND)
     add_subdirectory(
         ${PERM_BOOST_SRC}/cuda
