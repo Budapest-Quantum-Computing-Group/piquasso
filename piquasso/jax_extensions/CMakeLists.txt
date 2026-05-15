@@ -5,28 +5,38 @@
 # silently -- the resulting wheel is leaner but still functional, and at
 # runtime the dispatchers fall back to the JAX-only paths.
 
-# Locate the XLA/JAX FFI include directory by querying the build-env Python.
-# Two locations are tried: jax.ffi (>= 0.6) then jax.extend.ffi (< 0.6).
-execute_process(
-  COMMAND ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
-  OUTPUT_VARIABLE JAX_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  RESULT_VARIABLE JAX_RESULT
-  ERROR_QUIET
-)
-
-if(NOT JAX_RESULT EQUAL 0)
+# Locate the XLA/JAX FFI include directory. Callers may pre-set JAX_INCLUDE_DIR
+# (e.g. `cmake -DJAX_INCLUDE_DIR=...`) to bypass the Python probe entirely --
+# useful for cross-compilation, conda-build, and CI images where the build-env
+# Python may not match the runtime environment. Otherwise we query the build-env
+# Python, trying jax.ffi (>= 0.6) then jax.extend.ffi (< 0.6) in one call.
+if(NOT DEFINED JAX_INCLUDE_DIR)
   execute_process(
-    COMMAND ${Python_EXECUTABLE} -c "import jax.extend.ffi; print(jax.extend.ffi.include_dir())"
+    COMMAND ${Python_EXECUTABLE} -c "
+try:
+    import jax.ffi as _f
+except ImportError:
+    import jax.extend.ffi as _f
+print(_f.include_dir())
+"
     OUTPUT_VARIABLE JAX_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULT_VARIABLE JAX_RESULT
     ERROR_QUIET
   )
+  if(NOT JAX_RESULT EQUAL 0)
+    message(STATUS "JAX not found in build env, skipping jax_extensions build")
+    return()
+  endif()
 endif()
 
-if(NOT JAX_RESULT EQUAL 0)
-  message(STATUS "JAX not found in build env, skipping jax_extensions build")
+# Validate that the include dir actually contains the FFI header. Catches slim
+# wheels, stripped installs, or a mis-set -DJAX_INCLUDE_DIR before we hit an
+# opaque compile error later.
+if(NOT EXISTS "${JAX_INCLUDE_DIR}/xla/ffi/api/ffi.h")
+  message(STATUS
+    "JAX_INCLUDE_DIR=${JAX_INCLUDE_DIR} is missing xla/ffi/api/ffi.h; "
+    "skipping jax_extensions build")
   return()
 endif()
 
