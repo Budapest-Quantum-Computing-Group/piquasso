@@ -17,6 +17,8 @@
 #ifndef PERMANENT_HPP
 #define PERMANENT_HPP
 
+#include <complex>
+
 #include "matrix.hpp"
 
 /**
@@ -28,7 +30,18 @@
  * @returns The permanent of the input matrix
  */
 template <typename TScalar>
-extern std::complex<TScalar> permanent_cpp(
+std::complex<TScalar> permanent_cpp(
     Matrix<std::complex<TScalar>> &matrix, Vector<int> &rows, Vector<int> &cols);
+
+/**
+ * Calculates the gradient of the permanent with respect to each matrix element.
+ *
+ * @param A The input matrix.
+ * @param rows Row multiplicities.
+ * @param cols Column multiplicities.
+ * @returns Matrix of partial derivatives of the permanent.
+ */
+Matrix<std::complex<double>> grad_perm(
+    Matrix<std::complex<double>> &A, Vector<int> &rows, Vector<int> &cols);
 
 #endif

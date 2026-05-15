@@ -153,6 +153,31 @@ class JaxConnector(BuiltinConnector):
         return self._scipy.linalg.schur(*args, **kwargs)
 
     def permanent(self, *args, **kwargs):
+        use_boost = kwargs.pop("use_perm_boost", False)
+        if use_boost:
+            if not args:
+                raise TypeError("permanent: matrix argument is required")
+
+            try:
+                from piquasso.jax_extensions.permanent import perm
+            except ImportError:
+                perm = None
+
+            if perm is not None:
+                rows = kwargs.pop("rows", args[1] if len(args) > 1 else None)
+                cols = kwargs.pop("cols", args[2] if len(args) > 2 else None)
+                if rows is None or cols is None:
+                    raise TypeError(
+                        "permanent(..., use_perm_boost=True) requires rows and cols"
+                    )
+                matrix = args[0].astype(self.np.complex128)
+                rows_u64 = self.np.asarray(rows, dtype=self.np.uint64)
+                cols_u64 = self.np.asarray(cols, dtype=self.np.uint64)
+                return perm(matrix, rows_u64, cols_u64)
+            # Extension absent; fall through with the same dtype promise the
+            # boost path would have made, to avoid silent precision divergence.
+            args = (args[0].astype(self.np.complex128),) + args[1:]
+
         from piquasso._math.jax.permanent import permanent_with_reduction
 
         return permanent_with_reduction(*args, **kwargs)

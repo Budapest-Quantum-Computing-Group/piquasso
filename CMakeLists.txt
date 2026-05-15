@@ -9,12 +9,24 @@ message(CXXFLAGS="$ENV{CXXFLAGS}")
 if(MSVC)
   add_compile_options(/W4 /WX /openmp)
 else()
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(
+  $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+  $<$<COMPILE_LANGUAGE:CXX>:-Werror>
+  )
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# CUDA support is optional
+# So no error messages if CUDA is not found
+find_package(CUDAToolkit QUIET)
+if(CUDAToolkit_FOUND)
+    enable_language(CUDA)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
@@ -23,3 +35,4 @@ endif()
 
 add_subdirectory(src)
 add_subdirectory(piquasso/_math)
+add_subdirectory(piquasso/jax_extensions)

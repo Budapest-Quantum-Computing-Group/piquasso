@@ -1,5 +1,14 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
+requires = [
+  "scikit-build-core",
+  "pybind11",
+  # JAX is needed at build time so the perm_boost FFI extension can locate
+  # the XLA FFI headers; jaxlib >= 0.4.31 is required for the new Buffer API
+  # used by the C++ code. On platforms without jaxlib wheels (win32, musllinux)
+  # source builds will fail at dep resolution; CI skips those.
+  "jax[cpu]>=0.4.31",
+  "jaxlib>=0.4.31",
+]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -46,7 +55,8 @@ Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/m
 [project.optional-dependencies]
 qiskit = ["qiskit"]
 tensorflow = ["tensorflow"]
-jax = ["jax[cpu]"]
+jax = ["jax[cpu]>=0.4.31", "jaxlib>=0.4.31"]
+jax-cuda12 = ["jax[cuda12]>=0.4.31", "jaxlib>=0.4.31"]
 matplotlib = ["matplotlib"]
 dask = ["dask"]
 dev = [

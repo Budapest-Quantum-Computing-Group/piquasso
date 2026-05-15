@@ -24,6 +24,15 @@
 #include <iostream>
 #endif
 
+#ifndef HOST_DEVICE
+#ifdef __CUDACC__
+#include <cuda_runtime.h>
+#define HOST_DEVICE __host__ __device__
+#else
+#define HOST_DEVICE
+#endif
+#endif
+
 
 /**
  * The class for storing vectors.
@@ -40,7 +49,7 @@ public:
     bool owner;       // True if data is owned by the instance, otherwise false.
     size_t *refcount; // Number of references
 
-    Vector(size_t length) : length(length)
+    HOST_DEVICE Vector(size_t length) : length(length)
     {
         data = new TScalar[length];
         owner = true;
@@ -48,7 +57,7 @@ public:
         (*refcount) = 1;
     }
 
-    Vector(size_t length, TScalar *data)
+    HOST_DEVICE Vector(size_t length, TScalar *data)
         : length(length), data(data)
     {
         owner = false;
@@ -56,24 +65,28 @@ public:
         (*refcount) = 1;
     }
 
-    Vector(const Vector &other)
+    HOST_DEVICE Vector(const Vector &other)
         : length(other.length), data(other.data), owner(other.owner),
             refcount(other.refcount)
     {
-        (*refcount)++;
+        // refcount may be null when copying from a default-constructed Vector.
+        if (refcount) (*refcount)++;
     }
 
-    void operator=(const Vector &other)
+    HOST_DEVICE Vector()
+        : length(0), data(nullptr), owner(false), refcount(nullptr) {}
+
+    HOST_DEVICE void operator=(const Vector &other)
     {
         length = other.length;
         data = other.data;
         owner = other.owner;
         refcount = other.refcount;
 
-        (*refcount)++;
+        if (refcount) (*refcount)++;
     }
 
-    Vector copy()
+    HOST_DEVICE Vector copy()
     {
         Vector vector_copy(length);
 
@@ -82,12 +95,12 @@ public:
         return vector_copy;
     }
 
-    size_t size()
+    HOST_DEVICE size_t size()
     {
         return length;
     }
 
-    TScalar sum()
+    HOST_DEVICE TScalar sum()
     {
         TScalar result = TScalar{};
 
@@ -97,8 +110,10 @@ public:
         return result;
     }
 
-    ~Vector()
+    HOST_DEVICE ~Vector()
     {
+        if (!refcount) return; // default-constructed Vector, nothing owned.
+
         bool call_delete = ((*refcount) == 1);
 
         if (call_delete)
@@ -111,7 +126,7 @@ public:
     }
 
 #ifdef DEBUG
-    void print()
+    HOST_DEVICE void print()
     {
         std::cout << "The stored vector:\n";
         for (size_t idx = 0; idx < length; idx++)
@@ -121,7 +136,7 @@ public:
     }
 #endif
 
-    TScalar &operator[](size_t idx) const
+    HOST_DEVICE TScalar &operator[](size_t idx) const
     {
         return data[idx];
     }
@@ -145,7 +160,7 @@ public:
     bool owner;       // True if data is owned by the instance, otherwise false.
     size_t *refcount; // Number of references
 
-    Matrix(size_t rows, size_t cols)
+    HOST_DEVICE Matrix(size_t rows, size_t cols)
         : rows(rows), cols(cols), stride(cols)
     {
         data = new TScalar[rows * cols];
@@ -154,7 +169,7 @@ public:
         (*refcount) = 1;
     }
 
-    Matrix(size_t rows, size_t cols, TScalar *data)
+    HOST_DEVICE Matrix(size_t rows, size_t cols, TScalar *data)
         : rows(rows), cols(cols), stride(cols), data(data)
     {
         owner = false;
@@ -162,14 +177,19 @@ public:
         (*refcount) = 1;
     }
 
-    Matrix(const Matrix &matrix)
+    HOST_DEVICE Matrix(const Matrix &matrix)
         : rows(matrix.rows), cols(matrix.cols), stride(matrix.stride),
           data(matrix.data), owner(matrix.owner), refcount(matrix.refcount)
     {
-        (*refcount)++;
+        // refcount may be null when copying from a default-constructed Matrix.
+        if (refcount) (*refcount)++;
     }
 
-    void operator=(const Matrix &matrix)
+    HOST_DEVICE Matrix()
+        : rows(0), cols(0), stride(0), data(nullptr), owner(false),
+          refcount(nullptr) {}
+
+    HOST_DEVICE void operator=(const Matrix &matrix)
     {
         rows = matrix.rows;
         cols = matrix.cols;
@@ -178,15 +198,15 @@ public:
         owner = matrix.owner;
         refcount = matrix.refcount;
 
-        (*refcount)++;
+        if (refcount) (*refcount)++;
     }
 
-    size_t size()
+    HOST_DEVICE size_t size()
     {
         return rows * cols;
     }
 
-    Matrix copy()
+    HOST_DEVICE Matrix copy()
     {
         Matrix matrix_copy(rows, cols);
 
@@ -195,8 +215,10 @@ public:
         return matrix_copy;
     }
 
-    ~Matrix()
+    HOST_DEVICE ~Matrix()
     {
+        if (!refcount) return; // default-constructed Matrix, nothing owned.
+
         bool call_delete = ((*refcount) == 1);
 
         if (call_delete)
@@ -209,7 +231,7 @@ public:
     }
 
 #ifdef DEBUG
-    void print()
+    HOST_DEVICE void print()
     {
         std::cout << std::endl
                   << "The stored matrix:" << std::endl;
@@ -226,12 +248,12 @@ public:
     }
 #endif
 
-    TScalar &operator[](size_t idx) const
+    HOST_DEVICE TScalar &operator[](size_t idx) const
     {
         return data[idx];
     }
 
-    TScalar &operator()(size_t row, size_t col)
+    HOST_DEVICE TScalar &operator()(size_t row, size_t col)
     {
         return data[row * stride + col];
     }

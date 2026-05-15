@@ -31,6 +31,13 @@ from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
+try:
+    import jax
+
+    _JAX_PERM_BOOST_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    _JAX_PERM_BOOST_AVAILABLE = False
+
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
@@ -277,6 +284,9 @@ def pytest_addoption(parser):
         action="store_true",
         help="Skips tests using TensorFlow.",
     )
+    parser.addoption(
+        "--platform", action="store", default="cpu", help="Choose platform: cpu or gpu"
+    )
 
 
 @pytest.fixture
@@ -319,3 +329,12 @@ def PureFockSimulator_with_tensorflow_tf_function(tensorflow_connector_tf_functi
 @pytest.fixture
 def PureFockSimulator_with_jax():
     return partial(pq.PureFockSimulator, connector=pq.JaxConnector())
+
+
+def pytest_configure(config):
+    if _JAX_PERM_BOOST_AVAILABLE:
+        platform = config.getoption("--platform")
+        try:
+            jax.config.update("jax_platforms", platform)
+        except AttributeError:
+            jax.config.update("jax_platform_name", platform)
