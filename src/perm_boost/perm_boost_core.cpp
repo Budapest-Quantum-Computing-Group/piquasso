@@ -122,15 +122,10 @@ ffi::Error PermFwdImpl(ffi::Buffer<ffi::DataType::C128> A, ffi::Buffer<ffi::Data
   Vector<int> row_vec(row_mult.size(), row_mult.data());
   Vector<int> col_vec(col_mult.size(), col_mult.data());
 
-  (*y).typed_data()[0] =
-      permanent_cpp<double>(matrix, row_vec, col_vec);
-
-  // permanent_cpp mutates its matrix and rows arguments; use fresh copies for res
-  Matrix<std::complex<double>> matrix2(total_size / n, n, A_ptr);
-  Vector<int> row_vec2(row_mult.size(), row_mult.data());
-  Vector<int> col_vec2(col_mult.size(), col_mult.data());
-  (*res).typed_data()[0] =
-      permanent_cpp<double>(matrix2, row_vec2, col_vec2);
+  // permanent_cpp is pure; compute once and write the scalar to both outputs.
+  auto value = permanent_cpp<double>(matrix, row_vec, col_vec);
+  (*y).typed_data()[0]   = value;
+  (*res).typed_data()[0] = value;
 
   return ffi::Error::Success();
 }
