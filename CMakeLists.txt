@@ -21,11 +21,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# CUDA support is optional
-# So no error messages if CUDA is not found
-find_package(CUDAToolkit QUIET)
-if(CUDAToolkit_FOUND)
-    enable_language(CUDA)
+# CUDA support only on Linux x86_64 / aarch64 (JAX does not support CUDA on Windows or macOS)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
+   (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"))
+    find_package(CUDAToolkit QUIET)
+    if(CUDAToolkit_FOUND)
+        enable_language(CUDA)
+    endif()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
