@@ -410,3 +410,58 @@ def test_perm_jit_grad():
 
     assert np.allclose(jacobian[0], expected[0])
     assert np.allclose(jacobian[1], expected[1])
+
+
+def test_permanent_rows_not_1d():
+    matrix = np.eye(2, dtype=np.complex128)
+    rows = np.ones((2, 1), dtype=np.uint64)
+    cols = np.ones(2, dtype=np.uint64)
+    with pytest.raises(ValueError, match="rows and cols must be 1D"):
+        perm(matrix, rows, cols)
+
+
+def test_permanent_cols_not_1d():
+    matrix = np.eye(2, dtype=np.complex128)
+    rows = np.ones(2, dtype=np.uint64)
+    cols = np.ones((2, 1), dtype=np.uint64)
+    with pytest.raises(ValueError, match="rows and cols must be 1D"):
+        perm(matrix, rows, cols)
+
+
+def test_permanent_rows_wrong_dtype():
+    matrix = np.eye(2, dtype=np.complex128)
+    rows = np.ones(2, dtype=np.int32)
+    cols = np.ones(2, dtype=np.uint64)
+    with pytest.raises(ValueError, match="uint32 or uint64"):
+        perm(matrix, rows, cols)
+
+
+def test_permanent_cols_wrong_dtype():
+    matrix = np.eye(2, dtype=np.complex128)
+    rows = np.ones(2, dtype=np.uint64)
+    cols = np.ones(2, dtype=np.int64)
+    with pytest.raises(ValueError, match="uint32 or uint64"):
+        perm(matrix, rows, cols)
+
+
+def test_permanent_a_not_2d():
+    matrix = np.ones((2, 2, 2), dtype=np.complex128)
+    rows = np.ones(2, dtype=np.uint64)
+    cols = np.ones(2, dtype=np.uint64)
+    with pytest.raises(ValueError, match="shape mismatch"):
+        perm(matrix, rows, cols)
+
+
+def test_permanent_a_not_complex128_error_message():
+    matrix = np.eye(2, dtype=np.complex64)
+    rows = np.ones(2, dtype=np.uint64)
+    cols = np.ones(2, dtype=np.uint64)
+    with pytest.raises(ValueError, match="complex128"):
+        perm(matrix, rows, cols)
+
+
+def test_perm_is_reexported_from_package():
+    import piquasso.jax_extensions as je
+    from piquasso.jax_extensions.permanent import perm as direct_perm
+
+    assert je.perm is direct_perm
