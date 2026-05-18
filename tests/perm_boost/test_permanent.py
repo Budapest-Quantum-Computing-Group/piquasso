@@ -617,9 +617,7 @@ def test_gpu_extension_silent_fallback_when_missing(monkeypatch):
     monkeypatch.delattr(je_pkg, gpu_attr, raising=False)
 
     ffi_module = _resolve_ffi_module()
-    monkeypatch.setattr(
-        ffi_module, "register_ffi_target", lambda *a, **kw: None
-    )
+    monkeypatch.setattr(ffi_module, "register_ffi_target", lambda *a, **kw: None)
 
     original = sys.modules.get(mod_name)
     monkeypatch.delitem(sys.modules, mod_name, raising=False)
