@@ -60,7 +60,7 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(PermBwd, PermBwdImpl,
 );
 
 template <typename T>
-py::capsule EncapsulateFfiHandler(T *fn)
+py::capsule EncapsulateFFIHandler(T *fn)
 {
     static_assert(std::is_invocable_r_v<XLA_FFI_Error *, T, XLA_FFI_CallFrame *>,
                   "Encapsulated function must be and XLA FFI handler");
@@ -73,9 +73,9 @@ PYBIND11_MODULE(_perm_boost_gpu_ops, m)
     m.def("registrations", []()
           {
       py::dict registrations;
-      registrations["dperm"] = EncapsulateFfiHandler(Perm);
-      registrations["dperm_fwd"] = EncapsulateFfiHandler(PermFwd);
-      registrations["dperm_bwd"] = EncapsulateFfiHandler(PermBwd);
+      registrations["dperm"] = EncapsulateFFIHandler(Perm);
+      registrations["dperm_fwd"] = EncapsulateFFIHandler(PermFwd);
+      registrations["dperm_bwd"] = EncapsulateFFIHandler(PermBwd);
       return registrations; });
     m.attr("__version__") = "dev";
 }

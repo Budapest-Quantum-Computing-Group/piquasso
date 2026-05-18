@@ -201,7 +201,10 @@ public:
 
     /**
     @brief Iterate the counter to the next value.
-    @return Returns the success flag.
+    @param changed_index The index of the gray code element that changed.
+    @param value_prev The previous value of the gray code element that changed.
+    @param value The new value of the gray code element.
+    @return Returns 0 on success, or 1 if the counter has reached the maximal offset.
     */
     HOST_DEVICE int next(int &changed_index, int &value_prev, int &value)
     {
