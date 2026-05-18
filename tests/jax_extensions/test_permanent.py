@@ -535,6 +535,7 @@ def test_jax_extend_ffi_fallback_when_jax_ffi_missing(monkeypatch):
     import sys
 
     import jax
+    import piquasso.jax_extensions as je_pkg
 
     pytest.importorskip("jax.extend.ffi")
 
@@ -555,8 +556,13 @@ def test_jax_extend_ffi_fallback_when_jax_ffi_missing(monkeypatch):
         assert fresh._ffi_call_new_api is False
         assert fresh._jax_ffi is legacy_ffi
     finally:
+        # importlib.import_module rebinds the parent-package attribute to the
+        # fresh module; restoring sys.modules alone leaves
+        # piquasso.jax_extensions.permanent pointing at the throwaway module,
+        # which breaks subsequent tests that patch its `perm` attribute.
         if original is not None:
             sys.modules[mod_name] = original
+            je_pkg.permanent = original
 
 
 def test_gpu_extension_registered_when_available(monkeypatch):
@@ -597,6 +603,7 @@ def test_gpu_extension_registered_when_available(monkeypatch):
     finally:
         if original is not None:
             sys.modules[mod_name] = original
+            je_pkg.permanent = original
 
 
 def test_gpu_extension_silent_fallback_when_missing(monkeypatch):
@@ -627,3 +634,4 @@ def test_gpu_extension_silent_fallback_when_missing(monkeypatch):
     finally:
         if original is not None:
             sys.modules[mod_name] = original
+            je_pkg.permanent = original

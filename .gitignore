@@ -15,6 +15,7 @@ prof
 # IDEs
 .vscode
 .idea
+.claude/
 
 # Sphinx
 docs/_build
