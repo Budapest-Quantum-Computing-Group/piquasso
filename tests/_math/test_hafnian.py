@@ -660,7 +660,7 @@ def test_loop_hafnian_with_reduction_batch_random():
         A = A + A.T
         diagonal = np.random.rand(d) + 1j * np.random.rand(d)
 
-        occupation_numbers = np.random.randint(0, max_photons, d)
+        occupation_numbers = np.random.randint(0, max_photons, d, dtype=np.int64)
         occupation_numbers[-1] = 0
 
         cutoff = np.random.randint(1, 12)
