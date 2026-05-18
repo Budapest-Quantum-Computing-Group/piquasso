@@ -465,3 +465,167 @@ def test_perm_is_reexported_from_package():
     from piquasso.jax_extensions.permanent import perm as direct_perm
 
     assert je.perm is direct_perm
+
+
+def _resolve_ffi_module():
+    import jax
+
+    try:
+        return jax.ffi
+    except AttributeError:
+        import jax.extend.ffi as legacy
+
+        return legacy
+
+
+def test_ffi_call_legacy_api_branch(monkeypatch):
+    """Exercise the jax.extend.ffi (< 0.6) branch of _ffi_call."""
+    from piquasso.jax_extensions import permanent as perm_module
+
+    captured = {}
+
+    class StubLegacyFFI:
+        @staticmethod
+        def ffi_call(name, out_type, *args, **kwargs):
+            captured["call"] = (name, out_type, args, kwargs)
+            return "legacy-result"
+
+    monkeypatch.setattr(perm_module, "_ffi_call_new_api", False)
+    monkeypatch.setattr(perm_module, "_jax_ffi", StubLegacyFFI)
+
+    result = perm_module._ffi_call("perm", "out_sentinel", "arg1", "arg2")
+
+    assert result == "legacy-result"
+    assert captured["call"] == ("perm", "out_sentinel", ("arg1", "arg2"), {})
+
+
+def test_ffi_call_modern_api_branch(monkeypatch):
+    """Exercise the jax.ffi (>= 0.6) branch of _ffi_call."""
+    from piquasso.jax_extensions import permanent as perm_module
+
+    captured = {}
+
+    def inner(*args):
+        captured["inner_args"] = args
+        return "modern-result"
+
+    class StubModernFFI:
+        @staticmethod
+        def ffi_call(name, out_type, **kwargs):
+            captured["outer"] = (name, out_type, kwargs)
+            return inner
+
+    monkeypatch.setattr(perm_module, "_ffi_call_new_api", True)
+    monkeypatch.setattr(perm_module, "_jax_ffi", StubModernFFI)
+
+    result = perm_module._ffi_call("perm", "out_sentinel", "arg1", "arg2")
+
+    assert result == "modern-result"
+    assert captured["outer"] == (
+        "perm",
+        "out_sentinel",
+        {"vmap_method": "sequential"},
+    )
+    assert captured["inner_args"] == ("arg1", "arg2")
+
+
+def test_jax_extend_ffi_fallback_when_jax_ffi_missing(monkeypatch):
+    """Reload permanent.py with jax.ffi absent to hit the AttributeError branch."""
+    import importlib
+    import sys
+
+    import jax
+
+    pytest.importorskip("jax.extend.ffi")
+
+    monkeypatch.delattr(jax, "ffi", raising=False)
+
+    import jax.extend.ffi as legacy_ffi
+
+    # Avoid double-registering FFI targets when the module is re-imported.
+    monkeypatch.setattr(
+        legacy_ffi, "register_ffi_target", lambda *a, **kw: None, raising=False
+    )
+
+    mod_name = "piquasso.jax_extensions.permanent"
+    original = sys.modules.get(mod_name)
+    monkeypatch.delitem(sys.modules, mod_name, raising=False)
+    try:
+        fresh = importlib.import_module(mod_name)
+        assert fresh._ffi_call_new_api is False
+        assert fresh._jax_ffi is legacy_ffi
+    finally:
+        if original is not None:
+            sys.modules[mod_name] = original
+
+
+def test_gpu_extension_registered_when_available(monkeypatch):
+    """Cover the GPU registration loop by injecting a fake _perm_boost_gpu_ops."""
+    import importlib
+    import sys
+    import types
+
+    import piquasso.jax_extensions as je_pkg
+
+    mod_name = "piquasso.jax_extensions.permanent"
+    gpu_attr = "_perm_boost_gpu_ops"
+    gpu_mod_name = f"piquasso.jax_extensions.{gpu_attr}"
+
+    fake_target = object()
+    fake_gpu = types.ModuleType(gpu_mod_name)
+    fake_gpu.registrations = lambda: {"dperm_fake_target": fake_target}
+
+    registered = []
+    ffi_module = _resolve_ffi_module()
+    monkeypatch.setattr(
+        ffi_module,
+        "register_ffi_target",
+        lambda name, target, platform: registered.append((name, target, platform)),
+    )
+
+    # `from . import _perm_boost_gpu_ops` reads the attribute off the parent
+    # package, so patch both sys.modules and the parent-package attribute.
+    monkeypatch.setitem(sys.modules, gpu_mod_name, fake_gpu)
+    monkeypatch.setattr(je_pkg, gpu_attr, fake_gpu, raising=False)
+
+    original = sys.modules.get(mod_name)
+    monkeypatch.delitem(sys.modules, mod_name, raising=False)
+    try:
+        fresh = importlib.import_module(mod_name)
+        assert fresh._gpu is True
+        assert ("dperm_fake_target", fake_target, "CUDA") in registered
+    finally:
+        if original is not None:
+            sys.modules[mod_name] = original
+
+
+def test_gpu_extension_silent_fallback_when_missing(monkeypatch):
+    """Cover the ImportError fallback when the GPU extension is unbuilt."""
+    import importlib
+    import sys
+
+    import piquasso.jax_extensions as je_pkg
+
+    mod_name = "piquasso.jax_extensions.permanent"
+    gpu_attr = "_perm_boost_gpu_ops"
+    gpu_mod_name = f"piquasso.jax_extensions.{gpu_attr}"
+
+    # sys.modules[name] = None makes a subsequent import raise ImportError.
+    monkeypatch.setitem(sys.modules, gpu_mod_name, None)
+    # `from . import _perm_boost_gpu_ops` reads the parent-package attribute
+    # first; drop it so the import machinery falls through to sys.modules.
+    monkeypatch.delattr(je_pkg, gpu_attr, raising=False)
+
+    ffi_module = _resolve_ffi_module()
+    monkeypatch.setattr(
+        ffi_module, "register_ffi_target", lambda *a, **kw: None
+    )
+
+    original = sys.modules.get(mod_name)
+    monkeypatch.delitem(sys.modules, mod_name, raising=False)
+    try:
+        fresh = importlib.import_module(mod_name)
+        assert fresh._gpu is False
+    finally:
+        if original is not None:
+            sys.modules[mod_name] = original
