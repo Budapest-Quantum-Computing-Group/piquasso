@@ -5,28 +5,30 @@
 # silently -- the resulting wheel is leaner but still functional, and at
 # runtime the dispatchers fall back to the JAX-only paths.
 
-# Locate the XLA/JAX FFI include directory by querying the build-env Python.
-# Two locations are tried: jax.ffi (>= 0.6) then jax.extend.ffi (< 0.6).
-execute_process(
-  COMMAND ${Python_EXECUTABLE} -c "import jax.ffi; print(jax.ffi.include_dir())"
-  OUTPUT_VARIABLE JAX_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  RESULT_VARIABLE JAX_RESULT
-  ERROR_QUIET
-)
-
-if(NOT JAX_RESULT EQUAL 0)
+if(NOT DEFINED JAX_INCLUDE_DIR)
   execute_process(
-    COMMAND ${Python_EXECUTABLE} -c "import jax.extend.ffi; print(jax.extend.ffi.include_dir())"
+    COMMAND ${Python_EXECUTABLE} -c "
+try:
+    import jax.ffi as _f
+except ImportError:
+    import jax.extend.ffi as _f
+print(_f.include_dir())
+"
     OUTPUT_VARIABLE JAX_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULT_VARIABLE JAX_RESULT
     ERROR_QUIET
   )
+  if(NOT JAX_RESULT EQUAL 0)
+    message(STATUS "JAX not found in build env, skipping jax_extensions build")
+    return()
+  endif()
 endif()
 
-if(NOT JAX_RESULT EQUAL 0)
-  message(STATUS "JAX not found in build env, skipping jax_extensions build")
+if(NOT EXISTS "${JAX_INCLUDE_DIR}/xla/ffi/api/ffi.h")
+  message(STATUS
+    "JAX_INCLUDE_DIR=${JAX_INCLUDE_DIR} is missing xla/ffi/api/ffi.h; "
+    "skipping jax_extensions build")
   return()
 endif()
 
@@ -64,24 +66,31 @@ target_compile_options(_perm_boost_core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/wd4715>
 )
 
-if(APPLE)
-    # Check if Homebrew's libomp is installed
-    if(EXISTS "/opt/homebrew/opt/libomp")
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY "/opt/homebrew/opt/libomp/lib/libomp.dylib")
-    elseif(EXISTS "/usr/local/opt/libomp")
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY "/usr/local/opt/libomp/lib/libomp.dylib")
-    endif()
+find_package(OpenMP)
+
+if(NOT OpenMP_CXX_FOUND AND APPLE)
+    foreach(_prefix
+        "/opt/homebrew/opt/libomp"
+        "/usr/local/opt/libomp"
+        "/opt/local")
+        if(EXISTS "${_prefix}/lib/libomp.dylib" AND
+           EXISTS "${_prefix}/include/omp.h")
+            set(OpenMP_C_FLAGS
+                "-Xpreprocessor -fopenmp -I${_prefix}/include"
+                CACHE STRING "" FORCE)
+            set(OpenMP_CXX_FLAGS
+                "-Xpreprocessor -fopenmp -I${_prefix}/include"
+                CACHE STRING "" FORCE)
+            set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "" FORCE)
+            set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "" FORCE)
+            set(OpenMP_omp_LIBRARY "${_prefix}/lib/libomp.dylib"
+                CACHE FILEPATH "" FORCE)
+            break()
+        endif()
+    endforeach()
+    find_package(OpenMP)
 endif()
 
-find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
 endif()
@@ -96,4 +105,9 @@ install(
 
 # GPU module: only built when CUDA was enabled at the root level. The CUDA
 # subdir has its own CMakeLists.txt and uses JAX_INCLUDE_DIR set above.
-add_subdirectory(${PERM_BOOST_SRC}/cuda ${CMAKE_BINARY_DIR}/src/perm_boost/cuda)
+if(CUDAToolkit_FOUND)
+    add_subdirectory(
+        ${PERM_BOOST_SRC}/cuda
+        ${CMAKE_BINARY_DIR}/src/perm_boost/cuda
+    )
+endif()

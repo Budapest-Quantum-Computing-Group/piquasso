@@ -73,8 +73,16 @@ def pytest_configure(config):
 
 # Skip every perm_boost test if the underlying module cannot be imported.
 # The import of ``piquasso.jax_extensions`` raises ImportError when the
-# C++ extension has not been built.
+# C++ extension has not been built. Emit a warning so the skip is visible;
+# otherwise pytest just reports "collected 0 items" with no clue why.
 try:
     import piquasso.jax_extensions  # noqa: F401
-except ImportError:
+except ImportError as _exc:
+    import warnings
+
+    warnings.warn(
+        f"perm_boost tests skipped: {_exc}. "
+        "Rebuild with `pip install -e .` from the repo root.",
+        stacklevel=1,
+    )
     collect_ignore_glob = ["test_*.py"]
