@@ -382,7 +382,7 @@ def test_perm_jit_grad():
     regression where either the FFI trace path or the custom_vjp wiring
     breaks under composition).
 
-    Follows the real/imag-split pattern used in test_grad_perm.py: cross-check
+    Follows the real/imag-split pattern used in test_permanent_grad.py: cross-check
     the Jacobian of perm against the Jacobian of permanent_with_reduction.
     No holomorphicity assumption -- the wrapper splits the complex output
     into real and imaginary parts so jax.jacobian works for any

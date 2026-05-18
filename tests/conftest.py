@@ -31,13 +31,6 @@ from scipy.linalg import polar, coshm, sinhm, logm
 
 from piquasso._simulators.connectors import NumpyConnector
 
-try:
-    import jax
-
-    _JAX_PERM_BOOST_AVAILABLE = True
-except (ImportError, ModuleNotFoundError):
-    _JAX_PERM_BOOST_AVAILABLE = False
-
 
 @pytest.fixture(autouse=True)
 def _set_printoptions_for_debugging():
@@ -332,9 +325,13 @@ def PureFockSimulator_with_jax():
 
 
 def pytest_configure(config):
-    if _JAX_PERM_BOOST_AVAILABLE:
-        platform = config.getoption("--platform")
-        try:
-            jax.config.update("jax_platforms", platform)
-        except AttributeError:
-            jax.config.update("jax_platform_name", platform)
+    try:
+        import jax
+    except ImportError:
+        return
+
+    platform = config.getoption("--platform")
+    try:
+        jax.config.update("jax_platforms", platform)
+    except AttributeError:
+        jax.config.update("jax_platform_name", platform)
