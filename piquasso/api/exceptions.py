@@ -43,7 +43,7 @@ class InvalidSimulation(PiquassoException):
 
 
 class NotImplementedCalculation(PiquassoException):
-    """Raiesed when a calculation is not implemented."""
+    """Raised when a calculation is not implemented."""
 
 
 class CVQNNException(PiquassoException):

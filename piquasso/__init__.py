@@ -54,6 +54,8 @@ from piquasso._simulators.connectors import (
     JaxConnector,
 )
 
+from piquasso._simulators._simulate import simulate
+
 from .instructions.preparations import (
     Vacuum,
     Mean,
@@ -129,6 +131,7 @@ __all__ = [
     "SamplingSimulator",
     "FockSimulator",
     "PureFockSimulator",
+    "simulate",
     # Connectors
     "NumpyConnector",
     "TensorflowConnector",
