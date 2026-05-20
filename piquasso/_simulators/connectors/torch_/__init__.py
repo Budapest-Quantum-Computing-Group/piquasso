@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .jax_ import JaxConnector
-from .numpy_ import NumpyConnector
-from .tensorflow_ import TensorflowConnector
-from .torch_ import TorchConnector
 
-__all__ = ["NumpyConnector", "TensorflowConnector", "JaxConnector", "TorchConnector"]
+from .connector import TorchConnector
+
+__all__ = ["TorchConnector"]

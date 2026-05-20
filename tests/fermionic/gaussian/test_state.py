@@ -36,7 +36,7 @@ from piquasso.fermionic._utils import (
 
 
 for_all_connectors = pytest.mark.parametrize(
-    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+    "connector", [pq.NumpyConnector(), pq.JaxConnector(), pq.TorchConnector()]
 )
 
 

@@ -16,7 +16,7 @@
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
-from piquasso._simulators.connectors import NumpyConnector, JaxConnector
+from piquasso._simulators.connectors import NumpyConnector, JaxConnector, TorchConnector
 
 from .state import GaussianState
 from .simulation_steps import (
@@ -134,7 +134,7 @@ class GaussianSimulator(BuiltinSimulator):
 
     _default_connector_class = NumpyConnector
 
-    _extra_builtin_connectors = [JaxConnector]
+    _extra_builtin_connectors = [JaxConnector, TorchConnector]
 
     _measurement_classes_allowed_mid_circuit = (
         measurements.HomodyneMeasurement,

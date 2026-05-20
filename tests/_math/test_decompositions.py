@@ -13,32 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import networkx as nx
+import numpy as np
 import pytest
-
 from pytest_lazy_fixtures import lf
 
-import numpy as np
-
-import networkx as nx
-
 import piquasso as pq
-
-from piquasso._math.linalg import is_unitary, is_diagonal
-from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
 from piquasso._math.decompositions import (
     takagi,
     williamson,
 )
+from piquasso._math.linalg import is_diagonal, is_unitary
+from piquasso._math.symplectic import is_symplectic, xp_symplectic_form
+from piquasso._simulators.connectors import JaxConnector, NumpyConnector, TorchConnector
 
-from piquasso._simulators.connectors import (
-    NumpyConnector,
-    JaxConnector,
+for_all_connectors = pytest.mark.parametrize(
+    "connector",
+    [NumpyConnector(), JaxConnector(), TorchConnector(), lf("tensorflow_connector")],
 )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
     matrix = np.array(
         [
@@ -47,17 +42,22 @@ def test_takagi_on_real_symmetric_2_by_2_matrix(connector):
         ],
         dtype=complex,
     )
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    matrix = connector.np.array(matrix)
 
     singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+    assert np.allclose(connector.np.abs(singular_values), singular_values)
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
+    assert np.allclose(
+        matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
+    )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector):
     matrix = np.array(
         [
@@ -66,17 +66,22 @@ def test_takagi_on_complex_symmetric_2_by_2_matrix_with_multiplicities(connector
         ],
         dtype=complex,
     )
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    matrix = connector.np.array(matrix)
 
     singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+    assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
+    assert connector.np.allclose(
+        matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
+    )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
@@ -86,17 +91,19 @@ def test_takagi_on_real_symmetric_3_by_3_matrix(connector):
         ],
         dtype=complex,
     )
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    matrix = connector.np.array(matrix)
 
     singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+    assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
+    assert connector.np.allclose(
+        matrix, np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T
+    )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
     matrix = np.array(
         [
@@ -105,18 +112,23 @@ def test_takagi_on_complex_symmetric_3_by_3_matrix(connector):
             [3j, 5j, 9],
         ],
     )
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    matrix = connector.np.array(matrix)
 
     singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+    assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
+    # NOTE: We need matmul instead of @,
+    # because torch.Tensors do not automatically promote types.
+    assert connector.np.allclose(
+        matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
+    )
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
     connector,
     generate_unitary_matrix,
@@ -125,39 +137,49 @@ def test_takagi_on_complex_symmetric_6_by_6_matrix_with_multiplicities(
 
     unitary = generate_unitary_matrix(6)
 
-    matrix = unitary @ np.diag(singular_values) @ unitary.transpose()
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    unitary = connector.np.array(unitary)
+    singular_values = connector.np.array(singular_values)
+
+    matrix = (
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T
+    )
 
     calculated_singular_values, calculated_unitary = takagi(matrix, connector)
 
     assert is_unitary(calculated_unitary)
-    assert np.allclose(np.abs(calculated_singular_values), calculated_singular_values)
-    assert np.allclose(
+    assert connector.np.allclose(
+        connector.np.abs(calculated_singular_values), calculated_singular_values
+    )
+    assert connector.np.allclose(
         matrix,
-        calculated_unitary
-        @ np.diag(calculated_singular_values)
-        @ calculated_unitary.transpose(),
+        connector.np.matmul(
+            calculated_unitary, connector.np.diag(calculated_singular_values)
+        )
+        @ calculated_unitary.T,
     )
 
 
 @pytest.mark.monkey
 @pytest.mark.parametrize("N", [2, 3, 4, 5, 6])
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_complex_symmetric_N_by_N_matrix(
     N, connector, generate_complex_symmetric_matrix
 ):
     matrix = generate_complex_symmetric_matrix(N)
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    matrix = connector.np.array(matrix)
     singular_values, unitary = takagi(matrix, connector)
 
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(matrix, unitary @ np.diag(singular_values) @ unitary.transpose())
+    assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
+    assert connector.np.allclose(
+        matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
+    )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_adjacency_matrix_with_multiplicity(connector):
     adjacency_matrix = np.array(
         [
@@ -172,28 +194,32 @@ def test_takagi_on_adjacency_matrix_with_multiplicity(connector):
         ],
         dtype=complex,
     )
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    adjacency_matrix = connector.np.array(adjacency_matrix)
 
     singular_values, unitary = takagi(adjacency_matrix, connector)
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(
-        adjacency_matrix, unitary @ np.diag(singular_values) @ unitary.transpose()
+    assert connector.np.allclose(np.abs(singular_values), singular_values)
+    assert connector.np.allclose(
+        adjacency_matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
     )
 
 
-@pytest.mark.parametrize(
-    "connector", [NumpyConnector(), JaxConnector(), lf("tensorflow_connector")]
-)
+@for_all_connectors
 def test_takagi_on_random_adjacency_matrix_with_multiplicity(connector):
     graph = nx.erdos_renyi_graph(10, p=0.5)
 
     adjacency_matrix = nx.adjacency_matrix(graph).todense().astype(complex)
+    # TorchConnector operates on `torch.Tensor`, so we need to parse.
+    adjacency_matrix = connector.np.array(adjacency_matrix)
 
     singular_values, unitary = takagi(adjacency_matrix, connector)
     assert is_unitary(unitary)
-    assert np.allclose(np.abs(singular_values), singular_values)
-    assert np.allclose(
-        adjacency_matrix, unitary @ np.diag(singular_values) @ unitary.transpose()
+    assert connector.np.allclose(connector.np.abs(singular_values), singular_values)
+    assert connector.np.allclose(
+        adjacency_matrix,
+        connector.np.matmul(unitary, connector.np.diag(singular_values)) @ unitary.T,
     )
 
 

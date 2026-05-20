@@ -25,7 +25,7 @@ from piquasso.decompositions.clements import clements, instructions_from_decompo
 
 
 for_all_connectors = pytest.mark.parametrize(
-    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+    "connector", [pq.NumpyConnector(), pq.JaxConnector(), pq.TorchConnector()]
 )
 
 

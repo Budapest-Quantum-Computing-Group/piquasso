@@ -15,17 +15,13 @@
 
 """An implementation for the Clements decomposition."""
 
-from typing import List, Tuple, TYPE_CHECKING
-
 from dataclasses import dataclass
-
-from piquasso.api.connector import BaseConnector
-
-from piquasso.instructions.gates import Phaseshifter, Beamsplitter
+from typing import TYPE_CHECKING, List, Tuple
 
 from piquasso._math.indices import get_operator_index
-
 from piquasso._simulators.connectors import NumpyConnector
+from piquasso.api.connector import BaseConnector
+from piquasso.instructions.gates import Beamsplitter, Phaseshifter
 
 if TYPE_CHECKING:
     import numpy as np
@@ -150,7 +146,7 @@ def inverse_clements(
             beamsplitter, d, connector, dtype=dtype
         )
 
-        interferometer = beamsplitter_matrix @ interferometer
+        interferometer = np.matmul(beamsplitter_matrix, interferometer)
 
     phis = np.empty(d, dtype=interferometer.dtype)
 
@@ -344,7 +340,7 @@ def _apply_inverse_beamsplitters(
             _get_embedded_beamsplitter_matrix(operation, d, connector, dtype)
         ).T
 
-        U = U @ beamsplitter
+        U = connector.np.matmul(U, beamsplitter)
 
         operations.append(operation)
 
@@ -357,7 +353,7 @@ def _get_angles(matrix_element_to_eliminate, other_matrix_element, connector):
     if np.isclose(matrix_element_to_eliminate, 0.0):
         return np.pi / 2, 0.0
 
-    r = other_matrix_element / matrix_element_to_eliminate
+    r = np.array(other_matrix_element / matrix_element_to_eliminate)
     theta = np.arctan(np.abs(r))
     phi = np.angle(r)
 
@@ -372,8 +368,8 @@ def _get_embedded_beamsplitter_matrix(
     theta, phi = operation.params
     i, j = operation.modes
 
-    c = np.cos(theta).astype(dtype)
-    s = np.sin(theta).astype(dtype)
+    c = np.astype(np.cos(theta), dtype)
+    s = np.astype(np.sin(theta), dtype)
 
     matrix = np.array(
         [

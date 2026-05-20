@@ -22,7 +22,7 @@ import piquasso as pq
 from piquasso.fermionic._utils import binary_to_fock_indices
 
 for_all_connectors = pytest.mark.parametrize(
-    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+    "connector", [pq.NumpyConnector(), pq.JaxConnector(), pq.TorchConnector()]
 )
 
 
