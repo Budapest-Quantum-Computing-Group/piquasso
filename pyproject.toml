@@ -1,13 +1,12 @@
 [build-system]
+# The JAX connector provides an FFI extension that needs XLA FFI headers from
+# jaxlib for building. As some distributions don't ship jaxlib JAX is not a
+# hard requirement. CMakeLists.txt builds with JAX only when it is importable.
+# To opt in from sdist, pre-install jax/jaxlib and pass `--no-build-isolation`
+# to pip.
 requires = [
   "scikit-build-core",
   "pybind11",
-  # JAX is needed at build time so the perm_boost FFI extension can locate
-  # the XLA FFI headers; jaxlib >= 0.4.31 is required for the new Buffer API
-  # used by the C++ code. On platforms without jaxlib wheels (win32, musllinux)
-  # source builds will fail at dep resolution; CI skips those.
-  "jax[cpu]>=0.4.31",
-  "jaxlib>=0.4.31",
 ]
 build-backend = "scikit_build_core.build"
 
