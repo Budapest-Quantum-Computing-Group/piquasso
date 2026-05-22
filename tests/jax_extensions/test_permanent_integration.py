@@ -26,18 +26,18 @@ import pytest
 
 from jax import numpy as jnp
 
-perm_boost = pytest.importorskip(
+jax_perm = pytest.importorskip(
     "piquasso.jax_extensions",
-    reason="perm_boost C++ module is not compiled",
+    reason="jax_perm C++ module is not compiled",
 )
 
 import piquasso as pq  # noqa: E402
 
-from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
+from tests.jax_extensions._oracle import permanent_with_reduction  # noqa: E402
 
 
-def test_permanent_routes_to_perm_boost():
-    """JaxConnector.permanent must dispatch to perm_boost.perm."""
+def test_permanent_routes_to_jax_perm():
+    """JaxConnector.permanent must dispatch to jax_perm.perm."""
     connector = pq.JaxConnector()
 
     matrix = jnp.array(
@@ -52,14 +52,14 @@ def test_permanent_routes_to_perm_boost():
     cols = jnp.array([1, 1, 1], dtype=jnp.uint64)
 
     with patch(
-        "piquasso.jax_extensions.permanent.perm", wraps=perm_boost.perm
+        "piquasso.jax_extensions.permanent.perm", wraps=jax_perm.perm
     ) as mock_perm:
         connector.permanent(matrix, rows, cols)
 
     mock_perm.assert_called_once()
 
 
-def test_perm_boost_permanent_matches_oracle():
+def test_jax_perm_permanent_matches_oracle():
     """JaxConnector.permanent agrees with the pure-JAX oracle."""
     matrix = jnp.array(
         [

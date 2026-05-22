@@ -67,7 +67,7 @@ py::capsule EncapsulateFFIHandler(T *fn)
     return py::capsule(reinterpret_cast<void *>(fn));
 }
 
-PYBIND11_MODULE(_perm_boost_gpu_ops, m)
+PYBIND11_MODULE(_jax_perm_gpu_ops, m)
 {
     m.doc() = "GPU permanent calculator (XLA FFI, CUDA).";
     m.def("registrations", []()

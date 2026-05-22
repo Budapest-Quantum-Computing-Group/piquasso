@@ -24,12 +24,12 @@ import pytest
 import jax
 
 pytest.importorskip(
-    "piquasso.jax_extensions._perm_boost_core",
-    reason="perm_boost C++ extension is not compiled",
+    "piquasso.jax_extensions._jax_perm_core",
+    reason="jax_perm C++ extension is not compiled",
 )
 
 from piquasso.jax_extensions.permanent import perm  # noqa: E402
-from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
+from tests.jax_extensions._oracle import permanent_with_reduction  # noqa: E402
 
 
 def perm_wrapper(permanent_func):

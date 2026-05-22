@@ -32,29 +32,29 @@ if(NOT EXISTS "${JAX_INCLUDE_DIR}/xla/ffi/api/ffi.h")
   return()
 endif()
 
-set(PERM_BOOST_SRC ${CMAKE_SOURCE_DIR}/src/perm_boost)
+set(JAX_PERM_SRC ${CMAKE_SOURCE_DIR}/src/jax_perm)
 
-# CPU module: _perm_boost_core
-pybind11_add_module(_perm_boost_core SHARED
-    ${PERM_BOOST_SRC}/perm_boost_core.cpp
+# CPU module: _jax_perm_core
+pybind11_add_module(_jax_perm_core SHARED
+    ${JAX_PERM_SRC}/jax_perm_core.cpp
     ${CMAKE_SOURCE_DIR}/src/permanent.cpp
 )
 
-target_include_directories(_perm_boost_core PRIVATE
-    ${PERM_BOOST_SRC}
+target_include_directories(_jax_perm_core PRIVATE
+    ${JAX_PERM_SRC}
     ${CMAKE_SOURCE_DIR}/src
 )
 # Mark XLA/JAX headers as SYSTEM so their warnings are suppressed
-target_include_directories(_perm_boost_core SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
+target_include_directories(_jax_perm_core SYSTEM PRIVATE ${JAX_INCLUDE_DIR})
 
-target_compile_definitions(_perm_boost_core PRIVATE
+target_compile_definitions(_jax_perm_core PRIVATE
     VERSION_INFO="${PROJECT_VERSION}"
 )
 
 # permanent.hpp uses __int128 (GCC extension) and #pragma omp -- suppress
 # pedantic and unknown-pragma warnings that Piquasso's global flags would
 # otherwise error on.
-target_compile_options(_perm_boost_core PRIVATE
+target_compile_options(_jax_perm_core PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-pedantic>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unknown-pragmas>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-variable>
@@ -92,13 +92,13 @@ if(NOT OpenMP_CXX_FOUND AND APPLE)
 endif()
 
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(_perm_boost_core PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(_jax_perm_core PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 # Both RUNTIME and LIBRARY are specified so the install works on Windows
 # (.dll = RUNTIME) and Linux/macOS (.so = LIBRARY).
 install(
-    TARGETS _perm_boost_core
+    TARGETS _jax_perm_core
     RUNTIME DESTINATION piquasso/jax_extensions
     LIBRARY DESTINATION piquasso/jax_extensions
 )
@@ -107,7 +107,7 @@ install(
 # subdir has its own CMakeLists.txt and uses JAX_INCLUDE_DIR set above.
 if(CUDAToolkit_FOUND)
     add_subdirectory(
-        ${PERM_BOOST_SRC}/cuda
-        ${CMAKE_BINARY_DIR}/src/perm_boost/cuda
+        ${JAX_PERM_SRC}/cuda
+        ${CMAKE_BINARY_DIR}/src/jax_perm/cuda
     )
 endif()

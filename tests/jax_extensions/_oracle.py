@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Pure-JAX permanent. Retained here only as a cross-validation oracle for
-# perm_boost: production no longer ships a non-FFI JAX path.
+# jax_perm: production no longer ships a non-FFI JAX path.
 
 from jax import jit, lax
 

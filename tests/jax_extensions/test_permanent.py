@@ -23,8 +23,8 @@ import numpy as np
 import pytest
 
 pytest.importorskip(
-    "piquasso.jax_extensions._perm_boost_core",
-    reason="perm_boost C++ extension is not compiled",
+    "piquasso.jax_extensions._jax_perm_core",
+    reason="jax_perm C++ extension is not compiled",
 )
 
 import jax  # noqa: E402
@@ -388,7 +388,7 @@ def test_perm_jit_grad():
     into real and imaginary parts so jax.jacobian works for any
     complex-valued function.
     """
-    from tests.perm_boost._oracle import permanent_with_reduction
+    from tests.jax_extensions._oracle import permanent_with_reduction
 
     matrix = jnp.array(
         [[1 + 0.5j, 2 - 0.3j], [3 + 0.1j, 4 + 0.2j]], dtype=jnp.complex128
@@ -566,7 +566,7 @@ def test_jax_extend_ffi_fallback_when_jax_ffi_missing(monkeypatch):
 
 
 def test_gpu_extension_registered_when_available(monkeypatch):
-    """Cover the GPU registration loop by injecting a fake _perm_boost_gpu_ops."""
+    """Cover the GPU registration loop by injecting a fake _jax_perm_gpu_ops."""
     import importlib
     import sys
     import types
@@ -574,7 +574,7 @@ def test_gpu_extension_registered_when_available(monkeypatch):
     import piquasso.jax_extensions as je_pkg
 
     mod_name = "piquasso.jax_extensions.permanent"
-    gpu_attr = "_perm_boost_gpu_ops"
+    gpu_attr = "_jax_perm_gpu_ops"
     gpu_mod_name = f"piquasso.jax_extensions.{gpu_attr}"
 
     fake_target = object()
@@ -589,7 +589,7 @@ def test_gpu_extension_registered_when_available(monkeypatch):
         lambda name, target, platform: registered.append((name, target, platform)),
     )
 
-    # `from . import _perm_boost_gpu_ops` reads the attribute off the parent
+    # `from . import _jax_perm_gpu_ops` reads the attribute off the parent
     # package, so patch both sys.modules and the parent-package attribute.
     monkeypatch.setitem(sys.modules, gpu_mod_name, fake_gpu)
     monkeypatch.setattr(je_pkg, gpu_attr, fake_gpu, raising=False)
@@ -614,12 +614,12 @@ def test_gpu_extension_silent_fallback_when_missing(monkeypatch):
     import piquasso.jax_extensions as je_pkg
 
     mod_name = "piquasso.jax_extensions.permanent"
-    gpu_attr = "_perm_boost_gpu_ops"
+    gpu_attr = "_jax_perm_gpu_ops"
     gpu_mod_name = f"piquasso.jax_extensions.{gpu_attr}"
 
     # sys.modules[name] = None makes a subsequent import raise ImportError.
     monkeypatch.setitem(sys.modules, gpu_mod_name, None)
-    # `from . import _perm_boost_gpu_ops` reads the parent-package attribute
+    # `from . import _jax_perm_gpu_ops` reads the parent-package attribute
     # first; drop it so the import machinery falls through to sys.modules.
     monkeypatch.delattr(je_pkg, gpu_attr, raising=False)
 

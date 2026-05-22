@@ -21,7 +21,7 @@
 
 import pytest
 
-# perm_boost requires complex128 / uint64 inputs. Enable x64 here for the test
+# jax_perm requires complex128 / uint64 inputs. Enable x64 here for the test
 # session (the library itself no longer flips this global at import time).
 try:
     import jax
@@ -71,7 +71,7 @@ def pytest_configure(config):
         )
 
 
-# Skip every perm_boost test if the underlying module cannot be imported.
+# Skip every jax_perm test if the underlying module cannot be imported.
 # The import of ``piquasso.jax_extensions`` raises ImportError when the
 # C++ extension has not been built. Emit a warning so the skip is visible;
 # otherwise pytest just reports "collected 0 items" with no clue why.
@@ -81,7 +81,7 @@ except ImportError as _exc:
     import warnings
 
     warnings.warn(
-        f"perm_boost tests skipped: {_exc}. "
+        f"jax_perm tests skipped: {_exc}. "
         "Rebuild with `pip install -e .` from the repo root.",
         stacklevel=1,
     )

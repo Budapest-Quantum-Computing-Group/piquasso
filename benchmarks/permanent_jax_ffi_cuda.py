@@ -1,13 +1,13 @@
-"""Benchmark the JAX permanent pipeline against the perm_boost C++/CUDA backend.
+"""Benchmark the JAX permanent pipeline against the jax_perm C++/CUDA backend.
 
 Three backends are compared:
 
 * ``piquasso-jax``  -- the legacy pure-JAX permanent, retained only as a
-  benchmarking baseline (see ``tests/perm_boost/_oracle.py``); production no
+  benchmarking baseline (see ``tests/jax_extensions/_oracle.py``); production no
   longer ships this path.
-* ``boost-cpu``     -- perm_boost C++ backend via the JAX FFI
+* ``jax_perm-cpu``     -- jax_perm C++ backend via the JAX FFI
   (:func:`piquasso.jax_extensions.permanent.perm`, dispatched to CPU).
-* ``boost-gpu``     -- the same FFI on CUDA.
+* ``jax_perm-gpu``     -- the same FFI on CUDA.
 
 Two tasks are timed at a sweep of matrix sizes ``n`` (with row/column
 multiplicities fixed at ``--multiplicity``, default 3, matching the upstream
@@ -16,7 +16,7 @@ permanent-boost benchmark notebook):
 1. Permanent value -- ``perm(A, rows, cols)``.
 2. Real/imag-split Jacobian -- ``jax.jacobian`` of a wrapper that returns
    ``(res.real, res.imag)``. This is the non-holomorphic path used by the
-   perm_boost test suite (see ``tests/perm_boost/test_grad_perm.py``) and
+   jax_perm test suite (see ``tests/jax_extensions/test_permanent_grad.py``) and
    is the form that downstream ML loss functions hit in practice -- a
    typical loss reaches the permanent through real-valued quantities like
    ``|perm|^2`` or expectation values, not through a holomorphic chain.
@@ -57,13 +57,13 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-# The legacy pure-JAX permanent now lives next to the perm_boost tests as a
+# The legacy pure-JAX permanent now lives next to the jax_perm tests as a
 # cross-validation oracle. Add the repo root so the import works regardless of
 # where the benchmark is invoked from.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
-from piquasso.jax_extensions.permanent import perm as boost_perm  # noqa: E402
+from tests.jax_extensions._oracle import permanent_with_reduction  # noqa: E402
+from piquasso.jax_extensions.permanent import perm as jax_perm  # noqa: E402
 
 
 HERE = Path(__file__).resolve().parent
@@ -97,7 +97,7 @@ class Backend:
     style: dict
     # Hard cap on ``n`` for each task. SIGALRM-based timeouts cannot interrupt
     # C-level CUDA/XLA calls, so we refuse to launch past these. piquasso-jax
-    # scales as O(n * (n*multiplicity) * 2^(n*multiplicity-1)); perm_boost is
+    # scales as O(n * (n*multiplicity) * 2^(n*multiplicity-1)); jax_perm is
     # capped by the kernel's ``MAX_IDX_MAX = 1e8`` (4^n grows past it at n=14
     # for multiplicity 3).
     max_n_perm: int
@@ -113,8 +113,8 @@ def _build_backends() -> list[Backend]:
 
     Returns:
         Backends in the order they should appear in plots and CSVs. Always
-        includes ``piquasso-jax (CPU)`` and ``perm_boost CPU`` (eager + jit);
-        ``perm_boost GPU`` is appended only when ``jax.devices("cuda")``
+        includes ``piquasso-jax (CPU)`` and ``jax_perm CPU`` (eager + jit);
+        ``jax_perm GPU`` is appended only when ``jax.devices("cuda")``
         succeeds.
     """
     # ``jax.devices()`` triggers init of every registered backend; a wedged
@@ -170,9 +170,9 @@ def _build_backends() -> list[Backend]:
     )
     backends.extend(
         _pair(
-            "perm_boost CPU",
+            "jax_perm CPU",
             cpu,
-            boost_perm,
+            jax_perm,
             dict(linestyle="--", marker="s", color="tab:blue"),
             max_n_perm=13,
             max_n_grad=11,
@@ -181,9 +181,9 @@ def _build_backends() -> list[Backend]:
     if gpu is not None:
         backends.extend(
             _pair(
-                "perm_boost GPU",
+                "jax_perm GPU",
                 gpu,
-                boost_perm,
+                jax_perm,
                 dict(linestyle="-", marker="o", color="tab:red"),
                 max_n_perm=13,
                 max_n_grad=11,
@@ -253,7 +253,7 @@ def _make_inputs(backend: Backend, n: int, multiplicity: int, seed: int):
     """Generate inputs and place them on the backend's device.
 
     All backends consume the same dtypes (complex128 matrix, uint64 row/col
-    multiplicities): perm_boost's FFI validates ``rows`` / ``cols`` as
+    multiplicities): jax_perm's FFI validates ``rows`` / ``cols`` as
     uint32 or uint64, and ``permanent_with_reduction`` accepts any integer
     dtype, so uint64 works for both.
 
@@ -313,7 +313,7 @@ def _split_real_imag(
 
     Lets ``jax.jacobian`` produce the real-part and imag-part Jacobians
     separately without the holomorphic shortcut. This is the form used in
-    ``tests/perm_boost/test_grad_perm.py``.
+    ``tests/jax_extensions/test_permanent_grad.py``.
 
     Args:
         perm_fn: Callable returning a complex scalar.

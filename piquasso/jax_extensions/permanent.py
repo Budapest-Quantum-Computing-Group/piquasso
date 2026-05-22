@@ -22,7 +22,7 @@
 import jax
 import jax.numpy as jnp
 
-from ._perm_boost_core import registrations as _registrations
+from ._jax_perm_core import registrations as _registrations
 
 # Note: this extension expects complex128 / uint64 inputs. Callers must enable
 # x64 themselves (jax.config.update("jax_enable_x64", True) or
@@ -59,7 +59,7 @@ for _name, _target in _registrations().items():
 _gpu = False
 
 try:
-    from . import _perm_boost_gpu_ops as _gpu_ops  # type: ignore[attr-defined]
+    from . import _jax_perm_gpu_ops as _gpu_ops  # type: ignore[attr-defined]
 
     _gpu_targets = _gpu_ops.registrations()
     for _name, _target in _gpu_targets.items():

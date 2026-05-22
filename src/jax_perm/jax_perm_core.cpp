@@ -225,7 +225,7 @@ py::capsule EncapsulateFFIHandler(T *fn)
   return py::capsule(reinterpret_cast<void *>(fn));
 }
 
-PYBIND11_MODULE(_perm_boost_core, m)
+PYBIND11_MODULE(_jax_perm_core, m)
 {
   m.doc() = "CPU permanent calculator (XLA FFI).";
   m.def("registrations", []()

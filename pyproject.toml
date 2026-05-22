@@ -1,5 +1,5 @@
 [build-system]
-# jax/jaxlib provide the XLA FFI headers used by the perm_boost extension;
+# jax/jaxlib provide the XLA FFI headers used by the jax_perm extension;
 # CMakeLists.txt builds it only when JAX is importable. On platforms without
 # jaxlib wheels (win32, musllinux, cp314 macOS Intel) this list is
 # unresolvable by default pip -- workaround: `pip install scikit-build-core
