@@ -33,7 +33,7 @@ jax_perm = pytest.importorskip(
 
 import piquasso as pq  # noqa: E402
 
-from tests.jax_extensions._oracle import permanent_with_reduction  # noqa: E402
+from ._oracle import permanent_with_reduction  # noqa: E402
 
 
 def test_permanent_routes_to_jax_perm():
