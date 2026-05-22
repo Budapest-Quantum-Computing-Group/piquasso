@@ -33,32 +33,11 @@ perm_boost = pytest.importorskip(
 
 import piquasso as pq  # noqa: E402
 
-
-def test_permanent_routes_to_perm_boost_when_flag_is_set():
-    """When use_perm_boost=True, permanent must call perm_boost.perm."""
-    connector = pq.JaxConnector()
-
-    matrix = jnp.array(
-        [
-            [1.0 + 0j, 0.0 + 0j, 0.0 + 0j],
-            [0.0 + 0j, 1.0 + 0j, 0.0 + 0j],
-            [0.0 + 0j, 0.0 + 0j, 1.0 + 0j],
-        ],
-        dtype=jnp.complex128,
-    )
-    rows = jnp.array([1, 1, 1], dtype=jnp.uint64)
-    cols = jnp.array([1, 1, 1], dtype=jnp.uint64)
-
-    with patch(
-        "piquasso.jax_extensions.permanent.perm", wraps=perm_boost.perm
-    ) as mock_perm:
-        connector.permanent(matrix, rows, cols, use_perm_boost=True)
-
-    mock_perm.assert_called_once()
+from tests.perm_boost._oracle import permanent_with_reduction  # noqa: E402
 
 
-def test_permanent_does_not_route_to_perm_boost_by_default():
-    """When use_perm_boost is not passed, perm_boost.perm must NOT be called."""
+def test_permanent_routes_to_perm_boost():
+    """JaxConnector.permanent must dispatch to perm_boost.perm."""
     connector = pq.JaxConnector()
 
     matrix = jnp.array(
@@ -77,11 +56,11 @@ def test_permanent_does_not_route_to_perm_boost_by_default():
     ) as mock_perm:
         connector.permanent(matrix, rows, cols)
 
-    mock_perm.assert_not_called()
+    mock_perm.assert_called_once()
 
 
-def test_perm_boost_permanent_matches_jax_permanent():
-    """permanent(use_perm_boost=True) and permanent() agree on permanent values."""
+def test_perm_boost_permanent_matches_oracle():
+    """JaxConnector.permanent agrees with the pure-JAX oracle."""
     matrix = jnp.array(
         [
             [
@@ -107,27 +86,24 @@ def test_perm_boost_permanent_matches_jax_permanent():
 
     connector = pq.JaxConnector()
 
-    result_default = connector.permanent(matrix, rows, cols)
-    result_perm_boost = connector.permanent(matrix, rows, cols, use_perm_boost=True)
+    result_connector = connector.permanent(matrix, rows, cols)
+    result_oracle = permanent_with_reduction(matrix, rows, cols)
 
     assert np.isclose(
-        complex(result_default),
-        complex(result_perm_boost),
+        complex(result_connector),
+        complex(result_oracle),
         rtol=1e-10,
         atol=1e-12,
     ), (
-        f"perm_boost result {result_perm_boost} differs from JAX result "
-        f"{result_default}"
+        f"connector result {result_connector} differs from oracle "
+        f"{result_oracle}"
     )
 
 
 def test_jax_connector_simulator_pipeline_runs_without_errors():
     """End-to-end smoke test: PureFockSimulator with JaxConnector executes
-    a beamsplitter program. Does NOT exercise the perm_boost FFI path --
-    that's covered by the unit tests above (notably
-    `test_permanent_routes_to_perm_boost_when_flag_is_set` and
-    `test_perm_boost_permanent_matches_jax_permanent`). This test ensures the
-    JaxConnector integration with the simulator stack does not regress."""
+    a beamsplitter program. This test ensures the JaxConnector integration
+    with the simulator stack does not regress."""
     connector = pq.JaxConnector()
 
     simulator = pq.PureFockSimulator(
