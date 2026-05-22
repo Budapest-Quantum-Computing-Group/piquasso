@@ -1,12 +1,20 @@
 [build-system]
+# jax/jaxlib provide the XLA FFI headers used by the perm_boost extension;
+# CMakeLists.txt builds it only when JAX is importable. On platforms without
+# jaxlib wheels (win32, musllinux, cp314 macOS Intel) this list is
+# unresolvable by default pip -- workaround: `pip install scikit-build-core
+# pybind11 && pip install --no-build-isolation .` (skips the JAX FFI module).
+
 # The JAX connector provides an FFI extension that needs XLA FFI headers from
-# jaxlib for building. As some distributions don't ship jaxlib JAX is not a
-# hard requirement. CMakeLists.txt builds with JAX only when it is importable.
-# To opt in from sdist, pre-install jax/jaxlib and pass `--no-build-isolation`
-# to pip.
+# jaxlib for building. As some platforms don't have jaxlib wheels (e.g., win32,
+# musllinux, cp314 macOS Intel), building is recommended via:
+# pip install scikit-build-core pybind11
+# pip install --no-build-isolation -e .
 requires = [
   "scikit-build-core",
   "pybind11",
+  "jax[cpu]>=0.4.31",
+  "jaxlib>=0.4.31",
 ]
 build-backend = "scikit_build_core.build"
 
