@@ -95,8 +95,7 @@ def test_perm_boost_permanent_matches_oracle():
         rtol=1e-10,
         atol=1e-12,
     ), (
-        f"connector result {result_connector} differs from oracle "
-        f"{result_oracle}"
+        f"connector result {result_connector} differs from oracle " f"{result_oracle}"
     )
 
 
