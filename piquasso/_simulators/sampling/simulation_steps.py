@@ -149,12 +149,14 @@ def uniform_loss(
 ) -> List[Branch]:
     state.is_lossy = True
 
-    transmissivity = instruction._get_all_params(state._connector)["transmissivity"]
+    connector = state._connector
+    transmissivity = instruction._get_all_params(connector)["transmissivity"]
     modes = instruction.modes
 
     _apply_matrix_on_modes(
         state=state,
-        matrix=np.identity(len(modes)) * transmissivity,
+        matrix=connector.np.identity(len(modes), dtype=state._config.complex_dtype)
+        * transmissivity,
         modes=modes,
     )
 
