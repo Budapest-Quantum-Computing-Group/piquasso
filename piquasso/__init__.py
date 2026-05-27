@@ -104,6 +104,7 @@ from .instructions.channels import (
     DeterministicGaussianChannel,
     Attenuator,
     Loss,
+    UniformLoss,
     LossyInterferometer,
 )
 
@@ -184,6 +185,7 @@ __all__ = [
     "DeterministicGaussianChannel",
     "Attenuator",
     "Loss",
+    "UniformLoss",
     "LossyInterferometer",
     # Batch
     "BatchPrepare",

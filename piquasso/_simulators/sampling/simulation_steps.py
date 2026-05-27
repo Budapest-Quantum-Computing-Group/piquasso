@@ -144,6 +144,25 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> List[Bra
     return [Branch(state=state)]
 
 
+def uniform_loss(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> List[Branch]:
+    state.is_lossy = True
+
+    connector = state._connector
+    transmissivity = instruction._get_all_params(connector)["transmissivity"]
+    modes = instruction.modes
+
+    _apply_matrix_on_modes(
+        state=state,
+        matrix=connector.np.identity(len(modes), dtype=state._config.complex_dtype)
+        * transmissivity,
+        modes=modes,
+    )
+
+    return [Branch(state=state)]
+
+
 def lossy_interferometer(
     state: SamplingState, instruction: Instruction, shots: int
 ) -> List[Branch]:

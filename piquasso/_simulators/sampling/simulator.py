@@ -26,6 +26,7 @@ from .simulation_steps import (
     passive_linear,
     particle_number_measurement,
     loss,
+    uniform_loss,
     lossy_interferometer,
     post_select_photons,
     imperfect_post_select_photons,
@@ -78,7 +79,9 @@ class SamplingSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
 
     Supported channels:
-        :class:`~piquasso.instructions.channels.Loss`.
+        :class:`~piquasso.instructions.channels.Loss`,
+        :class:`~piquasso.instructions.channels.UniformLoss`,
+        :class:`~piquasso.instructions.channels.LossyInterferometer`.
     """
 
     _instruction_map = {
@@ -95,6 +98,7 @@ class SamplingSimulator(BuiltinSimulator):
         measurements.PostSelectPhotons: post_select_photons,
         measurements.ImperfectPostSelectPhotons: imperfect_post_select_photons,
         channels.Loss: loss,
+        channels.UniformLoss: uniform_loss,
         channels.LossyInterferometer: lossy_interferometer,
     }
 

@@ -196,6 +196,51 @@ class Loss(Gate):
         super().__init__(params=dict(transmissivity=transmissivity))
 
 
+class UniformLoss(Gate):
+    r"""Applies a uniform loss channel to the state.
+
+    The transmissivity is defined by :math:`t = \cos \theta`, where :math:`\theta` is
+    the beamsplitter parameter and the angle between the initial and resulting state.
+    Considering only one particle, :math:`1-t^2` is the probability of losing this
+    particle.
+
+    Note:
+        Currently, this instruction can only be used along with
+        :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`.
+
+    Note:
+        The parameter `transmissivity` is usually called `transmittance`.
+    """
+
+    def __init__(self, transmissivity: float) -> None:
+        """
+        Args:
+            transmissivity (float): The transmissivity.
+        """
+        super().__init__(params=dict(transmissivity=transmissivity))
+
+    def _validate(self, connector: BaseConnector) -> None:
+        transmissivity = self.params["transmissivity"]
+
+        if connector.is_abstract(transmissivity):
+            return
+
+        if np.size(transmissivity) != 1 or not np.all(np.isreal(transmissivity)):
+            raise InvalidParameter(
+                "The parameter 'transmissivity' must be a single real number in the "
+                "interval [0, 1]: "
+                f"transmissivity={transmissivity}"
+            )
+
+        t = float(np.real(transmissivity))
+
+        if not all_in_interval([t], lower=0.0, upper=1.0):
+            raise InvalidParameter(
+                "The parameter 'transmissivity' must be in the interval [0, 1]: "
+                f"transmissivity={transmissivity}"
+            )
+
+
 class LossyInterferometer(Gate):
     """Applies a lossy interferometer (specified by a matrix) to the state.
 
