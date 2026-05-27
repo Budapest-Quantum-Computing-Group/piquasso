@@ -80,7 +80,8 @@ class SamplingSimulator(BuiltinSimulator):
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Loss`,
-        :class:`~piquasso.instructions.channels.UniformLoss`.
+        :class:`~piquasso.instructions.channels.UniformLoss`,
+        :class:`~piquasso.instructions.channels.LossyInterferometer`.
     """
 
     _instruction_map = {
