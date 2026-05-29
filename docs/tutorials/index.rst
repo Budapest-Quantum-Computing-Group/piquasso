@@ -64,6 +64,12 @@ This document contains the basic tutorials of Piquasso.
 
       Solve dense k-subgraph problem with Gaussian Boson Sampling.
 
+   .. grid-item-card::  Linear cross-entropy benchmarking
+      :link: lxeb
+      :link-type: doc
+
+      A simple example of linear cross-entropy benchmarking with Piquasso.
+
 
 .. toctree::
    :maxdepth: 3
@@ -77,3 +83,4 @@ This document contains the basic tutorials of Piquasso.
    cvqnn-with-tensorflow
    jax-example
    dense-subgraph-gbs
+   lxeb

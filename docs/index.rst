@@ -137,6 +137,7 @@ If you are doing research using Piquasso, please cite us as follows:
    advanced/decompositions
    advanced/cvqnn
    advanced/dual_rail_encoding
+   advanced/lxeb
 
 .. toctree::
    :hidden:
