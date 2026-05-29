@@ -48,9 +48,9 @@ jobs:
           - os: windows-latest
             cibw_env_macos: ""
           - os: macos-14
-            cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=11.0"
-          - os: macos-15-intel
             cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=14.0"
+          - os: macos-15-intel
+            cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=15.0"
 
     steps:
       - uses: actions/checkout@v4
@@ -90,11 +90,41 @@ jobs:
           ## directory
           # CIBW_TEST_COMMAND: "pytest -v --import-mode=importlib {project}/tests"
         env:
-          CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
+          # libomp is not pre-installed on GitHub's macOS runners; brew installs it
+          # once per platform so CMakeLists.txt can find it at /opt/homebrew/opt/libomp.
+          CIBW_BEFORE_ALL_MACOS: "brew install libomp"
+          # Install CUDA toolkit inside the manylinux container so CMake's
+          # find_package(CUDAToolkit) picks it up and the wheel ships the
+          # statically-linked GPU extension alongside the CPU one. Skipped on
+          # Alpine (musllinux) where dnf is unavailable and CUDA isn't
+          # supported anyway -- CMakeLists.txt drops the GPU extension when
+          # CUDAToolkit isn't found.
+          CIBW_BEFORE_ALL_LINUX: |
+            if [ -f /etc/alpine-release ]; then
+                echo "Alpine detected (musllinux); skipping CUDA toolkit install"
+                exit 0
+            fi
+            rpm --import https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/D42D0685.pub &&
+            dnf install -y dnf-plugins-core &&
+            dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+            dnf clean all &&
+            dnf install -y --setopt=install_weak_deps=False cuda-toolkit-12-9 &&
+            nvcc --version
+          CIBW_ENVIRONMENT_LINUX: >-
+            PATH=/usr/local/cuda-12.9/bin:$PATH
+            CUDAToolkit_ROOT=/usr/local/cuda-12.9
+            CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12.9
+          # Build without PEP 517 isolation so CMake's JAX probe sees the
+          # jax/jaxlib installed in CIBW_BEFORE_BUILD; otherwise pip's
+          # isolated venv hides them and the FFI extension is skipped.
+          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          # Hard build deps first; JAX is best-effort so wheels still build
+          # where jaxlib has no wheels (*-win32, *musllinux*,
+          # cp314*-macosx_x86_64). delvewheel is harmless on non-Windows.
+          CIBW_BEFORE_BUILD: pip install scikit-build-core pybind11 delvewheel && (pip install "jax[cpu]>=0.4.31" "jaxlib>=0.4.31" || echo "::warning::JAX wheels unavailable for this target; building without the JAX FFI extension")
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
-          # pp*: Disable building PyPy wheels on all platforms
           # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
-          CIBW_SKIP: pp* cp314t-win*
+          CIBW_SKIP: cp314t-win*
           CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4

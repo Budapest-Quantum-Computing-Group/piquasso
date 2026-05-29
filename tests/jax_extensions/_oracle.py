@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Pure-JAX permanent. Retained here only as a cross-validation oracle for
+# jax_perm: production no longer ships a non-FFI JAX path.
+
 from jax import jit, lax
 
 import jax.numpy as jnp
@@ -21,14 +24,6 @@ from piquasso._math.linalg import assym_reduce
 
 
 def permanent_with_reduction(matrix, rows, cols):
-    """JAX implementation of the permanent, using the Glynn formula with Gray codes.
-
-    Note:
-        Unfortunately, JAX (or rather XLA) could not JIT-compile creating arrays
-        whose shapes depend on the values of the input, so the reduction of the
-        interferometer is needed to be made in advance.
-    """
-
     reduced_matrix = assym_reduce(matrix, rows, cols)
 
     return permanent(reduced_matrix)

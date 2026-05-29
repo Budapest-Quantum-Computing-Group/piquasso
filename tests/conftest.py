@@ -277,6 +277,9 @@ def pytest_addoption(parser):
         action="store_true",
         help="Skips tests using TensorFlow.",
     )
+    parser.addoption(
+        "--platform", action="store", default="cpu", help="Choose platform: cpu or gpu"
+    )
 
 
 @pytest.fixture
@@ -319,3 +322,16 @@ def PureFockSimulator_with_tensorflow_tf_function(tensorflow_connector_tf_functi
 @pytest.fixture
 def PureFockSimulator_with_jax():
     return partial(pq.PureFockSimulator, connector=pq.JaxConnector())
+
+
+def pytest_configure(config):
+    try:
+        import jax
+    except ImportError:
+        return
+
+    platform = config.getoption("--platform")
+    try:
+        jax.config.update("jax_platforms", platform)
+    except AttributeError:
+        jax.config.update("jax_platform_name", platform)

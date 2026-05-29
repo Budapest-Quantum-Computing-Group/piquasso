@@ -1,5 +1,21 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
+# jax/jaxlib provide the XLA FFI headers used by the jax_perm extension;
+# CMakeLists.txt builds it only when JAX is importable. On platforms without
+# jaxlib wheels (win32, musllinux, cp314 macOS Intel) this list is
+# unresolvable by default pip -- workaround: `pip install scikit-build-core
+# pybind11 && pip install --no-build-isolation .` (skips the JAX FFI module).
+
+# The JAX connector provides an FFI extension that needs XLA FFI headers from
+# jaxlib for building. As some platforms don't have jaxlib wheels (e.g., win32,
+# musllinux, cp314 macOS Intel), building is recommended via:
+# pip install scikit-build-core pybind11
+# pip install --no-build-isolation -e .
+requires = [
+  "scikit-build-core",
+  "pybind11",
+  "jax[cpu]>=0.4.31",
+  "jaxlib>=0.4.31",
+]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -46,7 +62,8 @@ Changelog = "https://github.com/Budapest-Quantum-Computing-Group/piquasso/blob/m
 [project.optional-dependencies]
 qiskit = ["qiskit"]
 tensorflow = ["tensorflow"]
-jax = ["jax[cpu]"]
+jax = ["jax[cpu]>=0.4.31", "jaxlib>=0.4.31"]
+jax-cuda12 = ["jax[cuda12]>=0.4.31", "jaxlib>=0.4.31"]
 matplotlib = ["matplotlib"]
 dask = ["dask"]
 dev = [
@@ -76,5 +93,6 @@ benchmark = [
 ]
 
 [tool.scikit-build]
-cmake.verbose = true
+build.verbose = true
 logging.level = "INFO"
+sdist.exclude = [".github", ".claude"]

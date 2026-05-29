@@ -16,6 +16,7 @@
 import sys
 import builtins
 
+import numpy as np
 import pytest
 
 
@@ -88,3 +89,19 @@ def test_Piquasso_works_without_jax(
     import piquasso as pq  # noqa: F401
 
     assert "jax" not in sys.modules
+
+
+def test_jaxConnector_permanent():
+    import piquasso as pq
+
+    pytest.importorskip("piquasso.jax_extensions._jax_perm_core")
+
+    connector = pq.JaxConnector()
+    matrix = connector.np.array([[1.0, 2.0], [3.0, 4.0]], dtype=connector.np.complex128)
+    rows = connector.np.ones(2, dtype=connector.np.uint64)
+    cols = connector.np.ones(2, dtype=connector.np.uint64)
+
+    result = connector.permanent(matrix, rows, cols)
+
+    # permanent of [[1,2],[3,4]] = 1*4 + 2*3 = 10
+    assert np.isclose(complex(result), 10.0)

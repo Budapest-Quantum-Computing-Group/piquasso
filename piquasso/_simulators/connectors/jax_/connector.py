@@ -152,10 +152,14 @@ class JaxConnector(BuiltinConnector):
     def schur(self, *args, **kwargs):
         return self._scipy.linalg.schur(*args, **kwargs)
 
-    def permanent(self, *args, **kwargs):
-        from piquasso._math.jax.permanent import permanent_with_reduction
+    def permanent(self, matrix, rows, cols):
+        from piquasso.jax_extensions.permanent import perm
 
-        return permanent_with_reduction(*args, **kwargs)
+        return perm(
+            matrix.astype(self.np.complex128),
+            self.np.asarray(rows, dtype=self.np.uint64),
+            self.np.asarray(cols, dtype=self.np.uint64),
+        )
 
     def permanent_laplace(self, matrix, rows, cols):
         raise NotImplementedError()
