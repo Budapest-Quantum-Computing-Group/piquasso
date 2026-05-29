@@ -123,9 +123,8 @@ jobs:
           # cp314*-macosx_x86_64). delvewheel is harmless on non-Windows.
           CIBW_BEFORE_BUILD: pip install scikit-build-core pybind11 delvewheel && (pip install "jax[cpu]>=0.4.31" "jaxlib>=0.4.31" || echo "::warning::JAX wheels unavailable for this target; building without the JAX FFI extension")
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
-          # pp*: Disable building PyPy wheels on all platforms
           # cp314t-win*: Disable free-threaded Python3.14 builds on Windows
-          CIBW_SKIP: pp* cp314t-win*
+          CIBW_SKIP: cp314t-win*
           CIBW_ENVIRONMENT_MACOS: ${{ matrix.cibw_env_macos }}
 
       - uses: actions/upload-artifact@v4
