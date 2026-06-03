@@ -86,6 +86,28 @@ def test_sampling_mode_permutation(interferometer_matrix):
     ), f"Expected [1, 0, 0, 1, 1], got: {sample}"
 
 
+@pytest.mark.parametrize(
+    ("measurement_modes", "expected_sample"),
+    [
+        ((0, 1), (1, 2)),
+        ((1, 0), (2, 1)),
+    ],
+)
+def test_sampling_particle_number_measurement_respects_modes(
+    measurement_modes, expected_sample
+):
+    shots = 3
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 2, 0, 0, 0])
+        pq.Q(*measurement_modes) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots)
+
+    assert result.samples == [expected_sample] * shots
+
+
 def test_sampling_multiple_samples_for_permutation_interferometer(
     interferometer_matrix,
 ):

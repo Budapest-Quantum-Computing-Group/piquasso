@@ -249,6 +249,7 @@ def particle_number_measurement(
         rng=rng,
         postselect_data=postselect_data,
     )
+    samples = [tuple(sample[mode] for mode in instruction.modes) for sample in samples]
 
     binned_samples = get_counts(samples)
 
