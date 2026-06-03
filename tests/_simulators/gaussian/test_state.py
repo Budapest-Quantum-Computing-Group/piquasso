@@ -1437,6 +1437,81 @@ def test_get_xp_string_moment_hbar_dependence():
     assert np.isclose(value1 * np.sqrt(hbar_2 / hbar_1) ** len(indices), value2)
 
 
+def test_get_ladder_string_moment_vacuum_state():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(state.get_ladder_string_moment([]), 1.0)
+    assert np.isclose(state.get_ladder_string_moment([0]), 0.0)
+    assert np.isclose(state.get_ladder_string_moment([1]), 0.0)
+
+    assert np.isclose(state.get_ladder_string_moment([0, 1]), 1.0)
+    assert np.isclose(state.get_ladder_string_moment([1, 0]), 0.0)
+    assert np.isclose(state.get_ladder_string_moment([0, 0]), 0.0)
+    assert np.isclose(state.get_ladder_string_moment([1, 1]), 0.0)
+
+
+def test_get_ladder_string_moment_coherent_state():
+    r = 0.2
+    phi = np.pi / 7
+    alpha = r * np.exp(1j * phi)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=r, phi=phi)
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(state.get_ladder_string_moment([0]), alpha)
+    assert np.isclose(state.get_ladder_string_moment([1]), alpha.conj())
+    assert np.isclose(state.get_ladder_string_moment([0, 1]), abs(alpha) ** 2 + 1)
+    assert np.isclose(state.get_ladder_string_moment([1, 0]), abs(alpha) ** 2)
+    assert np.isclose(state.get_ladder_string_moment([1, 1, 0, 0]), abs(alpha) ** 4)
+
+
+def test_get_ladder_string_moment_admits_ccr():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Displacement(r=0.4)
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5)
+
+    state = pq.GaussianSimulator(d=2).execute(program).state
+
+    assert np.isclose(
+        state.get_ladder_string_moment([0, 2]) - state.get_ladder_string_moment([2, 0]),
+        1.0,
+    )
+    assert np.isclose(
+        state.get_ladder_string_moment([0, 3]) - state.get_ladder_string_moment([3, 0]),
+        0.0,
+    )
+
+
+def test_get_ladder_string_moment_does_not_depend_on_hbar():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(1) | pq.Displacement(r=0.4)
+        pq.Q(0) | pq.Squeezing(r=0.2, phi=0.3)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 5)
+
+    state1 = (
+        pq.GaussianSimulator(d=2, config=pq.Config(hbar=1.0)).execute(program).state
+    )
+    state2 = (
+        pq.GaussianSimulator(d=2, config=pq.Config(hbar=3.0)).execute(program).state
+    )
+
+    indices = [0, 2, 1, 3, 0, 2]
+
+    assert np.isclose(
+        state1.get_ladder_string_moment(indices),
+        state2.get_ladder_string_moment(indices),
+    )
+
+
 def test_GaussianState_get_parity_operator_expectation_value_on_vacuum():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

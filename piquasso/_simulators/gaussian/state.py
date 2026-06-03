@@ -1138,6 +1138,68 @@ class GaussianState(State):
 
         return recursive(list(string))
 
+    def get_ladder_string_moment(self, string: List[int]) -> complex:
+        r"""Moment corresponding to a product of ladder operators.
+
+        The indices of `string` follow the ordering of :attr:`complex_displacement`,
+        i.e., :math:`0, \dots, d-1` denotes
+        :math:`\hat{a}_0, \dots, \hat{a}_{d-1}` and
+        :math:`d, \dots, 2d-1` denotes
+        :math:`\hat{a}_0^\dagger, \dots, \hat{a}_{d-1}^\dagger`.
+
+        The order of the indices determines the operator ordering. For example,
+        ``[0, d]`` corresponds to
+        :math:`\langle \hat{a}_0 \hat{a}_0^\dagger \rangle`, while ``[d, 0]``
+        corresponds to
+        :math:`\langle \hat{a}_0^\dagger \hat{a}_0 \rangle`.
+
+        Args:
+            string: The indices of the ladder operators.
+
+        Returns:
+            The moment corresponding to the specified operator product.
+        """
+
+        np = self._connector.np
+
+        d = self.d
+        hbar = self._config.hbar
+
+        identity = np.identity(d)
+        transformation = np.block(
+            [[identity, 1j * identity], [identity, -1j * identity]]
+        ) / np.sqrt(2)
+
+        ordered_xp_covariance = (
+            self.xxpp_covariance_matrix / 2 + 0.5j * hbar * xp_symplectic_form(d)
+        )
+
+        first_order_moments = self.complex_displacement
+        second_order_moments = (
+            transformation @ ordered_xp_covariance @ transformation.T / hbar
+        )
+
+        def recursive(op_list: List[int]) -> complex:
+            if not op_list:
+                return 1.0
+
+            if len(op_list) == 1:
+                return first_order_moments[op_list[0]]
+
+            first = op_list[0]
+            rest = op_list[1:]
+
+            total = first_order_moments[first] * recursive(rest)
+
+            for j, second in enumerate(rest):
+                remaining = rest[:j] + rest[j + 1 :]
+
+                total += second_order_moments[first, second] * recursive(remaining)
+
+            return total
+
+        return recursive(list(string))
+
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
 
