@@ -1512,6 +1512,25 @@ def test_get_ladder_string_moment_does_not_depend_on_hbar():
     )
 
 
+def test_get_ladder_string_moment_jax_gradient_and_jit():
+    connector = pq.JaxConnector()
+
+    @jax.jit
+    def get_mean_photon_number(r):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+            pq.Q(0) | pq.Displacement(r=r)
+
+        state = pq.GaussianSimulator(connector=connector).execute(program).state
+
+        return state.get_ladder_string_moment([1, 0]).real
+
+    r = 0.2
+
+    assert np.isclose(get_mean_photon_number(r), r**2)
+    assert np.isclose(jax.grad(get_mean_photon_number)(r), 2 * r)
+
+
 def test_GaussianState_get_parity_operator_expectation_value_on_vacuum():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

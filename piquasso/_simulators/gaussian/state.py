@@ -1153,6 +1153,28 @@ class GaussianState(State):
         corresponds to
         :math:`\langle \hat{a}_0^\dagger \hat{a}_0 \rangle`.
 
+        The ordered first and second ladder-operator moments are obtained from their
+        quadrature counterparts using
+
+        .. math::
+            \boldsymbol{\xi} = \frac{1}{\sqrt{\hbar}} W \boldsymbol{Y},
+            \qquad
+            \left\langle \boldsymbol{\xi} \boldsymbol{\xi}^T \right\rangle
+            = \frac{1}{\hbar} W
+                \left\langle \boldsymbol{Y} \boldsymbol{Y}^T \right\rangle W^T,
+
+        where :math:`\boldsymbol{\xi} = (a_0, \dots, a_{d-1},
+        a_0^\dagger, \dots, a_{d-1}^\dagger)^T`,
+        :math:`\boldsymbol{Y}` is in xxpp-ordering, and
+
+        .. math::
+            W = \frac{1}{\sqrt{2}}
+                \begin{bmatrix} I & iI \\ I & -iI \end{bmatrix}.
+
+        Since the ordered quadrature second moments include the canonical commutation
+        relations, this transformation preserves the specified operator ordering.
+        Higher-order moments then follow from Isserlis' theorem.
+
         Args:
             string: The indices of the ladder operators.
 
