@@ -18,6 +18,9 @@ from piquasso.api.branch import Branch
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Instruction
 
+from collections import Counter
+from fractions import Fraction
+
 from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
 from piquasso.fermionic.instructions import IsingXX
 
@@ -273,3 +276,88 @@ def ising_XX(state: GaussianState, instruction: IsingXX, shots: int) -> "List[Br
     evolved_state = _do_apply_gaussian_hamiltonian(state, h, modes)
 
     return [Branch(state=evolved_state)]
+
+
+def particle_number_measurement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Branch]":
+    samples = _get_particle_number_measurement_samples(state, instruction, shots)
+    sample_counts = Counter(samples)
+
+    return [
+        Branch(state=None, outcome=sample, frequency=Fraction(count, shots))
+        for sample, count in sample_counts.items()
+    ]
+
+
+def _get_particle_number_measurement_samples(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Tuple[int, ...]]":
+    return [
+        _generate_particle_number_measurement_sample(
+            state,
+            modes=instruction.modes,
+            seed=state._config.seed_sequence + index,
+        )
+        for index in range(shots)
+    ]
+
+
+def _generate_particle_number_measurement_sample(
+    state: GaussianState, modes: "Tuple[int, ...]", seed: int
+) -> "Tuple[int, ...]":
+    fallback_np = state._connector.fallback_np
+    rng = fallback_np.random.default_rng(seed)
+
+    sample = tuple()
+
+    for index in range(len(modes)):
+        partial_modes = modes[: index + 1]
+
+        zero_probability = _get_partial_detection_probability(
+            state, partial_modes, sample + (0,)
+        )
+        one_probability = _get_partial_detection_probability(
+            state, partial_modes, sample + (1,)
+        )
+
+        normalizer = zero_probability + one_probability
+        one_conditional_probability = (
+            0.0 if normalizer == 0.0 else one_probability / normalizer
+        )
+        one_conditional_probability = max(0.0, min(1.0, one_conditional_probability))
+
+        value = rng.choice(
+            (0, 1),
+            p=(1 - one_conditional_probability, one_conditional_probability),
+        )
+
+        sample = sample + (int(value),)
+
+    return sample
+
+
+def _get_partial_detection_probability(
+    state: GaussianState,
+    modes: "Tuple[int, ...]",
+    occupation_numbers: "Tuple[int, ...]",
+) -> float:
+    fallback_np = state._connector.fallback_np
+    reduced_state = state.reduced(modes)
+
+    basis_state = GaussianState(
+        d=reduced_state.d,
+        connector=reduced_state._connector,
+        config=reduced_state._config,
+    )
+    basis_state._set_occupation_numbers(fallback_np.array(occupation_numbers))
+
+    np = state._connector.np
+    identity = np.identity(2 * reduced_state.d)
+    determinant = np.linalg.det(
+        (identity - reduced_state.covariance_matrix @ basis_state.covariance_matrix) / 2
+    )
+
+    probability_squared = max(0.0, float(fallback_np.real(determinant)))
+
+    return float(fallback_np.sqrt(probability_squared))
