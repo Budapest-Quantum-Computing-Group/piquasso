@@ -17,6 +17,8 @@ from piquasso.api.branch import Branch
 
 from piquasso.api.exceptions import InvalidParameter
 
+from piquasso._utils import sample_from_probability_map
+
 from piquasso._math.validations import (
     all_zero_or_one,
     are_modes_consecutive,
@@ -30,6 +32,7 @@ from ._utils import (
 
 from .._utils import (
     get_fock_space_index,
+    get_fock_space_basis,
     get_cutoff_fock_space_dimension,
     next_second_quantized,
 )
@@ -38,7 +41,8 @@ from .state import PureFockState
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import List
+    from typing import List, Tuple
+    from piquasso.api.instruction import Instruction
     from piquasso.instructions.preparations import StateVector
     from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
     from piquasso.fermionic.instructions import ControlledPhase, IsingXX
@@ -231,3 +235,97 @@ def ising_XX(
         state._state_vector = connector.assign(state._state_vector, index, final)
 
     return [Branch(state=state)]
+
+
+def particle_number_measurement(
+    state: PureFockState, instruction: "Instruction", shots: int
+) -> "List[Branch]":
+    probability_map = _get_probability_map(state, instruction.modes)
+
+    frequency_map = sample_from_probability_map(probability_map, shots)
+
+    branches = []
+
+    for sample, frequency in frequency_map.items():
+        new_state = _get_post_measurement_state(
+            state=state,
+            sample=sample,
+            modes=instruction.modes,
+            probability=probability_map[sample],
+        )
+
+        branches.append(Branch(new_state, sample, frequency=frequency))
+
+    return branches
+
+
+def _get_probability_map(
+    state: PureFockState, modes: "Tuple[int, ...]"
+) -> "dict[Tuple[int, ...], float]":
+    fallback_np = state._connector.fallback_np
+
+    basis = get_fock_space_basis(state.d, state._config.cutoff)
+    probabilities = fallback_np.asarray(state.fock_probabilities)
+
+    probability_map = {}
+
+    for occupation_numbers, probability in zip(basis, probabilities):
+        sample = tuple(int(occupation_numbers[mode]) for mode in modes)
+
+        probability_map[sample] = probability_map.get(sample, 0.0) + float(
+            fallback_np.real(probability)
+        )
+
+    return probability_map
+
+
+def _get_post_measurement_state(
+    *,
+    state: PureFockState,
+    sample: "Tuple[int, ...]",
+    modes: "Tuple[int, ...]",
+    probability: float,
+) -> PureFockState:
+    connector = state._connector
+    np = connector.np
+    fallback_np = connector.fallback_np
+
+    remaining_modes = tuple(mode for mode in range(state.d) if mode not in modes)
+
+    config = state._config.copy()
+    config.cutoff -= sum(sample)
+
+    new_state = PureFockState(
+        d=len(remaining_modes), connector=connector, config=config
+    )
+
+    basis = get_fock_space_basis(state.d, state._config.cutoff)
+    normalization = fallback_np.sqrt(1 / probability)
+
+    new_state_vector = np.zeros(
+        shape=new_state.state_vector.shape,
+        dtype=state._config.complex_dtype,
+    )
+
+    for source_index, occupation_numbers in enumerate(basis):
+        current_sample = tuple(int(occupation_numbers[mode]) for mode in modes)
+
+        if current_sample != sample:
+            continue
+
+        remaining_occupation_numbers = occupation_numbers[
+            fallback_np.array(remaining_modes, dtype=int)
+        ]
+
+        target_index = get_fock_space_index(remaining_occupation_numbers)
+
+        new_state_vector = connector.assign(
+            new_state_vector,
+            target_index,
+            new_state_vector[target_index]
+            + normalization * state.state_vector[source_index],
+        )
+
+    new_state._state_vector = new_state_vector
+
+    return new_state
