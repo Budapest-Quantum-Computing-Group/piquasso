@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.instructions import gates, preparations
+from piquasso.instructions import gates, preparations, measurements
 from .state import PureFockState
 
 from .simulation_steps import (
@@ -22,6 +22,7 @@ from .simulation_steps import (
     squeezing2,
     controlled_phase,
     ising_XX,
+    particle_number_measurement,
 )
 
 from piquasso._simulators.simulator import BuiltinSimulator
@@ -54,6 +55,9 @@ class PureFockSimulator(BuiltinSimulator):
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`.
+
+    Supported measurements:
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
     """
 
     _state_class = PureFockState
@@ -69,8 +73,15 @@ class PureFockSimulator(BuiltinSimulator):
         gates.Squeezing2: squeezing2,
         ControlledPhase: controlled_phase,
         IsingXX: ising_XX,
+        measurements.ParticleNumberMeasurement: particle_number_measurement,
     }
 
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [JaxConnector]
+
+    _measurement_classes_allowed_mid_circuit = (measurements.ParticleNumberMeasurement,)
+
+    _measurement_classes_allowed_with_shots_none = (
+        measurements.ParticleNumberMeasurement,
+    )
