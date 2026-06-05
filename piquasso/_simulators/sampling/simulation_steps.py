@@ -28,6 +28,11 @@ from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
 from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 
+from piquasso._math.validations import (
+    validate_occupation_numbers,
+    validate_postselection_cutoff,
+)
+
 from piquasso._simulators.fock.pure.simulation_steps import (
     imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
 )
@@ -64,10 +69,12 @@ def state_vector(
         occupation_numbers = instruction._get_all_params(state._connector)[
             "occupation_numbers"
         ]
-        if state._config.validate and len(occupation_numbers) != state.d:
-            raise InvalidState(
-                f"The occupation numbers '{occupation_numbers}' are not well-defined "
-                f"on '{state.d}' modes: instruction={instruction}"
+        if state._config.validate:
+            validate_occupation_numbers(
+                occupation_numbers,
+                state.d,
+                state._config.cutoff,
+                context=f" Instruction: {instruction}.",
             )
 
         state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
@@ -78,11 +85,12 @@ def state_vector(
             state._connector
         )["fock_amplitude_map"].items():
 
-            if state._config.validate and len(occupation_numbers) != state.d:
-                raise InvalidState(
-                    f"The occupation numbers '{occupation_numbers}' "
-                    f"are not well-defined "
-                    f"on '{state.d}' modes: instruction={instruction}"
+            if state._config.validate:
+                validate_occupation_numbers(
+                    occupation_numbers,
+                    state.d,
+                    state._config.cutoff,
+                    context=f" Instruction: {instruction}.",
                 )
 
             state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
@@ -266,6 +274,14 @@ def post_select_photons(
     modes = instruction.modes
 
     photon_counts = instruction.params["photon_counts"]
+
+    if state._config.validate:
+        validate_postselection_cutoff(
+            state._config.cutoff,
+            photon_counts,
+            state._occupation_numbers,
+            context=f" Instruction: {instruction}.",
+        )
 
     state._set_postselection(modes, photon_counts)
 

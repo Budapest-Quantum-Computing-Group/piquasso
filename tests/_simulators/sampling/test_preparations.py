@@ -44,10 +44,75 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
         simulator.execute(program).state
 
     assert error.value.args[0] == (
-        "The occupation numbers '(1, 1, 1)' are not well-defined on '5' modes: "
-        "instruction=StateVector(occupation_numbers=(1, 1, 1), "
-        "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))"
+        "The occupation numbers '(1, 1, 1)' are not well-defined on '5' modes."
+        " Instruction: StateVector(occupation_numbers=(1, 1, 1), "
+        "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))."
     )
+
+
+def test_initial_state_raises_InvalidState_when_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation_numbers)
+
+    simulator = pq.SamplingSimulator(d=6, config=pq.Config(cutoff=4, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    message = error.value.args[0]
+    assert "require a cutoff of at least '5'" in message
+    assert "provided cutoff is '4'" in message
+    assert "pq.Config(cutoff=5)" in message
+
+
+def test_initial_state_with_fock_amplitude_map_raises_InvalidState_when_cutoff_too_small():
+    occupation_numbers = (0, 1, 0, 1, 1, 1)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(fock_amplitude_map={occupation_numbers: 1.0})
+
+    simulator = pq.SamplingSimulator(d=6, config=pq.Config(cutoff=4, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    message = error.value.args[0]
+    assert "require a cutoff of at least '5'" in message
+    assert "pq.Config(cutoff=5)" in message
+
+
+def test_issue_472_PostSelectPhotons_raises_InvalidState_instead_of_IndexError():
+    """Regression test for https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues/472."""
+    d = 6
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1])
+        pq.Q(4, 5) | pq.PostSelectPhotons(photon_counts=[1, 1])
+
+    sim = pq.SamplingSimulator(d=d)
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        sim.execute(program, shots=100)
+
+    message = error.value.args[0]
+    assert "require a cutoff of at least '5'" in message
+    assert "pq.Config(cutoff=5)" in message
+
+
+def test_PostSelectPhotons_raises_InvalidState_when_postselection_exceeds_cutoff():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0])
+        pq.Q(0, 1, 2) | pq.PostSelectPhotons(photon_counts=[2, 2, 1])
+
+    simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=5, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    message = error.value.args[0]
+    assert "Post-selecting 5 photon(s)" in message
+    assert "pq.Config(cutoff=6)" in message
 
 
 def test_interferometer_init():

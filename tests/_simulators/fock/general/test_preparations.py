@@ -94,6 +94,40 @@ def test_overflow_with_zero_norm_raises_InvalidState_when_normalized():
     assert error.value.args[0] == "The norm of the state is 0."
 
 
+def test_density_matrix_raises_InvalidState_when_ket_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=occupation_numbers, bra=[0, 0, 0, 0, 0, 0])
+
+    simulator = pq.FockSimulator(d=6, config=pq.Config(cutoff=4, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    message = error.value.args[0]
+    assert "require a cutoff of at least '5'" in message
+    assert "preparing the ket component of a DensityMatrix" in message
+    assert "pq.Config(cutoff=5)" in message
+
+
+def test_density_matrix_raises_InvalidState_when_bra_cutoff_too_small():
+    occupation_numbers = [0, 1, 0, 1, 1, 1]
+
+    with pq.Program() as program:
+        pq.Q() | pq.DensityMatrix(ket=[0, 0, 0, 0, 0, 0], bra=occupation_numbers)
+
+    simulator = pq.FockSimulator(d=6, config=pq.Config(cutoff=4, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    message = error.value.args[0]
+    assert "require a cutoff of at least '5'" in message
+    assert "preparing the bra component of a DensityMatrix" in message
+    assert "pq.Config(cutoff=5)" in message
+
+
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
         pq.Q() | pq.DensityMatrix(ket=[0, 0, 1], bra=[0, 0, 1]) * 2 / 5

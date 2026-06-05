@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Union, Tuple
+from typing import Iterable, Union, Tuple, Sequence
 
 import numpy as np
 
 from piquasso.api.exceptions import InvalidState
+
+
+def _cutoff_increase_hint(required_cutoff: int) -> str:
+    return (
+        f" Consider increasing the cutoff via "
+        f"`pq.Config(cutoff={required_cutoff})` when creating the simulator."
+    )
 
 
 def is_natural(number: Union[int, float]) -> bool:
@@ -70,7 +77,7 @@ def validate_occupation_numbers(
             ``d`` or if the total particle number requires a larger cutoff.
     """
 
-    original_occupation_numbers = tuple(occupation_numbers)
+    original_occupation_numbers = tuple(int(number) for number in occupation_numbers)
     occupation_numbers = np.array(original_occupation_numbers)
 
     if len(occupation_numbers) != d:
@@ -89,7 +96,65 @@ def validate_occupation_numbers(
             f"The occupation numbers '{original_occupation_numbers}' require "
             f"a cutoff of at least '{required_cutoff}', but the provided cutoff is "
             f"'{cutoff}'."
+            f"{_cutoff_increase_hint(required_cutoff)}"
         )
         if context:
             message += context
         raise InvalidState(message)
+
+
+def validate_postselection_cutoff(
+    cutoff: int,
+    photon_counts: Sequence[int],
+    occupation_numbers: Iterable[Sequence[int]],
+    *,
+    context: str = "",
+) -> None:
+    """Validate that postselection leaves enough Fock-space truncation.
+
+    After post-selecting ``photon_counts``, the effective cutoff becomes
+    ``cutoff - sum(photon_counts)``. Each prepared occupation number must
+    have fewer photons on the remaining modes than this effective cutoff.
+
+    Args:
+        cutoff: The current Fock-space cutoff before postselection.
+        photon_counts: The photon numbers being postselected.
+        occupation_numbers: Prepared occupation numbers on all modes.
+        context: Optional message appended to raised errors.
+
+    Raises:
+        InvalidState: If postselection would leave an invalid cutoff or if any
+            prepared state would exceed the truncated Fock space afterwards.
+    """
+    postselected_photons = int(np.sum(photon_counts))
+    remaining_cutoff = cutoff - postselected_photons
+
+    if remaining_cutoff <= 0:
+        required_cutoff = postselected_photons + 1
+        message = (
+            f"Post-selecting {postselected_photons} photon(s) on "
+            f"{photon_counts} requires a cutoff of at least "
+            f"'{required_cutoff}', but the provided cutoff is '{cutoff}'."
+            f"{_cutoff_increase_hint(required_cutoff)}"
+        )
+        if context:
+            message += context
+        raise InvalidState(message)
+
+    for original_occupation_numbers in occupation_numbers:
+        occupation_numbers_tuple = tuple(int(number) for number in original_occupation_numbers)
+        total_photons = int(np.sum(occupation_numbers_tuple))
+        remaining_photons = total_photons - postselected_photons
+
+        if remaining_photons >= remaining_cutoff:
+            required_cutoff = total_photons + 1
+            message = (
+                f"After post-selecting {postselected_photons} photon(s) on "
+                f"{photon_counts}, the remaining occupation numbers "
+                f"'{occupation_numbers_tuple}' require a cutoff of at least "
+                f"'{required_cutoff}', but the provided cutoff is '{cutoff}'."
+                f"{_cutoff_increase_hint(required_cutoff)}"
+            )
+            if context:
+                message += context
+            raise InvalidState(message)
