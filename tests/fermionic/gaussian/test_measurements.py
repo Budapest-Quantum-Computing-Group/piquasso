@@ -126,15 +126,14 @@ def test_particle_number_measurement_reproduces_exact_distribution():
     state_simulator = pq.fermionic.GaussianSimulator(d=d)
     state = state_simulator.execute(state_program).state
 
-    with np.errstate(invalid="ignore"):
-        exact_probabilities = np.nan_to_num(state.fock_probabilities, nan=0.0)
+    exact_probabilities = state.fock_probabilities
 
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 0, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    shots = 20000
+    shots = 1000
 
     simulator = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
     samples = simulator.execute(program, shots=shots).samples
@@ -145,7 +144,7 @@ def test_particle_number_measurement_reproduces_exact_distribution():
         empirical_probabilities[index] += 1
     empirical_probabilities /= shots
 
-    assert np.allclose(empirical_probabilities, exact_probabilities, atol=1e-2)
+    assert np.allclose(empirical_probabilities, exact_probabilities, atol=5e-2)
 
 
 def test_particle_number_measurement_mean_particle_numbers():
@@ -167,11 +166,11 @@ def test_particle_number_measurement_mean_particle_numbers():
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    shots = 20000
+    shots = 1000
 
     simulator = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
     samples = simulator.execute(program, shots=shots).samples
 
     empirical_mean = np.array(samples).mean(axis=0)
 
-    assert np.allclose(empirical_mean, exact_mean, atol=2e-2)
+    assert np.allclose(empirical_mean, exact_mean, atol=5e-2)

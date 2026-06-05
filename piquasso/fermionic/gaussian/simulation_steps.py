@@ -320,22 +320,11 @@ def _generate_particle_number_samples(
     ) -> float:
         reduced_state = state.reduced(subspace_modes)
 
-        with fallback_np.errstate(invalid="ignore"):
-            probability = float(
-                fallback_np.real(
-                    reduced_state.get_particle_detection_probability(
-                        fallback_np.array(occupation_numbers)
-                    )
-                )
+        return float(
+            reduced_state.get_particle_detection_probability(
+                fallback_np.array(occupation_numbers)
             )
-
-        # `get_particle_detection_probability` may return `nan` (or a tiny negative
-        # value) when the true probability is essentially zero, since the determinant
-        # under the square root can dip slightly below zero numerically.
-        if fallback_np.isnan(probability) or probability < 0.0:
-            return 0.0
-
-        return probability
+        )
 
     samples = []
 
