@@ -27,7 +27,11 @@ from piquasso._math.linalg import (
     is_symmetric,
     is_positive_semidefinite,
 )
-from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
+from piquasso._math.symplectic import (
+    symplectic_form,
+    xp_symplectic_form,
+    complex_symplectic_form,
+)
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
@@ -1153,26 +1157,21 @@ class GaussianState(State):
         corresponds to
         :math:`\langle \hat{a}_0^\dagger \hat{a}_0 \rangle`.
 
-        The ordered first and second ladder-operator moments are obtained from their
-        quadrature counterparts using
+        The ordered first and second ladder-operator moments are obtained from the
+        complex covariance matrix using
 
         .. math::
-            \boldsymbol{\xi} = \frac{1}{\sqrt{\hbar}} W \boldsymbol{Y},
-            \qquad
-            \left\langle \boldsymbol{\xi} \boldsymbol{\xi}^T \right\rangle
-            = \frac{1}{\hbar} W
-                \left\langle \boldsymbol{Y} \boldsymbol{Y}^T \right\rangle W^T,
+            \left\langle
+                \Delta\boldsymbol{\xi} \Delta\boldsymbol{\xi}^T
+            \right\rangle
+            =
+            \frac{1}{2} \left( \sigma_c + J_c \right) X,
 
         where :math:`\boldsymbol{\xi} = (a_0, \dots, a_{d-1},
-        a_0^\dagger, \dots, a_{d-1}^\dagger)^T`,
-        :math:`\boldsymbol{Y}` is in xxpp-ordering, and
-
-        .. math::
-            W = \frac{1}{\sqrt{2}}
-                \begin{bmatrix} I & iI \\ I & -iI \end{bmatrix}.
-
-        Since the ordered quadrature second moments include the canonical commutation
-        relations, this transformation preserves the specified operator ordering.
+        a_0^\dagger, \dots, a_{d-1}^\dagger)^T`, :math:`J_c` is the
+        complex symplectic form, and :math:`X` swaps annihilation and creation
+        columns to convert the second covariance index from
+        :math:`\boldsymbol{\xi}^\dagger` to :math:`\boldsymbol{\xi}`.
         Higher-order moments then follow from Isserlis' theorem.
 
         Args:
@@ -1185,20 +1184,19 @@ class GaussianState(State):
         np = self._connector.np
 
         d = self.d
-        hbar = self._config.hbar
-
         identity = np.identity(d)
-        transformation = np.block(
-            [[identity, 1j * identity], [identity, -1j * identity]]
-        ) / np.sqrt(2)
-
-        ordered_xp_covariance = (
-            self.xxpp_covariance_matrix / 2 + 0.5j * hbar * xp_symplectic_form(d)
+        ladder_operator_swap = np.block(
+            [
+                [np.zeros((d, d)), identity],
+                [identity, np.zeros((d, d))],
+            ]
         )
 
         first_order_moments = self.complex_displacement
         second_order_moments = (
-            transformation @ ordered_xp_covariance @ transformation.T / hbar
+            (self.complex_covariance + complex_symplectic_form(d))
+            @ ladder_operator_swap
+            / 2
         )
 
         def recursive(op_list: List[int]) -> complex:
