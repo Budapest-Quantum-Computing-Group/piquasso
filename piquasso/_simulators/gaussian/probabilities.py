@@ -27,6 +27,7 @@ from piquasso._math.linalg import block_reduce_xpxp
 from piquasso._math.torontonian import torontonian, loop_torontonian
 from piquasso._math.fock import nb_get_fock_space_basis
 from piquasso.api.connector import BaseConnector
+from piquasso._simulators.connectors.numpy_.connector import NumpyConnector
 
 
 @nb.njit(cache=True)
@@ -284,43 +285,42 @@ class DensityMatrixCalculation(abc.ABC):
         )
 
     def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
-        r"""Compute the full density matrix using the recurrence relation from
-        Eq. (45) of arXiv:2209.06069 (Yao, Miatto, Quesada, 2022).
+        r"""Compute the full density matrix.
 
-        This method is significantly faster than computing each matrix element
-        independently via hafnians, because it reuses previously computed
-        Fock amplitudes via a linear recurrence on the multidimensional Hermite
-        polynomials that represent the Gaussian state in Fock space.
+        For :class:`~piquasso._simulators.connectors.numpy_.NumpyConnector` this uses
+        the fast recurrence relation from Eq. (45) of arXiv:2209.06069, which fills all
+        Fock amplitudes in one compiled Numba pass and reuses cached index tables.
 
-        Performance optimisations over the naïve implementation:
-
-        1. **Cached index tables** – the Fock-space basis and its successor /
-           predecessor tables are built once per ``(d, cutoff)`` pair and stored
-           in an LRU cache, so repeated calls pay only the recurrence cost.
-        2. **Vectorised hash lookup** – the mapping from ``(ket ‖ bra)`` multi-
-           indices to flat G-array positions is computed in a single NumPy
-           broadcast rather than an element-wise Python loop.
-        3. **Hermitian symmetry** – only the upper triangle is looked up; the
-           lower triangle is filled by conjugation, halving the number of
-           ``G[...]`` accesses.
-
-        The density matrix element is given by:
-
-        .. math::
-            \langle m | \rho | n \rangle = c \cdot \tilde{G}_{n \oplus m},
-
-        where :math:`c` is the normalization scalar, and :math:`\tilde{G}_{k}` are the
-        renormalized multidimensional Hermite polynomial values computed recursively.
+        For differentiable connectors (TensorFlow, JAX) the method falls back to the
+        connector-compatible element-wise path so that gradients are preserved.
 
         Args:
-            occupation_numbers (numpy.ndarray):
-                Array of shape ``(m, d)`` of multi-indices representing the Fock
-                space basis states.
+            occupation_numbers: Array of shape ``(m, d)`` of Fock basis multi-indices.
 
         Returns:
-            numpy.ndarray: The complex ``(m, m)`` density matrix in the truncated
-            Fock space.
+            The complex ``(m, m)`` density matrix in the truncated Fock space.
         """
+        if isinstance(self.connector, NumpyConnector):
+            return self._get_density_matrix_recurrence(occupation_numbers)
+
+        # Differentiable fallback: use connector ops so gradients flow through.
+        return self._get_density_matrix_elementwise(occupation_numbers)
+
+    def _get_density_matrix_elementwise(
+        self, occupation_numbers: np.ndarray
+    ) -> np.ndarray:
+        """Element-wise density matrix via hafnians. Differentiable."""
+        n = occupation_numbers.shape[0]
+        density_matrix = self.connector.np.empty(shape=(n, n), dtype=complex)
+        for i, bra in enumerate(occupation_numbers):
+            for j, ket in enumerate(occupation_numbers):
+                density_matrix[i, j] = self.get_density_matrix_element(bra, ket)
+        return density_matrix
+
+    def _get_density_matrix_recurrence(
+        self, occupation_numbers: np.ndarray
+    ) -> np.ndarray:
+        """Fast recurrence-based density matrix (NumpyConnector only)."""
         d = occupation_numbers.shape[1]
         cutoff = int(occupation_numbers.sum(axis=1).max()) + 1
 
