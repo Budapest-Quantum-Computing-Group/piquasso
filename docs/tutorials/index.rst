@@ -19,15 +19,6 @@ This document contains the basic tutorials of Piquasso.
       Boson Sampling simulations using Piquasso.
 
 
-   .. grid-item-card::  Boson Sampling as an accelerator
-      :link: boson-sampling-mc-integral
-      :link-type: doc
-
-      Using Boson Sampling to accelerate Monte Carlo integration.
-
-
-.. grid:: 3
-
    .. grid-item-card::  Gaussian Boson Sampling
       :link: gaussian-boson-sampling
       :link-type: doc
@@ -35,28 +26,30 @@ This document contains the basic tutorials of Piquasso.
       Gaussian Boson Sampling simulations using Piquasso.
 
 
-   .. grid-item-card::  Modularity in Piquasso
+.. grid:: 3
+
+    .. grid-item-card::  Modularity in Piquasso
       :link: separating-programs
       :link-type: doc
 
       Compose Piquasso programs and define custom gates with ease.
 
 
-   .. grid-item-card::  Quantum Neural Network layers
+    .. grid-item-card::  Quantum Neural Network layers
       :link: cvqnn-with-tensorflow
       :link-type: doc
 
       Using the automatic differentiation capabilities of Piquasso with TensorFlow.
 
 
-.. grid:: 3
-
-
-   .. grid-item-card::  Using JAX with Piquasso
+    .. grid-item-card::  Using JAX with Piquasso
       :link: jax-example
       :link-type: doc
 
       A simple state learning example using JAX and Piquasso.
+
+
+.. grid:: 3
 
    .. grid-item-card::  Dense k-subgraph problem
       :link: dense-subgraph-gbs
@@ -77,7 +70,6 @@ This document contains the basic tutorials of Piquasso.
 
    getting-started
    boson-sampling
-   boson-sampling-mc-integral
    gaussian-boson-sampling
    separating-programs
    cvqnn-with-tensorflow
