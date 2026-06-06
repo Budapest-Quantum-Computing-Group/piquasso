@@ -16,7 +16,7 @@
 import abc
 
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import numba as nb
@@ -225,14 +225,54 @@ class DensityMatrixCalculation(abc.ABC):
 
     def __init__(self, connector: BaseConnector):
         self.connector = connector
+        # Cache for _get_density_matrix_element_from_recurrence (competitor API compat).
+        self._density_matrix_element_cache: Dict[Tuple[int, ...], complex] = {}
 
     @abc.abstractmethod
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         """Calculates the hafnian given a reduction."""
 
-    @abc.abstractmethod
     def _get_bargmann_Ab(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Returns the Bargmann A matrix and b vector for this state."""
+        """Returns the Bargmann A matrix and b vector.
+
+        The default implementation reads ``self._A`` and ``self._linear``, matching
+        the attribute names used in the competitor's test helpers and the concrete
+        subclasses.  Subclasses may override this if they use different names.
+        """
+        return self._A, self._linear  # type: ignore[attr-defined]
+
+    def _get_density_matrix_element_from_recurrence(
+        self, reduce_on: Tuple[int, ...]
+    ) -> complex:
+        """Scalar recurrence for a single element (competitor-compatible API).
+
+        This is provided for API compatibility with the competitor's interface.
+        ``get_density_matrix`` uses the faster vectorised path instead.
+        """
+        if reduce_on in self._density_matrix_element_cache:
+            return self._density_matrix_element_cache[reduce_on]
+        k = np.array(reduce_on)
+        i = int(np.flatnonzero(k)[0])
+        previous = k.copy()
+        previous[i] -= 1
+        element = self._linear[i] * self._get_density_matrix_element_from_recurrence(  # type: ignore[attr-defined]
+            tuple(previous)
+        )
+        for j, previous_j in enumerate(previous):
+            if previous_j == 0:
+                continue
+            previous_previous = previous.copy()
+            previous_previous[j] -= 1
+            element += (
+                np.sqrt(float(previous_j))
+                * self._A[i, j]  # type: ignore[attr-defined]
+                * self._get_density_matrix_element_from_recurrence(
+                    tuple(previous_previous)
+                )
+            )
+        element /= np.sqrt(float(k[i]))
+        self._density_matrix_element_cache[reduce_on] = element
+        return element
 
     def get_density_matrix_element(self, bra: np.ndarray, ket: np.ndarray) -> float:
         reduce_on = np.concatenate([ket, bra])
@@ -383,12 +423,13 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         )
 
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
-        self._b = np.zeros(2 * d, dtype=complex)
+        self._linear = np.zeros(2 * d, dtype=complex)
 
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
+        self._density_matrix_element_cache[(0,) * (2 * d)] = self._normalization
 
     def _get_bargmann_Ab(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self._A, self._b
+        return self._A, self._linear
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.connector.hafnian(self._A, reduce_on)
@@ -422,15 +463,15 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
         self._gamma = complex_displacement.conj() @ Qinv
-        # b vector for the recurrence: b = gamma = mu* @ Q^{-1}
-        self._b = self._gamma
+        self._linear = self._gamma
 
         self._normalization: float = np.exp(
             -0.5 * self._gamma @ complex_displacement
         ) / np.sqrt(np.linalg.det(Q))
+        self._density_matrix_element_cache[(0,) * (2 * d)] = self._normalization
 
     def _get_bargmann_Ab(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self._A, self._b
+        return self._A, self._linear
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.connector.loop_hafnian(self._A, self._gamma, reduce_on)
