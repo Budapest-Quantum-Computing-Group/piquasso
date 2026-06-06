@@ -15,7 +15,8 @@
 
 import abc
 
-from typing import Tuple
+from functools import lru_cache
+from typing import Optional, Tuple
 
 import numpy as np
 import numba as nb
@@ -94,51 +95,91 @@ def _recurrence_fill_G(
             G[new_flat_idx] = val / np.sqrt(np.float64(ki + 1))
 
 
-def _build_index_tables(
-    basis_2d: np.ndarray,
-    max_weight: int,
+@lru_cache(maxsize=64)
+def _get_cached_recurrence_data(
     ell: int,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Precompute successor and predecessor flat-index tables for the recurrence.
+    max_weight: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
+    """Build and cache the Fock-space basis, successor/predecessor tables, mixed-radix
+    hashes, and (when the hash range is small enough) a dense hash→flat-index lookup
+    array for a given ``(ell, max_weight)`` pair.
+
+    This function is called once per unique ``(ell, max_weight)`` combination and its
+    result is reused across all subsequent ``get_density_matrix`` calls, eliminating
+    the dominant O(N·ell) Python-dict construction that previously dominated runtime.
+
+    Index tables are built fully vectorised with NumPy:
+
+    * A mixed-radix hash ``h(k) = k · powers`` (with ``powers[i] = radix**i``) maps
+      every multi-index to a unique integer.
+    * When ``max(h) < 50 000 000`` a dense array ``lookup[h] = flat_idx`` gives O(1)
+      neighbour look-up per mode per element.
+    * Otherwise a sorted-hash + ``np.searchsorted`` fallback is used (still much faster
+      than the Python dict).
 
     Args:
-        basis_2d: Array of shape (N, ell) of multi-indices sorted by weight.
-        max_weight: Maximum total photon number (= 2*(cutoff-1)).
-        ell: Dimension of the multi-index.
+        ell: Dimension of the 2d-mode multi-index space (``= 2 * d``).
+        max_weight: Maximum total photon number across all ``ell`` modes
+            (``= 2 * (cutoff - 1)``).
 
     Returns:
-        succ: int64 array of shape (N, ell); succ[idx, i] is the flat index of
-              basis[idx] + e_i, or -1 if that index exceeds max_weight.
-        pred: int64 array of shape (N, ell); pred[idx, j] is the flat index of
-              basis[idx] - e_j, or -1 if basis[idx][j] == 0.
+        basis_2d:   ``(N, ell)`` int64 array of multi-indices sorted by weight.
+        succ:       ``(N, ell)`` int64 successor table (``-1`` if out of range).
+        pred:       ``(N, ell)`` int64 predecessor table (``-1`` if ``k[j] == 0``).
+        hashes:     ``(N,)`` int64 mixed-radix hash of each row in ``basis_2d``.
+        powers:     ``(ell,)`` int64 radix powers used to compute hashes.
+        dense_lookup: ``(max_hash+1,)`` int64 array mapping hash → flat index, or
+            ``None`` when the hash range exceeds the memory threshold.
     """
+    basis_2d: np.ndarray = nb_get_fock_space_basis(d=ell, cutoff=max_weight + 1).copy()
     n = len(basis_2d)
-    # Build a lookup dict: tuple(k) -> flat_idx
-    lookup = {tuple(basis_2d[idx].tolist()): idx for idx in range(n)}
+    radix = int(max_weight) + 2
+    powers: np.ndarray = radix ** np.arange(ell, dtype=np.int64)
+    hashes: np.ndarray = basis_2d @ powers          # shape (N,)
+    weights: np.ndarray = basis_2d.sum(axis=1)      # shape (N,)
 
-    succ = np.full((n, ell), -1, dtype=np.int64)
-    pred = np.full((n, ell), -1, dtype=np.int64)
+    succ: np.ndarray = np.full((n, ell), -1, dtype=np.int64)
+    pred: np.ndarray = np.full((n, ell), -1, dtype=np.int64)
 
-    for idx in range(n):
-        k = basis_2d[idx]
-        w = int(k.sum())
+    max_hash = int(hashes.max())
+    dense_lookup: Optional[np.ndarray] = None
+
+    if max_hash < 50_000_000:
+        # Dense O(1) lookup – fits comfortably in memory.
+        dense_lookup = np.full(max_hash + 1, -1, dtype=np.int64)
+        dense_lookup[hashes] = np.arange(n, dtype=np.int64)
+
         for i in range(ell):
-            # Successor
-            if w < max_weight:
-                k_new = k.copy()
-                k_new[i] += 1
-                t = tuple(k_new.tolist())
-                if t in lookup:
-                    succ[idx, i] = lookup[t]
-            # Predecessor
-            if k[i] > 0:
-                k_prev = k.copy()
-                k_prev[i] -= 1
-                t = tuple(k_prev.tolist())
-                if t in lookup:
-                    pred[idx, i] = lookup[t]
+            # Successors: add powers[i] to hash, valid only when weight < max_weight.
+            new_h = hashes + powers[i]
+            valid = (weights < max_weight) & (new_h <= max_hash)
+            rows = np.where(valid)[0]
+            succ[rows, i] = dense_lookup[new_h[rows]]
 
-    return succ, pred
+            # Predecessors: subtract powers[i], valid only when k[i] > 0.
+            rows2 = np.where(basis_2d[:, i] > 0)[0]
+            pred[rows2, i] = dense_lookup[hashes[rows2] - powers[i]]
+    else:
+        # Searchsorted fallback for large hash ranges (high d / high cutoff).
+        sort_idx = np.argsort(hashes)
+        sorted_hashes = hashes[sort_idx]
+
+        for i in range(ell):
+            new_h = hashes + powers[i]
+            mask = weights < max_weight
+            pos = np.searchsorted(sorted_hashes, new_h)
+            pos_c = np.minimum(pos, n - 1)
+            found = mask & (pos < n) & (sorted_hashes[pos_c] == new_h)
+            succ[found, i] = sort_idx[pos[found]]
+
+            rows2 = np.where(basis_2d[:, i] > 0)[0]
+            new_h2 = hashes[rows2] - powers[i]
+            pos2 = np.searchsorted(sorted_hashes, new_h2)
+            pos2_c = np.minimum(pos2, n - 1)
+            found2 = sorted_hashes[pos2_c] == new_h2
+            pred[rows2[found2], i] = sort_idx[pos2[found2]]
+
+    return basis_2d, succ, pred, hashes, powers, dense_lookup
 
 
 def _compute_G_array_via_recurrence(
@@ -146,39 +187,34 @@ def _compute_G_array_via_recurrence(
     b: np.ndarray,
     cutoff: int,
     d: int,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
     r"""Compute the full array of renormalized Fock amplitudes using the recurrence
     relation from Eq. (45) of arXiv:2209.06069.
 
-    For a Gaussian state with Bargmann triple (A, b, c), the density matrix element is
-
-    .. math::
-        \langle m | \rho | n \rangle = c \cdot \tilde{G}_{n \oplus m},
-
-    where :math:`\tilde{G}_{k} = G^A_k(b) / \sqrt{k!}` is the renormalized
-    multidimensional Hermite polynomial, computed via the recurrence starting from
-    :math:`\tilde{G}_0 = 1`.
+    Successor/predecessor tables are retrieved from a per-process LRU cache keyed by
+    ``(ell, max_weight)`` so they are built at most once per unique truncation, making
+    repeated calls (the common case) pay only the O(N·ell) numba recurrence cost.
 
     Args:
-        A: The 2d x 2d Bargmann A matrix.
+        A: The 2d × 2d Bargmann A matrix.
         b: The 2d Bargmann b vector.
         cutoff: Fock space truncation cutoff.
         d: Number of modes.
 
     Returns:
-        numpy.ndarray: 1D complex array G of renormalized Fock amplitudes, indexed by
-        the position of the 2d-mode multi-index in the basis sorted by weight
-        (k = ket ⊕ bra).
+        G: 1-D complex128 array of renormalized Fock amplitudes indexed by the
+           position of the 2d-mode multi-index in the weight-sorted basis.
+        basis_2d: The corresponding ``(N, 2d)`` multi-index array.
     """
     ell = 2 * d
     max_weight = 2 * (cutoff - 1)
 
-    basis_2d = nb_get_fock_space_basis(d=ell, cutoff=max_weight + 1)
-    succ, pred = _build_index_tables(basis_2d, max_weight, ell)
+    basis_2d, succ, pred, _hashes, _powers, _lookup = _get_cached_recurrence_data(
+        ell, max_weight
+    )
 
     G = np.zeros(len(basis_2d), dtype=np.complex128)
     G[0] = 1.0 + 0.0j
-
     _recurrence_fill_G(G, basis_2d, succ, pred, A, b, max_weight, ell)
 
     return G, basis_2d
@@ -216,6 +252,18 @@ class DensityMatrixCalculation(abc.ABC):
         Fock amplitudes via a linear recurrence on the multidimensional Hermite
         polynomials that represent the Gaussian state in Fock space.
 
+        Performance optimisations over the naïve implementation:
+
+        1. **Cached index tables** – the Fock-space basis and its successor /
+           predecessor tables are built once per ``(d, cutoff)`` pair and stored
+           in an LRU cache, so repeated calls pay only the recurrence cost.
+        2. **Vectorised hash lookup** – the mapping from ``(ket ‖ bra)`` multi-
+           indices to flat G-array positions is computed in a single NumPy
+           broadcast rather than an element-wise Python loop.
+        3. **Hermitian symmetry** – only the upper triangle is looked up; the
+           lower triangle is filled by conjugation, halving the number of
+           ``G[...]`` accesses.
+
         The density matrix element is given by:
 
         .. math::
@@ -226,29 +274,66 @@ class DensityMatrixCalculation(abc.ABC):
 
         Args:
             occupation_numbers (numpy.ndarray):
-                Array of multi-indices representing the Fock space basis.
+                Array of shape ``(m, d)`` of multi-indices representing the Fock
+                space basis states.
 
         Returns:
-            numpy.ndarray: The complex density matrix in the truncated Fock space.
+            numpy.ndarray: The complex ``(m, m)`` density matrix in the truncated
+            Fock space.
         """
         d = occupation_numbers.shape[1]
         cutoff = int(occupation_numbers.sum(axis=1).max()) + 1
 
+        ell = 2 * d
+        max_weight = 2 * (cutoff - 1)
+
         A, b = self._get_bargmann_Ab()
-        G, basis_2d = _compute_G_array_via_recurrence(A, b, cutoff, d)
 
-        # Build a lookup from multi-index tuple -> position in basis_2d (= flat G index).
-        # This avoids calling get_index_in_fock_space_array in the inner loop.
-        lookup = {tuple(basis_2d[idx].tolist()): idx for idx in range(len(basis_2d))}
+        # Retrieve cached basis + tables (built only once per (ell, max_weight)).
+        basis_2d, succ, pred, hashes, powers, dense_lookup = (
+            _get_cached_recurrence_data(ell, max_weight)
+        )
 
-        n = occupation_numbers.shape[0]
-        density_matrix = np.empty(shape=(n, n), dtype=complex)
+        # Run the numba recurrence to fill all G values.
+        G = np.zeros(len(basis_2d), dtype=np.complex128)
+        G[0] = 1.0 + 0.0j
+        _recurrence_fill_G(G, basis_2d, succ, pred, A, b, max_weight, ell)
 
-        for i, bra in enumerate(occupation_numbers):
-            for j, ket in enumerate(occupation_numbers):
-                # k = ket ⊕ bra (matches reduce_on = [ket, bra] convention)
-                k = tuple(ket.tolist() + bra.tolist())
-                density_matrix[i, j] = self._normalization * G[lookup[k]]
+        # Vectorised hash → flat-index lookup for all (ket ‖ bra) pairs.
+        # powers[:d] correspond to the ket part, powers[d:] to the bra part.
+        ket_powers = powers[:d]   # (d,)
+        bra_powers = powers[d:]   # (d,)
+
+        # (m,) hash contribution from each row of occupation_numbers as ket / bra.
+        ket_hashes = occupation_numbers @ ket_powers   # (m,)
+        bra_hashes = occupation_numbers @ bra_powers   # (m,)
+
+        m = occupation_numbers.shape[0]
+        density_matrix = np.empty((m, m), dtype=np.complex128)
+
+        if dense_lookup is not None:
+            # O(1) per element via the precomputed dense array.
+            for i in range(m):
+                # Upper triangle (including diagonal): ket = row j, bra = row i.
+                combined = ket_hashes[i:] + bra_hashes[i]
+                row_vals = self._normalization * G[dense_lookup[combined]]
+                density_matrix[i, i:] = row_vals
+                # Fill lower triangle by conjugation (density matrix is Hermitian).
+                density_matrix[i + 1:, i] = row_vals[1:].conj()
+        else:
+            # Searchsorted fallback (large d / large cutoff).
+            sort_idx = np.argsort(hashes)
+            sorted_hashes = hashes[sort_idx]
+            n_basis = len(hashes)
+
+            for i in range(m):
+                combined = ket_hashes[i:] + bra_hashes[i]
+                pos = np.searchsorted(sorted_hashes, combined)
+                pos_c = np.minimum(pos, n_basis - 1)
+                flat_idx = sort_idx[pos_c]
+                row_vals = self._normalization * G[flat_idx]
+                density_matrix[i, i:] = row_vals
+                density_matrix[i + 1:, i] = row_vals[1:].conj()
 
         return density_matrix
 
