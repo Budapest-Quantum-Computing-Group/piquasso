@@ -69,6 +69,17 @@ def test_sampling_samples_number(interferometer_matrix):
     )
 
 
+def test_measure_particle_number_on_two_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots=3)
+
+    assert result.samples == [(1, 1), (1, 1), (1, 1)]
+
+
 def test_sampling_mode_permutation(interferometer_matrix):
     shots = 1
 

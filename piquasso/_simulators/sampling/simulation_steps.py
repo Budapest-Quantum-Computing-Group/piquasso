@@ -250,7 +250,14 @@ def particle_number_measurement(
         postselect_data=postselect_data,
     )
 
+    modes = instruction.modes
+
     binned_samples = get_counts(samples)
+
+    binned_samples = {
+        tuple(outcome[mode] for mode in modes): multiplicity
+        for outcome, multiplicity in binned_samples.items()
+    }
 
     branches = [
         Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
