@@ -15,7 +15,7 @@
 
 import abc
 
-from typing import Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -31,6 +31,7 @@ class DensityMatrixCalculation(abc.ABC):
 
     def __init__(self, connector: BaseConnector):
         self.connector = connector
+        self._density_matrix_element_cache: Dict[Tuple[int, ...], complex] = {}
 
     @abc.abstractmethod
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
@@ -45,14 +46,55 @@ class DensityMatrixCalculation(abc.ABC):
             / np.sqrt(np.prod(factorial(reduce_on)))
         )
 
+    def _get_density_matrix_element_from_recurrence(
+        self, reduce_on: Tuple[int, ...]
+    ) -> complex:
+        if reduce_on in self._density_matrix_element_cache:
+            return self._density_matrix_element_cache[reduce_on]
+
+        k = np.array(reduce_on)
+        i = np.flatnonzero(k)[0]
+        previous = k.copy()
+        previous[i] -= 1
+
+        element = self._linear[i] * self._get_density_matrix_element_from_recurrence(
+            tuple(previous)
+        )
+
+        for j, previous_j in enumerate(previous):
+            if previous_j == 0:
+                continue
+
+            previous_previous = previous.copy()
+            previous_previous[j] -= 1
+            element += (
+                np.sqrt(previous_j)
+                * self._A[i, j]
+                * self._get_density_matrix_element_from_recurrence(
+                    tuple(previous_previous)
+                )
+            )
+
+        element /= np.sqrt(k[i])
+
+        self._density_matrix_element_cache[reduce_on] = element
+
+        return element
+
     def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
         n = occupation_numbers.shape[0]
 
         density_matrix = np.empty(shape=(n, n), dtype=complex)
 
         for i, bra in enumerate(occupation_numbers):
-            for j, ket in enumerate(occupation_numbers):
-                density_matrix[i, j] = self.get_density_matrix_element(bra, ket)
+            for j in range(i, n):
+                ket = occupation_numbers[j]
+                reduce_on = tuple(np.concatenate([ket, bra]))
+                element = self._get_density_matrix_element_from_recurrence(reduce_on)
+                density_matrix[i, j] = element
+
+                if i != j:
+                    density_matrix[j, i] = np.conj(element)
 
         return density_matrix
 
@@ -102,8 +144,10 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         )
 
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
+        self._linear = np.zeros(2 * d, dtype=complex)
 
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
+        self._density_matrix_element_cache[(0,) * (2 * d)] = self._normalization
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.connector.hafnian(self._A, reduce_on)
@@ -137,10 +181,12 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
         self._gamma = complex_displacement.conj() @ Qinv
+        self._linear = self._gamma
 
         self._normalization: float = np.exp(
             -0.5 * self._gamma @ complex_displacement
         ) / np.sqrt(np.linalg.det(Q))
+        self._density_matrix_element_cache[(0,) * (2 * d)] = self._normalization
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
         return self.connector.loop_hafnian(self._A, self._gamma, reduce_on)
