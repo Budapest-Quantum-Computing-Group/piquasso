@@ -382,3 +382,184 @@ def test_recurrence_index_ordering_matches_get_density_matrix_element(connector)
                 f"Mismatch at bra={bra}, ket={ket}: "
                 f"got {dm[i, j]}, expected {expected}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Competitor compatibility tests (from the diff)
+# ---------------------------------------------------------------------------
+
+from piquasso._simulators.gaussian.probabilities import DensityMatrixCalculation
+
+
+class RecurrenceTestDensityMatrixCalculation(DensityMatrixCalculation):
+    def __init__(self, A, linear, normalization, use_loop_hafnian=False):
+        super().__init__(connector=pq.NumpyConnector())
+        self._A = A
+        self._linear = linear
+        self._normalization = normalization
+        self._use_loop_hafnian = use_loop_hafnian
+        self._density_matrix_element_cache[(0,) * len(linear)] = normalization
+
+    def calculate_hafnian(self, reduce_on: np.ndarray) -> complex:
+        if self._use_loop_hafnian:
+            return self.connector.loop_hafnian(self._A, self._linear, reduce_on)
+        return self.connector.hafnian(self._A, reduce_on)
+
+
+def test_density_matrix_recurrence_matches_hafnian_elements():
+    A = np.array(
+        [
+            [0.1, 0.2 + 0.1j, -0.3, 0.05j],
+            [0.2 + 0.1j, -0.2, 0.4 - 0.2j, 0.15],
+            [-0.3, 0.4 - 0.2j, 0.25, -0.1j],
+            [0.05j, 0.15, -0.1j, 0.05],
+        ],
+        dtype=complex,
+    )
+    occupation_numbers = np.array(
+        [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1]]
+    )
+    calculation = RecurrenceTestDensityMatrixCalculation(
+        A=A, linear=np.zeros(4, dtype=complex), normalization=0.7 + 0.1j,
+    )
+    density_matrix = calculation.get_density_matrix(occupation_numbers)
+    for i, bra in enumerate(occupation_numbers):
+        for j in range(i, len(occupation_numbers)):
+            ket = occupation_numbers[j]
+            expected = calculation.get_density_matrix_element(bra=bra, ket=ket)
+            assert np.isclose(density_matrix[i, j], expected)
+
+
+def test_density_matrix_recurrence_matches_loop_hafnian_elements():
+    A = np.array(
+        [
+            [0.05, 0.1 + 0.1j, 0.15, -0.05j],
+            [0.1 + 0.1j, -0.05, 0.2 - 0.1j, 0.05],
+            [0.15, 0.2 - 0.1j, 0.1, 0.1j],
+            [-0.05j, 0.05, 0.1j, -0.1],
+        ],
+        dtype=complex,
+    )
+    linear = np.array([0.1, -0.2j, 0.05 + 0.1j, -0.15], dtype=complex)
+    occupation_numbers = np.array(
+        [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1]]
+    )
+    calculation = RecurrenceTestDensityMatrixCalculation(
+        A=A, linear=linear, normalization=0.9 - 0.2j, use_loop_hafnian=True,
+    )
+    density_matrix = calculation.get_density_matrix(occupation_numbers)
+    for i, bra in enumerate(occupation_numbers):
+        for j in range(i, len(occupation_numbers)):
+            ket = occupation_numbers[j]
+            expected = calculation.get_density_matrix_element(bra=bra, ket=ket)
+            assert np.isclose(density_matrix[i, j], expected)
+
+
+def test_density_matrix_uses_hermitian_symmetry():
+    A = np.zeros((2, 2), dtype=complex)
+    calculation = RecurrenceTestDensityMatrixCalculation(
+        A=A, linear=np.zeros(2, dtype=complex), normalization=1.0,
+    )
+    occupation_numbers = np.array([[0], [1], [2]])
+    density_matrix = calculation.get_density_matrix(occupation_numbers)
+    assert np.allclose(density_matrix, density_matrix.conj().T)
+
+
+# ---------------------------------------------------------------------------
+# Public-API black-box tests (through GaussianState.density_matrix)
+# ---------------------------------------------------------------------------
+
+
+def test_public_api_density_matrix_is_hermitian():
+    """density_matrix is Hermitian for a nondisplaced state."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.5, phi=0.3)
+        pq.Q(0, 2) | pq.Beamsplitter(theta=0.4, phi=0.1)
+
+    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=5))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.allclose(dm, dm.conj().T, atol=1e-10)
+
+
+def test_public_api_density_matrix_trace_is_one():
+    """density_matrix has unit trace."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.4, phi=0.0)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=0.3, phi=0.0)
+
+    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=6))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.isclose(np.trace(dm).real, 1.0, atol=1e-2)
+
+
+def test_public_api_density_matrix_is_positive_semidefinite():
+    """density_matrix has non-negative eigenvalues."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.0)
+
+    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=7))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+    eigvals = np.linalg.eigvalsh(dm)
+
+    assert np.all(eigvals >= -1e-10)
+
+
+def test_public_api_density_matrix_matches_element_wise():
+    """density_matrix matches get_density_matrix_element for every entry."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.5, phi=0.0)
+        pq.Q(0, 2) | pq.Beamsplitter(theta=0.3, phi=0.0)
+
+    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=4))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    from piquasso._simulators.gaussian.state import get_fock_space_basis
+    basis = get_fock_space_basis(d=3, cutoff=4)
+    connector = pq.NumpyConnector()
+    from piquasso._simulators.gaussian.probabilities import NondisplacedDensityMatrixCalculation
+    calc = NondisplacedDensityMatrixCalculation(state.complex_covariance, connector)
+
+    for i, bra in enumerate(basis):
+        for j, ket in enumerate(basis):
+            expected = calc.get_density_matrix_element(bra=bra, ket=ket)
+            assert np.isclose(dm[i, j], expected, atol=1e-10), (
+                f"Mismatch at bra={bra}, ket={ket}: got {dm[i,j]}, expected {expected}"
+            )
+
+
+def test_public_api_density_matrix_displaced_is_hermitian():
+    """density_matrix is Hermitian for a displaced state."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.0)
+        pq.Q(0) | pq.Displacement(r=0.5, phi=0.2)
+        pq.Q(1) | pq.Displacement(r=0.3, phi=1.0)
+
+    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=6))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.allclose(dm, dm.conj().T, atol=1e-10)
+
+
+def test_public_api_density_matrix_displaced_trace_is_one():
+    """density_matrix has unit trace for a displaced state."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.4, phi=0.5)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=8))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.isclose(np.trace(dm).real, 1.0, atol=1e-6)
