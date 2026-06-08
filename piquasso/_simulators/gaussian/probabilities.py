@@ -27,7 +27,7 @@ from piquasso._math.linalg import block_reduce_xpxp
 from piquasso._math.torontonian import torontonian, loop_torontonian
 from piquasso._math.fock import nb_get_fock_space_basis
 from piquasso.api.connector import BaseConnector
-from piquasso._simulators.connectors.numpy_.connector import NumpyConnector
+
 
 
 @nb.njit(cache=True)
@@ -300,7 +300,7 @@ class DensityMatrixCalculation(abc.ABC):
         Returns:
             The complex ``(m, m)`` density matrix in the truncated Fock space.
         """
-        if isinstance(self.connector, NumpyConnector):
+        if self.connector.allow_conditionals:
             return self._get_density_matrix_recurrence(occupation_numbers)
 
         # Differentiable fallback: use connector ops so gradients flow through.
