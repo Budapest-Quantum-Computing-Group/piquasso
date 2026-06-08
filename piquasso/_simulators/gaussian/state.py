@@ -1020,6 +1020,34 @@ class GaussianState(State):
 
         return self.reduced(modes).fock_probabilities
 
+    def _get_operator_string_moment(
+        self,
+        string: List[int],
+        first_order_moments: np.ndarray,
+        second_order_moments: np.ndarray,
+    ) -> complex:
+        # TODO: Reimplement this using the loop hafnian!
+        def recursive(op_list: List[int]) -> complex:
+            if not op_list:
+                return 1.0
+
+            if len(op_list) == 1:
+                return first_order_moments[op_list[0]]
+
+            first = op_list[0]
+            rest = op_list[1:]
+
+            total = first_order_moments[first] * recursive(rest)
+
+            for j, second in enumerate(rest):
+                remaining = rest[:j] + rest[j + 1 :]
+
+                total += second_order_moments[first, second] * recursive(remaining)
+
+            return total
+
+        return recursive(list(string))
+
     def get_xp_string_moment(self, string: List[int]) -> complex:
         r"""Moment corresponding to a product of quadrature operators (XP-string).
 
@@ -1118,29 +1146,9 @@ class GaussianState(State):
 
         second_order_moments = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
 
-        # TODO: Reimplement this using the loop hafnian!
-        def recursive(op_list: List[int]) -> complex:
-            if not op_list:
-                return 1.0
-
-            if len(op_list) == 1:
-                return first_order_moments[op_list[0]]
-
-            first = op_list[0]
-            rest = op_list[1:]
-
-            total = first_order_moments[first] * recursive(rest)
-
-            for j, second in enumerate(rest):
-                remaining = rest[:j] + rest[j + 1 :]
-
-                pair_val = second_order_moments[first, second]
-
-                total += pair_val * recursive(remaining)
-
-            return total
-
-        return recursive(list(string))
+        return self._get_operator_string_moment(
+            string, first_order_moments, second_order_moments
+        )
 
     def get_ladder_string_moment(self, string: List[int]) -> complex:
         r"""Moment corresponding to a product of ladder operators.
@@ -1199,26 +1207,9 @@ class GaussianState(State):
             / 2
         )
 
-        def recursive(op_list: List[int]) -> complex:
-            if not op_list:
-                return 1.0
-
-            if len(op_list) == 1:
-                return first_order_moments[op_list[0]]
-
-            first = op_list[0]
-            rest = op_list[1:]
-
-            total = first_order_moments[first] * recursive(rest)
-
-            for j, second in enumerate(rest):
-                remaining = rest[:j] + rest[j + 1 :]
-
-                total += second_order_moments[first, second] * recursive(remaining)
-
-            return total
-
-        return recursive(list(string))
+        return self._get_operator_string_moment(
+            string, first_order_moments, second_order_moments
+        )
 
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
