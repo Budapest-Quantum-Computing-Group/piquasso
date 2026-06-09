@@ -183,43 +183,6 @@ def _get_cached_recurrence_data(
     return basis_2d, succ, pred, hashes, powers, dense_lookup
 
 
-def _compute_G_array_via_recurrence(
-    A: np.ndarray,
-    b: np.ndarray,
-    cutoff: int,
-    d: int,
-) -> Tuple[np.ndarray, np.ndarray]:
-    r"""Compute the full array of renormalized Fock amplitudes using the recurrence
-    relation from Eq. (45) of arXiv:2209.06069.
-
-    Successor/predecessor tables are retrieved from a per-process LRU cache keyed by
-    ``(ell, max_weight)`` so they are built at most once per unique truncation, making
-    repeated calls (the common case) pay only the O(N·ell) numba recurrence cost.
-
-    Args:
-        A: The 2d × 2d Bargmann A matrix.
-        b: The 2d Bargmann b vector.
-        cutoff: Fock space truncation cutoff.
-        d: Number of modes.
-
-    Returns:
-        G: 1-D complex128 array of renormalized Fock amplitudes indexed by the
-           position of the 2d-mode multi-index in the weight-sorted basis.
-        basis_2d: The corresponding ``(N, 2d)`` multi-index array.
-    """
-    ell = 2 * d
-    max_weight = 2 * (cutoff - 1)
-
-    basis_2d, succ, pred, _hashes, _powers, _lookup = _get_cached_recurrence_data(
-        ell, max_weight
-    )
-
-    G = np.zeros(len(basis_2d), dtype=np.complex128)
-    G[0] = 1.0 + 0.0j
-    _recurrence_fill_G(G, basis_2d, succ, pred, A, b, max_weight, ell)
-
-    return G, basis_2d
-
 
 class DensityMatrixCalculation(abc.ABC):
     _normalization: float

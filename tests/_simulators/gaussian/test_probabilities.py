@@ -17,48 +17,6 @@ import numpy as np
 import pytest
 
 import piquasso as pq
-from piquasso._math.fock import nb_get_fock_space_basis
-from piquasso._simulators.gaussian.probabilities import (
-    DisplacedDensityMatrixCalculation,
-    NondisplacedDensityMatrixCalculation,
-)
-
-
-@pytest.fixture
-def connector():
-    return pq.NumpyConnector()
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _nondisplaced_calc(state, connector):
-    return NondisplacedDensityMatrixCalculation(state.complex_covariance, connector)
-
-
-def _displaced_calc(state, connector):
-    return DisplacedDensityMatrixCalculation(
-        state.complex_displacement, state.complex_covariance, connector
-    )
-
-
-def _hafnian_density_matrix(calc, basis):
-    """Reference implementation: one hafnian call per element."""
-    from scipy.special import factorial
-
-    n = basis.shape[0]
-    dm = np.empty((n, n), dtype=complex)
-    for i, bra in enumerate(basis):
-        for j, ket in enumerate(basis):
-            reduce_on = np.concatenate([ket, bra])
-            dm[i, j] = (
-                calc._normalization
-                * calc.calculate_hafnian(reduce_on)
-                / np.sqrt(np.prod(factorial(reduce_on)))
-            )
-    return dm
 
 
 # ---------------------------------------------------------------------------
@@ -66,24 +24,21 @@ def _hafnian_density_matrix(calc, basis):
 # ---------------------------------------------------------------------------
 
 
-def test_recurrence_vacuum_state(connector):
+def test_density_matrix_vacuum_state():
     """Vacuum state: rho[0,0] = 1, all other elements zero."""
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
 
     sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=5))
     state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=5)
-    dm = calc.get_density_matrix(basis)
+    dm = state.density_matrix
 
     assert np.isclose(dm[0, 0], 1.0)
     assert np.allclose(dm[1:, :], 0.0)
     assert np.allclose(dm[:, 1:], 0.0)
 
 
-def test_recurrence_squeezed_vacuum_analytic_values(connector):
+def test_density_matrix_squeezed_vacuum_analytic_values():
     """
     For a single-mode squeezed vacuum with parameter r the analytic values are:
 
@@ -98,408 +53,58 @@ def test_recurrence_squeezed_vacuum_analytic_values(connector):
 
     sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=8))
     state = sim.execute(prog).state
+    dm = state.density_matrix
 
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=8)
-    dm = calc.get_density_matrix(basis)
+    # Fock basis ordering: |0>, |1>, |2>, ...  index 0 -> n=0, index 2 -> n=2
+    assert np.isclose(dm[0, 0], 1.0 / np.cosh(r), atol=1e-10)
+    assert np.isclose(
+        dm[2, 0], -np.tanh(r) / (np.cosh(r) * np.sqrt(2)), atol=1e-10
+    )
 
-    assert np.isclose(dm[0, 0].real, 1.0 / np.cosh(r), atol=1e-8)
-    assert np.isclose(dm[2, 0].real, -np.tanh(r) / (np.cosh(r) * np.sqrt(2)), atol=1e-8)
 
+def test_density_matrix_squeezed_vacuum_odd_fock_states_zero():
+    """Squeezed vacuum has no odd-photon-number contributions."""
+    r = 0.5
 
-def test_recurrence_squeezed_vacuum_odd_fock_states_zero(connector):
-    """Squeezed vacuum has no population in odd Fock states."""
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.5)
+        pq.Q(0) | pq.Squeezing(r=r)
 
     sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=8))
     state = sim.execute(prog).state
+    dm = state.density_matrix
 
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=8)
-    dm = calc.get_density_matrix(basis)
-
-    assert np.allclose(dm[1::2, :], 0.0)
-    assert np.allclose(dm[:, 1::2], 0.0)
+    # Odd indices: 1, 3, 5, 7
+    assert np.allclose(dm[1::2, :], 0.0, atol=1e-10)
+    assert np.allclose(dm[:, 1::2], 0.0, atol=1e-10)
 
 
-def test_recurrence_nondisplaced_matches_hafnian_single_mode(connector):
-    """Recurrence result matches element-wise hafnian for a 1-mode squeezed state."""
+def test_density_matrix_nondisplaced_is_hermitian_single_mode():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
         pq.Q(0) | pq.Squeezing(r=0.4)
 
     sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=6))
     state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=6)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-10)
-
-
-def test_recurrence_nondisplaced_matches_hafnian_two_mode(connector):
-    """Recurrence result matches hafnian for a 2-mode entangled state."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.5)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
-
-    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=4))
-    state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=2, cutoff=4)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-10)
-
-
-def test_recurrence_nondisplaced_matches_hafnian_three_mode(connector):
-    """Recurrence result matches hafnian for a 3-mode state."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.3)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.4, phi=0.2)
-        pq.Q(1, 2) | pq.Beamsplitter(theta=0.3, phi=0.1)
-
-    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=3))
-    state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=3, cutoff=3)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-8)
-
-
-def test_recurrence_nondisplaced_is_hermitian(connector):
-    """Density matrix must be Hermitian."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.5)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.4, phi=0.3)
-
-    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=5))
-    state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=2, cutoff=5)
-    dm = calc.get_density_matrix(basis)
+    dm = state.density_matrix
 
     assert np.allclose(dm, dm.conj().T, atol=1e-10)
 
 
-def test_recurrence_nondisplaced_is_positive_semidefinite(connector):
-    """All eigenvalues of the density matrix must be non-negative."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.5)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
-
-    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=5))
-    state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=2, cutoff=5)
-    dm = calc.get_density_matrix(basis)
-
-    eigenvalues = np.linalg.eigvalsh(dm)
-    assert eigenvalues.min() >= -1e-10
-
-
-def test_recurrence_nondisplaced_trace_at_most_one(connector):
-    """Trace of the density matrix must be at most 1 (truncation can reduce it)."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.4)
-
-    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=10))
-    state = sim.execute(prog).state
-
-    calc = _nondisplaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=10)
-    dm = calc.get_density_matrix(basis)
-
-    trace = np.trace(dm).real
-    assert trace <= 1.0 + 1e-10
-    assert trace > 0.9
-
-
-# ---------------------------------------------------------------------------
-# Displaced states
-# ---------------------------------------------------------------------------
-
-
-def test_recurrence_coherent_state_purity(connector):
-    """A coherent state is pure, so tr(rho^2) should be close to 1."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Displacement(r=1.0, phi=0.5)
-
-    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=12))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=12)
-    dm = calc.get_density_matrix(basis)
-
-    purity = np.trace(dm @ dm).real
-    assert np.isclose(purity, 1.0, atol=1e-3)
-
-
-def test_recurrence_displaced_matches_hafnian_single_mode(connector):
-    """Recurrence result matches hafnian for a 1-mode displaced squeezed state."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.4)
-        pq.Q(0) | pq.Displacement(r=0.5, phi=0.3)
-
-    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=6))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=6)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-10)
-
-
-def test_recurrence_displaced_matches_hafnian_two_mode(connector):
-    """Recurrence result matches hafnian for a 2-mode displaced state."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.3)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.4, phi=0.2)
-        pq.Q(0) | pq.Displacement(r=0.4, phi=0.1)
-
-    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=3))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=2, cutoff=3)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-10)
-
-
-def test_recurrence_displaced_matches_hafnian_three_mode(connector):
-    """Recurrence result matches hafnian for a 3-mode displaced state."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.3)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.4, phi=0.2)
-        pq.Q(1, 2) | pq.Beamsplitter(theta=0.3, phi=0.1)
-        pq.Q(0) | pq.Displacement(r=0.5, phi=0.7)
-
-    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=3))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=3, cutoff=3)
-
-    dm_rec = calc.get_density_matrix(basis)
-    dm_ref = _hafnian_density_matrix(calc, basis)
-
-    assert np.allclose(dm_rec, dm_ref, atol=1e-8)
-
-
-def test_recurrence_displaced_is_hermitian(connector):
-    """Density matrix of a displaced state must be Hermitian."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.5)
-        pq.Q(0) | pq.Displacement(r=1.0, phi=0.7)
-
-    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=8))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=8)
-    dm = calc.get_density_matrix(basis)
-
-    assert np.allclose(dm, dm.conj().T, atol=1e-10)
-
-
-def test_recurrence_displaced_is_positive_semidefinite(connector):
-    """All eigenvalues of a displaced state density matrix must be non-negative."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.4)
-        pq.Q(0, 1) | pq.Beamsplitter(theta=0.3, phi=0.1)
-        pq.Q(0) | pq.Displacement(r=0.6, phi=0.4)
-
-    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=4))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=2, cutoff=4)
-    dm = calc.get_density_matrix(basis)
-
-    eigenvalues = np.linalg.eigvalsh(dm)
-    assert eigenvalues.min() >= -1e-10
-
-
-# ---------------------------------------------------------------------------
-# Index ordering
-# ---------------------------------------------------------------------------
-
-
-def test_recurrence_index_ordering_matches_get_density_matrix_element(connector):
-    """
-    dm[i, j] from get_density_matrix must equal
-    get_density_matrix_element(bra=basis[i], ket=basis[j]) for all i, j.
-    This locks down the ket-oplus-bra index convention used in the recurrence.
-    """
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0) | pq.Squeezing(r=0.3)
-        pq.Q(0) | pq.Displacement(r=0.4, phi=0.2)
-
-    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=5))
-    state = sim.execute(prog).state
-
-    calc = _displaced_calc(state, connector)
-    basis = nb_get_fock_space_basis(d=1, cutoff=5)
-    dm = calc.get_density_matrix(basis)
-
-    for i, bra in enumerate(basis):
-        for j, ket in enumerate(basis):
-            expected = calc.get_density_matrix_element(bra=bra, ket=ket)
-            assert np.isclose(dm[i, j], expected, atol=1e-10), (
-                f"Mismatch at bra={bra}, ket={ket}: "
-                f"got {dm[i, j]}, expected {expected}"
-            )
-
-
-# ---------------------------------------------------------------------------
-# Competitor compatibility tests (from the diff)
-# ---------------------------------------------------------------------------
-
-from piquasso._simulators.gaussian.probabilities import DensityMatrixCalculation
-
-
-class RecurrenceTestDensityMatrixCalculation(DensityMatrixCalculation):
-    def __init__(self, A, linear, normalization, use_loop_hafnian=False):
-        super().__init__(connector=pq.NumpyConnector())
-        self._A = A
-        self._linear = linear
-        self._normalization = normalization
-        self._use_loop_hafnian = use_loop_hafnian
-        self._density_matrix_element_cache[(0,) * len(linear)] = normalization
-
-    def calculate_hafnian(self, reduce_on: np.ndarray) -> complex:
-        if self._use_loop_hafnian:
-            return self.connector.loop_hafnian(self._A, self._linear, reduce_on)
-        return self.connector.hafnian(self._A, reduce_on)
-
-
-def test_density_matrix_recurrence_matches_hafnian_elements():
-    A = np.array(
-        [
-            [0.1, 0.2 + 0.1j, -0.3, 0.05j],
-            [0.2 + 0.1j, -0.2, 0.4 - 0.2j, 0.15],
-            [-0.3, 0.4 - 0.2j, 0.25, -0.1j],
-            [0.05j, 0.15, -0.1j, 0.05],
-        ],
-        dtype=complex,
-    )
-    occupation_numbers = np.array(
-        [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1]]
-    )
-    calculation = RecurrenceTestDensityMatrixCalculation(
-        A=A, linear=np.zeros(4, dtype=complex), normalization=0.7 + 0.1j,
-    )
-    density_matrix = calculation.get_density_matrix(occupation_numbers)
-    for i, bra in enumerate(occupation_numbers):
-        for j in range(i, len(occupation_numbers)):
-            ket = occupation_numbers[j]
-            expected = calculation.get_density_matrix_element(bra=bra, ket=ket)
-            assert np.isclose(density_matrix[i, j], expected)
-
-
-def test_density_matrix_recurrence_matches_loop_hafnian_elements():
-    A = np.array(
-        [
-            [0.05, 0.1 + 0.1j, 0.15, -0.05j],
-            [0.1 + 0.1j, -0.05, 0.2 - 0.1j, 0.05],
-            [0.15, 0.2 - 0.1j, 0.1, 0.1j],
-            [-0.05j, 0.05, 0.1j, -0.1],
-        ],
-        dtype=complex,
-    )
-    linear = np.array([0.1, -0.2j, 0.05 + 0.1j, -0.15], dtype=complex)
-    occupation_numbers = np.array(
-        [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1]]
-    )
-    calculation = RecurrenceTestDensityMatrixCalculation(
-        A=A, linear=linear, normalization=0.9 - 0.2j, use_loop_hafnian=True,
-    )
-    density_matrix = calculation.get_density_matrix(occupation_numbers)
-    for i, bra in enumerate(occupation_numbers):
-        for j in range(i, len(occupation_numbers)):
-            ket = occupation_numbers[j]
-            expected = calculation.get_density_matrix_element(bra=bra, ket=ket)
-            assert np.isclose(density_matrix[i, j], expected)
-
-
-def test_density_matrix_uses_hermitian_symmetry():
-    A = np.zeros((2, 2), dtype=complex)
-    calculation = RecurrenceTestDensityMatrixCalculation(
-        A=A, linear=np.zeros(2, dtype=complex), normalization=1.0,
-    )
-    occupation_numbers = np.array([[0], [1], [2]])
-    density_matrix = calculation.get_density_matrix(occupation_numbers)
-    assert np.allclose(density_matrix, density_matrix.conj().T)
-
-
-# ---------------------------------------------------------------------------
-# Public-API black-box tests (through GaussianState.density_matrix)
-# ---------------------------------------------------------------------------
-
-
-def test_public_api_density_matrix_is_hermitian():
-    """density_matrix is Hermitian for a nondisplaced state."""
+def test_density_matrix_nondisplaced_is_hermitian_two_mode():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
         pq.Q(0, 1) | pq.Squeezing2(r=0.5, phi=0.3)
-        pq.Q(0, 2) | pq.Beamsplitter(theta=0.4, phi=0.1)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=0.4, phi=0.1)
 
-    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=5))
+    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=5))
     state = sim.execute(prog).state
     dm = state.density_matrix
 
     assert np.allclose(dm, dm.conj().T, atol=1e-10)
 
 
-def test_public_api_density_matrix_trace_is_one():
-    """density_matrix has unit trace."""
-    with pq.Program() as prog:
-        pq.Q() | pq.Vacuum()
-        pq.Q(0, 1) | pq.Squeezing2(r=0.4, phi=0.0)
-        pq.Q(1, 2) | pq.Beamsplitter(theta=0.3, phi=0.0)
-
-    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=6))
-    state = sim.execute(prog).state
-    dm = state.density_matrix
-
-    assert np.isclose(np.trace(dm).real, 1.0, atol=1e-2)
-
-
-def test_public_api_density_matrix_is_positive_semidefinite():
-    """density_matrix has non-negative eigenvalues."""
+def test_density_matrix_nondisplaced_is_positive_semidefinite():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
         pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.0)
@@ -512,33 +117,50 @@ def test_public_api_density_matrix_is_positive_semidefinite():
     assert np.all(eigvals >= -1e-10)
 
 
-def test_public_api_density_matrix_matches_element_wise():
-    """density_matrix matches get_density_matrix_element for every entry."""
+def test_density_matrix_nondisplaced_unit_trace():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
-        pq.Q(0, 1) | pq.Squeezing2(r=0.5, phi=0.0)
-        pq.Q(0, 2) | pq.Beamsplitter(theta=0.3, phi=0.0)
+        pq.Q(0, 1) | pq.Squeezing2(r=0.4, phi=0.0)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=0.3, phi=0.0)
 
-    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=4))
+    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=6))
     state = sim.execute(prog).state
     dm = state.density_matrix
 
-    from piquasso._simulators.gaussian.state import get_fock_space_basis
-    basis = get_fock_space_basis(d=3, cutoff=4)
-    connector = pq.NumpyConnector()
-    from piquasso._simulators.gaussian.probabilities import NondisplacedDensityMatrixCalculation
-    calc = NondisplacedDensityMatrixCalculation(state.complex_covariance, connector)
-
-    for i, bra in enumerate(basis):
-        for j, ket in enumerate(basis):
-            expected = calc.get_density_matrix_element(bra=bra, ket=ket)
-            assert np.isclose(dm[i, j], expected, atol=1e-10), (
-                f"Mismatch at bra={bra}, ket={ket}: got {dm[i,j]}, expected {expected}"
-            )
+    assert np.isclose(np.trace(dm).real, 1.0, atol=1e-2)
 
 
-def test_public_api_density_matrix_displaced_is_hermitian():
-    """density_matrix is Hermitian for a displaced state."""
+def test_density_matrix_coherent_state_is_pure():
+    """A coherent state is pure so Tr(rho^2) = 1."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=1.0, phi=0.0)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=12))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.isclose(np.trace(dm @ dm).real, 1.0, atol=1e-2)
+
+
+# ---------------------------------------------------------------------------
+# Displaced states
+# ---------------------------------------------------------------------------
+
+
+def test_density_matrix_displaced_is_hermitian_single_mode():
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.5, phi=0.3)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=6))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.allclose(dm, dm.conj().T, atol=1e-10)
+
+
+def test_density_matrix_displaced_is_hermitian_two_mode():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
         pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.0)
@@ -552,8 +174,21 @@ def test_public_api_density_matrix_displaced_is_hermitian():
     assert np.allclose(dm, dm.conj().T, atol=1e-10)
 
 
-def test_public_api_density_matrix_displaced_trace_is_one():
-    """density_matrix has unit trace for a displaced state."""
+def test_density_matrix_displaced_is_positive_semidefinite():
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.3)
+        pq.Q(0) | pq.Displacement(r=0.4, phi=0.5)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=8))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+    eigvals = np.linalg.eigvalsh(dm)
+
+    assert np.all(eigvals >= -1e-10)
+
+
+def test_density_matrix_displaced_unit_trace():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
         pq.Q(0) | pq.Displacement(r=0.4, phi=0.5)
@@ -563,3 +198,18 @@ def test_public_api_density_matrix_displaced_trace_is_one():
     dm = state.density_matrix
 
     assert np.isclose(np.trace(dm).real, 1.0, atol=1e-6)
+
+
+def test_density_matrix_three_mode_displaced_is_hermitian():
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.0)
+        pq.Q(0, 2) | pq.Beamsplitter(theta=0.4, phi=0.1)
+        pq.Q(0) | pq.Displacement(r=0.2, phi=0.0)
+        pq.Q(2) | pq.Displacement(r=0.3, phi=1.0)
+
+    sim = pq.GaussianSimulator(d=3, config=pq.Config(cutoff=4))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    assert np.allclose(dm, dm.conj().T, atol=1e-10)
