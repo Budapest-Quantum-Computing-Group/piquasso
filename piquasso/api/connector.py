@@ -274,6 +274,27 @@ class BaseConnector(abc.ABC):
             to cutoff.
         """
 
+    def density_matrix_from_representation(self, A, b, c, basis):
+        """Builds a Gaussian density matrix from its :math:`(A, b, c)` triple.
+
+        This is an optional accelerated path for ``GaussianState.density_matrix``,
+        evaluating the modified Hermite recurrence (Eq. (45) of
+        https://arxiv.org/abs/2209.06069) over the whole Fock space in a single
+        shared sweep instead of one independent hafnian per matrix element.
+
+        Args:
+            A: The :math:`2d \\times 2d` complex symmetric matrix of the state.
+            b: The :math:`2d` complex vector (zeros for a non-displaced state).
+            c: The vacuum amplitude :math:`\\langle 0 | \\rho | 0 \\rangle`.
+            basis: The occupation-number basis of the truncated Fock space.
+
+        Returns:
+            The density matrix, or ``None`` when the connector provides no
+            accelerated implementation (the caller then falls back to the
+            generic per-element hafnian evaluation).
+        """
+        return None
+
     @abc.abstractmethod
     def pfaffian(self, matrix):
         """Calculates the pfaffian of a matrix."""

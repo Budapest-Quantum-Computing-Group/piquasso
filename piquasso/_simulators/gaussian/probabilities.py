@@ -28,6 +28,8 @@ from piquasso.api.connector import BaseConnector
 
 class DensityMatrixCalculation(abc.ABC):
     _normalization: float
+    _A: np.ndarray
+    _b: np.ndarray
 
     def __init__(self, connector: BaseConnector):
         self.connector = connector
@@ -46,6 +48,13 @@ class DensityMatrixCalculation(abc.ABC):
         )
 
     def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
+        density_matrix = self.connector.density_matrix_from_representation(
+            self._A, self._b, self._normalization, occupation_numbers
+        )
+
+        if density_matrix is not None:
+            return density_matrix
+
         n = occupation_numbers.shape[0]
 
         density_matrix = np.empty(shape=(n, n), dtype=complex)
@@ -103,6 +112,8 @@ class NondisplacedDensityMatrixCalculation(DensityMatrixCalculation):
 
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
+        self._b = np.zeros(2 * d, dtype=complex)
+
         self._normalization: float = 1 / np.sqrt(np.linalg.det(Q))
 
     def calculate_hafnian(self, reduce_on: np.ndarray) -> float:
@@ -137,6 +148,8 @@ class DisplacedDensityMatrixCalculation(DensityMatrixCalculation):
         self._A = X @ (np.identity(2 * d, dtype=complex) - Qinv)
 
         self._gamma = complex_displacement.conj() @ Qinv
+
+        self._b = self._gamma
 
         self._normalization: float = np.exp(
             -0.5 * self._gamma @ complex_displacement
