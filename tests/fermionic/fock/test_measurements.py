@@ -56,9 +56,7 @@ def test_ParticleNumberMeasurement_all_modes_seeded_sampling():
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.fermionic.PureFockSimulator(
-        d=3, config=pq.Config(seed_sequence=123)
-    )
+    simulator = pq.fermionic.PureFockSimulator(d=3, config=pq.Config(seed_sequence=123))
 
     result = simulator.execute(program, shots=8)
 
