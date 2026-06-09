@@ -97,7 +97,7 @@ def _loop_hafnian(A):
         # NOTE: If the ijnput matrix `A` has an odd dimension, e.g. 7x7, then the matrix
         # should be padded to an even dimension, to e.g. 8x8.
         A = jnp.pad(A, pad_width=((1, 0), (1, 0)))
-        A[0, 0] = 1.0
+        A = A.at[0, 0].set(1.0)
 
     degree = A.shape[0] // 2
 

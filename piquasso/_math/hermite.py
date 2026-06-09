@@ -48,6 +48,92 @@ from piquasso._math.indices import get_index_in_fock_space
 
 
 @nb.njit(cache=True)
+def _first_nonzero_mode(occupation_numbers: np.ndarray, d: int) -> int:
+    """Returns the index of the first nonzero mode (the recurrence pivot)."""
+    for mode in range(d):
+        if occupation_numbers[mode] > 0:
+            return mode
+
+    return 0
+
+
+@nb.njit(cache=True)
+def _entry_raising_ket(
+    row: int,
+    ket: np.ndarray,
+    bra: np.ndarray,
+    A: np.ndarray,
+    b: np.ndarray,
+    density_matrix: np.ndarray,
+    d: int,
+) -> complex:
+    """Applies Eq. (45) with the pivot in the (nonzero) ``ket`` block."""
+    pivot = _first_nonzero_mode(ket, d)
+
+    ket_lowered = ket.copy()
+    ket_lowered[pivot] -= 1
+    col_lowered = get_index_in_fock_space(ket_lowered)
+
+    value = b[pivot] * density_matrix[row, col_lowered]
+
+    for mode in range(d):
+        if ket_lowered[mode] > 0:
+            lowered = ket_lowered.copy()
+            lowered[mode] -= 1
+            value += (
+                np.sqrt(ket_lowered[mode])
+                * A[pivot, mode]
+                * density_matrix[row, get_index_in_fock_space(lowered)]
+            )
+
+    for mode in range(d):
+        if bra[mode] > 0:
+            lowered = bra.copy()
+            lowered[mode] -= 1
+            value += (
+                np.sqrt(bra[mode])
+                * A[pivot, d + mode]
+                * density_matrix[get_index_in_fock_space(lowered), col_lowered]
+            )
+
+    return value / np.sqrt(ket[pivot])
+
+
+@nb.njit(cache=True)
+def _entry_raising_bra(
+    bra: np.ndarray,
+    A: np.ndarray,
+    b: np.ndarray,
+    density_matrix: np.ndarray,
+    d: int,
+) -> complex:
+    """Applies Eq. (45) with the pivot in the ``bra`` block (``ket`` is zero).
+
+    The ``ket``-block sum vanishes identically here, so only the ``bra`` block
+    contributes and the column index stays ``0``.
+    """
+    pivot = _first_nonzero_mode(bra, d)
+
+    bra_lowered = bra.copy()
+    bra_lowered[pivot] -= 1
+    row_lowered = get_index_in_fock_space(bra_lowered)
+
+    value = b[d + pivot] * density_matrix[row_lowered, 0]
+
+    for mode in range(d):
+        if bra_lowered[mode] > 0:
+            lowered = bra_lowered.copy()
+            lowered[mode] -= 1
+            value += (
+                np.sqrt(bra_lowered[mode])
+                * A[d + pivot, d + mode]
+                * density_matrix[get_index_in_fock_space(lowered), 0]
+            )
+
+    return value / np.sqrt(bra[pivot])
+
+
+@nb.njit(cache=True)
 def density_matrix_from_a_b_c(
     A: np.ndarray,
     b: np.ndarray,
@@ -57,9 +143,9 @@ def density_matrix_from_a_b_c(
     r"""Builds a Gaussian density matrix from its :math:`(A, b, c)` triple.
 
     The element at position ``(i, j)`` equals
-    :math:`\langle \mathrm{basis}[i] | \rho | \mathrm{basis}[j] \rangle`, matching
-    ``DensityMatrixCalculation.get_density_matrix_element`` with ``bra = basis[i]``,
-    ``ket = basis[j]`` (i.e. ``reduce_on = ket ⊕ bra``).
+    :math:`\langle \mathrm{basis}[i] | \rho | \mathrm{basis}[j] \rangle`, i.e. it
+    matches the per-element evaluation with ``bra = basis[i]``, ``ket = basis[j]``
+    (``reduce_on = ket`` :math:`\oplus` ``bra``).
 
     Args:
         A (numpy.ndarray): The :math:`2d \times 2d` complex symmetric matrix.
@@ -82,75 +168,14 @@ def density_matrix_from_a_b_c(
     density_matrix[0, 0] = c
 
     for row in range(cardinality):
-        bra = basis[row]
         for col in range(cardinality):
-            if row == 0 and col == 0:
-                continue
-
-            ket = basis[col]
-
             if col > 0:
-                # The combined index has a nonzero `ket` block: raise there.
-                pivot = 0
-                for index in range(d):
-                    if ket[index] > 0:
-                        pivot = index
-                        break
-
-                ket_lowered = ket.copy()
-                ket_lowered[pivot] -= 1
-                col_lowered = get_index_in_fock_space(ket_lowered)
-
-                value = b[pivot] * density_matrix[row, col_lowered]
-
-                for index in range(d):
-                    if ket_lowered[index] > 0:
-                        ket_lowered2 = ket_lowered.copy()
-                        ket_lowered2[index] -= 1
-                        value += (
-                            np.sqrt(ket_lowered[index])
-                            * A[pivot, index]
-                            * density_matrix[row, get_index_in_fock_space(ket_lowered2)]
-                        )
-
-                for index in range(d):
-                    if bra[index] > 0:
-                        bra_lowered = bra.copy()
-                        bra_lowered[index] -= 1
-                        value += (
-                            np.sqrt(bra[index])
-                            * A[pivot, d + index]
-                            * density_matrix[
-                                get_index_in_fock_space(bra_lowered), col_lowered
-                            ]
-                        )
-
-                density_matrix[row, col] = value / np.sqrt(ket[pivot])
-            else:
-                # `ket` block is zero (col == 0): raise in the `bra` block. The
-                # `ket`-block sum in the recurrence vanishes identically.
-                pivot = 0
-                for index in range(d):
-                    if bra[index] > 0:
-                        pivot = index
-                        break
-
-                bra_lowered = bra.copy()
-                bra_lowered[pivot] -= 1
-                row_lowered = get_index_in_fock_space(bra_lowered)
-
-                value = b[d + pivot] * density_matrix[row_lowered, col]
-
-                for index in range(d):
-                    if bra_lowered[index] > 0:
-                        bra_lowered2 = bra_lowered.copy()
-                        bra_lowered2[index] -= 1
-                        value += (
-                            np.sqrt(bra_lowered[index])
-                            * A[d + pivot, d + index]
-                            * density_matrix[get_index_in_fock_space(bra_lowered2), col]
-                        )
-
-                density_matrix[row, col] = value / np.sqrt(bra[pivot])
+                density_matrix[row, col] = _entry_raising_ket(
+                    row, basis[col], basis[row], A, b, density_matrix, d
+                )
+            elif row > 0:
+                density_matrix[row, col] = _entry_raising_bra(
+                    basis[row], A, b, density_matrix, d
+                )
 
     return density_matrix

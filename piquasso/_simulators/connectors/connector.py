@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from scipy.special import factorial
+
 from piquasso._math.pfaffian import pfaffian
 from piquasso.api.connector import BaseConnector
 
@@ -120,6 +122,29 @@ class BuiltinConnector(BaseConnector):
             )
 
         return subspace_representations
+
+    def density_matrix_from_representation(self, A, b, c, basis):
+        """Builds the density matrix element by element from the loop hafnian.
+
+        Each element is ``c * loop_hafnian(A, b) / sqrt(ket! * bra!)`` reduced on
+        ``ket`` :math:`\\oplus` ``bra``. As it only relies on the connector's
+        ``loop_hafnian``, this generic fallback is differentiable wherever that is.
+        Connectors may override it with a faster implementation (e.g. the
+        multidimensional Hermite recurrence used by ``NumpyConnector``).
+        """
+        np = self.np
+        fallback_np = self.fallback_np
+
+        elements = []
+        for bra in basis:
+            for ket in basis:
+                reduce_on = fallback_np.concatenate((ket, bra))
+                normalization = fallback_np.sqrt(fallback_np.prod(factorial(reduce_on)))
+                elements.append(c * self.loop_hafnian(A, b, reduce_on) / normalization)
+
+        cardinality = len(basis)
+
+        return np.reshape(np.stack(elements), (cardinality, cardinality))
 
     def pfaffian(self, matrix):
         """

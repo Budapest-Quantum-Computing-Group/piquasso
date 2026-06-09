@@ -48,22 +48,9 @@ class DensityMatrixCalculation(abc.ABC):
         )
 
     def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
-        density_matrix = self.connector.density_matrix_from_representation(
+        return self.connector.density_matrix_from_representation(
             self._A, self._b, self._normalization, occupation_numbers
         )
-
-        if density_matrix is not None:
-            return density_matrix
-
-        n = occupation_numbers.shape[0]
-
-        density_matrix = np.empty(shape=(n, n), dtype=complex)
-
-        for i, bra in enumerate(occupation_numbers):
-            for j, ket in enumerate(occupation_numbers):
-                density_matrix[i, j] = self.get_density_matrix_element(bra, ket)
-
-        return density_matrix
 
     def get_particle_number_detection_probabilities(
         self, occupation_numbers: np.ndarray
