@@ -49,6 +49,27 @@ def test_ParticleNumberMeasurement_shots_None_projects_remaining_modes():
     )
 
 
+def test_ParticleNumberMeasurement_finite_shots_projects_remaining_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 0, 0])
+
+        pq.Q(0) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.fermionic.PureFockSimulator(d=3)
+
+    result = simulator.execute(program, shots=3)
+
+    assert result.get_counts() == {(1,): 3}
+
+    branch = result.branches[0]
+
+    assert branch.outcome == (1,)
+    assert np.isclose(
+        branch.state.get_particle_detection_probability([0, 0]),
+        1.0,
+    )
+
+
 def test_ParticleNumberMeasurement_all_modes_seeded_sampling():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 0, 0]) / 2

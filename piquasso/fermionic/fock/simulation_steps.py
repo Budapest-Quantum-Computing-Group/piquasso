@@ -180,18 +180,14 @@ def _project_to_subspace(
     )
 
     remaining_modes = get_auxiliary_modes(state.d, modes)
-    fock_space_basis = get_fock_space_basis(state.d, state._config.cutoff)
     measured_modes = list(modes)
+    remaining_basis = get_fock_space_basis(new_state.d, config_copy.cutoff)
+    occupation_number = fallback_np.empty(state.d, dtype=int)
+    occupation_number[measured_modes] = subspace_basis
 
-    for index, occupation_number in enumerate(fock_space_basis):
-        if tuple(occupation_number[measured_modes]) != subspace_basis:
-            continue
-
-        remaining_occupation_number = fallback_np.array(
-            occupation_number[remaining_modes]
-        )
-
-        remaining_index = get_fock_space_index(remaining_occupation_number)
+    for remaining_index, remaining_occupation_number in enumerate(remaining_basis):
+        occupation_number[remaining_modes] = remaining_occupation_number
+        index = get_fock_space_index(occupation_number)
 
         new_state._state_vector = connector.assign(
             new_state.state_vector,
