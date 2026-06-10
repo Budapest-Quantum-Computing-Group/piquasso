@@ -200,6 +200,71 @@ def test_density_matrix_displaced_unit_trace():
     assert np.isclose(np.trace(dm).real, 1.0, atol=1e-6)
 
 
+def test_density_matrix_displaced_coherent_analytic_values():
+    r"""Analytic check for a coherent state |alpha> with alpha = r*exp(i*phi).
+
+    Piquasso stores ``dm[n, m] = alpha^n * conj(alpha)^m * exp(-|alpha|^2) / sqrt(n! m!)``,
+    so the **row** index carries ``alpha`` (not its conjugate).
+    """
+    r_disp, phi = 0.5, 0.3
+    alpha = r_disp * np.exp(1j * phi)
+
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=r_disp, phi=phi)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=4))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    from scipy.special import factorial
+
+    for n in range(4):
+        for m in range(4):
+            expected = (
+                np.exp(-(abs(alpha) ** 2))
+                * alpha ** n
+                * alpha.conj() ** m
+                / np.sqrt(float(factorial(n)) * float(factorial(m)))
+            )
+            assert np.isclose(dm[n, m], expected, atol=1e-10), (
+                f"dm[{n},{m}] = {dm[n,m]:.6f} != {expected:.6f}"
+            )
+
+
+def test_density_matrix_displaced_off_diagonal_phases():
+    """Off-diagonal elements must carry the correct complex phase.
+
+    For a coherent state |alpha> with non-zero phase phi:
+
+        dm[0, 1] = alpha^0 * conj(alpha)^1 * exp(-|alpha|^2) = exp(-|alpha|^2) * conj(alpha)
+        dm[1, 0] = alpha^1 * conj(alpha)^0 * exp(-|alpha|^2) = exp(-|alpha|^2) * alpha
+
+    These are complex conjugates.  A ket/bra swap in the recurrence extraction
+    would reverse their imaginary parts, making the test fail.
+    """
+    r_disp, phi = 0.5, 0.7  # non-zero phi makes the phase visible
+    alpha = r_disp * np.exp(1j * phi)
+
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=r_disp, phi=phi)
+
+    sim = pq.GaussianSimulator(d=1, config=pq.Config(cutoff=4))
+    state = sim.execute(prog).state
+    dm = state.density_matrix
+
+    # row=0, col=1: a^0 * conj(a)^1 = conj(a)
+    expected_01 = np.exp(-(abs(alpha) ** 2)) * alpha.conj()
+    # row=1, col=0: a^1 * conj(a)^0 = a
+    expected_10 = np.exp(-(abs(alpha) ** 2)) * alpha
+
+    assert np.isclose(dm[0, 1], expected_01, atol=1e-10)
+    assert np.isclose(dm[1, 0], expected_10, atol=1e-10)
+    # Sanity: they are conjugates of each other but differ in imaginary part.
+    assert not np.isclose(dm[0, 1], dm[1, 0], atol=1e-10)
+
+
 def test_density_matrix_three_mode_displaced_is_hermitian():
     with pq.Program() as prog:
         pq.Q() | pq.Vacuum()
@@ -213,3 +278,47 @@ def test_density_matrix_three_mode_displaced_is_hermitian():
     dm = state.density_matrix
 
     assert np.allclose(dm, dm.conj().T, atol=1e-10)
+
+
+def test_density_matrix_recurrence_matches_elementwise_nondisplaced():
+    """Recurrence result must exactly match the element-wise hafnian path."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.4, phi=0.2)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=0.3, phi=0.1)
+
+    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=5))
+    state = sim.execute(prog).state
+
+    dm_recurrence = state.density_matrix
+
+    # Force the element-wise hafnian path by calling the internal method directly.
+    from piquasso._math.fock import get_fock_space_basis
+
+    occ = get_fock_space_basis(d=2, cutoff=5)
+    calc = state._get_density_matrix_calculation()
+    dm_elementwise = calc._get_density_matrix_elementwise(occ)
+
+    assert np.allclose(dm_recurrence, dm_elementwise, atol=1e-10)
+
+
+def test_density_matrix_recurrence_matches_elementwise_displaced():
+    """Recurrence result must match the element-wise path for displaced states."""
+    with pq.Program() as prog:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0, 1) | pq.Squeezing2(r=0.3, phi=0.1)
+        pq.Q(0) | pq.Displacement(r=0.4, phi=0.6)
+        pq.Q(1) | pq.Displacement(r=0.2, phi=1.2)
+
+    sim = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=4))
+    state = sim.execute(prog).state
+
+    dm_recurrence = state.density_matrix
+
+    from piquasso._math.fock import get_fock_space_basis
+
+    occ = get_fock_space_basis(d=2, cutoff=4)
+    calc = state._get_density_matrix_calculation()
+    dm_elementwise = calc._get_density_matrix_elementwise(occ)
+
+    assert np.allclose(dm_recurrence, dm_elementwise, atol=1e-10)
