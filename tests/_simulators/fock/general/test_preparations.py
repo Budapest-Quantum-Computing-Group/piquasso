@@ -105,10 +105,13 @@ def test_density_matrix_raises_InvalidState_when_ket_cutoff_too_small():
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)
 
-    message = error.value.args[0]
-    assert "require a cutoff of at least '5'" in message
-    assert "preparing the ket component of a DensityMatrix" in message
-    assert "pq.Config(cutoff=5)" in message
+    assert error.value.args[0] == (
+        "The occupation numbers '(0, 1, 0, 1, 1, 1)' require "
+        "a cutoff of at least '5', but the provided cutoff is '4'. "
+        "Consider increasing the cutoff via `pq.Config(cutoff=5)` "
+        "when creating the simulator. This occurred while preparing the ket "
+        "component of a DensityMatrix instruction."
+    )
 
 
 def test_density_matrix_raises_InvalidState_when_bra_cutoff_too_small():
@@ -122,10 +125,13 @@ def test_density_matrix_raises_InvalidState_when_bra_cutoff_too_small():
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)
 
-    message = error.value.args[0]
-    assert "require a cutoff of at least '5'" in message
-    assert "preparing the bra component of a DensityMatrix" in message
-    assert "pq.Config(cutoff=5)" in message
+    assert error.value.args[0] == (
+        "The occupation numbers '(0, 1, 0, 1, 1, 1)' require "
+        "a cutoff of at least '5', but the provided cutoff is '4'. "
+        "Consider increasing the cutoff via `pq.Config(cutoff=5)` "
+        "when creating the simulator. This occurred while preparing the bra "
+        "component of a DensityMatrix instruction."
+    )
 
 
 def test_creation_on_multiple_modes():

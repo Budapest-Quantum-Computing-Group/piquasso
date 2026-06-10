@@ -282,7 +282,9 @@ def test_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -365,7 +367,9 @@ def test_LossyInterferometer_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -448,7 +452,9 @@ def test_LossyInterferometer_boson_sampling_uniform_losses():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -749,7 +755,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(cutoff=9, seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=9, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -774,7 +782,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(cutoff=5, seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=5, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -801,7 +811,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(cutoff=5, seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=5, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 

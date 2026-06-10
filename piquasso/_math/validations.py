@@ -20,13 +20,6 @@ import numpy as np
 from piquasso.api.exceptions import InvalidState
 
 
-def _cutoff_increase_hint(required_cutoff: int) -> str:
-    return (
-        f" Consider increasing the cutoff via "
-        f"`pq.Config(cutoff={required_cutoff})` when creating the simulator."
-    )
-
-
 def is_natural(number: Union[int, float]) -> bool:
     return bool(np.isclose(number % 1, 0.0) and round(number) >= 0)
 
@@ -95,8 +88,8 @@ def validate_occupation_numbers(
         message = (
             f"The occupation numbers '{original_occupation_numbers}' require "
             f"a cutoff of at least '{required_cutoff}', but the provided cutoff is "
-            f"'{cutoff}'."
-            f"{_cutoff_increase_hint(required_cutoff)}"
+            f"'{cutoff}'. Consider increasing the cutoff via "
+            f"`pq.Config(cutoff={required_cutoff})` when creating the simulator."
         )
         if context:
             message += context
@@ -134,15 +127,18 @@ def validate_postselection_cutoff(
         message = (
             f"Post-selecting {postselected_photons} photon(s) on "
             f"{photon_counts} requires a cutoff of at least "
-            f"'{required_cutoff}', but the provided cutoff is '{cutoff}'."
-            f"{_cutoff_increase_hint(required_cutoff)}"
+            f"'{required_cutoff}', but the provided cutoff is '{cutoff}'. "
+            f"Consider increasing the cutoff via "
+            f"`pq.Config(cutoff={required_cutoff})` when creating the simulator."
         )
         if context:
             message += context
         raise InvalidState(message)
 
     for original_occupation_numbers in occupation_numbers:
-        occupation_numbers_tuple = tuple(int(number) for number in original_occupation_numbers)
+        occupation_numbers_tuple = tuple(
+            int(number) for number in original_occupation_numbers
+        )
         total_photons = int(np.sum(occupation_numbers_tuple))
         remaining_photons = total_photons - postselected_photons
 
@@ -152,8 +148,9 @@ def validate_postselection_cutoff(
                 f"After post-selecting {postselected_photons} photon(s) on "
                 f"{photon_counts}, the remaining occupation numbers "
                 f"'{occupation_numbers_tuple}' require a cutoff of at least "
-                f"'{required_cutoff}', but the provided cutoff is '{cutoff}'."
-                f"{_cutoff_increase_hint(required_cutoff)}"
+                f"'{required_cutoff}', but the provided cutoff is '{cutoff}'. "
+                f"Consider increasing the cutoff via "
+                f"`pq.Config(cutoff={required_cutoff})` when creating the simulator."
             )
             if context:
                 message += context

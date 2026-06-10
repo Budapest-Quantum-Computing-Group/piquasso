@@ -24,7 +24,7 @@ from piquasso._simulators.sampling.state import SamplingState
 
 from piquasso.instructions import gates
 
-from piquasso.api.exceptions import InvalidState, NotImplementedCalculation
+from piquasso.api.exceptions import NotImplementedCalculation
 from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 

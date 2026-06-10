@@ -620,6 +620,9 @@ def test_PostSelectPhotons_raises_InvalidState_when_postselection_exceeds_cutoff
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)
 
-    message = error.value.args[0]
-    assert "Post-selecting 5 photon(s)" in message
-    assert "pq.Config(cutoff=6)" in message
+    assert error.value.args[0] == (
+        "Post-selecting 5 photon(s) on [2, 2, 1] requires a cutoff of at least "
+        "'6', but the provided cutoff is '5'. Consider increasing the cutoff via "
+        "`pq.Config(cutoff=6)` when creating the simulator. Instruction: "
+        "PostSelectPhotons(photon_counts=[2, 2, 1], modes=(0, 1, 2))."
+    )
