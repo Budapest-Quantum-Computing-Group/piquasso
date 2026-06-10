@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import numpy as np
 from scipy.special import factorial
+from sympy import symbols, Poly
+from sympy.functions.special.polynomials import laguerre
 
 from functools import partial
 
@@ -469,3 +472,35 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     expansion_values = np.sqrt(vector_of_squared_expansions)
 
     return np.diag(expansion_values)
+
+
+def generate_k_modes_marginal_sample(modes, inputs, interferometer, rng):
+    '''
+        Implements sampling when k-modes have been selected for measurement.
+    '''
+    k = len(modes)
+    occupied_inputs = inputs[inputs!=0]
+    s = len(occupied_inputs)
+
+    V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
+    p_zw = 1
+    for a in range(s): 
+        faz = sum([V[j][a]*symbols(f'z{j+1}') for j in range(k)]) 
+        faw_conj = sum([np.conj(V[j][a])*symbols(f'w{j+1}') for j in range(k)]) 
+        xa = -faz * faw_conj
+        l_ra = laguerre(occupied_inputs[a], xa)
+        p_zw *= l_ra
+    poly_p_zw = Poly(p_zw, *(list(symbols(f'z1:{k+1}'))+list(symbols(f'w1:{k+1}'))))
+    p_zw_diag = {exponents[:k]:coeff for exponents, coeff in poly_p_zw.terms() if exponents[:k] == exponents[k:]}
+            
+    p_ys = {}
+    for y in p_zw_diag.keys():
+        p_y = 0
+        superior_ys = [alpha for alpha in p_zw_diag.keys() if (np.array(alpha) >= np.array(y)).all()]
+        for alpha in superior_ys:
+            p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([math.comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
+        if p_y > 0:
+            p_ys[y] = p_y
+            
+    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
+    return sample
