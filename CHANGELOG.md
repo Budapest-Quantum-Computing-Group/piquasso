@@ -1,5 +1,11 @@
 # Changelog
 
+## [7.2.2] - 2026-06-10
+
+### Removed
+
+- Tutorial for "Boson Sampling as a hardware accelerator for Monte Carlo integration".
+
 
 ## [7.2.1] - 2026-03-21
 
