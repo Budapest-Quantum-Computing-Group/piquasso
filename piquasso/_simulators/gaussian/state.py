@@ -1114,9 +1114,7 @@ class GaussianState(State):
 
         second_order_moments = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
 
-        return self._string_moment(
-            first_order_moments, second_order_moments, string
-        )
+        return self._string_moment(first_order_moments, second_order_moments, string)
 
     @staticmethod
     def _string_moment(
@@ -1205,9 +1203,7 @@ class GaussianState(State):
             ]
         )
 
-        return self._string_moment(
-            first_order_moments, second_order_moments, string
-        )
+        return self._string_moment(first_order_moments, second_order_moments, string)
 
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))

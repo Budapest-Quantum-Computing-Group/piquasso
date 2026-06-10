@@ -1513,7 +1513,9 @@ def test_get_ladder_string_moment_matches_xp_string_moment():
             pq.Q(i) | pq.Displacement(r=0.5 * (i + 1), phi=0.4 * i)
         pq.Q(all) | pq.Interferometer(U)
 
-    state = pq.GaussianSimulator(d=d, config=pq.Config(hbar=hbar)).execute(program).state
+    state = (
+        pq.GaussianSimulator(d=d, config=pq.Config(hbar=hbar)).execute(program).state
+    )
 
     # Linear map from xxpp quadratures to ladder operators.
     W = np.block(
@@ -1547,9 +1549,7 @@ def test_get_ladder_string_moment_jax_connector():
         pq.Q(0) | pq.Displacement(r=0.5, phi=0.2)
 
     state = (
-        pq.GaussianSimulator(d=1, connector=pq.JaxConnector())
-        .execute(program)
-        .state
+        pq.GaussianSimulator(d=1, connector=pq.JaxConnector()).execute(program).state
     )
 
     assert np.isclose(
