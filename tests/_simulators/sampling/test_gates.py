@@ -978,3 +978,86 @@ def test_LossyInterferometer_state_vector(connector):
         _ = state.state_vector
 
     assert "This property is not implemented for lossy states." in str(excinfo.value)
+
+
+def test_Kerr_gate_with_Vacuum():
+    with pq.Program() as program:
+        pq.Q(0) | pq.Vacuum()
+        pq.Q(0) | pq.Kerr(0.5)
+
+    simulator = pq.SamplingSimulator(d=1)
+    state = simulator.execute(program).state
+
+    state_vector_map = state.state_vector_map
+
+    assert np.isclose(state_vector_map[(0,)], 1.0)
+
+
+def test_Kerr_gate_with_StateVector():
+    angle = np.pi / 3
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([2, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.StateVector([1, 2]) / np.sqrt(2)
+
+        pq.Q(0) | pq.Kerr(angle)
+
+    simulator = pq.SamplingSimulator(d=2)
+    state = simulator.execute(program).state
+
+    state_vector_map = state.state_vector_map
+
+    assert np.isclose(state_vector_map[(2, 1)], np.exp(1j * angle * 2**2) / np.sqrt(2))
+    assert np.isclose(state_vector_map[(1, 2)], np.exp(1j * angle * 1**2) / np.sqrt(2))
+
+
+def test_Kerr_gate_with_Beamsplitter():
+    theta = np.pi / 4
+    xi = np.pi / 4
+    phi = 0.0
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([1, 1])
+
+        pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
+        pq.Q(0) | pq.Kerr(xi)
+
+    simulator = pq.SamplingSimulator(d=2)
+    state = simulator.execute(program).state
+
+    state_vector_map = state.state_vector_map
+
+    t = np.cos(theta)
+    r = np.exp(1j * phi) * np.sin(theta)
+
+    expected_state_vector_map = {
+        (2, 0): np.exp(1j * xi * 2**2) * (-np.sqrt(2) * t * np.conj(r)),
+        (1, 1): np.exp(1j * xi * 1**2) * (t**2 - np.abs(r) ** 2),
+        (0, 2): np.sqrt(2) * r * t,
+    }
+
+    for occupation, expected_amplitude in expected_state_vector_map.items():
+        assert np.isclose(
+            state_vector_map.get(occupation, 0.0),
+            expected_amplitude,
+        )
+
+
+def test_Kerr_gate_with_PostSelectPhotons():
+    angle = np.pi / 6
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([2, 2]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.StateVector([3, 1]) / np.sqrt(2)
+
+        pq.Q(0) | pq.PostSelectPhotons((3,))
+
+        pq.Q(1) | pq.Kerr(angle)
+
+    simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=5))
+    state = simulator.execute(program).state
+
+    state_vector_map = state.state_vector_map
+
+    assert np.isclose(state_vector_map[(0,)], 0.0)
+    assert np.isclose(state_vector_map[(1,)], np.exp(1j * angle) / np.sqrt(2))

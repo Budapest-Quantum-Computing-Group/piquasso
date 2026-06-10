@@ -108,6 +108,9 @@ class SamplingState(State):
         """
         super().__init__(connector=connector, config=config)
 
+        self._reset_state(d)
+
+    def _reset_state(self, d: int) -> None:
         self._occupation_numbers: List = []
         self._coefficients: List = []
 
@@ -355,6 +358,28 @@ class SamplingState(State):
             map_[tuple(basis)] = state_vector[index]
 
         return map_
+
+    def _materialize_state_vector(self):
+        """
+        Materialize the current state vector map and rebuild the internal sparse
+        representation from its nonzero entries.
+
+        Accessing ``self.state_vector_map`` may trigger an expensive interferometer
+        application in the truncated Fock basis. After that, this method resets the
+        internal occupation-number and coefficient arrays, keeping only nonzero
+        amplitudes.
+        """
+
+        map_ = self.state_vector_map
+
+        self._reset_state(d=len(self._get_active_modes()))
+
+        for basis_element, coeff in map_.items():
+            if not self._connector.fallback_np.isclose(coeff, 0.0):
+                self._occupation_numbers.append(
+                    self._connector.fallback_np.asarray(basis_element, dtype=int)
+                )
+                self._coefficients.append(coeff)
 
     @property
     def density_matrix(self) -> np.ndarray:

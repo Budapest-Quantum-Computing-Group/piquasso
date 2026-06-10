@@ -55,15 +55,17 @@ def test_simulate_nonlinear_gates():
     with pq.Program() as program:
         pq.Q() | pq.StateVector([1, 1, 0])
 
+        pq.Q(0) | pq.Squeezing(r=0.1)
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(0) | pq.Kerr(np.pi / 4)
         pq.Q(1, 2) | pq.Beamsplitter5050()
 
     result = pq.simulate(program, config=pq.Config(cutoff=9))
 
-    assert (
-        type(result.state) is pq.PureFockState
-    ), "The state should be a PureFockState, as it uses nonlinear gates."
+    assert type(result.state) is pq.PureFockState, (
+        "The state should be a PureFockState, as it uses nonlinear gates with active "
+        "gates."
+    )
 
 
 def test_simulate_nonlinear_gates_and_channels():

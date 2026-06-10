@@ -273,3 +273,20 @@ def post_select_photons(
 
 
 imperfect_post_select_photons = pure_fock_imperfect_post_select_photons
+
+
+def kerr(state: SamplingState, instruction: gates.Kerr, shots: int) -> List[Branch]:
+    state._materialize_state_vector()
+
+    np = state._connector.np
+
+    xi = instruction.params["xi"]
+
+    mode = instruction.modes[0]
+
+    for i in range(len(state._occupation_numbers)):
+        state._coefficients[i] *= np.exp(
+            1j * xi * state._occupation_numbers[i][mode] ** 2
+        )
+
+    return [Branch(state=state)]
