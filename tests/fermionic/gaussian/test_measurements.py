@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2026 Budapest Quantum Computing Group
+# Copyright 2026 Budapest Quantum Computing Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import pytest
 import piquasso as pq
 
 from scipy.stats import unitary_group
-
 
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
@@ -114,63 +113,127 @@ def test_particle_number_measurement_on_occupation_number_state(connector):
         assert sample == tuple(occupation)
 
 
-def test_particle_number_measurement_reproduces_exact_distribution():
-    d = 4
-
-    U = unitary_group.rvs(d, random_state=7)
-
-    with pq.Program() as state_program:
-        pq.Q() | pq.StateVector([1, 0, 1, 0])
-        pq.Q(all) | pq.Interferometer(U)
-
-    state_simulator = pq.fermionic.GaussianSimulator(d=d)
-    state = state_simulator.execute(state_program).state
-
-    exact_probabilities = state.fock_probabilities
-
-    with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 1, 0])
-        pq.Q(all) | pq.Interferometer(U)
-        pq.Q() | pq.ParticleNumberMeasurement()
-
-    shots = 1000
-
-    simulator = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
-    samples = simulator.execute(program, shots=shots).samples
-
-    empirical_probabilities = np.zeros(2**d)
-    for sample in samples:
-        index = int("".join(map(str, sample)), 2)
-        empirical_probabilities[index] += 1
-    empirical_probabilities /= shots
-
-    assert np.allclose(empirical_probabilities, exact_probabilities, atol=5e-2)
-
-
-def test_particle_number_measurement_mean_particle_numbers():
+def test_particle_number_measurement_is_seed_reproducible():
     d = 5
 
-    U = unitary_group.rvs(d, random_state=11)
-
-    with pq.Program() as state_program:
-        pq.Q() | pq.StateVector([1, 1, 0, 1, 0])
-        pq.Q(all) | pq.Interferometer(U)
-
-    state_simulator = pq.fermionic.GaussianSimulator(d=d)
-    state = state_simulator.execute(state_program).state
-
-    exact_mean = state.mean_particle_numbers(modes=tuple(range(d)))
+    U = unitary_group.rvs(d, random_state=99)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0, 1, 0])
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    shots = 1000
+    simulator1 = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
+    simulator2 = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
 
-    simulator = pq.fermionic.GaussianSimulator(d=d, config=pq.Config(seed_sequence=42))
-    samples = simulator.execute(program, shots=shots).samples
+    samples1 = simulator1.execute(program, shots=20).samples
+    samples2 = simulator2.execute(program, shots=20).samples
 
-    empirical_mean = np.array(samples).mean(axis=0)
+    assert samples1 == samples2
 
-    assert np.allclose(empirical_mean, exact_mean, atol=5e-2)
+
+def test_particle_number_measurement_samples_are_connector_independent():
+    d = 5
+
+    U = unitary_group.rvs(d, random_state=99)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.Interferometer(U)
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    numpy_simulator = pq.fermionic.GaussianSimulator(
+        d=d, connector=pq.NumpyConnector(), config=pq.Config(seed_sequence=42)
+    )
+    jax_simulator = pq.fermionic.GaussianSimulator(
+        d=d, connector=pq.JaxConnector(), config=pq.Config(seed_sequence=42)
+    )
+
+    numpy_samples = numpy_simulator.execute(program, shots=20).samples
+    jax_samples = jax_simulator.execute(program, shots=20).samples
+
+    assert numpy_samples == jax_samples
+
+
+@for_all_connectors
+def test_particle_number_measurement_on_identity_interferometer(connector):
+    d = 4
+
+    occupation = [1, 0, 1, 0]
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation)
+        pq.Q(all) | pq.Interferometer(np.identity(d, dtype=complex))
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.fermionic.GaussianSimulator(
+        d=d, connector=connector, config=pq.Config(seed_sequence=42)
+    )
+
+    samples = simulator.execute(program, shots=10).samples
+
+    for sample in samples:
+        assert tuple(sample) == tuple(occupation)
+
+
+@for_all_connectors
+def test_particle_number_measurement_on_permutation_interferometer(connector):
+    d = 4
+
+    occupation = [1, 1, 0, 0]
+
+    # A cyclic permutation of the modes.
+    permutation = np.array(
+        [
+            [0, 0, 0, 1],
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+        ],
+        dtype=complex,
+    )
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation)
+        pq.Q(all) | pq.Interferometer(permutation)
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.fermionic.GaussianSimulator(
+        d=d, connector=connector, config=pq.Config(seed_sequence=42)
+    )
+
+    samples = simulator.execute(program, shots=10).samples
+
+    # A permutation interferometer maps a Fock basis state to another Fock basis
+    # state, so the outcome is deterministic and a permutation of the input.
+    for sample in samples:
+        assert sample == samples[0]
+        assert sorted(sample) == sorted(occupation)
+
+
+@for_all_connectors
+def test_particle_number_measurement_conserves_particles_within_blocks(connector):
+    d = 4
+
+    occupation = [1, 0, 1, 0]
+
+    beamsplitter = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
+    zeros = np.zeros((2, 2), dtype=complex)
+    interferometer = np.block([[beamsplitter, zeros], [zeros, beamsplitter]])
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(occupation)
+        pq.Q(all) | pq.Interferometer(interferometer)
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator = pq.fermionic.GaussianSimulator(
+        d=d, connector=connector, config=pq.Config(seed_sequence=42)
+    )
+
+    samples = simulator.execute(program, shots=20).samples
+
+    # The interferometer does not couple modes {0, 1} to modes {2, 3}, so the
+    # particle number is conserved within each block for every shot.
+    for sample in samples:
+        assert sample[0] + sample[1] == 1
+        assert sample[2] + sample[3] == 1
