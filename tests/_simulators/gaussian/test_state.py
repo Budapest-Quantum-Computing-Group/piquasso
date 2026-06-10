@@ -1437,6 +1437,127 @@ def test_get_xp_string_moment_hbar_dependence():
     assert np.isclose(value1 * np.sqrt(hbar_2 / hbar_1) ** len(indices), value2)
 
 
+def test_get_ladder_string_moment_vacuum_state():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    assert np.isclose(state.get_ladder_string_moment([]), 1.0)
+
+    assert np.isclose(state.get_ladder_string_moment([0]), 0.0)
+    assert np.isclose(state.get_ladder_string_moment([1]), 0.0)
+
+    # <a a^dagger> = 1, <a^dagger a> = 0 on the vacuum.
+    assert np.isclose(state.get_ladder_string_moment([0, 1]), 1.0)
+    assert np.isclose(state.get_ladder_string_moment([1, 0]), 0.0)
+
+    # <a a> = <a^dagger a^dagger> = 0 on the vacuum.
+    assert np.isclose(state.get_ladder_string_moment([0, 0]), 0.0)
+    assert np.isclose(state.get_ladder_string_moment([1, 1]), 0.0)
+
+
+def test_get_ladder_string_moment_admits_ccr():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.3, phi=0.4)
+        pq.Q(0) | pq.Displacement(r=0.5, phi=0.2)
+
+    state = pq.GaussianSimulator(d=1).execute(program).state
+
+    # [a, a^dagger] = 1
+    assert np.isclose(
+        state.get_ladder_string_moment([0, 1]) - state.get_ladder_string_moment([1, 0]),
+        1.0,
+    )
+
+
+def test_get_ladder_string_moment_mean_photon_number_consistency():
+    from scipy.stats import unitary_group
+
+    d = 3
+
+    U = unitary_group.rvs(d, random_state=1)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.3 * (i + 1), phi=0.5 * i)
+            pq.Q(i) | pq.Displacement(r=0.4 * (i + 1), phi=0.2 * i)
+        pq.Q(all) | pq.Interferometer(U)
+
+    state = pq.GaussianSimulator(d=d).execute(program).state
+
+    mean_photon_number = sum(
+        state.get_ladder_string_moment([d + i, i]) for i in range(d)
+    )
+
+    assert np.isclose(mean_photon_number, state.mean_photon_number())
+
+
+def test_get_ladder_string_moment_matches_xp_string_moment():
+    r"""Cross-check using :math:`a_i = (x_i + i p_i) / \sqrt{2 \hbar}`."""
+    import itertools
+
+    from scipy.stats import unitary_group
+
+    d = 2
+    hbar = 2.0
+
+    U = unitary_group.rvs(d, random_state=3)
+
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        for i in range(d):
+            pq.Q(i) | pq.Squeezing(r=0.2 * (i + 1), phi=0.3 * i)
+            pq.Q(i) | pq.Displacement(r=0.5 * (i + 1), phi=0.4 * i)
+        pq.Q(all) | pq.Interferometer(U)
+
+    state = (
+        pq.GaussianSimulator(d=d, config=pq.Config(hbar=hbar)).execute(program).state
+    )
+
+    # Linear map from xxpp quadratures to ladder operators.
+    W = np.block(
+        [
+            [np.eye(d), 1j * np.eye(d)],
+            [np.eye(d), -1j * np.eye(d)],
+        ]
+    ) / np.sqrt(2 * hbar)
+
+    rng = np.random.default_rng(0)
+
+    for _ in range(50):
+        length = rng.integers(0, 5)
+        ladder_string = list(rng.integers(0, 2 * d, size=length))
+
+        expected = 0.0
+        for xp_string in itertools.product(range(2 * d), repeat=length):
+            coefficient = np.prod(
+                [W[alpha, k] for alpha, k in zip(ladder_string, xp_string)]
+            )
+            if coefficient != 0.0:
+                expected += coefficient * state.get_xp_string_moment(list(xp_string))
+
+        assert np.isclose(state.get_ladder_string_moment(ladder_string), expected)
+
+
+def test_get_ladder_string_moment_jax_connector():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=0.3, phi=0.4)
+        pq.Q(0) | pq.Displacement(r=0.5, phi=0.2)
+
+    state = (
+        pq.GaussianSimulator(d=1, connector=pq.JaxConnector()).execute(program).state
+    )
+
+    assert np.isclose(
+        state.get_ladder_string_moment([0, 1]) - state.get_ladder_string_moment([1, 0]),
+        1.0,
+    )
+
+
 def test_GaussianState_get_parity_operator_expectation_value_on_vacuum():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()

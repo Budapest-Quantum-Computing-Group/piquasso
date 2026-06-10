@@ -1114,6 +1114,24 @@ class GaussianState(State):
 
         second_order_moments = cov_xxpp / 2 + 0.5j * hbar * xp_symplectic_form(d)
 
+        return self._string_moment(first_order_moments, second_order_moments, string)
+
+    @staticmethod
+    def _string_moment(
+        first_order_moments: np.ndarray,
+        second_order_moments: np.ndarray,
+        string: List[int],
+    ) -> complex:
+        r"""Extended Isserlis' (Wick) recursion for an ordered operator string.
+
+        Computes the (non-centered) Gaussian moment of an ordered product of
+        operators as a sum over all partitions of the operator indices into
+        singletons (contributing a first-order moment) and ordered pairs
+        (contributing the connected, ordered two-point moment). This is shared
+        between :meth:`get_xp_string_moment` and :meth:`get_ladder_string_moment`,
+        which only differ in the moment inputs.
+        """
+
         # TODO: Reimplement this using the loop hafnian!
         def recursive(op_list: List[int]) -> complex:
             if not op_list:
@@ -1137,6 +1155,55 @@ class GaussianState(State):
             return total
 
         return recursive(list(string))
+
+    def get_ladder_string_moment(self, string: List[int]) -> complex:
+        r"""Moment corresponding to a product of ladder operators.
+
+        The indices of `string` follow the complex representation used by
+        :attr:`complex_displacement`, i.e., :math:`0, \dots, d-1` denote
+        :math:`a_0, \dots, a_{d-1}` and :math:`d, \dots, 2d-1` denote
+        :math:`a_0^\dagger, \dots, a_{d-1}^\dagger`. The order of the integers in
+        `string` determines the operator ordering in the evaluated moment.
+
+        For example, for a one-mode state:
+
+        .. math::
+            [0, 1] &\mapsto \langle a_0 a_0^\dagger \rangle, \\
+            [1, 0] &\mapsto \langle a_0^\dagger a_0 \rangle.
+
+        The moment is evaluated using the same extended Isserlis' (Wick) formula as
+        :meth:`get_xp_string_moment` (see :meth:`_string_moment`), where the
+        first-order moments are given by :attr:`complex_displacement` and the
+        connected, ordered two-point moments
+        :math:`\langle \Delta \xi_\alpha \Delta \xi_\beta \rangle` (with
+        :math:`\xi = (a_0, \dots, a_{d-1}, a_0^\dagger, \dots, a_{d-1}^\dagger)`)
+        are assembled from the complex correlation blocks :math:`C` and :math:`G`
+        and the canonical commutation relation
+        :math:`[a_i, a_j^\dagger] = \delta_{ij}`:
+
+        .. math::
+            \langle \Delta \xi \Delta \xi \rangle = \begin{bmatrix}
+                G & C^T + I \\
+                C & \overline{G}
+            \end{bmatrix},
+
+        where :math:`C_{ij} = \langle a_i^\dagger a_j \rangle_c` and
+        :math:`G_{ij} = \langle a_i a_j \rangle_c` are the connected correlations.
+        """
+
+        np = self._connector.np
+
+        identity = np.identity(self.d)
+
+        first_order_moments = self.complex_displacement
+        second_order_moments = np.block(
+            [
+                [self._G, self._C.T + identity],
+                [self._C, np.conj(self._G)],
+            ]
+        )
+
+        return self._string_moment(first_order_moments, second_order_moments, string)
 
     def is_pure(self) -> bool:
         return bool(np.isclose(self.get_purity(), 1.0))
