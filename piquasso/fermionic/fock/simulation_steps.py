@@ -41,7 +41,7 @@ from .._utils import (
 )
 from .state import PureFockState
 
-from typing import Mapping, TYPE_CHECKING, Tuple
+from typing import Dict, Mapping, TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
     from typing import List
@@ -142,7 +142,7 @@ def _get_measurement_probability_map(
     probabilities = state.fock_probabilities
     fock_space_basis = get_fock_space_basis(state.d, state._config.cutoff)
 
-    probability_map = {}
+    probability_map: Dict[Tuple[int, ...], float] = {}
     measured_modes = list(modes)
 
     for index, occupation_number in enumerate(fock_space_basis):
