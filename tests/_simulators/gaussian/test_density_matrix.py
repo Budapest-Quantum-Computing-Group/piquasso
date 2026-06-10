@@ -16,6 +16,8 @@
 import pytest
 import numpy as np
 
+from scipy.special import factorial
+
 import piquasso as pq
 
 
@@ -93,6 +95,57 @@ def test_thermal_density_matrix_matches_analytic():
 
     assert np.allclose(np.diag(density_matrix).real, expected_diagonal)
     assert np.allclose(density_matrix - np.diag(np.diag(density_matrix)), 0.0)
+
+
+def test_squeezed_vacuum_density_matrix_matches_analytic():
+    """Single-mode squeezed vacuum has only even-photon amplitudes."""
+    r = 0.5
+    cutoff = 8
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+        pq.Q(0) | pq.Squeezing(r=r)
+
+    state = (
+        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff))
+        .execute(program)
+        .state
+    )
+
+    amplitudes = np.zeros(cutoff)
+    for k in range(cutoff // 2):
+        amplitudes[2 * k] = (
+            np.sqrt(factorial(2 * k))
+            / (2**k * factorial(k))
+            * (-np.tanh(r)) ** k
+            / np.sqrt(np.cosh(r))
+        )
+    expected = np.outer(amplitudes, amplitudes)
+
+    assert np.allclose(state.density_matrix, expected)
+
+
+def test_coherent_density_matrix_matches_analytic():
+    """Coherent state: :math:`\\rho_{mn} = e^{-|\\alpha|^2} \\alpha^m
+    \\bar{\\alpha}^n / \\sqrt{m! n!}`."""
+    cutoff = 10
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+        pq.Q(0) | pq.Displacement(r=0.7, phi=0.4)
+
+    state = (
+        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff))
+        .execute(program)
+        .state
+    )
+
+    alpha = state.complex_displacement[0]
+    n = np.arange(cutoff)
+    amplitudes = np.exp(-0.5 * np.abs(alpha) ** 2) * alpha**n / np.sqrt(factorial(n))
+    expected = np.outer(amplitudes, amplitudes.conj())
+
+    assert np.allclose(state.density_matrix, expected)
 
 
 def test_density_matrix_is_hermitian():
