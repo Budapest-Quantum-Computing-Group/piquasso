@@ -13,15 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+
 from piquasso.api.branch import Branch
 
 from piquasso.api.exceptions import InvalidParameter
 
+from piquasso._math.indices import get_auxiliary_modes
 from piquasso._math.validations import (
     all_zero_or_one,
     are_modes_consecutive,
     validate_occupation_numbers,
 )
+
+from piquasso._utils import sample_from_probability_map
 
 from ._utils import (
     calculate_indices_for_controlled_phase,
@@ -32,15 +37,17 @@ from .._utils import (
     get_fock_space_index,
     get_cutoff_fock_space_dimension,
     next_second_quantized,
+    get_fock_space_basis,
 )
 from .state import PureFockState
 
-from typing import TYPE_CHECKING
+from typing import Dict, Mapping, TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
     from typing import List
     from piquasso.instructions.preparations import StateVector
     from piquasso.instructions.gates import _PassiveLinearGate, Squeezing2
+    from piquasso.instructions.measurements import ParticleNumberMeasurement
     from piquasso.fermionic.instructions import ControlledPhase, IsingXX
 
 
@@ -101,6 +108,94 @@ def state_vector(
             )
 
     return [Branch(state=state)]
+
+
+def particle_number_measurement(
+    state: PureFockState, instruction: "ParticleNumberMeasurement", shots: int
+) -> "List[Branch]":
+    probability_map = _get_measurement_probability_map(state, instruction.modes)
+
+    frequency_map = sample_from_probability_map(probability_map, shots)
+
+    branches = []
+
+    for sample, frequency in frequency_map.items():
+        normalization = _get_normalization(probability_map, sample)
+
+        new_state = _project_to_subspace(
+            state=state,
+            subspace_basis=sample,
+            modes=instruction.modes,
+            normalization=normalization,
+        )
+
+        branches.append(Branch(new_state, sample, frequency=frequency))
+
+    return branches
+
+
+def _get_measurement_probability_map(
+    state: PureFockState, modes: Tuple[int, ...]
+) -> Mapping[Tuple[int, ...], float]:
+    fallback_np = state._connector.fallback_np
+
+    probabilities = state.fock_probabilities
+    fock_space_basis = get_fock_space_basis(state.d, state._config.cutoff)
+
+    probability_map: Dict[Tuple[int, ...], float] = {}
+    measured_modes = list(modes)
+
+    for index, occupation_number in enumerate(fock_space_basis):
+        sample = tuple(occupation_number[measured_modes])
+        probability = fallback_np.real(fallback_np.asarray(probabilities[index]))
+
+        probability_map[sample] = probability_map.get(sample, 0.0) + float(probability)
+
+    return probability_map
+
+
+def _get_normalization(
+    probability_map: Mapping[Tuple[int, ...], float], sample: Tuple[int, ...]
+) -> float:
+    return np.sqrt(1 / probability_map[sample])
+
+
+def _project_to_subspace(
+    state: PureFockState,
+    *,
+    subspace_basis: Tuple[int, ...],
+    modes: Tuple[int, ...],
+    normalization: float,
+) -> PureFockState:
+    connector = state._connector
+    fallback_np = connector.fallback_np
+
+    config_copy = state._config.copy()
+    config_copy.cutoff -= sum(subspace_basis)
+
+    new_state = PureFockState(
+        d=state.d - len(modes),
+        connector=connector,
+        config=config_copy,
+    )
+
+    remaining_modes = get_auxiliary_modes(state.d, modes)
+    measured_modes = list(modes)
+    remaining_basis = get_fock_space_basis(new_state.d, config_copy.cutoff)
+    occupation_number = fallback_np.empty(state.d, dtype=int)
+    occupation_number[measured_modes] = subspace_basis
+
+    for remaining_index, remaining_occupation_number in enumerate(remaining_basis):
+        occupation_number[remaining_modes] = remaining_occupation_number
+        index = get_fock_space_index(occupation_number)
+
+        new_state._state_vector = connector.assign(
+            new_state.state_vector,
+            remaining_index,
+            normalization * state.state_vector[index],
+        )
+
+    return new_state
 
 
 def passive_linear(
