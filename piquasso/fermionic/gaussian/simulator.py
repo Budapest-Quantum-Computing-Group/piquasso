@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from piquasso.instructions import gates, preparations
+from piquasso.instructions import gates, measurements, preparations
 
 from ..instructions import GaussianHamiltonian, ParentHamiltonian, IsingXX
 
@@ -25,6 +25,7 @@ from .simulation_steps import (
     passive_linear_gate,
     squeezing2,
     ising_XX,
+    particle_number_measurement,
 )
 from .state import GaussianState
 
@@ -62,6 +63,9 @@ class GaussianSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.gates.Beamsplitter`,
         :class:`~piquasso.instructions.gates.Phaseshifter`,
         :class:`~piquasso.fermionic.instructions.GaussianHamiltonian`.
+
+    Supported measurements:
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
     """
 
     _state_class = GaussianState
@@ -76,6 +80,7 @@ class GaussianSimulator(BuiltinSimulator):
         gates.Phaseshifter: passive_linear_gate,
         gates.Squeezing2: squeezing2,
         IsingXX: ising_XX,
+        measurements.ParticleNumberMeasurement: particle_number_measurement,
     }
 
     _default_connector_class = NumpyConnector

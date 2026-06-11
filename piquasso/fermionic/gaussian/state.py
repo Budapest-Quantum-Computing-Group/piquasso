@@ -498,9 +498,11 @@ class GaussianState(State):
 
         ident = np.identity(len(gamma1))
 
-        ret2 = np.sqrt(np.linalg.det((ident - gamma1 @ gamma2) / 2))
+        determinant = np.linalg.det((ident - gamma1 @ gamma2) / 2)
 
-        return ret2
+        determinant = np.clip(np.real(determinant), 0.0, None)
+
+        return np.sqrt(determinant)
 
     def __eq__(self, other):
         np = self._connector.np

@@ -14,6 +14,10 @@
 # limitations under the License.
 
 
+from fractions import Fraction
+from functools import lru_cache
+from itertools import repeat
+
 from piquasso.api.branch import Branch
 from piquasso.api.exceptions import InvalidParameter
 from piquasso.api.instruction import Instruction
@@ -273,3 +277,81 @@ def ising_XX(state: GaussianState, instruction: IsingXX, shots: int) -> "List[Br
     evolved_state = _do_apply_gaussian_hamiltonian(state, h, modes)
 
     return [Branch(state=evolved_state)]
+
+
+def particle_number_measurement(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Branch]":
+    """Performs a particle number measurement on a fermionic Gaussian state.
+
+    Since fermions obey the Pauli exclusion principle, each measured mode yields an
+    occupation number of either 0 or 1.
+    """
+    samples = _generate_particle_number_samples(state, instruction, shots)
+
+    return [
+        Branch(state=None, outcome=outcome, frequency=Fraction(1, shots))
+        for outcome in samples
+    ]
+
+
+def _generate_particle_number_samples(
+    state: GaussianState, instruction: Instruction, shots: int
+) -> "List[Tuple[int, ...]]":
+    r"""Generates particle number samples using mode-by-mode (chain-rule) sampling.
+
+    To avoid computing all :math:`2^n` output probabilities, the joint distribution is
+    factorized as
+
+    .. math::
+        p(n_1, \dots, n_d) = \prod_{k=1}^d p(n_k \mid n_1, \dots, n_{k-1}),
+
+    where each conditional is obtained from reduced-state particle detection
+    probabilities, see
+    :meth:`~piquasso.fermionic.gaussian.state.GaussianState.get_particle_detection_probability`.
+    """  # noqa: E501
+    rng = state._config.rng
+    modes = instruction.modes
+    fallback_np = state._connector.fallback_np
+
+    @lru_cache(state._config.cache_size)
+    def get_probability(
+        subspace_modes: "Tuple[int, ...]", occupation_numbers: "Tuple[int, ...]"
+    ) -> float:
+        reduced_state = state.reduced(subspace_modes)
+
+        return float(
+            reduced_state.get_particle_detection_probability(
+                fallback_np.array(occupation_numbers)
+            )
+        )
+
+    samples = []
+
+    for _ in repeat(None, shots):
+        sample: "List[int]" = []
+
+        previous_probability = 1.0
+
+        for mode_index in range(1, len(modes) + 1):
+            subspace_modes = tuple(modes[:mode_index])
+
+            occupation_numbers = tuple(sample + [0])
+
+            probability = get_probability(
+                subspace_modes=subspace_modes, occupation_numbers=occupation_numbers
+            )
+            conditional_probability = probability / previous_probability
+
+            conditional_probability = min(max(conditional_probability, 0.0), 1.0)
+
+            if rng.uniform() < conditional_probability:
+                sample.append(0)
+                previous_probability *= conditional_probability
+            else:
+                sample.append(1)
+                previous_probability *= 1 - conditional_probability
+
+        samples.append(tuple(sample))
+
+    return samples
