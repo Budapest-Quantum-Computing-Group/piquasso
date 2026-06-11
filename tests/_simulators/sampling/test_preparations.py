@@ -50,6 +50,57 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
     )
 
 
+def test_cutoff_is_inferred_from_state_vector():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+
+    state = pq.SamplingSimulator(d=5).execute(program).state
+
+    assert state._config.cutoff == 6
+    assert len(state.state_vector) > 0
+
+
+def test_cutoff_is_inferred_when_validation_is_disabled():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+
+    simulator = pq.SamplingSimulator(d=5, config=pq.Config(validate=False))
+    state = simulator.execute(program).state
+
+    assert state._config.cutoff == 6
+    assert len(state.state_vector) > 0
+
+
+def test_explicit_cutoff_is_not_inferred_when_validation_is_disabled():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+
+    simulator = pq.SamplingSimulator(
+        d=5,
+        config=pq.Config(cutoff=4, validate=False),
+    )
+    state = simulator.execute(program).state
+
+    assert state._config.cutoff == 4
+
+
+def test_explicit_cutoff_is_validated_against_state_vector():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+
+    simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=4))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    assert error.value.args[0] == (
+        "The occupation numbers '(2, 1, 1, 0, 1)' require a cutoff of at least "
+        "'6', but the provided cutoff is '4'. "
+        "Instruction: StateVector(occupation_numbers=(2, 1, 1, 0, 1), "
+        "coefficient=1.0, modes=(0, 1, 2, 3, 4))."
+    )
+
+
 def test_interferometer_init():
     with pq.Program() as program:
         pass
@@ -453,3 +504,15 @@ def test_Create_on_multiple_modes():
     assert len(state._occupation_numbers) == 1
     assert np.allclose(state._occupation_numbers[0], np.array([1, 0, 1, 0]))
     assert np.allclose(state._coefficients[0], 1.0)
+
+
+def test_cutoff_is_inferred_from_Create_instructions():
+    with pq.Program() as program:
+        pq.Q() | pq.Vacuum()
+        for _ in range(5):
+            pq.Q(0) | pq.Create()
+
+    state = pq.SamplingSimulator(d=1).execute(program).state
+
+    assert state._config.cutoff == 6
+    assert np.allclose(state._occupation_numbers[0], np.array([5]))

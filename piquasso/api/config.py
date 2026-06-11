@@ -26,7 +26,11 @@ from piquasso.core import _mixins
 class Config(_mixins.CodeMixin):
     """The configuration for the simulation.
 
-    :ivar cutoff: The Fock space cutoff. Defaults to `4`.
+    :ivar cutoff:
+        The Fock space cutoff. Defaults to `4`. When omitted, the
+        :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`
+        may increase its execution-local copy to fit the prepared state. An
+        explicitly supplied cutoff is kept as a strict limit.
     :ivar dtype:
         The underlying datatype of the simulation. Possible values: `np.float32` and
         `np.float64`. Defaults to `np.float64`.
@@ -60,7 +64,7 @@ class Config(_mixins.CodeMixin):
     def __init__(
         self,
         *,
-        cutoff: int = 4,
+        cutoff: Optional[int] = None,
         dtype: type = np.float64,
         measurement_cutoff: int = 5,
         hbar: float = 2.0,
@@ -78,7 +82,8 @@ class Config(_mixins.CodeMixin):
         self.cache_size = cache_size
         self.hbar = hbar
         self.use_torontonian = use_torontonian
-        self.cutoff = cutoff
+        self._cutoff_was_explicit = cutoff is not None
+        self.cutoff = 4 if cutoff is None else cutoff
         self.measurement_cutoff = measurement_cutoff
         self.dtype = np.float64 if dtype is float else dtype
         self.validate = validate
@@ -93,6 +98,7 @@ class Config(_mixins.CodeMixin):
             and self.cache_size == other.cache_size
             and self.hbar == other.hbar
             and self.use_torontonian == other.use_torontonian
+            and self._cutoff_was_explicit == other._cutoff_was_explicit
             and self.cutoff == other.cutoff
             and self.measurement_cutoff == other.measurement_cutoff
             and self.dtype == other.dtype
@@ -113,7 +119,7 @@ class Config(_mixins.CodeMixin):
             non_default_params["hbar"] = self.hbar
         if self.use_torontonian != default_config.use_torontonian:
             non_default_params["use_torontonian"] = self.use_torontonian
-        if self.cutoff != default_config.cutoff:
+        if self._cutoff_was_explicit:
             non_default_params["cutoff"] = self.cutoff
         if self.measurement_cutoff != default_config.measurement_cutoff:
             non_default_params["measurement_cutoff"] = self.measurement_cutoff
