@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 from itertools import product
 import math
 import numpy as np
 from scipy.special import factorial
-from sympy import symbols, Poly
-from sympy.functions.special.polynomials import laguerre
+from numpy.polynomial.laguerre import lag2poly
 
 from functools import partial
 
@@ -475,6 +475,89 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     return np.diag(expansion_values)
 
 
+def multiply_polynomials(dict_1, dict_2):
+    '''
+        Multiplies two dictionaries of polynomial coefficients.
+    '''
+    if not dict_1:
+        return dict_2
+        
+    new_dict = defaultdict(complex)
+
+    for exp_1, coeff_1 in dict_1.items():
+        exp_1 = np.asarray(exp_1)
+
+        for exp_2, coeff_2 in dict_2.items():
+            new_dict[tuple(exp_1 + exp_2)] += coeff_1 * coeff_2
+
+    return { exp:coeff for exp, coeff in new_dict.items() if coeff != 0 }
+
+def add_polynomials(dict_1, dict_2):
+    '''
+        Adds two dictionaries of polynomial coefficients.
+    '''
+    new_dict = defaultdict(complex)
+
+    for exp, coeff in dict_1.items():
+        new_dict[exp] += coeff
+
+    for exp, coeff in dict_2.items():
+        new_dict[exp] += coeff
+
+    return { exp:coeff for exp, coeff in new_dict.items() if coeff != 0 }
+
+def decompositions(d, k):
+    '''
+        Yields all decompositions whose sum is d.
+        For example: decompositions(2, 2) yields
+            [2, 0]
+            [1, 1]
+            [0, 2]
+    '''
+    if k == 1:
+        yield (d,)
+        return
+
+    decomp = np.zeros(k, dtype=int)
+    decomp[0] = d
+
+    while True:
+        yield decomp
+
+        for i in range(k-2, -1, -1):
+            if decomp[i] > 0:
+                break
+            else:
+                return
+
+        decomp[i] -= 1
+        right_sum = decomp[i + 1:].sum() + 1
+        decomp[i + 1:] = 0
+        decomp[i + 1] = right_sum
+
+def compute_laguerre(coeffs, ra, k):
+    '''
+        Computes the Laguerre series at degree ra and returns a dict of its polynomials.
+    '''
+    poly_dict = defaultdict(complex)
+
+    l_coeffs = lag2poly([0] * ra + [1])
+    factorials = np.array([factorial(i) for i in range(ra + 1)])
+
+    for d, ld in enumerate(l_coeffs):
+        if ld == 0:
+            continue
+
+        for alpha in decompositions(d, k):
+            polynomial = factorials[d]
+            for i in alpha:
+                polynomial /= factorials[i]
+
+            coeff = ld * polynomial * np.prod(coeffs**alpha)
+            poly_dict[tuple(alpha)] += coeff
+
+    return { exp:coeff for exp, coeff in poly_dict.items() if coeff != 0 }
+
 def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     '''
         Implements sampling when k-modes have been selected for measurement.
@@ -485,21 +568,18 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     N = n+1
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
-    t = symbols(f't1:{k+1}')
     possible_ys = list(product(range(N), repeat=k))
-    D_t = 0
+    D_t = {}
     for y in possible_ys:
-        omegas = [np.exp(2j*np.pi/N)**i for i in y]
-        P_omega = 1
-        for a in range(s):
-            faz = sum([V[j][a]*t[j]*omegas[j] for j in range(k)]) 
-            faw_conj = sum([np.conj(V[j][a])*omegas[j]**(-1) for j in range(k)]) 
-            xa = -faz * faw_conj
-            l_ra = laguerre(occupied_inputs[a], xa)
-            P_omega *= l_ra
-        D_t += P_omega
-    D_t /= N**k
-    p_zw_diag = { alpha:complex(coeff) for alpha, coeff in Poly(D_t).terms() }
+        omegas = np.array([np.exp(2j*np.pi/N)**i for i in y])
+        xa = np.array([-np.outer(V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1)) for a in range(s)])
+        xa = np.sum(xa, 1)
+        P_omega = {}
+        for a, ra in enumerate(occupied_inputs):
+            res = compute_laguerre(xa[a], ra, k)
+            P_omega = multiply_polynomials(P_omega, res)
+        D_t = add_polynomials(D_t, P_omega)
+    p_zw_diag = { alpha:coeff/N**k for (alpha, coeff) in D_t.items() }
             
     p_ys = {}
     for y in p_zw_diag.keys():
@@ -509,6 +589,6 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
             p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([math.comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
         if p_y > 0:
             p_ys[y] = p_y
-            
-    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
+
+    sample = rng.choice(list(p_ys.keys()), p=[c.real for c in p_ys.values()])
     return sample
