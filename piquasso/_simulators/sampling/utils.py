@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
+from itertools import product
 import math
 import numpy as np
 from scipy.special import factorial
@@ -475,38 +475,31 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     return np.diag(expansion_values)
 
 
-def update_coefficients(current_coeffs, new_coeffs):
-    '''
-        Merges two dictionaries of polynomial coefficients.
-    '''
-    new_dict = defaultdict(complex)
-    for (prev_z_exp, prev_w_exp), prev_coeff in current_coeffs.items():
-        for (new_z_exp, new_wb_exp), new_coeff in new_coeffs.items():
-            new_z = tuple(i+j for i,j in zip(prev_z_exp, new_z_exp))
-            new_w = tuple(i+j for i,j in zip(prev_w_exp, new_wb_exp))
-            new_dict[(new_z, new_w)] += prev_coeff*new_coeff
-    return dict(new_dict)
-
-def generate_k_modes_marginal_sample(modes, inputs, interferometer, rng):
+def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     '''
         Implements sampling when k-modes have been selected for measurement.
     '''
     k = len(modes)
     occupied_inputs = inputs[inputs!=0]
     s = len(occupied_inputs)
+    N = n+1
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
-    symbols_list = list(symbols(f'z1:{k+1}'))+list(symbols(f'w1:{k+1}'))
-    p_zw_dict = {(tuple([0]*k), tuple([0]*k)): 1.0}
-    for a in range(s): 
-        faz = sum([V[j][a]*symbols(f'z{j+1}') for j in range(k)]) 
-        faw_conj = sum([np.conj(V[j][a])*symbols(f'w{j+1}') for j in range(k)]) 
-        xa = -faz * faw_conj
-        l_ra = laguerre(occupied_inputs[a], xa)
-        poly_ra = Poly(l_ra, *symbols_list)
-        coeff_dict = { (exponents[:k], exponents[k:]):coeff for exponents, coeff in poly_ra.terms() }
-        p_zw_dict = update_coefficients(p_zw_dict, coeff_dict)
-    p_zw_diag = { z_exp:coeff for (z_exp, w_exp), coeff in p_zw_dict.items() if z_exp == w_exp }
+    t = symbols(f't1:{k+1}')
+    possible_ys = list(product(range(N), repeat=k))
+    D_t = 0
+    for y in possible_ys:
+        omegas = [np.exp(2j*np.pi/N)**i for i in y]
+        P_omega = 1
+        for a in range(s):
+            faz = sum([V[j][a]*t[j]*omegas[j] for j in range(k)]) 
+            faw_conj = sum([np.conj(V[j][a])*omegas[j]**(-1) for j in range(k)]) 
+            xa = -faz * faw_conj
+            l_ra = laguerre(occupied_inputs[a], xa)
+            P_omega *= l_ra
+        D_t += P_omega
+    D_t /= N**k
+    p_zw_diag = { alpha:complex(coeff) for alpha, coeff in Poly(D_t).terms() }
             
     p_ys = {}
     for y in p_zw_diag.keys():
