@@ -282,7 +282,9 @@ def test_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -365,7 +367,9 @@ def test_LossyInterferometer_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -448,7 +452,9 @@ def test_LossyInterferometer_boson_sampling_uniform_losses():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.SamplingSimulator(
+        d=5, config=pq.Config(cutoff=6, seed_sequence=seed_sequence)
+    )
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -537,7 +543,7 @@ def test_PostSelectPhotons_state_vector_random():
         pq.Q() | program_without_postselection
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=5))
     state = simulator.execute(program_without_postselection).state
     postselected_state = simulator.execute(program_with_postselection).state
 
@@ -612,7 +618,7 @@ def test_PostSelectPhotons_get_particle_detection_probability():
         pq.Q(1, 2) | pq.Beamsplitter5050()
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=5))
     state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability((1,))
@@ -630,7 +636,7 @@ def test_multiple_overlapping_PostSelectPhotons_raise_ValueError():
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
         pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=[0, 1])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=5))
 
     with pytest.raises(
         ValueError,
@@ -658,7 +664,7 @@ def test_multiple_non_overlapping_PostSelectPhotons_no_error():
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 2])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=6))
 
     state_1 = simulator.execute(program_1).state
     state_2 = simulator.execute(program_2).state
@@ -675,7 +681,7 @@ def test_PostSelectPhotons_no_infinite_loop_via_max_sample_generation_trials():
         pq.Q(2, 3) | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(
-        config=pq.Config(max_sample_generation_trials=10),
+        config=pq.Config(cutoff=5, max_sample_generation_trials=10),
     )
 
     with pytest.raises(
@@ -749,7 +755,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=9, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -774,7 +782,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=5, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -801,7 +811,9 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=5, seed_sequence=42)
+        )
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -816,7 +828,7 @@ class TestMidCircuitMeasurements:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q(0, 1) | pq.Beamsplitter5050()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.SamplingSimulator(config=pq.Config(cutoff=5))
         with pytest.raises(
             ValueError,
             match=re.escape(
@@ -839,7 +851,7 @@ class TestMidCircuitMeasurements:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q(1, 2) | pq.Beamsplitter5050()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.SamplingSimulator(config=pq.Config(cutoff=5))
         state_1 = simulator.execute(program_1).state
         state_2 = simulator.execute(program_2).state
 

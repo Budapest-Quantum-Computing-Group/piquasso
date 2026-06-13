@@ -27,6 +27,8 @@ from piquasso.api.instruction import Instruction
 from piquasso.api.branch import Branch
 from piquasso.api.exceptions import InvalidParameter
 
+from piquasso._math.validations import validate_occupation_numbers
+
 from piquasso._utils import sample_from_probability_map
 
 from piquasso._math.indices import get_index_in_fock_space
@@ -453,6 +455,26 @@ def _add_occupation_number_basis(
     bra: Tuple[int, ...],
     coefficient: complex,
 ) -> None:
+    if state._config.validate:
+        validate_occupation_numbers(
+            ket,
+            state.d,
+            state._config.cutoff,
+            context=(
+                " This occurred while preparing the ket component of a "
+                "DensityMatrix instruction."
+            ),
+        )
+        validate_occupation_numbers(
+            bra,
+            state.d,
+            state._config.cutoff,
+            context=(
+                " This occurred while preparing the bra component of a "
+                "DensityMatrix instruction."
+            ),
+        )
+
     index = get_index_in_fock_space(ket)
     dual_index = get_index_in_fock_space(bra)
 

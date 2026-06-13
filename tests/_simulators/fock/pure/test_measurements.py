@@ -608,3 +608,21 @@ def test_unresolved_squeezing_with_expression():
             .state
         )
         assert branch.state == expected_state
+
+
+def test_PostSelectPhotons_raises_InvalidState_when_postselection_exceeds_cutoff():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0])
+        pq.Q(0, 1, 2) | pq.PostSelectPhotons(photon_counts=[2, 2, 1])
+
+    simulator = pq.PureFockSimulator(d=4, config=pq.Config(cutoff=5, validate=True))
+
+    with pytest.raises(pq.api.exceptions.InvalidState) as error:
+        simulator.execute(program)
+
+    assert error.value.args[0] == (
+        "Post-selecting 5 photon(s) on [2, 2, 1] requires a cutoff of at least "
+        "'6', but the provided cutoff is '5'. Consider increasing the cutoff via "
+        "`pq.Config(cutoff=6)` when creating the simulator. Instruction: "
+        "PostSelectPhotons(photon_counts=[2, 2, 1], modes=(0, 1, 2))."
+    )
