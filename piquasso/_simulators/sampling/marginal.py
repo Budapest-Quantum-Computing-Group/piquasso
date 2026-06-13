@@ -19,8 +19,8 @@ Given a Fock input state :math:`\ket{\mathbf{r}}` with :math:`n = \sum_b r_b`
 photons interfering on a unitary :math:`U`, this module samples the joint
 photon-number distribution restricted to a subset
 :math:`T = (\ell_1, \dots, \ell_k)` of output modes, in time polynomial in
-:math:`n` for fixed :math:`k`, i.e., without enumerating the exponentially
-many outcomes on the unmeasured modes.
+:math:`n` for fixed :math:`k`, i.e., without enumerating the exponentially many
+outcomes on the unmeasured modes.
 
 The algorithm is based on the (multivariate) probability generating function
 
@@ -52,41 +52,27 @@ whose *diagonal* coefficients :math:`P_{\alpha, \alpha}` (of
     = \sum_{\alpha \geq \mathbf{y}} \alpha! \, P_{\alpha, \alpha}
       \prod_{j=1}^k \binom{\alpha_j}{y_j} (-1)^{\alpha_j - y_j}.
 
-The diagonal coefficients are obtained by evaluating :math:`P` on the tensor
-grid of :math:`(n+1)`-th roots of unity (scaled to a numerically stable radius,
-see below) and recovering them with a single :math:`2k`-dimensional FFT. Only
-the diagonal slice is kept, and only entries with total degree
-:math:`|\alpha| \leq n` are nonzero, so just :math:`\binom{n + k}{k}` scaled
-coefficients :math:`\alpha! P_{\alpha, \alpha}` carry information, far fewer than
-the full :math:`(n+1)^k` table.
+Only the coefficients with total degree :math:`|\alpha| \leq n` are nonzero, and
+there are just :math:`\binom{n + k}{k}` of them. :math:`P` is built up as the
+product of its per-input-mode factors directly in this compact basis of
+compositions: each factor :math:`L_{r_b}(-h_b g_b)` is expanded once, and the
+running product is convolved with it while every partial product is truncated to
+total degree :math:`n` in the :math:`\mathbf{z}` powers and in the
+:math:`\mathbf{w}` powers. The convolution is carried out as sparse
+matrix multiplications on the composition index, so the full
+:math:`(n+1)^{2k}` coefficient array is never materialized; the working set
+stays at :math:`O\!\left(\binom{n+k}{k}^2\right)`.
 
 Sampling is then done mode by mode via the chain rule
 
 .. math::
     \Pr(y_1, \dots, y_k)
-    = \Pr(y_1) \, \Pr(y_2 \mid y_1) \cdots \Pr(y_k \mid y_1, \dots, y_{k-1}).
+    = \Pr(y_1) \, \Pr(y_2 \mid y_1) \cdots \Pr(y_k \mid y_1, \dots, y_{k-1}),
 
-The marginal of the first :math:`\ell` measured modes is exactly the
-coefficient table restricted to its first :math:`\ell` axes with the trailing
-indices set to zero, because setting :math:`z_j = w_j = 0` for :math:`j > \ell`
-in :math:`P` recovers the moment polynomial of the first :math:`\ell` modes.
-Conditioning on an outcome :math:`y_j` is a single contraction of the
-corresponding axis with row :math:`y_j` of the signed binomial matrix
-:math:`W_{y, \alpha} = \binom{\alpha}{y} (-1)^{\alpha - y}`. Drawing one mode at
-a time this way keeps everything in terms of the stored coefficients, supports
-postselection on measured modes by fixing the corresponding outcome, and never
-materializes the full joint distribution.
-
-The contour radius matters. On the unit torus the coefficient extraction is
-catastrophically ill-conditioned for :math:`n \gtrsim 14`: the polynomial
-reaches magnitude of order :math:`(1 + k)^n` on the grid while the diagonal
-coefficients are tiny, and the subsequent multiplication by :math:`\alpha!`
-amplifies the FFT roundoff into errors that can exceed the probabilities
-themselves. Evaluating instead on a torus of radius :math:`\rho = \sqrt{n / k}`
-and dividing the extracted coefficient :math:`P_{\alpha, \alpha}` by
-:math:`\rho^{2 |\alpha|}` balances the growth against the rescaling (this places
-the contour near the saddle point) and restores machine precision to large
-:math:`n`.
+where each conditional is read off the joint distribution recovered from the
+diagonal coefficients by the signed binomial transform above. Shots that share a
+prefix are advanced together, so the work scales with the number of distinct
+outcomes rather than with the number of shots.
 
 References:
     - S. Aaronson and A. Arkhipov, *The Computational Complexity of Linear
@@ -98,14 +84,15 @@ References:
       marginals).
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
-from scipy.special import comb, eval_laguerre, factorial
+from scipy import sparse
+from scipy.special import comb, factorial
 
 
-def _generate_marginal_samples(
+def generate_marginal_samples(
     interferometer: np.ndarray,
     initial_state: np.ndarray,
     modes: Tuple[int, ...],
@@ -113,101 +100,227 @@ def _generate_marginal_samples(
     rng: np.random.Generator,
     postselect_modes: Tuple[int, ...] = (),
     postselect_photons: Tuple[int, ...] = (),
-) -> Optional[List[Tuple[int, ...]]]:
+) -> List[Tuple[int, ...]]:
     """Samples the measured modes from the exact joint marginal distribution.
 
-    The measured modes are sampled one at a time via the chain rule, reusing a
-    compact table of the scaled diagonal moment coefficients. Shots that share a
-    prefix are conditioned together, so the work scales with the number of
-    distinct outcomes rather than with the number of shots. Postselection on a
-    subset of the measured modes is supported by fixing those outcomes.
-
-    Returns ``None`` when the conditionals fail the numerical sanity check, in
-    which case the caller should fall back to full sampling.
+    The measured modes are sampled one at a time via the chain rule. When some
+    measured modes are postselected, their outcomes are fixed to the requested
+    photon numbers and the remaining modes are sampled conditioned on them.
     """
     initial_state = np.asarray(initial_state, dtype=int)
     modes_array = np.asarray(modes, dtype=int)
 
-    k = len(modes_array)
     n = int(np.sum(initial_state))
+    k = len(modes_array)
 
-    coefficients = _calculate_scaled_diagonal_coefficients(
-        interferometer, initial_state, modes_array, n
+    compositions, composition_index = _compositions(k, n)
+
+    diagonal_coefficients = _diagonal_coefficients(
+        interferometer, initial_state, modes_array, compositions, composition_index, n
     )
+
+    joint = _joint_distribution(diagonal_coefficients, compositions, k, n)
 
     postselected_axes = _resolve_postselected_axes(
         modes, postselect_modes, postselect_photons
     )
 
-    binomial_matrix = _signed_binomial_matrix(n + 1)
+    return _sample_chain_rule(joint, compositions, k, n, shots, rng, postselected_axes)
 
-    return _sample_chain_rule(
-        coefficients, binomial_matrix, k, shots, rng, postselected_axes
+
+def _compositions(k: int, n: int) -> Tuple[np.ndarray, Dict[Tuple[int, ...], int]]:
+    r"""All length-``k`` nonnegative integer vectors with sum :math:`\leq n`."""
+    compositions: List[Tuple[int, ...]] = []
+
+    def _recurse(prefix: List[int], remaining: int) -> None:
+        if len(prefix) == k:
+            compositions.append(tuple(prefix))
+            return
+        for value in range(remaining + 1):
+            _recurse(prefix + [value], remaining - value)
+
+    _recurse([], n)
+
+    composition_array = np.array(compositions, dtype=int).reshape(-1, k)
+    index = {composition: i for i, composition in enumerate(compositions)}
+
+    return composition_array, index
+
+
+def _diagonal_coefficients(
+    interferometer: np.ndarray,
+    initial_state: np.ndarray,
+    modes: np.ndarray,
+    compositions: np.ndarray,
+    composition_index: Dict[Tuple[int, ...], int],
+    n: int,
+) -> np.ndarray:
+    r"""The scaled diagonal coefficients :math:`\alpha! \, P_{\alpha, \alpha}`.
+
+    Returns a vector indexed by ``compositions``. The moment polynomial is built
+    as the truncated product of its per-input-mode Laguerre factors, entirely in
+    the compact basis of compositions.
+    """
+    k = len(modes)
+
+    number_of_compositions = len(compositions)
+
+    if n == 0:
+        return np.ones(1, dtype=np.float64)
+
+    occupied = np.where(initial_state > 0)[0]
+    occupations = initial_state[occupied]
+
+    submatrix = np.asarray(interferometer, dtype=np.complex128)[np.ix_(modes, occupied)]
+
+    degrees = compositions.sum(axis=1)
+
+    product = sparse.lil_matrix(
+        (number_of_compositions, number_of_compositions), dtype=np.complex128
+    )
+    product[composition_index[(0,) * k], composition_index[(0,) * k]] = 1.0
+    product = product.tocsr()
+
+    for column in range(len(occupied)):
+        product = _multiply_factor(
+            product,
+            submatrix[:, column],
+            occupations[column],
+            compositions,
+            composition_index,
+            degrees,
+            k,
+            n,
+        )
+
+    diagonal = product.diagonal().real
+
+    factorials = np.array(
+        [np.prod(factorial(composition)) for composition in compositions]
+    )
+
+    return diagonal * factorials
+
+
+def _multiply_factor(
+    product: sparse.csr_matrix,
+    column: np.ndarray,
+    occupation: int,
+    compositions: np.ndarray,
+    composition_index: Dict[Tuple[int, ...], int],
+    degrees: np.ndarray,
+    k: int,
+    n: int,
+) -> sparse.csr_matrix:
+    r"""Multiplies the running product by one Laguerre factor, truncated.
+
+    The factor :math:`L_r(-h(\mathbf{z}) g(\mathbf{w}))` is a sum over its degree
+    :math:`m` of a rank-one term in the :math:`\mathbf{z}` and :math:`\mathbf{w}`
+    coefficients, so its action on the running product is a sum of
+    ``Sz @ product @ Sw.T`` with sparse shift operators built once per degree.
+    """
+    number_of_compositions = len(compositions)
+
+    result = sparse.csr_matrix(
+        (number_of_compositions, number_of_compositions), dtype=np.complex128
+    )
+
+    laguerre_coefficients = [
+        comb(occupation, m) * (-1.0) ** m / factorial(m) for m in range(occupation + 1)
+    ]
+
+    for m, laguerre_coefficient in enumerate(laguerre_coefficients):
+        if laguerre_coefficient == 0:
+            continue
+
+        degree_m_indices = np.where(degrees == m)[0]
+
+        z_weights = np.zeros(number_of_compositions, dtype=np.complex128)
+        w_weights = np.zeros(number_of_compositions, dtype=np.complex128)
+
+        for i in degree_m_indices:
+            composition = compositions[i]
+            multinomial = factorial(m)
+            for value in composition:
+                multinomial /= factorial(value)
+            z_weights[i] = multinomial * np.prod(column**composition)
+            w_weights[i] = multinomial * np.prod(np.conj(column) ** composition)
+
+        shift_z = _shift_operator(z_weights, compositions, composition_index, n)
+        shift_w = _shift_operator(w_weights, compositions, composition_index, n)
+
+        result = result + laguerre_coefficient * (-1.0) ** m * (
+            shift_z @ product @ shift_w.T
+        )
+
+    return result
+
+
+def _shift_operator(
+    weights: np.ndarray,
+    compositions: np.ndarray,
+    composition_index: Dict[Tuple[int, ...], int],
+    n: int,
+) -> sparse.csr_matrix:
+    r"""The sparse operator that convolves one axis with ``weights``.
+
+    Entry ``S[new, i]`` is :math:`\sum_p w_p` over those ``p`` with
+    ``compositions[i] + compositions[p] == new`` and total degree at most ``n``.
+    """
+    number_of_compositions = len(compositions)
+
+    nonzero = np.nonzero(weights)[0]
+
+    rows: List[int] = []
+    columns: List[int] = []
+    data: List[complex] = []
+
+    for i in range(number_of_compositions):
+        base = compositions[i]
+        for p in nonzero:
+            shifted = base + compositions[p]
+            if shifted.sum() <= n:
+                rows.append(composition_index[tuple(shifted)])
+                columns.append(i)
+                data.append(weights[p])
+
+    return sparse.csr_matrix(
+        (data, (rows, columns)),
+        shape=(number_of_compositions, number_of_compositions),
+        dtype=np.complex128,
     )
 
 
-def _sample_chain_rule(
-    coefficients: np.ndarray,
-    binomial_matrix: np.ndarray,
+def _joint_distribution(
+    diagonal_coefficients: np.ndarray,
+    compositions: np.ndarray,
     k: int,
-    shots: int,
-    rng: np.random.Generator,
-    postselected_axes: Dict[int, int],
-) -> Optional[List[Tuple[int, ...]]]:
-    """Draws ``shots`` samples by walking the measured modes one at a time.
+    n: int,
+) -> np.ndarray:
+    r"""Recovers the joint probabilities over ``compositions``.
 
-    Shots are grouped by their already-sampled prefix so the per-axis
-    conditioning is performed once per distinct prefix.
+    Applies the signed binomial transform
+    :math:`\Pr(\mathbf{y}) = \sum_{\alpha \geq \mathbf{y}} c_\alpha
+    \prod_j \binom{\alpha_j}{y_j} (-1)^{\alpha_j - y_j}` to the scaled diagonal
+    coefficients :math:`c_\alpha`.
     """
-    # Each group is (number_of_shots_in_group, conditioned_coefficients, prefix).
-    groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = [(shots, coefficients, ())]
+    number_of_compositions = len(compositions)
 
-    for axis in range(k):
-        next_groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = []
+    probabilities = np.zeros(number_of_compositions, dtype=np.float64)
 
-        for count, conditioned, prefix in groups:
-            # Marginalize the not-yet-sampled modes (trailing-zero property).
-            trailing = conditioned.ndim - 1
-            reduced = conditioned[(slice(None),) + (0,) * trailing]
+    for i in range(number_of_compositions):
+        y = compositions[i]
+        dominating = np.all(compositions >= y, axis=1)
+        alphas = compositions[dominating]
 
-            probabilities = np.clip((binomial_matrix @ reduced).real, 0.0, None)
-            total = probabilities.sum()
+        signs = np.prod(
+            comb(alphas, y) * (-1.0) ** (alphas - y),
+            axis=1,
+        )
 
-            if total <= 0.0:
-                return None
+        probabilities[i] = np.sum(diagonal_coefficients[dominating] * signs)
 
-            probabilities = probabilities / total
-
-            if axis in postselected_axes:
-                photons = postselected_axes[axis]
-                if photons >= len(probabilities) or probabilities[photons] <= 0.0:
-                    # This branch cannot satisfy the postselection; drop its
-                    # shots (rejection) rather than aborting the whole sample.
-                    continue
-                outcome_counts = np.zeros(len(probabilities), dtype=int)
-                outcome_counts[photons] = count
-            else:
-                outcome_counts = rng.multinomial(count, probabilities)
-
-            for value, value_count in enumerate(outcome_counts):
-                if value_count == 0:
-                    continue
-                next_conditioned = np.tensordot(
-                    binomial_matrix[value], conditioned, axes=([0], [0])
-                )
-                next_groups.append(
-                    (int(value_count), next_conditioned, prefix + (value,))
-                )
-
-        groups = next_groups
-
-    samples: List[Tuple[int, ...]] = []
-    for count, _, prefix in groups:
-        samples.extend([prefix] * count)
-
-    rng.shuffle(samples)
-
-    return samples
+    return probabilities
 
 
 def _resolve_postselected_axes(
@@ -224,97 +337,65 @@ def _resolve_postselected_axes(
     }
 
 
-def _calculate_scaled_diagonal_coefficients(
-    interferometer: np.ndarray,
-    initial_state: np.ndarray,
-    modes: np.ndarray,
+def _sample_chain_rule(
+    joint: np.ndarray,
+    compositions: np.ndarray,
+    k: int,
     n: int,
-) -> np.ndarray:
-    r"""The scaled diagonal moment coefficients :math:`\alpha! P_{\alpha,\alpha}`.
+    shots: int,
+    rng: np.random.Generator,
+    postselected_axes: Dict[int, int],
+) -> List[Tuple[int, ...]]:
+    """Draws ``shots`` samples mode by mode from the joint distribution.
 
-    Returns an array of shape :math:`(n + 1)^{\times k}`; only the entries with
-    total degree :math:`|\alpha| \leq n` are nonzero. These are exactly the
-    quantities the chain-rule sampler consumes.
+    Shots that share an already-sampled prefix are advanced together.
     """
-    k = len(modes)
+    probabilities = np.clip(joint, 0.0, None)
 
-    if n == 0:
-        return np.ones(shape=(1,) * k, dtype=np.float64)
+    # Each group is (number_of_shots, mask_of_consistent_compositions, prefix).
+    groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = [
+        (shots, np.ones(len(compositions), dtype=bool), ())
+    ]
 
-    occupied = np.where(initial_state > 0)[0]
-    occupations = initial_state[occupied]
-
-    submatrix = np.asarray(interferometer, dtype=np.complex128)[np.ix_(modes, occupied)]
-
-    N = n + 1
-
-    # Balanced contour radius; see the module docstring.
-    rho = np.sqrt(n / k)
-
-    diagonal = _extract_diagonal_coefficients(submatrix, occupations, k, N, rho)
-
-    total_degrees = np.sum(np.indices((N,) * k), axis=0)
-
-    diagonal = np.where(
-        total_degrees <= n,
-        diagonal.real / rho ** (2.0 * total_degrees),
-        0.0,
-    )
-
-    coefficients = diagonal
     for axis in range(k):
-        shape = [1] * k
-        shape[axis] = N
-        coefficients = coefficients * factorial(np.arange(N)).reshape(shape)
+        next_groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = []
 
-    return coefficients
+        for count, mask, prefix in groups:
+            axis_probabilities = np.zeros(n + 1, dtype=np.float64)
+            np.add.at(axis_probabilities, compositions[mask, axis], probabilities[mask])
 
+            total = axis_probabilities.sum()
+            if total <= 0.0:
+                continue
 
-def _extract_diagonal_coefficients(
-    submatrix: np.ndarray, occupations: np.ndarray, k: int, N: int, rho: float
-) -> np.ndarray:
-    r"""Diagonal coefficients :math:`P_{\alpha,\alpha}` of the moment polynomial.
+            axis_probabilities = axis_probabilities / total
 
-    The polynomial is evaluated on the tensor grid of :math:`N`-th roots of unity
-    scaled by ``rho``, its coefficients are recovered with a single
-    :math:`2k`-dimensional FFT, and the diagonal :math:`\alpha = \beta` slice is
-    returned (still scaled by :math:`\rho^{2 |\alpha|}`, which the caller undoes).
-    """
-    roots_of_unity = rho * np.exp(2j * np.pi * np.arange(N) / N)
+            outcome_counts: np.ndarray
+            if axis in postselected_axes:
+                photons = postselected_axes[axis]
+                outcome_counts = np.zeros(n + 1, dtype=int)
+                outcome_counts[photons] = count
+            else:
+                outcome_counts = rng.multinomial(count, axis_probabilities)
 
-    grid = np.stack(
-        [m.ravel() for m in np.meshgrid(*([roots_of_unity] * k), indexing="ij")],
-        axis=-1,
-    )
+            for value, value_count in enumerate(outcome_counts):
+                if value_count == 0:
+                    continue
+                next_mask = mask & (compositions[:, axis] == value)
+                next_groups.append((int(value_count), next_mask, prefix + (value,)))
 
-    h = grid @ submatrix
-    g = grid @ np.conj(submatrix)
+        groups = next_groups
 
-    values = np.ones(shape=(len(grid), len(grid)), dtype=np.complex128)
-    for b in range(len(occupations)):
-        argument = -np.multiply.outer(h[:, b], g[:, b])
-        values *= eval_laguerre(occupations[b], argument)
+    samples: List[Tuple[int, ...]] = []
+    for count, _, prefix in groups:
+        samples.extend([prefix] * count)
 
-    values = values.reshape((N,) * (2 * k))
+    rng.shuffle(samples)
 
-    coefficients = np.fft.fftn(values) / N ** (2 * k)
-
-    diagonal_indices = tuple(np.indices((N,) * k))
-
-    return coefficients[diagonal_indices + diagonal_indices]
+    return samples
 
 
-def _signed_binomial_matrix(N: int) -> np.ndarray:
-    r"""The matrix :math:`W_{y, \alpha} = \binom{\alpha}{y} (-1)^{\alpha - y}`."""
-    indices = np.arange(N)
-    return comb(indices[None, :], indices[:, None]) * np.where(
-        indices[None, :] >= indices[:, None],
-        (-1.0) ** (indices[None, :] - indices[:, None]),
-        0.0,
-    )
-
-
-def _marginal_strategy_is_preferred(
+def marginal_strategy_is_preferred(
     number_of_particles: int,
     number_of_measured_modes: int,
     number_of_occupied_modes: int,
@@ -324,31 +405,22 @@ def _marginal_strategy_is_preferred(
     """Decides whether sampling from the exact marginal distribution is cheaper
     than generating full samples and discarding the unmeasured modes.
 
-    The decision compares estimated worst-case floating point operation counts
-    of the two strategies and errs on the side of the existing full sampler. The
-    transient FFT buffer is also capped to bound memory use.
+    The decision compares estimated worst-case floating point operation counts of
+    the two strategies and errs on the side of the existing full sampler.
     """
     n = number_of_particles
     k = number_of_measured_modes
     s = max(number_of_occupied_modes, 1)
 
-    grid_points = float(n + 1) ** (2 * k)
+    number_of_coefficients = comb(n + k, k, exact=True)
 
-    if grid_points > _MAX_FFT_POINTS:
-        return False
-
-    # Coefficient table: one 2k-dimensional FFT over (n+1)^{2k} points plus the
-    # per-input-mode Laguerre evaluations. Sampling: O(k (n+1)^2) per distinct
-    # outcome, bounded by the number of shots.
-    marginal_flops = grid_points * (np.log2(grid_points) + s) + shots * k * (n + 1) ** 2
+    # Building the coefficient table convolves s factors, each a sparse product
+    # over the coefficient basis; recovering the joint and sampling are lower
+    # order. The squared term reflects the (alpha, beta) working set.
+    marginal_flops = s * number_of_coefficients**2 + shots * k * (n + 1)
 
     # Each full Clifford & Clifford sample evaluates permanents whose dominant
     # cost scales like n * d * 2^n.
     sampler_flops = shots * n * number_of_modes * 2.0 ** min(n, 48)
 
     return marginal_flops < sampler_flops
-
-
-# Beyond this transient FFT buffer size (~100 MB at 16 bytes per complex point)
-# the marginal strategy is never chosen, regardless of the FLOP estimate.
-_MAX_FFT_POINTS = 6_000_000

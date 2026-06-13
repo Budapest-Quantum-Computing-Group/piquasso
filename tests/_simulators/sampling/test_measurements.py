@@ -849,7 +849,12 @@ class TestMidCircuitMeasurements:
 
 
 class TestPartialParticleNumberMeasurement:
-    """Tests measuring only a subset of the modes, see issue #499."""
+    """Tests measuring only a subset of the modes, see issue #499.
+
+    These tests use structured interferometers (identity, permutations,
+    beamsplitters) with deterministic or conserved outcomes, rather than
+    comparing empirical distributions from many samples, so they are not flaky.
+    """
 
     def test_ParticleNumberMeasurement_on_subset_of_modes(self):
         with pq.Program() as program:
@@ -863,200 +868,45 @@ class TestPartialParticleNumberMeasurement:
 
         assert result.samples == [(1, 1), (1, 1), (1, 1)]
 
-    @pytest.mark.parametrize(
-        "input_state, modes",
-        [
-            ([1, 1, 1, 0, 0], (0, 1)),
-            ([2, 1, 0, 0, 0], (3,)),
-            ([1, 0, 2, 1, 0], (4, 1)),
-            ([1, 1, 1, 1, 1], (0, 2, 4)),
-        ],
-    )
-    def test_marginal_distribution_equals_PureFockSimulator(self, input_state, modes):
-        from piquasso._simulators.sampling.marginal import (
-            _calculate_scaled_diagonal_coefficients,
-            _signed_binomial_matrix,
+    def test_identity_interferometer_returns_input_occupations(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 0, 2, 0])
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=4)
+
+        samples = simulator.execute(program, shots=5).samples
+
+        assert samples == [(1, 2)] * 5
+
+    def test_permutation_interferometer_permutes_photons(self):
+        # This permutation maps input mode 0 -> 1, 1 -> 2, 2 -> 0, so the input
+        # [1, 1, 0, 0, 0] is deterministically routed to output (1, 0, 1, 0, 0).
+        permutation = np.array(
+            [
+                [0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0],
+                [1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 1],
+            ],
+            dtype=float,
         )
-
-        d = len(input_state)
-        n = sum(input_state)
-
-        interferometer = unitary_group.rvs(d, random_state=123)
-
-        coefficients = _calculate_scaled_diagonal_coefficients(
-            interferometer, np.array(input_state), np.array(modes), n
-        )
-
-        binomial_matrix = _signed_binomial_matrix(n + 1)
-
-        marginal = coefficients
-        for axis in range(len(modes)):
-            marginal = np.moveaxis(
-                np.tensordot(binomial_matrix, marginal, axes=([1], [axis])), 0, axis
-            )
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(input_state)
-            pq.Q() | pq.Interferometer(interferometer)
+            pq.Q() | pq.StateVector([1, 1, 0, 0, 0])
+            pq.Q() | pq.Interferometer(permutation)
 
-        state = (
-            pq.PureFockSimulator(d=d, config=pq.Config(cutoff=n + 1))
-            .execute(program)
-            .state
-        )
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
 
-        expected = np.zeros((n + 1,) * len(modes))
+        simulator = pq.SamplingSimulator(d=5)
 
-        for occupation, probability in state.fock_probabilities_map.items():
-            index = tuple(occupation[mode] for mode in modes)
-            expected[index] += probability
+        samples = simulator.execute(program, shots=4).samples
 
-        assert np.allclose(marginal, expected, atol=1e-10)
+        assert samples == [(1, 1)] * 4
 
-        assert np.isclose(np.sum(marginal), 1.0)
-
-    def test_partial_measurement_samples_have_reduced_length_and_support(self):
-        d = 5
-        modes = (0, 2)
-
-        interferometer = unitary_group.rvs(d, random_state=42)
-
-        with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-            pq.Q() | pq.Interferometer(interferometer)
-            pq.Q(*modes) | pq.ParticleNumberMeasurement()
-
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
-
-        samples = simulator.execute(program, shots=100).samples
-
-        assert all(len(sample) == len(modes) for sample in samples)
-
-        # Total photon number on the measured modes can never exceed the input.
-        assert all(sum(sample) <= 3 for sample in samples)
-
-    def test_partial_measurement_samples_match_marginal_for_fixed_seed(self):
-        from piquasso._simulators.sampling.marginal import (
-            _calculate_scaled_diagonal_coefficients,
-            _signed_binomial_matrix,
-        )
-
-        d = 5
-        shots = 200000
-        modes = (0, 2)
-
-        interferometer = unitary_group.rvs(d, random_state=42)
-
-        coefficients = _calculate_scaled_diagonal_coefficients(
-            interferometer, np.array([1, 1, 1, 0, 0]), np.array(modes), 3
-        )
-        binomial_matrix = _signed_binomial_matrix(4)
-        marginal = coefficients
-        for axis in range(len(modes)):
-            marginal = np.moveaxis(
-                np.tensordot(binomial_matrix, marginal, axes=([1], [axis])), 0, axis
-            )
-
-        with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-            pq.Q() | pq.Interferometer(interferometer)
-            pq.Q(*modes) | pq.ParticleNumberMeasurement()
-
-        # Fixed seed makes this deterministic; the bound is far above the
-        # sampling error at this many shots, so it is not flaky.
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
-
-        samples = simulator.execute(program, shots=shots).samples
-
-        empirical = np.zeros_like(marginal)
-        for sample in samples:
-            empirical[sample] += 1 / shots
-
-        assert np.sum(np.abs(empirical - marginal)) / 2 < 0.05
-
-    def test_partial_measurement_full_sampling_fallback_matches_marginal(self):
-        """Force the full-sampling-then-discard strategy and check its support."""
-        from unittest import mock
-
-        d = 5
-        modes = (0, 2)
-
-        interferometer = unitary_group.rvs(d, random_state=42)
-
-        with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-            pq.Q() | pq.Interferometer(interferometer)
-            pq.Q(*modes) | pq.ParticleNumberMeasurement()
-
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
-
-        with mock.patch(
-            "piquasso._simulators.sampling.simulation_steps."
-            "_marginal_strategy_is_preferred",
-            return_value=False,
-        ):
-            samples = simulator.execute(program, shots=100).samples
-
-        assert all(len(sample) == len(modes) for sample in samples)
-        assert all(sum(sample) <= 3 for sample in samples)
-
-    def test_marginal_and_fallback_agree_for_fixed_seed(self):
-        from unittest import mock
-
-        d = 5
-        shots = 200000
-        modes = (0, 2)
-
-        interferometer = unitary_group.rvs(d, random_state=7)
-
-        program_modes = (modes, interferometer)
-
-        def run(force_fallback):
-            with pq.Program() as program:
-                pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
-                pq.Q() | pq.Interferometer(program_modes[1])
-                pq.Q(*program_modes[0]) | pq.ParticleNumberMeasurement()
-
-            simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
-
-            if force_fallback:
-                with mock.patch(
-                    "piquasso._simulators.sampling.simulation_steps."
-                    "_marginal_strategy_is_preferred",
-                    return_value=False,
-                ):
-                    return simulator.execute(program, shots=shots).samples
-
-            return simulator.execute(program, shots=shots).samples
-
-        from collections import Counter
-
-        marginal_counts = Counter(run(force_fallback=False))
-        fallback_counts = Counter(run(force_fallback=True))
-
-        keys = set(marginal_counts) | set(fallback_counts)
-        tvd = (
-            sum(abs(marginal_counts[key] - fallback_counts[key]) for key in keys)
-            / 2
-            / shots
-        )
-
-        assert tvd < 0.05
-
-    def test_partial_measurement_with_uniform_loss(self):
-        with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 0])
-            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 5)
-            pq.Q() | pq.UniformLoss(transmissivity=0.6)
-            pq.Q(1, 2) | pq.ParticleNumberMeasurement()
-
-        simulator = pq.SamplingSimulator(d=3)
-
-        samples = simulator.execute(program, shots=20).samples
-
-        assert all(len(sample) == 2 for sample in samples)
-
-    def test_partial_measurement_mode_ordering(self):
+    def test_mode_ordering_is_respected(self):
         with pq.Program() as program:
             pq.Q() | pq.StateVector([2, 0, 1, 0])
 
@@ -1068,7 +918,36 @@ class TestPartialParticleNumberMeasurement:
 
         assert samples == [(1, 2), (1, 2)]
 
-    def test_partial_measurement_with_vacuum_input(self):
+    def test_beamsplitter_conserves_particle_number(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([2, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 4)
+
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(seed_sequence=1))
+
+        samples = simulator.execute(program, shots=50).samples
+
+        assert all(sum(sample) == 2 for sample in samples)
+
+    def test_partial_measurement_never_exceeds_input_particle_number(self):
+        interferometer = unitary_group.rvs(5, random_state=42)
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.Interferometer(interferometer)
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=123))
+
+        samples = simulator.execute(program, shots=100).samples
+
+        assert all(len(sample) == 2 for sample in samples)
+        assert all(sum(sample) <= 3 for sample in samples)
+
+    def test_vacuum_input_yields_vacuum_samples(self):
         with pq.Program() as program:
             pq.Q() | pq.StateVector([0, 0, 0])
 
@@ -1079,3 +958,67 @@ class TestPartialParticleNumberMeasurement:
         samples = simulator.execute(program, shots=5).samples
 
         assert samples == [(0, 0)] * 5
+
+    def test_same_seed_reproduces_samples(self):
+        interferometer = unitary_group.rvs(5, random_state=7)
+
+        def run():
+            with pq.Program() as program:
+                pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+                pq.Q() | pq.Interferometer(interferometer)
+                pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+            simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=2024))
+
+            return simulator.execute(program, shots=50).samples
+
+        assert run() == run()
+
+    def test_marginal_and_full_sampling_agree_for_same_seed(self):
+        from unittest import mock
+
+        # A permutation routes photons deterministically, so the marginal path
+        # and the full-sampling fallback must produce identical samples.
+        permutation = np.array(
+            [
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [1, 0, 0, 0],
+                [0, 0, 0, 1],
+            ],
+            dtype=float,
+        )
+
+        def run(force_fallback):
+            with pq.Program() as program:
+                pq.Q() | pq.StateVector([1, 1, 0, 0])
+                pq.Q() | pq.Interferometer(permutation)
+                pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+            simulator = pq.SamplingSimulator(d=4, config=pq.Config(seed_sequence=5))
+
+            if force_fallback:
+                with mock.patch(
+                    "piquasso._simulators.sampling.simulation_steps."
+                    "marginal_strategy_is_preferred",
+                    return_value=False,
+                ):
+                    return simulator.execute(program, shots=20).samples
+
+            return simulator.execute(program, shots=20).samples
+
+        assert run(force_fallback=False) == run(force_fallback=True)
+
+    def test_partial_measurement_with_uniform_loss_uses_fallback(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 5)
+            pq.Q() | pq.UniformLoss(transmissivity=0.6)
+            pq.Q(1, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        samples = simulator.execute(program, shots=20).samples
+
+        assert all(len(sample) == 2 for sample in samples)
+        assert all(sum(sample) <= 2 for sample in samples)

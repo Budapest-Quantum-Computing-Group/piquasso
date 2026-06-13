@@ -37,8 +37,8 @@ from .utils import (
     generate_lossy_samples,
 )
 from .marginal import (
-    _generate_marginal_samples,
-    _marginal_strategy_is_preferred,
+    generate_marginal_samples,
+    marginal_strategy_is_preferred,
 )
 from piquasso._utils import get_counts
 
@@ -267,7 +267,7 @@ def _try_generating_samples_from_marginal_distribution(
     number_of_particles = int(np.sum(initial_state))
     number_of_occupied_modes = int(np.count_nonzero(initial_state))
 
-    if not _marginal_strategy_is_preferred(
+    if not marginal_strategy_is_preferred(
         number_of_particles=number_of_particles,
         number_of_measured_modes=len(modes),
         number_of_occupied_modes=number_of_occupied_modes,
@@ -276,7 +276,7 @@ def _try_generating_samples_from_marginal_distribution(
     ):
         return None
 
-    return _generate_marginal_samples(
+    return generate_marginal_samples(
         interferometer=np.asarray(state.interferometer),
         initial_state=initial_state,
         modes=modes,
