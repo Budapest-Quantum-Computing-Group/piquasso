@@ -290,3 +290,25 @@ def kerr(state: SamplingState, instruction: gates.Kerr, shots: int) -> List[Bran
         )
 
     return [Branch(state=state)]
+
+
+def cross_kerr(
+    state: SamplingState, instruction: gates.CrossKerr, shots: int
+) -> List[Branch]:
+    state._materialize_state_vector()
+
+    np = state._connector.np
+
+    xi = instruction.params["xi"]
+
+    mode1, mode2 = instruction.modes
+
+    for i in range(len(state._occupation_numbers)):
+        state._coefficients[i] *= np.exp(
+            1j
+            * xi
+            * state._occupation_numbers[i][mode1]
+            * state._occupation_numbers[i][mode2]
+        )
+
+    return [Branch(state=state)]

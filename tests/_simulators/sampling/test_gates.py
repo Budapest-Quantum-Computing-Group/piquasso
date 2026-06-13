@@ -1061,3 +1061,19 @@ def test_Kerr_gate_with_PostSelectPhotons():
 
     assert np.isclose(state_vector_map[(0,)], 0.0)
     assert np.isclose(state_vector_map[(1,)], np.exp(1j * angle) / np.sqrt(2))
+
+
+def test_CrossKerr_gate_with_StateVector():
+    angle = np.pi / 4
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.StateVector([1, 1])
+
+        pq.Q(0, 1) | pq.CrossKerr(angle)
+
+    simulator = pq.SamplingSimulator(d=2)
+    state = simulator.execute(program).state
+
+    state_vector_map = state.state_vector_map
+
+    assert np.isclose(state_vector_map[(1, 1)], np.exp(1j * angle * 1 * 1))
