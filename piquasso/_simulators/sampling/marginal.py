@@ -258,17 +258,12 @@ def marginal_strategy_is_preferred(
         return False
 
     marginal_seconds = (
-        _MARGINAL_SECONDS_PER_POINT
-        * grid_points
-        * max(number_of_occupied_modes, 1)
+        _MARGINAL_SECONDS_PER_POINT * grid_points * max(number_of_occupied_modes, 1)
     )
 
     sampler_seconds = shots * (
         _SAMPLER_SECONDS_PER_SHOT_OVERHEAD
-        + _SAMPLER_SECONDS_PER_FLOP
-        * n
-        * number_of_modes
-        * 2.0 ** min(n, 40)
+        + _SAMPLER_SECONDS_PER_FLOP * n * number_of_modes * 2.0 ** min(n, 40)
     )
 
     return marginal_seconds < sampler_seconds
@@ -304,9 +299,7 @@ def generate_marginal_samples(
     flat_probabilities = np.clip(flat_probabilities, 0.0, None)
     flat_probabilities /= np.sum(flat_probabilities)
 
-    choices = rng.choice(
-        len(flat_probabilities), size=shots, p=flat_probabilities
-    )
+    choices = rng.choice(len(flat_probabilities), size=shots, p=flat_probabilities)
 
     outcomes = np.stack(np.unravel_index(choices, probabilities.shape), axis=-1)
 

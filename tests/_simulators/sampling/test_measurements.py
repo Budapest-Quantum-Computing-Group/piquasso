@@ -890,9 +890,11 @@ class TestPartialParticleNumberMeasurement:
             pq.Q() | pq.StateVector(input_state)
             pq.Q() | pq.Interferometer(interferometer)
 
-        state = pq.PureFockSimulator(
-            d=d, config=pq.Config(cutoff=n + 1)
-        ).execute(program).state
+        state = (
+            pq.PureFockSimulator(d=d, config=pq.Config(cutoff=n + 1))
+            .execute(program)
+            .state
+        )
 
         expected = np.zeros((n + 1,) * len(modes))
 
@@ -916,9 +918,7 @@ class TestPartialParticleNumberMeasurement:
             pq.Q() | pq.Interferometer(interferometer)
             pq.Q(*modes) | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(
-            d=d, config=pq.Config(seed_sequence=123)
-        )
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
 
         samples = simulator.execute(program, shots=shots).samples
 
@@ -953,9 +953,7 @@ class TestPartialParticleNumberMeasurement:
             pq.Q() | pq.Interferometer(interferometer)
             pq.Q(*modes) | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(
-            d=d, config=pq.Config(seed_sequence=123)
-        )
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=123))
 
         with mock.patch(
             "piquasso._simulators.sampling.simulation_steps."

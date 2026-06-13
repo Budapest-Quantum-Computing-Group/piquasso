@@ -235,9 +235,7 @@ def particle_number_measurement(
         samples = _generate_full_samples(state, initial_state, shots)
 
         if is_partial_measurement:
-            samples = [
-                tuple(int(sample[mode]) for mode in modes) for sample in samples
-            ]
+            samples = [tuple(int(sample[mode]) for mode in modes) for sample in samples]
 
     binned_samples = get_counts(samples)
 
