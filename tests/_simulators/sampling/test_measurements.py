@@ -575,6 +575,17 @@ def test_PostSelectPhotons_state_vector_with_more_photons():
         assert np.isclose(state_vector_map[index], coeff)
 
 
+def test_PostSelectPhotons_infers_cutoff_for_state_vector():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1])
+        pq.Q(4, 5) | pq.PostSelectPhotons(photon_counts=[1, 1])
+
+    state = pq.SamplingSimulator(d=6).execute(program, shots=100).state
+
+    assert state._config.cutoff == 3
+    assert len(state.state_vector) > 0
+
+
 @pytest.mark.monkey
 def test_PostSelectPhotons_state_vector_with_more_photons_random():
     photon_counts = [2, 2]
