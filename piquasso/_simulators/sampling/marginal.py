@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""Exact joint marginal photon-number distribution for Boson Sampling.
+r"""Exact joint marginal photon-number sampling for Boson Sampling.
 
 Given a Fock input state :math:`\ket{\mathbf{r}}` with :math:`n = \sum_b r_b`
-photons interfering on a unitary :math:`U`, this module computes the *exact*
-joint photon-number distribution restricted to a subset
+photons interfering on a unitary :math:`U`, this module samples the joint
+photon-number distribution restricted to a subset
 :math:`T = (\ell_1, \dots, \ell_k)` of output modes, in time polynomial in
 :math:`n` for fixed :math:`k`, i.e., without enumerating the exponentially
 many outcomes on the unmeasured modes.
@@ -52,26 +52,41 @@ whose *diagonal* coefficients :math:`P_{\alpha, \alpha}` (of
     = \sum_{\alpha \geq \mathbf{y}} \alpha! \, P_{\alpha, \alpha}
       \prod_{j=1}^k \binom{\alpha_j}{y_j} (-1)^{\alpha_j - y_j}.
 
-Instead of expanding :math:`P` symbolically (which is prohibitively slow), the
-implementation evaluates :math:`P` *numerically* on the tensor grid of
-:math:`(n+1)`-th roots of unity, recovers all coefficients with a single
-:math:`2k`-dimensional FFT, reads off the diagonal slice, and contracts with
-signed binomial matrices. This yields the *entire* joint distribution on the
-measured modes at once using
+The diagonal coefficients are obtained by evaluating :math:`P` on the tensor
+grid of :math:`(n+1)`-th roots of unity (scaled to a numerically stable radius,
+see below) and recovering them with a single :math:`2k`-dimensional FFT. Only
+the diagonal slice is kept, and only entries with total degree
+:math:`|\alpha| \leq n` are nonzero, so just :math:`\binom{n + k}{k}` scaled
+coefficients :math:`\alpha! P_{\alpha, \alpha}` carry information, far fewer than
+the full :math:`(n+1)^k` table.
+
+Sampling is then done mode by mode via the chain rule
 
 .. math::
-    O\big( (n+1)^{2k} (s + k) \big)
+    \Pr(y_1, \dots, y_k)
+    = \Pr(y_1) \, \Pr(y_2 \mid y_1) \cdots \Pr(y_k \mid y_1, \dots, y_{k-1}).
 
-floating point operations (:math:`s` being the number of occupied input
-modes), fully vectorized, after which any number of shots can be drawn at
-negligible cost. The unmeasured modes never enter the computation.
+The marginal of the first :math:`\ell` measured modes is exactly the
+coefficient table restricted to its first :math:`\ell` axes with the trailing
+indices set to zero, because setting :math:`z_j = w_j = 0` for :math:`j > \ell`
+in :math:`P` recovers the moment polynomial of the first :math:`\ell` modes.
+Conditioning on an outcome :math:`y_j` is a single contraction of the
+corresponding axis with row :math:`y_j` of the signed binomial matrix
+:math:`W_{y, \alpha} = \binom{\alpha}{y} (-1)^{\alpha - y}`. Drawing one mode at
+a time this way keeps everything in terms of the stored coefficients, supports
+postselection on measured modes by fixing the corresponding outcome, and never
+materializes the full joint distribution.
 
-For comparison, the textbook alternative of sampling *all* modes and
-discarding the unmeasured ones costs
-:math:`O(\text{shots} \cdot n 2^n)`-ish with Clifford-Clifford-type samplers,
-which is preferable for large :math:`k` or very few shots; the simulator
-chooses between the two strategies based on a calibrated cost model (see
-:func:`marginal_strategy_is_preferred`).
+The contour radius matters. On the unit torus the coefficient extraction is
+catastrophically ill-conditioned for :math:`n \gtrsim 14`: the polynomial
+reaches magnitude of order :math:`(1 + k)^n` on the grid while the diagonal
+coefficients are tiny, and the subsequent multiplication by :math:`\alpha!`
+amplifies the FFT roundoff into errors that can exceed the probabilities
+themselves. Evaluating instead on a torus of radius :math:`\rho = \sqrt{n / k}`
+and dividing the extracted coefficient :math:`P_{\alpha, \alpha}` by
+:math:`\rho^{2 |\alpha|}` balances the growth against the rescaling (this places
+the contour near the saddle point) and restores machine precision to large
+:math:`n`.
 
 References:
     - S. Aaronson and A. Arkhipov, *The Computational Complexity of Linear
@@ -83,38 +98,32 @@ References:
       marginals).
 """
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from scipy.special import comb, factorial
-
-# Hard cap on the number of grid points (n+1)^{2k} so that the FFT buffer
-# (16 bytes/point) stays below ~100 MB and runtime below ~1s.
-_MAX_GRID_POINTS = 6_000_000
-
-# Calibrated cost-model constants (seconds); see `marginal_strategy_is_preferred`.
-_MARGINAL_SECONDS_PER_POINT = 3e-8
-_SAMPLER_SECONDS_PER_SHOT_OVERHEAD = 2e-4
-_SAMPLER_SECONDS_PER_FLOP = 6e-9
+from scipy.special import comb, eval_laguerre, factorial
 
 
-def calculate_marginal_particle_number_distribution(
+def _generate_marginal_samples(
     interferometer: np.ndarray,
     initial_state: np.ndarray,
     modes: Tuple[int, ...],
-) -> np.ndarray:
-    r"""The exact joint photon-number distribution on a subset of output modes.
+    shots: int,
+    rng: np.random.Generator,
+    postselect_modes: Tuple[int, ...] = (),
+    postselect_photons: Tuple[int, ...] = (),
+) -> Optional[List[Tuple[int, ...]]]:
+    """Samples the measured modes from the exact joint marginal distribution.
 
-    Args:
-        interferometer: The (unitary) interferometer matrix.
-        initial_state: The input Fock basis state (occupation numbers).
-        modes: The measured output modes.
+    The measured modes are sampled one at a time via the chain rule, reusing a
+    compact table of the scaled diagonal moment coefficients. Shots that share a
+    prefix are conditioned together, so the work scales with the number of
+    distinct outcomes rather than with the number of shots. Postselection on a
+    subset of the measured modes is supported by fixing those outcomes.
 
-    Returns:
-        Array of shape :math:`(n+1)^{\times k}`, where the entry at index
-        :math:`\mathbf{y} = (y_1, \dots, y_k)` is the probability of detecting
-        :math:`y_j` photons in mode ``modes[j]``.
+    Returns ``None`` when the conditionals fail the numerical sanity check, in
+    which case the caller should fall back to full sampling.
     """
     initial_state = np.asarray(initial_state, dtype=int)
     modes_array = np.asarray(modes, dtype=int)
@@ -122,90 +131,169 @@ def calculate_marginal_particle_number_distribution(
     k = len(modes_array)
     n = int(np.sum(initial_state))
 
+    coefficients = _calculate_scaled_diagonal_coefficients(
+        interferometer, initial_state, modes_array, n
+    )
+
+    postselected_axes = _resolve_postselected_axes(
+        modes, postselect_modes, postselect_photons
+    )
+
+    binomial_matrix = _signed_binomial_matrix(n + 1)
+
+    return _sample_chain_rule(
+        coefficients, binomial_matrix, k, shots, rng, postselected_axes
+    )
+
+
+def _sample_chain_rule(
+    coefficients: np.ndarray,
+    binomial_matrix: np.ndarray,
+    k: int,
+    shots: int,
+    rng: np.random.Generator,
+    postselected_axes: Dict[int, int],
+) -> Optional[List[Tuple[int, ...]]]:
+    """Draws ``shots`` samples by walking the measured modes one at a time.
+
+    Shots are grouped by their already-sampled prefix so the per-axis
+    conditioning is performed once per distinct prefix.
+    """
+    # Each group is (number_of_shots_in_group, conditioned_coefficients, prefix).
+    groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = [(shots, coefficients, ())]
+
+    for axis in range(k):
+        next_groups: List[Tuple[int, np.ndarray, Tuple[int, ...]]] = []
+
+        for count, conditioned, prefix in groups:
+            # Marginalize the not-yet-sampled modes (trailing-zero property).
+            trailing = conditioned.ndim - 1
+            reduced = conditioned[(slice(None),) + (0,) * trailing]
+
+            probabilities = np.clip((binomial_matrix @ reduced).real, 0.0, None)
+            total = probabilities.sum()
+
+            if total <= 0.0:
+                return None
+
+            probabilities = probabilities / total
+
+            if axis in postselected_axes:
+                photons = postselected_axes[axis]
+                if photons >= len(probabilities) or probabilities[photons] <= 0.0:
+                    # This branch cannot satisfy the postselection; drop its
+                    # shots (rejection) rather than aborting the whole sample.
+                    continue
+                outcome_counts = np.zeros(len(probabilities), dtype=int)
+                outcome_counts[photons] = count
+            else:
+                outcome_counts = rng.multinomial(count, probabilities)
+
+            for value, value_count in enumerate(outcome_counts):
+                if value_count == 0:
+                    continue
+                next_conditioned = np.tensordot(
+                    binomial_matrix[value], conditioned, axes=([0], [0])
+                )
+                next_groups.append(
+                    (int(value_count), next_conditioned, prefix + (value,))
+                )
+
+        groups = next_groups
+
+    samples: List[Tuple[int, ...]] = []
+    for count, _, prefix in groups:
+        samples.extend([prefix] * count)
+
+    rng.shuffle(samples)
+
+    return samples
+
+
+def _resolve_postselected_axes(
+    modes: Tuple[int, ...],
+    postselect_modes: Tuple[int, ...],
+    postselect_photons: Tuple[int, ...],
+) -> Dict[int, int]:
+    """Maps measured-mode positions to their required photon numbers."""
+    mode_to_axis = {mode: axis for axis, mode in enumerate(modes)}
+    return {
+        mode_to_axis[mode]: photons
+        for mode, photons in zip(postselect_modes, postselect_photons)
+        if mode in mode_to_axis
+    }
+
+
+def _calculate_scaled_diagonal_coefficients(
+    interferometer: np.ndarray,
+    initial_state: np.ndarray,
+    modes: np.ndarray,
+    n: int,
+) -> np.ndarray:
+    r"""The scaled diagonal moment coefficients :math:`\alpha! P_{\alpha,\alpha}`.
+
+    Returns an array of shape :math:`(n + 1)^{\times k}`; only the entries with
+    total degree :math:`|\alpha| \leq n` are nonzero. These are exactly the
+    quantities the chain-rule sampler consumes.
+    """
+    k = len(modes)
+
     if n == 0:
-        probabilities = np.zeros(shape=(1,) * k, dtype=np.float64)
-        probabilities[(0,) * k] = 1.0
-        return probabilities
+        return np.ones(shape=(1,) * k, dtype=np.float64)
 
     occupied = np.where(initial_state > 0)[0]
     occupations = initial_state[occupied]
 
-    submatrix = np.asarray(interferometer, dtype=np.complex128)[
-        np.ix_(modes_array, occupied)
-    ]
+    submatrix = np.asarray(interferometer, dtype=np.complex128)[np.ix_(modes, occupied)]
 
     N = n + 1
 
-    # The coefficients are extracted on a torus of radius `rho` balancing the
-    # magnitude of the polynomial against the rescaling of the coefficients,
-    # which keeps the FFT-based extraction numerically stable for large `n`.
-    rho = np.sqrt(max(n, 1) / k)
+    # Balanced contour radius; see the module docstring.
+    rho = np.sqrt(n / k)
 
-    diagonal_coefficients = _calculate_diagonal_coefficients(
-        submatrix, occupations, k, N, rho
-    )
+    diagonal = _extract_diagonal_coefficients(submatrix, occupations, k, N, rho)
 
-    # Discard |alpha| > n entries (exactly zero in theory, noise numerically),
-    # and undo the radius rescaling of the coefficients.
-    alphas = np.indices((N,) * k)
-    total_degrees = np.sum(alphas, axis=0)
-    diagonal_coefficients = np.where(
+    total_degrees = np.sum(np.indices((N,) * k), axis=0)
+
+    diagonal = np.where(
         total_degrees <= n,
-        diagonal_coefficients.real / rho ** (2.0 * total_degrees),
+        diagonal.real / rho ** (2.0 * total_degrees),
         0.0,
     )
 
-    # c_alpha = alpha! * P_{alpha, alpha}
-    coefficients = diagonal_coefficients
+    coefficients = diagonal
     for axis in range(k):
         shape = [1] * k
         shape[axis] = N
         coefficients = coefficients * factorial(np.arange(N)).reshape(shape)
 
-    # Pr(y) = sum_{alpha >= y} c_alpha prod_j C(alpha_j, y_j) (-1)^(alpha_j-y_j)
-    indices = np.arange(N)
-    binomial_matrix = comb(indices[None, :], indices[:, None]) * np.where(
-        indices[None, :] >= indices[:, None],
-        (-1.0) ** (indices[None, :] - indices[:, None]),
-        0.0,
-    )
-
-    probabilities = coefficients
-    for axis in range(k):
-        probabilities = np.moveaxis(
-            np.tensordot(binomial_matrix, probabilities, axes=([1], [axis])), 0, axis
-        )
-
-    return probabilities
+    return coefficients
 
 
-def _calculate_diagonal_coefficients(
+def _extract_diagonal_coefficients(
     submatrix: np.ndarray, occupations: np.ndarray, k: int, N: int, rho: float
 ) -> np.ndarray:
     r"""Diagonal coefficients :math:`P_{\alpha,\alpha}` of the moment polynomial.
 
-    The polynomial :math:`P(\mathbf{z}, \mathbf{w})` is evaluated on the full
-    tensor grid of :math:`N`-th roots of unity scaled by ``rho``
-    (:math:`N = n + 1`), its coefficients are recovered with a single
-    :math:`2k`-dimensional FFT, and the diagonal :math:`\alpha = \beta` slice
-    is returned. Note, that the returned coefficients are scaled by
-    :math:`\rho^{2 |\alpha|}`, which the caller needs to undo.
+    The polynomial is evaluated on the tensor grid of :math:`N`-th roots of unity
+    scaled by ``rho``, its coefficients are recovered with a single
+    :math:`2k`-dimensional FFT, and the diagonal :math:`\alpha = \beta` slice is
+    returned (still scaled by :math:`\rho^{2 |\alpha|}`, which the caller undoes).
     """
     roots_of_unity = rho * np.exp(2j * np.pi * np.arange(N) / N)
 
-    # All grid points z in {roots}^k, flattened: shape (N^k, k).
     grid = np.stack(
         [m.ravel() for m in np.meshgrid(*([roots_of_unity] * k), indexing="ij")],
         axis=-1,
     )
 
-    h = grid @ submatrix  # h_b(z) for every grid point z; shape (N^k, s)
-    g = grid @ np.conj(submatrix)  # g_b(w) for every grid point w
+    h = grid @ submatrix
+    g = grid @ np.conj(submatrix)
 
     values = np.ones(shape=(len(grid), len(grid)), dtype=np.complex128)
     for b in range(len(occupations)):
         argument = -np.multiply.outer(h[:, b], g[:, b])
-        values *= _eval_laguerre(occupations[b], argument)
+        values *= eval_laguerre(occupations[b], argument)
 
     values = values.reshape((N,) * (2 * k))
 
@@ -216,91 +304,51 @@ def _calculate_diagonal_coefficients(
     return coefficients[diagonal_indices + diagonal_indices]
 
 
-def _eval_laguerre(degree: int, x: np.ndarray) -> np.ndarray:
-    """Laguerre polynomial of the given degree, elementwise on a complex array."""
-    previous = np.ones_like(x)
-
-    if degree == 0:
-        return previous
-
-    current = 1.0 - x
-
-    for m in range(1, degree):
-        previous, current = (
-            current,
-            ((2 * m + 1 - x) * current - m * previous) / (m + 1),
-        )
-
-    return current
+def _signed_binomial_matrix(N: int) -> np.ndarray:
+    r"""The matrix :math:`W_{y, \alpha} = \binom{\alpha}{y} (-1)^{\alpha - y}`."""
+    indices = np.arange(N)
+    return comb(indices[None, :], indices[:, None]) * np.where(
+        indices[None, :] >= indices[:, None],
+        (-1.0) ** (indices[None, :] - indices[:, None]),
+        0.0,
+    )
 
 
-def marginal_strategy_is_preferred(
+def _marginal_strategy_is_preferred(
     number_of_particles: int,
     number_of_measured_modes: int,
     number_of_occupied_modes: int,
     number_of_modes: int,
     shots: int,
 ) -> bool:
-    """Decides whether computing the exact marginal distribution is preferable
-    to generating full samples and discarding the unmeasured modes.
+    """Decides whether sampling from the exact marginal distribution is cheaper
+    than generating full samples and discarding the unmeasured modes.
 
-    The estimates below were calibrated against the built-in Clifford-Clifford
-    type sampler. The decision errs on the side of the full sampler: the
-    marginal strategy is chosen only when it is predicted to be clearly
-    cheaper, and its memory footprint is hard-capped.
+    The decision compares estimated worst-case floating point operation counts
+    of the two strategies and errs on the side of the existing full sampler. The
+    transient FFT buffer is also capped to bound memory use.
     """
     n = number_of_particles
     k = number_of_measured_modes
+    s = max(number_of_occupied_modes, 1)
 
     grid_points = float(n + 1) ** (2 * k)
 
-    if grid_points > _MAX_GRID_POINTS:
+    if grid_points > _MAX_FFT_POINTS:
         return False
 
-    marginal_seconds = (
-        _MARGINAL_SECONDS_PER_POINT * grid_points * max(number_of_occupied_modes, 1)
-    )
+    # Coefficient table: one 2k-dimensional FFT over (n+1)^{2k} points plus the
+    # per-input-mode Laguerre evaluations. Sampling: O(k (n+1)^2) per distinct
+    # outcome, bounded by the number of shots.
+    marginal_flops = grid_points * (np.log2(grid_points) + s) + shots * k * (n + 1) ** 2
 
-    sampler_seconds = shots * (
-        _SAMPLER_SECONDS_PER_SHOT_OVERHEAD
-        + _SAMPLER_SECONDS_PER_FLOP * n * number_of_modes * 2.0 ** min(n, 40)
-    )
+    # Each full Clifford & Clifford sample evaluates permanents whose dominant
+    # cost scales like n * d * 2^n.
+    sampler_flops = shots * n * number_of_modes * 2.0 ** min(n, 48)
 
-    return marginal_seconds < sampler_seconds
+    return marginal_flops < sampler_flops
 
 
-def generate_marginal_samples(
-    interferometer: np.ndarray,
-    initial_state: np.ndarray,
-    modes: Tuple[int, ...],
-    shots: int,
-    rng: np.random.Generator,
-) -> Optional[List[Tuple[int, ...]]]:
-    """Generates samples on the specified output modes from the exact joint
-    marginal distribution.
-
-    Returns ``None`` when the computed distribution fails the built-in
-    numerical sanity check, in which case the caller should fall back to full
-    sampling.
-    """
-    probabilities = calculate_marginal_particle_number_distribution(
-        interferometer, initial_state, modes
-    )
-
-    flat_probabilities = probabilities.ravel()
-
-    # Numerical sanity check; on failure the caller falls back to the sampler.
-    if (
-        np.min(flat_probabilities) < -1e-7
-        or abs(np.sum(flat_probabilities) - 1.0) > 1e-7
-    ):
-        return None
-
-    flat_probabilities = np.clip(flat_probabilities, 0.0, None)
-    flat_probabilities /= np.sum(flat_probabilities)
-
-    choices = rng.choice(len(flat_probabilities), size=shots, p=flat_probabilities)
-
-    outcomes = np.stack(np.unravel_index(choices, probabilities.shape), axis=-1)
-
-    return [tuple(map(int, outcome)) for outcome in outcomes]
+# Beyond this transient FFT buffer size (~100 MB at 16 bytes per complex point)
+# the marginal strategy is never chosen, regardless of the FLOP estimate.
+_MAX_FFT_POINTS = 6_000_000
