@@ -846,3 +846,179 @@ class TestMidCircuitMeasurements:
         assert state_1 == state_2
 
         assert np.allclose(state_1.state_vector, state_2.state_vector)
+
+
+class TestPartialParticleNumberMeasurement:
+    """Tests measuring only a subset of the modes, see issue #499.
+
+    These tests use structured interferometers (identity, permutations,
+    beamsplitters) with deterministic or conserved outcomes, rather than
+    comparing empirical distributions from many samples, so they are not flaky.
+    """
+
+    def test_ParticleNumberMeasurement_on_subset_of_modes(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5)
+
+        result = simulator.execute(program, shots=3)
+
+        assert result.samples == [(1, 1), (1, 1), (1, 1)]
+
+    def test_identity_interferometer_returns_input_occupations(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 0, 2, 0])
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=4)
+
+        samples = simulator.execute(program, shots=5).samples
+
+        assert samples == [(1, 2)] * 5
+
+    def test_permutation_interferometer_permutes_photons(self):
+        # This permutation maps input mode 0 -> 1, 1 -> 2, 2 -> 0, so the input
+        # [1, 1, 0, 0, 0] is deterministically routed to output (1, 0, 1, 0, 0).
+        permutation = np.array(
+            [
+                [0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0],
+                [1, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 1],
+            ],
+            dtype=float,
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 0, 0, 0])
+            pq.Q() | pq.Interferometer(permutation)
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5)
+
+        samples = simulator.execute(program, shots=4).samples
+
+        assert samples == [(1, 1)] * 4
+
+    def test_mode_ordering_is_respected(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([2, 0, 1, 0])
+
+            pq.Q(2, 0) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=4)
+
+        samples = simulator.execute(program, shots=2).samples
+
+        assert samples == [(1, 2), (1, 2)]
+
+    def test_beamsplitter_conserves_particle_number(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([2, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 4)
+
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(seed_sequence=1))
+
+        samples = simulator.execute(program, shots=50).samples
+
+        assert all(sum(sample) == 2 for sample in samples)
+
+    def test_partial_measurement_never_exceeds_input_particle_number(self):
+        interferometer = unitary_group.rvs(5, random_state=42)
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.Interferometer(interferometer)
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=123))
+
+        samples = simulator.execute(program, shots=100).samples
+
+        assert all(len(sample) == 2 for sample in samples)
+        assert all(sum(sample) <= 3 for sample in samples)
+
+    def test_vacuum_input_yields_vacuum_samples(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 0, 0])
+
+            pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        samples = simulator.execute(program, shots=5).samples
+
+        assert samples == [(0, 0)] * 5
+
+    def test_same_seed_reproduces_samples(self):
+        interferometer = unitary_group.rvs(5, random_state=7)
+
+        def run():
+            with pq.Program() as program:
+                pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+                pq.Q() | pq.Interferometer(interferometer)
+                pq.Q(0, 2) | pq.ParticleNumberMeasurement()
+
+            simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=2024))
+
+            return simulator.execute(program, shots=50).samples
+
+        assert run() == run()
+
+    def test_marginal_and_full_sampling_agree_for_same_seed(self):
+        from unittest import mock
+
+        # A permutation routes photons deterministically, so the marginal path
+        # and the full-sampling fallback must produce identical samples.
+        permutation = np.array(
+            [
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [1, 0, 0, 0],
+                [0, 0, 0, 1],
+            ],
+            dtype=float,
+        )
+
+        def run(force_fallback):
+            with pq.Program() as program:
+                pq.Q() | pq.StateVector([1, 1, 0, 0])
+                pq.Q() | pq.Interferometer(permutation)
+                pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+            simulator = pq.SamplingSimulator(d=4, config=pq.Config(seed_sequence=5))
+
+            if force_fallback:
+                with mock.patch(
+                    "piquasso._simulators.sampling.simulation_steps."
+                    "marginal_strategy_is_preferred",
+                    return_value=False,
+                ):
+                    return simulator.execute(program, shots=20).samples
+
+            return simulator.execute(program, shots=20).samples
+
+        assert run(force_fallback=False) == run(force_fallback=True)
+
+    def test_partial_measurement_with_uniform_loss_uses_fallback(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 5)
+            pq.Q() | pq.UniformLoss(transmissivity=0.6)
+            pq.Q(1, 2) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        samples = simulator.execute(program, shots=20).samples
+
+        assert all(len(sample) == 2 for sample in samples)
+        assert all(sum(sample) <= 2 for sample in samples)

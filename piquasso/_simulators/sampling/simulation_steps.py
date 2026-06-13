@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import numpy as np
 
@@ -35,6 +35,10 @@ from piquasso._simulators.fock.pure.simulation_steps import (
 from .utils import (
     generate_samples,
     generate_lossy_samples,
+)
+from .marginal import (
+    generate_marginal_samples,
+    marginal_strategy_is_preferred,
 )
 from piquasso._utils import get_counts
 
@@ -194,6 +198,12 @@ def particle_number_measurement(
     Generalized Cliffords simulation strategy form [Brod, Oszmaniec 2020] was used
     as it allows effective simulation of broader range of input states than original
     algorithm.
+
+    When only a subset of the modes is measured, the samples are restricted to the
+    measured modes. In this case, either the exact joint marginal distribution on
+    the measured modes is computed directly (see
+    :mod:`piquasso._simulators.sampling.marginal`), or full samples are generated
+    and the unmeasured modes are discarded, whichever is estimated to be cheaper.
     """
 
     if (
@@ -210,6 +220,74 @@ def particle_number_measurement(
 
     initial_state = state._occupation_numbers[0]
 
+    modes = instruction.modes
+
+    is_partial_measurement = len(modes) != state.d
+
+    samples = None
+
+    if is_partial_measurement and _marginal_strategy_is_applicable(state, shots):
+        samples = _try_generating_samples_from_marginal_distribution(
+            state, modes, initial_state, shots
+        )
+
+    if samples is None:
+        samples = _generate_full_samples(state, initial_state, shots)
+
+        if is_partial_measurement:
+            samples = [tuple(int(sample[mode]) for mode in modes) for sample in samples]
+
+    binned_samples = get_counts(samples)
+
+    branches = [
+        Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
+        for outcome, multiplicity in binned_samples.items()
+    ]
+
+    return branches
+
+
+def _marginal_strategy_is_applicable(state: SamplingState, shots: int) -> bool:
+    return (
+        not state.is_lossy
+        and not state._is_postselected()
+        and len(state._occupation_numbers) == 1
+        and shots is not None
+    )
+
+
+def _try_generating_samples_from_marginal_distribution(
+    state: SamplingState,
+    modes: Tuple[int, ...],
+    initial_state: np.ndarray,
+    shots: int,
+) -> Optional[List[Tuple[int, ...]]]:
+    initial_state = np.asarray(initial_state)
+
+    number_of_particles = int(np.sum(initial_state))
+    number_of_occupied_modes = int(np.count_nonzero(initial_state))
+
+    if not marginal_strategy_is_preferred(
+        number_of_particles=number_of_particles,
+        number_of_measured_modes=len(modes),
+        number_of_occupied_modes=number_of_occupied_modes,
+        number_of_modes=state.d,
+        shots=shots,
+    ):
+        return None
+
+    return generate_marginal_samples(
+        interferometer=np.asarray(state.interferometer),
+        initial_state=initial_state,
+        modes=modes,
+        shots=shots,
+        rng=state._config.rng,
+    )
+
+
+def _generate_full_samples(
+    state: SamplingState, initial_state: np.ndarray, shots: int
+) -> List[Tuple[int, ...]]:
     interferometer_svd = np.linalg.svd(state.interferometer)
 
     rng = state._config.rng
@@ -242,22 +320,13 @@ def particle_number_measurement(
             interferometer_svd=interferometer_svd,
         )
 
-    samples = partial_generate_samples(
+    return partial_generate_samples(
         initial_state,
         shots,
         calculate_permanent_laplace=state._connector.permanent_laplace,
         rng=rng,
         postselect_data=postselect_data,
     )
-
-    binned_samples = get_counts(samples)
-
-    branches = [
-        Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
-        for outcome, multiplicity in binned_samples.items()
-    ]
-
-    return branches
 
 
 def post_select_photons(
