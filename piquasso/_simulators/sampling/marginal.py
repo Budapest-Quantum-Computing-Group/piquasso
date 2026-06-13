@@ -98,14 +98,10 @@ def generate_marginal_samples(
     modes: Tuple[int, ...],
     shots: int,
     rng: np.random.Generator,
-    postselect_modes: Tuple[int, ...] = (),
-    postselect_photons: Tuple[int, ...] = (),
 ) -> List[Tuple[int, ...]]:
     """Samples the measured modes from the exact joint marginal distribution.
 
-    The measured modes are sampled one at a time via the chain rule. When some
-    measured modes are postselected, their outcomes are fixed to the requested
-    photon numbers and the remaining modes are sampled conditioned on them.
+    The measured modes are sampled one at a time via the chain rule.
     """
     initial_state = np.asarray(initial_state, dtype=int)
     modes_array = np.asarray(modes, dtype=int)
@@ -121,11 +117,7 @@ def generate_marginal_samples(
 
     joint = _joint_distribution(diagonal_coefficients, compositions, k, n)
 
-    postselected_axes = _resolve_postselected_axes(
-        modes, postselect_modes, postselect_photons
-    )
-
-    return _sample_chain_rule(joint, compositions, k, n, shots, rng, postselected_axes)
+    return _sample_chain_rule(joint, compositions, k, n, shots, rng)
 
 
 def _compositions(k: int, n: int) -> Tuple[np.ndarray, Dict[Tuple[int, ...], int]]:
@@ -164,9 +156,6 @@ def _diagonal_coefficients(
     k = len(modes)
 
     number_of_compositions = len(compositions)
-
-    if n == 0:
-        return np.ones(1, dtype=np.float64)
 
     occupied = np.where(initial_state > 0)[0]
     occupations = initial_state[occupied]
@@ -230,9 +219,6 @@ def _multiply_factor(
     ]
 
     for m, laguerre_coefficient in enumerate(laguerre_coefficients):
-        if laguerre_coefficient == 0:
-            continue
-
         degree_m_indices = np.where(degrees == m)[0]
 
         z_weights = np.zeros(number_of_compositions, dtype=np.complex128)
@@ -323,20 +309,6 @@ def _joint_distribution(
     return probabilities
 
 
-def _resolve_postselected_axes(
-    modes: Tuple[int, ...],
-    postselect_modes: Tuple[int, ...],
-    postselect_photons: Tuple[int, ...],
-) -> Dict[int, int]:
-    """Maps measured-mode positions to their required photon numbers."""
-    mode_to_axis = {mode: axis for axis, mode in enumerate(modes)}
-    return {
-        mode_to_axis[mode]: photons
-        for mode, photons in zip(postselect_modes, postselect_photons)
-        if mode in mode_to_axis
-    }
-
-
 def _sample_chain_rule(
     joint: np.ndarray,
     compositions: np.ndarray,
@@ -344,7 +316,6 @@ def _sample_chain_rule(
     n: int,
     shots: int,
     rng: np.random.Generator,
-    postselected_axes: Dict[int, int],
 ) -> List[Tuple[int, ...]]:
     """Draws ``shots`` samples mode by mode from the joint distribution.
 
@@ -364,19 +335,9 @@ def _sample_chain_rule(
             axis_probabilities = np.zeros(n + 1, dtype=np.float64)
             np.add.at(axis_probabilities, compositions[mask, axis], probabilities[mask])
 
-            total = axis_probabilities.sum()
-            if total <= 0.0:
-                continue
+            axis_probabilities = axis_probabilities / axis_probabilities.sum()
 
-            axis_probabilities = axis_probabilities / total
-
-            outcome_counts: np.ndarray
-            if axis in postselected_axes:
-                photons = postselected_axes[axis]
-                outcome_counts = np.zeros(n + 1, dtype=int)
-                outcome_counts[photons] = count
-            else:
-                outcome_counts = rng.multinomial(count, axis_probabilities)
+            outcome_counts = rng.multinomial(count, axis_probabilities)
 
             for value, value_count in enumerate(outcome_counts):
                 if value_count == 0:
