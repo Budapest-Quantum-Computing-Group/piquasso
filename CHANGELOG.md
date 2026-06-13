@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Changed
+
+- `GaussianState.density_matrix` is now computed with the modified multidimensional
+  Hermite recurrence (Section III. of [arXiv:2209.06069](https://arxiv.org/abs/2209.06069))
+  instead of an independent (loop) hafnian per matrix element, sharing the work
+  across the whole truncated Fock space. This yields a ~100-400x speedup on the
+  NumPy connector for typical mode counts and cutoffs, with no change in results.
+
+
 ## [7.2.1] - 2026-03-21
 
 ### Fixed

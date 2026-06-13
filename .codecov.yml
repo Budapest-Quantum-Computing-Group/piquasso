@@ -5,6 +5,7 @@ ignore:
   - piquasso/_simulators/fock/pure/calculations/homodyne.py
   - piquasso/_math/combinatorics.py
   - piquasso/_math/fock.py
+  - piquasso/_math/hermite.py
   - piquasso/_math/indices.py
   - piquasso/_math/transformations.py
   - piquasso/_simulators/fock/calculations.py

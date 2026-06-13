@@ -275,6 +275,20 @@ class BaseConnector(abc.ABC):
         """
 
     @abc.abstractmethod
+    def density_matrix_from_representation(self, A, b, c, basis):
+        """Builds a Gaussian density matrix from its :math:`(A, b, c)` triple.
+
+        Args:
+            A: The :math:`2d \\times 2d` complex symmetric matrix of the state.
+            b: The :math:`2d` complex vector (zeros for a non-displaced state).
+            c: The vacuum amplitude :math:`\\langle 0 | \\rho | 0 \\rangle`.
+            basis: The occupation-number basis of the truncated Fock space.
+
+        Returns:
+            The density matrix in the truncated Fock space.
+        """
+
+    @abc.abstractmethod
     def pfaffian(self, matrix):
         """Calculates the pfaffian of a matrix."""
 
