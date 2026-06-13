@@ -27,10 +27,12 @@ class Config(_mixins.CodeMixin):
     """The configuration for the simulation.
 
     :ivar cutoff:
-        The Fock space cutoff. Defaults to `4`. When omitted, the
-        :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`
-        may increase its execution-local copy to fit the prepared state. An
-        explicitly supplied cutoff is kept as a strict limit.
+        The Fock space cutoff/truncation. Defaults to `None`, which means the cutoff
+        is inferred from the program whenever possible, for example for simulations
+        with a fixed particle number. If no cutoff can be inferred, a default value
+        of `4` is used. An explicitly specified cutoff is always respected, and is
+        useful when automatic inference is not possible, such as when computing the
+        density matrix of a Gaussian state.
     :ivar dtype:
         The underlying datatype of the simulation. Possible values: `np.float32` and
         `np.float64`. Defaults to `np.float64`.
