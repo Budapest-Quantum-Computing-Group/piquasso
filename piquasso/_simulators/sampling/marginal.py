@@ -91,6 +91,8 @@ import numpy as np
 from scipy import sparse
 from scipy.special import comb, factorial
 
+from piquasso._math.combinatorics import partitions
+
 
 def generate_marginal_samples(
     interferometer: np.ndarray,
@@ -121,20 +123,15 @@ def generate_marginal_samples(
 
 
 def _compositions(k: int, n: int) -> Tuple[np.ndarray, Dict[Tuple[int, ...], int]]:
-    r"""All length-``k`` nonnegative integer vectors with sum :math:`\leq n`."""
-    compositions: List[Tuple[int, ...]] = []
+    r"""All length-``k`` nonnegative integer vectors with sum :math:`\leq n`.
 
-    def _recurse(prefix: List[int], remaining: int) -> None:
-        if len(prefix) == k:
-            compositions.append(tuple(prefix))
-            return
-        for value in range(remaining + 1):
-            _recurse(prefix + [value], remaining - value)
+    These are the partitions of ``n`` photons into ``k + 1`` boxes with the
+    surplus box dropped, so :func:`piquasso._math.combinatorics.partitions` does
+    the enumeration.
+    """
+    composition_array = partitions(k + 1, n)[:, :k].astype(int)
 
-    _recurse([], n)
-
-    composition_array = np.array(compositions, dtype=int).reshape(-1, k)
-    index = {composition: i for i, composition in enumerate(compositions)}
+    index = {tuple(composition): i for i, composition in enumerate(composition_array)}
 
     return composition_array, index
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 
 import numpy as np
 
@@ -224,14 +224,17 @@ def particle_number_measurement(
 
     is_partial_measurement = len(modes) != state.d
 
-    samples = None
-
-    if is_partial_measurement and _marginal_strategy_is_applicable(state, shots):
-        samples = _try_generating_samples_from_marginal_distribution(
-            state, modes, initial_state, shots
+    if is_partial_measurement and _marginal_strategy_is_applicable(
+        state, initial_state, modes, shots
+    ):
+        samples = generate_marginal_samples(
+            interferometer=np.asarray(state.interferometer),
+            initial_state=np.asarray(initial_state),
+            modes=modes,
+            shots=shots,
+            rng=state._config.rng,
         )
-
-    if samples is None:
+    else:
         samples = _generate_full_samples(state, initial_state, shots)
 
         if is_partial_measurement:
@@ -247,41 +250,28 @@ def particle_number_measurement(
     return branches
 
 
-def _marginal_strategy_is_applicable(state: SamplingState, shots: int) -> bool:
-    return (
-        not state.is_lossy
-        and not state._is_postselected()
-        and len(state._occupation_numbers) == 1
-        and shots is not None
-    )
-
-
-def _try_generating_samples_from_marginal_distribution(
+def _marginal_strategy_is_applicable(
     state: SamplingState,
-    modes: Tuple[int, ...],
     initial_state: np.ndarray,
+    modes: Tuple[int, ...],
     shots: int,
-) -> Optional[List[Tuple[int, ...]]]:
+) -> bool:
+    if (
+        state.is_lossy
+        or state._is_postselected()
+        or len(state._occupation_numbers) != 1
+        or shots is None
+    ):
+        return False
+
     initial_state = np.asarray(initial_state)
 
-    number_of_particles = int(np.sum(initial_state))
-    number_of_occupied_modes = int(np.count_nonzero(initial_state))
-
-    if not marginal_strategy_is_preferred(
-        number_of_particles=number_of_particles,
+    return marginal_strategy_is_preferred(
+        number_of_particles=int(np.sum(initial_state)),
         number_of_measured_modes=len(modes),
-        number_of_occupied_modes=number_of_occupied_modes,
+        number_of_occupied_modes=int(np.count_nonzero(initial_state)),
         number_of_modes=state.d,
         shots=shots,
-    ):
-        return None
-
-    return generate_marginal_samples(
-        interferometer=np.asarray(state.interferometer),
-        initial_state=initial_state,
-        modes=modes,
-        shots=shots,
-        rng=state._config.rng,
     )
 
 
