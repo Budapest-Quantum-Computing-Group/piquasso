@@ -84,12 +84,11 @@ class SamplingSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.channels.LossyInterferometer`.
 
     Note:
-        The ``cutoff`` in :class:`~piquasso.api.config.Config` limits the truncated
-        Fock space used by properties such as
-        :attr:`~piquasso._simulators.sampling.state.SamplingState.state_vector`.
-        If the total photon number in a prepared state is greater than or equal to
-        ``cutoff``, increase it when constructing the simulator, e.g.
-        ``pq.SamplingSimulator(d=6, config=pq.Config(cutoff=5))``.
+        By default, ``cutoff`` is inferred from prepared occupation numbers and
+        postselection instructions. Properties such as
+        :attr:`~piquasso._simulators.sampling.state.SamplingState.state_vector`
+        use this truncated Fock space. To enforce a specific cutoff, pass it
+        explicitly, e.g. ``pq.SamplingSimulator(d=6, config=pq.Config(cutoff=5))``.
     """
 
     _instruction_map = {

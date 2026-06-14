@@ -24,7 +24,7 @@ from piquasso._simulators.sampling.state import SamplingState
 
 from piquasso.instructions import gates
 
-from piquasso.api.exceptions import NotImplementedCalculation
+from piquasso.api.exceptions import NotImplementedCalculation, InvalidState
 from piquasso.api.branch import Branch
 from piquasso.api.instruction import Instruction
 
@@ -55,9 +55,40 @@ def create(state: SamplingState, instruction: Instruction, shots: int) -> List[B
     modes = instruction.modes
 
     for i in range(len(state._occupation_numbers)):
-        state._occupation_numbers[i][modes,] += 1
+        occupation_numbers = state._occupation_numbers[i].copy()
+        occupation_numbers[modes,] += 1
+        _validate_or_infer_cutoff(state, occupation_numbers, instruction)
+        state._occupation_numbers[i] = occupation_numbers
 
     return [Branch(state=state)]
+
+
+def _validate_or_infer_cutoff(
+    state: SamplingState,
+    occupation_numbers: np.ndarray,
+    instruction: Instruction,
+) -> None:
+    occupation_numbers_tuple = tuple(int(number) for number in occupation_numbers)
+
+    if state._config.validate and len(occupation_numbers) != state.d:
+        raise InvalidState(
+            f"The occupation numbers '{occupation_numbers_tuple}' are not "
+            f"well-defined on '{state.d}' modes."
+            f" Instruction: {instruction}."
+        )
+
+    if state._config._cutoff_was_explicit:
+        if state._config.validate:
+            validate_occupation_numbers(
+                occupation_numbers_tuple,
+                state.d,
+                state._config.cutoff,
+                context=f" Instruction: {instruction}.",
+            )
+        return
+
+    required_cutoff = int(np.sum(occupation_numbers)) + 1
+    state._config.cutoff = max(state._config.cutoff, required_cutoff)
 
 
 def state_vector(
@@ -69,15 +100,11 @@ def state_vector(
         occupation_numbers = instruction._get_all_params(state._connector)[
             "occupation_numbers"
         ]
-        if state._config.validate:
-            validate_occupation_numbers(
-                occupation_numbers,
-                state.d,
-                state._config.cutoff,
-                context=f" Instruction: {instruction}.",
-            )
+        occupation_numbers = np.rint(occupation_numbers).astype(int)
 
-        state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+        _validate_or_infer_cutoff(state, occupation_numbers, instruction)
+
+        state._occupation_numbers.append(occupation_numbers)
         state._coefficients.append(coefficient)
 
     elif "fock_amplitude_map" in instruction._get_all_params(state._connector):
@@ -85,15 +112,11 @@ def state_vector(
             state._connector
         )["fock_amplitude_map"].items():
 
-            if state._config.validate:
-                validate_occupation_numbers(
-                    occupation_numbers,
-                    state.d,
-                    state._config.cutoff,
-                    context=f" Instruction: {instruction}.",
-                )
+            occupation_numbers = np.rint(occupation_numbers).astype(int)
 
-            state._occupation_numbers.append(np.rint(occupation_numbers).astype(int))
+            _validate_or_infer_cutoff(state, occupation_numbers, instruction)
+
+            state._occupation_numbers.append(occupation_numbers)
             state._coefficients.append(coefficient * amplitude)
 
     return [Branch(state=state)]
@@ -275,13 +298,18 @@ def post_select_photons(
 
     photon_counts = instruction.params["photon_counts"]
 
-    if state._config.validate:
+    if state._config._cutoff_was_explicit and state._config.validate:
         validate_postselection_cutoff(
             state._config.cutoff,
             photon_counts,
             state._occupation_numbers,
             context=f" Instruction: {instruction}.",
         )
+    elif not state._config._cutoff_was_explicit:
+        required_cutoff = int(np.sum(photon_counts)) + 1
+        for occupation_numbers in state._occupation_numbers:
+            required_cutoff = max(required_cutoff, int(np.sum(occupation_numbers)) + 1)
+        state._config.cutoff = max(state._config.cutoff, required_cutoff)
 
     state._set_postselection(modes, photon_counts)
 

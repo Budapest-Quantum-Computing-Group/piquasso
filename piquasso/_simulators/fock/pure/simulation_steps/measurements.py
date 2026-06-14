@@ -37,18 +37,10 @@ def post_select_photons(
     photon_counts = instruction.params["photon_counts"]
 
     if state._config.validate:
-        basis = get_fock_space_basis(d=state.d, cutoff=state._config.cutoff)
-        fallback_np = connector.fallback_np
-        nonzero_indices = fallback_np.nonzero(fallback_np.abs(state.state_vector) > 0)[
-            0
-        ]
-        prepared_occupation_numbers = (
-            [basis[nonzero_indices[0]]] if len(nonzero_indices) else []
-        )
         validate_postselection_cutoff(
             state._config.cutoff,
             photon_counts,
-            prepared_occupation_numbers,
+            [],
             context=f" Instruction: {instruction}.",
         )
 
