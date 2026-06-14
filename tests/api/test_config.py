@@ -82,6 +82,15 @@ def test_as_code_validate():
     assert no_validate_config._as_code() == "pq.Config(validate=False)"
 
 
+def test_as_code_preserves_explicit_default_cutoff():
+    default = pq.Config()
+    explicit_default_cutoff = pq.Config(cutoff=4)
+
+    assert default != explicit_default_cutoff
+    assert default._as_code() == "pq.Config()"
+    assert explicit_default_cutoff._as_code() == "pq.Config(cutoff=4)"
+
+
 def test_as_code_use_dask():
     default = pq.Config()
     conf_dont_use_dask = pq.Config(use_dask=False)
