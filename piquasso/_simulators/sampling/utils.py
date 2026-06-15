@@ -479,24 +479,26 @@ def multiply_polynomials(poly_arr_shape, arr_1, arr_2):
     '''
     if arr_1 is None:
         return arr_2
-    fft_1 = np.fft.fftn(arr_1, poly_arr_shape)
-    fft_2 = np.fft.fftn(arr_2, poly_arr_shape)
-    fft_i = np.fft.ifftn(fft_1 * fft_2)
+    concerned_axes = range(1, len(arr_1.shape))
+    fft_1 = np.fft.fftn(arr_1, poly_arr_shape, axes=concerned_axes)
+    fft_2 = np.fft.fftn(arr_2, poly_arr_shape, axes=concerned_axes)
+    fft_i = np.fft.ifftn(fft_1 * fft_2, axes=concerned_axes)
     return fft_i
 
 def compute_laguerre(k, x, ra):
     '''
         Computes the Laguerre series at degree ra and returns an array of its polynomials.
     '''
-    coeffs = np.zeros([ra+1]*k, dtype=complex)
+    coeffs = np.zeros([x.shape[0]]+[ra+1]*k, dtype=complex)
 
-    poly_indices = np.indices(coeffs.shape).sum(axis=0)
+    poly_indices = np.indices(coeffs[0].shape).sum(axis=0)
     relevant_indices = (poly_indices <= ra)
 
-    coeffs[relevant_indices] = ((-1) ** poly_indices[relevant_indices]) * comb(ra, poly_indices[relevant_indices])
-    alphas = np.where(relevant_indices)
+    coeffs[:, relevant_indices] = ((-1) ** poly_indices[relevant_indices]) * comb(ra, poly_indices[relevant_indices])
+    alphas = np.array(np.where(relevant_indices))
+    alphas = np.repeat(alphas[None,...], x.shape[0], axis=0)
     for i in range(k):
-        coeffs[relevant_indices] *= x[i]**alphas[i] / factorial(alphas[i])
+        coeffs[:, relevant_indices] *= x[:, i].reshape((-1,1))**alphas[:, i] / factorial(alphas[:, i])
 
     return coeffs
 
@@ -511,22 +513,20 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
     possible_ys = list(product(range(N), repeat=k))
+    
     poly_arr_shape = [N]*k
-    D_t = np.zeros(poly_arr_shape, dtype=complex)
-
-    for y in possible_ys:
-        omegas = [np.exp(2j*np.pi/N)**i for i in y]
-        xa = np.array([-np.outer(V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1)) for a in range(s)])
-        xa = np.sum(xa, 1)
-        P_omega = None
-        for a in range(s):
-            l_ra = compute_laguerre(k, xa[a], occupied_inputs[a])
-            P_omega = multiply_polynomials(poly_arr_shape, P_omega, l_ra)
-        D_t += P_omega
+    omegas = np.array([[np.exp(2j*np.pi/N)**i for i in y] for y in possible_ys])
+    P_omega = None
+    for a in range(s):
+        xa = np.einsum('ni,nj->nij', V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1))
+        xa = np.sum(-xa, axis=1)
+        l_ra = compute_laguerre(k, xa, occupied_inputs[a])
+        P_omega = multiply_polynomials(poly_arr_shape, P_omega, l_ra)
+    D_t = np.sum(P_omega, axis=0)
     D_t /= N**k
 
     p_zw_diag = { tuple(alpha):D_t[*alpha] for alpha in possible_ys if sum(alpha)<=n }
-            
+
     p_ys = {}
     for y in p_zw_diag.keys():
         p_y = 0
