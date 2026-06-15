@@ -13,12 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
 from itertools import product
 import math
 import numpy as np
-from scipy.special import factorial
-from numpy.polynomial.laguerre import lag2poly
+from scipy.special import factorial, comb
 
 from functools import partial
 
@@ -475,88 +473,32 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     return np.diag(expansion_values)
 
 
-def multiply_polynomials(dict_1, dict_2):
+def multiply_polynomials(poly_arr_shape, arr_1, arr_2):
     '''
-        Multiplies two dictionaries of polynomial coefficients.
+        Multiplies two arrays of polynomial coefficients with fft.
     '''
-    if not dict_1:
-        return dict_2
-        
-    new_dict = defaultdict(complex)
+    if arr_1 is None:
+        return arr_2
+    fft_1 = np.fft.fftn(arr_1, poly_arr_shape)
+    fft_2 = np.fft.fftn(arr_2, poly_arr_shape)
+    fft_i = np.fft.ifftn(fft_1 * fft_2)
+    return fft_i
 
-    for exp_1, coeff_1 in dict_1.items():
-        exp_1 = np.asarray(exp_1)
-
-        for exp_2, coeff_2 in dict_2.items():
-            new_dict[tuple(exp_1 + exp_2)] += coeff_1 * coeff_2
-
-    return { exp:coeff for exp, coeff in new_dict.items() if coeff != 0 }
-
-def add_polynomials(dict_1, dict_2):
+def compute_laguerre(k, x, ra):
     '''
-        Adds two dictionaries of polynomial coefficients.
+        Computes the Laguerre series at degree ra and returns an array of its polynomials.
     '''
-    new_dict = defaultdict(complex)
+    coeffs = np.zeros([ra+1]*k, dtype=complex)
 
-    for exp, coeff in dict_1.items():
-        new_dict[exp] += coeff
+    poly_indices = np.indices(coeffs.shape).sum(axis=0)
+    relevant_indices = (poly_indices <= ra)
 
-    for exp, coeff in dict_2.items():
-        new_dict[exp] += coeff
+    coeffs[relevant_indices] = ((-1) ** poly_indices[relevant_indices]) * comb(ra, poly_indices[relevant_indices])
+    alphas = np.where(relevant_indices)
+    for i in range(k):
+        coeffs[relevant_indices] *= x[i]**alphas[i] / factorial(alphas[i])
 
-    return { exp:coeff for exp, coeff in new_dict.items() if coeff != 0 }
-
-def decompositions(d, k):
-    '''
-        Yields all decompositions whose sum is d.
-        For example: decompositions(2, 2) yields
-            [2, 0]
-            [1, 1]
-            [0, 2]
-    '''
-    if k == 1:
-        yield (d,)
-        return
-
-    decomp = np.zeros(k, dtype=int)
-    decomp[0] = d
-
-    while True:
-        yield decomp
-
-        for i in range(k-2, -1, -1):
-            if decomp[i] > 0:
-                break
-            else:
-                return
-
-        decomp[i] -= 1
-        right_sum = decomp[i + 1:].sum() + 1
-        decomp[i + 1:] = 0
-        decomp[i + 1] = right_sum
-
-def compute_laguerre(coeffs, ra, k):
-    '''
-        Computes the Laguerre series at degree ra and returns a dict of its polynomials.
-    '''
-    poly_dict = defaultdict(complex)
-
-    l_coeffs = lag2poly([0] * ra + [1])
-    factorials = np.array([factorial(i) for i in range(ra + 1)])
-
-    for d, ld in enumerate(l_coeffs):
-        if ld == 0:
-            continue
-
-        for alpha in decompositions(d, k):
-            polynomial = factorials[d]
-            for i in alpha:
-                polynomial /= factorials[i]
-
-            coeff = ld * polynomial * np.prod(coeffs**alpha)
-            poly_dict[tuple(alpha)] += coeff
-
-    return { exp:coeff for exp, coeff in poly_dict.items() if coeff != 0 }
+    return coeffs
 
 def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     '''
@@ -569,17 +511,21 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
     possible_ys = list(product(range(N), repeat=k))
-    D_t = {}
+    poly_arr_shape = [N]*k
+    D_t = np.zeros(poly_arr_shape, dtype=complex)
+
     for y in possible_ys:
-        omegas = np.array([np.exp(2j*np.pi/N)**i for i in y])
+        omegas = [np.exp(2j*np.pi/N)**i for i in y]
         xa = np.array([-np.outer(V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1)) for a in range(s)])
         xa = np.sum(xa, 1)
-        P_omega = {}
-        for a, ra in enumerate(occupied_inputs):
-            res = compute_laguerre(xa[a], ra, k)
-            P_omega = multiply_polynomials(P_omega, res)
-        D_t = add_polynomials(D_t, P_omega)
-    p_zw_diag = { alpha:coeff/N**k for (alpha, coeff) in D_t.items() }
+        P_omega = None
+        for a in range(s):
+            l_ra = compute_laguerre(k, xa[a], occupied_inputs[a])
+            P_omega = multiply_polynomials(poly_arr_shape, P_omega, l_ra)
+        D_t += P_omega
+    D_t /= N**k
+
+    p_zw_diag = { tuple(alpha):D_t[*alpha] for alpha in possible_ys if sum(alpha)<=n }
             
     p_ys = {}
     for y in p_zw_diag.keys():
@@ -589,6 +535,6 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
             p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([math.comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
         if p_y > 0:
             p_ys[y] = p_y
-
-    sample = rng.choice(list(p_ys.keys()), p=[c.real for c in p_ys.values()])
+            
+    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
     return sample
