@@ -509,13 +509,15 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     k = len(modes)
     occupied_inputs = inputs[inputs!=0]
     s = len(occupied_inputs)
+    if s == 0:
+        return [0]*k
     N = n+1
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
-    possible_ys = list(product(range(N), repeat=k))
+    all_ys = np.array(list(product(range(N), repeat=k)))
     
     poly_arr_shape = [N]*k
-    omegas = np.array([[np.exp(2j*np.pi/N)**i for i in y] for y in possible_ys])
+    omegas = np.exp(2j * np.pi / N) ** all_ys
     P_omega = None
     for a in range(s):
         xa = np.einsum('ni,nj->nij', V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1))
@@ -525,16 +527,25 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     D_t = np.sum(P_omega, axis=0)
     D_t /= N**k
 
-    p_zw_diag = { tuple(alpha):D_t[*alpha] for alpha in possible_ys if sum(alpha)<=n }
+    poly_indices = np.indices(D_t.shape).sum(axis=0)
+    possible_ys = np.argwhere(poly_indices <= n)
+    superior_ys = np.all(possible_ys[:, None, :] >= possible_ys[None, :, :], axis=2)
 
-    p_ys = {}
-    for y in p_zw_diag.keys():
-        p_y = 0
-        superior_ys = [alpha for alpha in p_zw_diag.keys() if (np.array(alpha) >= np.array(y)).all()]
-        for alpha in superior_ys:
-            p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([math.comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
-        if p_y > 0:
-            p_ys[y] = p_y
-            
-    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
+    fact = factorial(np.arange(N))
+    P_alpha_factorial = np.prod(fact[possible_ys], axis=1) * D_t[*possible_ys.T]
+
+    combination_alpha_y = np.zeros((N, N))
+    for alpha in range(N):
+        for y in range(alpha + 1):
+            combination_alpha_y[alpha, y] = math.comb(alpha, y) * (-1) ** (alpha - y)
+
+    Y = len(possible_ys)
+    coeffs = np.ones((Y, Y))
+    for j in range(possible_ys.shape[1]):
+        coeffs *= combination_alpha_y[possible_ys[:, j][:, None], possible_ys[:, j][None, :]]
+    coeffs *= superior_ys
+    p_ys = (P_alpha_factorial @ coeffs).real
+
+    positive_probs = np.where(p_ys>0)
+    sample = rng.choice(possible_ys[positive_probs], p=p_ys[positive_probs])
     return sample
