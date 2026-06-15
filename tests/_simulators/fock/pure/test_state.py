@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 import pytest
 
 import numpy as np
@@ -374,3 +376,336 @@ def test_PureFockState_unnormalized_state_raises_InvalidState():
         state.validate()
 
     assert "The sum of probabilities is" in error.value.args[0]
+
+
+class TestPureFockStateIndexing:
+
+    def test_basic_indexing_supports_multiple_types(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1]) / 2
+
+            pq.Q() | pq.StateVector([0, 2]) / 2
+            pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+        simulator = pq.PureFockSimulator(d=2)
+        state = simulator.execute(program).state
+
+        assert np.isclose(state[(0, 1)], 0.5)
+        assert np.isclose(state[0, 1], 0.5)
+
+        assert np.isclose(state[np.array([0, 2])], 0.5)
+        assert np.isclose(state[2, 0], 1 / np.sqrt(2))
+
+    def test_multiple_occupation_numbers(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1]) / 2
+
+            pq.Q() | pq.StateVector([0, 2]) / 2
+            pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+
+        simulator = pq.PureFockSimulator(d=2)
+        state = simulator.execute(program).state
+
+        occupation_numbers = [(0, 1), (2, 0), (0, 2)]
+
+        np_occupation_numbers = np.array(occupation_numbers)
+
+        assert np.allclose(state[occupation_numbers], [0.5, 1 / np.sqrt(2), 0.5])
+        assert np.allclose(state[np_occupation_numbers], [0.5, 1 / np.sqrt(2), 0.5])
+
+    def test_single_slice(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([2, 1, 0]) / 2
+            pq.Q() | pq.StateVector([3, 1, 0]) / 3
+            pq.Q() | pq.StateVector([4, 1, 0]) / 4
+            pq.Q() | pq.StateVector([5, 1, 0]) / 5
+
+        simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=8))
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[2:5, 1, 0], [1 / 2, 1 / 3, 1 / 4])
+
+        assert np.allclose(state[2:6, 1, 0], [1 / 2, 1 / 3, 1 / 4, 1 / 5])
+
+    def test_full_slice_respects_cutoff(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+
+        simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[:, 1, 0], [1 / 2, 1 / 3, 1 / 4])
+
+    def test_multiple_slices_is_not_supported(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+
+        simulator = pq.PureFockSimulator(d=3)
+        state = simulator.execute(program).state
+
+        with pytest.raises(NotImplementedError):
+            state[0:2, :, 0]
+
+    def test_one_mode(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0]) * np.sqrt(0.5)
+            pq.Q() | pq.StateVector([1]) * np.sqrt(0.3)
+            pq.Q() | pq.StateVector([2]) * np.sqrt(0.2)
+
+        simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=3))
+        state = simulator.execute(program).state
+
+        assert np.isclose(state[0], np.sqrt(0.5))
+        assert np.isclose(state[(0,)], np.sqrt(0.5))
+        assert np.isclose(state[1], np.sqrt(0.3))
+        assert np.isclose(state[2], np.sqrt(0.2))
+
+        assert np.allclose(state[0:2], np.sqrt([0.5, 0.3]))
+        assert np.allclose(state[1:], np.sqrt([0.3, 0.2]))
+        assert np.allclose(state[:], np.sqrt([0.5, 0.3, 0.2]))
+
+    def test_single_slice_with_negative_start_returns_last_admissible_value(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.StateVector([3, 1, 0]) / 5
+            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[-1:, 1, 0], [1 / 6])
+
+    def test_single_slice_with_negative_start_returns_last_two_admissible_values(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.StateVector([3, 1, 0]) / 5
+            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[-2:, 1, 0], [1 / 5, 1 / 6])
+
+    def test_single_slice_with_negative_stop_excludes_last_admissible_value(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.StateVector([3, 1, 0]) / 5
+            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[:-1, 1, 0], [1 / 2, 1 / 3, 1 / 4, 1 / 5])
+
+    def test_single_slice_with_negative_start_and_stop(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.StateVector([3, 1, 0]) / 5
+            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[-3:-1, 1, 0], [1 / 4, 1 / 5])
+
+    def test_single_slice_with_step_and_negative_start(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1, 0]) / 2
+            pq.Q() | pq.StateVector([1, 1, 0]) / 3
+            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.StateVector([3, 1, 0]) / 5
+            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[-4::2, 1, 0], [1 / 3, 1 / 5])
+
+    def test_negative_fixed_occupation_number_is_not_supported(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            state[0:2, -1, 0]
+
+    def test_negative_slice_respects_fixed_occupation_numbers_and_cutoff(self):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 2, 1]) / 2
+            pq.Q() | pq.StateVector([1, 2, 1]) / 3
+            pq.Q() | pq.StateVector([2, 2, 1]) / 4
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(program).state
+
+        assert np.allclose(state[-1:, 2, 1], [1 / 4])
+
+    def test_negative_single_occupation_number_is_not_supported(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            state[-1, 1, 0]
+
+    def test_single_occupation_number_violating_cutoff_raises_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=4),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="violate cutoff"):
+            state[2, 1, 1]
+
+    def test_negative_multiple_occupation_numbers_are_not_supported(self):
+        simulator = pq.PureFockSimulator(
+            d=2,
+            config=pq.Config(cutoff=4),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            state[[(0, 1), (-1, 2)]]
+
+    def test_multiple_occupation_numbers_violating_cutoff_raise_error(self):
+        simulator = pq.PureFockSimulator(
+            d=2,
+            config=pq.Config(cutoff=4),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="violate cutoff"):
+            state[[(0, 1), (2, 2)]]
+
+    def test_invalid_single_occupation_number_shape_raises_type_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(TypeError, match="Invalid occupation-number index"):
+            state[[1, 2]]
+
+    def test_invalid_multiple_occupation_number_shape_raises_type_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(TypeError, match="Invalid occupation-number index"):
+            state[np.array([[0, 1], [1, 0]])]
+
+    def test_invalid_slice_pattern_length_raises_value_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="Invalid slice pattern"):
+            state[:, 1]
+
+    def test_invalid_slice_pattern_entry_raises_value_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(ValueError, match="Invalid slice pattern"):
+            state[:, 1, 0.5]
+
+    def test_multiple_slices_raise_not_implemented_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        with pytest.raises(
+            NotImplementedError, match="Only a single slice is supported"
+        ):
+            state[:, :, 0]
+
+    def test_non_iterable_index_reaches_invalid_index_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        expected_message = (
+            "Invalid occupation-number index. Expected one of: "
+            "a single occupation number with shape (d,), "
+            "multiple occupation numbers with shape (n, d), "
+            "or a single-mode slice pattern of length d. "
+            "All fixed occupation numbers must be non-negative integers, "
+            "and each occupation-number sum must be less than the cutoff."
+        )
+
+        with pytest.raises(TypeError, match=re.escape(expected_message)):
+            state[1]
+
+    def test_slice_pattern_fixed_values_violating_cutoff_raises_value_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=4),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        key = (slice(None), 3, 1)
+        expected_message = f"Occupation numbers {key} violate cutoff 4."
+
+        with pytest.raises(ValueError, match=re.escape(expected_message)):
+            state[:, 3, 1]
+
+    def test_non_integer_occupation_numbers_raise_type_error(self):
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=6),
+        )
+        state = simulator.execute(pq.Program()).state
+
+        expected_message = (
+            "Invalid occupation-number index. " "Occupation numbers must be integers."
+        )
+
+        with pytest.raises(TypeError, match=re.escape(expected_message)):
+            state[[0.0, 1.0, 0.0]]
