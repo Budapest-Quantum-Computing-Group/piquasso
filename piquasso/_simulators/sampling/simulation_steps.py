@@ -274,6 +274,7 @@ def particle_number_measurement(
         calculate_permanent_laplace=state._connector.permanent_laplace,
         rng=rng,
         postselect_data=postselect_data,
+        selected_modes=instruction.modes,
     )
 
     binned_samples = get_counts(samples)
