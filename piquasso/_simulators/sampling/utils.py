@@ -183,7 +183,7 @@ def generate_samples(
     k = len(selected_modes)
 
     if k == 1 and n>=3 and n<10:
-        return _generate_marginal_samples(
+        return _generate_k_modes_samples(
             input, 
             shots, 
             interferometer, 
@@ -487,7 +487,7 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     return np.diag(expansion_values)
 
 
-def _generate_marginal_samples(
+def _generate_k_modes_samples(
         input, shots, interferometer, rng, selected_modes, n
 ):
     '''
@@ -496,12 +496,12 @@ def _generate_marginal_samples(
     samples = []
 
     while len(samples) < shots:
-        sample = _generate_marginal_sample(selected_modes, n, input, interferometer, rng)
+        sample = _generate_k_modes_sample(selected_modes, n, input, interferometer, rng)
         samples.append(tuple(sample))
 
     return samples
 
-def multiply_polynomials(poly_arr_shape, arr):
+def _multiply_polynomials(poly_arr_shape, arr):
     '''
         Multiplies arrays of polynomial coefficients with fft.
     '''
@@ -510,7 +510,7 @@ def multiply_polynomials(poly_arr_shape, arr):
     ifft_arr = np.fft.ifftn(prod_arr, axes=range(1, len(prod_arr.shape)))
     return ifft_arr
 
-def compute_laguerre(k, x, ra):
+def _compute_laguerre(k, x, ra):
     '''
         Computes the Laguerre series at degree ra and returns an array of its polynomials.
     '''
@@ -535,7 +535,7 @@ def compute_laguerre(k, x, ra):
         coeffs[:, i, relevant_indices] = poly_coeffs
     return coeffs
 
-def _generate_marginal_sample(modes, n, inputs, interferometer, rng):
+def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
     '''
         Implements sampling when k-modes have been selected for measurement.
     '''
@@ -556,8 +556,8 @@ def _generate_marginal_sample(modes, n, inputs, interferometer, rng):
     faw = np.conj(V).T[:, None, :]*np.power(omegas, -1)[None,...]
     xa = np.einsum('nmi,nmj->mnij', faz, faw)
     xa = np.sum(-xa, axis=2)
-    l_ra = compute_laguerre(k, xa, occupied_inputs)
-    P_omega = multiply_polynomials(poly_arr_shape, l_ra)
+    l_ra = _compute_laguerre(k, xa, occupied_inputs)
+    P_omega = _multiply_polynomials(poly_arr_shape, l_ra)
     D_t = np.sum(P_omega, axis=0)
     D_t /= N**k
 
