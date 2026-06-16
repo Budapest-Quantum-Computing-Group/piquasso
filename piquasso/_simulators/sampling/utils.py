@@ -473,33 +473,38 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     return np.diag(expansion_values)
 
 
-def multiply_polynomials(poly_arr_shape, arr_1, arr_2):
+def multiply_polynomials(poly_arr_shape, arr):
     '''
-        Multiplies two arrays of polynomial coefficients with fft.
+        Multiplies arrays of polynomial coefficients with fft.
     '''
-    if arr_1 is None:
-        return arr_2
-    concerned_axes = range(1, len(arr_1.shape))
-    fft_1 = np.fft.fftn(arr_1, poly_arr_shape, axes=concerned_axes)
-    fft_2 = np.fft.fftn(arr_2, poly_arr_shape, axes=concerned_axes)
-    fft_i = np.fft.ifftn(fft_1 * fft_2, axes=concerned_axes)
-    return fft_i
+    fft_arr = np.fft.fftn(arr, poly_arr_shape, axes=range(2, len(arr.shape)))
+    prod_arr = np.prod(fft_arr, axis=1)
+    ifft_arr = np.fft.ifftn(prod_arr, axes=range(1, len(prod_arr.shape)))
+    return ifft_arr
 
 def compute_laguerre(k, x, ra):
     '''
         Computes the Laguerre series at degree ra and returns an array of its polynomials.
     '''
-    coeffs = np.zeros([x.shape[0]]+[ra+1]*k, dtype=complex)
+    max_deg = max(ra)+1
+    poly_arr_shape = [max_deg]*k
+    coeffs = np.zeros([x.shape[0], x.shape[1]]+poly_arr_shape, dtype=complex)
 
-    poly_indices = np.indices(coeffs[0].shape).sum(axis=0)
-    relevant_indices = (poly_indices <= ra)
+    alphas = np.indices(poly_arr_shape,)
+    poly_indices = alphas.sum(axis=0)
 
-    coeffs[:, relevant_indices] = ((-1) ** poly_indices[relevant_indices]) * comb(ra, poly_indices[relevant_indices])
-    alphas = np.array(np.where(relevant_indices))
-    alphas = np.repeat(alphas[None,...], x.shape[0], axis=0)
-    for i in range(k):
-        coeffs[:, relevant_indices] *= x[:, i].reshape((-1,1))**alphas[:, i] / factorial(alphas[:, i])
+    fact = factorial(np.arange(max_deg))
+    for i, a in enumerate(ra):
+        relevant_indices = (poly_indices <= a)
 
+        alpha_i = alphas[:, relevant_indices]
+        poly_values = poly_indices[relevant_indices]
+
+        poly_coeffs = ((-1) ** poly_values) * comb(a, poly_values)
+        for j in range(k):
+            poly_coeffs = poly_coeffs[None, :] * x[:, i, j:j+1] ** alpha_i[j] / fact[alpha_i[j]]
+
+        coeffs[:, i, relevant_indices] = poly_coeffs
     return coeffs
 
 def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
@@ -518,12 +523,13 @@ def generate_k_modes_marginal_sample(modes, n, inputs, interferometer, rng):
     
     poly_arr_shape = [N]*k
     omegas = np.exp(2j * np.pi / N) ** all_ys
-    P_omega = None
-    for a in range(s):
-        xa = np.einsum('ni,nj->nij', V[:, a]*omegas, np.conj(V[:, a])*np.power(omegas, -1))
-        xa = np.sum(-xa, axis=1)
-        l_ra = compute_laguerre(k, xa, occupied_inputs[a])
-        P_omega = multiply_polynomials(poly_arr_shape, P_omega, l_ra)
+    
+    faz = V.T[:, None, :]*omegas[None,...]
+    faw = np.conj(V).T[:, None, :]*np.power(omegas, -1)[None,...]
+    xa = np.einsum('nmi,nmj->mnij', faz, faw)
+    xa = np.sum(-xa, axis=2)
+    l_ra = compute_laguerre(k, xa, occupied_inputs)
+    P_omega = multiply_polynomials(poly_arr_shape, l_ra)
     D_t = np.sum(P_omega, axis=0)
     D_t /= N**k
 
