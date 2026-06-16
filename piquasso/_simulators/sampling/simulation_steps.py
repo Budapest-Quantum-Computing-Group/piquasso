@@ -276,6 +276,14 @@ def particle_number_measurement(
         postselect_data=postselect_data,
     )
 
+    # The sampler produces an outcome over all modes, but only the measured modes
+    # (those specified in `pq.Q(...)`) should be reported - matching
+    # PureFockSimulator, which reduces the state to `instruction.modes` before
+    # sampling. Projecting each full-mode sample onto the measured modes yields
+    # exactly that marginal for this terminal measurement (issue #499).
+    measured_modes = instruction.modes
+    samples = [tuple(sample[mode] for mode in measured_modes) for sample in samples]
+
     binned_samples = get_counts(samples)
 
     branches = [

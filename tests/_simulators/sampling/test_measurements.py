@@ -86,6 +86,37 @@ def test_sampling_mode_permutation(interferometer_matrix):
     ), f"Expected [1, 0, 0, 1, 1], got: {sample}"
 
 
+def test_sampling_particle_number_measurement_measures_only_specified_modes():
+    # Regression test for issue #499: SamplingSimulator must report only the
+    # modes specified in pq.Q(...), not all modes (matching PureFockSimulator).
+    shots = 5
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+    result = pq.SamplingSimulator(d=5).execute(program, shots)
+
+    assert all(len(sample) == 2 for sample in result.samples)
+    assert all(tuple(sample) == (1, 1) for sample in result.samples)
+
+
+def test_sampling_particle_number_measurement_subset_matches_purefock():
+    # The reported marginal from SamplingSimulator agrees with PureFockSimulator
+    # for the same input state and measured modes, including reordered modes.
+    shots = 1
+
+    for modes, expected in [((0, 1), (1, 1)), ((2, 3), (1, 0)), ((3, 0), (0, 1))]:
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(*modes) | pq.ParticleNumberMeasurement()
+
+        sampling = pq.SamplingSimulator(d=5).execute(program, shots).samples[0]
+        purefock = pq.PureFockSimulator(d=5).execute(program, shots).samples[0]
+
+        assert tuple(sampling) == tuple(purefock) == expected
+
+
 def test_sampling_multiple_samples_for_permutation_interferometer(
     interferometer_matrix,
 ):

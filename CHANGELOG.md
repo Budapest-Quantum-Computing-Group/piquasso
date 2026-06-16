@@ -3,6 +3,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `ParticleNumberMeasurement` on `SamplingSimulator` now reports only the modes
+  specified in `pq.Q(...)`, instead of always measuring all modes, matching
+  `PureFockSimulator`'s behaviour
+  ([#499](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues/499)).
+
 ### Changed
 
 - `GaussianState.density_matrix` is now computed with the modified multidimensional
