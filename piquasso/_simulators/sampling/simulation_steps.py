@@ -37,6 +37,7 @@ from .utils import (
     generate_samples,
     generate_lossy_samples,
 )
+from .marginal import sample_marginal, prefer_marginal_sampling
 from piquasso._utils import get_counts
 
 
@@ -235,54 +236,68 @@ def particle_number_measurement(
         )
 
     initial_state = state._occupation_numbers[0]
-
-    interferometer_svd = np.linalg.svd(state.interferometer)
-
     rng = state._config.rng
+    measured_modes = instruction.modes
 
-    singular_values = interferometer_svd[1]
+    n = int(sum(initial_state))
+    d = len(initial_state)
 
-    postselect_data = (
-        state._get_postselected_modes(),
-        state._get_postselected_photons(),
-        state._config.max_sample_generation_trials,
-    )
-
-    if not state.is_lossy:
-        partial_generate_samples = partial(
-            generate_samples,
-            interferometer=state.interferometer,
-            reject_condition=lambda: False,
-        )
-    elif np.all(np.isclose(singular_values, singular_values[0])):
-        uniform_transmission_probability = singular_values[0] ** 2
-
-        partial_generate_samples = partial(
-            generate_samples,
-            interferometer=state.interferometer,
-            reject_condition=lambda: rng.uniform() > uniform_transmission_probability,
+    # Only the measured modes (those given in `pq.Q(...)`) are reported, matching
+    # PureFockSimulator. When only a few modes are measured, sampling the full
+    # boson sampler and discarding the rest is wasteful, so (absent loss and
+    # postselection) sample the marginal over the measured modes directly - an
+    # exactly equivalent but far cheaper computation for small k (issue #499).
+    if (
+        not state.is_lossy
+        and not state._get_postselected_modes()
+        and prefer_marginal_sampling(n, len(measured_modes), d, shots)
+    ):
+        samples = sample_marginal(
+            state.interferometer, initial_state, measured_modes, shots, rng
         )
     else:
-        partial_generate_samples = partial(
-            generate_lossy_samples,
-            interferometer_svd=interferometer_svd,
+        interferometer_svd = np.linalg.svd(state.interferometer)
+        singular_values = interferometer_svd[1]
+
+        postselect_data = (
+            state._get_postselected_modes(),
+            state._get_postselected_photons(),
+            state._config.max_sample_generation_trials,
         )
 
-    samples = partial_generate_samples(
-        initial_state,
-        shots,
-        calculate_permanent_laplace=state._connector.permanent_laplace,
-        rng=rng,
-        postselect_data=postselect_data,
-    )
+        if not state.is_lossy:
+            partial_generate_samples = partial(
+                generate_samples,
+                interferometer=state.interferometer,
+                reject_condition=lambda: False,
+            )
+        elif np.all(np.isclose(singular_values, singular_values[0])):
+            uniform_transmission_probability = singular_values[0] ** 2
 
-    # The sampler produces an outcome over all modes, but only the measured modes
-    # (those specified in `pq.Q(...)`) should be reported - matching
-    # PureFockSimulator, which reduces the state to `instruction.modes` before
-    # sampling. Projecting each full-mode sample onto the measured modes yields
-    # exactly that marginal for this terminal measurement (issue #499).
-    measured_modes = instruction.modes
-    samples = [tuple(sample[mode] for mode in measured_modes) for sample in samples]
+            partial_generate_samples = partial(
+                generate_samples,
+                interferometer=state.interferometer,
+                reject_condition=lambda: rng.uniform()
+                > uniform_transmission_probability,
+            )
+        else:
+            partial_generate_samples = partial(
+                generate_lossy_samples,
+                interferometer_svd=interferometer_svd,
+            )
+
+        full_samples = partial_generate_samples(
+            initial_state,
+            shots,
+            calculate_permanent_laplace=state._connector.permanent_laplace,
+            rng=rng,
+            postselect_data=postselect_data,
+        )
+
+        # project each full-mode outcome onto the measured modes
+        samples = [
+            tuple(sample[mode] for mode in measured_modes) for sample in full_samples
+        ]
 
     binned_samples = get_counts(samples)
 

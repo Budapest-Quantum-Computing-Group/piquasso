@@ -10,6 +10,16 @@
   `PureFockSimulator`'s behaviour
   ([#499](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues/499)).
 
+### Added
+
+- An efficient marginal sampling algorithm for `ParticleNumberMeasurement` on
+  `SamplingSimulator` when only a few modes are measured: instead of sampling all
+  modes and discarding, the marginal distribution over the requested modes is
+  computed directly via a Laguerre-polynomial generating function (valid for
+  collided inputs). This is hundreds of times faster than full-sample-then-discard
+  for small mode counts; a FLOP heuristic falls back to discarding for large ones
+  ([#499](https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues/499)).
+
 ### Changed
 
 - `GaussianState.density_matrix` is now computed with the modified multidimensional

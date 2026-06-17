@@ -117,6 +117,60 @@ def test_sampling_particle_number_measurement_subset_matches_purefock():
         assert tuple(sampling) == tuple(purefock) == expected
 
 
+def test_sampling_marginal_distribution_matches_purefock_exactly():
+    # The efficient marginal algorithm (#499) must reproduce PureFockSimulator's
+    # exact reduced probabilities, for both collision-free and collided inputs.
+    from piquasso._simulators.sampling.marginal import marginal_distribution
+
+    U = unitary_group.rvs(4, random_state=2)
+    for occupation in ([1, 1, 1, 0], [2, 1, 0, 0]):
+        modes = (0, 1)
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector(occupation)
+            pq.Q(0, 1, 2, 3) | pq.Interferometer(U)
+        exact = (
+            pq.PureFockSimulator(d=4).execute(program).state.reduced(modes)
+        ).fock_probabilities_map
+
+        outcomes, probs = marginal_distribution(np.array(U), occupation, modes)
+        efficient = dict(zip(outcomes, probs))
+
+        assert np.isclose(sum(probs), 1.0)
+        for outcome in set(efficient) | set(exact):
+            assert np.isclose(
+                efficient.get(outcome, 0.0), exact.get(outcome, 0.0), atol=1e-9
+            )
+
+
+def test_sampling_efficient_marginal_path_matches_purefock():
+    # End-to-end: when only a few modes are measured (so the efficient marginal
+    # path is taken), SamplingSimulator's distribution agrees with PureFockSimulator.
+    from piquasso._simulators.sampling.marginal import prefer_marginal_sampling
+
+    U = unitary_group.rvs(5, random_state=1)
+    shots = 40000
+    modes = (0, 1)
+    assert prefer_marginal_sampling(3, len(modes), 5, shots)  # efficient path taken
+
+    def distribution(simulator_class):
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q(0, 1, 2, 3, 4) | pq.Interferometer(U)
+            pq.Q(*modes) | pq.ParticleNumberMeasurement()
+        simulator = simulator_class(d=5, config=pq.Config(seed_sequence=123))
+        counts: dict = {}
+        for sample in simulator.execute(program, shots).samples:
+            key = tuple(int(x) for x in sample)
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    sampling = distribution(pq.SamplingSimulator)
+    purefock = distribution(pq.PureFockSimulator)
+    keys = set(sampling) | set(purefock)
+    tvd = 0.5 * sum(abs(sampling.get(k, 0) - purefock.get(k, 0)) for k in keys) / shots
+    assert tvd < 0.02
+
+
 def test_sampling_multiple_samples_for_permutation_interferometer(
     interferometer_matrix,
 ):
