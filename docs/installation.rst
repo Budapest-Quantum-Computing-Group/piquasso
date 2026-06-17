@@ -1,25 +1,38 @@
 Installation
 ============
 
-One could easily install Piquasso with the following command:
+Install Piquasso from PyPI with:
 
 .. code-block:: bash
 
    pip install piquasso
 
-For a basic example, check out :doc:`tutorials/getting-started`.
+For a first example, see :doc:`tutorials/getting-started`.
 
-One can also use Piquasso along with TensorFlow, see, e.g.,
-:doc:`tutorials/cvqnn-with-tensorflow`. To install Piquasso with TensorFlow, just enter
+Optional dependencies
+---------------------
+
+TensorFlow support
+^^^^^^^^^^^^^^^^^^
+
+Piquasso can also be used with TensorFlow, for example in continuous-variable
+quantum neural network workflows. See :doc:`tutorials/cvqnn-with-tensorflow`
+for a tutorial.
+
+To install Piquasso with TensorFlow support, run:
 
 .. code-block:: bash
 
-   pip install piquasso[tensorflow]
+   pip install "piquasso[tensorflow]"
 
+JAX support
+^^^^^^^^^^^
 
-Similarly, Piquasso admits a JAX support, as described in :doc:`tutorials/jax-example`
-To install Piquasso with JAX is done by
+Piquasso also supports JAX-based workflows, as described in
+:doc:`tutorials/jax-example`.
+
+To install Piquasso with JAX support, run:
 
 .. code-block:: bash
 
-   pip install piquasso[jax]
+   pip install "piquasso[jax]"

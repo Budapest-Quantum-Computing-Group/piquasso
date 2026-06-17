@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "Piquasso"
-copyright = "2021-2025, Budapest Quantum Computing Group"
+copyright = "2021-2026, Budapest Quantum Computing Group"
 author = "Budapest Quantum Computing Group"
 
 
@@ -86,9 +86,13 @@ html_theme = "furo"
 html_static_path = ["_static"]
 html_favicon = "_static/favicon.png"
 
+html_title = "Piquasso documentation"
+html_short_title = "Piquasso"
+
 pq_color = {
     "pq-grey": "#656565",
-    "pq-smokey-white": "#f4f4f4",
+    "pq-smokey-white": "#f7f8fb",
+    "pq-paper": "#ffffff",
     "pq-blue-shade1": "#1e2844",
     "pq-blue-shade2": "#273250",
     "pq-blue-shade3": "#2f3b5a",
@@ -97,28 +101,51 @@ pq_color = {
     "pq-font-color-shade2": "#b2bac8",
     "pq-font-color-shade3": "#8995a8",
     "pq-font-color-shade4": "#717c8e",
+    "pq-ink": "#202842",
+    "pq-ink-muted": "#4f5d75",
     "pq-color-red": "#e46363",
-    "pq-color-border": "#232d48",
-    "pq-color-border-dark": "#1a243e",
+    "pq-color-red-light": "#f07676",
+    "pq-color-border": "#dfe4ee",
+    "pq-color-border-dark": "#232d48",
 }
 
 html_theme_options = {
     "sidebar_hide_name": True,
     "light_logo": "logo_light.svg",
     "dark_logo": "logo_main.svg",
+    "light_css_variables": {
+        "color-background-primary": pq_color["pq-paper"],
+        "color-background-secondary": pq_color["pq-smokey-white"],
+        "color-background-hover": "#eef1f7",
+        "color-background-border": pq_color["pq-color-border"],
+        "color-code-background": "#f2f4f9",
+        "color-foreground-primary": pq_color["pq-ink"],
+        "color-foreground-secondary": pq_color["pq-ink-muted"],
+        "color-sidebar-link-text--top-level": pq_color["pq-ink"],
+        "color-brand-primary": pq_color["pq-color-red"],
+        "color-brand-content": pq_color["pq-color-red"],
+        "color-link": pq_color["pq-color-red"],
+        "color-link--hover": pq_color["pq-blue-shade4"],
+        "color-admonition-title--note": pq_color["pq-color-red"],
+        "color-admonition-background": "#fff4f4",
+        "color-admonition-title-background--note": "#ffe5e5",
+    },
     "dark_css_variables": {
         "color-background-primary": pq_color["pq-blue-shade1"],
         "color-background-secondary": pq_color["pq-blue-shade2"],
+        "color-background-hover": pq_color["pq-blue-shade3"],
+        "color-background-border": pq_color["pq-color-border-dark"],
         "color-code-background": pq_color["pq-blue-shade3"],
         "color-foreground-primary": pq_color["pq-font-color-shade1"],
         "color-foreground-secondary": pq_color["pq-font-color-shade2"],
         "color-sidebar-link-text--top-level": pq_color["pq-font-color-shade1"],
-        "color-brand-primary": pq_color["pq-font-color-shade4"],
-        "color-brand-content": pq_color["pq-color-red"],
-        "color-admonition-title--note": pq_color["pq-color-red"],
+        "color-brand-primary": pq_color["pq-color-red-light"],
+        "color-brand-content": pq_color["pq-color-red-light"],
+        "color-link": pq_color["pq-color-red-light"],
+        "color-link--hover": pq_color["pq-font-color-shade1"],
+        "color-admonition-title--note": pq_color["pq-color-red-light"],
         "color-admonition-background": pq_color["pq-blue-shade3"],
         "color-admonition-title-background--note": pq_color["pq-blue-shade2"],
-        "color-background-hover": pq_color["pq-blue-shade3"],
     },
 }
 
