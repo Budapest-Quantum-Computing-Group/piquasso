@@ -20,12 +20,12 @@ import piquasso as pq
 
 def test_Attenuator_with_zero_theta_changes_nothing_on_one_mode_state():
     with pq.Program() as empty_program:
-        pq.Q() | pq.StateVector([1]) / np.sqrt(2)
-        pq.Q() | pq.StateVector([2]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([1]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([2]) / np.sqrt(2)
 
     with pq.Program() as program_with_zero_theta:
-        pq.Q() | pq.StateVector([1]) / np.sqrt(2)
-        pq.Q() | pq.StateVector([2]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([1]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([2]) / np.sqrt(2)
 
         pq.Q() | pq.Attenuator(theta=0.0)
 
@@ -42,8 +42,8 @@ def test_Attenuator_with_zero_theta_changes_nothing_on_one_mode_state():
 
 def test_Attenuator_with_pi_over_2_theta_maps_to_vacuum():
     with pq.Program() as program_with_zero_theta:
-        pq.Q() | pq.StateVector([1]) / np.sqrt(2)
-        pq.Q() | pq.StateVector([2]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([1]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([2]) / np.sqrt(2)
 
         pq.Q() | pq.Attenuator(theta=np.pi / 2)
 
@@ -64,7 +64,7 @@ def test_Attenuator_for_one_particle():
     transmittivity = np.cos(theta)
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
 
         pq.Q(1) | pq.Attenuator(theta=theta)
 

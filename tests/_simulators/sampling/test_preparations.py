@@ -22,7 +22,7 @@ import piquasso as pq
 
 def test_initial_state_raises_InvalidState_for_nonnormalized_input_state():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 0.5
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0]) * 0.5
 
     simulator = pq.SamplingSimulator(d=5)
     state = simulator.execute(program).state
@@ -35,8 +35,8 @@ def test_initial_state_raises_InvalidState_for_nonnormalized_input_state():
 
 def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_length():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
-        pq.Q() | pq.StateVector([1, 1, 1]) * 1 / np.sqrt(2)
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
+        pq.Q() | pq.NumberState([1, 1, 1]) * 1 / np.sqrt(2)
 
     simulator = pq.SamplingSimulator(d=5)
 
@@ -45,14 +45,14 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
 
     assert error.value.args[0] == (
         "The occupation numbers '(1, 1, 1)' are not well-defined on '5' modes: "
-        "instruction=StateVector(occupation_numbers=(1, 1, 1), "
+        "instruction=NumberState(occupation_numbers=(1, 1, 1), "
         "coefficient=0.7071067811865475, modes=(0, 1, 2, 3, 4))"
     )
 
 
 def test_cutoff_is_inferred_from_state_vector():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
     state = pq.SamplingSimulator(d=5).execute(program).state
 
@@ -62,7 +62,7 @@ def test_cutoff_is_inferred_from_state_vector():
 
 def test_cutoff_is_inferred_when_validation_is_disabled():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
     simulator = pq.SamplingSimulator(d=5, config=pq.Config(validate=False))
     state = simulator.execute(program).state
@@ -73,7 +73,7 @@ def test_cutoff_is_inferred_when_validation_is_disabled():
 
 def test_explicit_cutoff_is_not_inferred_when_validation_is_disabled():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
     simulator = pq.SamplingSimulator(
         d=5,
@@ -86,7 +86,7 @@ def test_explicit_cutoff_is_not_inferred_when_validation_is_disabled():
 
 def test_explicit_cutoff_is_validated_against_state_vector():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
     simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=4))
 
@@ -96,7 +96,7 @@ def test_explicit_cutoff_is_validated_against_state_vector():
     assert error.value.args[0] == (
         "The occupation numbers '(2, 1, 1, 0, 1)' require a cutoff of at least "
         "'6', but the provided cutoff is '4'. "
-        "Instruction: StateVector(occupation_numbers=(2, 1, 1, 0, 1), "
+        "Instruction: NumberState(occupation_numbers=(2, 1, 1, 0, 1), "
         "coefficient=1.0, modes=(0, 1, 2, 3, 4))."
     )
 
@@ -123,7 +123,7 @@ def test_multiple_interferometer_on_neighbouring_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(0, 1, 2) | pq.Interferometer(U)
 
@@ -155,7 +155,7 @@ def test_multiple_interferometer_on_gaped_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(0, 1, 4) | pq.Interferometer(U)
 
@@ -183,7 +183,7 @@ def test_multiple_interferometer_on_reversed_gaped_modes():
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
@@ -214,7 +214,7 @@ def test_probability_distribution():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
@@ -236,7 +236,7 @@ def test_get_particle_detection_probability():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(d=3)
@@ -269,7 +269,7 @@ def test_get_particle_detection_probability_complex_scenario():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0, 1, 2])
+        pq.Q(all) | pq.NumberState([0, 1, 2])
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(d=3)
@@ -290,7 +290,7 @@ def test_get_particle_detection_probability_on_different_subspace():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
     simulator = pq.SamplingSimulator(d=3)
@@ -305,7 +305,7 @@ def test_get_particle_detection_probability_on_different_subspace():
     assert np.allclose(probability, 0.0)
 
 
-def test_multiple_StateVector_instructions_state_vector():
+def test_multiple_NumberState_instructions_state_vector():
     initial_occupation_numbers = np.array(
         [
             [1, 1, 0, 1],
@@ -319,7 +319,7 @@ def test_multiple_StateVector_instructions_state_vector():
 
     with pq.Program() as program:
         for idx in range(len(coefficients)):
-            pq.Q() | pq.StateVector(
+            pq.Q() | pq.NumberState(
                 initial_occupation_numbers[idx], coefficient=coefficients[idx]
             )
 
@@ -379,7 +379,7 @@ def test_multiple_StateVector_instructions_state_vector():
     )
 
 
-def test_multiple_StateVector_instructions_get_particle_detection_probability():
+def test_multiple_NumberState_instructions_get_particle_detection_probability():
     initial_occupation_numbers = np.array(
         [
             [1, 1, 0, 1],
@@ -393,7 +393,7 @@ def test_multiple_StateVector_instructions_get_particle_detection_probability():
 
     with pq.Program() as program:
         for idx in range(len(coefficients)):
-            pq.Q() | pq.StateVector(
+            pq.Q() | pq.NumberState(
                 initial_occupation_numbers[idx], coefficient=coefficients[idx]
             )
 
@@ -417,11 +417,11 @@ def test_multiple_StateVector_instructions_get_particle_detection_probability():
     )
 
 
-def test_state_vector_with_fock_amplitude_map_sampling():
+def test_FockStateVector_with_fock_amplitude_map_sampling():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
 
@@ -430,15 +430,15 @@ def test_state_vector_with_fock_amplitude_map_sampling():
     assert np.allclose(state.state_vector, np.array([0.6, 0.8]))
 
 
-def test_state_vector_with_fock_amplitude_map_and_coefficient_sampling():
+def test_FockStateVector_with_fock_amplitude_map_and_coefficient_sampling():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
     coefficient = 1 / np.sqrt(2)
 
     with pq.Program() as program_with_mul:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map) * coefficient
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map) * coefficient
 
     with pq.Program() as program_with_param:
-        pq.Q() | pq.StateVector(
+        pq.Q() | pq.FockStateVector(
             fock_amplitude_map=amplitude_map, coefficient=coefficient
         )
 
@@ -453,11 +453,11 @@ def test_state_vector_with_fock_amplitude_map_and_coefficient_sampling():
     assert np.allclose(state_with_param.state_vector, expected)
 
 
-def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState():
+def test_FockStateVector_with_fock_amplitude_map_invalid_shape_raises_InvalidState():
     amplitude_map = {(0, 0): 0.6}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
 

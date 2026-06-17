@@ -68,7 +68,7 @@ def strawberryfields_benchmark(benchmark, weights, cutoff, layer_count):
     benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff, layer_count))
 
 
-def test_state_vector_and_jacobian(weights, cutoff, layer_count):
+def test_number_state_and_jacobian(weights, cutoff, layer_count):
     pq_state_vector, pq_jacobian = _calculate_piquasso_results(
         weights, cutoff, layer_count
     )

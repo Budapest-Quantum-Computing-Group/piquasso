@@ -26,7 +26,7 @@ def test_state_vector(generate_unitary_matrix):
 
     program = pq.Program(
         instructions=[
-            pq.StateVector(input_state),
+            pq.NumberState(input_state),
             pq.Interferometer(unitary),
         ]
     )
@@ -49,7 +49,7 @@ def test_validate_not_normalized():
 
     program = pq.Program(
         instructions=[
-            pq.StateVector(input_state),
+            pq.NumberState(input_state),
             pq.Beamsplitter5050().on_modes(0, 1),
             pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
         ]

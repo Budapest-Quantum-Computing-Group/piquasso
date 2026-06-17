@@ -26,7 +26,7 @@ for_all_connectors = pytest.mark.parametrize(
 
 
 @for_all_connectors
-def test_StateVector_raises_InvalidParameters_when_coefficient_is_not_1(connector):
+def test_NumberState_raises_InvalidParameters_when_coefficient_is_not_1(connector):
     d = 3
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
@@ -34,7 +34,7 @@ def test_StateVector_raises_InvalidParameters_when_coefficient_is_not_1(connecto
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector) * 0.5
+        pq.Q() | pq.NumberState(state_vector) * 0.5
 
     with pytest.raises(InvalidParameter) as error:
         simulator.execute(program).state
@@ -45,7 +45,7 @@ def test_StateVector_raises_InvalidParameters_when_coefficient_is_not_1(connecto
 
 
 @for_all_connectors
-def test_StateVector_raises_InvalidParameters_when_state_vector_is_not_0_or_1_vector(
+def test_NumberState_raises_InvalidParameters_when_state_vector_is_not_0_or_1_vector(
     connector,
 ):
     d = 3
@@ -55,7 +55,7 @@ def test_StateVector_raises_InvalidParameters_when_state_vector_is_not_0_or_1_ve
     invalid_state_vector = [2, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(invalid_state_vector)
+        pq.Q() | pq.NumberState(invalid_state_vector)
 
     with pytest.raises(InvalidParameter) as error:
         simulator.execute(program).state

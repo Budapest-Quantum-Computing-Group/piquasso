@@ -80,8 +80,8 @@ def test_create_annihilate_and_create():
 
 def test_overflow_with_zero_norm_raises_InvalidState_when_normalized():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector([1]) * np.sqrt(2 / 5)
-        pq.Q(1) | pq.StateVector([1]) * np.sqrt(3 / 5)
+        pq.Q(2) | pq.NumberState([1]) * np.sqrt(2 / 5)
+        pq.Q(1) | pq.NumberState([1]) * np.sqrt(3 / 5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -97,8 +97,8 @@ def test_overflow_with_zero_norm_raises_InvalidState_when_normalized():
 
 def test_creation_on_multiple_modes():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector([1]) * np.sqrt(2 / 5)
-        pq.Q(1) | pq.StateVector([1]) * np.sqrt(3 / 5)
+        pq.Q(2) | pq.NumberState([1]) * np.sqrt(2 / 5)
+        pq.Q(1) | pq.NumberState([1]) * np.sqrt(3 / 5)
 
         pq.Q(1, 2) | pq.Create()
 
@@ -137,9 +137,9 @@ def test_creation_on_multiple_modes():
 
 def test_state_normalize_after_overflow():
     with pq.Program() as program:
-        pq.Q(2) | pq.StateVector([1]) * np.sqrt(2 / 6)
-        pq.Q(1) | pq.StateVector([1]) * np.sqrt(3 / 6)
-        pq.Q(2) | pq.StateVector([2]) * np.sqrt(1 / 6)
+        pq.Q(2) | pq.NumberState([1]) * np.sqrt(2 / 6)
+        pq.Q(1) | pq.NumberState([1]) * np.sqrt(3 / 6)
+        pq.Q(2) | pq.NumberState([2]) * np.sqrt(1 / 6)
 
         pq.Q(2) | pq.Create()
 
@@ -157,11 +157,11 @@ def test_state_normalize_after_overflow():
     )
 
 
-def test_state_vector_with_fock_amplitude_map_preparation():
+def test_number_state_with_fock_amplitude_map_preparation():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2))
 
@@ -170,15 +170,15 @@ def test_state_vector_with_fock_amplitude_map_preparation():
     assert np.allclose(state.state_vector, np.array([0.6, 0.8]))
 
 
-def test_state_vector_with_fock_amplitude_map_and_coefficient():
+def test_number_state_with_fock_amplitude_map_and_coefficient():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
     coefficient = 1 / np.sqrt(2)
 
     with pq.Program() as program_with_mul:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map) * coefficient
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map) * coefficient
 
     with pq.Program() as program_with_param:
-        pq.Q() | pq.StateVector(
+        pq.Q() | pq.FockStateVector(
             fock_amplitude_map=amplitude_map, coefficient=coefficient
         )
 
@@ -193,22 +193,22 @@ def test_state_vector_with_fock_amplitude_map_and_coefficient():
     assert np.allclose(state_with_param.state_vector, expected)
 
 
-def test_state_vector_with_fock_amplitude_map_invalid_shape_raises_InvalidState():
+def test_number_state_with_fock_amplitude_map_invalid_shape_raises_InvalidState():
     amplitude_map = {(0, 0): 0.6}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
 
 
-def test_state_vector_raises_InvalidState_when_cutoff_too_small():
+def test_number_state_raises_InvalidState_when_cutoff_too_small():
     occupation_numbers = [0, 1, 0, 1, 1, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
     config = pq.Config(cutoff=4, validate=True)
     simulator = pq.PureFockSimulator(d=6, config=config)
@@ -220,12 +220,12 @@ def test_state_vector_raises_InvalidState_when_cutoff_too_small():
     assert str(required_cutoff) in error.value.args[0]
 
 
-def test_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState():
+def test_number_state_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState():
     occupation_numbers = (0, 1, 0, 1, 1, 1)
     amplitude_map = {occupation_numbers: 1.0}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     config = pq.Config(cutoff=4, validate=True)
     simulator = pq.PureFockSimulator(d=6, config=config)

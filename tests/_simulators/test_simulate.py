@@ -37,7 +37,7 @@ def test_simulate_Gaussian_instructions():
 
 def test_simulate_passive_linear_gates():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(0) | pq.Phaseshifter(np.pi / 3)
@@ -53,7 +53,7 @@ def test_simulate_passive_linear_gates():
 
 def test_simulate_nonlinear_gates():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 0])
 
         pq.Q(0) | pq.Squeezing(r=0.1)
         pq.Q(0, 1) | pq.Beamsplitter5050()
@@ -70,7 +70,7 @@ def test_simulate_nonlinear_gates():
 
 def test_simulate_nonlinear_gates_and_channels():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(0) | pq.Kerr(np.pi / 4)
@@ -87,7 +87,7 @@ def test_simulate_nonlinear_gates_and_channels():
 
 def test_simulate_raises_NotImplementedCalculation_when_the_instruction_combination_is_not_supported():  # noqa: E501
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(0) | pq.Kerr(np.pi / 4)
@@ -109,7 +109,7 @@ def test_simulate_raises_NotImplementedCalculation_when_the_instruction_combinat
 
 def test_simulate_raises_NotImplementedCalculation_when_connector_is_not_supported():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(1, 2) | pq.Beamsplitter5050()

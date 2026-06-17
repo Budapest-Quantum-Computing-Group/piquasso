@@ -15,16 +15,18 @@
 
 import pytest
 
+import numpy as np
+
 import piquasso as pq
 
 
-def test_StateVector_is_valid_specifying_floats_close_to_integers():
-    pq.StateVector([1, 1.0, 2.0, 0.0])
+def test_NumberState_is_valid_specifying_floats_close_to_integers():
+    pq.NumberState([1, 1.0, 2.0, 0.0])
 
 
-def test_StateVector_raises_InvalidState_when_nonintegers_specified():
+def test_NumberState_raises_InvalidState_when_nonintegers_specified():
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
-        pq.StateVector([1, 1.3, 2.4])
+        pq.NumberState([1, 1.3, 2.4])
 
     assert error.value.args[0] == (
         "Invalid occupation numbers: occupation_numbers=[1, 1.3, 2.4]\n"
@@ -32,24 +34,25 @@ def test_StateVector_raises_InvalidState_when_nonintegers_specified():
     )
 
 
-def test_StateVector_stores_fock_amplitude_map():
+def test_FockStateVector_stores_fock_amplitude_map():
     amplitude_map = {(0,): 1.0, (1,): 0.0}
 
-    preparation = pq.StateVector(fock_amplitude_map=amplitude_map)
+    preparation = pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     assert preparation.params["fock_amplitude_map"] == amplitude_map
 
 
-def test_StateVector_raises_InvalidParameter_when_no_arguments():
-    with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
-        pq.StateVector()
+def test_NumberState_raises_TypeError_when_no_arguments():
+    with pytest.raises(TypeError) as error:
+        pq.NumberState()
 
     assert error.value.args[0] == (
-        "Either 'occupation_numbers' or 'fock_amplitude_map' must be provided."
+        "NumberState.__init__() missing 1 required positional argument: "
+        "'occupation_numbers'"
     )
 
 
-def test_StateVector_raises_InvalidParameter_when_both_arguments_given():
+def test_StateVector_raises_InvalidParameter_when_fock_amplitude_map_given():
     amplitude_map = {(0,): 1.0}
 
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
@@ -60,13 +63,106 @@ def test_StateVector_raises_InvalidParameter_when_both_arguments_given():
     )
 
 
-def test_StateVector_raises_InvalidState_when_fock_amplitude_map_keys_invalid():
+def test_FockStateVector_raises_InvalidState_when_fock_amplitude_map_keys_invalid():
     amplitude_map = {(0, 1.2): 1.0}
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
-        pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     assert error.value.args[0] == (
         "Invalid occupation numbers in fock_amplitude_map: {(0, 1.2): 1.0}\n"
         "Occupation numbers must contain non-negative integers."
     )
+
+
+def test_NumberState_addition_preserves_coefficients():
+    state_vector = (
+        pq.NumberState([1], coefficient=2.0) + pq.NumberState([2], coefficient=3.0)
+    ) * 5.0
+
+    result = state_vector + pq.NumberState([3], coefficient=7.0)
+
+    assert result.params["fock_amplitude_map"] == {(1,): 10.0, (2,): 15.0, (3,): 7.0}
+
+
+def test_NumberState_addition_preserves_coefficients_with_fock_amplitude_map():
+    state_vector = (
+        pq.NumberState([1], coefficient=2.0) + pq.NumberState([2], coefficient=3.0)
+    ) * 5.0
+
+    result = state_vector + pq.FockStateVector(
+        fock_amplitude_map={(3,): 7.0}, coefficient=1.0
+    )
+
+    assert result.params["fock_amplitude_map"] == {(1,): 10.0, (2,): 15.0, (3,): 7.0}
+
+
+def test_FockStateVector_addition_preserves_coefficients_with_fock_amplitude_map():
+    state_vector = (
+        pq.FockStateVector(fock_amplitude_map={(1,): 2.0})
+        + pq.FockStateVector(fock_amplitude_map={(2,): 3.0})
+    ) * 5.0
+
+    result = state_vector + pq.FockStateVector(
+        fock_amplitude_map={(3,): 7.0}, coefficient=1.0
+    )
+
+    assert result.params["fock_amplitude_map"] == {(1,): 10.0, (2,): 15.0, (3,): 7.0}
+
+
+def test_FockStateVector_addition_preserves_coefficients_with_NumberState():
+    state_vector = (
+        pq.FockStateVector(fock_amplitude_map={(1,): 2.0})
+        + pq.FockStateVector(fock_amplitude_map={(2,): 3.0})
+    ) * 5.0
+
+    result = state_vector + pq.NumberState([3], coefficient=7.0)
+
+    assert result.params["fock_amplitude_map"] == {(1,): 10.0, (2,): 15.0, (3,): 7.0}
+
+
+def test_NumberState_adding_same_occupation_numbers_preserves_coefficients():
+    state_vector = (
+        pq.NumberState([1], coefficient=2.0) + pq.NumberState([1], coefficient=3.0)
+    ) * 5.0
+
+    result = state_vector + pq.NumberState([1], coefficient=7.0)
+
+    assert result.params["occupation_numbers"] == (1,)
+    assert np.isclose(result.params["coefficient"], 2.0 * 5.0 + 3.0 * 5.0 + 7.0)
+
+
+def test_FockStateVector_adding_same_occupation_numbers_preserves_coefficients():
+    state_vector = (
+        pq.FockStateVector(fock_amplitude_map={(1,): 2.0})
+        + pq.FockStateVector(fock_amplitude_map={(1,): 3.0})
+    ) * 5.0
+
+    result = state_vector + pq.FockStateVector(
+        fock_amplitude_map={(1,): 7.0, (2,): 8.0}, coefficient=1.0
+    )
+
+    assert result.params["fock_amplitude_map"] == {(1,): 5.0 * 5.0 + 7.0, (2,): 8.0}
+
+
+def test_FockStateVector_adding_same_occ_numbers_preserves_coeffs_with_NumberState():
+    state_vector = (
+        pq.FockStateVector(fock_amplitude_map={(1,): 2.0})
+        + pq.FockStateVector(fock_amplitude_map={(1,): 3.0})
+    ) * 5.0
+
+    result = state_vector + pq.NumberState([1], coefficient=7.0)
+
+    assert result.params["fock_amplitude_map"] == {(1,): 5.0 * 5.0 + 7.0}
+
+
+def test_NumberState_adding_same_occ_numbers_preserves_coeffs_with_FockStateVector():
+    state_vector = (
+        pq.NumberState([1], coefficient=2.0) + pq.NumberState([1], coefficient=3.0)
+    ) * 5.0
+
+    result = state_vector + pq.FockStateVector(
+        fock_amplitude_map={(1,): 7.0, (2,): 8.0}, coefficient=1.0
+    )
+
+    assert result.params["fock_amplitude_map"] == {(1,): 5.0 * 5.0 + 7.0, (2,): 8.0}

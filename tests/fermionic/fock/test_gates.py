@@ -33,7 +33,7 @@ def test_Interferometer_2_by_2(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
         pq.Q(0, 1) | pq.Interferometer(U)
 
     fock_simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -52,8 +52,8 @@ def test_Interferometer_3_by_3_random(connector, generate_unitary_matrix):
     with pq.Program() as program:
         # NOTE: This violates the parity superselection rule, but the simulator should
         # permit it.
-        pq.Q(0, 1, 2) | pq.StateVector([0, 0, 1]) / np.sqrt(2)
-        pq.Q(0, 1, 2) | pq.StateVector([0, 1, 1]) / np.sqrt(2)
+        pq.Q(0, 1, 2) | pq.NumberState([0, 0, 1]) / np.sqrt(2)
+        pq.Q(0, 1, 2) | pq.NumberState([0, 1, 1]) / np.sqrt(2)
         pq.Q(0, 1, 2) | pq.Interferometer(U)
 
     fock_simulator = pq.fermionic.PureFockSimulator(d=d, connector=connector)
@@ -87,8 +87,8 @@ def test_Interferometer_clements_equivalence(connector, generate_unitary_matrix)
     U = generate_unitary_matrix(d)
 
     with pq.Program() as preparation:
-        pq.Q() | pq.StateVector(occupation_numbers=[1, 0, 1]) / np.sqrt(2)
-        pq.Q() | pq.StateVector(occupation_numbers=[0, 1, 1]) / np.sqrt(2)
+        pq.Q() | pq.NumberState(occupation_numbers=[1, 0, 1]) / np.sqrt(2)
+        pq.Q() | pq.NumberState(occupation_numbers=[0, 1, 1]) / np.sqrt(2)
 
     with pq.Program() as program:
         pq.Q() | preparation
@@ -125,9 +125,9 @@ def test_Interferometer_subsystem_equivalence(connector, generate_unitary_matrix
     bigU[1, 1] = U[1, 1]
 
     with pq.Program() as preparation:
-        pq.Q() | pq.StateVector(occupation_numbers=[0, 0, 1]) / np.sqrt(3)
-        pq.Q() | pq.StateVector(occupation_numbers=[1, 0, 1]) / np.sqrt(3)
-        pq.Q() | pq.StateVector(occupation_numbers=[0, 1, 1]) / np.sqrt(3)
+        pq.Q() | pq.NumberState(occupation_numbers=[0, 0, 1]) / np.sqrt(3)
+        pq.Q() | pq.NumberState(occupation_numbers=[1, 0, 1]) / np.sqrt(3)
+        pq.Q() | pq.NumberState(occupation_numbers=[0, 1, 1]) / np.sqrt(3)
 
     with pq.Program() as program_subsystem:
         pq.Q() | preparation
@@ -162,7 +162,7 @@ def test_Interferometer_nonconsecutive_ordering_raises_InvalidParameter(connecto
     simulator = pq.fermionic.PureFockSimulator(d=d, connector=connector)
 
     with pq.Program() as preparation:
-        pq.Q(0, 1, 2) | pq.StateVector([1, 1, 0])
+        pq.Q(0, 1, 2) | pq.NumberState([1, 1, 0])
         pq.Q(0, 2, 1) | pq.Interferometer(unitary)
 
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
@@ -179,7 +179,7 @@ def test_Squeezing2_on_two_modes(connector):
     phi = np.pi / 7
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1])
+        pq.Q() | pq.NumberState([1, 1])
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -205,7 +205,7 @@ def test_Squeezing2_nonconsecutive_ordering_raises_InvalidParameter(connector):
     phi = np.pi / 7
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q() | pq.NumberState([1, 0, 1])
 
         pq.Q(0, 2) | pq.Squeezing2(r=r, phi=phi)
 
@@ -229,7 +229,7 @@ def test_Squeezing2_cutoff(connector):
     cutoff = 2
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 0, 0])
+        pq.Q() | pq.NumberState([0, 0, 0])
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -253,7 +253,7 @@ def test_ControlledPhase(connector):
     cp_phi = np.pi / 5
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1])
+        pq.Q() | pq.NumberState([1, 1])
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -282,8 +282,8 @@ def test_IsingXX(connector):
     b = np.sqrt(1 / 4)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 0]) * a
-        pq.Q() | pq.StateVector([0, 1]) * b
+        pq.Q() | pq.NumberState([0, 0]) * a
+        pq.Q() | pq.NumberState([0, 1]) * b
 
         pq.Q(0, 1) | pq.fermionic.IsingXX(phi=phi)
 

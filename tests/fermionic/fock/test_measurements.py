@@ -23,8 +23,8 @@ def test_ParticleNumberMeasurement_shots_None_projects_remaining_modes():
     probability_011 = 0.75
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 0]) * np.sqrt(probability_100)
-        pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(probability_011)
+        pq.Q() | pq.NumberState([1, 0, 0]) * np.sqrt(probability_100)
+        pq.Q() | pq.NumberState([0, 1, 1]) * np.sqrt(probability_011)
 
         pq.Q(0) | pq.ParticleNumberMeasurement()
 
@@ -51,7 +51,7 @@ def test_ParticleNumberMeasurement_shots_None_projects_remaining_modes():
 
 def test_ParticleNumberMeasurement_finite_shots_projects_remaining_modes():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 0])
+        pq.Q() | pq.NumberState([1, 0, 0])
 
         pq.Q(0) | pq.ParticleNumberMeasurement()
 
@@ -72,8 +72,8 @@ def test_ParticleNumberMeasurement_finite_shots_projects_remaining_modes():
 
 def test_ParticleNumberMeasurement_all_modes_seeded_sampling():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 0]) / 2
-        pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(3) / 2
+        pq.Q() | pq.NumberState([1, 0, 0]) / 2
+        pq.Q() | pq.NumberState([0, 1, 1]) * np.sqrt(3) / 2
 
         pq.Q() | pq.ParticleNumberMeasurement()
 

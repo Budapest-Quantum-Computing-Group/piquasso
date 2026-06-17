@@ -43,7 +43,7 @@ def test_sampling_raises_InvalidParameter_for_negative_shot_value(
     invalid_shots = -1
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -57,7 +57,7 @@ def test_sampling_samples_number(interferometer_matrix):
     shots = 100
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -73,7 +73,7 @@ def test_sampling_mode_permutation(interferometer_matrix):
     shots = 1
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -92,7 +92,7 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
     shots = 2
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -121,7 +121,7 @@ def test_counts(input_state):
 
     expected = {input_state: shots}
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(input_state)
+        pq.Q() | pq.NumberState(input_state)
         pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.SamplingSimulator(d=2)
@@ -145,7 +145,7 @@ def test_counts_raises(simulator, measurement_class):
 
     with pq.Program() as program:
         if simulator == pq.PureFockSimulator:
-            pq.Q() | pq.StateVector((0, 1, 0))
+            pq.Q() | pq.NumberState((0, 1, 0))
         else:
             pq.Q(0) | pq.Fourier()
             pq.Q(0, 2) | pq.Squeezing2(r=0.5, phi=0)
@@ -165,7 +165,7 @@ def test_mach_zehnder():
     ext = np.pi / 4
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -175,7 +175,7 @@ def test_mach_zehnder():
 
 def test_fourier():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -183,10 +183,10 @@ def test_fourier():
     simulator.execute(program, shots=1)
 
 
-def test_multiple_StateVector_with_ParticleNumberMeasurement_raises_error():
+def test_multiple_NumberState_with_ParticleNumberMeasurement_raises_error():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
-        pq.Q() | pq.StateVector([1, 1, 0, 1, 0]) * 1 / np.sqrt(2)
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
+        pq.Q() | pq.NumberState([1, 1, 0, 1, 0]) * 1 / np.sqrt(2)
 
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.ParticleNumberMeasurement()
@@ -198,7 +198,7 @@ def test_multiple_StateVector_with_ParticleNumberMeasurement_raises_error():
 
     assert error.value.args[0] == (
         "The instruction ParticleNumberMeasurement(modes=(0, 1, 2, 3, 4)) is "
-        "not supported for states defined using multiple 'StateVector' instructions.\n"
+        "not supported for states defined using multiple 'NumberState' instructions.\n"
         "If you need this feature to be implemented, please create an issue at "
         "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
     )
@@ -208,7 +208,7 @@ def test_uniform_loss():
     d = 5
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         for i in range(d):
             pq.Q(i) | pq.Loss(transmissivity=0.9)
@@ -221,7 +221,7 @@ def test_uniform_loss():
 
 def test_general_loss():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(0) | pq.Loss(transmissivity=0.4)
         pq.Q(1) | pq.Loss(transmissivity=0.5)
@@ -276,7 +276,7 @@ def test_boson_sampling_seeded():
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.Interferometer(U)
 
@@ -359,7 +359,7 @@ def test_LossyInterferometer_boson_sampling_seeded():
     lossy_interferometer_matrix = U @ np.diag(singular_values) @ U @ U.T
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
@@ -442,7 +442,7 @@ def test_LossyInterferometer_boson_sampling_uniform_losses():
     lossy_interferometer_matrix = U @ np.diag(singular_values) @ U @ U.T
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
@@ -486,7 +486,7 @@ def test_post_select_random_unitary():
     postselect_modes = (1, 2)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 0])
+        pq.Q(all) | pq.NumberState([2, 1, 0])
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
@@ -505,7 +505,7 @@ def test_post_select_random_unitary():
 
 def test_PostSelectPhotons_state_vector():
     with pq.Program() as program_without_postselection:
-        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q() | pq.NumberState([1, 0, 1])
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(1, 2) | pq.Beamsplitter5050()
 
@@ -530,7 +530,7 @@ def test_PostSelectPhotons_state_vector_random():
     interferometer_matrix = unitary_group.rvs(3, random_state=42)
 
     with pq.Program() as program_without_postselection:
-        pq.Q(0, 1, 2) | pq.StateVector([1, 0, 1])
+        pq.Q(0, 1, 2) | pq.NumberState([1, 0, 1])
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
     with pq.Program() as program_with_postselection:
@@ -550,7 +550,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons():
     photon_counts = [2, 2]
 
     with pq.Program() as program_without_postselection:
-        pq.Q(0, 1, 2, 3, 4) | pq.StateVector([1, 0, 1, 2, 1])
+        pq.Q(0, 1, 2, 3, 4) | pq.NumberState([1, 0, 1, 2, 1])
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(1, 2) | pq.Beamsplitter5050()
 
@@ -577,7 +577,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons():
 
 def test_PostSelectPhotons_infers_cutoff_for_state_vector():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1])
+        pq.Q() | pq.NumberState([0, 1, 0, 1, 1, 1])
         pq.Q(4, 5) | pq.PostSelectPhotons(photon_counts=[1, 1])
 
     state = pq.SamplingSimulator(d=6).execute(program, shots=100).state
@@ -591,7 +591,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons_random():
     photon_counts = [2, 2]
 
     with pq.Program() as program_without_postselection:
-        pq.Q(0, 1, 2, 3, 4) | pq.StateVector([1, 0, 1, 2, 1])
+        pq.Q(0, 1, 2, 3, 4) | pq.NumberState([1, 0, 1, 2, 1])
 
         pq.Q(all) | pq.Interferometer(unitary_group.rvs(5))
 
@@ -618,7 +618,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons_random():
 
 def test_PostSelectPhotons_get_particle_detection_probability():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q() | pq.NumberState([1, 0, 1])
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(1, 2) | pq.Beamsplitter5050()
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
@@ -636,7 +636,7 @@ def test_multiple_overlapping_PostSelectPhotons_raise_ValueError():
     interferometer_matrix = unitary_group.rvs(3, random_state=42)
 
     with pq.Program() as program:
-        pq.Q(0, 1, 2) | pq.StateVector([2, 0, 1])
+        pq.Q(0, 1, 2) | pq.NumberState([2, 0, 1])
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
         pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=[0, 1])
@@ -659,13 +659,13 @@ def test_multiple_non_overlapping_PostSelectPhotons_no_error():
     interferometer_matrix = unitary_group.rvs(4, random_state=42)
 
     with pq.Program() as program_1:
-        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 1, 1])
+        pq.Q(0, 1, 2, 3) | pq.NumberState([2, 0, 1, 1])
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
         pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
         pq.Q(1) | pq.PostSelectPhotons(photon_counts=[2])
 
     with pq.Program() as program_2:
-        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 1, 1])
+        pq.Q(0, 1, 2, 3) | pq.NumberState([2, 0, 1, 1])
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 2])
 
@@ -680,7 +680,7 @@ def test_multiple_non_overlapping_PostSelectPhotons_no_error():
 
 def test_PostSelectPhotons_no_infinite_loop_via_max_sample_generation_trials():
     with pq.Program() as program:
-        pq.Q(0, 1, 2, 3) | pq.StateVector([2, 0, 2, 0])
+        pq.Q(0, 1, 2, 3) | pq.NumberState([2, 0, 2, 0])
         pq.Q(0, 1) | pq.Beamsplitter5050()
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[3, 0])
         pq.Q(2, 3) | pq.ParticleNumberMeasurement()
@@ -713,7 +713,7 @@ class TestMidCircuitMeasurements:
 
         interferometer_matrix = unitary_group.rvs(d)
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
             pq.Q(2) | pq.ParticleNumberMeasurement()
             pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
@@ -732,7 +732,7 @@ class TestMidCircuitMeasurements:
 
         interferometer_matrix = unitary_group.rvs(5, random_state=220)
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
             pq.Q(all) | pq.Interferometer(interferometer_matrix)
             pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
             pq.Q(all) | pq.ParticleNumberMeasurement()
@@ -753,7 +753,7 @@ class TestMidCircuitMeasurements:
 
         program = pq.Program(
             instructions=[
-                pq.StateVector(input_state),
+                pq.NumberState(input_state),
                 pq.Interferometer(unitary),
                 pq.PostSelectPhotons(photon_counts=[1, 2]).on_modes(0, 2),
                 pq.ParticleNumberMeasurement(),
@@ -777,7 +777,7 @@ class TestMidCircuitMeasurements:
 
         program = pq.Program(
             instructions=[
-                pq.StateVector(input_state),
+                pq.NumberState(input_state),
                 pq.Interferometer(unitary),
                 pq.LossyInterferometer(unitary @ np.diag([0.9] * d) @ unitary.conj().T),
                 pq.PostSelectPhotons(photon_counts=[1, 1]).on_modes(0, 2),
@@ -799,7 +799,7 @@ class TestMidCircuitMeasurements:
 
         program = pq.Program(
             instructions=[
-                pq.StateVector(input_state),
+                pq.NumberState(input_state),
                 pq.Beamsplitter5050().on_modes(0, 1),
                 pq.Beamsplitter5050().on_modes(1, 2),
                 pq.Beamsplitter5050().on_modes(2, 3),
@@ -821,7 +821,7 @@ class TestMidCircuitMeasurements:
 
     def test_PostSelectPhotons_mid_circuit_invalid_modes_raises(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q() | pq.NumberState([1, 1, 0])
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q(1, 2) | pq.Beamsplitter5050()
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
@@ -839,13 +839,13 @@ class TestMidCircuitMeasurements:
 
     def test_PostSelectPhotons_deferred_measurement_principle(self):
         with pq.Program() as program_1:
-            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q() | pq.NumberState([1, 1, 0])
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q(1, 2) | pq.Beamsplitter5050()
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
 
         with pq.Program() as program_2:
-            pq.Q() | pq.StateVector([1, 1, 0])
+            pq.Q() | pq.NumberState([1, 1, 0])
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q(1, 2) | pq.Beamsplitter5050()

@@ -22,9 +22,9 @@ def test_PostSelectPhotons_gradient(tf):
         np = connector.np
 
         with pq.Program() as preparation:
-            pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
-            pq.Q(all) | pq.StateVector([1, 1, 0]) * state_vector[1]
-            pq.Q(all) | pq.StateVector([2, 1, 0]) * state_vector[2]
+            pq.Q(all) | pq.NumberState([0, 1, 0]) * state_vector[0]
+            pq.Q(all) | pq.NumberState([1, 1, 0]) * state_vector[1]
+            pq.Q(all) | pq.NumberState([2, 1, 0]) * state_vector[2]
 
         phase_shifter_phis = weights[:3]
         thetas = weights[3:6]
@@ -88,9 +88,9 @@ def test_ImperfectPostSelectPhotons_gradient(tf):
         np = connector.np
 
         with pq.Program() as preparation:
-            pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
-            pq.Q(all) | pq.StateVector([1, 1, 0]) * state_vector[1]
-            pq.Q(all) | pq.StateVector([2, 1, 0]) * state_vector[2]
+            pq.Q(all) | pq.NumberState([0, 1, 0]) * state_vector[0]
+            pq.Q(all) | pq.NumberState([1, 1, 0]) * state_vector[1]
+            pq.Q(all) | pq.NumberState([2, 1, 0]) * state_vector[2]
 
         phase_shifter_phis = weights[:3]
         thetas = weights[3:6]

@@ -84,7 +84,9 @@ class PureFockSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.preparations.Vacuum`,
         :class:`~piquasso.instructions.preparations.Create`,
         :class:`~piquasso.instructions.preparations.Annihilate`,
-        :class:`~piquasso.instructions.preparations.StateVector`.
+        :class:`~piquasso.instructions.preparations.StateVector`,
+        :class:`~piquasso.instructions.preparations.NumberState`,
+        :class:`~piquasso.instructions.preparations.FockStateVector`.
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`,
@@ -119,6 +121,8 @@ class PureFockSimulator(BuiltinSimulator):
         preparations.Vacuum: vacuum,
         preparations.Create: create,
         preparations.Annihilate: annihilate,
+        preparations.NumberState: state_vector_instruction,
+        preparations.FockStateVector: state_vector_instruction,
         preparations.StateVector: state_vector_instruction,
         gates.Interferometer: passive_linear,
         gates.Beamsplitter: passive_linear,

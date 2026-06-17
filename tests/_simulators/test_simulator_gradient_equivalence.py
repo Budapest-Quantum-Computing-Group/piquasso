@@ -35,7 +35,7 @@ def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
         cutoff = np.sum(initial_state) + 1
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(initial_state)
+            pq.Q() | pq.NumberState(initial_state)
 
         with pq.Program() as rotated_program:
             pq.Q() | program
@@ -80,7 +80,7 @@ def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
         cutoff = np.sum(initial_state) + 1
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(initial_state)
+            pq.Q() | pq.NumberState(initial_state)
 
         with pq.Program() as rotated_program:
             pq.Q() | program
@@ -127,9 +127,11 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
         np = connector.np
 
         with pq.Program() as preparation:
-            pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
-            pq.Q(all) | pq.StateVector([1, 1, 0]) * state_vector[1]
-            pq.Q(all) | pq.StateVector([2, 1, 0]) * state_vector[2]
+            pq.Q(all) | (
+                pq.NumberState([0, 1, 0]) * state_vector[0]
+                + pq.NumberState([1, 1, 0]) * state_vector[1]
+                + pq.NumberState([2, 1, 0]) * state_vector[2]
+            )
 
         phase_shifter_phis = weights[:3]
         thetas = weights[3:6]
@@ -192,9 +194,9 @@ def test_ImperfectPostSelectPhotons_gradient(SimulatorClass):
         np = connector.np
 
         with pq.Program() as preparation:
-            pq.Q(all) | pq.StateVector([0, 1, 0]) * state_vector[0]
-            pq.Q(all) | pq.StateVector([1, 1, 0]) * state_vector[1]
-            pq.Q(all) | pq.StateVector([2, 1, 0]) * state_vector[2]
+            pq.Q(all) | pq.NumberState([0, 1, 0]) * state_vector[0]
+            pq.Q(all) | pq.NumberState([1, 1, 0]) * state_vector[1]
+            pq.Q(all) | pq.NumberState([2, 1, 0]) * state_vector[2]
 
         phase_shifter_phis = weights[:3]
         thetas = weights[3:6]

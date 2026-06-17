@@ -24,10 +24,10 @@ import piquasso as pq
 
 def test_PureFockState_reduced():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(d=2)
     state = simulator.execute(program).state
@@ -53,10 +53,10 @@ def test_PureFockState_reduced():
 
 def test_PureFockState_reduced_preserves_Config():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=10))
     state = simulator.execute(program).state
@@ -67,10 +67,10 @@ def test_PureFockState_reduced_preserves_Config():
 def test_PureFockState_fock_amplitudes_map():
     theta = 0.3
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0]) / np.sqrt(2)
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([1, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
+        pq.Q() | pq.NumberState([0, 2]) / 2
 
         pq.Q(0) | pq.Phaseshifter(theta)
 
@@ -101,10 +101,10 @@ def test_PureFockState_fock_amplitudes_map():
 
 def test_PureFockState_fock_probabilities_map():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(d=2)
     state = simulator.execute(program).state
@@ -133,10 +133,10 @@ def test_PureFockState_fock_probabilities_map():
 
 def test_PureFockState_get_marginal_fock_probabilities():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(d=2)
     state = simulator.execute(program).state
@@ -232,10 +232,10 @@ def test_PureFockState_get_tensor_representation(connector):
     cutoff = 3
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(
         d=d, config=pq.Config(cutoff=cutoff), connector=connector
@@ -263,10 +263,10 @@ def test_PureFockState_get_purity():
     cutoff = 3
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) / 2
+        pq.Q() | pq.NumberState([0, 1]) / 2
 
-        pq.Q() | pq.StateVector([0, 2]) / 2
-        pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+        pq.Q() | pq.NumberState([0, 2]) / 2
+        pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
     simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
     state = simulator.execute(program).state
@@ -290,12 +290,12 @@ def test_PureFockState_get_particle_detection_probability_on_modes():
     coeffs /= np.linalg.norm(coeffs)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 0]) * coeffs[0]
-        pq.Q() | pq.StateVector([0, 1]) * coeffs[1]
-        pq.Q() | pq.StateVector([1, 0]) * coeffs[2]
-        pq.Q() | pq.StateVector([0, 2]) * coeffs[3]
-        pq.Q() | pq.StateVector([1, 1]) * coeffs[4]
-        pq.Q() | pq.StateVector([2, 0]) * coeffs[5]
+        pq.Q() | pq.NumberState([0, 0]) * coeffs[0]
+        pq.Q() | pq.NumberState([0, 1]) * coeffs[1]
+        pq.Q() | pq.NumberState([1, 0]) * coeffs[2]
+        pq.Q() | pq.NumberState([0, 2]) * coeffs[3]
+        pq.Q() | pq.NumberState([1, 1]) * coeffs[4]
+        pq.Q() | pq.NumberState([2, 0]) * coeffs[5]
 
     simulator = pq.PureFockSimulator(d=d, config=pq.Config(cutoff=cutoff))
     state = simulator.execute(program).state
@@ -382,10 +382,10 @@ class TestPureFockStateIndexing:
 
     def test_basic_indexing_supports_multiple_types(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1]) / 2
+            pq.Q() | pq.NumberState([0, 1]) / 2
 
-            pq.Q() | pq.StateVector([0, 2]) / 2
-            pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+            pq.Q() | pq.NumberState([0, 2]) / 2
+            pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
         simulator = pq.PureFockSimulator(d=2)
         state = simulator.execute(program).state
@@ -398,10 +398,10 @@ class TestPureFockStateIndexing:
 
     def test_multiple_occupation_numbers(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1]) / 2
+            pq.Q() | pq.NumberState([0, 1]) / 2
 
-            pq.Q() | pq.StateVector([0, 2]) / 2
-            pq.Q() | pq.StateVector([2, 0]) / np.sqrt(2)
+            pq.Q() | pq.NumberState([0, 2]) / 2
+            pq.Q() | pq.NumberState([2, 0]) / np.sqrt(2)
 
         simulator = pq.PureFockSimulator(d=2)
         state = simulator.execute(program).state
@@ -415,10 +415,10 @@ class TestPureFockStateIndexing:
 
     def test_single_slice(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([2, 1, 0]) / 2
-            pq.Q() | pq.StateVector([3, 1, 0]) / 3
-            pq.Q() | pq.StateVector([4, 1, 0]) / 4
-            pq.Q() | pq.StateVector([5, 1, 0]) / 5
+            pq.Q() | pq.NumberState([2, 1, 0]) / 2
+            pq.Q() | pq.NumberState([3, 1, 0]) / 3
+            pq.Q() | pq.NumberState([4, 1, 0]) / 4
+            pq.Q() | pq.NumberState([5, 1, 0]) / 5
 
         simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=8))
         state = simulator.execute(program).state
@@ -429,9 +429,9 @@ class TestPureFockStateIndexing:
 
     def test_full_slice_respects_cutoff(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
 
         simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
         state = simulator.execute(program).state
@@ -440,9 +440,9 @@ class TestPureFockStateIndexing:
 
     def test_multiple_slices_is_not_supported(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
 
         simulator = pq.PureFockSimulator(d=3)
         state = simulator.execute(program).state
@@ -452,9 +452,9 @@ class TestPureFockStateIndexing:
 
     def test_one_mode(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0]) * np.sqrt(0.5)
-            pq.Q() | pq.StateVector([1]) * np.sqrt(0.3)
-            pq.Q() | pq.StateVector([2]) * np.sqrt(0.2)
+            pq.Q() | pq.NumberState([0]) * np.sqrt(0.5)
+            pq.Q() | pq.NumberState([1]) * np.sqrt(0.3)
+            pq.Q() | pq.NumberState([2]) * np.sqrt(0.2)
 
         simulator = pq.PureFockSimulator(d=1, config=pq.Config(cutoff=3))
         state = simulator.execute(program).state
@@ -470,11 +470,11 @@ class TestPureFockStateIndexing:
 
     def test_single_slice_with_negative_start_returns_last_admissible_value(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
-            pq.Q() | pq.StateVector([3, 1, 0]) / 5
-            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([3, 1, 0]) / 5
+            pq.Q() | pq.NumberState([4, 1, 0]) / 6
 
         simulator = pq.PureFockSimulator(
             d=3,
@@ -486,11 +486,11 @@ class TestPureFockStateIndexing:
 
     def test_single_slice_with_negative_start_returns_last_two_admissible_values(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
-            pq.Q() | pq.StateVector([3, 1, 0]) / 5
-            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([3, 1, 0]) / 5
+            pq.Q() | pq.NumberState([4, 1, 0]) / 6
 
         simulator = pq.PureFockSimulator(
             d=3,
@@ -502,11 +502,11 @@ class TestPureFockStateIndexing:
 
     def test_single_slice_with_negative_stop_excludes_last_admissible_value(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
-            pq.Q() | pq.StateVector([3, 1, 0]) / 5
-            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([3, 1, 0]) / 5
+            pq.Q() | pq.NumberState([4, 1, 0]) / 6
 
         simulator = pq.PureFockSimulator(
             d=3,
@@ -518,11 +518,11 @@ class TestPureFockStateIndexing:
 
     def test_single_slice_with_negative_start_and_stop(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
-            pq.Q() | pq.StateVector([3, 1, 0]) / 5
-            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([3, 1, 0]) / 5
+            pq.Q() | pq.NumberState([4, 1, 0]) / 6
 
         simulator = pq.PureFockSimulator(
             d=3,
@@ -534,11 +534,11 @@ class TestPureFockStateIndexing:
 
     def test_single_slice_with_step_and_negative_start(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 0]) / 2
-            pq.Q() | pq.StateVector([1, 1, 0]) / 3
-            pq.Q() | pq.StateVector([2, 1, 0]) / 4
-            pq.Q() | pq.StateVector([3, 1, 0]) / 5
-            pq.Q() | pq.StateVector([4, 1, 0]) / 6
+            pq.Q() | pq.NumberState([0, 1, 0]) / 2
+            pq.Q() | pq.NumberState([1, 1, 0]) / 3
+            pq.Q() | pq.NumberState([2, 1, 0]) / 4
+            pq.Q() | pq.NumberState([3, 1, 0]) / 5
+            pq.Q() | pq.NumberState([4, 1, 0]) / 6
 
         simulator = pq.PureFockSimulator(
             d=3,
@@ -560,9 +560,9 @@ class TestPureFockStateIndexing:
 
     def test_negative_slice_respects_fixed_occupation_numbers_and_cutoff(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 2, 1]) / 2
-            pq.Q() | pq.StateVector([1, 2, 1]) / 3
-            pq.Q() | pq.StateVector([2, 2, 1]) / 4
+            pq.Q() | pq.NumberState([0, 2, 1]) / 2
+            pq.Q() | pq.NumberState([1, 2, 1]) / 3
+            pq.Q() | pq.NumberState([2, 2, 1]) / 4
 
         simulator = pq.PureFockSimulator(
             d=3,

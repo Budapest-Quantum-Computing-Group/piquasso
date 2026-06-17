@@ -22,10 +22,10 @@ import piquasso as pq
 def test_measure_particle_number_on_one_mode():
     cutoff = 3
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1, 1]) * np.sqrt(2 / 6)
+        pq.Q() | pq.NumberState([0, 1, 1]) * np.sqrt(2 / 6)
 
-        pq.Q(2) | pq.StateVector([1]) * np.sqrt(1 / 6)
-        pq.Q(2) | pq.StateVector([2]) * np.sqrt(3 / 6)
+        pq.Q(2) | pq.NumberState([1]) * np.sqrt(1 / 6)
+        pq.Q(2) | pq.NumberState([2]) * np.sqrt(3 / 6)
 
         pq.Q(2) | pq.ParticleNumberMeasurement()
 
@@ -44,8 +44,8 @@ def test_measure_particle_number_on_one_mode():
         )
         expected_state = expected_simulator.execute_instructions(
             instructions=[
-                0.5773502691896258 * pq.StateVector([0, 0]),
-                0.816496580927726 * pq.StateVector([0, 1]),
+                0.5773502691896258 * pq.NumberState([0, 0]),
+                0.816496580927726 * pq.NumberState([0, 1]),
             ]
         ).state
 
@@ -54,7 +54,7 @@ def test_measure_particle_number_on_one_mode():
             d=2, config=pq.Config(cutoff=cutoff - 2)
         )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0, 0])]
+            instructions=[pq.NumberState([0, 0])]
         ).state
 
     assert result.state == expected_state
@@ -63,9 +63,9 @@ def test_measure_particle_number_on_one_mode():
 def test_measure_particle_number_on_two_modes():
     cutoff = 3
     with pq.Program() as program:
-        pq.Q(1, 2) | pq.StateVector([1, 1]) * np.sqrt(2 / 6)
-        pq.Q(1, 2) | pq.StateVector([0, 1]) * np.sqrt(1 / 6)
-        pq.Q(1, 2) | pq.StateVector([0, 2]) * np.sqrt(3 / 6)
+        pq.Q(1, 2) | pq.NumberState([1, 1]) * np.sqrt(2 / 6)
+        pq.Q(1, 2) | pq.NumberState([0, 1]) * np.sqrt(1 / 6)
+        pq.Q(1, 2) | pq.NumberState([0, 2]) * np.sqrt(3 / 6)
 
         pq.Q(1, 2) | pq.ParticleNumberMeasurement()
 
@@ -83,7 +83,7 @@ def test_measure_particle_number_on_two_modes():
             d=1, config=pq.Config(cutoff=cutoff - 1)
         )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0])]
+            instructions=[pq.NumberState([0])]
         ).state
 
     elif sample == (1, 1):
@@ -91,7 +91,7 @@ def test_measure_particle_number_on_two_modes():
             d=1, config=pq.Config(cutoff=cutoff - 2)
         )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0])]
+            instructions=[pq.NumberState([0])]
         ).state
 
     elif sample == (0, 2):
@@ -99,7 +99,7 @@ def test_measure_particle_number_on_two_modes():
             d=1, config=pq.Config(cutoff=cutoff - 2)
         )
         expected_state = expected_simulator.execute_instructions(
-            instructions=[pq.StateVector([0])]
+            instructions=[pq.NumberState([0])]
         ).state
 
     assert result.state == expected_state
@@ -111,9 +111,9 @@ def test_measure_particle_number_on_all_modes():
     simulator = pq.PureFockSimulator(d=3, config=config)
 
     with pq.Program() as program:
-        pq.Q() | 0.5 * pq.StateVector([0, 0, 0])
-        pq.Q() | 0.5 * pq.StateVector([0, 0, 1])
-        pq.Q() | np.sqrt(1 / 2) * pq.StateVector([1, 0, 0])
+        pq.Q() | 0.5 * pq.NumberState([0, 0, 0])
+        pq.Q() | 0.5 * pq.NumberState([0, 0, 1])
+        pq.Q() | np.sqrt(1 / 2) * pq.NumberState([1, 0, 0])
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -134,9 +134,9 @@ def test_measure_particle_number_with_multiple_shots():
     simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=2))
 
     with pq.Program() as program:
-        pq.Q() | 0.5 * pq.StateVector([0, 0, 0])
-        pq.Q() | 0.5 * pq.StateVector([0, 0, 1])
-        pq.Q() | np.sqrt(1 / 2) * pq.StateVector([1, 0, 0])
+        pq.Q() | 0.5 * pq.NumberState([0, 0, 0])
+        pq.Q() | 0.5 * pq.NumberState([0, 0, 1])
+        pq.Q() | np.sqrt(1 / 2) * pq.NumberState([1, 0, 0])
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -313,7 +313,7 @@ def test_ParticleNumberMeasurement_resulting_state():
     simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1])
+        pq.Q() | pq.NumberState([0, 1])
 
         pq.Q() | pq.Beamsplitter5050()
 
@@ -331,8 +331,8 @@ def test_ParticleNumberMeasurement_shots_None():
     p = 1 / np.pi
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1]) * np.sqrt(p)
-        pq.Q() | pq.StateVector([1, 0]) * np.sqrt(1 - p)
+        pq.Q() | pq.NumberState([0, 1]) * np.sqrt(p)
+        pq.Q() | pq.NumberState([1, 0]) * np.sqrt(1 - p)
 
         pq.Q(0) | pq.ParticleNumberMeasurement()
 
@@ -357,7 +357,7 @@ class TestMidCircuitMeasurements:
         )
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 1, 1, 0])
+            pq.Q() | pq.NumberState([0, 1, 1, 0])
 
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q(0) | pq.ParticleNumberMeasurement()
@@ -395,7 +395,7 @@ class TestMidCircuitMeasurements:
     def test_post_select_and_pnm(self, input_modes, res_samples):
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(
+            pq.Q() | pq.NumberState(
                 [res_samples[0], res_samples[1], res_samples[2], 0, 0]
             )
             pq.Q(3, 4) | pq.PostSelectPhotons(photon_counts=[0, 0])
@@ -421,11 +421,11 @@ class TestMidCircuitMeasurements:
         coeffs = np.sqrt([0.1, 0.3, 0.4, 0.05, 0.1, 0.05])
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 0, 0, 2, 1, 1, 2]) * coeffs[0]
-            pq.Q() | pq.StateVector([0, 0, 2, 0, 1, 1, 2]) * coeffs[1]
-            pq.Q() | pq.StateVector([0, 1, 0, 1, 1, 1, 2]) * coeffs[2]
-            pq.Q() | pq.StateVector([1, 1, 0, 1, 0, 1, 2]) * coeffs[3]
-            pq.Q() | pq.StateVector([3, 0, 0, 0, 0, 1, 2]) * coeffs[4]
+            pq.Q() | pq.NumberState([0, 0, 0, 2, 1, 1, 2]) * coeffs[0]
+            pq.Q() | pq.NumberState([0, 0, 2, 0, 1, 1, 2]) * coeffs[1]
+            pq.Q() | pq.NumberState([0, 1, 0, 1, 1, 1, 2]) * coeffs[2]
+            pq.Q() | pq.NumberState([1, 1, 0, 1, 0, 1, 2]) * coeffs[3]
+            pq.Q() | pq.NumberState([3, 0, 0, 0, 0, 1, 2]) * coeffs[4]
 
             pq.Q(5, 6) | pq.ParticleNumberMeasurement()
             pq.Q(2) | pq.Squeezing(0.0)
@@ -443,7 +443,7 @@ class TestMidCircuitMeasurements:
     def test_reindexing_for_measurements_explicit_modes(self, res_samples):
         """Test a case where internally mode reindexing happens for active modes."""
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, res_samples[0], 0, res_samples[1]])
+            pq.Q() | pq.NumberState([1, 1, res_samples[0], 0, res_samples[1]])
             pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
             pq.Q(2) | pq.Squeezing(0.0)
             pq.Q(2, 4) | pq.ParticleNumberMeasurement()
@@ -456,7 +456,7 @@ class TestMidCircuitMeasurements:
     def test_measuring_inactive_raises(self, measured_mode):
         """Test that measuring inactive modes raises an error."""
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
             pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
             pq.Q(2) | pq.Squeezing(0.0)
             pq.Q(measured_mode) | pq.ParticleNumberMeasurement()
@@ -470,7 +470,7 @@ class TestMidCircuitMeasurements:
         Test that an error is raised for mid-circuit measurements that are not allowed.
         """
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
             pq.Q(0, 1) | pq.HomodyneMeasurement()
             pq.Q(2) | pq.Squeezing(0.0)
             pq.Q(2) | pq.ParticleNumberMeasurement()
@@ -488,8 +488,8 @@ def test_conditional_squeezing_with_function():
 
     program = pq.Program(
         instructions=[
-            pq.StateVector([0, 2]) * np.sqrt(1 / 2),
-            pq.StateVector([2, 0]) * np.sqrt(1 / 2),
+            pq.NumberState([0, 2]) * np.sqrt(1 / 2),
+            pq.NumberState([2, 0]) * np.sqrt(1 / 2),
             pq.ParticleNumberMeasurement().on_modes(1),
             pq.Squeezing(r=r).on_modes(0).when(lambda x: x[-1] == 2),
         ]
@@ -515,8 +515,8 @@ def test_conditional_squeezing_with_expression():
 
     program = pq.Program(
         instructions=[
-            pq.StateVector([0, 2]) * np.sqrt(1 / 2),
-            pq.StateVector([2, 0]) * np.sqrt(1 / 2),
+            pq.NumberState([0, 2]) * np.sqrt(1 / 2),
+            pq.NumberState([2, 0]) * np.sqrt(1 / 2),
             pq.ParticleNumberMeasurement().on_modes(1),
             pq.Squeezing(r=r).on_modes(0).when("x[-1] == 2"),
         ]
@@ -545,9 +545,9 @@ def test_unresolved_squeezing_with_function():
 
     program = pq.Program(
         instructions=[
-            pq.StateVector([0, 2]) * np.sqrt(1 / 3),
-            pq.StateVector([1, 1]) * np.sqrt(1 / 3),
-            pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+            pq.NumberState([0, 2]) * np.sqrt(1 / 3),
+            pq.NumberState([1, 1]) * np.sqrt(1 / 3),
+            pq.NumberState([2, 0]) * np.sqrt(1 / 3),
             pq.ParticleNumberMeasurement().on_modes(1),
             pq.Squeezing(r=f).on_modes(0),
         ]
@@ -566,7 +566,7 @@ def test_unresolved_squeezing_with_function():
             )
             .execute_instructions(
                 [
-                    pq.StateVector([2 - branch.outcome[0]]),
+                    pq.NumberState([2 - branch.outcome[0]]),
                     pq.Squeezing(r=f(branch.outcome)),
                 ]
             )
@@ -580,9 +580,9 @@ def test_unresolved_squeezing_with_expression():
 
     program = pq.Program(
         instructions=[
-            pq.StateVector([0, 2]) * np.sqrt(1 / 3),
-            pq.StateVector([1, 1]) * np.sqrt(1 / 3),
-            pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+            pq.NumberState([0, 2]) * np.sqrt(1 / 3),
+            pq.NumberState([1, 1]) * np.sqrt(1 / 3),
+            pq.NumberState([2, 0]) * np.sqrt(1 / 3),
             pq.ParticleNumberMeasurement().on_modes(1),
             pq.Squeezing(r="0.01 * x[-1] ** 2").on_modes(0),
         ]
@@ -601,7 +601,7 @@ def test_unresolved_squeezing_with_expression():
             )
             .execute_instructions(
                 [
-                    pq.StateVector([2 - branch.outcome[0]]),
+                    pq.NumberState([2 - branch.outcome[0]]),
                     pq.Squeezing(r=0.01 * branch.outcome[-1] ** 2),
                 ]
             )

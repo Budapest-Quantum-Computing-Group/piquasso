@@ -30,7 +30,7 @@ def test_Beamsplitter_gradient_at_theta_equal_0():
         initial_state = [1, 1, 0]
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(initial_state)
+            pq.Q() | pq.NumberState(initial_state)
 
         with pq.Program() as rotated_program:
             pq.Q() | program
@@ -64,7 +64,7 @@ def test_Beamsplitter_gradient_at_random_angle():
         initial_state = [1, 1, 0]
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(initial_state)
+            pq.Q() | pq.NumberState(initial_state)
 
         with pq.Program() as rotated_program:
             pq.Q() | program
@@ -102,7 +102,7 @@ def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
         initial_state = [2, 1, 0]
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector(initial_state)
+            pq.Q() | pq.NumberState(initial_state)
 
         with pq.Program() as rotated_program:
             pq.Q() | program
@@ -151,7 +151,7 @@ def test_get_particle_detection_probability_gradient():
 
     def func(theta):
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta)
 

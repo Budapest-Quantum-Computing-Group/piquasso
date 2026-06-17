@@ -1024,7 +1024,7 @@ def test_identical_state_vector_overlap(connector):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
@@ -1042,10 +1042,10 @@ def test_different_state_vector_overlap(connector):
     state_vector_2 = [0, 1, 1]
 
     with pq.Program() as program_1:
-        pq.Q() | pq.StateVector(state_vector_1)
+        pq.Q() | pq.NumberState(state_vector_1)
 
     with pq.Program() as program_2:
-        pq.Q() | pq.StateVector(state_vector_2)
+        pq.Q() | pq.NumberState(state_vector_2)
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
@@ -1271,11 +1271,11 @@ def test_Vacuum_density_matrix(connector):
 
 
 @for_all_connectors
-def test_StateVector_density_matrix(connector):
+def test_NumberState_density_matrix(connector):
     d = 2
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0])
+        pq.Q() | pq.NumberState([1, 0])
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
@@ -1285,11 +1285,11 @@ def test_StateVector_density_matrix(connector):
 
 
 @for_all_connectors
-def test_parity_StateVector(connector):
+def test_parity_NumberState(connector):
     d = 3
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 1, 0])
+        pq.Q() | pq.NumberState([0, 1, 0])
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
@@ -1302,13 +1302,13 @@ def test_parity_StateVector(connector):
 
 @pytest.mark.monkey
 @for_all_connectors
-def test_parity_StateVector_random(connector):
+def test_parity_NumberState_random(connector):
     d = np.random.randint(1, 10)
 
     state_vector = np.random.randint(0, 2, d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
@@ -1332,7 +1332,7 @@ def test_parity_is_invariant_under_linear_transformations(
     H = generate_fermionic_gaussian_hamiltonian(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(H)
 
@@ -1356,11 +1356,11 @@ def test_overlap_Interferometer(connector, generate_unitary_matrix):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program1:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
         pq.Q() | pq.Interferometer(U1)
 
     with pq.Program() as program2:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
         pq.Q() | pq.Interferometer(U2)
 
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
@@ -1438,7 +1438,7 @@ def test_density_matrix_Interferometer_2_by_2_simple(connector):
     )
 
     with pq.Program() as preparation:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
 
     with pq.Program() as program:
         pq.Q(0, 1) | preparation
@@ -1475,7 +1475,7 @@ def test_density_matrix_Interferometer_2_by_2_random(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as preparation:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
 
     with pq.Program() as program:
         pq.Q(0, 1) | preparation
@@ -1504,7 +1504,7 @@ def test_density_matrix_Interferometer_2_by_2_random(
 
 
 @for_all_connectors
-def test_density_matrix_StateVector_ordering(connector):
+def test_density_matrix_NumberState_ordering(connector):
     d = 3
 
     state_vectors = [
@@ -1522,7 +1522,7 @@ def test_density_matrix_StateVector_ordering(connector):
 
     for i in range(len(state_vectors)):
         with pq.Program() as preparation:
-            pq.Q(0, 1, 2) | pq.StateVector(state_vectors[i])
+            pq.Q(0, 1, 2) | pq.NumberState(state_vectors[i])
 
         state = simulator.execute(preparation).state
 
@@ -1541,7 +1541,7 @@ def test_density_matrix_Interferometer_3_by_3_random(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as preparation:
-        pq.Q(0, 1, 2) | pq.StateVector([1, 0, 0])
+        pq.Q(0, 1, 2) | pq.NumberState([1, 0, 0])
 
     with pq.Program() as program:
         pq.Q(0, 1, 2) | preparation

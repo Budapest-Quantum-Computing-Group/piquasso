@@ -49,12 +49,12 @@ def test_GaussianHamiltonian_and_Interferometer_equivalence(
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
     with pq.Program() as passive_program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.Interferometer(matrix=unitary)
 
@@ -77,7 +77,7 @@ def test_passive_GaussianHamiltonian_preserves_particle_number(
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
@@ -120,12 +120,12 @@ def test_GaussianHamiltonian_subsystem_equivalence(
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
     with pq.Program() as program_subsystem:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q(*modes) | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
     with pq.Program() as program_embedded:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=embedded_hamiltonian)
 
@@ -144,7 +144,7 @@ def test_Interferometer_on_state_vector(connector):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.Interferometer(U)
 
@@ -185,7 +185,7 @@ def test_Interferometer(connector):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+        pq.Q() | pq.NumberState(occupation_numbers=state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
@@ -225,7 +225,7 @@ def test_Interferometer_on_subsystem(connector):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+        pq.Q() | pq.NumberState(occupation_numbers=state_vector)
 
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
@@ -257,7 +257,7 @@ def test_Beamsplitter_preserves_particle_number(connector):
     state_vector = [1, 0, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
         pq.Q(1, 2) | pq.Beamsplitter(theta=-np.pi / 5, phi=np.pi / 4)
@@ -278,7 +278,7 @@ def test_5050_Beamsplitter(connector):
     state_vector = [1, 0]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(state_vector)
+        pq.Q() | pq.NumberState(state_vector)
 
         pq.Q() | pq.Beamsplitter(theta=np.pi / 4)
 
@@ -313,7 +313,7 @@ def test_Interferometer_clements_equivalence(connector):
     U = expm(1j * passive_hamiltonian)
 
     with pq.Program() as preparation:
-        pq.Q() | pq.StateVector(occupation_numbers=[1, 0, 1])
+        pq.Q() | pq.NumberState(occupation_numbers=[1, 0, 1])
         pq.Q() | pq.fermionic.GaussianHamiltonian(hamiltonian=hamiltonian)
 
     with pq.Program() as program:
@@ -350,7 +350,7 @@ def test_Interferometer_subsystem_equivalence(connector, generate_unitary_matrix
     bigU[2, 2] = U[1, 1]
 
     with pq.Program() as preparation:
-        pq.Q() | pq.StateVector(occupation_numbers=[1, 1, 0])
+        pq.Q() | pq.NumberState(occupation_numbers=[1, 1, 0])
 
     with pq.Program() as program_subsystem:
         pq.Q() | preparation
@@ -378,7 +378,7 @@ def test_Squeezing2_on_two_modes_00(connector):
     phi = np.pi / 7
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+        pq.Q() | pq.NumberState(occupation_numbers=state_vector)
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -410,7 +410,7 @@ def test_Squeezing2_on_two_modes_11(connector):
     phi = np.pi / 7
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+        pq.Q() | pq.NumberState(occupation_numbers=state_vector)
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -444,7 +444,7 @@ def test_Squeezing2_leaves_odd_occupation_numbers_invariant(connector):
     simulator = pq.fermionic.GaussianSimulator(d=d, connector=connector)
 
     with pq.Program() as empty_program:
-        pq.Q() | pq.StateVector(occupation_numbers=state_vector)
+        pq.Q() | pq.NumberState(occupation_numbers=state_vector)
 
     with pq.Program() as program:
         pq.Q() | empty_program

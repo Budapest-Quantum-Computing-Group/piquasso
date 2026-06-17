@@ -62,6 +62,12 @@ def state_vector(
     fallback_np = state._connector.fallback_np
 
     coefficient = instruction._get_all_params(state._connector)["coefficient"]
+
+    if "fock_amplitude_map" in instruction._get_all_params(state._connector):
+        raise InvalidParameter(
+            "`fock_amplitude_map` is not supported for fermionic Gaussian states."
+        )
+
     if state._can_validate_variable(coefficient) and not fallback_np.isclose(
         coefficient, 1.0
     ):

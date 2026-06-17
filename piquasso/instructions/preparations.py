@@ -23,6 +23,7 @@ be placed at the beginning of the Piquasso program.
 
 
 from typing import Dict, Iterable, Tuple, Optional
+import warnings
 
 import numpy as np
 
@@ -179,21 +180,196 @@ class Thermal(Preparation):
         return dict(cov=cov)
 
 
-class StateVector(Preparation, _mixins.WeightMixin):
+class NumberState(Preparation, _mixins.WeightMixin):
     r"""State preparation with Fock basis vectors.
 
     Example usage::
 
         with pq.Program() as program:
             pq.Q() | (
-                0.3 * pq.StateVector([2, 1, 0, 3])
-                + 0.2 * pq.StateVector([1, 1, 2, 3])
+                0.3 * pq.NumberState([2, 1, 0, 3])
+                + 0.2 * pq.NumberState([1, 1, 2, 3])
                 ...
             )
             ...
 
     Can only be applied to the following states:
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState` and
+    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    """
+
+    def __init__(
+        self,
+        occupation_numbers: Iterable[int],
+        coefficient: complex = 1.0,
+    ) -> None:
+        """
+        Args:
+            occupation_numbers (Iterable[int]): The occupation numbers.
+            coefficient (complex, optional):
+                The coefficient of the occupation number. Defaults to :math:`1.0`.
+
+        Raises:
+            InvalidState:
+                If the specified occupation numbers are not all natural numbers.
+        """
+
+        if not all_natural(occupation_numbers):
+            raise InvalidState(
+                f"Invalid occupation numbers: "
+                f"occupation_numbers={occupation_numbers}\n"
+                "Occupation numbers must contain non-negative integers."
+            )
+
+        super().__init__(
+            params=dict(
+                occupation_numbers=tuple(occupation_numbers),
+                coefficient=coefficient,
+            ),
+        )
+
+    def __add__(self, other):
+        if isinstance(other, NumberState):
+            if self.params["occupation_numbers"] == other.params["occupation_numbers"]:
+                new_coefficient = (
+                    self.params["coefficient"] + other.params["coefficient"]
+                )
+                return NumberState(
+                    occupation_numbers=self.params["occupation_numbers"],
+                    coefficient=new_coefficient,
+                )
+            else:
+                fock_amplitude_map = {
+                    self.params["occupation_numbers"]: self.params["coefficient"],
+                    other.params["occupation_numbers"]: other.params["coefficient"],
+                }
+                return FockStateVector(fock_amplitude_map=fock_amplitude_map)
+        elif isinstance(other, FockStateVector):
+            if self.params["occupation_numbers"] in other.params["fock_amplitude_map"]:
+                new_coefficient = (
+                    self.params["coefficient"]
+                    + other.params["fock_amplitude_map"][
+                        self.params["occupation_numbers"]
+                    ]
+                )
+                fock_amplitude_map = {
+                    **other.params["fock_amplitude_map"],
+                    self.params["occupation_numbers"]: new_coefficient,
+                }
+            else:
+                fock_amplitude_map = {
+                    self.params["occupation_numbers"]: self.params["coefficient"],
+                    **other.params["fock_amplitude_map"],
+                }
+
+            return FockStateVector(fock_amplitude_map=fock_amplitude_map)
+        else:
+            return NotImplemented
+
+
+class FockStateVector(Preparation, _mixins.WeightMixin):
+    r"""State preparation with Fock basis vectors.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.FockStateVector(
+                {
+                    (2, 1, 0, 3): 0.3,
+                    (1, 1, 2, 3): 0.2,
+                    ...
+                }
+            )
+            ...
+
+    Can only be applied to the following states:
+    :class:`~piquasso._simulators.fock.pure.state.PureFockState` and
+    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    """
+
+    def __init__(
+        self,
+        fock_amplitude_map: Dict[Tuple[int, ...], complex],
+        coefficient: complex = 1.0,
+    ) -> None:
+        """
+        Args:
+            fock_amplitude_map (Dict[Tuple[int, ...], complex]): The Fock amplitude map.
+            coefficient (complex, optional):
+                The coefficient of the occupation number. Defaults to :math:`1.0`.
+
+        Raises:
+            InvalidState:
+                If the specified occupation numbers are not all natural numbers.
+        """
+        if not all(all_natural(occupation) for occupation in fock_amplitude_map.keys()):
+            raise InvalidState(
+                f"Invalid occupation numbers in "
+                f"fock_amplitude_map: {fock_amplitude_map}\n"
+                "Occupation numbers must contain non-negative integers."
+            )
+        super().__init__(
+            params=dict(
+                fock_amplitude_map=fock_amplitude_map,
+                coefficient=coefficient,
+            ),
+        )
+
+    def __add__(self, other):
+        if isinstance(other, NumberState):
+            fock_amplitude_map = {
+                occupation_numbers: coefficient * self.params["coefficient"]
+                for occupation_numbers, coefficient in self.params[
+                    "fock_amplitude_map"
+                ].items()
+            }
+
+            if other.params["occupation_numbers"] in self.params["fock_amplitude_map"]:
+                fock_amplitude_map[other.params["occupation_numbers"]] += other.params[
+                    "coefficient"
+                ]
+            else:
+                fock_amplitude_map[other.params["occupation_numbers"]] = other.params[
+                    "coefficient"
+                ]
+
+            return FockStateVector(fock_amplitude_map=fock_amplitude_map)
+
+        elif isinstance(other, FockStateVector):
+            fock_amplitude_map = {
+                occupation_numbers: coefficient * self.params["coefficient"]
+                for occupation_numbers, coefficient in self.params[
+                    "fock_amplitude_map"
+                ].items()
+            }
+            for occupation_numbers, coefficient in other.params[
+                "fock_amplitude_map"
+            ].items():
+                coefficient *= other.params["coefficient"]
+                if occupation_numbers in fock_amplitude_map:
+                    fock_amplitude_map[occupation_numbers] += coefficient
+                else:
+                    fock_amplitude_map[occupation_numbers] = coefficient
+
+            return FockStateVector(fock_amplitude_map=fock_amplitude_map)
+        else:
+            return NotImplemented
+
+
+class StateVector(Preparation, _mixins.WeightMixin):
+    r"""State preparation with Fock basis vectors.
+
+    Example usage::
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([2, 1, 0, 3])
+            ...
+
+    Can only be applied to the following states:
     :class:`~piquasso._simulators.fock.pure.state.PureFockState`.
+
+    .. deprecated:: 8.0.0
+       Use :class:`NumberState` or :class:`FockStateVector` instead.
     """
 
     def __init__(
@@ -220,6 +396,13 @@ class StateVector(Preparation, _mixins.WeightMixin):
             InvalidState:
                 If the keys in `fock_amplitude_map` are not all natural numbers.
         """
+
+        warnings.warn(
+            "`pq.StateVector` is deprecated and will be removed in a future "
+            "release. Use `pq.NumberState` or `pq.FockStateVector` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         if occupation_numbers is None and fock_amplitude_map is None:
             raise InvalidParameter(

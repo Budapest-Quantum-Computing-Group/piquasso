@@ -82,7 +82,7 @@ def strawberryfields_benchmark(benchmark, weights, cutoff, sf):
     benchmark(lambda: _calculate_strawberryfields_results(weights, cutoff, sf))
 
 
-def test_state_vector_and_jacobian(weights, cutoff, sf):
+def test_number_state_and_jacobian(weights, cutoff, sf):
     pq_state_vector, pq_jacobian = _calculate_piquasso_results(
         weights, cutoff, pq.TensorflowConnector(decorate_with=tf.function)
     )

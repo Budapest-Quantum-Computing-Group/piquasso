@@ -39,7 +39,7 @@ def test_Interferometer_2_by_2_gradient():
         )
 
         with pq.Program() as program:
-            pq.Q(0, 1) | pq.StateVector([0, 1])
+            pq.Q(0, 1) | pq.NumberState([0, 1])
             pq.Q(0, 1) | pq.Interferometer(U)
 
         fock_simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -72,8 +72,8 @@ def test_Interferometer_3_by_3_random(generate_unitary_matrix):
         with pq.Program() as program:
             # NOTE: This violates the parity superselection rule, but the simulator
             # should permit it.
-            pq.Q(0, 1, 2) | pq.StateVector([0, 0, 1]) / np.sqrt(2)
-            pq.Q(0, 1, 2) | pq.StateVector([0, 1, 1]) / np.sqrt(2)
+            pq.Q(0, 1, 2) | pq.NumberState([0, 0, 1]) / np.sqrt(2)
+            pq.Q(0, 1, 2) | pq.NumberState([0, 1, 1]) / np.sqrt(2)
             pq.Q(0, 1, 2) | pq.Interferometer(U)
 
         fock_simulator = pq.fermionic.PureFockSimulator(d=d, connector=connector)
@@ -149,8 +149,8 @@ def test_parametrized_circuit_gradient_clements_random(generate_unitary_matrix):
         U = get_interferometer_from_weights(weights.real, d, connector, np.complex128)
 
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([0, 0, 1, 1]) / np.sqrt(2)
-            pq.Q() | pq.StateVector([1, 1, 0, 0]) / np.sqrt(2)
+            pq.Q() | pq.NumberState([0, 0, 1, 1]) / np.sqrt(2)
+            pq.Q() | pq.NumberState([1, 1, 0, 0]) / np.sqrt(2)
             pq.Q() | pq.Interferometer(U)
 
         fock_simulator = pq.fermionic.PureFockSimulator(

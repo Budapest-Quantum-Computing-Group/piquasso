@@ -25,7 +25,7 @@ import re
 def test_Loss_uniform():
     d = 5
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         for i in range(5):
             pq.Q(i) | pq.Loss(0.9)
@@ -42,7 +42,7 @@ def test_Loss_uniform():
 
 def test_Loss_non_uniform():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(0) | pq.Loss(transmissivity=0.4)
         pq.Q(1) | pq.Loss(transmissivity=0.5)
@@ -61,7 +61,7 @@ def test_Loss_non_uniform():
 
 def test_UniformLoss():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q() | pq.UniformLoss(0.8)
 
@@ -77,7 +77,7 @@ def test_UniformLoss():
 
 def test_UniformLoss_transmissivity_out_of_range():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q() | pq.UniformLoss(-0.1)
 
@@ -92,7 +92,7 @@ def test_UniformLoss_transmissivity_out_of_range():
 
 def test_UniformLoss_transmissivity_invalid():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q() | pq.UniformLoss(0.5j)
 
