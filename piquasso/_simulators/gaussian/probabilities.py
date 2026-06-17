@@ -48,7 +48,7 @@ class DensityMatrixCalculation(abc.ABC):
         )
 
     def get_density_matrix(self, occupation_numbers: np.ndarray) -> np.ndarray:
-        return self.connector.density_matrix_from_representation(
+        return self.connector.density_matrix_from_gaussian(
             self._A, self._b, self._normalization, occupation_numbers
         )
 

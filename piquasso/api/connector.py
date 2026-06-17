@@ -275,7 +275,7 @@ class BaseConnector(abc.ABC):
         """
 
     @abc.abstractmethod
-    def density_matrix_from_representation(self, A, b, c, basis):
+    def density_matrix_from_gaussian(self, A, b, c, basis):
         """Builds a Gaussian density matrix from its :math:`(A, b, c)` triple.
 
         Args:

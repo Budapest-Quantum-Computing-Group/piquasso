@@ -123,7 +123,7 @@ class BuiltinConnector(BaseConnector):
 
         return subspace_representations
 
-    def density_matrix_from_representation(self, A, b, c, basis):
+    def density_matrix_from_gaussian(self, A, b, c, basis):
         """Builds the density matrix element by element from the loop hafnian.
 
         Each element is ``c * loop_hafnian(A, b) / sqrt(ket! * bra!)`` reduced on

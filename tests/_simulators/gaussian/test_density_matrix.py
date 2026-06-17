@@ -16,9 +16,17 @@
 import pytest
 import numpy as np
 
+from scipy.linalg import block_diag
 from scipy.special import factorial
 
 import piquasso as pq
+
+import jax
+
+
+for_all_connectors = pytest.mark.parametrize(
+    "connector", [pq.NumpyConnector(), pq.JaxConnector()]
+)
 
 
 def _example_program(d, displaced):
@@ -74,7 +82,8 @@ def test_density_matrix_agrees_across_connectors(d, displaced):
     )
 
 
-def test_thermal_density_matrix_matches_analytic():
+@for_all_connectors
+def test_thermal_density_matrix_matches_analytic(connector):
     """The thermal state has the closed-form diagonal density matrix."""
     mean_photon_number = 0.5
     cutoff = 8
@@ -83,7 +92,7 @@ def test_thermal_density_matrix_matches_analytic():
         pq.Q(0) | pq.Thermal([mean_photon_number])
 
     state = (
-        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff))
+        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff), connector=connector)
         .execute(program)
         .state
     )
@@ -97,7 +106,8 @@ def test_thermal_density_matrix_matches_analytic():
     assert np.allclose(density_matrix - np.diag(np.diag(density_matrix)), 0.0)
 
 
-def test_squeezed_vacuum_density_matrix_matches_analytic():
+@for_all_connectors
+def test_squeezed_vacuum_density_matrix_matches_analytic(connector):
     """Single-mode squeezed vacuum has only even-photon amplitudes."""
     r = 0.5
     cutoff = 8
@@ -107,7 +117,7 @@ def test_squeezed_vacuum_density_matrix_matches_analytic():
         pq.Q(0) | pq.Squeezing(r=r)
 
     state = (
-        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff))
+        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff), connector=connector)
         .execute(program)
         .state
     )
@@ -125,7 +135,8 @@ def test_squeezed_vacuum_density_matrix_matches_analytic():
     assert np.allclose(state.density_matrix, expected)
 
 
-def test_coherent_density_matrix_matches_analytic():
+@for_all_connectors
+def test_coherent_density_matrix_matches_analytic(connector):
     """Coherent state: :math:`\\rho_{mn} = e^{-|\\alpha|^2} \\alpha^m
     \\bar{\\alpha}^n / \\sqrt{m! n!}`."""
     cutoff = 10
@@ -135,7 +146,7 @@ def test_coherent_density_matrix_matches_analytic():
         pq.Q(0) | pq.Displacement(r=0.7, phi=0.4)
 
     state = (
-        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff))
+        pq.GaussianSimulator(d=1, config=pq.Config(cutoff=cutoff), connector=connector)
         .execute(program)
         .state
     )
@@ -148,30 +159,99 @@ def test_coherent_density_matrix_matches_analytic():
     assert np.allclose(state.density_matrix, expected)
 
 
-def test_density_matrix_is_hermitian():
+@for_all_connectors
+def test_density_matrix_is_hermitian(connector):
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
         pq.Q(0) | pq.Squeezing(r=0.5) | pq.Displacement(r=0.3, phi=0.7)
         pq.Q(1) | pq.Displacement(r=0.2)
         pq.Q(0, 1) | pq.Beamsplitter(theta=0.9, phi=0.4)
 
-    state = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=6)).execute(program).state
+    state = (
+        pq.GaussianSimulator(d=2, config=pq.Config(cutoff=6), connector=connector)
+        .execute(program)
+        .state
+    )
 
     density_matrix = state.density_matrix
 
     assert np.allclose(density_matrix, density_matrix.conj().T)
 
 
-def test_density_matrix_diagonal_matches_fock_probabilities():
+@for_all_connectors
+def test_density_matrix_diagonal_matches_fock_probabilities(connector):
     with pq.Program() as program:
         pq.Q(all) | pq.Vacuum()
         pq.Q(0) | pq.Squeezing(r=0.5)
         pq.Q(1) | pq.Squeezing(r=0.3, phi=0.8)
         pq.Q(0, 1) | pq.Beamsplitter(theta=0.6, phi=0.2)
 
-    state = pq.GaussianSimulator(d=2, config=pq.Config(cutoff=6)).execute(program).state
+    state = (
+        pq.GaussianSimulator(d=2, config=pq.Config(cutoff=6), connector=connector)
+        .execute(program)
+        .state
+    )
 
     assert np.allclose(
         np.diag(state.density_matrix).real,
         state.fock_probabilities,
     )
+
+
+@for_all_connectors
+def test_density_matrix_Thermal_Interferometer(generate_unitary_matrix, connector):
+    d = 3
+
+    preparation = pq.Program([pq.Thermal([0.1, 0.2, 0.3])])
+
+    U = generate_unitary_matrix(d)
+
+    with pq.Program() as program:
+        pq.Q() | preparation
+        pq.Q() | pq.Interferometer(U)
+
+    simulator = pq.GaussianSimulator(
+        d=d, config=pq.Config(cutoff=2), connector=connector
+    )
+
+    initial_state = simulator.execute(preparation).state
+    final_state = simulator.execute(program).state
+
+    fock_space_unitary = block_diag(np.array([1.0]), U)
+
+    assert np.allclose(
+        final_state.density_matrix,
+        fock_space_unitary @ initial_state.density_matrix @ fock_space_unitary.conj().T,
+    )
+
+
+def test_density_matrix_differentiability():
+    connector = pq.JaxConnector()
+
+    def func(r):
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+            pq.Q(0) | pq.Squeezing(r=r, phi=np.pi / 3)
+
+        simulator = pq.GaussianSimulator(
+            d=1, config=pq.Config(cutoff=3), connector=connector
+        )
+
+        state = simulator.execute(program).state
+
+        return state.density_matrix[2, 2].real
+
+    grad_func = jax.grad(func)
+
+    r = 0.1
+
+    expected_value = np.tanh(r) ** 2 / (2 * np.cosh(r))
+    expected_derivative = np.tanh(r) / np.cosh(r) ** 3 - np.tanh(r) ** 3 / (
+        2 * np.cosh(r)
+    )
+
+    actual_value = func(r)
+    actual_derivative = grad_func(r)
+
+    assert np.isclose(actual_value, expected_value)
+    assert np.isclose(actual_derivative, expected_derivative)

@@ -17,7 +17,9 @@ import numpy as np
 
 from functools import partial
 from typing import Any
-from ..connector import BuiltinConnector
+from ..connector import BuiltinConnector, instancemethod
+
+from piquasso._math.jax.hermite import density_matrix_from_gaussian
 
 
 class JaxConnector(BuiltinConnector):
@@ -71,6 +73,8 @@ class JaxConnector(BuiltinConnector):
     # don't work together, when the condition depends on a tracer. Therefore,
     # conditionals must be disabled in this case
     allow_conditionals = False
+
+    density_matrix_from_gaussian = instancemethod(density_matrix_from_gaussian)
 
     def __init__(self):
         try:
