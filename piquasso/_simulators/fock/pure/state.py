@@ -15,6 +15,8 @@
 
 from typing import Optional, Tuple, Dict
 
+from numbers import Integral
+
 import numpy as np
 
 from piquasso.api.config import Config
@@ -45,7 +47,27 @@ class PureFockState(BaseFockState):
 
     where :math:`c \in \mathbb{N}` is the Fock space cutoff.
 
-    :ivar state_vector: The state vector of the quantum state.
+    You can index this state to obtain the Fock basis coefficients of its state vector,
+    for example:
+
+    .. code-block::
+
+        with pq.Program() as program:
+            pq.Q() | pq.StateVector([0, 1]) / 2
+
+            pq.Q() | pq.StateVector([0, 2]) / 2
+            pq.Q() | pq.StateVector([1, 1]) / np.sqrt(2)
+
+        simulator = pq.PureFockSimulator(d=2, config=pq.Config(cutoff=3))
+        state = simulator.execute(program).state  # returns PureFockState instance
+
+        state[0, 1]  # returns 0.5
+        state[:, 1]  # returns [0.5, 0.70710678]
+
+    :ivar state_vector:
+        The state vector of the quantum state, where the ordering of the Fock basis is
+        increasing with particle numbers, and in each particle number conserving
+        subspace, lexicographic ordering is used.
     """
 
     def __init__(
@@ -376,3 +398,89 @@ class PureFockState(BaseFockState):
 
     def get_purity(self):
         return 1.0
+
+    def __getitem__(self, key):
+        d = self.d
+        cutoff = self._config.cutoff
+
+        if d == 1 and isinstance(key, (Integral, slice)):
+            return self.state_vector[key]
+
+        try:
+            slice_positions = [i for i, x in enumerate(key) if isinstance(x, slice)]
+        except TypeError:
+            slice_positions = []
+
+        if len(slice_positions) > 1:
+            raise NotImplementedError(
+                f"Only a single slice is supported, but found {len(slice_positions)}."
+                f"Key: {key}."
+            )
+
+        if len(slice_positions) == 1:
+            is_valid_slice_pattern = len(key) == d and all(
+                isinstance(x, (slice, Integral)) for x in key
+            )
+
+            if not is_valid_slice_pattern:
+                raise ValueError(f"Invalid slice pattern: {key}.")
+
+            slice_position = slice_positions[0]
+
+            fixed_values = [x for x in key if not isinstance(x, slice)]
+
+            if not all(x >= 0 for x in fixed_values):
+                raise ValueError(f"Occupation numbers must be non-negative: {key}.")
+
+            fixed_total = sum(fixed_values)
+            if fixed_total >= cutoff:
+                raise ValueError(f"Occupation numbers {key} violate cutoff {cutoff}.")
+
+            values = np.arange(cutoff - fixed_total)[key[slice_position]]
+            occupations = np.tile(key, (len(values), 1))
+            occupations[:, slice_position] = values
+
+            indices = get_index_in_fock_space_array(occupations.astype(int))
+
+            return self.state_vector[indices]
+
+        key = np.asarray(key)
+        if key.dtype.kind not in ("i", "u", "b"):
+            raise TypeError(
+                "Invalid occupation-number index. Occupation numbers must be integers."
+            )
+        key = key.astype(int, copy=False)
+
+        is_single_occupation = key.ndim == 1 and key.shape[0] == d
+        if is_single_occupation:
+            if not all(key >= 0):
+                raise ValueError(f"Occupation numbers must be non-negative: {key}.")
+
+            if sum(key) >= cutoff:
+                raise ValueError(f"Occupation numbers {key} violate cutoff {cutoff}.")
+
+            index = get_index_in_fock_space(key)
+
+            return self.state_vector[index]
+
+        is_multiple_occupations = key.ndim == 2 and key.shape[1] == d
+
+        if is_multiple_occupations:
+            if not np.all(key >= 0):
+                raise ValueError(f"Occupation numbers must be non-negative: {key}.")
+
+            if np.any(np.sum(key, axis=1) >= cutoff):
+                raise ValueError(f"Occupation numbers {key} violate cutoff {cutoff}.")
+
+            indices = get_index_in_fock_space_array(key)
+
+            return self.state_vector[indices]
+
+        raise TypeError(
+            "Invalid occupation-number index. Expected one of: "
+            "a single occupation number with shape (d,), "
+            "multiple occupation numbers with shape (n, d), "
+            "or a single-mode slice pattern of length d. "
+            "All fixed occupation numbers must be non-negative integers, "
+            "and each occupation-number sum must be less than the cutoff."
+        )
