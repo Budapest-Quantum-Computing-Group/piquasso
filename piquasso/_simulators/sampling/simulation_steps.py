@@ -37,6 +37,7 @@ from .utils import (
     generate_samples,
     generate_lossy_samples,
 )
+from .marginal import generate_marginal_samples, marginal_strategy_is_preferred
 from piquasso._utils import get_counts
 
 
@@ -235,7 +236,66 @@ def particle_number_measurement(
         )
 
     initial_state = state._occupation_numbers[0]
+    modes = instruction.modes
+    is_partial_measurement = len(modes) != state.d
 
+    if is_partial_measurement and _marginal_strategy_is_applicable(
+        state=state,
+        initial_state=initial_state,
+        modes=modes,
+        shots=shots,
+    ):
+        samples = generate_marginal_samples(
+            interferometer=state.interferometer,
+            initial_state=initial_state,
+            modes=modes,
+            shots=shots,
+            rng=state._config.rng,
+        )
+    else:
+        samples = _generate_full_samples(state, initial_state, shots)
+
+        if is_partial_measurement:
+            samples = [tuple(sample[mode] for mode in modes) for sample in samples]
+
+    binned_samples = get_counts(samples)
+
+    branches = [
+        Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
+        for outcome, multiplicity in binned_samples.items()
+    ]
+
+    return branches
+
+
+def _marginal_strategy_is_applicable(
+    state: SamplingState,
+    initial_state: np.ndarray,
+    modes: Tuple[int, ...],
+    shots: int,
+) -> bool:
+    if (
+        state.is_lossy
+        or state._is_postselected()
+        or len(state._occupation_numbers) != 1
+        or shots is None
+    ):
+        return False
+
+    initial_state = np.asarray(initial_state)
+
+    return marginal_strategy_is_preferred(
+        number_of_particles=int(np.sum(initial_state)),
+        number_of_measured_modes=len(modes),
+        number_of_occupied_modes=int(np.count_nonzero(initial_state)),
+        number_of_modes=state.d,
+        shots=shots,
+    )
+
+
+def _generate_full_samples(
+    state: SamplingState, initial_state: np.ndarray, shots: int
+) -> List[Tuple[int, ...]]:
     interferometer_svd = np.linalg.svd(state.interferometer)
 
     rng = state._config.rng
@@ -268,22 +328,13 @@ def particle_number_measurement(
             interferometer_svd=interferometer_svd,
         )
 
-    samples = partial_generate_samples(
+    return partial_generate_samples(
         initial_state,
         shots,
         calculate_permanent_laplace=state._connector.permanent_laplace,
         rng=rng,
         postselect_data=postselect_data,
     )
-
-    binned_samples = get_counts(samples)
-
-    branches = [
-        Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
-        for outcome, multiplicity in binned_samples.items()
-    ]
-
-    return branches
 
 
 def post_select_photons(

@@ -22,6 +22,11 @@ from scipy.stats import unitary_group
 
 import piquasso as pq
 from piquasso.api.exceptions import InvalidParameter
+from piquasso._simulators.sampling.marginal import (
+    _calculate_prefix_probability,
+    _get_compositions,
+    _get_scaled_diagonal_coefficients,
+)
 
 
 @pytest.fixture
@@ -158,6 +163,81 @@ def test_counts_raises(simulator, measurement_class):
         NotImplementedError, match="method only supports samples that contain integers"
     ):
         res.get_counts()
+
+
+def test_ParticleNumberMeasurement_on_subset_of_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(0, 1) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=5)
+    result = simulator.execute(program, shots=3)
+
+    assert result.samples == [(1, 1), (1, 1), (1, 1)]
+
+
+def test_ParticleNumberMeasurement_on_reordered_subset_of_modes():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([2, 0, 1, 0])
+        pq.Q(2, 0) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=4)
+    result = simulator.execute(program, shots=3)
+
+    assert result.samples == [(1, 2), (1, 2), (1, 2)]
+
+
+def test_ParticleNumberMeasurement_on_subset_uses_projected_fallback_for_loss():
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector([1, 1, 0])
+        pq.Q(0) | pq.Loss(transmissivity=1.0)
+        pq.Q(1) | pq.ParticleNumberMeasurement()
+
+    simulator = pq.SamplingSimulator(d=3)
+    result = simulator.execute(program, shots=3)
+
+    assert result.samples == [(1,), (1,), (1,)]
+
+
+def test_marginal_coefficients_match_reduced_PureFockSimulator():
+    input_state = np.array([2, 0, 1], dtype=int)
+    modes = (0, 2)
+    d = len(input_state)
+    number_of_particles = int(np.sum(input_state))
+
+    interferometer = unitary_group.rvs(d, random_state=123)
+
+    with pq.Program() as program:
+        pq.Q() | pq.StateVector(input_state)
+        pq.Q() | pq.Interferometer(interferometer)
+
+    pure_fock_state = (
+        pq.PureFockSimulator(d=d, config=pq.Config(cutoff=number_of_particles + 1))
+        .execute(program)
+        .state
+    )
+    expected_probabilities = pure_fock_state.reduced(modes).fock_probabilities_map
+
+    compositions, composition_indices = _get_compositions(
+        len(modes), number_of_particles
+    )
+    coefficients = _get_scaled_diagonal_coefficients(
+        interferometer=interferometer,
+        initial_state=input_state,
+        modes=modes,
+        compositions=compositions,
+        composition_indices=composition_indices,
+        number_of_particles=number_of_particles,
+    )
+
+    for outcome, expected_probability in expected_probabilities.items():
+        probability = _calculate_prefix_probability(
+            tuple(outcome),
+            coefficients=coefficients,
+            compositions=compositions,
+        )
+
+        assert np.isclose(probability, expected_probability)
 
 
 def test_mach_zehnder():
