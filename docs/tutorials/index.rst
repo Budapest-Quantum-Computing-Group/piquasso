@@ -1,77 +1,91 @@
 Tutorials
 =========
 
-This document contains the basic tutorials of Piquasso.
+These tutorials introduce the main workflows in Piquasso, from basic program
+construction to sampling, differentiable simulations, and application-oriented
+examples.
 
-.. grid:: 3
+First steps
+-----------
 
-   .. grid-item-card::  Getting started
+.. grid:: 1 1 2 2
+   :gutter: 2
+
+   .. grid-item-card:: Getting started
       :link: getting-started
       :link-type: doc
 
-      A basic usage example of Piquasso.
+      Build and execute a first Piquasso program.
 
-
-   .. grid-item-card::  Boson Sampling
-      :link: boson-sampling
-      :link-type: doc
-
-      Boson Sampling simulations using Piquasso.
-
-
-   .. grid-item-card::  Gaussian Boson Sampling
-      :link: gaussian-boson-sampling
-      :link-type: doc
-
-      Gaussian Boson Sampling simulations using Piquasso.
-
-
-.. grid:: 3
-
-    .. grid-item-card::  Modularity in Piquasso
+   .. grid-item-card:: Modularity in Piquasso
       :link: separating-programs
       :link-type: doc
 
-      Compose Piquasso programs and define custom gates with ease.
+      Compose programs, reuse circuit fragments, and define custom gates.
 
+Sampling experiments
+--------------------
 
-    .. grid-item-card::  Quantum Neural Network layers
+.. grid:: 1 1 2 2
+   :gutter: 2
+
+   .. grid-item-card:: Boson Sampling
+      :link: boson-sampling
+      :link-type: doc
+
+      Simulate Boson Sampling circuits with particle-number input states.
+
+   .. grid-item-card:: Gaussian Boson Sampling
+      :link: gaussian-boson-sampling
+      :link-type: doc
+
+      Simulate Gaussian Boson Sampling circuits and inspect the resulting
+      samples.
+
+Differentiable workflows
+------------------------
+
+.. grid:: 1 1 2 2
+   :gutter: 2
+
+   .. grid-item-card:: Quantum Neural Network layers
       :link: cvqnn-with-tensorflow
       :link-type: doc
 
-      Using the automatic differentiation capabilities of Piquasso with TensorFlow.
+      Use Piquasso with TensorFlow in a trainable continuous-variable workflow.
 
-
-    .. grid-item-card::  Using JAX with Piquasso
+   .. grid-item-card:: Using JAX with Piquasso
       :link: jax-example
       :link-type: doc
 
-      A simple state learning example using JAX and Piquasso.
+      Learn a simple state-learning example using JAX and Piquasso.
 
+Applications and benchmarking
+-----------------------------
 
-.. grid:: 3
+.. grid:: 1 1 2 2
+   :gutter: 2
 
-   .. grid-item-card::  Dense k-subgraph problem
+   .. grid-item-card:: Dense k-subgraph problem
       :link: dense-subgraph-gbs
       :link-type: doc
 
-      Solve dense k-subgraph problem with Gaussian Boson Sampling.
+      Use Gaussian Boson Sampling to study the dense k-subgraph problem.
 
-   .. grid-item-card::  Linear cross-entropy benchmarking
+   .. grid-item-card:: Linear cross-entropy benchmarking
       :link: lxeb
       :link-type: doc
 
-      A simple example of linear cross-entropy benchmarking with Piquasso.
-
+      Run a simple linear cross-entropy benchmarking example.
 
 .. toctree::
    :maxdepth: 3
    :hidden:
 
    getting-started
+   separating-programs
    boson-sampling
    gaussian-boson-sampling
-   separating-programs
    cvqnn-with-tensorflow
    jax-example
    dense-subgraph-gbs
