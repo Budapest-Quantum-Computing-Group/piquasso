@@ -134,7 +134,7 @@ def _entry_raising_bra(
 
 
 @nb.njit(cache=True)
-def density_matrix_from_a_b_c(
+def density_matrix_from_gaussian(
     A: np.ndarray,
     b: np.ndarray,
     c: complex,

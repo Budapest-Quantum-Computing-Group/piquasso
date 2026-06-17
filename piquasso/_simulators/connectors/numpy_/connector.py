@@ -26,7 +26,7 @@ from piquasso._math.hafnian import (
     loop_hafnian_with_reduction,
     loop_hafnian_with_reduction_batch,
 )
-from piquasso._math.hermite import density_matrix_from_a_b_c
+from piquasso._math.hermite import density_matrix_from_gaussian
 
 from ..connector import BuiltinConnector, instancemethod
 
@@ -61,7 +61,7 @@ class NumpyConnector(BuiltinConnector):
     calculate_interferometer_on_fermionic_fock_space = instancemethod(
         calculate_interferometer_on_fermionic_fock_space
     )
-    density_matrix_from_representation = instancemethod(density_matrix_from_a_b_c)
+    density_matrix_from_gaussian = instancemethod(density_matrix_from_gaussian)
 
     def sqrtm(self, matrix):
         return scipy.linalg.sqrtm(matrix).astype(np.complex128)
