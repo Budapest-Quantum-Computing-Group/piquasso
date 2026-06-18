@@ -29,7 +29,7 @@ def test_PureFockState_d(connector):
     d = 2
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([1, 1])
+        pq.Q(0, 1) | pq.NumberState([1, 1])
 
     simulator = pq.fermionic.PureFockSimulator(d=d, connector=connector)
 
@@ -45,7 +45,7 @@ def test_PureFockState_fock_probabilities(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -64,7 +64,7 @@ def test_PureFockState_norm(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -81,7 +81,7 @@ def test_PureFockState_get_particle_detection_probability(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -100,7 +100,7 @@ def test_PureFockState_validate_unnormalized(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -120,7 +120,7 @@ def test_PureFockState_eq_with_itself(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -137,7 +137,7 @@ def test_PureFockState_eq_different_type(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([0, 1]) / np.sqrt(2)
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -156,7 +156,7 @@ def test_PureFockState_fock_probabilities_map(connector):
     U = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 1])
+        pq.Q(0, 1) | pq.NumberState([0, 1])
         pq.Q(0, 1) | pq.Interferometer(U)
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
@@ -177,10 +177,10 @@ def test_PureFockState_fock_probabilities_map(connector):
 @for_all_connectors
 def test_PureFockState_str(connector):
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([0, 0]) / 2
-        pq.Q(0, 1) | pq.StateVector([0, 1]) / 2
-        pq.Q(0, 1) | pq.StateVector([1, 0]) / 2
-        pq.Q(0, 1) | pq.StateVector([1, 1]) / 2
+        pq.Q(0, 1) | pq.NumberState([0, 0]) / 2
+        pq.Q(0, 1) | pq.NumberState([0, 1]) / 2
+        pq.Q(0, 1) | pq.NumberState([1, 0]) / 2
+        pq.Q(0, 1) | pq.NumberState([1, 1]) / 2
 
     simulator = pq.fermionic.PureFockSimulator(d=2, connector=connector)
 

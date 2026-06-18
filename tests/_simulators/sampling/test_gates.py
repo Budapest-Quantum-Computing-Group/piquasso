@@ -24,7 +24,7 @@ def test_program():
     U = np.array([[0.5, 0, 0], [0, 0.5j, 0], [0, 0, -1]], dtype=complex)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter(0.5)
         pq.Q(1, 2, 3) | pq.Interferometer(U)
@@ -42,7 +42,7 @@ def test_interferometer():
     U = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=complex)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
@@ -67,7 +67,7 @@ def test_phaseshifter():
     phi = np.pi / 2
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(2) | pq.Phaseshifter(phi)
 
@@ -94,7 +94,7 @@ def test_beamsplitter():
     phi = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q(all) | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
 
@@ -131,7 +131,7 @@ def test_lossy_program():
     initial_state = [1, 1, 1, 0, 0]
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(initial_state)
+        pq.Q(all) | pq.NumberState(initial_state)
 
         for i in range(d):
             pq.Q(i) | pq.Loss(losses)
@@ -161,7 +161,7 @@ def test_LossyInterferometer_decreases_particle_number(generate_unitary_matrix):
     initial_state = [1, 1, 1, 0, 0]
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector(initial_state)
+        pq.Q(all) | pq.NumberState(initial_state)
 
         pq.Q() | pq.LossyInterferometer(lossy_interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
@@ -189,7 +189,7 @@ def test_LossyInterferometer_is_equivalent_to_Loss_and_Interferometers(
     simulator = pq.SamplingSimulator(d=d)
 
     with pq.Program() as program_using_lossy_interferometer:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q() | pq.LossyInterferometer(lossy_interferometer_matrix)
 
@@ -198,7 +198,7 @@ def test_LossyInterferometer_is_equivalent_to_Loss_and_Interferometers(
     ).state
 
     with pq.Program() as program_using_loss:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
 
         pq.Q() | pq.Interferometer(second_unitary)
 
@@ -273,7 +273,7 @@ def test_Interferometer_fock_probabilities(connector):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.Interferometer(U)
 
@@ -588,7 +588,7 @@ def test_LossyInterferometer_fock_probabilities(connector):
     lossy_interferometer_matrix = U @ np.diag(singular_values) @ U @ U.T
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
@@ -648,7 +648,7 @@ def test_Interferometer_state_vector(connector):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.Interferometer(U)
 
@@ -963,7 +963,7 @@ def test_LossyInterferometer_state_vector(connector):
     lossy_interferometer_matrix = U @ np.diag(singular_values) @ U @ U.T
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
@@ -997,8 +997,8 @@ def test_Kerr_gate_with_StateVector():
     angle = np.pi / 3
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([2, 1]) / np.sqrt(2)
-        pq.Q(0, 1) | pq.StateVector([1, 2]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([2, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([1, 2]) / np.sqrt(2)
 
         pq.Q(0) | pq.Kerr(angle)
 
@@ -1017,7 +1017,7 @@ def test_Kerr_gate_with_Beamsplitter():
     phi = 0.0
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([1, 1])
+        pq.Q(0, 1) | pq.NumberState([1, 1])
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
         pq.Q(0) | pq.Kerr(xi)
@@ -1047,8 +1047,8 @@ def test_Kerr_gate_with_PostSelectPhotons():
     angle = np.pi / 6
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([2, 2]) / np.sqrt(2)
-        pq.Q(0, 1) | pq.StateVector([3, 1]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([2, 2]) / np.sqrt(2)
+        pq.Q(0, 1) | pq.NumberState([3, 1]) / np.sqrt(2)
 
         pq.Q(0) | pq.PostSelectPhotons((3,))
 
@@ -1067,7 +1067,7 @@ def test_CrossKerr_gate_with_StateVector():
     angle = np.pi / 4
 
     with pq.Program() as program:
-        pq.Q(0, 1) | pq.StateVector([1, 1])
+        pq.Q(0, 1) | pq.NumberState([1, 1])
 
         pq.Q(0, 1) | pq.CrossKerr(angle)
 

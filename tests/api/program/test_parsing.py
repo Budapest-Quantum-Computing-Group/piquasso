@@ -18,11 +18,11 @@ import numpy as np
 import piquasso as pq
 
 
-def test_program_from_dict_with_StateVector_preparation():
+def test_program_from_dict_with_NumberState_preparation():
     instructions_dict = {
         "instructions": [
             {
-                "type": "StateVector",
+                "type": "NumberState",
                 "attributes": {
                     "constructor_kwargs": {
                         "occupation_numbers": [1, 1],
@@ -53,7 +53,7 @@ def test_program_from_dict_with_StateVector_preparation():
 
     program = pq.Program.from_dict(instructions_dict)
 
-    assert isinstance(program.instructions[0], pq.StateVector)
+    assert isinstance(program.instructions[0], pq.NumberState)
     assert program.instructions[0].params == {
         "occupation_numbers": (1, 1),
         "coefficient": 1.0,
@@ -128,13 +128,13 @@ def test_program_from_dict_with_DensityMatrix_preparation():
     assert program.instructions[2].modes == [0]
 
 
-def test_program_from_dict_with_StateVector_fock_amplitude_map_preparation():
+def test_program_from_dict_with_FockStateVector_fock_amplitude_map_preparation():
     amplitude_map = {(0,): 0.5, (1,): 0.5}
 
     instructions_dict = {
         "instructions": [
             {
-                "type": "StateVector",
+                "type": "FockStateVector",
                 "attributes": {
                     "constructor_kwargs": {"fock_amplitude_map": amplitude_map},
                     "modes": [0],
@@ -145,7 +145,7 @@ def test_program_from_dict_with_StateVector_fock_amplitude_map_preparation():
 
     program = pq.Program.from_dict(instructions_dict)
 
-    assert isinstance(program.instructions[0], pq.StateVector)
+    assert isinstance(program.instructions[0], pq.FockStateVector)
     assert program.instructions[0].params["fock_amplitude_map"] == amplitude_map
     assert program.instructions[0].modes == [0]
 

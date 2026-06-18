@@ -25,7 +25,7 @@ def test_Beamsplitter_mean_particle_numbers_grad():
 
     def get_mean_particle_number_first_mode(theta):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 0])
+            pq.Q() | pq.NumberState([1, 0])
 
             pq.Q() | pq.Beamsplitter(theta=theta)
 
@@ -53,7 +53,7 @@ def test_Beamsplitter_mean_particle_numbers_jacrev():
 
     def get_mean_particle_numbers(theta):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 0])
+            pq.Q() | pq.NumberState([1, 0])
 
             pq.Q() | pq.Beamsplitter(theta=theta)
 

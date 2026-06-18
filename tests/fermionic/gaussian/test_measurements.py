@@ -33,7 +33,7 @@ def test_particle_number_measurement_samples_are_binary(connector):
     U = unitary_group.rvs(d, random_state=123)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -59,7 +59,7 @@ def test_particle_number_measurement_conserves_particle_number(connector):
     initial_occupation = [1, 1, 1, 0, 0]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation)
+        pq.Q() | pq.NumberState(initial_occupation)
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -100,7 +100,7 @@ def test_particle_number_measurement_on_occupation_number_state(connector):
     occupation = [1, 0, 1, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation)
+        pq.Q() | pq.NumberState(occupation)
         pq.Q() | pq.ParticleNumberMeasurement()
 
     simulator = pq.fermionic.GaussianSimulator(
@@ -119,7 +119,7 @@ def test_particle_number_measurement_is_seed_reproducible():
     U = unitary_group.rvs(d, random_state=99)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -138,7 +138,7 @@ def test_particle_number_measurement_samples_are_connector_independent():
     U = unitary_group.rvs(d, random_state=99)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
         pq.Q(all) | pq.Interferometer(U)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -162,7 +162,7 @@ def test_particle_number_measurement_on_identity_interferometer(connector):
     occupation = [1, 0, 1, 0]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation)
+        pq.Q() | pq.NumberState(occupation)
         pq.Q(all) | pq.Interferometer(np.identity(d, dtype=complex))
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -194,7 +194,7 @@ def test_particle_number_measurement_on_permutation_interferometer(connector):
     )
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation)
+        pq.Q() | pq.NumberState(occupation)
         pq.Q(all) | pq.Interferometer(permutation)
         pq.Q() | pq.ParticleNumberMeasurement()
 
@@ -222,7 +222,7 @@ def test_particle_number_measurement_conserves_particles_within_blocks(connector
     interferometer = np.block([[beamsplitter, zeros], [zeros, beamsplitter]])
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation)
+        pq.Q() | pq.NumberState(occupation)
         pq.Q(all) | pq.Interferometer(interferometer)
         pq.Q() | pq.ParticleNumberMeasurement()
 

@@ -21,18 +21,18 @@ import piquasso as pq
 def test_str_of_preparations():
     assert str(pq.Vacuum()) == "Vacuum(modes=())"
     assert (
-        str(pq.StateVector([1, 2]))
-        == "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=())"
+        str(pq.NumberState([1, 2]))
+        == "NumberState(occupation_numbers=(1, 2), coefficient=1.0, modes=())"
     )
 
     assert (
-        str(pq.StateVector([1, 2]).on_modes(0, 1))
-        == "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1))"
+        str(pq.NumberState([1, 2]).on_modes(0, 1))
+        == "NumberState(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1))"
     )
 
     assert (
-        str(pq.StateVector([1, 2]).on_modes(0, 1) * 0.2)
-        == "StateVector(occupation_numbers=(1, 2), coefficient=0.2, modes=(0, 1))"
+        str(pq.NumberState([1, 2]).on_modes(0, 1) * 0.2)
+        == "NumberState(occupation_numbers=(1, 2), coefficient=0.2, modes=(0, 1))"
     )
 
 

@@ -56,7 +56,9 @@ class GaussianSimulator(BuiltinSimulator):
 
     Supported preparations:
         :class:`~piquasso.instructions.preparations.Vacuum`,
-        :class:`~piquasso.instructions.preparations.StateVector`.
+        :class:`~piquasso.instructions.preparations.StateVector`,
+        :class:`~piquasso.instructions.preparations.NumberState`,
+        :class:`~piquasso.instructions.preparations.FockStateVector`.
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`,
@@ -72,6 +74,7 @@ class GaussianSimulator(BuiltinSimulator):
 
     _instruction_map = {
         preparations.Vacuum: vacuum,
+        preparations.NumberState: state_vector,
         preparations.StateVector: state_vector,
         ParentHamiltonian: parent_hamiltonian,
         GaussianHamiltonian: gaussian_hamiltonian,

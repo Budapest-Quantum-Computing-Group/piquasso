@@ -67,7 +67,11 @@ class SamplingSimulator(BuiltinSimulator):
         result = simulator.execute(program, shots=100)
 
     Supported preparations:
-        :class:`~piquasso.instructions.preparations.StateVector`.
+        :class:`~piquasso.instructions.preparations.Vacuum`,
+        :class:`~piquasso.instructions.preparations.Create`,
+        :class:`~piquasso.instructions.preparations.StateVector`,
+        :class:`~piquasso.instructions.preparations.NumberState`,
+        :class:`~piquasso.instructions.preparations.FockStateVector`.
 
     Supported gates:
         :class:`~piquasso.instructions.gates.Interferometer`,
@@ -89,6 +93,8 @@ class SamplingSimulator(BuiltinSimulator):
     _instruction_map = {
         preparations.Vacuum: vacuum,
         preparations.Create: create,
+        preparations.NumberState: state_vector,
+        preparations.FockStateVector: state_vector,
         preparations.StateVector: state_vector,
         gates.Beamsplitter: passive_linear,
         gates.Beamsplitter5050: passive_linear,

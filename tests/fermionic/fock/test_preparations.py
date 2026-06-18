@@ -24,7 +24,7 @@ for_all_connectors = pytest.mark.parametrize(
 
 
 @for_all_connectors
-def test_density_matrix_StateVector_ordering(connector):
+def test_density_matrix_NumberState_ordering(connector):
     d = 3
 
     state_vectors = [
@@ -42,7 +42,7 @@ def test_density_matrix_StateVector_ordering(connector):
 
     for i in range(len(state_vectors)):
         with pq.Program() as preparation:
-            pq.Q(0, 1, 2) | pq.StateVector(state_vectors[i])
+            pq.Q(0, 1, 2) | pq.NumberState(state_vectors[i])
 
         state = simulator.execute(preparation).state
 
@@ -52,13 +52,13 @@ def test_density_matrix_StateVector_ordering(connector):
 
 
 @for_all_connectors
-def test_StateVector_raises_InvalidParameter_for_invalid_occupation_numbers(connector):
+def test_NumberState_raises_InvalidParameter_for_invalid_occupation_numbers(connector):
     d = 3
 
     simulator = pq.fermionic.PureFockSimulator(d=d, connector=connector)
 
     with pq.Program() as preparation:
-        pq.Q(0, 1, 2) | pq.StateVector([1, 2])
+        pq.Q(0, 1, 2) | pq.NumberState([1, 2])
 
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         simulator.execute(preparation)
@@ -66,16 +66,16 @@ def test_StateVector_raises_InvalidParameter_for_invalid_occupation_numbers(conn
     assert error.value.args[0] == (
         "Invalid initial state specified: "
         "instruction="
-        "StateVector(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1, 2))"
+        "NumberState(occupation_numbers=(1, 2), coefficient=1.0, modes=(0, 1, 2))"
     )
 
 
 @for_all_connectors
-def test_state_vector_with_fock_amplitude_map_preparation(connector):
+def test_FockStateVector_with_fock_amplitude_map_preparation(connector):
     amplitude_map = {(0,): 0.6, (1,): 0.8}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     simulator = pq.fermionic.PureFockSimulator(d=1, connector=connector)
 
@@ -85,15 +85,15 @@ def test_state_vector_with_fock_amplitude_map_preparation(connector):
 
 
 @for_all_connectors
-def test_state_vector_with_fock_amplitude_map_and_coefficient(connector):
+def test_FockStateVector_with_fock_amplitude_map_and_coefficient(connector):
     amplitude_map = {(0,): 0.6, (1,): 0.8}
     coefficient = 1 / np.sqrt(2)
 
     with pq.Program() as program_with_mul:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map) * coefficient
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map) * coefficient
 
     with pq.Program() as program_with_param:
-        pq.Q() | pq.StateVector(
+        pq.Q() | pq.FockStateVector(
             fock_amplitude_map=amplitude_map, coefficient=coefficient
         )
 
@@ -109,13 +109,15 @@ def test_state_vector_with_fock_amplitude_map_and_coefficient(connector):
 
 
 @for_all_connectors
-def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(connector):
+def test_FockStateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(
+    connector,
+):
     amplitude_map = {(0, 1): 0.6}
 
     simulator = pq.fermionic.PureFockSimulator(d=1, connector=connector)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     with pytest.raises(pq.api.exceptions.InvalidParameter) as error:
         simulator.execute(program)
@@ -123,16 +125,16 @@ def test_StateVector_raises_InvalidParameter_for_invalid_fock_amplitude_map(conn
     assert error.value.args[0] == (
         "Invalid initial state specified: "
         "instruction="
-        "StateVector(fock_amplitude_map={(0, 1): 0.6}, coefficient=1.0, modes=(0,))"
+        "FockStateVector(fock_amplitude_map={(0, 1): 0.6}, coefficient=1.0, modes=(0,))"
     )
 
 
 @for_all_connectors
-def test_state_vector_raises_InvalidState_when_cutoff_too_small(connector):
+def test_number_state_raises_InvalidState_when_cutoff_too_small(connector):
     occupation_numbers = [0, 1, 0, 1, 1, 1]
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
     config = pq.Config(cutoff=4, validate=True)
     simulator = pq.fermionic.PureFockSimulator(d=6, config=config, connector=connector)
@@ -145,14 +147,14 @@ def test_state_vector_raises_InvalidState_when_cutoff_too_small(connector):
 
 
 @for_all_connectors
-def test_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState(
+def test_fock_state_vector_with_fock_amplitude_map_cutoff_too_small_raises_InvalidState(
     connector,
 ):
     occupation_numbers = (0, 1, 0, 1, 1, 1)
     amplitude_map = {occupation_numbers: 1.0}
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(fock_amplitude_map=amplitude_map)
+        pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
     config = pq.Config(cutoff=4, validate=True)
     simulator = pq.fermionic.PureFockSimulator(d=6, config=config, connector=connector)

@@ -229,7 +229,7 @@ def particle_number_measurement(
     ):
         raise NotImplementedCalculation(
             f"The instruction {instruction} is not supported for states defined using "
-            "multiple 'StateVector' instructions.\n"
+            "multiple 'NumberState' instructions.\n"
             "If you need this feature to be implemented, please create an issue at "
             "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
         )

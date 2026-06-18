@@ -28,7 +28,7 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles():
 
     def func(theta):
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta)
 
@@ -81,7 +81,7 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles_JIT():
     @jax.jit
     def func(theta):
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta)
 

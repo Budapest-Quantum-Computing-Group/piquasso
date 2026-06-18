@@ -230,7 +230,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((1, 0))
+            pq.Q(all) | pq.NumberState((1, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta)
 
@@ -263,7 +263,7 @@ def test_Beamsplitter_fock_probabilities_gradient_1_particle_with_phaseshift(tf)
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((1, 0))
+            pq.Q(all) | pq.NumberState((1, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta, phi=phi)
 
@@ -295,7 +295,7 @@ def test_decomposed_Beamsplitter_state_vector_gradient_1_particle(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((1, 0))
+            pq.Q(all) | pq.NumberState((1, 0))
 
             pq.Q(1) | pq.Phaseshifter(-np.pi / 2)
             pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=0.0)
@@ -330,7 +330,7 @@ def test_Beamsplitter_fock_probabilities_gradient_2_particles(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(all) | pq.Beamsplitter(theta=theta)
 
@@ -378,7 +378,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta_1, phi=phi_1)
 
@@ -441,7 +441,7 @@ def test_multiple_Beamsplitter_state_vector_gradient_2_particles_reversed(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((2, 0))
+            pq.Q(all) | pq.NumberState((2, 0))
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=0.0)
 
@@ -509,9 +509,9 @@ def test_jacobian_of_state_after_mixing_with_fix_Interferometer(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((1, 0, 0)) * c1
-            pq.Q(all) | pq.StateVector((0, 1, 0)) * c2
-            pq.Q(all) | pq.StateVector((0, 0, 1)) * c3
+            pq.Q(all) | pq.NumberState((1, 0, 0)) * c1
+            pq.Q(all) | pq.NumberState((0, 1, 0)) * c2
+            pq.Q(all) | pq.NumberState((0, 0, 1)) * c3
 
             pq.Q(all) | pq.Interferometer(U)
 
@@ -550,8 +550,8 @@ def test_Phaseshifter_density_matrix_gradient(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(0) | pq.StateVector([0]) * coefficients[0]
-            pq.Q(0) | pq.StateVector([1]) * coefficients[1]
+            pq.Q(0) | pq.NumberState([0]) * coefficients[0]
+            pq.Q(0) | pq.NumberState([1]) * coefficients[1]
 
             pq.Q(0) | pq.Phaseshifter(phi)
 
@@ -593,9 +593,9 @@ def test_Phaseshifter_density_matrix_gradient_is_zero_at_zero_phaseshift(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(0) | pq.StateVector([0]) * np.sqrt(0.5)
-            pq.Q(0) | pq.StateVector([1]) * np.sqrt(0.3)
-            pq.Q(0) | pq.StateVector([2]) * np.sqrt(0.2)
+            pq.Q(0) | pq.NumberState([0]) * np.sqrt(0.5)
+            pq.Q(0) | pq.NumberState([1]) * np.sqrt(0.3)
+            pq.Q(0) | pq.NumberState([2]) * np.sqrt(0.2)
 
             pq.Q(0) | pq.Phaseshifter(phi)
 
@@ -628,8 +628,8 @@ def test_Interferometer_fock_probabilities(tf):
         j = tf.complex(0.0, 1.0)
         interferometer = tf.linalg.expm(j * hamiltonian)
         with pq.Program() as program:
-            pq.Q(all) | pq.StateVector((1, 0)) / np.sqrt(2)
-            pq.Q(all) | pq.StateVector((1, 1)) / np.sqrt(2)
+            pq.Q(all) | pq.NumberState((1, 0)) / np.sqrt(2)
+            pq.Q(all) | pq.NumberState((1, 1)) / np.sqrt(2)
 
             pq.Q(all) | pq.Interferometer(interferometer)
 
@@ -685,8 +685,8 @@ def test_Kerr_fock_probabilities_on_1_mode(tf):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
-        pq.Q(all) | pq.StateVector([2]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([0]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([2]) / np.sqrt(2)
 
         pq.Q(all) | pq.Kerr(xi=xi)
 
@@ -710,8 +710,8 @@ def test_Kerr_density_matrix_on_1_mode(tf):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
-        pq.Q(all) | pq.StateVector([n]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([0]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([n]) / np.sqrt(2)
 
         pq.Q(all) | pq.Kerr(xi=xi)
 
@@ -743,8 +743,8 @@ def test_CubicPhase_fock_probabilities_on_1_mode(tf):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
-        pq.Q(all) | pq.StateVector([2]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([0]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([2]) / np.sqrt(2)
 
         pq.Q(all) | pq.CubicPhase(gamma=gamma)
 
@@ -774,8 +774,8 @@ def test_CrossKerr_density_matrix(tf):
 
     with tf.GradientTape() as tape:
         with pq.Program() as program:
-            pq.Q(0, 1) | pq.StateVector(n[0]) * np.sqrt(0.5)
-            pq.Q(0, 1) | pq.StateVector(n[1]) * np.sqrt(0.5)
+            pq.Q(0, 1) | pq.NumberState(n[0]) * np.sqrt(0.5)
+            pq.Q(0, 1) | pq.NumberState(n[1]) * np.sqrt(0.5)
 
             pq.Q(all) | pq.CrossKerr(xi=xi)
 

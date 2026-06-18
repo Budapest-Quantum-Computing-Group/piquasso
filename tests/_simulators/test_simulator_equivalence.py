@@ -870,7 +870,7 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
 
@@ -895,7 +895,7 @@ def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_fock_probabiliti
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
 
@@ -920,7 +920,7 @@ def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_state_vector():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter5050()
 
@@ -945,7 +945,7 @@ def test_sampling_backend_equivalence_complex_scenario_fock_probabilities():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
 
@@ -971,7 +971,7 @@ def test_sampling_backend_equivalence_complex_scenario_state_vector():
     d = len(initial_occupation_numbers)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 4)
 
@@ -1006,7 +1006,7 @@ def test_sampling_backend_equivalence_complex_scenario_fock_probabilities_2():
 
     with pq.Program() as program:
         for idx in range(len(coefficients)):
-            pq.Q() | pq.StateVector(
+            pq.Q() | pq.NumberState(
                 initial_occupation_numbers[idx], coefficient=coefficients[idx]
             )
 
@@ -1043,7 +1043,7 @@ def test_sampling_backend_equivalence_complex_scenario_state_vector_2():
 
     with pq.Program() as program:
         for idx in range(len(coefficients)):
-            pq.Q() | pq.StateVector(
+            pq.Q() | pq.NumberState(
                 initial_occupation_numbers[idx], coefficient=coefficients[idx]
             )
 
@@ -1076,7 +1076,7 @@ def test_sampling_backend_equivalence_with_random_interferometer_fock_probabilit
     interferometer_matrix = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
@@ -1106,7 +1106,7 @@ def test_sampling_backend_equivalence_with_random_interferometer_state_vector(
     interferometer_matrix = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(initial_occupation_numbers)
+        pq.Q() | pq.NumberState(initial_occupation_numbers)
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
@@ -1460,8 +1460,8 @@ def test_Kerr_equivalence(SimulatorClass):
     n = 2
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0]) / np.sqrt(2)
-        pq.Q(all) | pq.StateVector([n]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([0]) / np.sqrt(2)
+        pq.Q(all) | pq.NumberState([n]) / np.sqrt(2)
 
         pq.Q(all) | pq.Kerr(xi=xi)
 
@@ -1845,9 +1845,9 @@ def test_post_select_NS_gate(SimulatorClass):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0, 1, 0]) * first_mode_state_vector[0]
-        pq.Q(all) | pq.StateVector([1, 1, 0]) * first_mode_state_vector[1]
-        pq.Q(all) | pq.StateVector([2, 1, 0]) * first_mode_state_vector[2]
+        pq.Q(all) | pq.NumberState([0, 1, 0]) * first_mode_state_vector[0]
+        pq.Q(all) | pq.NumberState([1, 1, 0]) * first_mode_state_vector[1]
+        pq.Q(all) | pq.NumberState([2, 1, 0]) * first_mode_state_vector[2]
 
         pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
 
@@ -1889,9 +1889,11 @@ def test_post_select_random_unitary(SimulatorClass):
     postselect_modes = (1, 2)
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0, 1, 0]) * np.sqrt(0.2)
-        pq.Q(all) | pq.StateVector([1, 1, 0]) * np.sqrt(0.3)
-        pq.Q(all) | pq.StateVector([2, 1, 0]) * np.sqrt(0.5)
+        pq.Q(all) | (
+            pq.NumberState([0, 1, 0]) * np.sqrt(0.2)
+            + pq.NumberState([1, 1, 0]) * np.sqrt(0.3)
+            + pq.NumberState([2, 1, 0]) * np.sqrt(0.5)
+        )
 
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
@@ -1947,7 +1949,7 @@ def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
 
     with pq.Program() as program:
         for input_state, coeff in zip(states, coefficients):
-            pq.Q(all) | pq.StateVector(input_state + ancilla_state * 2) * coeff
+            pq.Q(all) | pq.NumberState(input_state + ancilla_state * 2) * coeff
 
         pq.Q(all) | conditional_sign_flip
 
@@ -1974,7 +1976,7 @@ def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
 
     with pq.Program() as expectation_program:
         for input_state, coeff in zip(states, expected_coefficients):
-            pq.Q(all) | pq.StateVector(input_state) * coeff
+            pq.Q(all) | pq.NumberState(input_state) * coeff
 
     expectation_simulator = SimulatorClass(
         d=4, config=pq.Config(cutoff=final_state._config.cutoff)
@@ -2003,11 +2005,11 @@ def test_ImperfectPostSelectPhotons(SimulatorClass):
     coeffs = np.sqrt([0.1, 0.3, 0.4, 0.05, 0.1, 0.05])
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 0, 0, 2, 1]) * coeffs[0]
-        pq.Q() | pq.StateVector([0, 0, 2, 0, 1]) * coeffs[1]
-        pq.Q() | pq.StateVector([0, 1, 0, 1, 1]) * coeffs[2]
-        pq.Q() | pq.StateVector([1, 1, 0, 1, 0]) * coeffs[3]
-        pq.Q() | pq.StateVector([3, 0, 0, 0, 0]) * coeffs[4]
+        pq.Q() | pq.NumberState([0, 0, 0, 2, 1]) * coeffs[0]
+        pq.Q() | pq.NumberState([0, 0, 2, 0, 1]) * coeffs[1]
+        pq.Q() | pq.NumberState([0, 1, 0, 1, 1]) * coeffs[2]
+        pq.Q() | pq.NumberState([1, 1, 0, 1, 0]) * coeffs[3]
+        pq.Q() | pq.NumberState([3, 0, 0, 0, 0]) * coeffs[4]
 
         pq.Q(2, 4) | pq.ImperfectPostSelectPhotons(
             photon_counts=(0, 1),
@@ -2051,9 +2053,9 @@ def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
     trivial_detector_efficiency_matrix = np.identity(d)
 
     with pq.Program() as preparation:
-        pq.Q(all) | pq.StateVector([0, 1, 0]) * first_mode_state_vector[0]
-        pq.Q(all) | pq.StateVector([1, 1, 0]) * first_mode_state_vector[1]
-        pq.Q(all) | pq.StateVector([2, 1, 0]) * first_mode_state_vector[2]
+        pq.Q(all) | pq.NumberState([0, 1, 0]) * first_mode_state_vector[0]
+        pq.Q(all) | pq.NumberState([1, 1, 0]) * first_mode_state_vector[1]
+        pq.Q(all) | pq.NumberState([2, 1, 0]) * first_mode_state_vector[2]
 
         pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
 
@@ -2115,9 +2117,9 @@ def test_NS_gate_with_ImperfectPostSelectPhotons(SimulatorClass):
     )
 
     with pq.Program() as program:
-        pq.Q(all) | pq.StateVector([0, 1, 0]) * first_mode_state_vector[0]
-        pq.Q(all) | pq.StateVector([1, 1, 0]) * first_mode_state_vector[1]
-        pq.Q(all) | pq.StateVector([2, 1, 0]) * first_mode_state_vector[2]
+        pq.Q(all) | pq.NumberState([0, 1, 0]) * first_mode_state_vector[0]
+        pq.Q(all) | pq.NumberState([1, 1, 0]) * first_mode_state_vector[1]
+        pq.Q(all) | pq.NumberState([2, 1, 0]) * first_mode_state_vector[2]
 
         pq.Q(all) | pq.Interferometer(ns_gate_interferometer)
 
@@ -2222,7 +2224,7 @@ def test_variance_photon_number_equivalence(SimulatorClass):
 
 def test_PostSelectPhotons_with_SamplingSimulator_and_PureFockSimulator_equivalence():
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1, 1, 0])
+        pq.Q() | pq.NumberState([1, 1, 1, 0])
 
         pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4, phi=np.pi / 6)
         pq.Q(1, 2) | pq.Beamsplitter(theta=np.pi / 3, phi=np.pi / 5)
@@ -2254,7 +2256,7 @@ def test_PostSelectPhotons_fock_probabilities_map_equivalence(SimulatorClass):
 
     program = pq.Program(
         instructions=[
-            pq.StateVector(input_state),
+            pq.NumberState(input_state),
             pq.Beamsplitter(theta=np.pi / 5).on_modes(0, 1),
             pq.Beamsplitter5050().on_modes(1, 2),
             pq.Beamsplitter(theta=np.pi / 3).on_modes(2, 3),

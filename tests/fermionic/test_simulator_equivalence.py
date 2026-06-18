@@ -37,7 +37,7 @@ def test_PureFockSimulator_GaussianSimulator_equivalence_1_particle(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0, 0, 1])
+        pq.Q() | pq.NumberState([0, 0, 1])
 
         pq.Q() | pq.Interferometer(U)
 
@@ -74,7 +74,7 @@ def test_PureFockSimulator_GaussianSimulator_equivalence_2_particles(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 1])
+        pq.Q() | pq.NumberState([1, 0, 1])
 
         pq.Q() | pq.Interferometer(U)
 
@@ -106,7 +106,7 @@ def test_PureFockSimulator_GaussianSimulator_equivalence_3_particles(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 0, 1, 1])
+        pq.Q() | pq.NumberState([1, 0, 1, 1])
 
         pq.Q() | pq.Interferometer(U)
 
@@ -140,7 +140,7 @@ def test_PureFockSimulator_GaussianSimulator_equivalence_n_particles_random(
     U = generate_unitary_matrix(d)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
         pq.Q() | pq.Interferometer(U)
 
@@ -176,7 +176,7 @@ def test_PureFockSimulator_GaussianSimulator_equivalence_subsystem_random(
     U = generate_unitary_matrix(2)
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
         pq.Q(*modes) | pq.Interferometer(U)
 
@@ -205,7 +205,7 @@ def test_PureFockSimulator_GaussianSimulator_squeezing2_equivalence(connector):
     phi = np.pi / 5
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([1, 1])
+        pq.Q() | pq.NumberState([1, 1])
 
         pq.Q(0, 1) | pq.Squeezing2(r=r, phi=phi)
 
@@ -234,7 +234,7 @@ def test_PureFockSimulator_GaussianSimulator_IsingXX_equivalence(
     d = 2
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector(input_state)
+        pq.Q() | pq.NumberState(input_state)
 
         pq.Q(0) | pq.Phaseshifter(phi=np.pi / 3)
 
@@ -264,7 +264,7 @@ def test_PureFockSimulator_GaussianSimulator_covariance_matrix_equivalence(
     d = 3
 
     with pq.Program() as program:
-        pq.Q() | pq.StateVector([0] * d)
+        pq.Q() | pq.NumberState([0] * d)
 
         pq.Q(0, 1) | pq.fermionic.IsingXX(phi=np.pi / 5)
 

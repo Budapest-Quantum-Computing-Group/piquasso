@@ -174,7 +174,7 @@ instruction should be applied in the current branch.
    import piquasso as pq
 
    with pq.Program() as program:
-      pq.Q(0, 1, 2) | pq.StateVector((1, 0, 0))
+      pq.Q(0, 1, 2) | pq.NumberState((1, 0, 0))
       pq.Q(0, 1) | pq.Beamsplitter(theta=np.pi / 4)
 
       # Measure mode 0 before the end of the program.
@@ -203,9 +203,9 @@ obtained during the same execution.
 
    program = pq.Program(
       instructions=[
-         pq.StateVector([0, 2]) * np.sqrt(1 / 3),
-         pq.StateVector([1, 1]) * np.sqrt(1 / 3),
-         pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+         (
+            pq.NumberState([0, 2]) + pq.NumberState([1, 1]) + pq.NumberState([2, 0])
+         ) * np.sqrt(1 / 3),
          pq.ParticleNumberMeasurement().on_modes(1),
          pq.Squeezing(r=lambda x: 0.1 * x[-1] ** 2).on_modes(0),
       ]
@@ -222,9 +222,9 @@ Using an expression string:
 
    program = pq.Program(
       instructions=[
-         pq.StateVector([0, 2]) * np.sqrt(1 / 3),
-         pq.StateVector([1, 1]) * np.sqrt(1 / 3),
-         pq.StateVector([2, 0]) * np.sqrt(1 / 3),
+         (
+            pq.NumberState([0, 2]) + pq.NumberState([1, 1]) + pq.NumberState([2, 0])
+         ) * np.sqrt(1 / 3),
          pq.ParticleNumberMeasurement().on_modes(1),
          pq.Squeezing(r="0.1 * x[-1] ** 2").on_modes(0),
       ]

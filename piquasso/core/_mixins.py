@@ -39,8 +39,8 @@ class DictMixin(abc.ABC):
 class WeightMixin(abc.ABC, Generic[_T]):
     """Class for registering coefficients into `params`.
 
-    Most notably, it is used for specifying coefficents for `StateVector`
-    and `DensityMatrix` instances.
+    Most notably, it is used for specifying coefficents for `NumberState`,
+    `FockStateVector`, `StateVector` or `DensityMatrix` instances.
     """
 
     @property

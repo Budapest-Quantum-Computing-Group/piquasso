@@ -53,12 +53,12 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
     decomposition = clements(U, connector=pq.NumpyConnector())
 
     with pq.Program() as program_with_interferometer:
-        pq.Q() | pq.StateVector(tuple([1] * d))
+        pq.Q() | pq.NumberState(tuple([1] * d))
 
         pq.Q() | pq.Interferometer(matrix=U)
 
     with pq.Program() as program_with_decomposition:
-        pq.Q() | pq.StateVector(tuple([1] * d))
+        pq.Q() | pq.NumberState(tuple([1] * d))
 
         for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])
@@ -84,12 +84,12 @@ def test_clements_decomposition_using_piquasso_PureFockSimulator(dummy_unitary):
     occupation_numbers = (1, 1, 0, 0)
 
     with pq.Program() as program_with_interferometer:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
         pq.Q() | pq.Interferometer(matrix=U)
 
     with pq.Program() as program_with_decomposition:
-        pq.Q() | pq.StateVector(occupation_numbers)
+        pq.Q() | pq.NumberState(occupation_numbers)
 
         for operation in decomposition.beamsplitters:
             pq.Q(operation.modes[0]) | pq.Phaseshifter(phi=operation.params[1])

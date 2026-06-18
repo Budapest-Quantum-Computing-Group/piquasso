@@ -137,7 +137,7 @@ of measurement samples.
    )
 
    with pq.Program() as program:
-      pq.Q() | pq.StateVector([1, 1])
+      pq.Q() | pq.NumberState([1, 1])
       pq.Q() | pq.Interferometer(interferometer)
       pq.Q(all) | pq.ParticleNumberMeasurement()
 
