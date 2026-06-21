@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from itertools import product
-import math
+from collections import deque
 import numpy as np
 from scipy.special import factorial, comb
 
@@ -501,39 +501,148 @@ def _generate_k_modes_samples(
 
     return samples
 
-def _multiply_polynomials(poly_arr_shape, arr):
+def _get_non_empty_alphas(poly, N, k, d):
     '''
-        Multiplies arrays of polynomial coefficients with fft.
+        Retrieves the non empty indices in the polynomial array and their corresponding (alpha, beta).
     '''
-    fft_arr = np.fft.fftn(arr, poly_arr_shape, axes=range(2, len(arr.shape)))
-    prod_arr = np.prod(fft_arr, axis=1)
-    ifft_arr = np.fft.ifftn(prod_arr, axes=range(1, len(prod_arr.shape)))
-    return ifft_arr
+    indices = {}
+    alphas = []
+    while len(alphas)<poly.shape[0]:
+        alphas = [alpha for alpha in product(range(N), repeat=k) if sum(alpha) <= d]
+        d+=1
+    for i in range(len(alphas)):
+        for j in range(len(alphas)):
+            indices[(i, j)] = alphas[i]+alphas[j]
+    non_empty = np.array(np.where(poly)).T.tolist()
+    S = {tuple(i): np.array(indices[tuple(i)]) for i in non_empty}
+    return S
 
-def _compute_laguerre(k, x, ra):
+def _get_support_points(alphas_to_indices, N, k, d, P,Q):
     '''
-        Computes the Laguerre series at degree ra and returns an array of its polynomials.
+        Finds the points to evaluate in R based on the non-empty points in P and Q.
     '''
-    max_deg = max(ra)+1
-    poly_arr_shape = [max_deg]*k
-    coeffs = np.zeros([x.shape[0], x.shape[1]]+poly_arr_shape, dtype=complex)
+    SP = _get_non_empty_alphas(P, N, k, d[0])
+    SQ = _get_non_empty_alphas(Q, N, k, d[1])
 
-    alphas = np.indices(poly_arr_shape,)
-    poly_indices = alphas.sum(axis=0)
+    X = set()
+    for a in SP.values():
+        for b in SQ.values():
+            new_tuple = tuple(a+b)
+            if sum(new_tuple[:k]) == sum(new_tuple[k:]) and sum(new_tuple[:k])<N:
+                X.add(alphas_to_indices[new_tuple])
+    return sorted(X), SP, SQ
 
-    fact = factorial(np.arange(max_deg))
-    for i, a in enumerate(ra):
-        relevant_indices = (poly_indices <= a)
+def _build_exponent(alpha, N):
+    '''
+        Converts alpha to an integer in N.
+    '''
+    u = 0
+    for a in alpha:
+        u = u * N + a
+    return u
 
-        alpha_i = alphas[:, relevant_indices]
-        poly_values = poly_indices[relevant_indices]
+def _build_kronecker_exponents(N, max_exponent, row_exponent, col_exponent):
+    '''
+        Builds the Kronecker exponents for the support values X by converting rows and cols to integers.
+    '''
+    return _build_exponent(row_exponent, N) + max_exponent * _build_exponent(col_exponent, N)
 
-        poly_coeffs = ((-1) ** poly_values) * comb(a, poly_values)
-        for j in range(k):
-            poly_coeffs = poly_coeffs[None, :] * x[:, i, j:j+1] ** alpha_i[j] / fact[alpha_i[j]]
+def _set_evaluation_points(all_ys, X, N, d):
+    '''
+        Creates the set of T pairwise distinct omega points. 
+    '''
+    max_exponent = max(_build_exponent(alpha, N) for alpha in all_ys)
+    T = max_exponent**2
+    omega = np.exp(2j * np.pi / T)
+    points = np.array([omega ** _build_kronecker_exponents(N, max_exponent, all_ys[r], all_ys[c]) for r, c in X])
+    return points
 
-        coeffs[:, i, relevant_indices] = poly_coeffs
-    return coeffs
+def _build_V_matrix(points):
+    '''
+        Creates the Vandermonde matrix based on the T omega points.
+    '''
+    s = len(points)
+    return np.array([
+        [points[j] ** i for j in range(s)]
+        for i in range(s)
+    ])
+
+def _project_coefficients(indices_to_alphas, X, poly, poly_support):
+    '''
+        Gets the polynomial's coefficients at the support X alphas.
+    '''
+    coeffs = {tuple(alpha):poly[index[0], [index[1]]][0] for index, alpha in poly_support.items()}
+    return np.array([coeffs.get(indices_to_alphas[i], 0) for i in X])
+
+def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, P, Q, N, k, d, return_dense=False):
+    '''
+        Multiplies arrays of polynomial coefficients using "Sparse polynomial multiplication" algorithm by Joris van der Hoeven.
+    '''
+    X, SP, SQ = _get_support_points(alphas_to_indices, N, k, d, P,Q)
+    points = _set_evaluation_points(all_ys, X, N, d)
+
+    V = _build_V_matrix(points)
+    V_inv = np.linalg.pinv(V)
+
+    p = _project_coefficients(indices_to_alphas, X, P, SP)
+    q = _project_coefficients(indices_to_alphas, X, Q, SQ)
+    
+    EP = V @ p
+    EQ = V @ q
+    ER = EP * EQ
+    R_vals = V_inv @ ER
+
+    if return_dense:
+        R = np.zeros((X[-1][0]+1, X[-1][0]+1), dtype=complex)
+        X = tuple(np.array(X).T)
+        R[X] = R_vals
+        return R
+    return R_vals
+
+def _compute_degree(degree, alphas_by_degree, powers_by_degree, x):
+    '''
+        Computes the Laguerre polynomials at one degree.
+    '''
+    previous_powers = powers_by_degree[degree-1]
+    alphas_1 = alphas_by_degree[1]
+    previous_alphas = alphas_by_degree[degree-1]
+    current_alphas = alphas_by_degree[degree]
+
+    indices = {alpha: index for index, alpha in enumerate(current_alphas)}
+    l_ra = np.zeros((len(current_alphas), len(current_alphas)), dtype=complex)
+    for i1, alpha in enumerate(previous_alphas):
+        for i2, beta in enumerate(previous_alphas):
+            for j1, alpha_1 in enumerate(alphas_1):
+                for j2, beta_1 in enumerate(alphas_1):
+                    row = tuple(np.add(alpha, alpha_1))
+                    col = tuple(np.add(beta, beta_1))
+                    l_ra[indices[row], indices[col]] += previous_powers[i1, i2] * x[j1, j2]
+    return l_ra
+
+def _compute_laguerre(x, d, k):
+    '''
+        Computes the Laguerre series of degree d and returns an array of its polynomials.
+    '''
+    x = x[::-1, ::-1]
+
+    alphas_1 = [alpha for alpha in product(range(2), repeat=k) if sum(alpha) == 1]
+    alphas_by_degree = {0: [(0,) * k], 1: alphas_1}
+    powers_by_degree = {0: np.array([[1.0 + 0j]]), 1:x}
+    for degree in range(2, d + 1):
+        alphas_by_degree[degree] = [alpha for alpha in product(range(degree+1), repeat=k) if sum(alpha) == degree]
+        powers_by_degree[degree] = _compute_degree(degree, alphas_by_degree, powers_by_degree, x)
+
+    coeffs = [(-1) ** j * comb(d, j) / factorial(j) for j in range(d + 1)]
+    current_alphas = [alpha for alpha in product(range(d + 1), repeat=k) if sum(alpha) <= d]
+    indices = {alpha: i for i, alpha in enumerate(current_alphas)}
+    l_ra = np.zeros((len(current_alphas), len(current_alphas)))
+    for degree in range(d + 1):
+        power_block = coeffs[degree] * powers_by_degree[degree]
+        degree_alphas = alphas_by_degree[degree]
+        for i, row in enumerate(degree_alphas):
+            for j, col in enumerate(degree_alphas):
+                l_ra[indices[row], indices[col]] = power_block[i, j].real
+    return l_ra
 
 def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
     '''
@@ -544,42 +653,41 @@ def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
     s = len(occupied_inputs)
     if s == 0:
         return np.zeros(k, dtype=int)
+    
     N = n+1
+    all_ys = [alpha for alpha in product(range(N), repeat=k) if sum(alpha) <= n]
+    alphas_to_indices = {}
+    indices_to_alphas = {}
+    for i in range(len(all_ys)):
+        for j in range(len(all_ys)):
+            indices = (i, j)
+            alpha = all_ys[i]+all_ys[j]
+            indices_to_alphas[indices] = alpha
+            alphas_to_indices[alpha] = indices
 
     V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
-    all_ys = np.array(list(product(range(N), repeat=k)))
-    
-    poly_arr_shape = [N]*k
-    omegas = np.exp(2j * np.pi / N) ** all_ys
-    
-    faz = V.T[:, None, :]*omegas[None,...]
-    faw = np.conj(V).T[:, None, :]*np.power(omegas, -1)[None,...]
-    xa = np.einsum('nmi,nmj->mnij', faz, faw)
-    xa = np.sum(-xa, axis=2)
-    l_ra = _compute_laguerre(k, xa, occupied_inputs)
-    P_omega = _multiply_polynomials(poly_arr_shape, l_ra)
-    D_t = np.sum(P_omega, axis=0)
-    D_t /= N**k
 
-    poly_indices = np.indices(D_t.shape).sum(axis=0)
-    possible_ys = np.argwhere(poly_indices <= n)
-    superior_ys = np.all(possible_ys[:, None, :] >= possible_ys[None, :, :], axis=2)
+    xa = -np.einsum('ai,aj->aij', V.T, np.conj(V.T))
 
-    fact = factorial(np.arange(N))
-    P_alpha_factorial = np.prod(fact[possible_ys], axis=1) * D_t[*possible_ys.T]
+    polys = deque([], maxlen=2)
+    for a in range(s):
+        R = _compute_laguerre(xa[a], occupied_inputs[a], k)
+        polys.append(R)
+        if len(polys) == 2:
+            R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polys[0], polys[1], N, k, (sum(occupied_inputs[:a]), occupied_inputs[a]), return_dense=True)
+            polys.append(R)
 
-    combination_alpha_y = np.zeros((N, N))
-    for alpha in range(N):
-        for y in range(alpha + 1):
-            combination_alpha_y[alpha, y] = math.comb(alpha, y) * (-1) ** (alpha - y)
+    diag = np.diag(R).real
+    p_zw_diag = {indices_to_alphas[i, i][:k]:coeff for i, coeff in enumerate(diag)}
 
-    Y = len(possible_ys)
-    coeffs = np.ones((Y, Y))
-    for j in range(possible_ys.shape[1]):
-        coeffs *= combination_alpha_y[possible_ys[:, j][:, None], possible_ys[:, j][None, :]]
-    coeffs *= superior_ys
-    p_ys = (P_alpha_factorial @ coeffs).real
-
-    positive_probs = np.where(p_ys>0)
-    sample = rng.choice(possible_ys[positive_probs], p=p_ys[positive_probs])
+    p_ys = {}
+    for y in p_zw_diag.keys():
+        p_y = 0
+        superior_ys = [alpha for alpha in p_zw_diag.keys() if (np.array(alpha) >= np.array(y)).all()]
+        for alpha in superior_ys:
+            p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
+        if p_y > 0:
+            p_ys[y] = p_y
+            
+    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
     return sample
