@@ -861,10 +861,10 @@ class TestMidCircuitMeasurements:
     def test_k_modes_measurement(self):
         with pq.Program() as program:
             pq.Q() | pq.StateVector([1, 1, 0, 0, 0])
-            pq.Q(0,1) | pq.ParticleNumberMeasurement()
+            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
 
         s_simulator = pq.SamplingSimulator(d=5)
         s_res = s_simulator.execute(program, shots=1)
         samples = np.array(s_res.samples)
         assert samples.shape[1] == 2
-        assert np.allclose(samples, [1,1])
+        assert np.allclose(samples, [1, 1])

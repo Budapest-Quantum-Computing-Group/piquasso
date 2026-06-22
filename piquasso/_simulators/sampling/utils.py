@@ -194,7 +194,7 @@ def generate_samples(
         sample_generator=sample_generator,
         interferometer=interferometer,
         rng=rng,
-        selected_modes=selected_modes
+        selected_modes=selected_modes,
     )
 
 
@@ -250,7 +250,13 @@ def _get_first_quantized(occupation_numbers):
 
 
 def _generate_samples(
-    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng, selected_modes
+    input,
+    shots,
+    calculate_permanent_laplace,
+    interferometer,
+    sample_generator,
+    rng,
+    selected_modes,
 ):
     d = len(input)
     n = np.sum(input)
@@ -269,7 +275,7 @@ def _generate_samples(
             rng=rng,
         )
         samples.append(tuple(sample))
-    samples = [ tuple(sample[mode] for mode in selected_modes) for sample in samples ]
+    samples = [tuple(sample[mode] for mode in selected_modes) for sample in samples]
     return samples
 
 
