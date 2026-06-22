@@ -31,6 +31,7 @@ from piquasso.api.exceptions import (
 from piquasso.api.connector import BaseConnector
 
 from .utils import calculate_state_vector, calculate_inner_product
+from .marginal import get_marginal_probabilities
 
 if TYPE_CHECKING:
     import piquasso
@@ -443,6 +444,42 @@ class SamplingState(State):
 
         raise NotImplementedCalculation(
             "Purity calculation is not implemented for lossy states."
+        )
+
+    def get_marginal_probabilities(
+        self, modes: Tuple[int, ...]
+    ) -> Dict[Tuple[int, ...], float]:
+        """Returns the marginal probabilities of the state.
+
+        Returns:
+            Dict[Tuple[int, ...], float]: The marginal probabilities of the state.
+        """
+
+        if self.is_lossy:
+            raise NotImplementedCalculation(
+                "Marginal probability calculation is not implemented for lossy states."
+            )
+
+        if len(self._occupation_numbers) > 1:
+            raise NotImplementedCalculation(
+                "Marginal probability calculation is not implemented for states with "
+                "multiple input occupation numbers."
+            )
+
+        postselected_modes = self._get_postselected_modes()
+        postselected_photons = self._get_postselected_photons()
+
+        if set(modes).intersection(set(postselected_modes)):
+            raise PiquassoException(
+                "Marginal probabilities cannot be calculated for postselected modes."
+            )
+
+        return get_marginal_probabilities(
+            self._occupation_numbers[0],
+            self.interferometer,
+            postselected_modes,
+            postselected_photons,
+            marginal_modes=tuple(modes),
         )
 
     def __eq__(self, other: object) -> bool:

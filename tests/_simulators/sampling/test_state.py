@@ -63,3 +63,309 @@ def test_validate_not_normalized():
         pq.api.exceptions.InvalidState, match="The state is not normalized."
     ):
         result.state.validate()
+
+
+class TestMarginalProbabilities:
+    def test_marginal_probabilities_simple(self):
+        input_state = np.array([1, 1], dtype=int)
+
+        unitary = np.array([[1, 0], [0, 1]], dtype=complex)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        expected = {(0,): 0.0, (1,): 1.0, (2,): 0.0}
+        assert set(probabilities) == set(expected)
+
+        for outcome, expected_value in expected.items():
+            assert np.isclose(probabilities[outcome], expected_value)
+
+    def test_marginal_probabilities_simple_beamsplitter(self):
+        input_state = np.array([1, 1], dtype=int)
+
+        theta = np.pi / 5
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter(theta=theta).on_modes(0, 1),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        expected_probabilities = {
+            (0,): np.sin(2 * theta) ** 2 / 2,
+            (1,): np.cos(2 * theta) ** 2,
+            (2,): np.sin(2 * theta) ** 2 / 2,
+        }
+
+        for outcome, expected in expected_probabilities.items():
+            assert np.isclose(probabilities[outcome], expected)
+
+    def test_marginal_probabilities_3_modes(self):
+        input_state = np.array([1, 1, 0], dtype=int)
+
+        alpha = np.pi / 5
+        beta = np.pi / 4
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter(theta=alpha).on_modes(0, 1),
+                pq.Beamsplitter(theta=beta).on_modes(1, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [1]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        sin_2alpha_sq = np.sin(2 * alpha) ** 2
+        cos_2alpha_sq = np.cos(2 * alpha) ** 2
+
+        sin_beta_sq = np.sin(beta) ** 2
+        cos_beta_sq = np.cos(beta) ** 2
+
+        p0 = (
+            0.5 * sin_2alpha_sq
+            + sin_beta_sq * cos_2alpha_sq
+            + 0.5 * sin_2alpha_sq * sin_beta_sq**2
+        )
+
+        p1 = cos_beta_sq * cos_2alpha_sq + sin_2alpha_sq * cos_beta_sq * sin_beta_sq
+
+        p2 = 0.5 * sin_2alpha_sq * cos_beta_sq**2
+
+        for outcome, expected in {(0,): p0, (1,): p1, (2,): p2}.items():
+            assert np.isclose(probabilities[outcome], expected)
+
+    def test_marginal_probabilities_4_modes_selected_2_modes(self):
+        input_state = np.array([1, 1, 0, 0], dtype=int)
+
+        alpha = np.pi / 5
+        beta = np.pi / 4
+        gamma = np.pi / 7
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter(theta=alpha).on_modes(0, 1),
+                pq.Beamsplitter(theta=beta).on_modes(1, 2),
+                pq.Beamsplitter(theta=gamma).on_modes(2, 3),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [1, 3]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        S = np.sin(2 * alpha) ** 2
+        C = np.cos(2 * alpha) ** 2
+
+        sin_beta_sq = np.sin(beta) ** 2
+        cos_beta_sq = np.cos(beta) ** 2
+
+        sin_gamma_sq = np.sin(gamma) ** 2
+        cos_gamma_sq = np.cos(gamma) ** 2
+
+        expected = np.zeros((3, 3))
+
+        expected[0, 0] = (
+            0.5 * S
+            + sin_beta_sq * cos_gamma_sq * C
+            + 0.5 * S * sin_beta_sq**2 * cos_gamma_sq**2
+        )
+
+        expected[0, 1] = (
+            sin_beta_sq * sin_gamma_sq * C
+            + S * sin_beta_sq**2 * cos_gamma_sq * sin_gamma_sq
+        )
+
+        expected[0, 2] = 0.5 * S * sin_beta_sq**2 * sin_gamma_sq**2
+
+        expected[1, 0] = cos_beta_sq * C + S * cos_beta_sq * sin_beta_sq * cos_gamma_sq
+
+        expected[1, 1] = S * cos_beta_sq * sin_beta_sq * sin_gamma_sq
+
+        expected[2, 0] = 0.5 * S * cos_beta_sq**2
+
+        for outcome, probability in probabilities.items():
+            assert np.isclose(probability, expected[outcome])
+
+    def test_marginal_probabilities_4_modes_postselected(self):
+        input_state = np.array([1, 1, 0, 0], dtype=int)
+
+        alpha = np.pi / 5
+        beta = np.pi / 4
+        gamma = np.pi / 7
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter(theta=alpha).on_modes(0, 1),
+                pq.Beamsplitter(theta=beta).on_modes(1, 2),
+                pq.Beamsplitter(theta=gamma).on_modes(2, 3),
+                pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [1]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        expected = {
+            (0,): np.sin(beta) ** 2,
+            (1,): np.cos(beta) ** 2,
+        }
+
+        for outcome, probability in probabilities.items():
+            assert np.isclose(probability, expected[outcome])
+
+    @pytest.mark.monkey
+    def test_marginal_probabilities_sum_to_1_for_random(self, generate_unitary_matrix):
+        input_state = np.array([2, 1, 3, 1, 1], dtype=int)
+
+        unitary = generate_unitary_matrix(5)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=9))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0, 1, 2]
+
+        probabilities = state.get_marginal_probabilities(modes)
+
+        assert np.isclose(np.sum(list(probabilities.values())), 1.0)
+
+    def test_lossy_state_marginal_probabilities_raises_NotImplementedCalculation(self):
+        input_state = np.array([1, 1], dtype=int)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.UniformLoss(transmissivity=0.5).on_modes(0, 1),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0]
+
+        with pytest.raises(
+            pq.api.exceptions.NotImplementedCalculation,
+            match=(
+                "Marginal probability calculation is not implemented for lossy states."
+            ),
+        ):
+            _ = state.get_marginal_probabilities(modes)
+
+    def test_multiple_occupation_numbers_raises_NotImplementedCalculation(self):
+        unitary = np.array([[1, 0], [0, 1]], dtype=complex)
+
+        program = pq.Program(
+            instructions=[
+                (
+                    pq.NumberState([0, 2]) * np.sqrt(0.5)
+                    + pq.NumberState([2, 0]) * np.sqrt(0.5)
+                ),
+                pq.Interferometer(unitary),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0]
+
+        with pytest.raises(
+            pq.api.exceptions.NotImplementedCalculation,
+            match=(
+                "Marginal probability calculation is not implemented for states with "
+                "multiple input occupation numbers."
+            ),
+        ):
+            _ = state.get_marginal_probabilities(modes)
+
+    def test_postselecting_on_same_mode_raises_PiquassoException(self):
+        input_state = np.array([1, 1, 0], dtype=int)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter5050().on_modes(0, 1),
+                pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
+
+        state = result.state
+
+        modes = [0]
+
+        with pytest.raises(
+            pq.api.exceptions.PiquassoException,
+            match=(
+                "Marginal probabilities cannot be calculated for postselected modes."
+            ),
+        ):
+            _ = state.get_marginal_probabilities(modes)
