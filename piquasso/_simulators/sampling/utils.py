@@ -182,7 +182,7 @@ def generate_samples(
     n = np.sum(input)
     k = len(selected_modes)
 
-    if k == 1 and n>=3 and n<10:
+    if k == 1 and n>3 and n<10:
         return _generate_k_modes_samples(
             input, 
             shots, 
@@ -501,15 +501,14 @@ def _generate_k_modes_samples(
 
     return samples
 
-def _get_support_points(alphas_to_indices, N, k, P, Q):
+def _get_support_points(alphas_to_indices, N, k, polynomials_list):
     '''
-        Finds the points to evaluate in R based on the non-empty alphas in P and Q.
+        Finds the points to evaluate in R based on the non-empty alphas in the polynomials list.
     '''
     X = set()
-    for alpha_beta_P in P.keys():
-        for alpha_beta_Q in Q.keys():
-            new_alpha_beta = tuple([sum(x) for x in zip(alpha_beta_P,alpha_beta_Q)])
-            if sum(new_alpha_beta[:k]) == sum(new_alpha_beta[k:]) and sum(new_alpha_beta[:k])<N:
+    for alpha_betas in product(*(poly.keys() for poly in polynomials_list)):
+        new_alpha_beta = tuple(map(sum, zip(*alpha_betas)))
+        if sum(new_alpha_beta[:k]) == sum(new_alpha_beta[k:]) and sum(new_alpha_beta[:k])<N:
                 X.add(alphas_to_indices[new_alpha_beta])
     return sorted(X)
 
@@ -555,22 +554,19 @@ def _project_coefficients(indices_to_alphas, X, poly):
     '''
     return np.array([poly.get(indices_to_alphas[i], 0) for i in X])
 
-def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, P, Q, N, k):
+def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polynomials_list, N, k):
     '''
         Multiplies polynomial coefficients using "Sparse polynomial multiplication" algorithm by Joris van der Hoeven.
     '''
-    X = _get_support_points(alphas_to_indices, N, k, P, Q)
+    X = _get_support_points(alphas_to_indices, N, k, polynomials_list)
     points = _set_evaluation_points(all_ys, X, N)
 
     V = _build_V_matrix(points)
     V_inv = np.linalg.inv(V)
 
-    p = _project_coefficients(indices_to_alphas, X, P)
-    q = _project_coefficients(indices_to_alphas, X, Q)
+    E_polys = [ V @ _project_coefficients(indices_to_alphas, X, poly) for poly in polynomials_list ]
+    ER = np.prod(E_polys, axis=0)
     
-    EP = V @ p
-    EQ = V @ q
-    ER = EP * EQ
     R_vals = V_inv @ ER
 
     return { indices_to_alphas[X[i]]: R_vals[i].real for i in range(len(X)) if R_vals[i].real > 0.0 }
@@ -645,14 +641,13 @@ def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
 
     xa = -np.einsum('ai,aj->aij', V.T, np.conj(V.T))
 
-    polys = deque([], maxlen=2)
+    laguerre_polynomials = []
     for a in range(s):
-        l_ra = _compute_laguerre(xa[a], occupied_inputs[a], k)
-        polys.append(l_ra)
-        if len(polys) == 2:
-            X_R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polys[0], polys[1], N, k)
-            polys.append(X_R)
-    p_zw_diag = {alpha_beta[:k]:coeff for alpha_beta, coeff in polys[-1].items() if alpha_beta[:k] == alpha_beta[k:]}
+        X_R = _compute_laguerre(xa[a], occupied_inputs[a], k)
+        laguerre_polynomials.append(X_R)
+    if len(laguerre_polynomials) > 1:
+        X_R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, laguerre_polynomials, N, k)
+    p_zw_diag = {alpha_beta[:k]:coeff for alpha_beta, coeff in X_R.items() if alpha_beta[:k] == alpha_beta[k:]}
 
     alphas = np.array(list(p_zw_diag.keys()))
     P_alpha_factorial = np.prod(factorial(alphas), axis=1) * np.array(list(p_zw_diag.values()))
