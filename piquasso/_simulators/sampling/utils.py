@@ -563,7 +563,7 @@ def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, P, Q, N,
     points = _set_evaluation_points(all_ys, X, N)
 
     V = _build_V_matrix(points)
-    V_inv = np.linalg.pinv(V)
+    V_inv = np.linalg.inv(V)
 
     p = _project_coefficients(indices_to_alphas, X, P)
     q = _project_coefficients(indices_to_alphas, X, Q)
@@ -654,14 +654,15 @@ def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
             polys.append(X_R)
     p_zw_diag = {alpha_beta[:k]:coeff for alpha_beta, coeff in polys[-1].items() if alpha_beta[:k] == alpha_beta[k:]}
 
-    p_ys = {}
-    for y in p_zw_diag.keys():
-        p_y = 0
-        superior_ys = [alpha for alpha in p_zw_diag.keys() if (np.array(alpha) >= np.array(y)).all()]
-        for alpha in superior_ys:
-            p_y += np.prod(factorial(alpha)) * p_zw_diag[alpha] * np.prod([comb(alpha[j], y[j]) * (-1)**(alpha[j] - y[j]) for j in range(k)])
-        if p_y > 0:
-            p_ys[y] = p_y
-            
-    sample = rng.choice(list(p_ys.keys()), p=list(p_ys.values()))
+    alphas = np.array(list(p_zw_diag.keys()))
+    P_alpha_factorial = np.prod(factorial(alphas), axis=1) * np.array(list(p_zw_diag.values()))
+
+    y = alphas[:, None, :]
+    alpha = alphas[None, :, :]
+    combination_alpha_y = comb(alpha, y) * (-1) ** ((alpha - y)%2)
+
+    p_ys = np.prod(combination_alpha_y, axis=2) @ P_alpha_factorial
+    positive_probs = np.where(p_ys>0)
+
+    sample = rng.choice(alphas[positive_probs], p=p_ys[positive_probs])
     return sample
