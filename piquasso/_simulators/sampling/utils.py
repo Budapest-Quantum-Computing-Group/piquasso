@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import product
-from collections import deque
 import numpy as np
-from scipy.special import factorial, comb
+from scipy.special import factorial
 
 from functools import partial
 
@@ -179,17 +177,7 @@ def generate_samples(
     Returns:
         The generated samples.
     """
-    n = np.sum(input)
-    k = len(selected_modes)
 
-    if k == 1 and n>3 and n<10:
-        return _generate_k_modes_samples(
-            input, 
-            shots, 
-            interferometer, 
-            rng, 
-            selected_modes,
-            n)
     if len(postselect_data[0]) > 0:
         sample_generator = partial(
             _generate_sample_with_postselect,
@@ -206,8 +194,7 @@ def generate_samples(
         sample_generator=sample_generator,
         interferometer=interferometer,
         rng=rng,
-        selected_modes=selected_modes,
-        n=n,
+        selected_modes=selected_modes
     )
 
 
@@ -263,9 +250,10 @@ def _get_first_quantized(occupation_numbers):
 
 
 def _generate_samples(
-    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng, selected_modes, n
+    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng, selected_modes
 ):
     d = len(input)
+    n = np.sum(input)
 
     samples = []
 
@@ -485,179 +473,3 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     expansion_values = np.sqrt(vector_of_squared_expansions)
 
     return np.diag(expansion_values)
-
-
-def _generate_k_modes_samples(
-        input, shots, interferometer, rng, selected_modes, n
-):
-    '''
-        Generates multiple samples with specified selected modes.
-    '''
-    samples = []
-
-    while len(samples) < shots:
-        sample = _generate_k_modes_sample(selected_modes, n, input, interferometer, rng)
-        samples.append(tuple(sample))
-
-    return samples
-
-def _get_support_points(alphas_to_indices, N, k, polynomials_list):
-    '''
-        Finds the points to evaluate in R based on the non-empty alphas in the polynomials list.
-    '''
-    X = set()
-    for alpha_betas in product(*(poly.keys() for poly in polynomials_list)):
-        new_alpha_beta = tuple(map(sum, zip(*alpha_betas)))
-        if sum(new_alpha_beta[:k]) == sum(new_alpha_beta[k:]) and sum(new_alpha_beta[:k])<N:
-                X.add(alphas_to_indices[new_alpha_beta])
-    return sorted(X)
-
-def _build_exponent(alpha, N):
-    '''
-        Converts alpha to an integer in N.
-    '''
-    u = 0
-    for a in alpha:
-        u = u * N + a
-    return u
-
-def _build_kronecker_exponents(N, max_exponent, row_exponent, col_exponent):
-    '''
-        Builds the Kronecker exponents for the support values X by converting rows and cols to integers.
-    '''
-    return _build_exponent(row_exponent, N) + max_exponent * _build_exponent(col_exponent, N)
-
-def _set_evaluation_points(all_ys, X, N):
-    '''
-        Creates the set of T pairwise distinct omega points. 
-    '''
-    max_exponent = max([_build_exponent(alpha, N) for alpha in all_ys])
-    exponents = [_build_kronecker_exponents(N, max_exponent, all_ys[r], all_ys[c]) for r, c in X]
-    T = max(exponents)+1
-    omega = np.exp(2j * np.pi / T)
-    points = np.array(omega ** exponents)
-    return points
-
-def _build_V_matrix(points):
-    '''
-        Creates the Vandermonde matrix based on the T omega points.
-    '''
-    s = len(points)
-    return np.array([
-        [points[j] ** i for j in range(s)]
-        for i in range(s)
-    ])
-
-def _project_coefficients(indices_to_alphas, X, poly):
-    '''
-        Gets the polynomial's coefficients at the support X alphas.
-    '''
-    return np.array([poly.get(indices_to_alphas[i], 0) for i in X])
-
-def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polynomials_list, N, k):
-    '''
-        Multiplies polynomial coefficients using "Sparse polynomial multiplication" algorithm by Joris van der Hoeven.
-    '''
-    X = _get_support_points(alphas_to_indices, N, k, polynomials_list)
-    points = _set_evaluation_points(all_ys, X, N)
-
-    V = _build_V_matrix(points)
-    V_inv = np.linalg.inv(V)
-
-    E_polys = [ V @ _project_coefficients(indices_to_alphas, X, poly) for poly in polynomials_list ]
-    ER = np.prod(E_polys, axis=0)
-    
-    R_vals = V_inv @ ER
-
-    return { indices_to_alphas[X[i]]: R_vals[i].real for i in range(len(X)) if R_vals[i].real > 0.0 }
-
-def _compute_degree(degree, alphas_by_degree, powers_by_degree, x):
-    '''
-        Computes the Laguerre polynomials at one degree.
-    '''
-    previous_powers = powers_by_degree[degree-1]
-    alphas_1 = alphas_by_degree[1]
-    previous_alphas = alphas_by_degree[degree-1]
-    current_alphas = alphas_by_degree[degree]
-
-    indices = {alpha: index for index, alpha in enumerate(current_alphas)}
-    l_ra = np.zeros((len(current_alphas), len(current_alphas)), dtype=complex)
-    for i1, alpha in enumerate(previous_alphas):
-        for i2, beta in enumerate(previous_alphas):
-            for j1, alpha_1 in enumerate(alphas_1):
-                for j2, beta_1 in enumerate(alphas_1):
-                    row = tuple(np.add(alpha, alpha_1))
-                    col = tuple(np.add(beta, beta_1))
-                    l_ra[indices[row], indices[col]] += previous_powers[i1, i2] * x[j1, j2]
-    return l_ra
-
-def _compute_laguerre(x, d, k):
-    '''
-        Computes the Laguerre series of degree d and returns an array of its polynomials.
-    '''
-    x = x[::-1, ::-1]
-
-    alphas_1 = [alpha for alpha in product(range(2), repeat=k) if sum(alpha) == 1]
-    alphas_by_degree = {0: [(0,) * k], 1: alphas_1}
-    powers_by_degree = {0: np.array([[1.0 + 0j]]), 1:x}
-    for degree in range(2, d + 1):
-        alphas_by_degree[degree] = [alpha for alpha in product(range(degree+1), repeat=k) if sum(alpha) == degree]
-        powers_by_degree[degree] = _compute_degree(degree, alphas_by_degree, powers_by_degree, x)
-
-    coeffs = [(-1) ** j * comb(d, j) / factorial(j) for j in range(d + 1)]
-    l_ra = {}
-    for degree in range(d + 1):
-        power_block = coeffs[degree] * powers_by_degree[degree]
-        degree_alphas = alphas_by_degree[degree]
-        for i, row in enumerate(degree_alphas):
-            for j, col in enumerate(degree_alphas):
-                coeff = power_block[i, j].real
-                if coeff != 0.0:
-                    l_ra[(row + col)] = coeff
-    return l_ra
-
-def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
-    '''
-        Implements sampling when k-modes have been selected for measurement.
-    '''
-    k = len(modes)
-    occupied_inputs = inputs[inputs!=0]
-    s = len(occupied_inputs)
-    if s == 0:
-        return np.zeros(k, dtype=int)
-    
-    N = n+1
-    all_ys = [alpha for alpha in product(range(N), repeat=k) if sum(alpha) <= n]
-    alphas_to_indices = {}
-    indices_to_alphas = {}
-    for i in range(len(all_ys)):
-        for j in range(len(all_ys)):
-            indices = (i, j)
-            alpha = all_ys[i]+all_ys[j]
-            indices_to_alphas[indices] = alpha
-            alphas_to_indices[alpha] = indices
-
-    V = np.conj(interferometer)[modes, :][:, np.where(inputs!=0)[0]]
-
-    xa = -np.einsum('ai,aj->aij', V.T, np.conj(V.T))
-
-    laguerre_polynomials = []
-    for a in range(s):
-        X_R = _compute_laguerre(xa[a], occupied_inputs[a], k)
-        laguerre_polynomials.append(X_R)
-    if len(laguerre_polynomials) > 1:
-        X_R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, laguerre_polynomials, N, k)
-    p_zw_diag = {alpha_beta[:k]:coeff for alpha_beta, coeff in X_R.items() if alpha_beta[:k] == alpha_beta[k:]}
-
-    alphas = np.array(list(p_zw_diag.keys()))
-    P_alpha_factorial = np.prod(factorial(alphas), axis=1) * np.array(list(p_zw_diag.values()))
-
-    y = alphas[:, None, :]
-    alpha = alphas[None, :, :]
-    combination_alpha_y = comb(alpha, y) * (-1) ** ((alpha - y)%2)
-
-    p_ys = np.prod(combination_alpha_y, axis=2) @ P_alpha_factorial
-    positive_probs = np.where(p_ys>0)
-
-    sample = rng.choice(alphas[positive_probs], p=p_ys[positive_probs])
-    return sample
