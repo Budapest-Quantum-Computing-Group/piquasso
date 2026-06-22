@@ -501,36 +501,17 @@ def _generate_k_modes_samples(
 
     return samples
 
-def _get_non_empty_alphas(poly, N, k, d):
+def _get_support_points(alphas_to_indices, N, k, P, Q):
     '''
-        Retrieves the non empty indices in the polynomial array and their corresponding (alpha, beta).
+        Finds the points to evaluate in R based on the non-empty alphas in P and Q.
     '''
-    indices = {}
-    alphas = []
-    while len(alphas)<poly.shape[0]:
-        alphas = [alpha for alpha in product(range(N), repeat=k) if sum(alpha) <= d]
-        d+=1
-    for i in range(len(alphas)):
-        for j in range(len(alphas)):
-            indices[(i, j)] = alphas[i]+alphas[j]
-    non_empty = np.array(np.where(poly)).T.tolist()
-    S = {tuple(i): np.array(indices[tuple(i)]) for i in non_empty}
-    return S
-
-def _get_support_points(alphas_to_indices, N, k, d, P,Q):
-    '''
-        Finds the points to evaluate in R based on the non-empty points in P and Q.
-    '''
-    SP = _get_non_empty_alphas(P, N, k, d[0])
-    SQ = _get_non_empty_alphas(Q, N, k, d[1])
-
     X = set()
-    for a in SP.values():
-        for b in SQ.values():
-            new_tuple = tuple(a+b)
-            if sum(new_tuple[:k]) == sum(new_tuple[k:]) and sum(new_tuple[:k])<N:
-                X.add(alphas_to_indices[new_tuple])
-    return sorted(X), SP, SQ
+    for alpha_beta_P in P.keys():
+        for alpha_beta_Q in Q.keys():
+            new_alpha_beta = tuple([sum(x) for x in zip(alpha_beta_P,alpha_beta_Q)])
+            if sum(new_alpha_beta[:k]) == sum(new_alpha_beta[k:]) and sum(new_alpha_beta[:k])<N:
+                X.add(alphas_to_indices[new_alpha_beta])
+    return sorted(X)
 
 def _build_exponent(alpha, N):
     '''
@@ -547,14 +528,15 @@ def _build_kronecker_exponents(N, max_exponent, row_exponent, col_exponent):
     '''
     return _build_exponent(row_exponent, N) + max_exponent * _build_exponent(col_exponent, N)
 
-def _set_evaluation_points(all_ys, X, N, d):
+def _set_evaluation_points(all_ys, X, N):
     '''
         Creates the set of T pairwise distinct omega points. 
     '''
-    max_exponent = max(_build_exponent(alpha, N) for alpha in all_ys)
-    T = max_exponent**2
+    max_exponent = max([_build_exponent(alpha, N) for alpha in all_ys])
+    exponents = [_build_kronecker_exponents(N, max_exponent, all_ys[r], all_ys[c]) for r, c in X]
+    T = max(exponents)+1
     omega = np.exp(2j * np.pi / T)
-    points = np.array([omega ** _build_kronecker_exponents(N, max_exponent, all_ys[r], all_ys[c]) for r, c in X])
+    points = np.array(omega ** exponents)
     return points
 
 def _build_V_matrix(points):
@@ -567,37 +549,31 @@ def _build_V_matrix(points):
         for i in range(s)
     ])
 
-def _project_coefficients(indices_to_alphas, X, poly, poly_support):
+def _project_coefficients(indices_to_alphas, X, poly):
     '''
         Gets the polynomial's coefficients at the support X alphas.
     '''
-    coeffs = {tuple(alpha):poly[index[0], [index[1]]][0] for index, alpha in poly_support.items()}
-    return np.array([coeffs.get(indices_to_alphas[i], 0) for i in X])
+    return np.array([poly.get(indices_to_alphas[i], 0) for i in X])
 
-def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, P, Q, N, k, d, return_dense=False):
+def _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, P, Q, N, k):
     '''
-        Multiplies arrays of polynomial coefficients using "Sparse polynomial multiplication" algorithm by Joris van der Hoeven.
+        Multiplies polynomial coefficients using "Sparse polynomial multiplication" algorithm by Joris van der Hoeven.
     '''
-    X, SP, SQ = _get_support_points(alphas_to_indices, N, k, d, P,Q)
-    points = _set_evaluation_points(all_ys, X, N, d)
+    X = _get_support_points(alphas_to_indices, N, k, P, Q)
+    points = _set_evaluation_points(all_ys, X, N)
 
     V = _build_V_matrix(points)
     V_inv = np.linalg.pinv(V)
 
-    p = _project_coefficients(indices_to_alphas, X, P, SP)
-    q = _project_coefficients(indices_to_alphas, X, Q, SQ)
+    p = _project_coefficients(indices_to_alphas, X, P)
+    q = _project_coefficients(indices_to_alphas, X, Q)
     
     EP = V @ p
     EQ = V @ q
     ER = EP * EQ
     R_vals = V_inv @ ER
 
-    if return_dense:
-        R = np.zeros((X[-1][0]+1, X[-1][0]+1), dtype=complex)
-        X = tuple(np.array(X).T)
-        R[X] = R_vals
-        return R
-    return R_vals
+    return { indices_to_alphas[X[i]]: R_vals[i].real for i in range(len(X)) if R_vals[i].real > 0.0 }
 
 def _compute_degree(degree, alphas_by_degree, powers_by_degree, x):
     '''
@@ -633,15 +609,15 @@ def _compute_laguerre(x, d, k):
         powers_by_degree[degree] = _compute_degree(degree, alphas_by_degree, powers_by_degree, x)
 
     coeffs = [(-1) ** j * comb(d, j) / factorial(j) for j in range(d + 1)]
-    current_alphas = [alpha for alpha in product(range(d + 1), repeat=k) if sum(alpha) <= d]
-    indices = {alpha: i for i, alpha in enumerate(current_alphas)}
-    l_ra = np.zeros((len(current_alphas), len(current_alphas)))
+    l_ra = {}
     for degree in range(d + 1):
         power_block = coeffs[degree] * powers_by_degree[degree]
         degree_alphas = alphas_by_degree[degree]
         for i, row in enumerate(degree_alphas):
             for j, col in enumerate(degree_alphas):
-                l_ra[indices[row], indices[col]] = power_block[i, j].real
+                coeff = power_block[i, j].real
+                if coeff != 0.0:
+                    l_ra[(row + col)] = coeff
     return l_ra
 
 def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
@@ -671,14 +647,12 @@ def _generate_k_modes_sample(modes, n, inputs, interferometer, rng):
 
     polys = deque([], maxlen=2)
     for a in range(s):
-        R = _compute_laguerre(xa[a], occupied_inputs[a], k)
-        polys.append(R)
+        l_ra = _compute_laguerre(xa[a], occupied_inputs[a], k)
+        polys.append(l_ra)
         if len(polys) == 2:
-            R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polys[0], polys[1], N, k, (sum(occupied_inputs[:a]), occupied_inputs[a]), return_dense=True)
-            polys.append(R)
-
-    diag = np.diag(R).real
-    p_zw_diag = {indices_to_alphas[i, i][:k]:coeff for i, coeff in enumerate(diag)}
+            X_R = _multiply_polynomials(all_ys, alphas_to_indices, indices_to_alphas, polys[0], polys[1], N, k)
+            polys.append(X_R)
+    p_zw_diag = {alpha_beta[:k]:coeff for alpha_beta, coeff in polys[-1].items() if alpha_beta[:k] == alpha_beta[k:]}
 
     p_ys = {}
     for y in p_zw_diag.keys():
