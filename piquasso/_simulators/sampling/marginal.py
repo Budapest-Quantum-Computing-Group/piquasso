@@ -354,8 +354,7 @@ def generate_marginal_samples(state, selected_modes, shots, rng):
             n_photons_probs = np.array(list(probs.values()))
             positive_probs = np.where(n_photons_probs>0)
             n_photons = rng.choice(n_photons_list[positive_probs], p=n_photons_probs[positive_probs])[0]
-            if n_photons > 0:
-                sample[i_mode] += n_photons
-                state._postselections[mode] = n_photons
+            sample[i_mode] += n_photons
+            state._postselections[mode] = n_photons
         samples.append(tuple(sample.tolist()))
     return samples
