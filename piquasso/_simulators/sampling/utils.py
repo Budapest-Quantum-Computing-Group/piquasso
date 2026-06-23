@@ -25,6 +25,7 @@ from piquasso._math.combinatorics import partitions, partitions_bounded_k
 from piquasso._math.fock import get_fock_space_basis
 from .marginal import (
     _get_diagonal_coefficients,
+    cutoff_fock_space_dim_array,
     _probabilities_from_diagonal_coefficients,
 )
 
@@ -601,10 +602,14 @@ def _generate_marginal_samples(
                     ]
                     intermediate_diagonal = diagonal_coefficients[relevant_indices]
 
+                indices = cutoff_fock_space_dim_array(
+                    np.arange(n + 2), num_postselected_modes + 1
+                )
                 probabilities = _probabilities_from_diagonal_coefficients(
                     intermediate_diagonal,
                     intermediate_compositions,
                     outcomes_with_postselection,
+                    indices,
                 )
                 if np.all(probabilities == 0):
                     break
