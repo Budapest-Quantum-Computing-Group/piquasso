@@ -22,6 +22,8 @@ from piquasso.api.exceptions import InvalidSimulation
 
 from piquasso._math.combinatorics import partitions, partitions_bounded_k
 
+from .marginal import get_marginal_probabilities
+
 """
 This is a contribution from `theboss`, see https://github.com/Tomev-CTP/theboss.
 
@@ -151,6 +153,7 @@ def generate_samples(
     rng,
     reject_condition,
     postselect_data,
+    selected_modes,
 ):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
@@ -183,6 +186,10 @@ def generate_samples(
             reject_condition=reject_condition,
             postselect_data=postselect_data,
         )
+    elif 0 < len(selected_modes) < len(input) and not reject_condition:
+        return _generate_marginal_samples(
+            input, interferometer, selected_modes, shots, rng
+        )
     else:
         sample_generator = partial(_generate_sample, reject_condition=reject_condition)
 
@@ -193,6 +200,7 @@ def generate_samples(
         sample_generator=sample_generator,
         interferometer=interferometer,
         rng=rng,
+        selected_modes=selected_modes,
     )
 
 
@@ -203,6 +211,7 @@ def generate_lossy_samples(
     interferometer_svd,
     rng,
     postselect_data,
+    selected_modes,
 ):
     """
     Basically the same algorithm as in `generate_samples`, but doubles the system size
@@ -225,6 +234,7 @@ def generate_lossy_samples(
         rng,
         reject_condition=lambda: False,
         postselect_data=postselect_data,
+        selected_modes=selected_modes,
     )
 
     # Trim output state
@@ -246,7 +256,13 @@ def _get_first_quantized(occupation_numbers):
 
 
 def _generate_samples(
-    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng
+    input,
+    shots,
+    calculate_permanent_laplace,
+    interferometer,
+    sample_generator,
+    rng,
+    selected_modes,
 ):
     d = len(input)
     n = np.sum(input)
@@ -265,7 +281,7 @@ def _generate_samples(
             rng=rng,
         )
         samples.append(tuple(sample))
-
+    samples = [tuple(sample[mode] for mode in selected_modes) for sample in samples]
     return samples
 
 
@@ -469,3 +485,35 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     expansion_values = np.sqrt(vector_of_squared_expansions)
 
     return np.diag(expansion_values)
+
+
+def _generate_marginal_samples(
+    initial_state, interferometer, selected_modes, shots, rng
+):
+    """
+    Implements mode-by-mode sampling.
+    """
+    if sum(initial_state) == 0:
+        return [(0,) * len(selected_modes)] * shots
+    samples = []
+    while len(samples) < shots:
+        sample = np.zeros(len(selected_modes), dtype=int)
+        postselections = {}
+        for i_mode, mode in enumerate(selected_modes):
+            probs = get_marginal_probabilities(
+                initial_state,
+                interferometer,
+                tuple(postselections.keys()),
+                tuple(postselections.values()),
+                (mode,),
+            )
+            n_photons_list = np.array(list(probs.keys()))
+            n_photons_probs = np.array(list(probs.values()))
+            positive_probs = np.where(n_photons_probs > 0)
+            n_photons = rng.choice(
+                n_photons_list[positive_probs], p=n_photons_probs[positive_probs]
+            )[0]
+            sample[i_mode] += n_photons
+            postselections[mode] = n_photons
+        samples.append(tuple(sample.tolist()))
+    return samples
