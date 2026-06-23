@@ -141,8 +141,9 @@ def get_marginal_probabilities(
             postselected_photons, dtype=np.int64
         )
     outcomes_with_postselection[:, num_postselected_modes:] = outcomes
+    indices = cutoff_fock_space_dim_array(np.arange(n + 2), k_total)
     probabilities = _probabilities_from_diagonal_coefficients(
-        diagonal_coefficients, compositions, outcomes_with_postselection
+        diagonal_coefficients, compositions, outcomes_with_postselection, indices
     )
 
     ret = {tuple(outcome): probabilities[i].real for i, outcome in enumerate(outcomes)}
@@ -301,39 +302,100 @@ def _probabilities_from_diagonal_coefficients(
     diagonals: np.ndarray,
     compositions: np.ndarray,
     outcomes: np.ndarray,
+    indices: np.ndarray,
 ) -> np.ndarray:
-    num_outcomes = outcomes.shape[0]
-    num_alpha = compositions.shape[0]
+    r"""Convert diagonal coefficients to probabilities by Taylor shifts.
+
+    The input ``diagonals`` stores
+
+        G_\alpha = \alpha! P_{\alpha, \alpha},
+
+    i.e., the coefficients of
+
+        G(x) = \sum_\alpha G_\alpha x^\alpha.
+
+    This function computes the coefficients of
+
+        G(x_1 - 1, ..., x_k - 1),
+
+    and returns only the coefficients corresponding to ``outcomes``.
+    """
+    n = len(indices) - 2
     k = compositions.shape[1]
 
-    probs = np.zeros(num_outcomes, dtype=np.complex128)
+    probabilities = diagonals.astype(np.complex128).copy()
 
-    for y_index in range(num_outcomes):
-        total = 0.0 + 0.0j
+    line = np.zeros(n + 1, dtype=np.complex128)
+    occupation = np.zeros(k, dtype=np.int64)
 
-        for a_index in range(num_alpha):
-            alpha = compositions[a_index]
+    for axis in range(k):
+        for base_index in range(compositions.shape[0]):
+            base = compositions[base_index]
 
-            ok = True
-            sign_power = 0
-            factor = 1.0
+            if base[axis] != 0:
+                continue
 
+            base_degree = 0
             for j in range(k):
-                aj = int(alpha[j])
-                yj = int(outcomes[y_index, j])
+                base_degree += int(base[j])
 
-                if aj < yj:
-                    ok = False
-                    break
+            max_axis_degree = n - base_degree
+            length = max_axis_degree + 1
 
-                sign_power += aj - yj
-                factor *= comb(aj, yj)
+            for t in range(length):
+                for j in range(k):
+                    occupation[j] = base[j]
 
-            if ok:
-                if sign_power % 2 == 1:
-                    factor = -factor
-                total += diagonals[a_index] * factor
+                occupation[axis] = t
+                idx = _get_global_composition_index(occupation, indices)
+                line[t] = probabilities[idx]
 
-        probs[y_index] = total
+            _shift_minus_one_inplace(line, length)
 
-    return probs
+            for t in range(length):
+                for j in range(k):
+                    occupation[j] = base[j]
+
+                occupation[axis] = t
+                idx = _get_global_composition_index(occupation, indices)
+                probabilities[idx] = line[t]
+
+            for t in range(length):
+                line[t] = 0.0 + 0.0j
+
+    output = np.zeros(outcomes.shape[0], dtype=np.complex128)
+
+    for i in range(outcomes.shape[0]):
+        idx = _get_global_composition_index(outcomes[i], indices)
+        output[i] = probabilities[idx]
+
+    return output
+
+
+@nb.njit(cache=True)
+def _get_global_composition_index(
+    occupation: np.ndarray,
+    indices: np.ndarray,
+) -> int:
+    degree = 0
+    for value in occupation:
+        degree += int(value)
+
+    return indices[degree] + get_index_in_fock_subspace(occupation)
+
+
+@nb.njit(cache=True)
+def _shift_minus_one_inplace(line: np.ndarray, length: int) -> None:
+    r"""Transform coefficients of p(c) into coefficients of p(x - 1).
+
+    Input:
+        line[a] = [c^a] p(c), for 0 <= a < length.
+
+    Output:
+        line[y] = [x^y] p(x - 1), for 0 <= y < length.
+
+    This implements the in-place shift by -1.
+    """
+    for i in range(length - 1):
+        for j in range(length - 1, i, -1):
+            line[j - 1] -= line[j]
