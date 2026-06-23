@@ -21,6 +21,10 @@ import numpy as np
 from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
 from piquasso._math.linalg import is_unitary
 
+from piquasso._simulators.sampling.probabilities import (
+    get_ideal_particle_number_probability,
+    get_lossy_particle_number_probability,
+)
 from piquasso.api.config import Config
 from piquasso.api.state import State
 from piquasso.api.exceptions import (
@@ -30,7 +34,7 @@ from piquasso.api.exceptions import (
 )
 from piquasso.api.connector import BaseConnector
 
-from .utils import calculate_state_vector, calculate_inner_product
+from .utils import calculate_state_vector
 from .marginal import get_marginal_probabilities
 
 if TYPE_CHECKING:
@@ -116,7 +120,11 @@ class SamplingState(State):
         self._coefficients: List = []
 
         self.interferometer = np.diag(np.ones(d, dtype=self._config.complex_dtype))
-        """The interferometer matrix corresponding to the circuit."""
+        """
+        The interferometer matrix corresponding to the circuit. When the state is
+        lossy, this matrix represents the transmission matrix of the lossy
+        interferometer.
+        """
 
         self.is_lossy = False
         """Returns `True` if the state is lossy, otherwise `False`."""
@@ -224,41 +232,24 @@ class SamplingState(State):
                 f"postselected."
             )
 
-        np = self._connector.np
-        fallback_np = self._connector.fallback_np
-
-        output_number_of_particles = fallback_np.sum(occupation_number) + sum(
-            self._postselections.values()
-        )
-
-        sum_ = 0.0
-
-        postselected_modes = self._get_postselected_modes()
-        active_modes = self._get_active_modes()
-        postselected_photons = self._get_postselected_photons()
-
-        for index, input_occupation_number in enumerate(self._occupation_numbers):
-            if output_number_of_particles != fallback_np.sum(input_occupation_number):
-                continue
-
-            full_occupation_number = fallback_np.zeros(
-                self.total_number_of_modes, dtype=int
-            )
-
-            full_occupation_number[active_modes,] = occupation_number
-            full_occupation_number[postselected_modes,] = postselected_photons
-
-            inner_product = calculate_inner_product(
-                interferometer=self.interferometer,
-                input=input_occupation_number,
-                output=full_occupation_number,
+        if self.is_lossy:
+            return get_lossy_particle_number_probability(
+                occupation_number=occupation_number,
+                postselections=self._postselections,
+                transmission_matrix=self.interferometer,
+                occupation_numbers=self._occupation_numbers,
+                coefficients=self._coefficients,
                 connector=self._connector,
             )
-            coefficient = self._coefficients[index]
 
-            sum_ += coefficient * inner_product
-
-        return np.abs(sum_) ** 2
+        return get_ideal_particle_number_probability(
+            occupation_number=occupation_number,
+            postselections=self._postselections,
+            interferometer=self.interferometer,
+            occupation_numbers=self._occupation_numbers,
+            coefficients=self._coefficients,
+            connector=self._connector,
+        )
 
     @property
     def state_vector(self):
