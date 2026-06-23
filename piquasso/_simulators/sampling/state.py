@@ -451,6 +451,12 @@ class SamplingState(State):
     ) -> Dict[Tuple[int, ...], float]:
         """Returns the marginal probabilities of the state.
 
+        .. note::
+
+            If the state is postselected, the marginal probabilities are not normalized,
+            and the sum of the marginal probabilities is equal to the probability of the
+            postselection.
+
         Returns:
             Dict[Tuple[int, ...], float]: The marginal probabilities of the state.
         """
