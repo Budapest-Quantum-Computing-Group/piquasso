@@ -254,9 +254,11 @@ class TestMarginalProbabilities:
 
         probabilities = state.get_marginal_probabilities(modes)
 
+        postselection_probability = np.cos(2 * alpha) ** 2
+
         expected = {
-            (0,): np.sin(beta) ** 2,
-            (1,): np.cos(beta) ** 2,
+            (0,): postselection_probability * np.sin(beta) ** 2,
+            (1,): postselection_probability * np.cos(beta) ** 2,
         }
 
         for outcome, probability in probabilities.items():

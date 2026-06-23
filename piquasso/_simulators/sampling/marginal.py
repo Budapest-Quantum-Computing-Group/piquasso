@@ -145,8 +145,6 @@ def get_marginal_probabilities(
         diagonal_coefficients, compositions, outcomes_with_postselection
     )
 
-    probabilities /= np.sum(probabilities)
-
     ret = {tuple(outcome): probabilities[i].real for i, outcome in enumerate(outcomes)}
 
     return ret
