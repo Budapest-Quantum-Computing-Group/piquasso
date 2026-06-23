@@ -337,3 +337,25 @@ def _probabilities_from_diagonal_coefficients(
         probs[y_index] = total
 
     return probs
+
+def generate_marginal_samples(state, selected_modes, shots, rng):
+    '''
+        Implements mode-by-mode sampling.
+    '''
+    if sum(state._occupation_numbers[0]) == 0:
+        return [(0,) * len(selected_modes)] * shots
+    samples = []
+    while len(samples) < shots:
+        sample = np.zeros(len(selected_modes), dtype=int)
+        state._postselections = {}
+        for i_mode, mode in enumerate(selected_modes):
+            probs = state.get_marginal_probabilities((mode,))
+            n_photons_list = np.array(list(probs.keys()))
+            n_photons_probs = np.array(list(probs.values()))
+            positive_probs = np.where(n_photons_probs>0)
+            n_photons = rng.choice(n_photons_list[positive_probs], p=n_photons_probs[positive_probs])[0]
+            if n_photons > 0:
+                sample[i_mode] += n_photons
+                state._postselections[mode] = n_photons
+        samples.append(tuple(sample.tolist()))
+    return samples

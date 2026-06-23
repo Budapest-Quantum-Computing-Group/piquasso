@@ -151,7 +151,6 @@ def generate_samples(
     rng,
     reject_condition,
     postselect_data,
-    selected_modes,
 ):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
@@ -194,7 +193,6 @@ def generate_samples(
         sample_generator=sample_generator,
         interferometer=interferometer,
         rng=rng,
-        selected_modes=selected_modes,
     )
 
 
@@ -205,7 +203,6 @@ def generate_lossy_samples(
     interferometer_svd,
     rng,
     postselect_data,
-    selected_modes,
 ):
     """
     Basically the same algorithm as in `generate_samples`, but doubles the system size
@@ -228,7 +225,6 @@ def generate_lossy_samples(
         rng,
         reject_condition=lambda: False,
         postselect_data=postselect_data,
-        selected_modes=selected_modes,
     )
 
     # Trim output state
@@ -250,13 +246,7 @@ def _get_first_quantized(occupation_numbers):
 
 
 def _generate_samples(
-    input,
-    shots,
-    calculate_permanent_laplace,
-    interferometer,
-    sample_generator,
-    rng,
-    selected_modes,
+    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng
 ):
     d = len(input)
     n = np.sum(input)
@@ -275,7 +265,7 @@ def _generate_samples(
             rng=rng,
         )
         samples.append(tuple(sample))
-    samples = [tuple(sample[mode] for mode in selected_modes) for sample in samples]
+
     return samples
 
 

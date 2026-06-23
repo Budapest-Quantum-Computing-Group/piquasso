@@ -860,7 +860,7 @@ class TestMidCircuitMeasurements:
 
     def test_k_modes_measurement(self):
         with pq.Program() as program:
-            pq.Q() | pq.StateVector([1, 1, 0, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 0, 0, 0])
             pq.Q(0, 1) | pq.ParticleNumberMeasurement()
 
         s_simulator = pq.SamplingSimulator(d=5)
