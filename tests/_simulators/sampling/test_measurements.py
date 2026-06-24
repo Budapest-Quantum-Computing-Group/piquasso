@@ -857,3 +857,195 @@ class TestMidCircuitMeasurements:
         assert state_1 == state_2
 
         assert np.allclose(state_1.state_vector, state_2.state_vector)
+
+
+class TestMarginalBosonSampling:
+    """Test programs that contain marginal boson sampling."""
+
+    @pytest.mark.monkey
+    def test_marginal_boson_sampling_conserves_particle_number_bound(
+        self, generate_unitary_matrix
+    ):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+
+        unitary = generate_unitary_matrix(d)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+                pq.ParticleNumberMeasurement().on_modes(0, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+
+        for sample in result.samples:
+            assert sum(sample) <= sum(input_state)
+            assert all(particle_number >= 0 for particle_number in sample)
+
+    @pytest.mark.monkey
+    def test_full_boson_sampling_conserves_particle_number(
+        self, generate_unitary_matrix
+    ):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+
+        unitary = generate_unitary_matrix(d)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+                pq.ParticleNumberMeasurement().on_modes(*range(d)),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+
+        for sample in result.samples:
+            assert sum(sample) == sum(input_state)
+
+    def test_identity_interferometer_marginal_boson_sampling(self):
+        input_state = np.array([2, 0, 1, 0], dtype=int)
+        d = len(input_state)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(np.identity(d)),
+                pq.ParticleNumberMeasurement().on_modes(0, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+
+        for sample in result.samples:
+            assert tuple(sample) == (2, 1)
+
+    def test_permutation_interferometer_marginal_boson_sampling(self):
+        input_state = np.array([1, 0, 2, 0], dtype=int)
+        d = len(input_state)
+
+        unitary = np.array(
+            [
+                [0, 0, 1, 0],
+                [1, 0, 0, 0],
+                [0, 0, 0, 1],
+                [0, 1, 0, 0],
+            ],
+            dtype=complex,
+        )
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+                pq.ParticleNumberMeasurement().on_modes(0, 1),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=10)
+
+        for sample in result.samples:
+            assert tuple(sample) == (2, 1)
+
+    def test_lossy_marginal_sampling_raises_NotImplementedCalculation(self):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Loss(transmissivity=0.5).on_modes(0),
+                pq.ParticleNumberMeasurement().on_modes(0, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+
+        with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as error:
+            simulator.execute(program, shots=10)
+
+        assert error.value.args[0] == (
+            "The instruction ParticleNumberMeasurement(modes=(0, 2)) is not supported "
+            "for lossy states with postselection on a subset of modes.\nIf you need "
+            "this feature to be implemented, please create an issue at "
+            "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
+        )
+
+    def test_postselected_marginal_sampling_with_permutation_interferometer(self):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+        shots = 10
+
+        unitary = np.array(
+            [
+                [0, 1, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [1, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1],
+            ],
+            dtype=complex,
+        )
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Interferometer(unitary),
+                pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+                pq.ParticleNumberMeasurement().on_modes(1, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=shots)
+
+        for sample in result.samples:
+            assert tuple(sample) == (0, 1)
+
+        analytic_result = simulator.execute(
+            pq.Program(
+                instructions=[
+                    pq.NumberState(input_state),
+                    pq.Interferometer(unitary),
+                    pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+                ]
+            )
+        )
+
+        analytic_probabilities = analytic_result.state.get_marginal_probabilities(
+            modes=(1, 2),
+        )
+
+        assert np.isclose(sum(analytic_probabilities.values()), 1.0)
+        assert np.isclose(analytic_probabilities[(0, 1)], 1.0)
+
+    def test_postselected_marginal_sampling_on_same_modes_raises_ValueError(self):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.PostSelectPhotons(photon_counts=[1]).on_modes(0),
+                pq.ParticleNumberMeasurement().on_modes(0, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Some modes of instruction ParticleNumberMeasurement(modes=(0, 2)) are "
+                "not active: {0}."
+            ),
+        ):
+            simulator.execute(program, shots=10)

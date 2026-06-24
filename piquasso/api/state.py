@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Tuple, Type, Optional
+from typing import Any, Tuple, Type, Optional, Self
 
 import abc
 import copy
@@ -51,7 +51,7 @@ class State(abc.ABC):
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return get_auxiliary_modes(self.d, modes)
 
-    def copy(self) -> "State":
+    def copy(self) -> Self:
         """Returns an exact copy of this state.
 
         Returns:

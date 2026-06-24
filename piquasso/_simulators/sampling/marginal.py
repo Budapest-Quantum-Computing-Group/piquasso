@@ -99,8 +99,12 @@ import numba as nb
 from scipy.special import factorial
 
 from piquasso._math.combinatorics import comb
-from piquasso._math.fock import get_fock_space_basis, cutoff_fock_space_dim_array
-from piquasso._math.indices import get_index_in_fock_subspace
+from piquasso._math.fock import (
+    get_fock_space_basis,
+    cutoff_fock_space_dim_array,
+    nb_get_fock_space_basis,
+)
+from piquasso._math.indices import get_index_in_fock_space, get_index_in_fock_subspace
 
 
 def get_marginal_probabilities(
@@ -131,7 +135,7 @@ def get_marginal_probabilities(
 
     compositions = get_fock_space_basis(k_total, n + 1)
 
-    binomial_moments = _get_binomial_moments(
+    binomial_moments = get_binomial_moments(
         input_photons=input_photons,
         interferometer=interferometer,
         all_modes=all_modes,
@@ -158,7 +162,7 @@ def get_marginal_probabilities(
     return ret
 
 
-def _get_binomial_moments(
+def get_binomial_moments(
     input_photons: np.ndarray,
     interferometer: np.ndarray,
     all_modes: np.ndarray,
@@ -406,3 +410,29 @@ def _shift_minus_one_inplace(line: np.ndarray, length: int) -> None:
     for i in range(length - 1):
         for j in range(length - 1, i, -1):
             line[j - 1] -= line[j]
+
+
+@nb.njit(cache=True)
+def get_single_marginal_probability_from_binomial_moments(
+    n: int,
+    d: int,
+    binomial_moments: np.ndarray,
+    particles: np.ndarray,
+) -> float:
+    k = len(particles)
+
+    full_occupation = np.zeros(d, dtype=nb.int64)
+
+    probability = 0.0
+
+    for beta in nb_get_fock_space_basis(k, n + 1 - sum(particles)):
+        prod = 1.0
+
+        for i in range(k):
+            full_occupation[i] = beta[i] + particles[i]
+            prod *= comb(full_occupation[i], particles[i]) * (-1) ** beta[i]
+
+        index = get_index_in_fock_space(full_occupation)
+        probability += prod * binomial_moments[index]
+
+    return probability
