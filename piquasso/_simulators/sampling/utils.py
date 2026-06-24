@@ -22,13 +22,6 @@ from piquasso.api.exceptions import InvalidSimulation
 
 from piquasso._math.combinatorics import partitions, partitions_bounded_k
 
-from piquasso._math.fock import get_fock_space_basis
-from .marginal import (
-    _get_diagonal_coefficients,
-    cutoff_fock_space_dim_array,
-    _probabilities_from_diagonal_coefficients,
-)
-
 """
 This is a contribution from `theboss`, see https://github.com/Tomev-CTP/theboss.
 
@@ -158,8 +151,6 @@ def generate_samples(
     rng,
     reject_condition,
     postselect_data,
-    selected_modes,
-    lossy=False,
 ):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
@@ -185,11 +176,8 @@ def generate_samples(
     Returns:
         The generated samples.
     """
-    if 0 < len(selected_modes) < len(input) and not lossy:
-        return _generate_marginal_samples(
-            input, interferometer, selected_modes, shots, rng, postselect_data
-        )
-    elif len(postselect_data[0]) > 0:
+
+    if len(postselect_data[0]) > 0:
         sample_generator = partial(
             _generate_sample_with_postselect,
             reject_condition=reject_condition,
@@ -205,7 +193,6 @@ def generate_samples(
         sample_generator=sample_generator,
         interferometer=interferometer,
         rng=rng,
-        selected_modes=selected_modes,
     )
 
 
@@ -216,7 +203,6 @@ def generate_lossy_samples(
     interferometer_svd,
     rng,
     postselect_data,
-    selected_modes,
 ):
     """
     Basically the same algorithm as in `generate_samples`, but doubles the system size
@@ -239,8 +225,6 @@ def generate_lossy_samples(
         rng,
         reject_condition=lambda: False,
         postselect_data=postselect_data,
-        selected_modes=selected_modes,
-        lossy=True,
     )
 
     # Trim output state
@@ -262,13 +246,7 @@ def _get_first_quantized(occupation_numbers):
 
 
 def _generate_samples(
-    input,
-    shots,
-    calculate_permanent_laplace,
-    interferometer,
-    sample_generator,
-    rng,
-    selected_modes,
+    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng
 ):
     d = len(input)
     n = np.sum(input)
@@ -287,7 +265,7 @@ def _generate_samples(
             rng=rng,
         )
         samples.append(tuple(sample))
-    samples = [tuple(sample[mode] for mode in selected_modes) for sample in samples]
+
     return samples
 
 
@@ -491,143 +469,3 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     expansion_values = np.sqrt(vector_of_squared_expansions)
 
     return np.diag(expansion_values)
-
-
-def _generate_marginal_samples(
-    initial_state, interferometer, selected_modes, shots, rng, postselect_data
-):
-    """
-    Implements mode-by-mode sampling with postselection.
-    """
-    n = sum(initial_state)
-    k = len(selected_modes)
-
-    if n == 0:
-        return [(0,) * k] * shots
-
-    postselect_modes, postselect_photons, max_sample_generation_trials = postselect_data
-    selected_modes = np.array(selected_modes)
-    for postselected in postselect_modes:
-        selected_modes[selected_modes >= postselected] += 1
-    all_selected_modes = np.array(sorted(tuple(selected_modes) + postselect_modes))
-
-    compositions = get_fock_space_basis(len(all_selected_modes), n + 1)
-    diagonal_coefficients = _get_diagonal_coefficients(
-        input_photons=initial_state,
-        interferometer=interferometer,
-        all_modes=all_selected_modes,
-        compositions=compositions,
-    )
-
-    samples = []
-    while len(samples) < shots:
-        sample = []
-
-        postselections = {
-            postselect_modes[i]: postselect_photons[i]
-            for i in range(len(postselect_data[0]))
-        }
-
-        retry = True
-        trial_count = 0
-
-        while retry:
-            trial_count += 1
-
-            if trial_count > max_sample_generation_trials:
-                raise InvalidSimulation(
-                    "Too many trials during sample generation. "
-                    "The specified postselection criteria may be very highly unlikely. "
-                    "Aborting. "
-                    "To increase the limit, set Config.max_sample_generation_trials "
-                    f"to a higher value. Current value: {max_sample_generation_trials}."
-                )
-
-            for mode in selected_modes:
-
-                if mode in postselections:
-                    continue
-
-                cutoff = int(n - np.sum(list(postselections.values())) + 1)
-                outcomes = get_fock_space_basis(1, cutoff)
-                num_postselected_modes = len(postselections.keys())
-                ordered_modes = sorted(list(postselections.keys()) + [mode])
-                current_index = ordered_modes.index(mode)
-
-                outcomes_with_postselection = np.zeros(
-                    (len(outcomes), num_postselected_modes + 1), dtype=np.int64
-                )
-                if num_postselected_modes:
-                    postselected_array = np.array(
-                        [list(postselections.keys()), list(postselections.values())],
-                        dtype=int,
-                    )
-                    postselected_array[0, postselected_array[0, :] < mode] = range(
-                        current_index
-                    )
-                    postselected_array[0, postselected_array[0, :] > mode] = range(
-                        current_index + 1, num_postselected_modes + 1
-                    )
-                    outcomes_with_postselection[:, postselected_array[0]] = np.asarray(
-                        postselected_array[1], dtype=np.int64
-                    )
-                outcomes_with_postselection[:, current_index : current_index + 1] = (
-                    outcomes
-                )
-
-                intermediate_compositions = get_fock_space_basis(
-                    num_postselected_modes + 1, n + 1
-                )
-                intermediate_diagonal = diagonal_coefficients
-                if intermediate_compositions.shape[1] < len(all_selected_modes):
-                    intermediate_compositions_full = np.zeros(
-                        (intermediate_compositions.shape[0], len(all_selected_modes)),
-                        dtype=int,
-                    )
-                    columns_ordering = [
-                        i
-                        for i in range(len(all_selected_modes))
-                        if all_selected_modes[i] in ordered_modes
-                    ]
-                    intermediate_compositions_full[:, columns_ordering] = (
-                        intermediate_compositions
-                    )
-                    intermediate_compositions_dict = {
-                        tuple(row) for row in intermediate_compositions_full
-                    }
-                    relevant_indices = [
-                        i
-                        for i, row in enumerate(compositions)
-                        if tuple(row) in intermediate_compositions_dict
-                    ]
-                    intermediate_diagonal = diagonal_coefficients[relevant_indices]
-
-                indices = cutoff_fock_space_dim_array(
-                    np.arange(n + 2), num_postselected_modes + 1
-                )
-                probabilities = _probabilities_from_diagonal_coefficients(
-                    intermediate_diagonal,
-                    intermediate_compositions,
-                    outcomes_with_postselection,
-                    indices,
-                )
-                if np.all(probabilities == 0):
-                    break
-                probabilities /= np.sum(probabilities)
-
-                n_photons_list = outcomes.flatten()
-                n_photons_probs = probabilities.real
-                positive_probs = np.where(n_photons_probs > 0)
-
-                n_photons = rng.choice(
-                    n_photons_list[positive_probs], p=n_photons_probs[positive_probs]
-                )
-
-                sample.append(n_photons)
-                postselections[mode] = n_photons
-
-            if len(sample) > 0:
-                retry = False
-
-        samples.append(tuple(sample))
-    return samples

@@ -857,14 +857,3 @@ class TestMidCircuitMeasurements:
         assert state_1 == state_2
 
         assert np.allclose(state_1.state_vector, state_2.state_vector)
-
-    def test_k_modes_measurement(self):
-        with pq.Program() as program:
-            pq.Q() | pq.NumberState([1, 1, 0, 0, 0])
-            pq.Q(0, 1) | pq.ParticleNumberMeasurement()
-
-        s_simulator = pq.SamplingSimulator(d=5)
-        s_res = s_simulator.execute(program, shots=1)
-        samples = np.array(s_res.samples)
-        assert samples.shape[1] == 2
-        assert np.allclose(samples, [1, 1])
