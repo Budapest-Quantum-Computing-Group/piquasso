@@ -955,7 +955,7 @@ class TestMarginalBosonSampling:
         for sample in result.samples:
             assert tuple(sample) == (2, 1)
 
-    def test_lossy_marginal_sampling_raises_NotImplementedCalculation(self):
+    def test_lossy_marginal_sampling(self):
         input_state = np.array([1, 1, 1, 0, 0], dtype=int)
         d = len(input_state)
 
@@ -969,15 +969,24 @@ class TestMarginalBosonSampling:
 
         simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
 
-        with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as error:
-            simulator.execute(program, shots=10)
+        shots = 10
+        result = simulator.execute(program, shots=shots)
 
-        assert error.value.args[0] == (
-            "The instruction ParticleNumberMeasurement(modes=(0, 2)) is not supported "
-            "for lossy states with postselection on a subset of modes.\nIf you need "
-            "this feature to be implemented, please create an issue at "
-            "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
-        )
+        assert len(result.samples) == shots
+
+        for sample in result.samples:
+            assert len(sample) == 2
+
+            assert sample[0] in (0, 1), "Mode 0 initially has one photon and is lossy."
+
+            assert (
+                sample[1] == 1
+            ), "Mode 2 is untouched, so it should always contain one photon."
+
+            assert sum(sample) in (
+                1,
+                2,
+            ), "The total number of photons should be either 1 or 2."
 
     def test_postselected_marginal_sampling_with_permutation_interferometer(self):
         input_state = np.array([1, 1, 1, 0, 0], dtype=int)

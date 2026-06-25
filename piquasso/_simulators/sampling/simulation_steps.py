@@ -37,6 +37,7 @@ from .utils import (
     generate_samples,
     generate_lossy_samples,
     generate_marginal_samples,
+    is_direct_marginal_sampling_cheaper,
     map_to_original_modes,
 )
 from piquasso._utils import get_counts
@@ -252,15 +253,15 @@ def particle_number_measurement(
 
     marginal_sampling = set(modes) != set(range(state.d))
 
-    if marginal_sampling:
-        if state.is_lossy:
-            raise NotImplementedCalculation(
-                f"The instruction {instruction} is not supported for lossy states with "
-                "postselection on a subset of modes.\n"
-                "If you need this feature to be implemented, please create an issue at "
-                "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"
-            )
-
+    if (
+        marginal_sampling
+        and not state.is_lossy
+        and is_direct_marginal_sampling_cheaper(
+            k=len(modes) + len(postselected_modes),
+            d=state.total_number_of_modes,
+            n=int(np.sum(initial_state)),
+        )
+    ):
         original_modes = map_to_original_modes(modes, postselected_modes)
 
         samples = generate_marginal_samples(
@@ -325,6 +326,12 @@ def particle_number_measurement(
     )
 
     binned_samples = get_counts(samples)
+
+    if marginal_sampling:
+        binned_samples = {
+            tuple(outcome[mode] for mode in modes): multiplicity
+            for outcome, multiplicity in binned_samples.items()
+        }
 
     branches = [
         Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))

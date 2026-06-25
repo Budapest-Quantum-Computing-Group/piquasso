@@ -20,7 +20,7 @@ from functools import partial
 
 from piquasso.api.exceptions import InvalidSimulation
 
-from piquasso._math.combinatorics import partitions, partitions_bounded_k
+from piquasso._math.combinatorics import comb, partitions, partitions_bounded_k
 
 from piquasso._math.fock import get_fock_space_basis
 from .marginal import (
@@ -548,3 +548,28 @@ def generate_marginal_samples(
         samples.append(tuple(particles[mode_offset:]))
 
     return samples
+
+
+def is_direct_marginal_sampling_cheaper(k: int, d: int, n: int) -> bool:
+    """
+    Estimate whether direct marginal sampling is cheaper than full sampling
+    followed by discarding unmeasured modes. The comparison is based on simple
+    cost estimates.
+
+    Direct marginal sampling is dominated by the cost of calculating the marginal
+    probabilities, which is roughly `n * k^2 * sum_{s=0}^n binom(s + k - 1, k - 1)^2`,
+    In the case of full sampling, the cost is roughly `n * 2^n + d * n^2`.
+
+    Here, k is the number of measured modes, d is the total number of modes, and
+    n is the total number of photons.
+    """
+    if k == d:
+        return False
+
+    direct_marginal_cost = (
+        n * k**2 * sum(comb(degree + k - 1, k - 1) ** 2 for degree in range(n + 1))
+    )
+
+    full_sampling_cost = n * 2**n + d * n**2
+
+    return direct_marginal_cost < full_sampling_cost
