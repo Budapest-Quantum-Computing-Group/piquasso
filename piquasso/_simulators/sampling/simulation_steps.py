@@ -250,7 +250,7 @@ def particle_number_measurement(
 
     modes = instruction.modes
 
-    marginal_sampling = set(postselected_modes + modes) != set(range(state.d))
+    marginal_sampling = set(modes) != set(range(state.d))
 
     if marginal_sampling:
         if state.is_lossy:
