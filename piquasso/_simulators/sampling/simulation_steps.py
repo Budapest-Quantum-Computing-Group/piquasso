@@ -253,9 +253,13 @@ def particle_number_measurement(
 
     marginal_sampling = set(modes) != set(range(state.d))
 
+    singular_values = np.linalg.svd(state.interferometer, compute_uv=False)
+
+    is_ideal_or_uniform_lossy = np.all(np.isclose(singular_values, singular_values[0]))
+
     if (
         marginal_sampling
-        and not state.is_lossy
+        and is_ideal_or_uniform_lossy
         and is_direct_marginal_sampling_cheaper(
             k=len(modes) + len(postselected_modes),
             d=state.total_number_of_modes,
@@ -283,16 +287,13 @@ def particle_number_measurement(
             binned_samples=binned_samples,
         )
 
-    interferometer_svd = np.linalg.svd(state.interferometer)
-    singular_values = interferometer_svd[1]
-
     if not state.is_lossy:
         partial_generate_samples = partial(
             generate_samples,
             interferometer=state.interferometer,
             reject_condition=lambda: False,
         )
-    elif np.all(np.isclose(singular_values, singular_values[0])):
+    elif is_ideal_or_uniform_lossy:
         uniform_transmission_probability = singular_values[0] ** 2
 
         partial_generate_samples = partial(
@@ -301,6 +302,7 @@ def particle_number_measurement(
             reject_condition=lambda: rng.uniform() > uniform_transmission_probability,
         )
     else:
+        interferometer_svd = np.linalg.svd(state.interferometer)
         partial_generate_samples = partial(
             generate_lossy_samples,
             interferometer_svd=interferometer_svd,

@@ -151,6 +151,14 @@ class SamplingState(State):
     def _is_postselected(self) -> bool:
         return self._postselections != {}
 
+    def _is_uniformly_lossy(self) -> bool:
+        if not self.is_lossy:
+            return False
+
+        singular_values = np.linalg.svd(self.interferometer, compute_uv=False)
+
+        return all(np.isclose(singular_values, singular_values[0]))
+
     def _get_postselected_modes(self) -> Tuple[int, ...]:
         return tuple(self._postselections.keys())
 
@@ -452,9 +460,12 @@ class SamplingState(State):
             Dict[Tuple[int, ...], float]: The marginal probabilities of the state.
         """
 
-        if self.is_lossy:
+        is_uniformly_lossy = self._is_uniformly_lossy()
+
+        if self.is_lossy and not is_uniformly_lossy:
             raise NotImplementedCalculation(
-                "Marginal probability calculation is not implemented for lossy states."
+                "Marginal probability calculation is not implemented for non-uniformly "
+                "lossy states."
             )
 
         if len(self._occupation_numbers) > 1:
