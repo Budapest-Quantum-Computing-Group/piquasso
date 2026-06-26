@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import Tuple, List
+from typing import Dict, Tuple, List
 
 import numpy as np
 
@@ -257,9 +257,10 @@ def particle_number_measurement(
         marginal_sampling
         and not state.is_lossy
         and is_direct_marginal_sampling_cheaper(
-            k=len(modes) + len(postselected_modes),
+            k=len(modes),
             d=state.total_number_of_modes,
             n=int(np.sum(initial_state)),
+            shots=shots,
         )
     ):
         original_modes = map_to_original_modes(modes, postselected_modes)
@@ -275,24 +276,12 @@ def particle_number_measurement(
 
         binned_samples = get_counts(samples)
 
-        branches = []
-
-        for outcome, multiplicity in binned_samples.items():
-            new_state = state.copy()
-            new_state._postselections = {
-                **new_state._postselections,
-                **{mode: x for mode, x in zip(modes, outcome)},
-            }
-
-            branches.append(
-                Branch(
-                    state=new_state,
-                    outcome=outcome,
-                    frequency=Fraction(multiplicity, shots),
-                )
-            )
-
-        return branches
+        return _create_branches_after_marginal_particle_number_measurement(
+            state=state,
+            instruction=instruction,
+            shots=shots,
+            binned_samples=binned_samples,
+        )
 
     interferometer_svd = np.linalg.svd(state.interferometer)
     singular_values = interferometer_svd[1]
@@ -328,15 +317,52 @@ def particle_number_measurement(
     binned_samples = get_counts(samples)
 
     if marginal_sampling:
-        binned_samples = {
-            tuple(outcome[mode] for mode in modes): multiplicity
-            for outcome, multiplicity in binned_samples.items()
-        }
+        projected_binned_samples: Dict[Tuple[int, ...], int] = {}
+
+        for outcome, multiplicity in binned_samples.items():
+            projected_outcome = tuple(outcome[mode] for mode in modes)
+            projected_binned_samples[projected_outcome] = (
+                projected_binned_samples.get(projected_outcome, 0) + multiplicity
+            )
+
+        binned_samples = projected_binned_samples
+
+        return _create_branches_after_marginal_particle_number_measurement(
+            state=state,
+            instruction=instruction,
+            shots=shots,
+            binned_samples=binned_samples,
+        )
 
     branches = [
         Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))
         for outcome, multiplicity in binned_samples.items()
     ]
+
+    return branches
+
+
+def _create_branches_after_marginal_particle_number_measurement(
+    state: SamplingState, instruction: Instruction, shots: int, binned_samples: dict
+) -> List[Branch]:
+    modes = instruction.modes
+
+    branches = []
+
+    for outcome, multiplicity in binned_samples.items():
+        new_state = state.copy()
+        new_state._postselections = {
+            **new_state._postselections,
+            **{mode: x for mode, x in zip(modes, outcome)},
+        }
+
+        branches.append(
+            Branch(
+                state=new_state,
+                outcome=outcome,
+                frequency=Fraction(multiplicity, shots),
+            )
+        )
 
     return branches
 
