@@ -608,26 +608,31 @@ def generate_marginal_samples(
     return samples
 
 
-def is_direct_marginal_sampling_cheaper(k: int, d: int, n: int) -> bool:
+def is_direct_marginal_sampling_cheaper(k: int, d: int, n: int, shots: int) -> bool:
     """
-    Estimate whether direct marginal sampling is cheaper than full sampling
-    followed by discarding unmeasured modes. The comparison is based on simple
-    cost estimates.
+    Estimate whether direct marginal sampling is cheaper than full sampling followed by
+    discarding unmeasured modes. The decision is based on the size of the number of
+    coefficients in the marginal sampling algorithm and the number of shots.
 
-    Direct marginal sampling is dominated by the cost of calculating the marginal
-    probabilities, which is roughly `n * k^2 * sum_{s=0}^n binom(s + k - 1, k - 1)^2`,
-    In the case of full sampling, the cost is roughly `n * 2^n + d * n^2`.
-
-    Here, k is the number of measured modes, d is the total number of modes, and
-    n is the total number of photons.
+    NOTE: Take this with a grain of salt, as it is based on rough guesses and benchmarks
+    on my laptop, and the specific runtime may vary depending on the machine and the
+    specific parameters.
     """
+
     if k == d:
         return False
 
-    direct_marginal_cost = (
-        n * k**2 * sum(comb(degree + k - 1, k - 1) ** 2 for degree in range(n + 1))
+    number_of_coeffs_in_marginal_sampling_algorithm = sum(
+        comb(degree + k - 1, k - 1) ** 2 for degree in range(n + 1)
     )
 
-    full_sampling_cost = n * 2**n + d * n**2
+    if number_of_coeffs_in_marginal_sampling_algorithm <= 100_000:
+        return True
 
-    return direct_marginal_cost < full_sampling_cost
+    if number_of_coeffs_in_marginal_sampling_algorithm <= 500_000:
+        return shots >= 1_000
+
+    if number_of_coeffs_in_marginal_sampling_algorithm <= 4_000_000:
+        return shots >= 10_000
+
+    return False
