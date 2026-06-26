@@ -47,6 +47,13 @@ are the coefficients of the low-rank permanent polynomial
     G(c) =
         1 / r! * Per((I + V diag(c) V^dagger)_{r,r}).
 
+Equivalently, the coefficients ``b_alpha`` are the binomial moments of the output
+distribution on the selected modes, i.e.,
+
+    b_alpha = E[prod_j binom(X_j, alpha_j)],
+
+where ``X_j`` is the random variable for the output photon number in mode ``T[j]``.
+
 The probability of observing a pattern ``y`` on the selected modes is obtained
 from the binomial transform
 
@@ -92,8 +99,12 @@ import numba as nb
 from scipy.special import factorial
 
 from piquasso._math.combinatorics import comb
-from piquasso._math.fock import get_fock_space_basis, cutoff_fock_space_dim_array
-from piquasso._math.indices import get_index_in_fock_subspace
+from piquasso._math.fock import (
+    get_fock_space_basis,
+    cutoff_fock_space_dim_array,
+    nb_get_fock_space_basis,
+)
+from piquasso._math.indices import get_index_in_fock_space, get_index_in_fock_subspace
 
 
 def get_marginal_probabilities(
@@ -124,7 +135,7 @@ def get_marginal_probabilities(
 
     compositions = get_fock_space_basis(k_total, n + 1)
 
-    diagonal_coefficients = _get_diagonal_coefficients(
+    binomial_moments = get_binomial_moments(
         input_photons=input_photons,
         interferometer=interferometer,
         all_modes=all_modes,
@@ -142,8 +153,8 @@ def get_marginal_probabilities(
         )
     outcomes_with_postselection[:, num_postselected_modes:] = outcomes
     indices = cutoff_fock_space_dim_array(np.arange(n + 2), k_total)
-    probabilities = _probabilities_from_diagonal_coefficients(
-        diagonal_coefficients, compositions, outcomes_with_postselection, indices
+    probabilities = _probabilities_from_binomial_moments(
+        binomial_moments, compositions, outcomes_with_postselection, indices
     )
 
     ret = {tuple(outcome): probabilities[i].real for i, outcome in enumerate(outcomes)}
@@ -151,7 +162,7 @@ def get_marginal_probabilities(
     return ret
 
 
-def _get_diagonal_coefficients(
+def get_binomial_moments(
     input_photons: np.ndarray,
     interferometer: np.ndarray,
     all_modes: np.ndarray,
@@ -210,13 +221,13 @@ def _get_diagonal_coefficients(
         bihomogeneous_blocks = new_blocks
         processed_degree = processed_degree + occupation
 
-    return _extract_diagonal_coefficients_from_bihomogeneous_blocks(
+    return _extract_binomial_moments_from_bihomogeneous_blocks(
         bihomogeneous_blocks, compositions, indices, factorials
     )
 
 
 @nb.njit(cache=True)
-def _extract_diagonal_coefficients_from_bihomogeneous_blocks(
+def _extract_binomial_moments_from_bihomogeneous_blocks(
     bihomogeneous_blocks: Sequence[np.ndarray],
     compositions: np.ndarray,
     indices: np.ndarray,
@@ -224,7 +235,7 @@ def _extract_diagonal_coefficients_from_bihomogeneous_blocks(
 ) -> np.ndarray:
     n = len(factorials) - 1
 
-    diagonal_coefficients = np.zeros(len(compositions), dtype=np.float64)
+    binomial_moments = np.zeros(len(compositions), dtype=np.float64)
 
     offsets = np.zeros(n + 2, dtype=np.int64)
     for i in range(n + 1):
@@ -240,9 +251,9 @@ def _extract_diagonal_coefficients_from_bihomogeneous_blocks(
             alpha_fact = 1.0
             for value in comps_i[j]:
                 alpha_fact *= factorials[int(value)]
-            diagonal_coefficients[start + j] = (alpha_fact * diag[j]).real
+            binomial_moments[start + j] = (alpha_fact * diag[j]).real
 
-    return diagonal_coefficients
+    return binomial_moments
 
 
 @nb.njit(cache=True)
@@ -298,7 +309,7 @@ def _add_bihomogeneous_product_term(
 
 
 @nb.njit(cache=True)
-def _probabilities_from_diagonal_coefficients(
+def _probabilities_from_binomial_moments(
     diagonals: np.ndarray,
     compositions: np.ndarray,
     outcomes: np.ndarray,
@@ -399,3 +410,29 @@ def _shift_minus_one_inplace(line: np.ndarray, length: int) -> None:
     for i in range(length - 1):
         for j in range(length - 1, i, -1):
             line[j - 1] -= line[j]
+
+
+@nb.njit(cache=True)
+def get_single_marginal_probability_from_binomial_moments(
+    n: int,
+    d: int,
+    binomial_moments: np.ndarray,
+    particles: np.ndarray,
+) -> float:
+    k = len(particles)
+
+    full_occupation = np.zeros(d, dtype=nb.int64)
+
+    probability = 0.0
+
+    for beta in nb_get_fock_space_basis(k, n + 1 - sum(particles)):
+        prod = 1.0
+
+        for i in range(k):
+            full_occupation[i] = beta[i] + particles[i]
+            prod *= comb(full_occupation[i], particles[i]) * (-1) ** beta[i]
+
+        index = get_index_in_fock_space(full_occupation)
+        probability += prod * binomial_moments[index]
+
+    return probability

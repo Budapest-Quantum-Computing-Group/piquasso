@@ -36,6 +36,9 @@ from piquasso._simulators.fock.pure.simulation_steps import (
 from .utils import (
     generate_samples,
     generate_lossy_samples,
+    generate_marginal_samples,
+    is_direct_marginal_sampling_cheaper,
+    map_to_original_modes,
 )
 from piquasso._utils import get_counts
 
@@ -236,17 +239,63 @@ def particle_number_measurement(
 
     initial_state = state._occupation_numbers[0]
 
-    interferometer_svd = np.linalg.svd(state.interferometer)
-
     rng = state._config.rng
 
-    singular_values = interferometer_svd[1]
+    postselected_modes = state._get_postselected_modes()
 
     postselect_data = (
-        state._get_postselected_modes(),
+        postselected_modes,
         state._get_postselected_photons(),
         state._config.max_sample_generation_trials,
     )
+
+    modes = instruction.modes
+
+    marginal_sampling = set(modes) != set(range(state.d))
+
+    if (
+        marginal_sampling
+        and not state.is_lossy
+        and is_direct_marginal_sampling_cheaper(
+            k=len(modes) + len(postselected_modes),
+            d=state.total_number_of_modes,
+            n=int(np.sum(initial_state)),
+        )
+    ):
+        original_modes = map_to_original_modes(modes, postselected_modes)
+
+        samples = generate_marginal_samples(
+            initial_state=initial_state,
+            interferometer=state.interferometer,
+            modes=original_modes,
+            shots=shots,
+            rng=rng,
+            postselect_data=postselect_data,
+        )
+
+        binned_samples = get_counts(samples)
+
+        branches = []
+
+        for outcome, multiplicity in binned_samples.items():
+            new_state = state.copy()
+            new_state._postselections = {
+                **new_state._postselections,
+                **{mode: x for mode, x in zip(modes, outcome)},
+            }
+
+            branches.append(
+                Branch(
+                    state=new_state,
+                    outcome=outcome,
+                    frequency=Fraction(multiplicity, shots),
+                )
+            )
+
+        return branches
+
+    interferometer_svd = np.linalg.svd(state.interferometer)
+    singular_values = interferometer_svd[1]
 
     if not state.is_lossy:
         partial_generate_samples = partial(
@@ -277,6 +326,12 @@ def particle_number_measurement(
     )
 
     binned_samples = get_counts(samples)
+
+    if marginal_sampling:
+        binned_samples = {
+            tuple(outcome[mode] for mode in modes): multiplicity
+            for outcome, multiplicity in binned_samples.items()
+        }
 
     branches = [
         Branch(state=None, outcome=outcome, frequency=Fraction(multiplicity, shots))

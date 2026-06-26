@@ -20,7 +20,13 @@ from functools import partial
 
 from piquasso.api.exceptions import InvalidSimulation
 
-from piquasso._math.combinatorics import partitions, partitions_bounded_k
+from piquasso._math.combinatorics import comb, partitions, partitions_bounded_k
+
+from piquasso._math.fock import get_fock_space_basis
+from .marginal import (
+    get_binomial_moments,
+    get_single_marginal_probability_from_binomial_moments,
+)
 
 """
 This is a contribution from `theboss`, see https://github.com/Tomev-CTP/theboss.
@@ -527,3 +533,101 @@ def _calculate_singular_values_matrix_expansion(singular_values_vector):
     expansion_values = np.sqrt(vector_of_squared_expansions)
 
     return np.diag(expansion_values)
+
+
+def map_to_original_modes(modes, postselected_modes):
+    modes = np.asarray(modes, dtype=int).copy()
+
+    for postselected in sorted(postselected_modes):
+        modes[modes >= postselected] += 1
+
+    return tuple(modes)
+
+
+def generate_marginal_samples(
+    initial_state, interferometer, modes, shots, rng, postselect_data
+):
+    n = sum(initial_state)
+    k = len(modes)
+
+    postselect_modes = postselect_data[0]
+    postselect_photons = np.asarray(postselect_data[1], dtype=int)
+
+    all_modes = np.array(postselect_modes + modes)
+
+    binomial_moments = get_binomial_moments(
+        input_photons=initial_state,
+        interferometer=interferometer,
+        all_modes=all_modes,
+        compositions=get_fock_space_basis(len(all_modes), n + 1),
+    )
+
+    get_probability = partial(
+        get_single_marginal_probability_from_binomial_moments,
+        n=n,
+        binomial_moments=binomial_moments,
+        d=len(all_modes),
+    )
+
+    postselection_probability = get_probability(particles=postselect_photons)
+
+    particle_offset = sum(postselect_photons)
+    mode_offset = len(postselect_photons)
+
+    samples = []
+
+    for _ in range(shots):
+        previous_probability = postselection_probability
+        remaining_particles = n - particle_offset
+
+        particles = np.concatenate([postselect_photons, np.zeros(k, dtype=int)])
+
+        for mode_idx in range(k):
+            threshold = rng.random()
+
+            cumulative_probability = 0.0
+
+            total_mode_idx = mode_offset + mode_idx
+
+            for photon_number in range(remaining_particles + 1):
+                particles[total_mode_idx] = photon_number
+
+                probability = get_probability(particles=particles[: total_mode_idx + 1])
+
+                conditional_probability = probability / previous_probability
+                cumulative_probability += conditional_probability
+
+                if cumulative_probability >= threshold:
+                    break
+
+            remaining_particles -= photon_number
+            previous_probability = probability
+
+        samples.append(tuple(particles[mode_offset:]))
+
+    return samples
+
+
+def is_direct_marginal_sampling_cheaper(k: int, d: int, n: int) -> bool:
+    """
+    Estimate whether direct marginal sampling is cheaper than full sampling
+    followed by discarding unmeasured modes. The comparison is based on simple
+    cost estimates.
+
+    Direct marginal sampling is dominated by the cost of calculating the marginal
+    probabilities, which is roughly `n * k^2 * sum_{s=0}^n binom(s + k - 1, k - 1)^2`,
+    In the case of full sampling, the cost is roughly `n * 2^n + d * n^2`.
+
+    Here, k is the number of measured modes, d is the total number of modes, and
+    n is the total number of photons.
+    """
+    if k == d:
+        return False
+
+    direct_marginal_cost = (
+        n * k**2 * sum(comb(degree + k - 1, k - 1) ** 2 for degree in range(n + 1))
+    )
+
+    full_sampling_cost = n * 2**n + d * n**2
+
+    return direct_marginal_cost < full_sampling_cost
