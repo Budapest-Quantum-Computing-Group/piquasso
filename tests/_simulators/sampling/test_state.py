@@ -622,13 +622,81 @@ class TestMarginalProbabilities:
 
         assert np.isclose(np.sum(list(probabilities.values())), 1.0)
 
-    def test_lossy_state_marginal_probabilities_raises_NotImplementedCalculation(self):
-        input_state = np.array([1, 1], dtype=int)
+    def test_uniform_lossy_state_marginal_probabilities_trivial(self):
+        input_state = np.array([1, 0], dtype=int)
+
+        transmissivity = 0.5
+        survival_probability = transmissivity**2
 
         program = pq.Program(
             instructions=[
                 pq.NumberState(input_state),
-                pq.UniformLoss(transmissivity=0.5).on_modes(0, 1),
+                pq.UniformLoss(transmissivity=transmissivity).on_modes(0, 1),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=2))
+
+        result = simulator.execute(program)
+
+        probabilities = result.state.get_marginal_probabilities(modes=[0])
+
+        expected = {
+            (0,): 1.0 - survival_probability,
+            (1,): survival_probability,
+        }
+
+        assert set(probabilities) == set(expected)
+
+        for outcome, expected_probability in expected.items():
+            assert np.isclose(probabilities[outcome], expected_probability)
+
+        assert np.isclose(sum(probabilities.values()), 1.0)
+
+    def test_uniform_lossy_state_marginal_probabilities_trivial_multiphoton(self):
+        input_state = np.array([2, 1, 0], dtype=int)
+
+        transmissivity = 0.5
+        survival_probability = transmissivity**2
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.UniformLoss(transmissivity=transmissivity).on_modes(0, 1, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=4))
+
+        result = simulator.execute(program)
+
+        probabilities = result.state.get_marginal_probabilities(modes=[0, 1])
+
+        expected = {
+            (0, 0): (1.0 - survival_probability) ** 3,
+            (0, 1): (1.0 - survival_probability) ** 2 * survival_probability,
+            (1, 0): 2 * survival_probability * (1.0 - survival_probability) ** 2,
+            (1, 1): 2 * survival_probability**2 * (1.0 - survival_probability),
+            (2, 0): survival_probability**2 * (1.0 - survival_probability),
+            (2, 1): survival_probability**3,
+        }
+
+        for outcome, expected_probability in expected.items():
+            assert np.isclose(probabilities[outcome], expected_probability)
+
+        assert np.isclose(sum(probabilities.values()), 1.0)
+
+    def test_uniform_lossy_state_marginal_probabilities_with_beamsplitter(self):
+        input_state = np.array([1, 1], dtype=int)
+
+        transmissivity = 0.5
+        survival_probability = transmissivity**2
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.Beamsplitter(theta=np.pi / 4, phi=0.0).on_modes(0, 1),
+                pq.UniformLoss(transmissivity=transmissivity).on_modes(0, 1),
             ]
         )
 
@@ -636,17 +704,45 @@ class TestMarginalProbabilities:
 
         result = simulator.execute(program)
 
-        state = result.state
+        probabilities = result.state.get_marginal_probabilities(modes=[0])
 
-        modes = [0]
+        expected = {
+            (0,): 0.5 + 0.5 * (1.0 - survival_probability) ** 2,
+            (1,): 0.5 * 2.0 * survival_probability * (1.0 - survival_probability),
+            (2,): 0.5 * survival_probability**2,
+        }
+
+        for outcome, expected_probability in expected.items():
+            assert np.isclose(probabilities[outcome], expected_probability)
+
+        assert np.isclose(sum(probabilities.values()), 1.0)
+
+    def test_non_uniformly_lossy_state_raises_NotImplementedCalculation(
+        self,
+    ):
+        input_state = np.array([1, 1], dtype=int)
+
+        lossy_interferometer = np.diag([0.5, 0.25])
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.LossyInterferometer(lossy_interferometer),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+
+        result = simulator.execute(program)
 
         with pytest.raises(
             pq.api.exceptions.NotImplementedCalculation,
             match=(
-                "Marginal probability calculation is not implemented for lossy states."
+                "Marginal probability calculation is not implemented for non-uniformly "
+                "lossy states."
             ),
         ):
-            _ = state.get_marginal_probabilities(modes)
+            _ = result.state.get_marginal_probabilities(modes=[0])
 
     def test_multiple_occupation_numbers_raises_NotImplementedCalculation(self):
         unitary = np.array([[1, 0], [0, 1]], dtype=complex)

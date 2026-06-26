@@ -955,6 +955,56 @@ class TestMarginalBosonSampling:
         for sample in result.samples:
             assert tuple(sample) == (2, 1)
 
+    def test_uniformly_lossy_marginal_sampling(self):
+        input_state = np.array([1, 1, 1, 0, 0], dtype=int)
+        d = len(input_state)
+
+        transmissivity = 0.5
+
+        permutation = np.zeros((d, d), dtype=complex)
+
+        permutation[2, 0] = 1.0
+        permutation[4, 1] = 1.0
+        permutation[0, 2] = 1.0
+        permutation[1, 3] = 1.0
+        permutation[3, 4] = 1.0
+
+        lossy_interferometer = transmissivity * permutation
+
+        program = pq.Program(
+            instructions=[
+                pq.NumberState(input_state),
+                pq.LossyInterferometer(lossy_interferometer),
+                pq.ParticleNumberMeasurement().on_modes(0, 2),
+            ]
+        )
+
+        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+
+        shots = 100
+        result = simulator.execute(program, shots=shots)
+
+        assert len(result.samples) == shots
+
+        for sample in result.samples:
+            assert len(sample) == 2
+
+            assert sample[0] in (
+                0,
+                1,
+            ), "Output mode 0 receives the photon from input mode 2."
+
+            assert sample[1] in (
+                0,
+                1,
+            ), "Output mode 2 receives the photon from input mode 0."
+
+            assert sum(sample) in (
+                0,
+                1,
+                2,
+            ), "The measured modes can contain at most those two routed photons."
+
     def test_lossy_marginal_sampling(self):
         input_state = np.array([1, 1, 1, 0, 0], dtype=int)
         d = len(input_state)
