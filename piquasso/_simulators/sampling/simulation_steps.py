@@ -257,7 +257,7 @@ def particle_number_measurement(
         marginal_sampling
         and not state.is_lossy
         and is_direct_marginal_sampling_cheaper(
-            k=len(modes),
+            k=len(modes) + len(postselected_modes),
             d=state.total_number_of_modes,
             n=int(np.sum(initial_state)),
             shots=shots,

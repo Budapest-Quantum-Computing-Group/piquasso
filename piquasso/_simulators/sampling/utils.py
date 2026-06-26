@@ -614,7 +614,7 @@ def is_direct_marginal_sampling_cheaper(k: int, d: int, n: int, shots: int) -> b
     discarding unmeasured modes. The decision is based on the size of the number of
     coefficients in the marginal sampling algorithm and the number of shots.
 
-    NOTE: Take this with a grain of salt, as it based on rough guesses and benchmarks
+    NOTE: Take this with a grain of salt, as it is based on rough guesses and benchmarks
     on my laptop, and the specific runtime may vary depending on the machine and the
     specific parameters.
     """
