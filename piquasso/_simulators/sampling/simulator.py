@@ -23,6 +23,7 @@ from .simulation_steps import (
     vacuum,
     create,
     state_vector,
+    distinguishable_number_state,
     passive_linear,
     particle_number_measurement,
     kerr,
@@ -71,6 +72,7 @@ class SamplingSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.preparations.Create`,
         :class:`~piquasso.instructions.preparations.StateVector`,
         :class:`~piquasso.instructions.preparations.NumberState`,
+        :class:`~piquasso.instructions.preparations.DistinguishableNumberState`,
         :class:`~piquasso.instructions.preparations.FockStateVector`.
 
     Supported gates:
@@ -94,6 +96,7 @@ class SamplingSimulator(BuiltinSimulator):
         preparations.Vacuum: vacuum,
         preparations.Create: create,
         preparations.NumberState: state_vector,
+        preparations.DistinguishableNumberState: distinguishable_number_state,
         preparations.FockStateVector: state_vector,
         preparations.StateVector: state_vector,
         gates.Beamsplitter: passive_linear,

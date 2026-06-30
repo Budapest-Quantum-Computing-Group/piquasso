@@ -80,6 +80,39 @@ def nb_get_fock_space_basis(d: int, cutoff: int) -> np.ndarray:
 get_fock_space_basis = functools.lru_cache(maxsize=None)(nb_get_fock_space_basis)
 
 
+def get_postselected_fock_basis(
+    d: int,
+    cutoff: int,
+    postselected_modes: Tuple[int, ...],
+    postselected_photons: Tuple[int, ...],
+) -> np.ndarray:
+
+    postselected_photon_sum = int(np.sum(postselected_photons))
+    active_cutoff = int(cutoff) - postselected_photon_sum
+
+    active_d = d - len(postselected_modes)
+
+    active_basis = get_fock_space_basis(
+        active_d,
+        active_cutoff,
+    )
+
+    if len(postselected_modes) == 0:
+        return active_basis
+
+    full_basis = np.zeros((len(active_basis), d), dtype=int)
+
+    active_modes = np.delete(np.arange(d), postselected_modes)
+
+    full_basis[:, active_modes] = active_basis
+    full_basis[:, postselected_modes] = np.asarray(
+        postselected_photons,
+        dtype=int,
+    )
+
+    return full_basis
+
+
 def get_single_mode_squeezing_operator(
     r: float,
     phi: float,

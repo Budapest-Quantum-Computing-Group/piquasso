@@ -602,7 +602,10 @@ def test_LossyInterferometer_fock_probabilities(connector):
     with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as excinfo:
         _ = state.fock_probabilities
 
-    assert "This property is not implemented for lossy states." in str(excinfo.value)
+    assert (
+        "State vector calculation is not implemented for lossy or partially "
+        "distinguishable states." in str(excinfo.value)
+    )
 
 
 @pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
@@ -977,7 +980,10 @@ def test_LossyInterferometer_state_vector(connector):
     with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as excinfo:
         _ = state.state_vector
 
-    assert "This property is not implemented for lossy states." in str(excinfo.value)
+    assert (
+        "State vector calculation is not implemented for lossy or partially "
+        "distinguishable states." in str(excinfo.value)
+    )
 
 
 def test_Kerr_gate_with_Vacuum():

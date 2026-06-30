@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 from typing import Dict, Tuple, List
 
 import numpy as np
@@ -33,10 +32,11 @@ from piquasso._simulators.fock.pure.simulation_steps import (
     imperfect_post_select_photons as pure_fock_imperfect_post_select_photons,
 )
 
-from .utils import (
+from .sampling import (
     generate_samples,
     generate_lossy_samples,
     generate_marginal_samples,
+    generate_lossy_and_partially_distinguishable_samples,
     is_direct_marginal_sampling_cheaper,
     map_to_original_modes,
 )
@@ -94,6 +94,12 @@ def state_vector(
 ) -> List[Branch]:
     coefficient = instruction._get_all_params(state._connector)["coefficient"]
 
+    if not state.is_indistinguishable:
+        raise NotImplementedCalculation(
+            f"The instruction {instruction} is not supported for partially "
+            "distinguishable states."
+        )
+
     if "occupation_numbers" in instruction._get_all_params(state._connector):
         occupation_numbers = instruction._get_all_params(state._connector)[
             "occupation_numbers"
@@ -116,6 +122,30 @@ def state_vector(
 
             state._occupation_numbers.append(occupation_numbers)
             state._coefficients.append(coefficient * amplitude)
+
+    return [Branch(state=state)]
+
+
+def distinguishable_number_state(
+    state: SamplingState, instruction: Instruction, shots: int
+) -> List[Branch]:
+    if state._occupation_numbers:
+        raise NotImplementedCalculation(
+            f"The instruction {instruction} is not supported for states defined using "
+            "multiple 'NumberState' instructions."
+        )
+
+    state._occupation_numbers.append(
+        np.rint(
+            instruction._get_all_params(state._connector)["occupation_numbers"]
+        ).astype(int)
+    )
+    state._coefficients.append(1.0)
+
+    particle_overlap = instruction._get_all_params(state._connector)["particle_overlap"]
+    if np.isscalar(particle_overlap) and np.isclose(particle_overlap, 1.0):
+        particle_overlap = None
+    state._particle_overlap = particle_overlap
 
     return [Branch(state=state)]
 
@@ -287,34 +317,45 @@ def particle_number_measurement(
             binned_samples=binned_samples,
         )
 
-    if not state.is_lossy:
-        partial_generate_samples = partial(
-            generate_samples,
-            interferometer=state.interferometer,
-            reject_condition=lambda: False,
-        )
-    elif is_ideal_or_uniform_lossy:
-        uniform_transmission_probability = singular_values[0] ** 2
-
-        partial_generate_samples = partial(
-            generate_samples,
-            interferometer=state.interferometer,
-            reject_condition=lambda: rng.uniform() > uniform_transmission_probability,
-        )
-    else:
-        interferometer_svd = np.linalg.svd(state.interferometer)
-        partial_generate_samples = partial(
-            generate_lossy_samples,
-            interferometer_svd=interferometer_svd,
-        )
-
-    samples = partial_generate_samples(
-        initial_state,
-        shots,
-        calculate_permanent_laplace=state._connector.permanent_laplace,
+    common_kwargs = dict(
+        input=initial_state,
+        interferometer=state.interferometer,
+        shots=shots,
         rng=rng,
         postselect_data=postselect_data,
     )
+
+    if not state.is_lossy and not state.is_nonuniformly_partially_distinguishable:
+        samples = generate_samples(
+            **common_kwargs,
+            calculate_permanent_laplace=state._connector.permanent_laplace,
+            reject_condition=lambda: False,
+            uniform_particle_overlap=state._particle_overlap,
+        )
+
+    elif (
+        state.is_uniformly_lossy and not state.is_nonuniformly_partially_distinguishable
+    ):
+        uniform_transmission_probability = singular_values[0] ** 2
+
+        samples = generate_samples(
+            **common_kwargs,
+            calculate_permanent_laplace=state._connector.permanent_laplace,
+            reject_condition=(lambda: rng.uniform() > uniform_transmission_probability),
+            uniform_particle_overlap=state._particle_overlap,
+        )
+
+    elif not state.is_partially_distinguishable:
+        samples = generate_lossy_samples(
+            **common_kwargs,
+            calculate_permanent_laplace=state._connector.permanent_laplace,
+        )
+    else:
+        samples = generate_lossy_and_partially_distinguishable_samples(
+            **common_kwargs,
+            particle_overlap_matrix=state._particle_overlap,
+            connector=state._connector,
+        )
 
     binned_samples = get_counts(samples)
 

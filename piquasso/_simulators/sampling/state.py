@@ -15,7 +15,7 @@
 
 
 from functools import partial
-from typing import Dict, Optional, List, Tuple, TYPE_CHECKING
+from typing import Dict, Optional, List, Tuple, Union, TYPE_CHECKING
 import numpy as np
 
 from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
@@ -24,6 +24,8 @@ from piquasso._math.linalg import is_unitary
 from piquasso._simulators.sampling.probabilities import (
     get_ideal_particle_number_probability,
     get_lossy_particle_number_probability,
+    get_partially_distinguishable_detection_probability,
+    get_lossy_partially_distinguishable_detection_probabilities,
 )
 from piquasso.api.config import Config
 from piquasso.api.state import State
@@ -132,6 +134,9 @@ class SamplingState(State):
         self._postselections: Dict[int, int] = {}
         """Maps postselected modes to postselected photon counts."""
 
+        self._particle_overlap: Optional[Union[complex, np.ndarray]] = None
+        """The particle overlap, if the state is partially distinguishable."""
+
     def _set_postselection(
         self, modes: Tuple[int, ...], photon_counts: Tuple[int, ...]
     ) -> None:
@@ -151,9 +156,16 @@ class SamplingState(State):
     def _is_postselected(self) -> bool:
         return self._postselections != {}
 
-    def _is_uniformly_lossy(self) -> bool:
+    @property
+    def is_uniformly_lossy(self) -> bool:
         if not self.is_lossy:
             return False
+
+        return self._is_uniformly_lossy_or_lossless()
+
+    def _is_uniformly_lossy_or_lossless(self) -> bool:
+        if not self.is_lossy:
+            return True
 
         singular_values = np.linalg.svd(self.interferometer, compute_uv=False)
 
@@ -173,6 +185,40 @@ class SamplingState(State):
                 for i in range(self.total_number_of_modes)
                 if i not in postselected_modes
             ]
+        )
+
+    @property
+    def is_indistinguishable(self) -> bool:
+        """
+        Returns `True` if the state consists of indistinguishable particles,
+        otherwise `False`.
+        """
+        return self._particle_overlap is None
+
+    @property
+    def is_partially_distinguishable(self) -> bool:
+        """
+        Returns `True` if the state consists of partially distinguishable particles,
+        otherwise `False`.
+        """
+        return self._particle_overlap is not None
+
+    @property
+    def is_uniformly_partially_distinguishable(self) -> bool:
+        """
+        Returns `True` if the state consists of uniformly partially distinguishable
+        particles, otherwise `False`.
+        """
+        return self.is_partially_distinguishable and np.isscalar(self._particle_overlap)
+
+    @property
+    def is_nonuniformly_partially_distinguishable(self) -> bool:
+        """
+        Returns `True` if the state consists of non-uniformly partially
+        distinguishable particles, otherwise `False`.
+        """
+        return self.is_partially_distinguishable and not np.isscalar(
+            self._particle_overlap
         )
 
     @property
@@ -240,24 +286,65 @@ class SamplingState(State):
                 f"postselected."
             )
 
-        if self.is_lossy:
-            return get_lossy_particle_number_probability(
-                occupation_number=occupation_number,
-                postselections=self._postselections,
-                transmission_matrix=self.interferometer,
+        if self.is_partially_distinguishable and len(self._occupation_numbers) != 1:
+            raise NotImplementedCalculation(
+                "Particle detection probability calculation is not implemented for "
+                "partially distinguishable states with multiple input occupation "
+                "numbers. "
+                "If you would like to use this feature, please create an issue at "
+                "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues."
+            )
+
+        total_number_of_modes = self.total_number_of_modes
+
+        postselected_modes = self._get_postselected_modes()
+        postselected_photons = self._get_postselected_photons()
+
+        active_modes = self._connector.fallback_np.delete(
+            self._connector.fallback_np.arange(total_number_of_modes),
+            postselected_modes,
+        )
+
+        full_occupation_number = self._connector.fallback_np.zeros(
+            total_number_of_modes, dtype=int
+        )
+        full_occupation_number[active_modes,] = occupation_number
+        full_occupation_number[postselected_modes,] = postselected_photons
+
+        if not self.is_partially_distinguishable:
+            if self.is_lossy:
+                return get_lossy_particle_number_probability(
+                    occupation_number=full_occupation_number,
+                    transmission_matrix=self.interferometer,
+                    occupation_numbers=self._occupation_numbers,
+                    coefficients=self._coefficients,
+                    connector=self._connector,
+                )
+
+            return get_ideal_particle_number_probability(
+                occupation_number=full_occupation_number,
+                interferometer=self.interferometer,
                 occupation_numbers=self._occupation_numbers,
                 coefficients=self._coefficients,
                 connector=self._connector,
             )
 
-        return get_ideal_particle_number_probability(
-            occupation_number=occupation_number,
-            postselections=self._postselections,
-            interferometer=self.interferometer,
-            occupation_numbers=self._occupation_numbers,
-            coefficients=self._coefficients,
+        if not self.is_lossy and self.is_uniformly_partially_distinguishable:
+            return get_partially_distinguishable_detection_probability(
+                occupation_number=full_occupation_number,
+                interferometer=self.interferometer,
+                input_occupation=self._occupation_numbers[0],
+                uniform_particle_overlap=self._particle_overlap,
+                connector=self._connector,
+            )
+
+        return get_lossy_partially_distinguishable_detection_probabilities(
+            occupation_numbers=full_occupation_number,
+            transmission_matrix=self.interferometer,
+            input_occupation=self._occupation_numbers[0],
+            particle_overlap=self._particle_overlap,
             connector=self._connector,
-        )
+        )[0]
 
     @property
     def state_vector(self):
@@ -269,13 +356,14 @@ class SamplingState(State):
         conserving subspace, anti-lexicographic ordering is used.
 
         Raises:
-            NotImplementedCalculation: If the state is lossy.
+            NotImplementedCalculation:
+                If the state is lossy or partially distinguishable.
         """  # noqa: E501
 
-        if self.is_lossy:
+        if self.is_lossy or not self.is_indistinguishable:
             raise NotImplementedCalculation(
-                "This property is not implemented for lossy states. If you need it, "
-                "please create an issue at "
+                "State vector calculation is not implemented for lossy or partially "
+                "distinguishable states. If you need it, please create an issue at "
                 "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues."
             )
 
@@ -438,11 +526,12 @@ class SamplingState(State):
             float: The purity of the state.
         """
 
-        if not self.is_lossy:
+        if not self.is_lossy and self.is_indistinguishable:
             return 1.0
 
         raise NotImplementedCalculation(
-            "Purity calculation is not implemented for lossy states."
+            "Purity calculation is not implemented for lossy or partially "
+            "distinguishable states."
         )
 
     def get_marginal_probabilities(
@@ -460,12 +549,16 @@ class SamplingState(State):
             Dict[Tuple[int, ...], float]: The marginal probabilities of the state.
         """
 
-        is_uniformly_lossy = self._is_uniformly_lossy()
-
-        if self.is_lossy and not is_uniformly_lossy:
+        if not self._is_uniformly_lossy_or_lossless():
             raise NotImplementedCalculation(
                 "Marginal probability calculation is not implemented for non-uniformly "
                 "lossy states."
+            )
+
+        if self.is_partially_distinguishable:
+            raise NotImplementedCalculation(
+                "Marginal probability calculation is not implemented for partially "
+                "distinguishable states."
             )
 
         if len(self._occupation_numbers) > 1:

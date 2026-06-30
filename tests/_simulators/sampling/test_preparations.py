@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 import pytest
 
 import numpy as np
@@ -516,3 +518,220 @@ def test_cutoff_is_inferred_from_Create_instructions():
 
     assert state._config.cutoff == 6
     assert np.allclose(state._occupation_numbers[0], np.array([5]))
+
+
+class TestDistinguishableNumberState:
+
+    def test_uniform_overlap(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 2, 0], particle_overlap=0.5)
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        state = simulator.execute(program).state
+
+        assert np.allclose(state._occupation_numbers[0], np.array([1, 2, 0]))
+        assert np.allclose(state._coefficients[0], 1.0)
+        assert not state.is_indistinguishable
+        assert state.is_partially_distinguishable
+        assert state.is_uniformly_partially_distinguishable
+
+    def test_nonuniform_overlap(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                [1, 2, 0],
+                particle_overlap=np.array(
+                    [[1.0, 0.5, 0.1], [0.5, 1.0, 0.2], [0.1, 0.2, 1.0]]
+                ),
+            )
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        state = simulator.execute(program).state
+
+        assert np.allclose(state._occupation_numbers[0], np.array([1, 2, 0]))
+        assert np.allclose(state._coefficients[0], 1.0)
+        assert not state.is_indistinguishable
+        assert state.is_partially_distinguishable
+        assert not state.is_uniformly_partially_distinguishable
+
+    def test_invalid_overlap_matrix(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                [1, 2, 0],
+                particle_overlap=np.array(
+                    [[1.0, 0.5], [0.5, 1.0]]
+                ),  # Invalid shape for 3 particles
+            )
+
+        simulator = pq.SamplingSimulator(d=3)
+
+        with pytest.raises(
+            pq.api.exceptions.InvalidState,
+            match=re.escape(
+                "Invalid particle overlap matrix shape: particle_overlap.shape=(2, 2)\n"
+                "For occupation_numbers=(1, 2, 0), expected shape (3, 3)."
+            ),
+        ):
+            simulator.execute(program).state
+
+    def test_uniform_particle_overlap_agrees_with_gram_matrix_get_probability(self):
+        d = 4
+        input_state = np.array([1, 1, 1, 0], dtype=int)
+        number_of_particles = int(np.sum(input_state))
+
+        particle_overlap = 0.5
+
+        particle_overlap_matrix = particle_overlap * np.ones(
+            (number_of_particles, number_of_particles), dtype=complex
+        ) + (1.0 - particle_overlap) * np.identity(number_of_particles, dtype=complex)
+
+        interferometer = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0 / np.sqrt(2.0), 1.0 / np.sqrt(2.0), 0.0],
+                [0.0, 1.0 / np.sqrt(2.0), -1.0 / np.sqrt(2.0), 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=complex,
+        )
+
+        with pq.Program() as scalar_program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=particle_overlap,
+            )
+            pq.Q() | pq.Interferometer(interferometer)
+
+        with pq.Program() as gram_matrix_program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=particle_overlap_matrix,
+            )
+            pq.Q() | pq.Interferometer(interferometer)
+
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=number_of_particles + 1)
+        )
+
+        scalar_state = simulator.execute(scalar_program).state
+        gram_matrix_state = simulator.execute(gram_matrix_program).state
+
+        basis = np.array(
+            [
+                [0, 0, 0, 3],
+                [0, 0, 1, 2],
+                [0, 0, 2, 1],
+                [0, 0, 3, 0],
+                [0, 1, 0, 2],
+                [0, 1, 1, 1],
+                [0, 1, 2, 0],
+                [0, 2, 0, 1],
+                [0, 2, 1, 0],
+                [0, 3, 0, 0],
+                [1, 0, 0, 2],
+                [1, 0, 1, 1],
+                [1, 0, 2, 0],
+                [1, 1, 0, 1],
+                [1, 1, 1, 0],
+                [1, 2, 0, 0],
+                [2, 0, 0, 1],
+                [2, 0, 1, 0],
+                [2, 1, 0, 0],
+                [3, 0, 0, 0],
+            ],
+            dtype=int,
+        )
+
+        for occupation_number in basis:
+            scalar_probability = scalar_state.get_particle_detection_probability(
+                occupation_number
+            )
+            gram_matrix_probability = (
+                gram_matrix_state.get_particle_detection_probability(occupation_number)
+            )
+
+            assert np.isclose(
+                scalar_probability,
+                gram_matrix_probability,
+            ), (
+                f"occupation_number={occupation_number}, "
+                f"scalar_probability={scalar_probability}, "
+                f"gram_matrix_probability={gram_matrix_probability}"
+            )
+
+    def test_uniform_particle_overlap_agrees_with_gram_matrix_with_loss_and_postselection(  # noqa: E501
+        self,
+    ):
+        d = 4
+        input_state = np.array([1, 1, 1, 0], dtype=int)
+        number_of_particles = int(np.sum(input_state))
+
+        particle_overlap = 0.5
+
+        particle_overlap_matrix = particle_overlap * np.ones(
+            (number_of_particles, number_of_particles), dtype=complex
+        ) + (1.0 - particle_overlap) * np.identity(number_of_particles, dtype=complex)
+
+        interferometer = np.array(
+            [
+                [1.0 / np.sqrt(2.0), 1.0 / np.sqrt(2.0), 0.0, 0.0],
+                [1.0 / np.sqrt(2.0), -1.0 / np.sqrt(2.0), 0.0, 0.0],
+                [0.0, 0.0, 1.0 / np.sqrt(2.0), 1.0 / np.sqrt(2.0)],
+                [0.0, 0.0, 1.0 / np.sqrt(2.0), -1.0 / np.sqrt(2.0)],
+            ],
+            dtype=complex,
+        )
+
+        with pq.Program() as scalar_program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=particle_overlap,
+            )
+            pq.Q() | pq.Interferometer(interferometer)
+            pq.Q() | pq.UniformLoss(transmissivity=0.7)
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+
+        with pq.Program() as gram_matrix_program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=particle_overlap_matrix,
+            )
+            pq.Q() | pq.Interferometer(interferometer)
+            pq.Q() | pq.UniformLoss(transmissivity=0.7)
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+
+        simulator = pq.SamplingSimulator(
+            d=d, config=pq.Config(cutoff=number_of_particles + 1)
+        )
+
+        scalar_state = simulator.execute(scalar_program).state
+        gram_matrix_state = simulator.execute(gram_matrix_program).state
+
+        basis = np.array(
+            [
+                [0, 0, 2],
+                [0, 1, 1],
+                [0, 2, 0],
+                [1, 0, 1],
+                [1, 1, 0],
+                [2, 0, 0],
+            ]
+        )
+
+        for occupation_number in basis:
+            scalar_probability = scalar_state.get_particle_detection_probability(
+                occupation_number
+            )
+            gram_matrix_probability = (
+                gram_matrix_state.get_particle_detection_probability(occupation_number)
+            )
+
+            assert np.isclose(
+                scalar_probability,
+                gram_matrix_probability,
+            ), (
+                f"occupation_number={occupation_number}, "
+                f"scalar_probability={scalar_probability}, "
+                f"gram_matrix_probability={gram_matrix_probability}"
+            )

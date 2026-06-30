@@ -99,3 +99,26 @@ def double_modes(arr):
     result[0::2] = 2 * arr
     result[1::2] = 2 * arr + 1
     return result
+
+
+@nb.njit(cache=True)
+def to_first_quantized(occupation_numbers):
+    first_quantized = np.empty(sum(occupation_numbers), dtype=occupation_numbers.dtype)
+
+    idx = 0
+    for mode, reps in enumerate(occupation_numbers):
+        for _ in range(reps):
+            first_quantized[idx] = mode
+            idx += 1
+
+    return first_quantized
+
+
+@nb.njit(cache=True)
+def to_second_quantized(first_quantized, d):
+    second_quantized = np.zeros(d, dtype=nb.int64)
+
+    for mode in first_quantized:
+        second_quantized[mode] += 1
+
+    return second_quantized
