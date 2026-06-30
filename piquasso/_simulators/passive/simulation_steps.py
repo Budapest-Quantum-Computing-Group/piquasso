@@ -269,6 +269,7 @@ def particle_number_measurement(
 
     initial_state = state._occupation_numbers[0]
 
+    config = state._config
     rng = state._config.rng
 
     postselected_modes = state._get_postselected_modes()
@@ -276,7 +277,7 @@ def particle_number_measurement(
     postselect_data = (
         postselected_modes,
         state._get_postselected_photons(),
-        state._config.max_sample_generation_trials,
+        config.max_sample_generation_trials,
     )
 
     modes = instruction.modes
@@ -321,7 +322,7 @@ def particle_number_measurement(
         input=initial_state,
         interferometer=state.interferometer,
         shots=shots,
-        rng=rng,
+        config=config,
         postselect_data=postselect_data,
     )
 
