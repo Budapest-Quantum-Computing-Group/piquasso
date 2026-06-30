@@ -149,6 +149,7 @@ __all__ = [
     # States
     "GaussianState",
     "PassiveState",
+    "SamplingState",  # deprecated, will be removed in future versions
     "FockState",
     "PureFockState",
     "BatchPureFockState",
