@@ -1108,3 +1108,230 @@ class TestMarginalBosonSampling:
             ),
         ):
             simulator.execute(program, shots=10)
+
+
+class TestDistinguishableNumberStateWithParticleNumberMeasurement:
+    """Test programs that contain distinguishable photons."""
+
+    def test_full_indistinguishability(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=1.0)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        for sample in samples:
+            assert sample in [(2, 0), (0, 2)]
+
+    def test_full_distinguishability(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.0)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        for sample in samples:
+            assert sample in [(2, 0), (0, 2), (1, 1)]
+
+    def test_seed_reproducibility(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.5)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator1 = pq.SamplingSimulator(config=pq.Config(seed_sequence=42))
+        simulator2 = pq.SamplingSimulator(config=pq.Config(seed_sequence=42))
+        result_1 = simulator1.execute(program, shots=10)
+        result_2 = simulator2.execute(program, shots=10)
+
+        assert np.allclose(result_1.samples, result_2.samples)
+
+    def test_postselection_of_distinguishable_photons(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.5)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        assert all(sample == (1,) for sample in samples)
+
+    def test_postselection_with_distinguishable_photons_and_losses(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.5)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.UniformLoss(transmissivity=0.8)
+
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        assert all(sample == (1,) or sample == (0,) for sample in samples)
+
+    def test_uniform_loss_with_distinguishable_photons(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.5)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.UniformLoss(transmissivity=0.5)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        valid_samples = {
+            (0, 0),
+            (1, 0),
+            (0, 1),
+            (2, 0),
+            (1, 1),
+            (0, 2),
+        }
+
+        assert all(tuple(sample) in valid_samples for sample in samples)
+
+    def test_nonuniform_loss_with_distinguishable_photons(self):
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState([1, 1], particle_overlap=0.5)
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.Loss(transmissivity=0.7)
+            pq.Q(1) | pq.Loss(transmissivity=0.3)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        valid_samples = {
+            (0, 0),
+            (1, 0),
+            (0, 1),
+            (2, 0),
+            (1, 1),
+            (0, 2),
+        }
+
+        assert all(tuple(sample) in valid_samples for sample in samples)
+
+    def test_uniform_loss_with_gram_matrix_for_distinguishable_photons(self):
+        particle_overlap = np.array(
+            [
+                [1.0, 0.5],
+                [0.5, 1.0],
+            ],
+            dtype=complex,
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                [1, 1],
+                particle_overlap=particle_overlap,
+            )
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q() | pq.UniformLoss(transmissivity=0.5)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator()
+        result = simulator.execute(program, shots=10)
+        samples = result.samples
+
+        valid_samples = {
+            (0, 0),
+            (1, 0),
+            (0, 1),
+            (2, 0),
+            (1, 1),
+            (0, 2),
+        }
+
+        assert all(tuple(sample) in valid_samples for sample in samples)
+
+    def test_identity_with_gram_matrix_and_full_loss_is_vacuum(self):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        particle_overlap = np.array(
+            [
+                [1.0, 0.2 + 0.1j, 0.3],
+                [0.2 - 0.1j, 1.0, 0.4 - 0.2j],
+                [0.3, 0.4 + 0.2j, 1.0],
+            ],
+            dtype=complex,
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=particle_overlap,
+            )
+            pq.Q() | pq.Interferometer(np.identity(3, dtype=complex))
+            pq.Q() | pq.UniformLoss(transmissivity=0.0)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=20)
+
+        assert all(tuple(sample) == (0, 0, 0) for sample in result.samples)
+
+    def test_postselection_with_deterministic_loss_returns_active_modes(self):
+        input_state = np.array([1, 1, 0], dtype=int)
+
+        expected_sample = (0, 0)
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=0.5,
+            )
+            pq.Q() | pq.Interferometer(np.identity(3, dtype=complex))
+            pq.Q(1) | pq.Loss(transmissivity=0.0)
+            pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=20)
+
+        assert all(tuple(sample) == expected_sample for sample in result.samples)
+
+    def test_nonuniform_loss_after_permutation_can_be_deterministic(self):
+        input_state = np.array([1, 1, 1, 0], dtype=int)
+
+        interferometer = np.array(
+            [
+                [0, 0, 1, 0],
+                [1, 0, 0, 0],
+                [0, 0, 0, 1],
+                [0, 1, 0, 0],
+            ],
+            dtype=complex,
+        )
+
+        expected_sample = (1, 1, 0, 0)
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                input_state,
+                particle_overlap=0.5,
+            )
+            pq.Q() | pq.Interferometer(interferometer)
+            pq.Q(3) | pq.Loss(transmissivity=0.0)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        simulator = pq.SamplingSimulator(
+            d=4,
+            config=pq.Config(seed_sequence=42),
+        )
+        result = simulator.execute(program, shots=20)
+
+        assert all(tuple(sample) == expected_sample for sample in result.samples)

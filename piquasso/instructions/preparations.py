@@ -22,7 +22,7 @@ be placed at the beginning of the Piquasso program.
 """
 
 
-from typing import Dict, Iterable, Tuple, Optional
+from typing import Dict, Iterable, Tuple, Optional, Union
 import warnings
 
 import numpy as np
@@ -265,6 +265,163 @@ class NumberState(Preparation, _mixins.WeightMixin):
             return FockStateVector(fock_amplitude_map=fock_amplitude_map)
         else:
             return NotImplemented
+
+
+class DistinguishableNumberState(Preparation):
+    r"""State preparation with labelled photons in spatial number states.
+
+    The occupation numbers specify the spatial input modes. The optional
+    ``particle_overlap`` specifies the internal-state Gram matrix of the labelled
+    photons.
+
+    Example usage with uniform partial distinguishability::
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                [2, 1, 0, 3],
+                particle_overlap=0.8,
+            )
+            ...
+
+    Example usage with a full particle-overlap matrix::
+
+        G = np.array(
+            [
+                [1.0, 0.8, 0.7],
+                [0.8, 1.0, 0.6],
+                [0.7, 0.6, 1.0],
+            ],
+            dtype=complex,
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.DistinguishableNumberState(
+                [1, 1, 1, 0],
+                particle_overlap=G,
+            )
+            ...
+
+    The photon ordering is induced by the occupation numbers in increasing mode
+    order. For example, ``occupation_numbers=[2, 0, 1]`` corresponds to labelled
+    photon input modes ``[0, 0, 2]``. Therefore, a full overlap matrix ``G`` must
+    satisfy ``G[i, j] = <phi_i | phi_j>`` with respect to this ordering.
+
+    A scalar ``particle_overlap=lambda`` means real uniform amplitude overlap,
+
+    .. math::
+
+        G_{ii} = 1, \qquad G_{ij} = \lambda \quad i \neq j.
+
+    A matrix ``particle_overlap=G`` must be a normalized positive semidefinite
+    Gram matrix,
+
+    .. math::
+
+        G = G^\dagger, \qquad G \succeq 0, \qquad G_{ii}=1.
+
+    Complex-valued overlaps should be specified using the full Gram matrix form,
+    so that Hermiticity is explicit.
+
+    The scalar uniform-overlap algorithms are typically faster than the general
+    Gram-matrix algorithms.
+
+    Can only be applied to the following states:
+    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    """
+
+    def __init__(
+        self,
+        occupation_numbers: Iterable[int],
+        particle_overlap: Union[float, np.ndarray] = 0.0,
+    ) -> None:
+        """
+        Args:
+            occupation_numbers (Iterable[int]):
+                The spatial occupation numbers.
+
+            particle_overlap (Union[float, np.ndarray]):
+                Either a scalar uniform amplitude overlap or an ``n x n``
+                particle-overlap Gram matrix, where
+                ``n = sum(occupation_numbers)``.
+
+                A scalar value means uniform pairwise overlap between every
+                pair of labelled photons.
+
+                A matrix value means ``particle_overlap[i, j]`` is the
+                internal-state overlap of photons ``i`` and ``j`` in the
+                ordering induced by ``occupation_numbers``.
+
+
+        Raises:
+            InvalidState:
+                If the occupation numbers are invalid, or if the particle
+                overlap is not a valid scalar overlap or Gram matrix.
+        """
+
+        super().__init__(
+            params=dict(
+                occupation_numbers=tuple(occupation_numbers),
+                particle_overlap=particle_overlap,
+            ),
+        )
+
+    def _validate(self, connector: BaseConnector) -> None:
+        np = connector.np
+
+        occupation_numbers = self.params["occupation_numbers"]
+        particle_overlap = self.params["particle_overlap"]
+
+        if not all_natural(occupation_numbers):
+            raise InvalidState(
+                f"Invalid occupation numbers: "
+                f"occupation_numbers={occupation_numbers}\n"
+                "Occupation numbers must contain non-negative integers."
+            )
+
+        if connector.is_abstract(particle_overlap):
+            return
+
+        if np.isscalar(particle_overlap):
+            if particle_overlap < 0.0 or particle_overlap > 1.0:
+                raise InvalidState(
+                    f"Invalid particle overlap: "
+                    f"particle_overlap={particle_overlap}\n"
+                    "Particle overlap must be in the range [0, 1]."
+                )
+
+        else:
+            number_of_particles = sum(occupation_numbers)
+            expected_shape = (number_of_particles, number_of_particles)
+
+            if particle_overlap.shape != expected_shape:
+                raise InvalidState(
+                    f"Invalid particle overlap matrix shape: "
+                    f"particle_overlap.shape={particle_overlap.shape}\n"
+                    f"For occupation_numbers={occupation_numbers}, expected shape "
+                    f"{expected_shape}."
+                )
+
+            if not np.allclose(particle_overlap, particle_overlap.conj().T):
+                raise InvalidState(
+                    f"Invalid particle overlap matrix: "
+                    f"particle_overlap={particle_overlap}\n"
+                    "Particle overlap matrix must be Hermitian."
+                )
+
+            if not np.allclose(np.diag(particle_overlap), 1.0):
+                raise InvalidState(
+                    f"Invalid particle overlap matrix diagonal: "
+                    f"diag={np.diag(particle_overlap)}\n"
+                    "Particle overlap matrix must have ones on its diagonal."
+                )
+
+            eigenvalues = np.linalg.eigvalsh(particle_overlap)
+            if np.any(eigenvalues < -1e-10):
+                raise InvalidState(
+                    f"Invalid particle overlap matrix eigenvalues: "
+                    f"eigenvalues={eigenvalues}\n"
+                    "Particle overlap matrix must be positive semidefinite."
+                )
 
 
 class FockStateVector(Preparation, _mixins.WeightMixin):
