@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 from ..simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
 from piquasso._simulators.connectors import NumpyConnector, JaxConnector
 
-from .state import SamplingState
+from .state import PassiveState
 from .simulation_steps import (
     vacuum,
     create,
@@ -36,14 +38,14 @@ from .simulation_steps import (
 )
 
 
-class SamplingSimulator(BuiltinSimulator):
+class PassiveSimulator(BuiltinSimulator):
     r"""A simulator dedicated for Boson Sampling (or related) simulations.
 
     Generally, this simulator can be used to simulate passive linear optical circuits
     with Fock state inputs, photon number measurements, and photon losses.
 
     The simulation (when executed) results in an instance of
-    :class:`~piquasso._simulators.sampling.state.SamplingState` or with the samples
+    :class:`~piquasso._simulators.passive.state.PassiveState` or with the samples
     generated from it (see :class:`~piquasso.api.result.Result`).
 
     Example usage::
@@ -64,7 +66,7 @@ class SamplingSimulator(BuiltinSimulator):
 
             pq.Q(all) | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(d=5)
+        simulator = pq.PassiveSimulator(d=5)
         result = simulator.execute(program, shots=100)
 
     Supported preparations:
@@ -115,10 +117,23 @@ class SamplingSimulator(BuiltinSimulator):
         channels.LossyInterferometer: lossy_interferometer,
     }
 
-    _state_class = SamplingState
+    _state_class = PassiveState
 
     _default_connector_class = NumpyConnector
 
     _extra_builtin_connectors = [JaxConnector]
 
     _measurement_classes_allowed_mid_circuit = (measurements.PostSelectPhotons,)
+
+
+class SamplingSimulator(PassiveSimulator):
+    """Deprecated alias for :class:`PassiveSimulator`."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "`SamplingSimulator` is deprecated and will be removed in a future "
+            "release. Use `PassiveSimulator` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

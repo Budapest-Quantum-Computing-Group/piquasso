@@ -32,7 +32,7 @@ def test_program():
         pq.Q(4) | pq.Phaseshifter(0.5)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     result = simulator.execute(program, shots=10)
 
     assert len(result.samples) == 10
@@ -46,7 +46,7 @@ def test_interferometer():
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     expected_interferometer = np.array(
@@ -71,7 +71,7 @@ def test_phaseshifter():
 
         pq.Q(2) | pq.Phaseshifter(phi)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     x = np.exp(1j * phi)
@@ -98,7 +98,7 @@ def test_beamsplitter():
 
         pq.Q(1, 3) | pq.Beamsplitter(theta, phi)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     t = np.cos(theta)
@@ -126,7 +126,7 @@ def test_lossy_program():
     losses = 0.5
 
     d = 5
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
 
     initial_state = [1, 1, 1, 0, 0]
 
@@ -156,7 +156,7 @@ def test_LossyInterferometer_decreases_particle_number(generate_unitary_matrix):
         @ generate_unitary_matrix(d)
     )
 
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
 
     initial_state = [1, 1, 1, 0, 0]
 
@@ -186,7 +186,7 @@ def test_LossyInterferometer_is_equivalent_to_Loss_and_Interferometers(
         first_unitary @ np.diag(singular_values) @ second_unitary
     )
 
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
 
     with pq.Program() as program_using_lossy_interferometer:
         pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
@@ -277,7 +277,7 @@ def test_Interferometer_fock_probabilities(connector):
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
@@ -592,7 +592,7 @@ def test_LossyInterferometer_fock_probabilities(connector):
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
@@ -655,7 +655,7 @@ def test_Interferometer_state_vector(connector):
 
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
@@ -970,7 +970,7 @@ def test_LossyInterferometer_state_vector(connector):
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=5, connector=connector, config=pq.Config(cutoff=6)
     )
     state = simulator.execute(program).state
@@ -991,7 +991,7 @@ def test_Kerr_gate_with_Vacuum():
         pq.Q(0) | pq.Vacuum()
         pq.Q(0) | pq.Kerr(0.5)
 
-    simulator = pq.SamplingSimulator(d=1)
+    simulator = pq.PassiveSimulator(d=1)
     state = simulator.execute(program).state
 
     state_vector_map = state.state_vector_map
@@ -1008,7 +1008,7 @@ def test_Kerr_gate_with_StateVector():
 
         pq.Q(0) | pq.Kerr(angle)
 
-    simulator = pq.SamplingSimulator(d=2)
+    simulator = pq.PassiveSimulator(d=2)
     state = simulator.execute(program).state
 
     state_vector_map = state.state_vector_map
@@ -1028,7 +1028,7 @@ def test_Kerr_gate_with_Beamsplitter():
         pq.Q(0, 1) | pq.Beamsplitter(theta=theta, phi=phi)
         pq.Q(0) | pq.Kerr(xi)
 
-    simulator = pq.SamplingSimulator(d=2)
+    simulator = pq.PassiveSimulator(d=2)
     state = simulator.execute(program).state
 
     state_vector_map = state.state_vector_map
@@ -1060,7 +1060,7 @@ def test_Kerr_gate_with_PostSelectPhotons():
 
         pq.Q(1) | pq.Kerr(angle)
 
-    simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=5))
+    simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=5))
     state = simulator.execute(program).state
 
     state_vector_map = state.state_vector_map
@@ -1077,7 +1077,7 @@ def test_CrossKerr_gate_with_StateVector():
 
         pq.Q(0, 1) | pq.CrossKerr(angle)
 
-    simulator = pq.SamplingSimulator(d=2)
+    simulator = pq.PassiveSimulator(d=2)
     state = simulator.execute(program).state
 
     state_vector_map = state.state_vector_map

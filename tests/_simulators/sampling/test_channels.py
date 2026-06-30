@@ -30,7 +30,7 @@ def test_Loss_uniform():
         for i in range(5):
             pq.Q(i) | pq.Loss(0.9)
 
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
     state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy
@@ -47,7 +47,7 @@ def test_Loss_non_uniform():
         pq.Q(0) | pq.Loss(transmissivity=0.4)
         pq.Q(1) | pq.Loss(transmissivity=0.5)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy
@@ -65,7 +65,7 @@ def test_UniformLoss():
 
         pq.Q() | pq.UniformLoss(0.8)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy

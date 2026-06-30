@@ -24,7 +24,7 @@ import jax.numpy as jnp
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.PassiveSimulator))
 def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
     connector = pq.JaxConnector()
 
@@ -69,7 +69,7 @@ def test_Jax_gradient_equivalence_for_single_Beamsplitter(SimulatorClass):
     assert np.isclose(fidelity_grad, expected_fidelity_grad)
 
 
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.PassiveSimulator))
 def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
     connector = pq.JaxConnector()
 
@@ -118,7 +118,7 @@ def test_Jax_gradient_equivalence_complex_scenario(SimulatorClass):
     assert np.isclose(fidelity_grad, expected_fidelity_grad)
 
 
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.PassiveSimulator))
 def test_PostSelectPhotons_gradient(SimulatorClass):
     connector = pq.JaxConnector()
     state_vector = np.sqrt([0.2, 0.3, 0.5])
@@ -183,7 +183,7 @@ def test_PostSelectPhotons_gradient(SimulatorClass):
     assert np.allclose(gradient, 0.0, atol=1e-7)
 
 
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.PassiveSimulator))
 def test_ImperfectPostSelectPhotons_gradient(SimulatorClass):
 
     connector = pq.JaxConnector()

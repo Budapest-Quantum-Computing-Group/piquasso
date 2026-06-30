@@ -17,7 +17,7 @@ from typing import Optional, Union
 
 from .gaussian import GaussianSimulator
 from .fock import FockSimulator, PureFockSimulator
-from .sampling import SamplingSimulator
+from .passive import PassiveSimulator
 
 from ..api.exceptions import NotImplementedCalculation
 from ..api.connector import BaseConnector
@@ -29,7 +29,7 @@ from ..api.result import Result
 def _resolve_simulator_class(program, connector):
     simulator_classes = (
         GaussianSimulator,
-        SamplingSimulator,
+        PassiveSimulator,
         PureFockSimulator,
         FockSimulator,
     )  # NOTE: Order matters, as the first compatible simulator is selected.

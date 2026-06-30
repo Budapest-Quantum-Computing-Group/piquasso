@@ -195,7 +195,7 @@ class NumberState(Preparation, _mixins.WeightMixin):
 
     Can only be applied to the following states:
     :class:`~piquasso._simulators.fock.pure.state.PureFockState` and
-    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    :class:`~piquasso._simulators.passive.state.PassiveState`.
     """
 
     def __init__(
@@ -326,7 +326,7 @@ class DistinguishableNumberState(Preparation):
     Gram-matrix algorithms.
 
     Can only be applied to the following states:
-    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    :class:`~piquasso._simulators.passive.state.PassiveState`.
     """
 
     def __init__(
@@ -441,7 +441,7 @@ class FockStateVector(Preparation, _mixins.WeightMixin):
 
     Can only be applied to the following states:
     :class:`~piquasso._simulators.fock.pure.state.PureFockState` and
-    :class:`~piquasso._simulators.sampling.state.SamplingState`.
+    :class:`~piquasso._simulators.passive.state.PassiveState`.
     """
 
     def __init__(

@@ -13,5 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .state import SamplingState  # noqa: F401
-from .simulator import SamplingSimulator  # noqa: F401
+from .state import PassiveState
+from .simulator import PassiveSimulator, SamplingSimulator
+
+
+__all__ = [
+    "PassiveState",
+    "PassiveSimulator",
+    "SamplingSimulator",
+]

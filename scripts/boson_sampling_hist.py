@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     program = pq.Program(instructions=instructions)
 
-    simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(seed_sequence=42))
+    simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(seed_sequence=42))
 
     samples = [tuple(sample) for sample in simulator.execute(program, shots=N).samples]
 

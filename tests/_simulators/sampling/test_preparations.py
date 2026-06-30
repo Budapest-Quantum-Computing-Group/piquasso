@@ -26,7 +26,7 @@ def test_initial_state_raises_InvalidState_for_nonnormalized_input_state():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([1, 1, 1, 0, 0]) * 0.5
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
@@ -40,7 +40,7 @@ def test_initial_state_raises_InvalidState_for_occupation_numbers_of_differing_l
         pq.Q() | pq.NumberState([1, 1, 1, 0, 0]) * 1 / np.sqrt(2)
         pq.Q() | pq.NumberState([1, 1, 1]) * 1 / np.sqrt(2)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program).state
@@ -56,7 +56,7 @@ def test_cutoff_is_inferred_from_state_vector():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
-    state = pq.SamplingSimulator(d=5).execute(program).state
+    state = pq.PassiveSimulator(d=5).execute(program).state
 
     assert state._config.cutoff == 6
     assert len(state.state_vector) > 0
@@ -66,7 +66,7 @@ def test_cutoff_is_inferred_when_validation_is_disabled():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(validate=False))
+    simulator = pq.PassiveSimulator(d=5, config=pq.Config(validate=False))
     state = simulator.execute(program).state
 
     assert state._config.cutoff == 6
@@ -77,7 +77,7 @@ def test_explicit_cutoff_is_not_inferred_when_validation_is_disabled():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=5,
         config=pq.Config(cutoff=4, validate=False),
     )
@@ -90,7 +90,7 @@ def test_explicit_cutoff_is_validated_against_state_vector():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([2, 1, 1, 0, 1])
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(cutoff=4))
+    simulator = pq.PassiveSimulator(d=5, config=pq.Config(cutoff=4))
 
     with pytest.raises(pq.api.exceptions.InvalidState) as error:
         simulator.execute(program)
@@ -107,7 +107,7 @@ def test_interferometer_init():
     with pq.Program() as program:
         pass
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
 
     state = simulator.execute(program).state
 
@@ -129,7 +129,7 @@ def test_multiple_interferometer_on_neighbouring_modes():
 
         pq.Q(0, 1, 2) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     expected_interferometer = np.array(
@@ -161,7 +161,7 @@ def test_multiple_interferometer_on_gaped_modes():
 
         pq.Q(0, 1, 4) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     expected_interferometer = np.array(
@@ -189,7 +189,7 @@ def test_multiple_interferometer_on_reversed_gaped_modes():
 
         pq.Q(4, 3, 1) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     state = simulator.execute(program).state
 
     expected_interferometer = np.array(
@@ -219,7 +219,7 @@ def test_probability_distribution():
         pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
+    simulator = pq.PassiveSimulator(d=3, config=pq.Config(cutoff=3))
     state = simulator.execute(program).state
 
     assert np.allclose(
@@ -241,7 +241,7 @@ def test_get_particle_detection_probability():
         pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
     state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability(occupation_number=(1, 1, 0))
@@ -274,7 +274,7 @@ def test_get_particle_detection_probability_complex_scenario():
         pq.Q(all) | pq.NumberState([0, 1, 2])
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
     state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability(occupation_number=(2, 1, 0))
@@ -295,7 +295,7 @@ def test_get_particle_detection_probability_on_different_subspace():
         pq.Q(all) | pq.NumberState([1, 1, 0])
         pq.Q(all) | pq.Interferometer(U)
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
     state = simulator.execute(program).state
 
     different_particle_subspace_occupation_number = (3, 1, 0)
@@ -335,12 +335,12 @@ def test_multiple_NumberState_instructions_state_vector():
 
     config = pq.Config(cutoff=4)
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
-        sampling_state.state_vector,
+        passive_state.state_vector,
         [
             0.63245553,
             0.0,
@@ -409,30 +409,30 @@ def test_multiple_NumberState_instructions_get_particle_detection_probability():
 
     config = pq.Config(cutoff=4)
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
-        sampling_state.get_particle_detection_probability((1, 1, 0, 1)),
+        passive_state.get_particle_detection_probability((1, 1, 0, 1)),
         0.0018507569323483858,
     )
 
 
-def test_FockStateVector_with_fock_amplitude_map_sampling():
+def test_FockStateVector_with_fock_amplitude_map():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
 
     with pq.Program() as program:
         pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
-    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
+    simulator = pq.PassiveSimulator(d=1, config=pq.Config(cutoff=2))
 
     state = simulator.execute(program).state
 
     assert np.allclose(state.state_vector, np.array([0.6, 0.8]))
 
 
-def test_FockStateVector_with_fock_amplitude_map_and_coefficient_sampling():
+def test_FockStateVector_with_fock_amplitude_map_and_coefficient():
     amplitude_map = {(0,): 0.6, (1,): 0.8}
     coefficient = 1 / np.sqrt(2)
 
@@ -444,7 +444,7 @@ def test_FockStateVector_with_fock_amplitude_map_and_coefficient_sampling():
             fock_amplitude_map=amplitude_map, coefficient=coefficient
         )
 
-    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2))
+    simulator = pq.PassiveSimulator(d=1, config=pq.Config(cutoff=2))
 
     state_with_mul = simulator.execute(program_with_mul).state
     state_with_param = simulator.execute(program_with_param).state
@@ -461,7 +461,7 @@ def test_FockStateVector_with_fock_amplitude_map_invalid_shape_raises_InvalidSta
     with pq.Program() as program:
         pq.Q() | pq.FockStateVector(fock_amplitude_map=amplitude_map)
 
-    simulator = pq.SamplingSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
+    simulator = pq.PassiveSimulator(d=1, config=pq.Config(cutoff=2, validate=True))
 
     with pytest.raises(pq.api.exceptions.InvalidState):
         simulator.execute(program)
@@ -471,7 +471,7 @@ def test_Vacuum():
     with pq.Program() as program:
         pq.Q() | pq.Vacuum()
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
 
     state = simulator.execute(program).state
 
@@ -485,7 +485,7 @@ def test_Create_on_single_mode():
         pq.Q() | pq.Vacuum()
         pq.Q(1) | pq.Create()
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
 
     state = simulator.execute(program).state
 
@@ -499,7 +499,7 @@ def test_Create_on_multiple_modes():
         pq.Q() | pq.Vacuum()
         pq.Q(0, 2) | pq.Create()
 
-    simulator = pq.SamplingSimulator(d=4)
+    simulator = pq.PassiveSimulator(d=4)
 
     state = simulator.execute(program).state
 
@@ -514,7 +514,7 @@ def test_cutoff_is_inferred_from_Create_instructions():
         for _ in range(5):
             pq.Q(0) | pq.Create()
 
-    state = pq.SamplingSimulator(d=1).execute(program).state
+    state = pq.PassiveSimulator(d=1).execute(program).state
 
     assert state._config.cutoff == 6
     assert np.allclose(state._occupation_numbers[0], np.array([5]))
@@ -526,7 +526,7 @@ class TestDistinguishableNumberState:
         with pq.Program() as program:
             pq.Q() | pq.DistinguishableNumberState([1, 2, 0], particle_overlap=0.5)
 
-        simulator = pq.SamplingSimulator(d=3)
+        simulator = pq.PassiveSimulator(d=3)
 
         state = simulator.execute(program).state
 
@@ -545,7 +545,7 @@ class TestDistinguishableNumberState:
                 ),
             )
 
-        simulator = pq.SamplingSimulator(d=3)
+        simulator = pq.PassiveSimulator(d=3)
 
         state = simulator.execute(program).state
 
@@ -564,7 +564,7 @@ class TestDistinguishableNumberState:
                 ),  # Invalid shape for 3 particles
             )
 
-        simulator = pq.SamplingSimulator(d=3)
+        simulator = pq.PassiveSimulator(d=3)
 
         with pytest.raises(
             pq.api.exceptions.InvalidState,
@@ -610,7 +610,7 @@ class TestDistinguishableNumberState:
             )
             pq.Q() | pq.Interferometer(interferometer)
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=d, config=pq.Config(cutoff=number_of_particles + 1)
         )
 
@@ -701,7 +701,7 @@ class TestDistinguishableNumberState:
             pq.Q() | pq.UniformLoss(transmissivity=0.7)
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=d, config=pq.Config(cutoff=number_of_particles + 1)
         )
 

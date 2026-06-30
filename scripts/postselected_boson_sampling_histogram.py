@@ -44,7 +44,7 @@ if __name__ == "__main__":
         pq.ParticleNumberMeasurement(),
     ]
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=len(input_state), config=pq.Config(seed_sequence=42, cutoff=9)
     )
 

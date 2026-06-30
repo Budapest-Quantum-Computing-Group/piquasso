@@ -21,7 +21,7 @@ import numpy as np
 from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
 from piquasso._math.linalg import is_unitary
 
-from piquasso._simulators.sampling.probabilities import (
+from piquasso._simulators.passive.probabilities import (
     get_ideal_particle_number_probability,
     get_lossy_particle_number_probability,
     get_partially_distinguishable_detection_probability,
@@ -43,10 +43,10 @@ if TYPE_CHECKING:
     import piquasso
 
 
-class SamplingState(State):
+class PassiveState(State):
     r"""A state dedicated for Boson Sampling (or related) simulations.
 
-    When using :class:`~piquasso._simulators.sampling.simulator.SamplingSimulator`, the
+    When using :class:`~piquasso._simulators.passive.simulator.PassiveSimulator`, the
     simulation results will contain an instance of this class, containing the input
     occupation numbers and the interferometer to be applied. Moreover, postselections
     and losses can also be specified in this state.
@@ -96,7 +96,7 @@ class SamplingState(State):
         >>>     pq.Q(all) | pq.Interferometer(interferometer_matrix)
         >>>     pq.Q(all) | pq.ParticleNumberMeasurement()
         >>>
-        >>> simulator = pq.SamplingSimulator(d=d)
+        >>> simulator = pq.PassiveSimulator(d=d)
         >>>
         >>> result = simulator.execute(program, shots=3)
         >>>
@@ -584,7 +584,7 @@ class SamplingState(State):
         )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SamplingState):
+        if not isinstance(other, PassiveState):
             return False
 
         return (

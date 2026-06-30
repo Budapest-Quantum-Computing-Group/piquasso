@@ -105,7 +105,7 @@ def get_piquasso_samples(unitary):
         ]
     )
 
-    simulator = pq.SamplingSimulator(d=m)
+    simulator = pq.PassiveSimulator(d=m)
 
     return simulator.execute(program, shots=N).samples
 

@@ -37,7 +37,7 @@ def test_Beamsplitter_gradient_at_theta_equal_0():
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.SamplingSimulator(d=3, connector=connector)
+        simulator = pq.PassiveSimulator(d=3, connector=connector)
 
         initial_state_vector = simulator.execute(program).state.state_vector
         rotated_state_vector = simulator.execute(rotated_program).state.state_vector
@@ -71,7 +71,7 @@ def test_Beamsplitter_gradient_at_random_angle():
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.SamplingSimulator(d=3, connector=connector)
+        simulator = pq.PassiveSimulator(d=3, connector=connector)
 
         initial_state_vector = simulator.execute(program).state.state_vector
         rotated_state_vector = simulator.execute(rotated_program).state.state_vector
@@ -109,7 +109,7 @@ def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
 
             pq.Q(0, 1) | pq.Beamsplitter(theta=theta)
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=3,
             connector=connector,
             config=pq.Config(cutoff=np.sum(initial_state) + 1),
@@ -145,7 +145,7 @@ def test_Beamsplitter_gradient_at_random_angle_multiparticle_initial_state():
 def test_get_particle_detection_probability_gradient():
     theta = jnp.pi / 3
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         d=2, config=pq.Config(cutoff=3), connector=pq.JaxConnector()
     )
 
