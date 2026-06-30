@@ -107,7 +107,7 @@ from piquasso._math.fock import (
 from piquasso._math.indices import get_index_in_fock_space, get_index_in_fock_subspace
 
 
-def get_marginal_probabilities(
+def get_marginal_fock_probabilities(
     input_photons: np.ndarray,
     interferometer: np.ndarray,
     postselected_modes: Tuple[int, ...],

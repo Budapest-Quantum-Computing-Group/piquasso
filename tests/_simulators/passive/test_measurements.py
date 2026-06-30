@@ -1165,7 +1165,7 @@ class TestMarginalBosonSampling:
             )
         )
 
-        analytic_probabilities = analytic_result.state.get_marginal_probabilities(
+        analytic_probabilities = analytic_result.state.get_marginal_fock_probabilities(
             modes=(1, 2),
         )
 

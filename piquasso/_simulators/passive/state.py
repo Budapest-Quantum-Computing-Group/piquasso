@@ -37,7 +37,7 @@ from piquasso.api.exceptions import (
 from piquasso.api.connector import BaseConnector
 
 from .utils import calculate_state_vector
-from .marginal import get_marginal_probabilities
+from .marginal import get_marginal_fock_probabilities
 
 if TYPE_CHECKING:
     import piquasso
@@ -534,7 +534,7 @@ class PassiveState(State):
             "distinguishable states."
         )
 
-    def get_marginal_probabilities(
+    def get_marginal_fock_probabilities(
         self, modes: Tuple[int, ...]
     ) -> Dict[Tuple[int, ...], float]:
         """Returns the marginal probabilities of the state.
@@ -575,7 +575,7 @@ class PassiveState(State):
                 "Marginal probabilities cannot be calculated for postselected modes."
             )
 
-        return get_marginal_probabilities(
+        return get_marginal_fock_probabilities(
             self._occupation_numbers[0],
             self.interferometer,
             postselected_modes,
