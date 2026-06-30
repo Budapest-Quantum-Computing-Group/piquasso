@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Dict
 
 import numpy as np
 
@@ -1011,10 +1011,20 @@ class GaussianState(State):
             get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
         )
 
-    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
+    @property
+    def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
+        fock_space_basis = get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
+
+        occupation_numbers = [tuple(x) for x in fock_space_basis]
+
+        return dict(zip(occupation_numbers, self.fock_probabilities))
+
+    def get_marginal_fock_probabilities(
+        self, modes: Tuple[int, ...]
+    ) -> Dict[Tuple[int, ...], float]:
         """Return the particle number probabilities on a given subsystem."""
 
-        return self.reduced(modes).fock_probabilities
+        return self.reduced(modes).fock_probabilities_map
 
     def get_xp_string_moment(self, string: List[int]) -> complex:
         r"""Moment corresponding to a product of quadrature operators (XP-string).
