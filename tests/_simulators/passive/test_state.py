@@ -1083,7 +1083,7 @@ class TestMarginalProbabilities:
 
         modes = [0]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         expected = {(0,): 0.0, (1,): 1.0, (2,): 0.0}
         assert set(probabilities) == set(expected)
@@ -1111,7 +1111,7 @@ class TestMarginalProbabilities:
 
         modes = [0]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         expected_probabilities = {
             (0,): np.sin(2 * theta) ** 2 / 2,
@@ -1144,7 +1144,7 @@ class TestMarginalProbabilities:
 
         modes = [1]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         sin_2alpha_sq = np.sin(2 * alpha) ** 2
         cos_2alpha_sq = np.cos(2 * alpha) ** 2
@@ -1189,7 +1189,7 @@ class TestMarginalProbabilities:
 
         modes = [1, 3]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         S = np.sin(2 * alpha) ** 2
         C = np.cos(2 * alpha) ** 2
@@ -1249,7 +1249,7 @@ class TestMarginalProbabilities:
 
         modes = [1]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         postselection_probability = np.cos(2 * alpha) ** 2
 
@@ -1282,7 +1282,7 @@ class TestMarginalProbabilities:
 
         modes = [0, 1, 2]
 
-        probabilities = state.get_marginal_probabilities(modes)
+        probabilities = state.get_marginal_fock_probabilities(modes)
 
         assert np.isclose(np.sum(list(probabilities.values())), 1.0)
 
@@ -1303,7 +1303,7 @@ class TestMarginalProbabilities:
 
         result = simulator.execute(program)
 
-        probabilities = result.state.get_marginal_probabilities(modes=[0])
+        probabilities = result.state.get_marginal_fock_probabilities(modes=[0])
 
         expected = {
             (0,): 1.0 - survival_probability,
@@ -1334,7 +1334,7 @@ class TestMarginalProbabilities:
 
         result = simulator.execute(program)
 
-        probabilities = result.state.get_marginal_probabilities(modes=[0, 1])
+        probabilities = result.state.get_marginal_fock_probabilities(modes=[0, 1])
 
         expected = {
             (0, 0): (1.0 - survival_probability) ** 3,
@@ -1368,7 +1368,7 @@ class TestMarginalProbabilities:
 
         result = simulator.execute(program)
 
-        probabilities = result.state.get_marginal_probabilities(modes=[0])
+        probabilities = result.state.get_marginal_fock_probabilities(modes=[0])
 
         expected = {
             (0,): 0.5 + 0.5 * (1.0 - survival_probability) ** 2,
@@ -1406,7 +1406,7 @@ class TestMarginalProbabilities:
                 "lossy states."
             ),
         ):
-            _ = result.state.get_marginal_probabilities(modes=[0])
+            _ = result.state.get_marginal_fock_probabilities(modes=[0])
 
     def test_multiple_occupation_numbers_raises_NotImplementedCalculation(self):
         unitary = np.array([[1, 0], [0, 1]], dtype=complex)
@@ -1436,7 +1436,7 @@ class TestMarginalProbabilities:
                 "multiple input occupation numbers."
             ),
         ):
-            _ = state.get_marginal_probabilities(modes)
+            _ = state.get_marginal_fock_probabilities(modes)
 
     def test_postselecting_on_same_mode_raises_PiquassoException(self):
         input_state = np.array([1, 1, 0], dtype=int)
@@ -1463,4 +1463,4 @@ class TestMarginalProbabilities:
                 "Marginal probabilities cannot be calculated for postselected modes."
             ),
         ):
-            _ = state.get_marginal_probabilities(modes)
+            _ = state.get_marginal_fock_probabilities(modes)
