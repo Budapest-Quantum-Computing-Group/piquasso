@@ -36,10 +36,10 @@ def generate_samples(
     shots,
     calculate_permanent_laplace,
     interferometer,
-    rng,
     reject_condition,
     postselect_data,
     uniform_particle_overlap,
+    config,
 ):
     """
     Generates samples corresponding to the Clifford & Clifford algorithm B from
@@ -51,7 +51,6 @@ def generate_samples(
         calculate_permanent_laplace: Function to calculate the permanent submatrices
             according to the Laplace expansion.
         interferometer: The interferometer matrix.
-        rng: Random number generator.
         reject_condition: A callable that returns True if a particle should be rejected
             during the sample generation.
         postselect_data: A tuple containing postselection information:
@@ -61,6 +60,10 @@ def generate_samples(
             - max_sample_generation_trials: Maximum number of trials to generate a valid
               sample, to avoid infinite loops in case the postselection conditions are
               too strict.
+        uniform_particle_overlap: Uniform particle overlap parameter for partially
+            distinguishable photons, or None for fully indistinguishable photons.
+        config: The simulator configuration, providing the random number generator and
+            other settings.
 
     Returns:
         The generated samples.
@@ -100,7 +103,7 @@ def generate_samples(
         calculate_permanent_laplace,
         sample_generator=sample_generator,
         interferometer=interferometer,
-        rng=rng,
+        config=config,
     )
 
 
@@ -109,8 +112,8 @@ def generate_lossy_samples(
     shots,
     calculate_permanent_laplace,
     interferometer,
-    rng,
     postselect_data,
+    config,
 ):
     """
     Basically the same algorithm as in `generate_samples`, but doubles the system size
@@ -131,10 +134,10 @@ def generate_lossy_samples(
         shots,
         calculate_permanent_laplace,
         expanded_matrix,
-        rng,
         reject_condition=lambda: False,
         postselect_data=postselect_data,
         uniform_particle_overlap=None,
+        config=config,
     )
 
     # Trim output state
@@ -144,7 +147,7 @@ def generate_lossy_samples(
 
 
 def _generate_samples(
-    input, shots, calculate_permanent_laplace, interferometer, sample_generator, rng
+    input, shots, calculate_permanent_laplace, interferometer, sample_generator, config
 ):
     d = len(input)
     n = np.sum(input)
@@ -153,16 +156,40 @@ def _generate_samples(
 
     first_quantized_input = to_first_quantized(input)
 
-    while len(samples) < shots:
-        sample = sample_generator(
-            d,
-            n,
-            calculate_permanent_laplace,
-            interferometer,
-            first_quantized_input,
-            rng=rng,
+    def _generate_sample_from_seed(seed):
+        rng = np.random.default_rng(seed=seed)
+        return tuple(
+            sample_generator(
+                d,
+                n,
+                calculate_permanent_laplace,
+                interferometer,
+                first_quantized_input,
+                rng=rng,
+            )
         )
-        samples.append(tuple(sample))
+
+    seed = config.seed_sequence
+
+    if config.use_dask:
+        try:
+            import dask
+        except ImportError:
+            raise ImportError("This feature requires 'dask' to be installed.")
+
+        delayed_func = dask.delayed(_generate_sample_from_seed)
+
+        compute_list = []
+        for idx in range(shots):
+            compute_list.append(delayed_func(seed=seed + idx))
+
+        results = dask.compute(*compute_list)
+
+        return list(results)
+
+    for idx in range(shots):
+        sample = _generate_sample_from_seed(seed=seed + idx)
+        samples.append(sample)
 
     return samples
 
@@ -632,10 +659,10 @@ def generate_lossy_and_partially_distinguishable_samples(
     input,
     shots,
     interferometer,
-    rng,
     postselect_data,
     particle_overlap_matrix,
     connector,
+    config,
 ):
     """
     Naive algorithm to generate samples from a general lossy and partially
@@ -670,7 +697,7 @@ def generate_lossy_and_partially_distinguishable_samples(
 
     probabilities /= connector.np.sum(probabilities)
 
-    sample_indices = rng.choice(
+    sample_indices = config.rng.choice(
         len(occupation_numbers),
         size=shots,
         p=probabilities,
