@@ -541,71 +541,58 @@ def test_Interferometer_fock_probabilities(connector):
     )
 
 
-@pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))
-def test_LossyInterferometer_fock_probabilities(connector):
+def test_LossyInterferometer_fock_probabilities():
+    singular_values = np.array([0.9, 0.8, 0.5])
+
+    omega = np.exp(2j * np.pi / 3)
+
     U = np.array(
         [
-            [
-                -0.17959207 - 0.29175972j,
-                -0.64550941 - 0.02897055j,
-                -0.023922 - 0.38854671j,
-                -0.07908932 + 0.35617293j,
-                -0.39779191 + 0.14902272j,
-            ],
-            [
-                -0.36896208 + 0.19468375j,
-                -0.11545557 + 0.20434514j,
-                0.25548079 + 0.05220164j,
-                -0.51002161 + 0.38442256j,
-                0.48106678 - 0.25210091j,
-            ],
-            [
-                0.25912844 + 0.16131742j,
-                0.11886251 + 0.12632645j,
-                0.69028213 - 0.25734432j,
-                0.01276639 + 0.05841739j,
-                0.03713264 + 0.57364845j,
-            ],
-            [
-                -0.20314019 - 0.18973473j,
-                0.59146854 + 0.28605532j,
-                -0.11096495 - 0.26870144j,
-                -0.47290354 - 0.0489408j,
-                -0.42459838 + 0.01554643j,
-            ],
-            [
-                -0.5021973 - 0.53474291j,
-                0.24524545 - 0.0741398j,
-                0.37786104 + 0.10225255j,
-                0.46696955 + 0.10636677j,
-                0.07171789 - 0.09194236j,
-            ],
-        ]
-    )
+            [1.0, 1.0, 1.0],
+            [1.0, omega, omega**2],
+            [1.0, omega**2, omega],
+        ],
+        dtype=complex,
+    ) / np.sqrt(3)
 
-    singular_values = np.array([0.9, 0.8, 0.7, 0.6, 0.5])
-
-    lossy_interferometer_matrix = U @ np.diag(singular_values) @ U @ U.T
+    lossy_interferometer_matrix = U @ np.diag(singular_values) @ U.conj().T
 
     with pq.Program() as program:
-        pq.Q(all) | pq.NumberState([2, 1, 1, 0, 1])
+        pq.Q(all) | pq.NumberState([2, 1, 0])
 
         pq.Q(all) | pq.LossyInterferometer(lossy_interferometer_matrix)
 
-    simulator = pq.PassiveSimulator(
-        d=5, connector=connector, config=pq.Config(cutoff=6)
-    )
+    simulator = pq.PassiveSimulator(d=3, config=pq.Config(cutoff=4))
     state = simulator.execute(program).state
 
     assert state.is_lossy
 
-    with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as excinfo:
-        _ = state.fock_probabilities
-
-    assert (
-        "State vector calculation is not implemented for lossy or partially "
-        "distinguishable states." in str(excinfo.value)
+    expected_fock_probabilities = np.array(
+        [
+            0.1051844444,
+            0.2337373333,
+            0.1067068889,
+            0.0062313333,
+            0.138173037,
+            0.2703917037,
+            0.0086308148,
+            0.0135382963,
+            0.0053396296,
+            0.0003620741,
+            0.012532214,
+            0.1726864198,
+            0.0025813333,
+            0.0171614444,
+            0.0069342469,
+            0.0003969012,
+            0.0003366091,
+            0.0003969012,
+            0.0000693333,
+            0.0000090412,
+        ]
     )
+
+    assert np.allclose(state.fock_probabilities, expected_fock_probabilities)
 
 
 @pytest.mark.parametrize("connector", (pq.NumpyConnector(), pq.JaxConnector()))

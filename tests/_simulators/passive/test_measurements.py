@@ -1640,3 +1640,95 @@ class TestImperfectParticleNumberMeasurement:
             (0,),
             (1,),
         }
+
+    def test_marginal_imperfect_particle_number_measurement_with_shots_none(self):
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 0.25],
+                [0.0, 0.75],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState([1, 0])
+            pq.Q(0) | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(seed_sequence=42))
+
+        result = simulator.execute(program, shots=None)
+
+        branches = result.branches
+
+        assert len(branches) == 2
+
+        frequencies_by_outcome = {
+            branch.outcome: branch.frequency for branch in branches
+        }
+
+        assert np.isclose(frequencies_by_outcome[(0,)], 0.25)
+        assert np.isclose(frequencies_by_outcome[(1,)], 0.75)
+
+        assert all(branch.state is not None for branch in branches)
+        assert all(branch.state._postselections == {0: 1} for branch in branches)
+
+        assert np.isclose(sum(branch.frequency for branch in branches), 1.0)
+
+    def test_marginal_imperfect_particle_number_measurement_with_shots_none_nontrivial(
+        self,
+    ):
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 0.25, 0.10],
+                [0.0, 0.50, 0.30],
+                [0.0, 0.25, 0.60],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState([2, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 4)
+
+            pq.Q(0) | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(seed_sequence=42))
+
+        result = simulator.execute(program, shots=None)
+
+        branches = result.branches
+
+        assert len(branches) == 7
+
+        assert all(branch.state is not None for branch in branches)
+
+        frequencies_by_actual_and_detected = {
+            (branch.state._postselections[0], branch.outcome[0]): branch.frequency
+            for branch in branches
+        }
+
+        expected_frequencies = {
+            (0, 0): 0.25,
+            (1, 0): 0.125,
+            (1, 1): 0.25,
+            (1, 2): 0.125,
+            (2, 0): 0.025,
+            (2, 1): 0.075,
+            (2, 2): 0.15,
+        }
+
+        assert frequencies_by_actual_and_detected.keys() == expected_frequencies.keys()
+
+        for key, expected_frequency in expected_frequencies.items():
+            assert np.isclose(
+                frequencies_by_actual_and_detected[key],
+                expected_frequency,
+            )
+
+        assert np.isclose(sum(branch.frequency for branch in branches), 1.0)
+
+        assert {branch.state._postselections[0] for branch in branches} == {0, 1, 2}
+
+        assert {branch.outcome for branch in branches} == {(0,), (1,), (2,)}

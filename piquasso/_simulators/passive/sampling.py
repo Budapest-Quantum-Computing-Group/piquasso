@@ -794,9 +794,9 @@ def map_to_original_modes(modes, postselected_modes):
 
 
 def generate_marginal_samples(
-    initial_state, interferometer, modes, shots, rng, postselect_data
+    input, interferometer, modes, shots, config, postselect_data
 ):
-    n = sum(initial_state)
+    n = sum(input)
     k = len(modes)
 
     postselect_modes = postselect_data[0]
@@ -805,7 +805,7 @@ def generate_marginal_samples(
     all_modes = np.array(postselect_modes + modes)
 
     binomial_moments = get_binomial_moments(
-        input_photons=initial_state,
+        input_photons=input,
         interferometer=interferometer,
         all_modes=all_modes,
         compositions=get_fock_space_basis(len(all_modes), n + 1),
@@ -832,7 +832,7 @@ def generate_marginal_samples(
         particles = np.concatenate([postselect_photons, np.zeros(k, dtype=int)])
 
         for mode_idx in range(k):
-            threshold = rng.random()
+            threshold = config.rng.random()
 
             cumulative_probability = 0.0
 

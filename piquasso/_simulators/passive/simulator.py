@@ -141,6 +141,12 @@ class PassiveSimulator(BuiltinSimulator):
         measurements.ImperfectParticleNumberMeasurement,
     )
 
+    _measurement_classes_allowed_with_shots_none = (
+        measurements.PostSelectPhotons,
+        measurements.ParticleNumberMeasurement,
+        measurements.ImperfectParticleNumberMeasurement,
+    )
+
 
 class SamplingSimulator(PassiveSimulator):
     """Deprecated alias for :class:`PassiveSimulator`."""

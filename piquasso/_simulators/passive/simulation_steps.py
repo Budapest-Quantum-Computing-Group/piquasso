@@ -284,6 +284,34 @@ def particle_number_measurement(
 
     marginal_sampling = set(modes) != set(range(state.d))
 
+    common_kwargs = dict(
+        input=initial_state,
+        interferometer=state.interferometer,
+        shots=shots,
+        config=config,
+        postselect_data=postselect_data,
+    )
+
+    if shots is None:
+        if marginal_sampling:
+            probabilities = state.get_marginal_fock_probabilities(modes=modes)
+
+            return [
+                Branch(
+                    state=state._copy_with_postselection(modes, outcome),
+                    outcome=outcome,
+                    frequency=probability,
+                )
+                for outcome, probability in probabilities.items()
+            ]
+
+        probabilities = state.fock_probabilities_map
+
+        return [
+            Branch(state=None, outcome=outcome, frequency=probability)
+            for outcome, probability in probabilities.items()
+        ]
+
     singular_values = np.linalg.svd(state.interferometer, compute_uv=False)
 
     is_ideal_or_uniform_lossy = np.all(np.isclose(singular_values, singular_values[0]))
@@ -300,14 +328,7 @@ def particle_number_measurement(
     ):
         original_modes = map_to_original_modes(modes, postselected_modes)
 
-        samples = generate_marginal_samples(
-            initial_state=initial_state,
-            interferometer=state.interferometer,
-            modes=original_modes,
-            shots=shots,
-            rng=rng,
-            postselect_data=postselect_data,
-        )
+        samples = generate_marginal_samples(**common_kwargs, modes=original_modes)
 
         binned_samples = get_counts(samples)
 
@@ -317,14 +338,6 @@ def particle_number_measurement(
             shots=shots,
             binned_samples=binned_samples,
         )
-
-    common_kwargs = dict(
-        input=initial_state,
-        interferometer=state.interferometer,
-        shots=shots,
-        config=config,
-        postselect_data=postselect_data,
-    )
 
     if not state.is_lossy and not state.is_nonuniformly_partially_distinguishable:
         samples = generate_samples(
@@ -395,10 +408,7 @@ def _create_branches_after_marginal_particle_number_measurement(
 
     for outcome, multiplicity in binned_samples.items():
         new_state = state.copy()
-        new_state._postselections = {
-            **new_state._postselections,
-            **{mode: x for mode, x in zip(modes, outcome)},
-        }
+        new_state._set_postselection(modes, outcome)
 
         branches.append(
             Branch(
