@@ -16,9 +16,14 @@
 
 from functools import partial
 from typing import Dict, Optional, List, Tuple, Union, TYPE_CHECKING
+from typing_extensions import Self
 import numpy as np
 
-from piquasso._math.fock import cutoff_fock_space_dim, get_fock_space_basis
+from piquasso._math.fock import (
+    cutoff_fock_space_dim,
+    get_fock_space_basis,
+    get_postselected_fock_basis,
+)
 from piquasso._math.linalg import is_unitary
 
 from piquasso._simulators.passive.probabilities import (
@@ -152,6 +157,15 @@ class PassiveState(State):
 
         self._config.cutoff -= sum(photon_counts)
         self._postselections = postselections
+
+    def _copy_with_postselection(
+        self, modes: Tuple[int, ...], photon_counts: Tuple[int, ...]
+    ) -> Self:
+        new_state = self.copy()
+
+        new_state._set_postselection(modes, photon_counts)
+
+        return new_state
 
     def _is_postselected(self) -> bool:
         return self._postselections != {}
@@ -479,6 +493,36 @@ class PassiveState(State):
     @property
     def fock_probabilities(self) -> np.ndarray:
         """The Fock basis probabilities of the state."""
+
+        if self.is_lossy or self.is_partially_distinguishable:
+            if len(self._occupation_numbers) != 1:
+                raise NotImplementedCalculation(
+                    "Fock probabilities calculation is not implemented for lossy or "
+                    "partially distinguishable states with multiple input occupation "
+                    "numbers. "
+                    "If you would like to use this feature, please create an issue at "
+                    "https://github.com/Budapest-Quantum-Computing-Group/piquasso/issues"  # noqa: E501
+                )
+
+            occupation_numbers = get_postselected_fock_basis(
+                d=self.d,
+                cutoff=self._config.cutoff,
+                postselected_modes=self._get_postselected_modes(),
+                postselected_photons=self._get_postselected_photons(),
+            )
+
+            particle_overlap = (
+                1.0 if self._particle_overlap is None else self._particle_overlap
+            )
+
+            return get_lossy_partially_distinguishable_detection_probabilities(
+                occupation_numbers=occupation_numbers,
+                transmission_matrix=self.interferometer,
+                input_occupation=self._occupation_numbers[0],
+                particle_overlap=particle_overlap,
+                connector=self._connector,
+            )
+
         np = self._connector.np
 
         state_vector = self.state_vector

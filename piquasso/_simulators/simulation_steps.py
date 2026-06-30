@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Tuple, List, Callable
+from fractions import Fraction
+from itertools import product
+from typing import Callable, Dict, List, Optional, Tuple, cast
 
 import numpy as np
-
-from fractions import Fraction
 
 from piquasso.api.state import State
 from piquasso.api.branch import Branch
@@ -29,7 +29,7 @@ def create_imperfect_particle_number_measurement(
     particle_number_measurement_simulation_step: Callable,
 ) -> Callable:
     def imperfect_particle_number_measurement(
-        state: State, instruction: Instruction, shots: int
+        state: State, instruction: Instruction, shots: Optional[int]
     ) -> List[Branch]:
         branches = particle_number_measurement_simulation_step(
             state, instruction, shots
@@ -40,32 +40,32 @@ def create_imperfect_particle_number_measurement(
             dtype=state._config.dtype,
         )
 
-        rng = state._config.rng
-
-        detected_counts: Dict[Tuple[int, ...], int] = {}
+        detected_frequencies: Dict[Tuple[int, ...], Fraction] = {}
         imperfect_branches: List[Branch] = []
 
         for branch in branches:
-            multiplicity = (branch.frequency * shots).numerator
-
-            detected_outcomes = _sample_detected_outcomes_for_branch(
-                actual_outcome=branch.outcome,
-                multiplicity=multiplicity,
+            branch_frequencies = _get_imperfect_branch_frequencies(
+                branch=branch,
+                shots=shots,
                 detector_efficiency_matrix=detector_efficiency_matrix,
-                rng=rng,
+                rng=state._config.rng,
             )
 
-            for detected_outcome, detected_multiplicity in detected_outcomes.items():
+            for detected_outcome, frequency in branch_frequencies.items():
+                if frequency == 0:
+                    continue
+
                 if branch.state is None:
-                    detected_counts[detected_outcome] = (
-                        detected_counts.get(detected_outcome, 0) + detected_multiplicity
+                    detected_frequencies[detected_outcome] = (
+                        detected_frequencies.get(detected_outcome, Fraction(0, 1))
+                        + frequency
                     )
                 else:
                     imperfect_branches.append(
                         Branch(
                             state=branch.state.copy(),
                             outcome=detected_outcome,
-                            frequency=Fraction(detected_multiplicity, shots),
+                            frequency=frequency,
                         )
                     )
 
@@ -73,9 +73,9 @@ def create_imperfect_particle_number_measurement(
             Branch(
                 state=None,
                 outcome=outcome,
-                frequency=Fraction(multiplicity, shots),
+                frequency=frequency,
             )
-            for outcome, multiplicity in detected_counts.items()
+            for outcome, frequency in detected_frequencies.items()
         )
 
         return imperfect_branches
@@ -83,19 +83,70 @@ def create_imperfect_particle_number_measurement(
     return imperfect_particle_number_measurement
 
 
-def _sample_detected_outcomes_for_branch(
-    actual_outcome: Tuple[int, ...],
-    multiplicity: int,
+def _get_imperfect_branch_frequencies(
+    branch: Branch,
+    shots: Optional[int],
     detector_efficiency_matrix: np.ndarray,
     rng: np.random.Generator,
-) -> Dict[Tuple[int, ...], int]:
-    number_of_detectable_counts, number_of_actual_counts = (
-        detector_efficiency_matrix.shape
+) -> Dict[Tuple[int, ...], Fraction]:
+    actual_outcome = cast(Tuple[int, ...], branch.outcome)
+
+    if shots is None:
+        return {
+            outcome: branch.frequency * probability
+            for outcome, probability in _get_detected_outcome_probabilities(
+                actual_outcome=actual_outcome,
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            ).items()
+        }
+
+    multiplicity = (branch.frequency * shots).numerator
+
+    return {
+        outcome: Fraction(count, shots)
+        for outcome, count in _sample_detected_outcomes(
+            actual_outcome=actual_outcome,
+            multiplicity=multiplicity,
+            detector_efficiency_matrix=detector_efficiency_matrix,
+            rng=rng,
+        ).items()
+    }
+
+
+def _get_detected_outcome_probabilities(
+    actual_outcome: Tuple[int, ...],
+    detector_efficiency_matrix: np.ndarray,
+) -> Dict[Tuple[int, ...], Fraction]:
+    probabilities_by_mode = _get_probabilities_by_mode(
+        actual_outcome=actual_outcome,
+        detector_efficiency_matrix=detector_efficiency_matrix,
     )
 
-    detected_counts = np.arange(number_of_detectable_counts)
+    number_of_detectable_counts = detector_efficiency_matrix.shape[0]
+    detected_outcome_probabilities: Dict[Tuple[int, ...], Fraction] = {}
 
-    detected_counts_by_mode = []
+    for detected_outcome in product(
+        range(number_of_detectable_counts),
+        repeat=len(actual_outcome),
+    ):
+        probability = Fraction(1, 1)
+
+        for mode, detected_count in enumerate(detected_outcome):
+            probability *= Fraction(
+                float(probabilities_by_mode[mode][detected_count])
+            ).limit_denominator()
+
+        if probability != 0:
+            detected_outcome_probabilities[detected_outcome] = probability
+
+    return detected_outcome_probabilities
+
+
+def _get_probabilities_by_mode(
+    actual_outcome: Tuple[int, ...],
+    detector_efficiency_matrix: np.ndarray,
+) -> List[np.ndarray]:
+    number_of_actual_counts = detector_efficiency_matrix.shape[1]
 
     for actual_count in actual_outcome:
         if actual_count >= number_of_actual_counts:
@@ -104,20 +155,40 @@ def _sample_detected_outcomes_for_branch(
                 f"{actual_count}. Increase the number of columns."
             )
 
-        probabilities = detector_efficiency_matrix[:, actual_count]
-        probabilities = probabilities / np.sum(probabilities)
+    return [
+        detector_efficiency_matrix[:, actual_count] for actual_count in actual_outcome
+    ]
 
-        detected_counts_by_mode.append(
-            rng.choice(
-                detected_counts,
-                size=multiplicity,
-                p=probabilities,
-            )
+
+def _sample_detected_outcomes(
+    actual_outcome: Tuple[int, ...],
+    multiplicity: int,
+    detector_efficiency_matrix: np.ndarray,
+    rng: np.random.Generator,
+) -> Dict[Tuple[int, ...], int]:
+    probabilities_by_mode = _get_probabilities_by_mode(
+        actual_outcome=actual_outcome,
+        detector_efficiency_matrix=detector_efficiency_matrix,
+    )
+
+    number_of_detectable_counts = detector_efficiency_matrix.shape[0]
+
+    detected_counts_by_mode = [
+        rng.choice(
+            number_of_detectable_counts,
+            size=multiplicity,
+            p=probabilities,
         )
+        for probabilities in probabilities_by_mode
+    ]
 
-    detected_outcomes = np.stack(detected_counts_by_mode, axis=1)
+    detected_outcomes = np.column_stack(detected_counts_by_mode)
+
     unique_outcomes, first_indices, counts = np.unique(
-        detected_outcomes, axis=0, return_index=True, return_counts=True
+        detected_outcomes,
+        axis=0,
+        return_index=True,
+        return_counts=True,
     )
 
     order = np.argsort(first_indices)
