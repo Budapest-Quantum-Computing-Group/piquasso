@@ -41,6 +41,7 @@ from piquasso._simulators.passive import (
     PassiveState,
     PassiveSimulator,
     SamplingSimulator,
+    PassiveState as SamplingState,
 )
 
 from piquasso._simulators.gaussian import GaussianState, GaussianSimulator
