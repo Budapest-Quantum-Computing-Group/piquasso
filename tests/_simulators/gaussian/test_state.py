@@ -374,10 +374,12 @@ def test_GaussianState_get_marginal_fock_probabilities():
     state.validate()
 
     modes = (0, 2)
-    expected_probabilities = state.reduced(modes).fock_probabilities
+    expected_probabilities = state.reduced(modes).fock_probabilities_map
     actual_probabilities = state.get_marginal_fock_probabilities(modes)
 
-    assert np.allclose(actual_probabilities, expected_probabilities)
+    for occupation, expected_probability in expected_probabilities.items():
+        actual_probability = actual_probabilities[occupation]
+        assert np.isclose(expected_probability, actual_probability)
 
 
 def test_vacuum_covariance_is_proportional_to_identity():

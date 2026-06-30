@@ -135,10 +135,12 @@ def test_FockState_get_marginal_fock_probabilities():
     state = simulator.execute(program).state
 
     modes = (1,)
-    expected_probabilities = np.array([0.5, 0.25, 0.25, 0.0])
     actual_probabilities = state.get_marginal_fock_probabilities(modes)
 
-    assert np.allclose(actual_probabilities, expected_probabilities)
+    assert np.isclose(actual_probabilities[(0,)], 0.5)
+    assert np.isclose(actual_probabilities[(1,)], 0.25)
+    assert np.isclose(actual_probabilities[(2,)], 0.25)
+    assert np.isclose(actual_probabilities[(3,)], 0.0)
 
 
 def test_FockState_quadratures_mean_variance():

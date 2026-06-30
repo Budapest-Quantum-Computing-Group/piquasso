@@ -87,7 +87,7 @@ class PureFockState(State):
     def fock_probabilities_map(self) -> dict:
         fock_space_basis = get_fock_space_basis(self.d, self._config.cutoff)
 
-        occupation_numbers = [tuple(x) for x in fock_space_basis.tolist()]
+        occupation_numbers = [tuple(x) for x in fock_space_basis]
 
         return dict(zip(occupation_numbers, self.fock_probabilities))
 

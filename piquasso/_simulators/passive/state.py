@@ -487,16 +487,11 @@ class PassiveState(State):
 
     @property
     def fock_probabilities_map(self) -> Dict[Tuple[int, ...], float]:
-        probability_map: Dict[Tuple[int, ...], float] = {}
+        fock_space_basis = get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
 
-        space = get_fock_space_basis(d=self.d, cutoff=self._config.cutoff)
+        occupation_numbers = [tuple(x) for x in fock_space_basis]
 
-        state_vector = self.state_vector
-
-        for index, basis in enumerate(space):
-            probability_map[tuple(basis)] = self._np.abs(state_vector[index]) ** 2
-
-        return probability_map
+        return dict(zip(occupation_numbers, self.fock_probabilities))
 
     def to_pure_fock_state(
         self,

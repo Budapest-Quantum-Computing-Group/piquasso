@@ -290,17 +290,20 @@ class BaseFockState(State, abc.ABC):
         )
         return np.abs(np.sum(geometric_mean)) ** 2
 
-    def get_marginal_fock_probabilities(self, modes: Tuple[int, ...]) -> np.ndarray:
+    def get_marginal_fock_probabilities(
+        self, modes: Tuple[int, ...]
+    ) -> Dict[Tuple[int, ...], float]:
         """Return the particle number probabilities on a given subsystem.
 
         Args:
             modes (tuple[int, ...]): The indices of the modes to keep.
 
         Returns:
-            numpy.ndarray: The marginal particle number detection probabilities.
+            Dict[Tuple[int, ...], float]: The marginal particle number detection
+                probabilities, mapping occupation number tuples to their probabilities.
         """
 
-        return self.reduced(modes).fock_probabilities
+        return self.reduced(modes).fock_probabilities_map
 
     @abc.abstractmethod
     def get_purity(self):
