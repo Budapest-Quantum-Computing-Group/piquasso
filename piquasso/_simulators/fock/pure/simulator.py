@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso._simulators.simulation_steps import (
+    create_imperfect_particle_number_measurement,
+)
+
 from .state import PureFockState
 
 from .simulation_steps import (
@@ -109,7 +113,11 @@ class PureFockSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.gates.MomentumDisplacement`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.ImperfectParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.PostSelectPhotons`,
+        :class:`~piquasso.instructions.measurements.ImperfectPostSelectPhotons`,
+        :class:`~piquasso.instructions.measurements.HomodyneMeasurement`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Attenuator`.
@@ -142,6 +150,11 @@ class PureFockSimulator(BuiltinSimulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.ImperfectParticleNumberMeasurement: (
+            create_imperfect_particle_number_measurement(
+                particle_number_measurement_simulation_step=particle_number_measurement
+            )
+        ),
         measurements.PostSelectPhotons: post_select_photons,
         measurements.ImperfectPostSelectPhotons: imperfect_post_select_photons,
         measurements.HomodyneMeasurement: homodyne_measurement,

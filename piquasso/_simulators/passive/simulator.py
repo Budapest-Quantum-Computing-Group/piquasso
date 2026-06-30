@@ -37,6 +37,10 @@ from .simulation_steps import (
     imperfect_post_select_photons,
 )
 
+from ..simulation_steps import (
+    create_imperfect_particle_number_measurement,
+)
+
 
 class PassiveSimulator(BuiltinSimulator):
     r"""A simulator dedicated for Boson Sampling (or related) simulations.
@@ -86,7 +90,10 @@ class PassiveSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.gates.Interferometer`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.ImperfectParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.PostSelectPhotons`,
+        :class:`~piquasso.instructions.measurements.ImperfectPostSelectPhotons`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Loss`,
@@ -110,6 +117,11 @@ class PassiveSimulator(BuiltinSimulator):
         gates.Kerr: kerr,
         gates.CrossKerr: cross_kerr,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.ImperfectParticleNumberMeasurement: (
+            create_imperfect_particle_number_measurement(
+                particle_number_measurement_simulation_step=particle_number_measurement
+            )
+        ),
         measurements.PostSelectPhotons: post_select_photons,
         measurements.ImperfectPostSelectPhotons: imperfect_post_select_photons,
         channels.Loss: loss,
@@ -123,7 +135,11 @@ class PassiveSimulator(BuiltinSimulator):
 
     _extra_builtin_connectors = [JaxConnector]
 
-    _measurement_classes_allowed_mid_circuit = (measurements.PostSelectPhotons,)
+    _measurement_classes_allowed_mid_circuit = (
+        measurements.PostSelectPhotons,
+        measurements.ParticleNumberMeasurement,
+        measurements.ImperfectParticleNumberMeasurement,
+    )
 
 
 class SamplingSimulator(PassiveSimulator):

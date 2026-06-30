@@ -100,6 +100,7 @@ from .instructions.gates import (
 
 from .instructions.measurements import (
     ParticleNumberMeasurement,
+    ImperfectParticleNumberMeasurement,
     ThresholdMeasurement,
     HomodyneMeasurement,
     HeterodyneMeasurement,
@@ -188,6 +189,7 @@ __all__ = [
     "Graph",
     # Measurements
     "ParticleNumberMeasurement",
+    "ImperfectParticleNumberMeasurement",
     "ThresholdMeasurement",
     "HomodyneMeasurement",
     "HeterodyneMeasurement",

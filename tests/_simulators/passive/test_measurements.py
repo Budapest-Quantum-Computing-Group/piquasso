@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from fractions import Fraction
+
 import numpy as np
 import pytest
 
@@ -705,24 +707,26 @@ class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 
     @pytest.mark.monkey
-    def test_ParticleNumberMeasurement_mid_circuit_not_allowed(self):
-        """
-        Test that an error is raised for mid-circuit measurements that are not allowed.
-        """
-        d = 3
+    def test_ParticleNumberMeasurement_mid_circuit_allowed(self):
+        interferometer_matrix = unitary_group.rvs(2)
 
-        interferometer_matrix = unitary_group.rvs(d)
         with pq.Program() as program:
-            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
+            pq.Q() | pq.NumberState([1, 1, 1])
             pq.Q(2) | pq.ParticleNumberMeasurement()
             pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
-        simulator = pq.PassiveSimulator(d=5)
-        with pytest.raises(
-            pq.api.exceptions.InvalidSimulation,
-            match="not allowed as a mid-circuit measurement",
-        ):
-            simulator.execute(program, shots=1)
+        simulator = pq.PassiveSimulator(d=3)
+
+        result = simulator.execute(program, shots=1)
+
+        assert result.samples == [(1,)]
+
+        branches = result.branches
+
+        assert len(branches) == 1
+        assert branches[0].outcome == (1,)
+        assert branches[0].frequency == Fraction(1, 1)
+        assert branches[0].state is not None
 
     @pytest.mark.monkey
     def test_PostSelectPhotons_mid_circuit_allowed(self):
@@ -1335,3 +1339,222 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
         result = simulator.execute(program, shots=20)
 
         assert all(tuple(sample) == expected_sample for sample in result.samples)
+
+
+class TestImperfectParticleNumberMeasurement:
+    """Test programs that contain imperfect particle number measurements."""
+
+    def test_imperfect_measurement_with_uniform_loss_and_blind_detector(self):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        transmissivity = 0.5
+
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 1.0],
+                [0.0, 0.0],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=100)
+
+        assert result.samples == [(0, 0, 0)] * 100
+
+    def test_identity_imperfect_measurement_matches_particle_number_measurement_with_uniform_loss(  # noqa: E501
+        self,
+    ):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        transmissivity = 0.5
+
+        detector_efficiency_matrix = np.identity(2)
+
+        with pq.Program() as ideal_program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ParticleNumberMeasurement()
+
+        with pq.Program() as imperfect_program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        ideal_simulator = pq.PassiveSimulator(
+            d=3,
+            config=pq.Config(seed_sequence=42),
+        )
+        imperfect_simulator = pq.PassiveSimulator(
+            d=3,
+            config=pq.Config(seed_sequence=42),
+        )
+
+        ideal_result = ideal_simulator.execute(ideal_program, shots=100)
+        imperfect_result = imperfect_simulator.execute(imperfect_program, shots=100)
+
+        assert imperfect_result.samples == ideal_result.samples
+
+    def test_imperfect_measurement_with_uniform_loss_and_perfect_detector_has_expected_samples(  # noqa: E501
+        self,
+    ):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        transmissivity = 0.0
+
+        detector_efficiency_matrix = np.identity(2)
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=100)
+
+        assert result.samples == [(0, 0, 0)] * 100
+
+    def test_imperfect_measurement_with_unit_transmissivity_and_blind_detector(
+        self,
+    ):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        transmissivity = 1.0
+
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 1.0],
+                [0.0, 0.0],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=100)
+
+        assert result.samples == [(0, 0, 0)] * 100
+
+    def test_imperfect_measurement_with_unit_transmissivity_and_identity_detector(
+        self,
+    ):
+        input_state = np.array([1, 1, 1], dtype=int)
+
+        transmissivity = 1.0
+
+        detector_efficiency_matrix = np.identity(2)
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState(input_state)
+            pq.Q() | pq.UniformLoss(transmissivity=transmissivity)
+            pq.Q() | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
+        result = simulator.execute(program, shots=100)
+
+        assert result.samples == [(1, 1, 1)] * 100
+
+    def test_marginal_imperfect_particle_number_measurement(self):
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState([1, 1])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 4)
+
+            pq.Q(0) | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(seed_sequence=42))
+
+        result = simulator.execute(program, shots=100)
+
+        branches = result.branches
+
+        assert len(branches) == 2
+
+        assert {branch.outcome for branch in branches} == {(0,)}
+
+        assert all(branch.state is not None for branch in branches)
+
+        actual_postselected_counts = {
+            branch.state._postselections[0] for branch in branches
+        }
+
+        assert actual_postselected_counts == {0, 2}
+
+        assert sum(branch.frequency for branch in branches) == Fraction(1, 1)
+
+        assert result.samples == [(0,)] * 100
+
+    def test_marginal_imperfect_particle_number_measurement_less_trivial(
+        self,
+    ):
+        detector_efficiency_matrix = np.array(
+            [
+                [1.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState([2, 0])
+            pq.Q(0, 1) | pq.Beamsplitter(np.pi / 4)
+
+            pq.Q(0) | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(seed_sequence=42))
+
+        result = simulator.execute(program, shots=100)
+
+        branches = result.branches
+
+        assert len(branches) == 3
+
+        assert {branch.outcome for branch in branches} == {(0,), (1,)}
+
+        assert all(branch.state is not None for branch in branches)
+
+        actual_postselected_counts = {
+            branch.state._postselections[0] for branch in branches
+        }
+
+        assert actual_postselected_counts == {0, 1, 2}
+
+        detected_outcomes_by_actual_count = {
+            branch.state._postselections[0]: branch.outcome for branch in branches
+        }
+
+        assert detected_outcomes_by_actual_count == {0: (0,), 1: (0,), 2: (1,)}
+
+        assert sum(branch.frequency for branch in branches) == Fraction(1, 1)
+
+        assert {tuple(int(value) for value in sample) for sample in result.samples} == {
+            (0,),
+            (1,),
+        }
