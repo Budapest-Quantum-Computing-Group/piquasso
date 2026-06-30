@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from piquasso._simulators.simulation_steps import (
+    create_imperfect_particle_number_measurement,
+)
+
 from ...simulator import BuiltinSimulator
 from piquasso.instructions import preparations, gates, measurements, channels
 
@@ -93,7 +97,8 @@ class FockSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.gates.MomentumDisplacement`.
 
     Supported measurements:
-        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`.
+        :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.ImperfectParticleNumberMeasurement`.
 
     Supported channels:
         :class:`~piquasso.instructions.channels.Attenuator`
@@ -122,6 +127,11 @@ class FockSimulator(BuiltinSimulator):
         gates.Squeezing2: linear,
         gates.GaussianTransform: linear,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.ImperfectParticleNumberMeasurement: (
+            create_imperfect_particle_number_measurement(
+                particle_number_measurement_simulation_step=particle_number_measurement
+            )
+        ),
         channels.Attenuator: attenuator,
     }
 

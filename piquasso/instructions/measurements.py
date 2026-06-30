@@ -62,6 +62,87 @@ class ParticleNumberMeasurement(Measurement):
         super().__init__()
 
 
+class ImperfectParticleNumberMeasurement(Measurement):
+    r"""Imperfect particle number measurement.
+
+    Similar to :class:`ParticleNumberMeasurement`, but with a detector efficiency matrix
+    :math:`P` which describes the probability of detecting a certain number of photons
+    given the actual number of photons in the mode. The detector efficiency matrix
+    :math:`P` is defined elementwise as
+
+    .. math::
+
+        P_{n m} = p(\text{detected photon count } = n| \text{actual photon count } = m)
+
+    Example usage::
+
+        P = np.array(
+            [
+                [1.0, 0.1, 0.2],
+                [0.0, 0.9, 0.2],
+                [0.0, 0.0, 0.6],
+            ],
+        )
+
+        with pq.Program() as program:
+            pq.Q(all) | pq.StateVector([0, 1, 0]) * np.sqrt(0.2)
+            pq.Q(all) | pq.StateVector([1, 1, 0]) * np.sqrt(0.3)
+            pq.Q(all) | pq.StateVector([2, 1, 0]) * np.sqrt(0.5)
+
+            pq.Q(0) | pq.Phaseshifter(np.pi)
+
+            pq.Q(1, 2) | pq.Beamsplitter(np.pi / 8)
+            pq.Q(0, 1) | pq.Beamsplitter(1.1437)
+            pq.Q(1, 2) | pq.Beamsplitter(-np.pi / 8)
+
+            pq.Q(all) | pq.ImperfectParticleNumberMeasurement(
+                detector_efficiency_matrix=P,
+            )
+
+        simulator = pq.PureFockSimulator(d=3, config=pq.Config(cutoff=4))
+
+        state = simulator.execute(program).state
+
+    """
+
+    def __init__(self, detector_efficiency_matrix: "np.ndarray") -> None:
+        """
+        Args:
+            detector_efficiency_matrix (np.ndarray): Detector efficiency matrix.
+        """
+        super().__init__(
+            params=dict(
+                detector_efficiency_matrix=detector_efficiency_matrix,
+            )
+        )
+
+    def _validate(self, connector: BaseConnector) -> None:
+        detector_efficiency_matrix = self.params["detector_efficiency_matrix"]
+
+        if connector.is_abstract(detector_efficiency_matrix):
+            return
+
+        if detector_efficiency_matrix.ndim != 2:
+            raise ValueError(
+                "The detector efficiency matrix must be a two-dimensional array."
+            )
+
+        if np.any(detector_efficiency_matrix < 0.0):
+            raise ValueError(
+                "The detector efficiency matrix must contain non-negative "
+                "probabilities."
+            )
+
+        column_sums = np.sum(detector_efficiency_matrix, axis=0)
+
+        if not np.all(np.isclose(column_sums, 1.0)):
+            raise ValueError(
+                "Each column of the detector efficiency matrix must sum to 1. "
+                "Column m gives the probabilities of detected counts conditioned "
+                "on actual photon count m."
+            )
+
+
 class ThresholdMeasurement(Measurement):
     """Threshold measurement.
 
@@ -254,6 +335,16 @@ class PostSelectPhotons(Measurement):
 class ImperfectPostSelectPhotons(Measurement):
     r"""Post-selection on detected photon numbers.
 
+    Similar to :class:`PostSelectPhotons`, but with a detector efficiency matrix
+    :math:`P` which describes the probability of detecting a certain number of photons
+    given the actual number of photons in the mode. The detector efficiency matrix
+    :math:`P` is defined elementwise as
+
+    .. math::
+
+        P_{n m} = p(\text{detected photon count } = n| \text{actual photon count } = m)
+
+
     Example usage::
 
         P = np.array(
@@ -285,12 +376,6 @@ class ImperfectPostSelectPhotons(Measurement):
         state = simulator.execute(program).state
 
 
-    The detector efficiency matrix :math:`P` is defined elementwise as
-
-    .. math::
-
-        P_{n m} = p(\text{detected photon count } = n| \text{actual photon count } = m)
-
     Note:
         The resulting state is not normalized. To normalize it, use
         :meth:`~piquasso._simulators.fock.pure.state.PureFockState.normalize`. Moreover,
@@ -303,8 +388,7 @@ class ImperfectPostSelectPhotons(Measurement):
         photon_counts: Tuple[int, ...],
         detector_efficiency_matrix: "np.ndarray",
     ):
-        """_summary_
-
+        """
         Args:
             photon_counts (Tuple[int, ...]):
                 The desired photon numbers on the specified modes.

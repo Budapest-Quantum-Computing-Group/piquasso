@@ -34,6 +34,10 @@ from .simulation_steps import (
     deterministic_gaussian_channel,
 )
 
+from ..simulation_steps import (
+    create_imperfect_particle_number_measurement,
+)
+
 
 class GaussianSimulator(BuiltinSimulator):
     """Performs photonic simulations using Gaussian representation.
@@ -93,6 +97,7 @@ class GaussianSimulator(BuiltinSimulator):
         :class:`~piquasso.instructions.measurements.HeterodyneMeasurement`,
         :class:`~piquasso.instructions.measurements.GeneraldyneMeasurement`,
         :class:`~piquasso.instructions.measurements.ParticleNumberMeasurement`,
+        :class:`~piquasso.instructions.measurements.ImperfectParticleNumberMeasurement`,
         :class:`~piquasso.instructions.measurements.ThresholdMeasurement`.
 
     Supported channels:
@@ -125,6 +130,11 @@ class GaussianSimulator(BuiltinSimulator):
         measurements.HeterodyneMeasurement: generaldyne_measurement,
         measurements.GeneraldyneMeasurement: generaldyne_measurement,
         measurements.ParticleNumberMeasurement: particle_number_measurement,
+        measurements.ImperfectParticleNumberMeasurement: (
+            create_imperfect_particle_number_measurement(
+                particle_number_measurement_simulation_step=particle_number_measurement
+            )
+        ),
         measurements.ThresholdMeasurement: threshold_measurement,
         channels.DeterministicGaussianChannel: deterministic_gaussian_channel,
         channels.Attenuator: deterministic_gaussian_channel,
