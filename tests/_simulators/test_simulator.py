@@ -31,15 +31,15 @@ def test_GaussianSimulator_does_not_support_TensorflowConnector(tf):
     assert f"The connector '{connector}' is not supported." in error.value.args[0]
 
 
-def test_SamplingSimulator_supports_NumpyConnector():
-    pq.SamplingSimulator(d=1, connector=pq.NumpyConnector())
+def test_PassiveSimulator_supports_NumpyConnector():
+    pq.PassiveSimulator(d=1, connector=pq.NumpyConnector())
 
 
-def test_SamplingSimulator_does_not_support_TensorflowConnector(tf):
+def test_PassiveSimulator_does_not_support_TensorflowConnector(tf):
     connector = pq.TensorflowConnector()
 
     with pytest.raises(pq.api.exceptions.InvalidSimulation) as error:
-        pq.SamplingSimulator(d=1, connector=connector)
+        pq.PassiveSimulator(d=1, connector=connector)
 
     assert f"The connector '{connector}' is not supported." in error.value.args[0]
 

@@ -33,7 +33,7 @@ def test_state_vector(generate_unitary_matrix):
         ]
     )
 
-    simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=9))
+    simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(cutoff=9))
 
     result = simulator.execute(program)
 
@@ -57,7 +57,7 @@ def test_validate_not_normalized():
         ]
     )
 
-    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=3))
+    simulator = pq.PassiveSimulator(config=pq.Config(cutoff=3))
 
     result = simulator.execute(program)
 
@@ -80,7 +80,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -104,7 +104,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(input_state), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(input_state), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -131,7 +131,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(input_state), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(input_state), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -169,7 +169,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=4),
         )
@@ -249,7 +249,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(input_state), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(input_state), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -276,7 +276,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -313,7 +313,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -360,7 +360,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=2,
             config=pq.Config(cutoff=3),
         )
@@ -413,7 +413,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -460,7 +460,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -497,7 +497,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -533,7 +533,7 @@ class TestGetParticleDetectionProbability:
             )
             pq.Q(0, 1) | pq.Beamsplitter5050()
 
-        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=3))
         state = simulator.execute(program).state
 
         expected_probabilities = {
@@ -578,7 +578,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -632,7 +632,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -684,7 +684,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -727,7 +727,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -788,7 +788,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -864,7 +864,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=3),
         )
@@ -975,7 +975,7 @@ class TestGetParticleDetectionProbability:
             ]
         )
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=len(input_state),
             config=pq.Config(cutoff=4),
         )
@@ -1075,7 +1075,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1103,7 +1103,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1136,7 +1136,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1181,7 +1181,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=4, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1241,7 +1241,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=4, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1274,7 +1274,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=9))
+        simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(cutoff=9))
 
         result = simulator.execute(program)
 
@@ -1299,7 +1299,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=2))
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=2))
 
         result = simulator.execute(program)
 
@@ -1330,7 +1330,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=4))
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(cutoff=4))
 
         result = simulator.execute(program)
 
@@ -1364,7 +1364,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1395,7 +1395,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=2, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=2, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1421,7 +1421,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=len(unitary), config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=len(unitary), config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 
@@ -1449,7 +1449,7 @@ class TestMarginalProbabilities:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=3, config=pq.Config(cutoff=3))
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(cutoff=3))
 
         result = simulator.execute(program)
 

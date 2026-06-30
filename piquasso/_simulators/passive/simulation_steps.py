@@ -19,7 +19,7 @@ import numpy as np
 
 from fractions import Fraction
 
-from piquasso._simulators.sampling.state import SamplingState
+from piquasso._simulators.passive.state import PassiveState
 
 from piquasso.instructions import gates
 
@@ -43,14 +43,14 @@ from .sampling import (
 from piquasso._utils import get_counts
 
 
-def vacuum(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
+def vacuum(state: PassiveState, instruction: Instruction, shots: int) -> List[Branch]:
     state._occupation_numbers.append(np.zeros(state.d, dtype=int))
     state._coefficients.append(1.0)
 
     return [Branch(state=state)]
 
 
-def create(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
+def create(state: PassiveState, instruction: Instruction, shots: int) -> List[Branch]:
     modes = instruction.modes
 
     for i in range(len(state._occupation_numbers)):
@@ -63,7 +63,7 @@ def create(state: SamplingState, instruction: Instruction, shots: int) -> List[B
 
 
 def _validate_or_infer_cutoff(
-    state: SamplingState,
+    state: PassiveState,
     occupation_numbers: np.ndarray,
     instruction: Instruction,
 ) -> None:
@@ -90,7 +90,7 @@ def _validate_or_infer_cutoff(
 
 
 def state_vector(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     coefficient = instruction._get_all_params(state._connector)["coefficient"]
 
@@ -127,7 +127,7 @@ def state_vector(
 
 
 def distinguishable_number_state(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     if state._occupation_numbers:
         raise NotImplementedCalculation(
@@ -151,7 +151,7 @@ def distinguishable_number_state(
 
 
 def passive_linear(
-    state: SamplingState, instruction: gates._PassiveLinearGate, shots: int
+    state: PassiveState, instruction: gates._PassiveLinearGate, shots: int
 ) -> List[Branch]:
     r"""Applies an interferometer to the circuit.
 
@@ -172,7 +172,7 @@ def passive_linear(
 
 
 def _apply_matrix_on_modes(
-    state: SamplingState, matrix: np.ndarray, modes: Tuple[int, ...]
+    state: PassiveState, matrix: np.ndarray, modes: Tuple[int, ...]
 ) -> None:
     connector = state._connector
     np = connector.np
@@ -189,7 +189,7 @@ def _apply_matrix_on_modes(
     state.interferometer = embedded @ state.interferometer
 
 
-def loss(state: SamplingState, instruction: Instruction, shots: int) -> List[Branch]:
+def loss(state: PassiveState, instruction: Instruction, shots: int) -> List[Branch]:
     state.is_lossy = True
 
     _apply_matrix_on_modes(
@@ -204,7 +204,7 @@ def loss(state: SamplingState, instruction: Instruction, shots: int) -> List[Bra
 
 
 def uniform_loss(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     state.is_lossy = True
 
@@ -223,7 +223,7 @@ def uniform_loss(
 
 
 def lossy_interferometer(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     state.is_lossy = True
 
@@ -237,7 +237,7 @@ def lossy_interferometer(
 
 
 def particle_number_measurement(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     """
     Simulates a boson sampling using generalized Clifford & Clifford algorithm
@@ -386,7 +386,7 @@ def particle_number_measurement(
 
 
 def _create_branches_after_marginal_particle_number_measurement(
-    state: SamplingState, instruction: Instruction, shots: int, binned_samples: dict
+    state: PassiveState, instruction: Instruction, shots: int, binned_samples: dict
 ) -> List[Branch]:
     modes = instruction.modes
 
@@ -411,7 +411,7 @@ def _create_branches_after_marginal_particle_number_measurement(
 
 
 def post_select_photons(
-    state: SamplingState, instruction: Instruction, shots: int
+    state: PassiveState, instruction: Instruction, shots: int
 ) -> List[Branch]:
     modes = instruction.modes
 
@@ -425,7 +425,7 @@ def post_select_photons(
 imperfect_post_select_photons = pure_fock_imperfect_post_select_photons
 
 
-def kerr(state: SamplingState, instruction: gates.Kerr, shots: int) -> List[Branch]:
+def kerr(state: PassiveState, instruction: gates.Kerr, shots: int) -> List[Branch]:
     state._materialize_state_vector()
 
     np = state._connector.np
@@ -443,7 +443,7 @@ def kerr(state: SamplingState, instruction: gates.Kerr, shots: int) -> List[Bran
 
 
 def cross_kerr(
-    state: SamplingState, instruction: gates.CrossKerr, shots: int
+    state: PassiveState, instruction: gates.CrossKerr, shots: int
 ) -> List[Branch]:
     state._materialize_state_vector()
 

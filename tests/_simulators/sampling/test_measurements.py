@@ -47,7 +47,7 @@ def test_sampling_raises_InvalidParameter_for_negative_shot_value(
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
 
     with pytest.raises(InvalidParameter):
         simulator.execute(program, invalid_shots)
@@ -61,7 +61,7 @@ def test_sampling_samples_number(interferometer_matrix):
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     result = simulator.execute(program, shots)
 
     assert len(result.samples) == shots, (
@@ -77,7 +77,7 @@ def test_sampling_mode_permutation(interferometer_matrix):
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     result = simulator.execute(program, shots)
 
     sample = result.samples[0]
@@ -96,7 +96,7 @@ def test_sampling_multiple_samples_for_permutation_interferometer(
         pq.Q() | pq.Interferometer(interferometer_matrix)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     result = simulator.execute(program, shots)
 
     samples = result.samples
@@ -124,7 +124,7 @@ def test_counts(input_state):
         pq.Q() | pq.NumberState(input_state)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=2)
+    simulator = pq.PassiveSimulator(d=2)
     res = simulator.execute(program, shots=shots)
     counts = res.get_counts()
     assert len(counts) == len(expected)
@@ -169,7 +169,7 @@ def test_mach_zehnder():
         pq.Q(0, 1) | pq.MachZehnder(int_=int_, ext=ext)
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     simulator.execute(program, shots=1)
 
 
@@ -179,7 +179,7 @@ def test_fourier():
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     simulator.execute(program, shots=1)
 
 
@@ -191,7 +191,7 @@ def test_multiple_NumberState_with_ParticleNumberMeasurement_raises_error():
         pq.Q(0) | pq.Fourier()
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
 
     with pytest.raises(pq.api.exceptions.NotImplementedCalculation) as error:
         simulator.execute(program, shots=1)
@@ -213,7 +213,7 @@ def test_uniform_loss():
         for i in range(d):
             pq.Q(i) | pq.Loss(transmissivity=0.9)
 
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
     state = simulator.execute(program, shots=1).state
 
     assert state.is_lossy
@@ -228,7 +228,7 @@ def test_general_loss():
 
         pq.Q() | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5)
+    simulator = pq.PassiveSimulator(d=5)
     simulator.execute(program, shots=1)
 
 
@@ -282,7 +282,7 @@ def test_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.PassiveSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -365,7 +365,7 @@ def test_LossyInterferometer_boson_sampling_seeded():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.PassiveSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -448,7 +448,7 @@ def test_LossyInterferometer_boson_sampling_uniform_losses():
 
         pq.Q(all) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
+    simulator = pq.PassiveSimulator(d=5, config=pq.Config(seed_sequence=seed_sequence))
     samples = simulator.execute(program, shots=20).samples
 
     expected_samples = [
@@ -492,14 +492,14 @@ def test_post_select_random_unitary():
 
         pq.Q(*postselect_modes) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
-    simulator = pq.SamplingSimulator(d=d, config=pq.Config(cutoff=4))
+    simulator = pq.PassiveSimulator(d=d, config=pq.Config(cutoff=4))
 
     state = simulator.execute(program).state
 
     state.normalize()
     state.validate()
 
-    assert isinstance(state, pq.SamplingState)
+    assert isinstance(state, pq.PassiveState)
     assert state.d == d - len(postselect_modes)
 
 
@@ -513,7 +513,7 @@ def test_PostSelectPhotons_state_vector():
         pq.Q() | program_without_postselection
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
 
-    simulator = pq.SamplingSimulator(d=3)
+    simulator = pq.PassiveSimulator(d=3)
     state = simulator.execute(program_without_postselection).state
     postselected_state = simulator.execute(program_with_postselection).state
 
@@ -537,7 +537,7 @@ def test_PostSelectPhotons_state_vector_random():
         pq.Q() | program_without_postselection
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.PassiveSimulator()
     state = simulator.execute(program_without_postselection).state
     postselected_state = simulator.execute(program_with_postselection).state
 
@@ -558,7 +558,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons():
         pq.Q() | program_without_postselection
         pq.Q(1, 3) | pq.PostSelectPhotons(photon_counts)
 
-    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=6))
+    simulator = pq.PassiveSimulator(config=pq.Config(cutoff=6))
     postselected_state = simulator.execute(program_with_postselection).state
     state = simulator.execute(program_without_postselection).state
 
@@ -580,7 +580,7 @@ def test_PostSelectPhotons_infers_cutoff_for_state_vector():
         pq.Q() | pq.NumberState([0, 1, 0, 1, 1, 1])
         pq.Q(4, 5) | pq.PostSelectPhotons(photon_counts=[1, 1])
 
-    state = pq.SamplingSimulator(d=6).execute(program, shots=100).state
+    state = pq.PassiveSimulator(d=6).execute(program, shots=100).state
 
     assert state._config.cutoff == 3
     assert len(state.state_vector) > 0
@@ -599,7 +599,7 @@ def test_PostSelectPhotons_state_vector_with_more_photons_random():
         pq.Q() | program_without_postselection
         pq.Q(1, 3) | pq.PostSelectPhotons(photon_counts)
 
-    simulator = pq.SamplingSimulator(config=pq.Config(cutoff=6))
+    simulator = pq.PassiveSimulator(config=pq.Config(cutoff=6))
     postselected_state = simulator.execute(program_with_postselection).state
     state = simulator.execute(program_without_postselection).state
 
@@ -623,7 +623,7 @@ def test_PostSelectPhotons_get_particle_detection_probability():
         pq.Q(1, 2) | pq.Beamsplitter5050()
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.PassiveSimulator()
     state = simulator.execute(program).state
 
     probability = state.get_particle_detection_probability((1,))
@@ -641,7 +641,7 @@ def test_multiple_overlapping_PostSelectPhotons_raise_ValueError():
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 0])
         pq.Q(1, 2) | pq.PostSelectPhotons(photon_counts=[0, 1])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.PassiveSimulator()
 
     with pytest.raises(
         ValueError,
@@ -669,7 +669,7 @@ def test_multiple_non_overlapping_PostSelectPhotons_no_error():
         pq.Q(all) | pq.Interferometer(interferometer_matrix)
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 2])
 
-    simulator = pq.SamplingSimulator()
+    simulator = pq.PassiveSimulator()
 
     state_1 = simulator.execute(program_1).state
     state_2 = simulator.execute(program_2).state
@@ -685,7 +685,7 @@ def test_PostSelectPhotons_no_infinite_loop_via_max_sample_generation_trials():
         pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[3, 0])
         pq.Q(2, 3) | pq.ParticleNumberMeasurement()
 
-    simulator = pq.SamplingSimulator(
+    simulator = pq.PassiveSimulator(
         config=pq.Config(max_sample_generation_trials=10),
     )
 
@@ -717,7 +717,7 @@ class TestMidCircuitMeasurements:
             pq.Q(2) | pq.ParticleNumberMeasurement()
             pq.Q(all) | pq.Interferometer(interferometer_matrix)
 
-        simulator = pq.SamplingSimulator(d=5)
+        simulator = pq.PassiveSimulator(d=5)
         with pytest.raises(
             pq.api.exceptions.InvalidSimulation,
             match="not allowed as a mid-circuit measurement",
@@ -737,7 +737,7 @@ class TestMidCircuitMeasurements:
             pq.Q(0, 1) | pq.PostSelectPhotons(photon_counts=[1, 1])
             pq.Q(all) | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(d=5)
+        simulator = pq.PassiveSimulator(d=5)
         samples = simulator.execute(program, shots=20).samples
 
         for sample in samples:
@@ -760,7 +760,7 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -785,7 +785,7 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -812,7 +812,7 @@ class TestMidCircuitMeasurements:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -827,7 +827,7 @@ class TestMidCircuitMeasurements:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q(0, 1) | pq.Beamsplitter5050()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         with pytest.raises(
             ValueError,
             match=re.escape(
@@ -850,7 +850,7 @@ class TestMidCircuitMeasurements:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q(1, 2) | pq.Beamsplitter5050()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         state_1 = simulator.execute(program_1).state
         state_2 = simulator.execute(program_2).state
 
@@ -879,7 +879,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
 
         for sample in result.samples:
@@ -903,7 +903,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
 
         for sample in result.samples:
@@ -921,7 +921,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
 
         for sample in result.samples:
@@ -949,7 +949,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=10)
 
         for sample in result.samples:
@@ -979,7 +979,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
 
         shots = 100
         result = simulator.execute(program, shots=shots)
@@ -1017,7 +1017,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
 
         shots = 10
         result = simulator.execute(program, shots=shots)
@@ -1063,7 +1063,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=shots)
 
         for sample in result.samples:
@@ -1098,7 +1098,7 @@ class TestMarginalBosonSampling:
             ]
         )
 
-        simulator = pq.SamplingSimulator(d=d, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=d, config=pq.Config(seed_sequence=42))
 
         with pytest.raises(
             ValueError,
@@ -1119,7 +1119,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1132,7 +1132,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1145,8 +1145,8 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0, 1) | pq.Beamsplitter5050()
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator1 = pq.SamplingSimulator(config=pq.Config(seed_sequence=42))
-        simulator2 = pq.SamplingSimulator(config=pq.Config(seed_sequence=42))
+        simulator1 = pq.PassiveSimulator(config=pq.Config(seed_sequence=42))
+        simulator2 = pq.PassiveSimulator(config=pq.Config(seed_sequence=42))
         result_1 = simulator1.execute(program, shots=10)
         result_2 = simulator2.execute(program, shots=10)
 
@@ -1159,7 +1159,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1174,7 +1174,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1187,7 +1187,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q() | pq.UniformLoss(transmissivity=0.5)
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1210,7 +1210,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(1) | pq.Loss(transmissivity=0.3)
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1243,7 +1243,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q() | pq.UniformLoss(transmissivity=0.5)
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator()
+        simulator = pq.PassiveSimulator()
         result = simulator.execute(program, shots=10)
         samples = result.samples
 
@@ -1279,7 +1279,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q() | pq.UniformLoss(transmissivity=0.0)
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(d=3, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=20)
 
         assert all(tuple(sample) == (0, 0, 0) for sample in result.samples)
@@ -1299,7 +1299,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(0) | pq.PostSelectPhotons(photon_counts=[1])
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(d=3, config=pq.Config(seed_sequence=42))
+        simulator = pq.PassiveSimulator(d=3, config=pq.Config(seed_sequence=42))
         result = simulator.execute(program, shots=20)
 
         assert all(tuple(sample) == expected_sample for sample in result.samples)
@@ -1328,7 +1328,7 @@ class TestDistinguishableNumberStateWithParticleNumberMeasurement:
             pq.Q(3) | pq.Loss(transmissivity=0.0)
             pq.Q() | pq.ParticleNumberMeasurement()
 
-        simulator = pq.SamplingSimulator(
+        simulator = pq.PassiveSimulator(
             d=4,
             config=pq.Config(seed_sequence=42),
         )

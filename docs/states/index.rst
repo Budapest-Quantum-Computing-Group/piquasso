@@ -13,7 +13,7 @@ program, and inspect the returned :class:`~piquasso.api.result.Result` (e.g.,
 
    gaussian
    fock
-   sampling
+   passive
 
 .. grid:: 1 1 2 3
    :gutter: 2
@@ -32,8 +32,8 @@ program, and inspect the returned :class:`~piquasso.api.result.Result` (e.g.,
       Returned by Fock-space simulations. They represent mixed or pure photonic
       states in a truncated Fock basis.
 
-   .. grid-item-card:: SamplingState
-      :link: sampling
+   .. grid-item-card:: PassiveState
+      :link: passive
       :link-type: doc
 
       Used by Boson Sampling simulations to represent the state before terminal
@@ -62,9 +62,9 @@ The state type follows from the simulator used to execute the program.
       Returns a :class:`~piquasso._simulators.fock.general.state.FockState`
       represented by a density matrix in the Fock basis.
 
-   .. grid-item-card:: SamplingSimulator
+   .. grid-item-card:: PassiveSimulator
 
-      Uses a :class:`~piquasso._simulators.sampling.state.SamplingState` for
+      Uses a :class:`~piquasso._simulators.passive.state.PassiveState` for
       Boson Sampling-style circuits and produces particle-number samples.
 
 Basic usage
@@ -118,8 +118,8 @@ in a truncated Fock basis, controlled by ``Config(cutoff=...)``.
    print(type(state))
    print(state.fock_probabilities)
 
-Sampling example
-----------------
+Boson Sampling example
+----------------------
 
 For Boson Sampling-style simulations, the main output is usually the collection
 of measurement samples.
@@ -141,7 +141,7 @@ of measurement samples.
       pq.Q() | pq.Interferometer(interferometer)
       pq.Q(all) | pq.ParticleNumberMeasurement()
 
-   simulator = pq.SamplingSimulator(d=2)
+   simulator = pq.PassiveSimulator(d=2)
    result = simulator.execute(program, shots=10)
 
    print(result.samples)

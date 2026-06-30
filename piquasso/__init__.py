@@ -37,7 +37,12 @@ from piquasso.api.utils import as_code
 
 from piquasso import dual_rail_encoding
 
-from piquasso._simulators.sampling import SamplingState, SamplingSimulator
+from piquasso._simulators.passive import (
+    PassiveState,
+    PassiveSimulator,
+    SamplingSimulator,
+    PassiveState as SamplingState,
+)
 
 from piquasso._simulators.gaussian import GaussianState, GaussianSimulator
 from piquasso._simulators.fock import (
@@ -132,7 +137,8 @@ __all__ = [
     "as_code",
     # Simulators
     "GaussianSimulator",
-    "SamplingSimulator",
+    "PassiveSimulator",
+    "SamplingSimulator",  # deprecated, will be removed in future versions
     "FockSimulator",
     "PureFockSimulator",
     "simulate",
@@ -142,7 +148,8 @@ __all__ = [
     "JaxConnector",
     # States
     "GaussianState",
-    "SamplingState",
+    "PassiveState",
+    "SamplingState",  # deprecated, will be removed in future versions
     "FockState",
     "PureFockState",
     "BatchPureFockState",

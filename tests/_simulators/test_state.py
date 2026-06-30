@@ -26,7 +26,7 @@ import piquasso as pq
         pq.GaussianSimulator,
         pq.PureFockSimulator,
         pq.FockSimulator,
-        pq.SamplingSimulator,
+        pq.PassiveSimulator,
     ),
 )
 def test_get_particle_detection_probability_raises_PiquassoException_wrong_modes(

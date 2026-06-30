@@ -12,7 +12,7 @@ in your program, and whether you want finite-shot samples or the final state.
 
    gaussian
    fock
-   sampling
+   passive
 
 .. grid:: 1 1 2 3
    :gutter: 2
@@ -32,7 +32,7 @@ in your program, and whether you want finite-shot samples or the final state.
       operations such as Kerr-type gates.
 
    .. grid-item-card:: Boson Sampling simulator
-      :link: sampling
+      :link: passive
       :link-type: doc
 
       Sample from interferometer-based Boson Sampling circuits with terminal
@@ -65,8 +65,8 @@ Choosing a simulator
       Use this when you need the more general Fock representation, for example
       for mixed states or supported noisy operations.
 
-   .. grid-item-card:: SamplingSimulator
-      :link: sampling
+   .. grid-item-card:: PassiveSimulator
+      :link: passive
       :link-type: doc
 
       Use this for Boson Sampling-style circuits with Fock-state inputs,
@@ -143,7 +143,7 @@ linear optical circuit and terminal particle number measurements.
       pq.Q() | pq.Interferometer(interferometer)
       pq.Q(all) | pq.ParticleNumberMeasurement()
 
-   simulator = pq.SamplingSimulator(d=2)
+   simulator = pq.PassiveSimulator(d=2)
    result = simulator.execute(program, shots=10)
 
    print(result.samples)

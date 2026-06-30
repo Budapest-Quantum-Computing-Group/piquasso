@@ -45,8 +45,8 @@ def test_simulate_passive_linear_gates():
 
     result = pq.simulate(program, connector=pq.JaxConnector())
 
-    assert type(result.state) is pq.SamplingState, (
-        "The state should be a SamplingState, as it only uses passive linear optical "
+    assert type(result.state) is pq.PassiveState, (
+        "The state should be a PassiveState, as it only uses passive linear optical "
         "gates."
     )
 

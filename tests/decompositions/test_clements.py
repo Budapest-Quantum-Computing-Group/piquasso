@@ -46,7 +46,7 @@ def dummy_unitary():
     return func
 
 
-def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
+def test_clements_decomposition_using_piquasso_PassiveSimulator(dummy_unitary):
     d = 3
     U = dummy_unitary(d)
 
@@ -67,7 +67,7 @@ def test_clements_decomposition_using_piquasso_SamplingSimulator(dummy_unitary):
         for operation in decomposition.phaseshifters:
             pq.Q(operation.mode) | pq.Phaseshifter(operation.phi)
 
-    simulator = pq.SamplingSimulator(d=d)
+    simulator = pq.PassiveSimulator(d=d)
 
     state_with_interferometer = simulator.execute(program_with_interferometer).state
     state_with_decomposition = simulator.execute(program_with_decomposition).state

@@ -13,6 +13,6 @@ ignore:
   - piquasso/_simulators/connectors/_utils.py
   - piquasso/_simulators/connectors/numpy_/interferometer.py
   - piquasso/_simulators/connectors/numpy_/connections.py
-  - piquasso/_simulators/sampling/marginal.py
+  - piquasso/_simulators/passive/marginal.py
   - piquasso/fermionic/_utils.py
   - piquasso/fermionic/fock/_utils.py

@@ -865,7 +865,7 @@ def test_monkey_get_density_matrix_with_general_gaussian_transform(
     )
 
 
-def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
+def test_passive_simulator_equivalence_for_two_mode_beamsplitter():
     initial_occupation_numbers = (1, 1)
     d = len(initial_occupation_numbers)
 
@@ -880,17 +880,17 @@ def test_sampling_backend_equivalence_for_two_mode_beamsplitter():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
         fock_state.fock_probabilities,
-        sampling_state.fock_probabilities,
+        passive_state.fock_probabilities,
     )
 
 
-def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_fock_probabilities():
+def test_passive_simulator_equivalence_two_mode_Beamsplitter5050_fock_probabilities():
     initial_occupation_numbers = (1, 1)
     d = len(initial_occupation_numbers)
 
@@ -905,17 +905,17 @@ def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_fock_probabiliti
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
         fock_state.fock_probabilities,
-        sampling_state.fock_probabilities,
+        passive_state.fock_probabilities,
     )
 
 
-def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_state_vector():
+def test_passive_simulator_equivalence_two_mode_Beamsplitter5050_state_vector():
     initial_occupation_numbers = (1, 1)
     d = len(initial_occupation_numbers)
 
@@ -930,17 +930,17 @@ def test_sampling_backend_equivalence_two_mode_Beamsplitter5050_state_vector():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
         fock_state.state_vector,
-        sampling_state.state_vector,
+        passive_state.state_vector,
     )
 
 
-def test_sampling_backend_equivalence_complex_scenario_fock_probabilities():
+def test_passive_simulator_equivalence_complex_scenario_fock_probabilities():
     initial_occupation_numbers = (1, 1, 0, 1)
     d = len(initial_occupation_numbers)
 
@@ -959,14 +959,14 @@ def test_sampling_backend_equivalence_complex_scenario_fock_probabilities():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
-    assert np.allclose(fock_state.fock_probabilities, sampling_state.fock_probabilities)
+    assert np.allclose(fock_state.fock_probabilities, passive_state.fock_probabilities)
 
 
-def test_sampling_backend_equivalence_complex_scenario_state_vector():
+def test_passive_simulator_equivalence_complex_scenario_state_vector():
     initial_occupation_numbers = (1, 1, 0, 1)
     d = len(initial_occupation_numbers)
 
@@ -985,14 +985,14 @@ def test_sampling_backend_equivalence_complex_scenario_state_vector():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
-    assert np.allclose(fock_state.state_vector, sampling_state.state_vector)
+    assert np.allclose(fock_state.state_vector, passive_state.state_vector)
 
 
-def test_sampling_backend_equivalence_complex_scenario_fock_probabilities_2():
+def test_passive_simulator_equivalence_complex_scenario_fock_probabilities_2():
     initial_occupation_numbers = np.array(
         [
             [1, 1, 0, 1],
@@ -1022,14 +1022,14 @@ def test_sampling_backend_equivalence_complex_scenario_fock_probabilities_2():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
-    assert np.allclose(fock_state.fock_probabilities, sampling_state.fock_probabilities)
+    assert np.allclose(fock_state.fock_probabilities, passive_state.fock_probabilities)
 
 
-def test_sampling_backend_equivalence_complex_scenario_state_vector_2():
+def test_passive_simulator_equivalence_complex_scenario_state_vector_2():
     initial_occupation_numbers = np.array(
         [
             [1, 1, 0, 1],
@@ -1059,15 +1059,15 @@ def test_sampling_backend_equivalence_complex_scenario_state_vector_2():
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
-    assert np.allclose(fock_state.state_vector, sampling_state.state_vector)
+    assert np.allclose(fock_state.state_vector, passive_state.state_vector)
 
 
 @pytest.mark.monkey
-def test_sampling_backend_equivalence_with_random_interferometer_fock_probabilities(
+def test_passive_simulator_equivalence_with_random_interferometer_fock_probabilities(
     generate_unitary_matrix,
 ):
     initial_occupation_numbers = (1, 1, 0, 1)
@@ -1086,18 +1086,18 @@ def test_sampling_backend_equivalence_with_random_interferometer_fock_probabilit
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
         fock_state.fock_probabilities,
-        sampling_state.fock_probabilities,
+        passive_state.fock_probabilities,
     )
 
 
 @pytest.mark.monkey
-def test_sampling_backend_equivalence_with_random_interferometer_state_vector(
+def test_passive_simulator_equivalence_with_random_interferometer_state_vector(
     generate_unitary_matrix,
 ):
     initial_occupation_numbers = (1, 1, 0, 1)
@@ -1116,13 +1116,13 @@ def test_sampling_backend_equivalence_with_random_interferometer_state_vector(
     fock_state = fock_simulator.execute(program).state
     fock_state.validate()
 
-    sampling_simulator = pq.SamplingSimulator(d=d, config=config)
-    sampling_state = sampling_simulator.execute(program).state
-    sampling_state.validate()
+    passive_simulator = pq.PassiveSimulator(d=d, config=config)
+    passive_state = passive_simulator.execute(program).state
+    passive_state.validate()
 
     assert np.allclose(
         fock_state.state_vector,
-        sampling_state.state_vector,
+        passive_state.state_vector,
     )
 
 
@@ -1830,7 +1830,7 @@ def test_beamsplitter5050_equivalence(SimulatorClass):
 
 
 @pytest.mark.monkey
-@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.SamplingSimulator))
+@pytest.mark.parametrize("SimulatorClass", (pq.PureFockSimulator, pq.PassiveSimulator))
 def test_post_select_NS_gate(SimulatorClass):
     d = 3
 
@@ -1879,7 +1879,7 @@ def test_post_select_NS_gate(SimulatorClass):
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (pq.PureFockSimulator, pq.SamplingSimulator),
+    (pq.PureFockSimulator, pq.PassiveSimulator),
 )
 def test_post_select_random_unitary(SimulatorClass):
     d = 3
@@ -1911,7 +1911,7 @@ def test_post_select_random_unitary(SimulatorClass):
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (pq.PureFockSimulator, pq.SamplingSimulator),
+    (pq.PureFockSimulator, pq.PassiveSimulator),
 )
 def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
     SimulatorClass,
@@ -1988,7 +1988,7 @@ def test_post_select_conditional_sign_flip_gate_with_1_over_16_success_rate(
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (pq.PureFockSimulator, pq.SamplingSimulator),
+    (pq.PureFockSimulator, pq.PassiveSimulator),
 )
 def test_ImperfectPostSelectPhotons(SimulatorClass):
     d = 5
@@ -2035,7 +2035,7 @@ def test_ImperfectPostSelectPhotons(SimulatorClass):
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (pq.PureFockSimulator, pq.SamplingSimulator),
+    (pq.PureFockSimulator, pq.PassiveSimulator),
 )
 def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
     d = 3
@@ -2097,7 +2097,7 @@ def test_NS_gate_with_ImperfectPostSelectPhotons_trivial_case(SimulatorClass):
 
 @pytest.mark.parametrize(
     "SimulatorClass",
-    (pq.PureFockSimulator, pq.SamplingSimulator),
+    (pq.PureFockSimulator, pq.PassiveSimulator),
 )
 def test_NS_gate_with_ImperfectPostSelectPhotons(SimulatorClass):
     d = 3
@@ -2222,7 +2222,7 @@ def test_variance_photon_number_equivalence(SimulatorClass):
     assert np.allclose(state.variance_photon_number(), 0.030268090551006963)
 
 
-def test_PostSelectPhotons_with_SamplingSimulator_and_PureFockSimulator_equivalence():
+def test_PostSelectPhotons_with_PassiveSimulator_and_PureFockSimulator_equivalence():
     with pq.Program() as program:
         pq.Q() | pq.NumberState([1, 1, 1, 0])
 
@@ -2232,23 +2232,23 @@ def test_PostSelectPhotons_with_SamplingSimulator_and_PureFockSimulator_equivale
 
         pq.Q(2, 3) | pq.PostSelectPhotons(photon_counts=(1, 0))
 
-    # NOTE: cutoff for SamplingSimulator must be larger than that for PureFockSimulator,
-    # because SamplingSimulator decreases the cutoff internally to account for
+    # NOTE: cutoff for PassiveSimulator must be larger than that for PureFockSimulator,
+    # because PassiveSimulator decreases the cutoff internally to account for
     # the photons being postselected, while PureFockSimulator does not.
-    sampling_simulator = pq.SamplingSimulator(d=4, config=pq.Config(cutoff=5))
-    sampling_state = sampling_simulator.execute(program).state
+    passive_simulator = pq.PassiveSimulator(d=4, config=pq.Config(cutoff=5))
+    passive_state = passive_simulator.execute(program).state
 
     pure_fock_simulator = pq.PureFockSimulator(d=4, config=pq.Config(cutoff=4))
     pure_fock_state = pure_fock_simulator.execute(program).state
 
-    assert pure_fock_state == sampling_state.to_pure_fock_state()
+    assert pure_fock_state == passive_state.to_pure_fock_state()
 
 
 @pytest.mark.parametrize(
     "SimulatorClass",
     (
         pq.PureFockSimulator,
-        pq.SamplingSimulator,
+        pq.PassiveSimulator,
     ),
 )
 def test_PostSelectPhotons_fock_probabilities_map_equivalence(SimulatorClass):
