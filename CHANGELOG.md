@@ -1,15 +1,81 @@
 # Changelog
 
 
-## [Unreleased]
+## [8.0.0] - 2026-06-30
+
+### Added
+
+- Phase shifter expectation values of Gaussian states via
+  `GaussianState.get_phaseshifter_expectation_value`.
+- `simulate` function for automatically choosing a simulator (`GaussianSimulator`,
+  `PassiveSimulator`, `PureFockSimulator`, or `FockSimulator`) instead of requiring
+  manual simulator selection. Example:
+  ```python
+  import numpy as np
+  import piquasso as pq
+
+  with pq.Program() as program:
+      pq.Q() | pq.Vacuum()
+      pq.Q(0) | pq.Displacement(r=0.2, phi=np.pi / 4)
+
+  result = pq.simulate(program)
+
+  print(type(result.state))
+  # <class 'piquasso._simulators.gaussian.state.GaussianState'>
+  ```
+  In this example, `pq.simulate` automatically selects `GaussianSimulator`, since the
+  program only contains Gaussian instructions. This removes the need to manually create
+  and execute the simulator:
+  ```python
+  simulator = pq.GaussianSimulator(d=1)
+  result = simulator.execute(program)
+  ```
+- `UniformLoss` channel for easier specification of uniform losses.
+- New linear cross-entropy benchmarking (LXEB) module under `piquasso.lxeb` for
+  computing LXEB reference values in photonic quantum advantage schemes, along with
+  a LXEB notebook.
+- CUDA kernel for permanent computation through JAX FFI.
+- Expectation values of ladder operator strings via
+  `GaussianState.get_ladder_string_moment`.
+- `ParticleNumberMeasurement` support in `fermionic.PureFockSimulator` and
+  `fermionic.GaussianSimulator`.
+- `Kerr` and `CrossKerr` gate support in `PassiveSimulator`.
+- `PassiveState.get_marginal_fock_probabilities`.
+- Marginal `ParticleNumberMeasurement` support in `PassiveSimulator`.
+- Partial distinguishability support in `PassiveSimulator`.
+- Support for imperfect particle-number-resolving detectors via
+  `ImperfectParticleNumberMeasurement`.
+- `dask` support in `PassiveSimulator`.
+- `shots=None` support for `ParticleNumberMeasurement` in `PassiveSimulator`.
 
 ### Changed
 
-- `GaussianState.density_matrix` is now computed with the modified multidimensional
-  Hermite recurrence (Section III. of [arXiv:2209.06069](https://arxiv.org/abs/2209.06069))
-  instead of an independent (loop) hafnian per matrix element, sharing the work
-  across the whole truncated Fock space. This yields a ~100-400x speedup on the
-  NumPy connector for typical mode counts and cutoffs, with no change in results.
+- `GaussianState.density_matrix` is now computed using the modified multidimensional
+  Hermite recurrence (Section III of https://arxiv.org/abs/2209.06069), instead of
+  computing an independent loop hafnian for each matrix element.
+
+### Fixed
+
+- Loop hafnian occupation-number precision issue on Windows.
+- Lossy case in `PassiveState.get_particle_detection_probability`.
+
+### Breaking changes
+
+- Dropped support for Python 3.9, which reached end-of-life in 2025.
+- `PassiveSimulator` now infers the cutoff instead of using the default value from
+  `Config`.
+- Split the `StateVector` instruction into `NumberState` and `FockStateVector` for
+  clarity.
+- Renamed `SamplingSimulator` to `PassiveSimulator`.
+- `get_marginal_fock_probabilities` now returns a dictionary of probabilities indexed by
+  occupation numbers, instead of an array of probabilities.
+
+
+## [7.2.2] - 2026-06-10
+
+### Removed
+
+- Tutorial for "Boson Sampling as a hardware accelerator for Monte Carlo integration".
 
 
 ## [7.2.1] - 2026-03-21
