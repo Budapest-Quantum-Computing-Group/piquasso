@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Tuple, Type, Optional
-from typing_extensions import Self
+from typing import Any, Tuple, Type, Optional, TYPE_CHECKING
 
 import abc
 import copy
@@ -24,6 +23,9 @@ import numpy as np
 from piquasso.api.config import Config
 from piquasso.api.connector import BaseConnector
 from piquasso._math.indices import get_auxiliary_modes
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class State(abc.ABC):
@@ -52,7 +54,7 @@ class State(abc.ABC):
     def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
         return get_auxiliary_modes(self.d, modes)
 
-    def copy(self) -> Self:
+    def copy(self) -> "Self":
         """Returns an exact copy of this state.
 
         Returns:

@@ -75,6 +75,7 @@ dev = [
   "nbmake~=1.5.4",
   "black>=24.2,<25.10",
   "pytest-lazy-fixtures==1.4.0",
+  "typing-extensions>=4.0.0",
 ]
 docs = [
   "sphinx>=7.1.2,<8.3.0",
