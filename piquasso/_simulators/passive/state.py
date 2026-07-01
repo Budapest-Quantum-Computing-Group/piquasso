@@ -16,7 +16,6 @@
 
 from functools import partial
 from typing import Dict, Optional, List, Tuple, Union, TYPE_CHECKING
-from typing_extensions import Self
 import numpy as np
 
 from piquasso._math.fock import (
@@ -46,6 +45,7 @@ from .marginal import get_marginal_fock_probabilities
 
 if TYPE_CHECKING:
     import piquasso
+    from typing_extensions import Self
 
 
 class PassiveState(State):
@@ -160,7 +160,7 @@ class PassiveState(State):
 
     def _copy_with_postselection(
         self, modes: Tuple[int, ...], photon_counts: Tuple[int, ...]
-    ) -> Self:
+    ) -> "Self":
         new_state = self.copy()
 
         new_state._set_postselection(modes, photon_counts)
