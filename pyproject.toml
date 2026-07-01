@@ -67,7 +67,7 @@ jax-cuda12 = ["jax[cuda12]>=0.4.31", "jaxlib>=0.4.31"]
 matplotlib = ["matplotlib"]
 dask = ["dask"]
 dev = [
-  "pytest>=8.0.1,<8.5.0",
+  "pytest>=8.0.1,<9.2.0",
   "coverage>=7.6.1,<7.11.0",
   "mypy==1.8.0",
   "flake8>=7.1.1,<7.4.0",
