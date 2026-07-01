@@ -21,7 +21,6 @@ import piquasso as pq
 
 from pytest_lazy_fixtures import lf
 
-
 connectors = (lf("tensorflow_connector"), lf("tensorflow_connector_tf_function"))
 
 

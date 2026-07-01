@@ -16,5 +16,4 @@
 
 from .connector import JaxConnector
 
-
 __all__ = ["JaxConnector"]

@@ -18,7 +18,6 @@ import pytest
 import numpy as np
 import piquasso as pq
 
-
 pytestmark = pytest.mark.benchmark(
     group="gaussian-homodyne-measurement",
 )

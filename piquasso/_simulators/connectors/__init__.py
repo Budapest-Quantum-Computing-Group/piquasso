@@ -17,5 +17,4 @@ from .numpy_ import NumpyConnector
 from .tensorflow_ import TensorflowConnector
 from .jax_ import JaxConnector
 
-
 __all__ = ["NumpyConnector", "TensorflowConnector", "JaxConnector"]

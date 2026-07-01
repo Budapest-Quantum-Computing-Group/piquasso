@@ -20,7 +20,6 @@ import tensorflow as tf
 
 from scipy.stats import unitary_group
 
-
 pytestmark = pytest.mark.benchmark(
     group="tf-general",
 )

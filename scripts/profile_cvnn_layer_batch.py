@@ -19,7 +19,6 @@ import tensorflow as tf
 import time
 import numpy as np
 
-
 PROFILE = True
 number_of_inputs = 2
 inputs = 0.01 * np.random.rand(number_of_inputs)

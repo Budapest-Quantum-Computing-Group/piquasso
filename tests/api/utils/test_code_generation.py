@@ -44,9 +44,7 @@ def test_empty_code_generation():
     code = pq.as_code(program, simulator)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -58,7 +56,6 @@ simulator = pq.{pq.GaussianSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=1)
 """
-    )
 
 
 def test_complicated_code_generation():
@@ -75,9 +72,7 @@ def test_complicated_code_generation():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -95,7 +90,6 @@ simulator = pq.{pq.GaussianSimulator.__name__}(
 
 result = simulator.execute(program, shots=10)
 """
-    )
 
 
 def test_numpy_ndarray_parameter_code_generation():
@@ -114,9 +108,7 @@ def test_numpy_ndarray_parameter_code_generation():
     code = pq.as_code(program, simulator, shots=420)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -129,7 +121,6 @@ simulator = pq.{pq.GaussianSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=420)
 """
-    )
 
 
 def test_full_config_code_generation():
@@ -155,9 +146,7 @@ def test_full_config_code_generation():
     code = pq.as_code(program, simulator, shots=100)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -175,7 +164,6 @@ use_torontonian=True, cutoff=6, measurement_cutoff=4, dtype=np.float32)
 
 result = simulator.execute(program, shots=100)
 """
-    )
 
 
 def test_Kerr_scalar_parameter_on_multimode_code_generation():
@@ -197,9 +185,7 @@ def test_Kerr_scalar_parameter_on_multimode_code_generation():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -218,7 +204,6 @@ simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=10)
 """
-    )
 
 
 def test_Kerr_vector_parameter_code_generation():
@@ -240,9 +225,7 @@ def test_Kerr_vector_parameter_code_generation():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -261,7 +244,6 @@ simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=10)
 """
-    )
 
 
 def test_CubicPhase_vector_parameter_code_generation():
@@ -283,9 +265,7 @@ def test_CubicPhase_vector_parameter_code_generation():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -304,7 +284,6 @@ simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=10)
 """
-    )
 
 
 def test_CubicPhase_scalar_parameter_on_multimode_code_generation():
@@ -326,9 +305,7 @@ def test_CubicPhase_scalar_parameter_on_multimode_code_generation():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -347,7 +324,6 @@ simulator = pq.{pq.FockSimulator.__name__}(d=2)
 
 result = simulator.execute(program, shots=10)
 """
-    )
 
 
 def test_conditioned_instruction_code_generation_lambda_function():
@@ -388,9 +364,7 @@ def test_code_generation_with_undefined_d():
     code = pq.as_code(program, simulator, shots=10)
     code_is_executable(code)
 
-    assert (
-        code
-        == f"""\
+    assert code == f"""\
 import numpy as np
 import piquasso as pq
 
@@ -403,4 +377,3 @@ simulator = pq.{pq.FockSimulator.__name__}()
 
 result = simulator.execute(program, shots=10)
 """
-    )

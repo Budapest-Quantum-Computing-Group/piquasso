@@ -27,7 +27,6 @@ from perceval.algorithm import Sampler
 
 import piquasso as pq
 
-
 N = 100  # number of samplings
 
 

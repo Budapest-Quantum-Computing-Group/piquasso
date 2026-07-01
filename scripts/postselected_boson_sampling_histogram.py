@@ -23,7 +23,6 @@ import numpy as np
 
 from scipy.stats import unitary_group
 
-
 if __name__ == "__main__":
     unitary = unitary_group.rvs(3, random_state=42)
 

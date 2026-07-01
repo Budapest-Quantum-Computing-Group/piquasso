@@ -22,7 +22,6 @@ from scipy.stats import unitary_group
 
 import piquasso as pq
 
-
 SHOTS = 1000
 SEED = 123
 

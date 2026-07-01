@@ -30,7 +30,6 @@ from .loop_hafnian import (
     loop_hafnian_with_reduction_batch,
 )
 
-
 __all__ = [
     "hafnian_with_reduction",
     "hafnian_with_reduction_batch",

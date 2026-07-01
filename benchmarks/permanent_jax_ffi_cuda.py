@@ -80,7 +80,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tests.jax_extensions._oracle import permanent_with_reduction  # noqa: E402
 from piquasso.jax_extensions.permanent import perm as jax_perm  # noqa: E402
 
-
 HERE = Path(__file__).resolve().parent
 
 

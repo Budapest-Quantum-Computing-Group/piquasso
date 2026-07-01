@@ -15,7 +15,6 @@
 
 import pytest
 
-
 pytestmark = pytest.mark.benchmark(
     group="gaussian-preparation",
 )

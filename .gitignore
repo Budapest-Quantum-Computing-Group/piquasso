@@ -6,8 +6,8 @@ __pycache__
 .pytest_cache
 .mypy_cache
 piquasso.egg-info/
-venv/
-.venv/
+venv*/
+.venv*/
 coverage.xml
 .coverage
 prof
