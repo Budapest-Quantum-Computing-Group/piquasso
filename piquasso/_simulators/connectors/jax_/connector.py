@@ -17,9 +17,7 @@ import numpy as np
 
 from functools import partial
 from typing import Any
-from ..connector import BuiltinConnector, instancemethod
-
-from piquasso._math.jax.hermite import density_matrix_from_gaussian
+from ..connector import BuiltinConnector
 
 
 class JaxConnector(BuiltinConnector):
@@ -73,8 +71,6 @@ class JaxConnector(BuiltinConnector):
     # don't work together, when the condition depends on a tracer. Therefore,
     # conditionals must be disabled in this case
     allow_conditionals = False
-
-    density_matrix_from_gaussian = instancemethod(density_matrix_from_gaussian)
 
     def __init__(self):
         try:
@@ -175,6 +171,11 @@ class JaxConnector(BuiltinConnector):
         from piquasso._math.jax.hafnian import loop_hafnian_with_reduction
 
         return loop_hafnian_with_reduction(matrix, diagonal, reduce_on)
+
+    def density_matrix_from_gaussian(self, *args, **kwargs):
+        from piquasso._math.jax.hermite import density_matrix_from_gaussian
+
+        return density_matrix_from_gaussian(*args, **kwargs)
 
     def loop_hafnian_batch(self, matrix, diagonal, reduce_on, cutoff):
         raise NotImplementedError()
