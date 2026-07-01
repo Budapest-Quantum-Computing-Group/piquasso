@@ -1,5 +1,10 @@
 # Changelog
 
+## [8.0.1] - 2026-07-01
+
+### Fixed
+
+- Import errors related to JAX and `typing_extensions`.
 
 ## [8.0.0] - 2026-06-30
 
