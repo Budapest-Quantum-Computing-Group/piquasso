@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""An implementation for the Clements decomposition."""
 
 from typing import List, Tuple, TYPE_CHECKING
 
