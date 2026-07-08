@@ -14,6 +14,67 @@
 # limitations under the License.
 
 
+
+r"""
+The Clements decomposition expresses an arbitrary unitary matrix :math:`U \in U(N)` as a product of two-mode unitary transformations acting on adjacent modes, 
+together with a diagonal phase matrix. Each two-mode transformation corresponds to a tunable beam splitter (or Mach–Zehnder interferometer) described by
+
+
+.. math::
+    
+    T_{m,n}(\theta,\phi)=
+    \begin{bmatrix}
+    e^{i\phi}\cos\theta & -\sin\theta\\
+    e^{i\phi}\sin\theta & \cos\theta
+    \end{bmatrix},
+    
+
+embedded in the :math:`N`-dimensional identity matrix so that it acts only on modes :math:`m` and :math:`n=m+1`. 
+The parameters :math:`\theta` and :math:`\phi` determine the reflectivity and internal phase of the beam splitter, respectively.
+
+The decomposition proceeds by successively eliminating the off-diagonal elements of 
+:math:`U` using alternating right and left multiplications with these elementary matrices. Specifically,
+
+
+.. math::
+    
+    U^{(k+1)} = T_k U^{(k)}
+    \qquad \text{or} \qquad
+    U^{(k+1)} = U^{(k)} T_k,
+    
+
+where each transformation :math:`T_k` is chosen such that a selected matrix element becomes zero. 
+By alternating between left and right multiplications, the nonzero elements are systematically shifted toward the diagonal while preserving unitarity.
+
+After all off-diagonal elements have been eliminated, the remaining matrix is diagonal,
+
+.. math::
+    
+    D=\operatorname{diag}\left(e^{i\alpha_1},e^{i\alpha_2},\ldots,e^{i\alpha_N}\right),
+    
+
+containing only output phase shifts. Consequently, the original unitary matrix can be written as
+
+.. math::
+    
+    U=
+    \left(\prod_{k=1}^{M_L} T_k^{\dagger}\right)
+    D
+    \left(\prod_{k=1}^{M_R} T_k^{\dagger}\right),
+    
+
+where :math:`M_L` and :math:`M_R` denote the numbers of left- and right-applied transformations, respectively. 
+Since each :math:`T_k` acts only on adjacent modes, the decomposition maps directly onto a rectangular mesh of Mach-Zehnder interferometers.
+
+For an :math:`N`-mode interferometer, the Clements architecture requires :math:`\frac{N(N-1)}{2}`
+tunable two-mode couplers and :math:`N` external phase shifts, matching the minimum resource count of the Reck decomposition. 
+However, the rectangular arrangement reduces the maximum optical path length from :math:`2N-3` layers in the triangular Reck geometry to :math:`N` layers, 
+yielding a more balanced interferometer with improved tolerance to propagation loss and fabrication errors.
+
+
+"""
+
+
 from typing import List, Tuple, TYPE_CHECKING
 
 from dataclasses import dataclass
@@ -33,13 +94,12 @@ if TYPE_CHECKING:
 @dataclass
 class BS:
     r"""
-    Beamsplitter gate, implemented as described in
-    `arXiv:1603.08788 <https://arxiv.org/abs/1603.08788>`_.
+    Beamsplitter gate, implemented as described above.
 
     The single-particle unitary matrix corresponding to the beamsplitter is
 
     .. math::
-        BS(\theta, \phi) = \begin{bmatrix}
+        T_{m,n}(\theta,\phi)=BS(\theta, \phi) = \begin{bmatrix}
             e^{i \phi} \cos \theta & - \sin \theta \\
             e^{i \phi} \sin \theta & \cos \theta
         \end{bmatrix}.

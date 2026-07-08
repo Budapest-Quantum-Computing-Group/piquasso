@@ -39,10 +39,9 @@ from piquasso.api.exceptions import InvalidInstruction
 
 from piquasso._math.indices import get_operator_index, get_auxiliary_operator_index
 from piquasso._math.decompositions import (
-    williamson,
     decompose_adjacency_matrix_into_circuit,
 )
-
+from piquasso.decompositions import williamson
 
 def passive_linear(
     state: GaussianState, instruction: gates._PassiveLinearGate, shots: int
