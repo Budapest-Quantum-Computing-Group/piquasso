@@ -11,6 +11,7 @@ Learn about decompositions and specialized simulation workflows.
    :hidden:
 
    clements
+   williamson
 
 
 Available decompositions
@@ -23,6 +24,14 @@ Available decompositions
       :link: clements
       :link-type: doc
 
-      An implementation for the Clements decomposition.
+      Decomposes any linear optical transformation 
+      into a rectangular network of beam splitters and phase shifters.
+
+
+   .. grid-item-card:: Williamson
+      :link: williamson
+      :link-type: doc
+
+      Decomposes a positive definite matrix into a real symplectic and a diagonal matrix using Williamson decomposition.
 
 
