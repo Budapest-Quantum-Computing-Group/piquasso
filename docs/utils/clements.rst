@@ -1,7 +1,6 @@
 Clements
 ========
 
-An implementation for the Clements decomposition.
 
 .. automodule:: piquasso.decompositions.clements
    :members:
