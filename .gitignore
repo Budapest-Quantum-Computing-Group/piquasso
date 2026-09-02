@@ -40,3 +40,9 @@ build.ninja
 .skbuild-info.json
 *.o
 .claude/
+
+#Latex files 
+*.aux
+*.log
+*.fls
+*.fdb_latexmk

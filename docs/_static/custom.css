@@ -217,8 +217,8 @@ body[data-theme="dark"] .mission-statement {
     background: var(--color-background-hover);
 }
 
-.sidebar-tree .current-page > .reference,
-.toc-tree .current > .reference {
+.sidebar-tree .current-page>.reference,
+.toc-tree .current>.reference {
     color: var(--color-brand-content);
     font-weight: 650;
 }
@@ -433,4 +433,16 @@ body[data-theme="dark"] .sd-card {
         right: -0.15rem;
         margin-left: 0;
     }
+}
+
+.wide-diagram {
+    width: 100%;
+    text-align: center;
+}
+
+.wide-diagram img {
+    display: block;
+    width: 100%;
+    max-width: none !important;
+    height: auto;
 }
