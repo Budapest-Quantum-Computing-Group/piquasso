@@ -267,6 +267,33 @@ class HomodyneMeasurement(Measurement):
             ),
         )
 
+    def _validate(self, connector: BaseConnector) -> None:
+        np = connector.np
+        phi = self.params["phi"]
+
+        if connector.is_abstract(phi):
+            raise InvalidParameter(
+                "The parameter 'phi' must be a concrete value, not an abstract one."
+            )
+
+        phi = np.asarray(phi)
+
+        if phi.ndim == 0:
+            return
+
+        if phi.ndim != 1:
+            raise InvalidParameter(
+                "The parameter 'phi' must be either a scalar or "
+                "a one-dimensional array."
+            )
+
+        if len(phi) != len(self.modes):
+            raise InvalidParameter(
+                "When 'phi' is an array, it must contain exactly one "
+                "angle for each measured mode. "
+                f"Got len(phi)={len(phi)} and len(modes)={len(self.modes)}."
+            )
+
 
 class HeterodyneMeasurement(Measurement):
     r"""Heterodyne measurement.
