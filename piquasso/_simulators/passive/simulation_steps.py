@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, cast
 
 import numpy as np
 
@@ -143,7 +143,7 @@ def distinguishable_number_state(
     state._coefficients.append(1.0)
 
     particle_overlap = instruction._get_all_params(state._connector)["particle_overlap"]
-    if np.isscalar(particle_overlap) and np.isclose(particle_overlap, 1.0):
+    if np.isscalar(particle_overlap) and np.isclose(cast(float, particle_overlap), 1.0):
         particle_overlap = None
     state._particle_overlap = particle_overlap
 

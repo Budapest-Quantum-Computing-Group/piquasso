@@ -42,8 +42,10 @@ def gaussian_wigner_function(
 def gaussian_wigner_function_for_scalar(
     X: List[float], *, d: int, mean: np.ndarray, cov: np.ndarray
 ) -> float:
+    difference = np.asarray(X) - mean
+
     return (
         (1 / (np.pi**d))
         * np.sqrt((1 / np.linalg.det(cov)))
-        * np.exp(-(X - mean) @ np.linalg.inv(cov) @ (X - mean))
+        * np.exp(-difference @ np.linalg.inv(cov) @ difference)
     ).real

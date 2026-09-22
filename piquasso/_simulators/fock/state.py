@@ -183,7 +183,7 @@ class BaseFockState(State, abc.ABC):
 
         # QuTiP implementation starts from here
 
-        M = np.prod(rho.shape[0])
+        M = int(np.prod(rho.shape[0]))
         X, Y = np.meshgrid(positions, momentums)
         A = 0.5 * g * (X + 1.0j * Y)
 

@@ -51,7 +51,7 @@ class State(abc.ABC):
     def _np(self):
         return self._connector.np
 
-    def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> Tuple[int, ...]:
+    def _get_auxiliary_modes(self, modes: Tuple[int, ...]) -> np.ndarray:
         return get_auxiliary_modes(self.d, modes)
 
     def copy(self) -> "Self":
