@@ -35,8 +35,8 @@ def get_operator_index(modes: Tuple[int, ...]) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def get_auxiliary_operator_index(
-    modes: Tuple[int, ...], auxiliary_modes: Tuple[int, ...]
-) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+    modes: Tuple[int, ...], auxiliary_modes: np.ndarray
+) -> Tuple[Tuple[np.ndarray, ...], np.ndarray]:
     auxiliary_rows = tuple(np.array([modes] * len(auxiliary_modes)).transpose())
 
     return auxiliary_rows, auxiliary_modes

@@ -87,7 +87,7 @@ def _apply_passive_linear_to_auxiliary_modes(
     state: GaussianState,
     T: np.ndarray,
     modes: Tuple[int, ...],
-    auxiliary_modes: Tuple[int, ...],
+    auxiliary_modes: np.ndarray,
 ) -> None:
     connector = state._connector
     np = connector.np
@@ -179,7 +179,7 @@ def _apply_linear_to_auxiliary_modes(
     P: np.ndarray,
     A: np.ndarray,
     modes: Tuple[int, ...],
-    auxiliary_modes: Tuple[int, ...],
+    auxiliary_modes: np.ndarray,
 ) -> None:
     connector = state._connector
     np = connector.np

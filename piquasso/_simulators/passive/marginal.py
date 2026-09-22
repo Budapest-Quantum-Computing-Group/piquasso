@@ -421,7 +421,7 @@ def get_single_marginal_probability_from_binomial_moments(
 ) -> float:
     k = len(particles)
 
-    full_occupation = np.zeros(d, dtype=nb.int64)
+    full_occupation = np.zeros(d, dtype=np.int64)
 
     probability = 0.0
 

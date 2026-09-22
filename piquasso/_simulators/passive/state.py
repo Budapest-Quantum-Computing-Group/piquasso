@@ -44,7 +44,7 @@ from .utils import calculate_state_vector
 from .marginal import get_marginal_fock_probabilities
 
 if TYPE_CHECKING:
-    import piquasso
+    from piquasso._simulators.fock.pure.state import PureFockState
     from typing_extensions import Self
 
 
@@ -539,7 +539,7 @@ class PassiveState(State):
 
     def to_pure_fock_state(
         self,
-    ) -> "piquasso._simulators.fock.pure.state.PureFockState":
+    ) -> "PureFockState":
         """Converts this state to a pure Fock state.
 
         Returns:
