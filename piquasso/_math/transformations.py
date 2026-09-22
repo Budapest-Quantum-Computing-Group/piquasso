@@ -29,7 +29,7 @@ def xxpp_to_xpxp_indices(d: int) -> np.ndarray:
         numpy.ndarray: The basis changing indices.
     """
 
-    indices = np.empty(2 * d, dtype=nb.int32)
+    indices = np.empty(2 * d, dtype=np.int32)
 
     for i in range(d):
         indices[2 * i] = i
@@ -50,7 +50,7 @@ def xpxp_to_xxpp_indices(d: int) -> np.ndarray:
         numpy.ndarray: The basis changing indices.
     """
 
-    indices = np.empty(2 * d, dtype=nb.int32)
+    indices = np.empty(2 * d, dtype=np.int32)
 
     for i in range(d):
         indices[i] = 2 * i
