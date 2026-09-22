@@ -165,7 +165,7 @@ def test_torontonian_4_by_4_random():
     A = np.random.rand(4, 4)
     matrix = A @ A.T
 
-    matrix /= max(np.linalg.eigvals(matrix)) + 1.0
+    matrix /= max(np.linalg.eigvalsh(matrix)) + 1.0
 
     torontonian(matrix)
 
@@ -177,7 +177,7 @@ def test_torontonian_6_by_6_random():
     A = np.random.rand(6, 6)
     matrix = A @ A.T
 
-    matrix /= max(np.linalg.eigvals(matrix)) + 1.0
+    matrix /= max(np.linalg.eigvalsh(matrix)) + 1.0
 
     torontonian(matrix)
 
