@@ -232,50 +232,49 @@ class PureFockState(BaseFockState):
                 f"fock_probabilities={self.fock_probabilities}"
             )
 
-    def _get_mean_position_indices(self, mode):
+    def _get_mean_annihilation_indices(self, mode):
         fallback_np = self._connector.fallback_np
-
-        self._space[:, mode] -= 1
-        lowered_indices = get_index_in_fock_space_array(self._space)
-        self._space[:, mode] += 2
-        raised_indices = get_index_in_fock_space_array(self._space)
-        self._space[:, mode] -= 1
 
         relevant_column = self._space[:, mode]
 
         nonzero_indices_on_mode = (relevant_column > 0).nonzero()[0]
-        upper_index = cutoff_fock_space_dim(d=self.d, cutoff=self._config.cutoff - 1)
 
-        multipliers = fallback_np.sqrt(
-            fallback_np.concatenate(
-                [
-                    relevant_column[nonzero_indices_on_mode],
-                    relevant_column[:upper_index] + 1,
-                ]
-            )
-        )
-        left_indices = fallback_np.concatenate(
-            [lowered_indices[nonzero_indices_on_mode], raised_indices[:upper_index]]
-        )
-        right_indices = fallback_np.concatenate(
-            [nonzero_indices_on_mode, fallback_np.arange(upper_index)]
-        )
+        self._space[:, mode] -= 1
+        lowered_indices = get_index_in_fock_space_array(self._space)
+        self._space[:, mode] += 1
+
+        multipliers = fallback_np.sqrt(relevant_column[nonzero_indices_on_mode])
+
+        left_indices = lowered_indices[nonzero_indices_on_mode]
+
+        right_indices = nonzero_indices_on_mode
 
         return multipliers, left_indices, right_indices
 
-    def mean_position(self, mode: int) -> np.ndarray:
+    def mean_position(
+        self,
+        mode: int,
+        phi: float = 0.0,
+    ) -> np.ndarray:
         np = self._connector.np
         fallback_np = self._connector.fallback_np
-        multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
+
+        multipliers, left_indices, right_indices = self._get_mean_annihilation_indices(
+            mode
+        )
 
         state_vector = self.state_vector
 
-        accumulator = np.dot(
-            (multipliers * state_vector[left_indices]),
+        mean_annihilation = np.dot(
+            multipliers * np.conj(state_vector[left_indices]),
             state_vector[right_indices],
         )
 
-        return np.real(accumulator) * fallback_np.sqrt(self._config.hbar / 2)
+        phase = np.exp(-1j * phi)
+
+        return fallback_np.sqrt(2.0 * self._config.hbar) * np.real(
+            phase * mean_annihilation
+        )
 
     def quadratures_mean_variance(
         self, modes: Tuple[int, ...], phi: float = 0

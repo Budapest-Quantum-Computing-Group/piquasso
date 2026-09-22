@@ -121,14 +121,26 @@ class BatchPureFockState(PureFockState):
                 "in the batch."
             )
 
-    def mean_position(self, mode: int) -> np.ndarray:
+    def mean_position(
+        self,
+        mode: int,
+        phi: float = 0.0,
+    ) -> np.ndarray:
         np = self._connector.np
         fallback_np = self._connector.fallback_np
-        multipliers, left_indices, right_indices = self._get_mean_position_indices(mode)
 
-        lhs = (multipliers * self.state_vector[left_indices].T).T
+        (multipliers, left_indices, right_indices) = (
+            self._get_mean_annihilation_indices(mode)
+        )
+
+        lhs = np.conj(self.state_vector[left_indices])
+
         rhs = self.state_vector[right_indices]
 
-        return np.real(
-            np.einsum("ij,ij->j", lhs, rhs) * fallback_np.sqrt(self._config.hbar / 2)
+        mean_annihilation = np.einsum("ij,ij->j", multipliers[:, None] * lhs, rhs)
+
+        phase = np.exp(-1j * phi)
+
+        return fallback_np.sqrt(2.0 * self._config.hbar) * np.real(
+            phase * mean_annihilation
         )

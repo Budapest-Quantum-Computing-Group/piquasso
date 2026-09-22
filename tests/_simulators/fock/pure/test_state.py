@@ -207,6 +207,91 @@ def test_mean_position():
     assert np.allclose(mean, np.sqrt(2 * config.hbar) * alpha_)
 
 
+@pytest.mark.parametrize(
+    "phi",
+    [
+        0.0,
+        np.pi / 6,
+        np.pi / 4,
+        np.pi / 2,
+        np.pi,
+    ],
+)
+def test_mean_position_with_phi(phi):
+    d = 1
+    cutoff = 7
+
+    alpha_ = 0.02
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+        pq.Q(all) | pq.Displacement(r=alpha_)
+
+    config = pq.Config(cutoff=cutoff)
+
+    simulator = pq.PureFockSimulator(
+        d=d,
+        config=config,
+    )
+
+    state = simulator.execute(program).state
+
+    mean = state.mean_position(
+        mode=0,
+        phi=phi,
+    )
+
+    expected = np.sqrt(2 * config.hbar) * alpha_ * np.cos(phi)
+
+    assert np.allclose(mean, expected)
+
+
+@pytest.mark.parametrize(
+    "displacement_phi, measurement_phi",
+    [
+        (np.pi / 4, 0.0),
+        (np.pi / 4, np.pi / 4),
+        (np.pi / 4, np.pi / 2),
+        (np.pi / 2, np.pi / 2),
+        (np.pi / 2, 0.0),
+    ],
+)
+def test_mean_position_with_displacement_phase(
+    displacement_phi,
+    measurement_phi,
+):
+    d = 1
+    cutoff = 7
+
+    r = 0.02
+
+    with pq.Program() as program:
+        pq.Q(all) | pq.Vacuum()
+
+        pq.Q(all) | pq.Displacement(
+            r=r,
+            phi=displacement_phi,
+        )
+
+    config = pq.Config(cutoff=cutoff)
+
+    simulator = pq.PureFockSimulator(
+        d=d,
+        config=config,
+    )
+
+    state = simulator.execute(program).state
+
+    mean = state.mean_position(
+        mode=0,
+        phi=measurement_phi,
+    )
+
+    expected = np.sqrt(2 * config.hbar) * r * np.cos(displacement_phi - measurement_phi)
+
+    assert np.allclose(mean, expected)
+
+
 def test_normalize_if_disabled_in_Config():
     d = 1
     cutoff = 3
