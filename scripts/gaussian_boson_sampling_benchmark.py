@@ -27,7 +27,6 @@ import numpy as np
 
 import piquasso as pq
 
-
 N = 100  # number of shots
 
 

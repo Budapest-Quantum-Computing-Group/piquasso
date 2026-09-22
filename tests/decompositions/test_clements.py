@@ -34,7 +34,6 @@ from piquasso.decompositions.clements import (
     instructions_from_decomposition,
 )
 
-
 pytestmark = pytest.mark.monkey
 
 

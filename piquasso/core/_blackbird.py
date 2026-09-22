@@ -22,7 +22,6 @@ import blackbird as bb
 from ..api.instruction import Instruction
 from ..api.exceptions import PiquassoException
 
-
 _BB_TO_PQ_MAP = {
     "Dgate": "Displacement",
     "Xgate": "PositionDisplacement",

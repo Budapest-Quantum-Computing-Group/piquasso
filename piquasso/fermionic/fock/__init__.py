@@ -20,9 +20,7 @@ Fermionic Fock space-based simulators
 This is a package for Fock space-based simulations of fermionic states.
 """
 
-
 from .simulator import PureFockSimulator
 from .state import PureFockState
-
 
 __all__ = ["PureFockState", "PureFockSimulator"]

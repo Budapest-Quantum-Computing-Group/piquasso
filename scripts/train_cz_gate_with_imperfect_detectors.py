@@ -27,7 +27,6 @@ from piquasso._math.indices import get_operator_index
 
 from typing import Callable
 
-
 LR = 0.00025
 ITERATIONS = 1000
 ALPHA = 10

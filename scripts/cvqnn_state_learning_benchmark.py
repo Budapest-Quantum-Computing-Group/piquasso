@@ -30,7 +30,6 @@ import time
 
 import json
 
-
 filename = f"cvqnn_{int(time.time())}.json"
 
 # Set TensorFlow to use only the CPU

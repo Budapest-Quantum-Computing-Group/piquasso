@@ -18,7 +18,6 @@ import tensorflow as tf
 
 import time
 
-
 tf.get_logger().setLevel("ERROR")
 
 

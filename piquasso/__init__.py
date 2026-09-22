@@ -122,7 +122,6 @@ from .instructions.batch import (
     BatchApply,
 )
 
-
 __all__ = [
     # API
     "Program",

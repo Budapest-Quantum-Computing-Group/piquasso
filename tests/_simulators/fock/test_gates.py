@@ -21,7 +21,6 @@ import piquasso as pq
 
 from pytest_lazy_fixtures import lf
 
-
 tf_purefock_simulators = (
     lf("PureFockSimulator_with_tensorflow"),
     lf("PureFockSimulator_with_tensorflow_tf_function"),

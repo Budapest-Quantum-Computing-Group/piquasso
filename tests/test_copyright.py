@@ -20,7 +20,6 @@ from itertools import islice
 from pathlib import Path
 from datetime import date
 
-
 COPYRIGHT = f"""\
 #
 # Copyright 2021-{date.today().year} Budapest Quantum Computing Group

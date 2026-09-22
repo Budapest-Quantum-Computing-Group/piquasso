@@ -80,7 +80,6 @@ from .instructions import (
 )
 from .fock import PureFockState, PureFockSimulator
 
-
 __all__ = [
     # Gaussian module
     "gaussian",

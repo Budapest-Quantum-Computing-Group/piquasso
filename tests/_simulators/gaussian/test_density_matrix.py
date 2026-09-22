@@ -23,7 +23,6 @@ import piquasso as pq
 
 import jax
 
-
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
 )

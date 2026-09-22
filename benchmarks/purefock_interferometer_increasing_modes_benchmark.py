@@ -19,7 +19,6 @@ import piquasso as pq
 
 from scipy.stats import unitary_group
 
-
 pytestmark = pytest.mark.benchmark(
     group="pure-fock-interferometer-increasing-modes",
 )

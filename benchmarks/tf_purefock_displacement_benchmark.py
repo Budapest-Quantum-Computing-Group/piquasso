@@ -18,7 +18,6 @@ import pytest
 import piquasso as pq
 import tensorflow as tf
 
-
 pytestmark = pytest.mark.benchmark(
     group="tensorflow",
 )

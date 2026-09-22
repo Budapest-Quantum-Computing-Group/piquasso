@@ -23,7 +23,6 @@ from scipy.linalg import expm
 
 from piquasso.decompositions.clements import clements, instructions_from_decomposition
 
-
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
 )

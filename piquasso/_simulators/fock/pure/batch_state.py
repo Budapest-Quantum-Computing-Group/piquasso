@@ -129,8 +129,8 @@ class BatchPureFockState(PureFockState):
         np = self._connector.np
         fallback_np = self._connector.fallback_np
 
-        (multipliers, left_indices, right_indices) = (
-            self._get_mean_annihilation_indices(mode)
+        multipliers, left_indices, right_indices = self._get_mean_annihilation_indices(
+            mode
         )
 
         lhs = np.conj(self.state_vector[left_indices])

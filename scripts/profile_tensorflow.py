@@ -18,7 +18,6 @@ import tensorflow as tf
 import time
 from scipy.stats import unitary_group
 
-
 alpha = 0.01
 r = 0.01
 xi = 0.3

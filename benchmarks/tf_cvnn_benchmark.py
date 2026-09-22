@@ -27,7 +27,6 @@ import tensorflow as tf
 import piquasso as pq
 from piquasso import cvqnn
 
-
 np.set_printoptions(suppress=True, linewidth=200)
 
 

@@ -19,7 +19,6 @@ import numpy as np
 
 import piquasso as pq
 
-
 pytestmark = pytest.mark.benchmark(
     group="pure-fock",
 )

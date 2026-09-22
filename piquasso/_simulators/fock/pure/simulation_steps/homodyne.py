@@ -32,7 +32,6 @@ from piquasso._math.fock import get_fock_space_basis
 
 from ..state import PureFockState
 
-
 hermite = lru_cache(maxsize=None)(hermite)
 
 

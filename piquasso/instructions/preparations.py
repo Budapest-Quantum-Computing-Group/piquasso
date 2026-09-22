@@ -21,7 +21,6 @@ The built-in preparation instructions in Piquasso. Preparation instructions shou
 be placed at the beginning of the Piquasso program.
 """
 
-
 from typing import Dict, Iterable, Tuple, Optional, Union
 import warnings
 

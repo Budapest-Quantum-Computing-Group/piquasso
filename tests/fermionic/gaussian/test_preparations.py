@@ -19,7 +19,6 @@ import piquasso as pq
 
 from piquasso.api.exceptions import InvalidParameter
 
-
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
 )

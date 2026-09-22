@@ -16,7 +16,6 @@
 from .state import PassiveState
 from .simulator import PassiveSimulator, SamplingSimulator
 
-
 __all__ = [
     "PassiveState",
     "PassiveSimulator",

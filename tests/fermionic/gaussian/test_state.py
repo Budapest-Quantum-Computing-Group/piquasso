@@ -34,7 +34,6 @@ from piquasso.fermionic._utils import (
     get_majorana_operators,
 )
 
-
 for_all_connectors = pytest.mark.parametrize(
     "connector", [pq.NumpyConnector(), pq.JaxConnector()]
 )

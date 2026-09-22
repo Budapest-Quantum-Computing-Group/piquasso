@@ -18,7 +18,6 @@ import pytest
 import piquasso as pq
 import numpy as np
 
-
 pytestmark = pytest.mark.benchmark(
     group="gaussian-threshold-detection",
 )
