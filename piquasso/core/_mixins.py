@@ -39,7 +39,7 @@ class DictMixin(abc.ABC):
 class WeightMixin(abc.ABC, Generic[_T]):
     """Class for registering coefficients into `params`.
 
-    Most notably, it is used for specifying coefficents for `NumberState`,
+    Most notably, it is used for specifying coefficients for `NumberState`,
     `FockStateVector`, `StateVector` or `DensityMatrix` instances.
     """
 
@@ -61,7 +61,8 @@ class WeightMixin(abc.ABC, Generic[_T]):
 class RegisterMixin(abc.ABC):
     @abc.abstractmethod
     def _apply_to_program_on_register(self, program: "Program", register: "Q") -> None:
-        """Applies the current object to the specifed program on its specified register.
+        """Applies the current object to the specified program on its specified
+        register.
 
         Args:
             program (Program): [description]

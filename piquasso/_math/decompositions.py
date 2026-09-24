@@ -86,7 +86,7 @@ def _rotation_to_positive_above_diagonals(block_diagonal_matrix, connector):
     The block diagonal matrix returned by the Schur decomposition in the Williamson
     decomposition needs to be rotated.
 
-    Not doing this we'd still get a valid Williamson decompostion with valid symplectic
+    Not doing this we'd still get a valid Williamson decomposition with valid symplectic
     and diagonal matrices, but the symplectic matrix would have complex elements and the
     diagonal matrix would have negative values.
     """

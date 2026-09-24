@@ -593,7 +593,7 @@ class GaussianState(State):
             integer e.g :math:`(0,1,...)`.
 
         Args:
-            modes (tuple[int]): The correspoding modes at which the mean photon number
+            modes (tuple[int]): The corresponding modes at which the mean photon number
                 is calculated.
         Returns:
             float: The expectation value of the photon number.
@@ -620,7 +620,7 @@ class GaussianState(State):
         for details on how to calculate this for Gaussian states.
 
         Args:
-            modes (Tuple[int, ...]): The correspoding modes at which the variance of
+            modes (Tuple[int, ...]): The corresponding modes at which the variance of
                 the photon number is calculated.
 
         Returns:
@@ -752,11 +752,11 @@ class GaussianState(State):
         mu_1 = self.xpxp_mean_vector / np.sqrt(hbar)
         mu_2 = state.xpxp_mean_vector / np.sqrt(hbar)
         delta_mu = mu_2 - mu_1
-        displaced_contribition = np.exp(
+        displaced_contribution = np.exp(
             -1 / 2 * delta_mu @ np.linalg.inv(sigma_mean) @ delta_mu
         )
 
-        return np.real(displaced_contribition * F_0)
+        return np.real(displaced_contribution * F_0)
 
     def quadratic_polynomial_expectation(
         self, A: np.ndarray, b: np.ndarray, c: float = 0.0, phi: float = 0.0
@@ -858,7 +858,7 @@ class GaussianState(State):
             positions (list[list[float]]): List of position vectors.
             momentums (list[list[float]]): List of momentum vectors.
             modes (tuple[int], optional):
-                Modes where Wigner function should be calculcated.
+                Modes where Wigner function should be calculated.
 
         Returns:
             numpy.ndarray:
@@ -898,7 +898,7 @@ class GaussianState(State):
             positions (List[List[float]]): List of list of position values (x-axis).
             momentums (List[List[float]]): List of list of momentum values (p-axis) .
             mode (int, optional):
-                Mode where Wigner function should be calculcated.
+                Mode where Wigner function should be calculated.
 
         Note:
             Only a single mode is supported.

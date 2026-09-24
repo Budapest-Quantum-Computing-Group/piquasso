@@ -41,7 +41,7 @@ def create_single_mode_displacement_gradient(
         row_term = (row_sqrts * row_rolled_transformation.T).T
         col_term = col_sqrts * col_rolled_transformation
 
-        # NOTE: This algorithm rolls the last elements of the transormation matrix to
+        # NOTE: This algorithm rolls the last elements of the transformation matrix to
         # the 0th place, but the 0th element of `row_sqrts` and `col_sqrts` is always
         # zero, so it is fine.
         phi_grad = (row_term + col_term) * r * 1j
@@ -94,7 +94,7 @@ def create_single_mode_squeezing_gradient(
         col_term = col_sqrts * col_rolled_transformation
 
         # NOTE: This algorithm rolls the last and penultimate elements of the
-        # transormation matrix to the 1st and 0th place, but the 0th and 1st element of
+        # transformation matrix to the 1st and 0th place, but the 0th and 1st element of
         # `row_sqrts` and `col_sqrts` is always zero, so it is fine.
         phi_grad = -0.5j * tanhr * (row_term + col_term)
 

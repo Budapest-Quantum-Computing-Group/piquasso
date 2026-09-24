@@ -198,11 +198,11 @@ class Simulator(Computer, _mixins.CodeMixin):
     def _validate_preparations_at_beginning(self, instructions):
         for index, instruction in enumerate(instructions):
             if isinstance(instruction, Preparation):
-                previous_instuctions = instructions[:index]
+                previous_instructions = instructions[:index]
 
                 if any(
                     not isinstance(previous_instruction, Preparation)
-                    for previous_instruction in previous_instuctions
+                    for previous_instruction in previous_instructions
                 ):
                     raise InvalidSimulation(
                         f"Preparations should only be registered at the beginning of a "

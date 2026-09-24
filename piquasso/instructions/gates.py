@@ -562,7 +562,7 @@ class Squeezing2(_ActiveLinearGate):
 
     where :math:`S_{(c)}` is defined by Eq. :eq:`linearity`.
 
-    In the fermionic setting, an analoguous definition is used: the bosonic ladder
+    In the fermionic setting, an analogous definition is used: the bosonic ladder
     operators are just exchanged to fermionic ones. For two fermionic modes, the action
     on :math:`\ket{00}` and :math:`\ket{11}` is simply given as
 

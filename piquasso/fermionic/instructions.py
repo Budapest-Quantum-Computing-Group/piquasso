@@ -87,7 +87,7 @@ class ControlledPhase(Gate):
         :class:`~piquasso.fermionic.gaussian.simulator.GaussianSimulator`.
 
     Note:
-        This is analoguous to the :class:`~piquasso.instructions.gates.CrossKerr` gate
+        This is analogous to the :class:`~piquasso.instructions.gates.CrossKerr` gate
         in the photonic setting.
     """
 

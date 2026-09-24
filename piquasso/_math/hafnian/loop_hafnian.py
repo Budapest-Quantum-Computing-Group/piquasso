@@ -111,7 +111,7 @@ def _calc_B_and_reduced_diagonals(matrix, diagonal, delta):
 
 @nb.njit(cache=True)
 def _calc_f_loop(traces, loop_corrections):
-    r"""Calcualates `f` from Appendix B.1 from https://arxiv.org/abs/2108.01622.
+    r"""Calculates `f` from Appendix B.1 from https://arxiv.org/abs/2108.01622.
 
     This function uses the previously calculated power traces and loop corrections.
 

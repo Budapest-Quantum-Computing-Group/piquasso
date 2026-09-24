@@ -42,7 +42,7 @@ class Config(_mixins.CodeMixin):
         using :class:`~piquasso._simulators.gaussian.simulator.GaussianSimulator`.
         Defaults to `5`.
     :ivar hbar: The value of the Planck constant. Defaults to `2.0`.
-    :ivar seed_sequence: The seed for reproducability of sampling algorithms.
+    :ivar seed_sequence: The seed for reproducibility of sampling algorithms.
     :ivar use_torontonian:
         Uses torontonian for
         :class:`~piquasso.instructions.measurements.ThresholdMeasurement`. Defaults to

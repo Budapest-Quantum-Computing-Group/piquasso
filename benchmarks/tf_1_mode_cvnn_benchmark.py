@@ -15,7 +15,7 @@
 
 
 """
-Some of the code has been copyied from
+Some of the code has been copied from
 `https://strawberryfields.ai/photonics/demos/run_gate_synthesis.html`.
 """
 
