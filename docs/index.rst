@@ -77,7 +77,7 @@ Explore Piquasso
       Use alternative numerical backends, including JAX-based workflows.
 
    .. grid-item-card:: Advanced topics
-      :link: advanced/decompositions
+      :link: utils/decompositions
       :link-type: doc
 
       Learn about decompositions and specialized simulation workflows.
@@ -168,7 +168,6 @@ If you use Piquasso in your research, please cite:
 
    api/index
    advanced/connectors
-   advanced/decompositions
    advanced/cvqnn
    advanced/dual_rail_encoding
    advanced/lxeb
@@ -178,6 +177,13 @@ If you use Piquasso in your research, please cite:
    :caption: Experimental
 
    experimental/fermionic
+
+
+.. toctree::
+   :hidden:
+   :caption: Utilities
+
+   utils/decompositions
 
 
 Notable features

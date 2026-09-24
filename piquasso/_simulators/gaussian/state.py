@@ -31,7 +31,7 @@ from piquasso._math.symplectic import symplectic_form, xp_symplectic_form
 from piquasso._math.fock import get_fock_space_basis
 from piquasso._math.transformations import xxpp_to_xpxp_indices, xpxp_to_xxpp_indices
 
-from piquasso._math.decompositions import williamson
+from piquasso.decompositions import williamson
 from piquasso.api.exceptions import InvalidModes
 from piquasso._simulators.plot import plot_wigner_function
 

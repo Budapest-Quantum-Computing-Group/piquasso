@@ -1,0 +1,492 @@
+\begin{tikzpicture}[
+    x=1.25cm,
+    y=0.95cm,
+    wire/.style={
+            draw=diagramfg,
+            line cap=round,
+            line width=0.8pt
+        },
+    crossing/.style={
+            preaction={
+                    draw=diagrambg,
+                    line width=3.5pt,
+                    line cap=butt
+                },
+            draw=diagramfg,
+            line width=0.8pt,
+            line cap=round
+        },
+    bs/.style={
+            draw=none,
+            fill=diagramBS,
+            rectangle,
+            minimum width=5mm,
+            minimum height=1.7mm,
+            inner sep=0pt,
+            line width=0.8pt
+        },
+    phase/.style={
+            draw=diagramfg,
+            text=diagramfg,
+            fill=diagrambg,
+            rectangle,
+            rounded corners=1pt,
+            minimum width=6mm,
+            minimum height=6mm,
+            line width=0.8pt,
+        },
+    meas/.style={
+    draw=diagramfg,
+    text=diagramfg,
+    circle,
+    rounded corners=1pt,
+    minimum width=7mm,
+    minimum height=7mm,
+    inner sep=0pt,
+    line width=0.8pt,
+    fill=diagrambg,
+    path picture={
+    % semicircular dial
+    \draw[draw=diagramfg,line width=0.8pt]
+    ([xshift=-2.3mm,yshift=-1.1mm]
+    path picture bounding box.center)
+    arc[start angle=180,end angle=0,radius=2.3mm];
+    % needle with visible arrowhead
+    \draw[draw=diagramfg,line width=0.9pt,
+    -{Latex[length=1.5mm,width=1.2mm]}
+    ]
+    ([xshift=0mm,yshift=-1.0mm]
+    path picture bounding box.center)
+    --
+    ([xshift=1.7mm,yshift=2.6mm]
+    path picture bounding box.center);
+    }
+    },
+    txt/.style={
+            font=\small,
+            text=diagramfg
+        },
+    epr/.style={
+            draw=diagramaccent,
+            dashed,
+            line width=0.8pt
+        },
+    resource label/.style=epr bs/.style={
+    draw=diagramfg,
+    fill=diagrambg,
+    rectangle,
+    minimum width=6mm,
+    minimum height=6mm,
+    inner sep=0pt,
+    line width=0.8pt
+    },
+    classical/.style={
+            draw=diagramfg,
+            double=diagrambg,
+            double distance=1.1pt,
+            line width=0.55pt,
+            line cap=round,
+            line join=round
+        },
+    classical arrow/.style={
+    classical,
+    -{Latex[length=1.8mm,width=1.4mm]},
+    shorten >=1pt
+    },
+    wire arrow/.style={
+    wire,
+    -{Latex[length=1.8mm,width=1.4mm]},
+    shorten >=1pt
+    },
+    disp/.style={
+            draw=diagramfg,
+            fill=diagrambg,
+            rectangle,
+            minimum size=6mm,
+            inner sep=0pt,
+            line width=0.8pt,
+            text=diagramfg,
+            rounded corners=1pt,
+        }
+    ]
+
+    \pgfdeclarelayer{foreground}
+    \pgfsetlayers{background,main,foreground}
+
+    % =================================================
+    % Rail order: (a,c,c',b,d,d')
+    % =================================================
+
+    \def\ya{5}
+    \def\yc{4}
+    \def\ycp{3}
+    \def\yb{2}
+    \def\yd{1}
+    \def\ydp{0}
+
+    % =================================================
+    % Layout parameters
+    % Change these values to move gates without editing paths.
+    % =================================================
+
+
+    % Main horizontal stages
+    \def\xLabel{0}
+    \def\xSqueezing{1}
+    \def\xEPRBSStart{1.85}
+    \def\xFirstBSStart{2.9}
+    \def\xSecondBSStart{4.2}
+    \def\xPhase{6.2}
+    \def\xMeasure{7.20}
+    \def\xResultLabel{8}
+    \def\xDisplacement{7.7}
+    \def\xFourier{9}
+    \def\xOutputEnd{9.6}
+    \def\xOutputLabel{9.65}
+
+    % EPR-resource geometry
+    % The "turn before" value is where the straight rail begins bending.
+    % The "port" value is where the bent segment reaches the BS edge.
+    % The "turn after" value is where the output reaches the original rail again.
+
+
+    \def\xEPRTurnBefore{1.85}
+    \def\xEPRPortBefore{2}
+    \def\xEPRBS{2.20}
+    \def\xEPRPortAfter{2.40}
+    \def\xEPRTurnAfter{2.55}
+
+    % EPR beamsplitter layer geometry
+    \def\xEPRPortOffset{0.2}
+    \def\xEPRTurnOffset{0.15}
+
+    \pgfmathsetmacro{\xEPRTurnBefore}{\xEPRBSStart}
+    \pgfmathsetmacro{\xEPRPortBefore}{\xEPRTurnBefore + \xEPRTurnOffset}
+    \pgfmathsetmacro{\xEPRBS}{\xEPRPortBefore + \xEPRPortOffset}
+    \pgfmathsetmacro{\xEPRPortAfter}{\xEPRBS + \xEPRPortOffset}
+    \pgfmathsetmacro{\xEPRTurnAfter}{\xEPRPortAfter + \xEPRTurnOffset}
+
+    \def\yEPRUpper{3.50}
+    \def\yEPRLower{0.50}
+
+    % First beamsplitter layer geometry
+
+
+    \def\xFirstPortOffset{0.2}
+    \def\xFirstTurnOffset{0.15}
+
+    \pgfmathsetmacro{\xFirstTurnBefore}{\xFirstBSStart}
+    \pgfmathsetmacro{\xFirstPortBefore}{\xFirstTurnBefore + \xFirstTurnOffset}
+    \pgfmathsetmacro{\xFirstBS}{\xFirstPortBefore + \xFirstPortOffset}
+    \pgfmathsetmacro{\xFirstPortAfter}{\xFirstBS + \xFirstPortOffset}
+    \pgfmathsetmacro{\xFirstTurnAfter}{\xFirstPortAfter + \xFirstTurnOffset}
+
+
+    \def\yFirstUpper{4.50}
+    \def\yFirstLower{1.50}
+
+    % Second beamsplitter layer geometry
+    \def\xSecondTurnBefore{\xSecondBSStart}
+    \pgfmathsetmacro{\xSecondPortBefore}{\xSecondTurnBefore + 0.5}
+    \pgfmathsetmacro{\xSecondBS}{\xSecondPortBefore + 0.2}
+    \pgfmathsetmacro{\xSecondPortAfter}{\xSecondBS + 0.2}
+    \pgfmathsetmacro{\xSecondTurnAfter}{\xSecondPortAfter + 0.5}
+    \def\ySecondUpper{3.80}
+    \def\ySecondLower{2.20}
+
+    % Vertical port offset from each beamsplitter centre
+    \def\bsPortOffset{0.08}
+
+    % Classical feed-forward routing
+    \def\ffExitShort{0.25}
+    \def\ffExitLong{0.40}
+    \def\ffBusHeight{0.40}
+
+    % =================================================
+    % Left labels
+    % =================================================
+
+    \node[txt,anchor=east] at (\xLabel,\ya) {$\ket{\psi_{\mathrm{in}}}$};
+    \node[txt,anchor=east] (cLabel) at (\xLabel,\yc) {$\ket{0}$};
+    \node[txt,anchor=east] (cpLabel) at (\xLabel,\ycp) {$\ket{0}$};
+    \node[txt,anchor=east] at (\xLabel,\yb) {$\ket{\phi_{\mathrm{in}}}$};
+    \node[txt,anchor=east] (dLabel) at (\xLabel,\yd) {$\ket{0}$};
+    \node[txt,anchor=east] (dpLabel) at (\xLabel,\ydp) {$\ket{0}$};
+
+
+
+    % =================================================
+    % Squeezing
+    % =================================================
+
+
+
+
+    \node[phase] (Sc) at (\xSqueezing,\yc) {$S(r,0)$};
+    \node[phase] (Scp) at (\xSqueezing,\ycp) {$S(r,\pi)$};
+
+    \node[phase] (Sd) at (\xSqueezing,\yd) {$S(r,0)$};
+    \node[phase] (Sdp) at (\xSqueezing,\ydp) {$S(r,\pi)$};
+
+    \draw[wire] (0.12,\ya) -- (\xFirstTurnBefore,\ya);
+    \draw[wire] (0.12,\yc)  -- (Sc.west);
+    \draw[wire] (0.12,\ycp) -- (Scp.west);
+
+    \draw[wire] (0.12,\yb) -- (\xFirstTurnBefore,\yb);
+    \draw[wire] (0.12,\yd)  -- (Sd.west);
+    \draw[wire] (0.12,\ydp) -- (Sdp.west);
+
+    % =================================================
+    % EPR resources
+    % =================================================
+    % ---------- upper EPR beamsplitter between c and c' ----------
+
+    % left straight parts
+    \draw[wire] (Sc.east)  -- (\xEPRTurnBefore,\yc);
+    \draw[wire] (Scp.east) -- (\xEPRTurnBefore,\ycp);
+
+    % gaps
+    %\draw[crossing] (3.50,\ycp) -- (3.60,\ycp);
+    %\draw[wire] (0.12,\ycp) -- (\xEPRTurnBefore,\ycp);
+
+
+    % bend into the BS
+    \draw[wire] (\xEPRTurnBefore,\yc)  -- (\xEPRPortBefore,{\yEPRUpper+\bsPortOffset});
+    \draw[wire] (\xEPRTurnBefore,\ycp) -- (\xEPRPortBefore,{\yEPRUpper-\bsPortOffset});
+
+    % bend back out to the original rails
+    \draw[wire] (\xEPRPortAfter,{\yEPRUpper+\bsPortOffset}) -- (\xEPRTurnAfter,\yc);
+    \draw[wire] (\xEPRPortAfter,{\yEPRUpper-\bsPortOffset}) -- (\xEPRTurnAfter,\ycp);
+
+    % continue on the rails
+    \draw[wire] (\xEPRTurnAfter,\ycp) -- (\xDisplacement,\ycp);
+
+
+    % beamsplitter
+    \node[bs] (EPRup) at (\xEPRBS,\yEPRUpper) {};
+
+    % framed label
+
+    \node[
+        draw=diagramaccent!75!black,
+        rounded corners=2pt,
+        line width=0.9pt,
+        inner xsep=8pt,
+        inner ysep=4pt,
+        fit=(cLabel)(cpLabel)(EPRup),
+        label={[text=diagramaccent!75!black,font=\small]above:EPR}
+    ] (upperEPRbox) {};
+    % ---------- lower EPR beamsplitter between d and d' ----------
+
+    % left straight parts
+    \draw[wire] (Sd.east)  -- (\xEPRTurnBefore,\yd);
+    \draw[wire] (Sdp.east) -- (\xEPRTurnBefore,\ydp);
+
+
+    % bend into the BS
+    \draw[wire] (\xEPRTurnBefore,\yd)  -- (\xEPRPortBefore,{\yEPRLower+\bsPortOffset}) ;
+    \draw[wire] (\xEPRTurnBefore,\ydp) -- (\xEPRPortBefore,{\yEPRLower-\bsPortOffset}) ;
+
+    % continue on the rails
+    \draw[wire] (\xEPRTurnAfter,\ydp) -- (\xDisplacement,\ydp);
+
+    % bend back out to the original rails
+    \draw[wire] (\xEPRPortAfter,{\yEPRLower+\bsPortOffset}) -- (\xEPRTurnAfter,\yd);
+    \draw[wire] (\xEPRPortAfter,{\yEPRLower-\bsPortOffset}) -- (\xEPRTurnAfter,\ydp);
+
+    % beamsplitter
+    \node[bs] (EPRdown) at (\xEPRBS,\yEPRLower) {};
+    % framed label
+    \node[
+        draw=diagramaccent!75!black,
+        rounded corners=2pt,
+        line width=0.9pt,
+        inner xsep=8pt,
+        inner ysep=4pt,
+        fit=(dLabel)(dpLabel)(EPRdown),
+        label={[text=diagramaccent!75!black,font=\small]below:EPR}
+    ] (lowerEPRbox) {};
+
+    % =================================================
+    % First layer: B_ac and B_bd
+    % =================================================
+
+    % Inputs to B_ac
+    \draw[wire] (\xFirstTurnBefore,\ya) -- (\xFirstPortBefore,{\yFirstUpper+\bsPortOffset});
+    \draw[wire] (\xEPRTurnAfter,\yc) -- (\xFirstTurnBefore,\yc) -- (\xFirstPortBefore,{\yFirstUpper-\bsPortOffset});
+
+    % Inputs to B_bd
+    \draw[wire] (\xFirstTurnBefore,\yb)  -- (\xFirstTurnBefore,\yb) -- (\xFirstPortBefore,{\yFirstLower+\bsPortOffset});
+    \draw[wire] (\xEPRTurnAfter,\yd) -- (\xFirstTurnBefore,\yd) -- (\xFirstPortBefore,{\yFirstLower-\bsPortOffset});
+
+    % Outputs of B_ac: return to rails a,c
+    \coordinate (acup) at (\xFirstTurnAfter,\ya);
+    \coordinate (aclo) at (\xFirstTurnAfter,\yc);
+
+    \draw[wire] (\xFirstPortAfter,{\yFirstUpper+\bsPortOffset}) -- (acup);
+    \draw[wire] (\xFirstPortAfter,{\yFirstUpper-\bsPortOffset}) -- (aclo);
+
+    % Outputs of B_bd: return to rails b,d
+    \coordinate (bdup) at (\xFirstTurnAfter,\yb);
+    \coordinate (bdlo) at (\xFirstTurnAfter,\yd);
+
+    \draw[wire] (\xFirstPortAfter,{\yFirstLower+\bsPortOffset}) -- (bdup);
+    \draw[wire] (\xFirstPortAfter,{\yFirstLower-\bsPortOffset}) -- (bdlo);
+
+    \node[bs] (Bac) at (\xFirstBS,\yFirstUpper) {};
+    \node[bs] (Bbd) at (\xFirstBS,\yFirstLower) {};
+
+    \node[txt,above=2mm of Bac] {$B_{01}$};
+    \node[txt,above=2mm of Bbd] {$B_{34}$};
+
+    % =================================================
+    % Second layer: B_ab and B_cd
+    % =================================================
+
+    % Inputs to B_ab: from rails a and b
+    \draw[wire] (acup) -- (\xSecondTurnBefore,\ya) -- (\xSecondPortBefore,{\ySecondUpper+\bsPortOffset});
+    \draw[wire] (bdup) -- (\xSecondTurnBefore,\yb);
+    \draw[crossing] (\xSecondTurnBefore,\yb) -- (\xSecondPortBefore,{\ySecondUpper-\bsPortOffset});
+
+    % Inputs to B_cd: from rails c and d
+    \draw[wire] (aclo) -- (\xSecondTurnBefore,\yc);
+    \draw[crossing] (\xSecondTurnBefore,\yc) -- (\xSecondPortBefore,{\ySecondLower+\bsPortOffset});
+    \draw[wire] (bdlo) -- (\xSecondTurnBefore,\yd) -- (\xSecondPortBefore,{\ySecondLower-\bsPortOffset});
+
+    % Outputs of B_ab: return to rails a and b
+    \coordinate (m1in) at (\xSecondTurnAfter,\ya);
+    \coordinate (m3in) at (\xSecondTurnAfter,\yb);
+
+    \draw[wire] (\xSecondPortAfter,{\ySecondUpper+\bsPortOffset}) -- (m1in);
+    \draw[crossing] (\xSecondPortAfter,{\ySecondUpper-\bsPortOffset}) -- (m3in);
+
+    % Outputs of B_cd: return to rails c and d
+    \coordinate (m2in) at (\xSecondTurnAfter,\yc);
+    \coordinate (m4in) at (\xSecondTurnAfter,\yd);
+
+    \draw[crossing] (\xSecondPortAfter,{\ySecondLower+\bsPortOffset}) -- (m2in);
+    \draw[wire] (\xSecondPortAfter,{\ySecondLower-\bsPortOffset}) -- (m4in);
+
+
+    % moved a bit higher
+    \node[bs] (Bab) at (\xSecondBS,\ySecondUpper) {};
+    \node[bs] (Bcd) at (\xSecondBS,\ySecondLower) {};
+
+    \node[txt,above=2mm of Bab] {$B_{03}$};
+    \node[txt,below=2mm of Bcd] {$B_{14}$};
+
+
+
+
+
+    % =================================================
+    % Phase rotations
+    % =================================================
+
+    \node[phase] (R3) at (\xPhase,\ya) {$R(\theta_3)$};
+    \node[phase] (R1) at (\xPhase,\yc) {$R(\theta_1)$};
+    \node[phase] (R4) at (\xPhase,\yb) {$R(\theta_4)$};
+    \node[phase] (R2) at (\xPhase,\yd) {$R(\theta_2)$};
+
+    \draw[wire] (m1in) -- (R3.west);
+    \draw[wire] (m2in) -- (R1.west);
+    \draw[wire] (m3in) -- (R4.west);
+    \draw[wire] (m4in) -- (R2.west);
+
+    % =================================================
+    % Measurements
+    % =================================================
+
+    \node[meas] (M3) at (\xMeasure,\ya) {};
+    \node[meas] (M1) at (\xMeasure,\yc) {};
+    \node[meas] (M4) at (\xMeasure,\yb) {};
+    \node[meas] (M2) at (\xMeasure,\yd) {};
+
+    \draw[wire] (R3.east) -- (M3.west);
+    \draw[wire] (R1.east) -- (M1.west);
+    \draw[wire] (R4.east) -- (M4.west);
+    \draw[wire] (R2.east) -- (M2.west);
+
+
+    \node[txt,anchor=west] at (\xResultLabel,\ya) {$m_3$};
+    \node[txt,anchor=west] at (\xResultLabel,\yc) {$m_1$};
+    \node[txt,anchor=west] at (\xResultLabel,\yb) {$m_4$};
+    \node[txt,anchor=west] at (\xResultLabel,\yd) {$m_2$};
+
+    % =================================================
+    % Surviving outputs
+    % =================================================
+    % Displacement gate on c'
+    \node[disp] (Dc) at (\xDisplacement,\ycp) {$\hat{D}$};
+
+    \node[phase] (F1) at (\xFourier,\ycp) {$F^\dagger$};
+
+    % Quantum output wire is split around the gate
+    \draw[wire] (Dc.east) -- (F1.west);
+    \draw[wire arrow] (F1.east) -- (\xOutputEnd,\ycp);
+
+
+    % Dedicated routing positions
+    \coordinate (M3exit) at ($(M3.east)+(\ffExitShort,0)$);
+    \coordinate (M1exit) at ($(M1.east)+(\ffExitLong,0)$);
+
+    % Classical bus above Dc
+    \coordinate (FFc) at ($(Dc.north)+(0,\ffBusHeight)$);
+
+    % Measurement outcomes
+    \draw[classical] (M3.east) -- (M3exit) |- (FFc);
+
+    \draw[classical] (M1.east) -- (M1exit) |- (FFc);
+
+    % Arrow only on the final segment
+    \draw[classical arrow] (FFc) -- (Dc.north);
+
+
+
+    % Displacement gate on d'
+    \node[disp] (Dd) at (\xDisplacement,\ydp) {$\hat{D}$};
+
+    \node[phase] (F2) at (\xFourier,\ydp) {$F^\dagger$};
+    % Quantum output wire
+    \draw[wire] (Dd.east) -- (F2.west);
+    \draw[wire arrow] (F2.east) -- (\xOutputEnd,\ydp);
+
+    % Separate vertical lanes
+    \coordinate (M4exit) at ($(M4.east)+(\ffExitShort,0)$);
+    \coordinate (M2exit) at ($(M2.east)+(\ffExitLong,0)$);
+
+    % Classical bus above Dd
+    \coordinate (FFd) at ($(Dd.north)+(0,\ffBusHeight)$);
+
+    \draw[classical]
+    (M4.east) -- (M4exit) |- (FFd);
+
+    \draw[classical]
+    (M2.east) -- (M2exit) |- (FFd);
+
+    \draw[classical arrow]
+    (FFd) -- (Dd.north);
+
+    \node[
+        txt,
+        anchor=west
+    ] at (\xOutputLabel,\ycp)
+    {$\ket{\psi_{\mathrm{out}}}$};
+
+    \node[
+        txt,
+        anchor=west
+    ] at (\xOutputLabel,\ydp)
+    {$\ket{\phi_{\mathrm{out}}}$};
+
+    % =================================================
+    % Bottom caption
+    % =================================================
+
+    \node[txt,align=center] at (4.85,-0.85)
+    {
+        two-mode gate teleportation:
+        $G_{0,3}(\theta_1,\theta_2,\theta_3,\theta_4)$
+    };
+
+\end{tikzpicture}

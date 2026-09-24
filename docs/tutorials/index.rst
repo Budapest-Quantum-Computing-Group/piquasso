@@ -90,3 +90,4 @@ Applications and benchmarking
    jax-example
    dense-subgraph-gbs
    lxeb
+   gate-teleport

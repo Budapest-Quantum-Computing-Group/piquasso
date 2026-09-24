@@ -1,10 +1,6 @@
-Decompositions
-==============
+Clements
+========
 
-The available decompositions in Piquasso.
-
-Clements decomposition
-----------------------
 
 .. automodule:: piquasso.decompositions.clements
    :members:
