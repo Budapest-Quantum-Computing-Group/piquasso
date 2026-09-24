@@ -54,7 +54,7 @@ def test_Interferometer_2_by_2_gradient():
 
     calculate_state_vector_jac = jit(jacrev(calculate_state_vector, holomorphic=True))
 
-    # NOTE: `holomorphic=True` requrires both complex inputs and outputs
+    # NOTE: `holomorphic=True` requires both complex inputs and outputs
     state_vector_jac = calculate_state_vector_jac(theta + 0.0j)
 
     assert np.allclose(state_vector_jac, [0, -np.cos(theta), -np.sin(theta), 0])
@@ -175,7 +175,7 @@ def test_parametrized_circuit_gradient_clements_random(generate_unitary_matrix):
 
     calculate_state_vector_jac = jit(jacrev(calculate_state_vector, holomorphic=True))
 
-    # NOTE: `holomorphic=True` requrires both complex inputs and outputs
+    # NOTE: `holomorphic=True` requires both complex inputs and outputs
     state_vector_jac = calculate_state_vector_jac(weights + 0.0j)
 
     assert state_vector_jac.shape == (2**d, len(weights))

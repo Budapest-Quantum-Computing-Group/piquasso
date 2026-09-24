@@ -311,7 +311,7 @@ class PureFockState(BaseFockState):
             phi (float): The rotation angle. By default it is `0` which means that
                 the mean of the position operator is being calculated. For :math:`\phi=
                 \frac{\pi}{2}` the mean of the momentum operator is being calculated.
-            modes (tuple[int]): The correspoding mode at which the mean of the
+            modes (tuple[int]): The corresponding mode at which the mean of the
                 quadratures are being calculated.
         Returns:
             (float, float): A tuple that contains the expectation value and the
@@ -386,7 +386,7 @@ class PureFockState(BaseFockState):
 
     def copy(self) -> "PureFockState":
         # NOTE: `__deepcopy__` is not allowed for tensorflow variables, so we have to
-        # do it explicitely here.
+        # do it explicitly here.
         state = self.__class__(
             d=self.d, connector=self._connector, config=self._config.copy()
         )

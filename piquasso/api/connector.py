@@ -89,7 +89,7 @@ class BaseConnector(abc.ABC):
         r"""Calculates the hafnian of a matrix with prescribed reduction array.
 
         This function first performs a reduction by a reduction array :math:`S`, and
-        then calculates the hafnian. Succintly, this function should implement
+        then calculates the hafnian. Succinctly, this function should implement
         :math:`A \mapsto \operatorname{haf}(A_{(S)})`.
 
         Args:
@@ -108,7 +108,7 @@ class BaseConnector(abc.ABC):
 
         This function first fills the diagonals with :math:`D`, then performs a
         reduction by a reduction array :math:`S` and then calculates the hafnian.
-        Succintly, this function should implement
+        Succinctly, this function should implement
         :math:`A \mapsto \operatorname{lhaf}(\operatorname{filldiag}(A, D)_{(S)})`.
 
         Args:

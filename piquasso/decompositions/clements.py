@@ -68,7 +68,8 @@ class PS:
 @dataclass
 class Decomposition:
     """
-    The data stucture which holds the decomposed angles from the Clements decomposition.
+    The data structure which holds the decomposed angles from the Clements
+    decomposition.
 
     Example usage::
 
@@ -416,7 +417,7 @@ def get_weights_from_decomposition(
 def get_decomposition_from_weights(
     weights: "np.ndarray", d: int, connector: BaseConnector
 ) -> Decomposition:
-    """Puts the data in the weight vector into a Clements decompositon.
+    """Puts the data in the weight vector into a Clements decomposition.
 
     Returns:
         The Clements decomposition. See :class:`Decomposition`.

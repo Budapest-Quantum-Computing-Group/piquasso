@@ -84,7 +84,7 @@ def _calc_reduced_matrix(matrix: np.ndarray, delta: np.ndarray) -> np.ndarray:
 
 @nb.njit(cache=True)
 def _calc_f(traces, scale_factor):
-    r"""Calcualates `f` from Appendix B.1 from https://arxiv.org/abs/2108.01622.
+    r"""Calculates `f` from Appendix B.1 from https://arxiv.org/abs/2108.01622.
 
     This function uses the previously calculated power traces.
 

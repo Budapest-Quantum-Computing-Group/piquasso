@@ -129,7 +129,7 @@ class BaseFockState(State, abc.ABC):
             positions (list[float]): List of position vectors.
             momentums (list[float]): List of momentum vectors.
             modes (tuple[int], optional):
-                Modes where Wigner function should be calculcated.
+                Modes where Wigner function should be calculated.
 
         Returns:
             numpy.ndarray:
@@ -228,7 +228,7 @@ class BaseFockState(State, abc.ABC):
             positions (List[float]): List of position values (x-axis)
             momentums (List[float]): List of momentum values (p-axis)
             mode (int, optional):
-                Mode where Wigner function should be calculcated.
+                Mode where Wigner function should be calculated.
 
         Note:
             Only a single mode is supported.
@@ -280,7 +280,7 @@ class BaseFockState(State, abc.ABC):
             state:
                 Either a :class:`~piquasso._simulators.fock.pure.state.PureFockState`
                 or a :class:`~piquasso._simulators.fock.general.state.FockState` that
-                can be used to calculate the fidelity aganist it.
+                can be used to calculate the fidelity against it.
 
         Returns:
             float: The calculated fidelity.

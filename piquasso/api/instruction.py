@@ -199,7 +199,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
 
         Raises:
             PiquassoException:
-                When the class is not actually an instance of :class:`Insruction`.
+                When the class is not actually an instance of :class:`Instruction`.
         """
 
         if not issubclass(instruction, Instruction):
@@ -255,7 +255,7 @@ class Instruction(_mixins.DictMixin, _mixins.RegisterMixin, _mixins.CodeMixin):
     def _validate_modes(self, modes):
         if self.NUMBER_OF_MODES is not None and len(modes) != self.NUMBER_OF_MODES:
             raise InvalidProgram(
-                f"The modes '{modes}' got specifed for the instruction '{self}', but "
+                f"The modes '{modes}' got specified for the instruction '{self}', but "
                 f"exactly '{self.NUMBER_OF_MODES}' mode needs to be specified. "
                 f"Concretely, the total number of modes specified for this instruction "
                 f"is 'len(modes) == len({modes}) == {len(modes)} != "
