@@ -170,6 +170,7 @@ class PureFockSimulator(BuiltinSimulator):
     _measurement_classes_allowed_mid_circuit = (
         measurements.ParticleNumberMeasurement,
         measurements.PostSelectPhotons,
+        measurements.HomodyneMeasurement,
     )
 
     _measurement_classes_allowed_with_shots_none = (
