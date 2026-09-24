@@ -751,22 +751,132 @@ class TestMidCircuitMeasurements:
         with pytest.raises(ValueError, match=f"are not active: {{{measured_mode}}}"):
             simulator.execute(program, shots=1)
 
-    def test_mid_circuit_not_allowed(self):
-        """
-        Test that an error is raised for mid-circuit measurements that are not allowed.
-        """
-        with pq.Program() as program:
-            pq.Q() | pq.NumberState([1, 1, 1, 0, 0])
-            pq.Q(0, 1) | pq.HomodyneMeasurement()
-            pq.Q(2) | pq.Squeezing(0.0)
-            pq.Q(2) | pq.ParticleNumberMeasurement()
+    def test_HomodyneMeasurement_followed_by_gate(self):
+        shots = 10
+        cutoff = 3
+        hbar = 1.0
+        homodyne_phi = np.pi / 5
+        phaseshifter_phi = np.pi / 7
 
-        simulator = pq.PureFockSimulator(d=5)
-        with pytest.raises(
-            pq.api.exceptions.InvalidSimulation,
-            match="not allowed as a mid-circuit measurement",
-        ):
-            simulator.execute(program, shots=1)
+        with pq.Program() as program:
+            pq.Q() | (pq.NumberState([0, 0]) + pq.NumberState([1, 1])) / np.sqrt(2)
+
+            pq.Q(0) | pq.HomodyneMeasurement(phi=homodyne_phi)
+            pq.Q(1) | pq.Phaseshifter(phi=phaseshifter_phi)
+
+        simulator = pq.PureFockSimulator(
+            d=2,
+            config=pq.Config(cutoff=cutoff, hbar=hbar, seed_sequence=123),
+        )
+
+        result = simulator.execute(program, shots=shots)
+
+        assert len(result.branches) == shots
+
+        for branch in result.branches:
+            assert branch.state is not None
+            assert branch.state.d == 1
+
+            q = branch.outcome[0] / np.sqrt(hbar)
+
+            expected = np.zeros(cutoff, dtype=complex)
+            expected[0] = 1.0
+            expected[1] = (
+                np.sqrt(2.0) * q * np.exp(1j * (phaseshifter_phi - homodyne_phi))
+            )
+            expected /= np.linalg.norm(expected)
+
+            overlap = np.vdot(expected, branch.state.state_vector)
+
+            assert np.isclose(np.abs(overlap) ** 2, 1.0)
+
+    def test_HomodyneMeasurement_followed_by_ParticleNumberMeasurement(self):
+        shots = 10
+
+        with pq.Program() as program:
+            pq.Q() | pq.NumberState([1, 0, 2, 1])
+
+            pq.Q(1) | pq.HomodyneMeasurement(phi=np.pi / 3)
+            pq.Q(3) | pq.Phaseshifter(phi=np.pi / 7)
+            pq.Q(0, 2, 3) | pq.ParticleNumberMeasurement()
+
+        simulator = pq.PureFockSimulator(
+            d=4,
+            config=pq.Config(cutoff=6, hbar=1.0, seed_sequence=123),
+        )
+
+        result = simulator.execute(program, shots=shots)
+
+        assert len(result.samples) == shots
+
+        for sample in result.samples:
+            assert isinstance(sample[0], float)
+            assert sample[1:] == (1, 2, 1)
+
+        assert all(branch.state is None for branch in result.branches)
+
+    def test_CV_gate_teleportation(self):
+        cutoff = 16
+        hbar = 2.0
+        resource_squeezing = 0.9
+        gate_s = 0.3
+        input_displacement_r = 0.25
+        input_displacement_phi = 0.2
+
+        with pq.Program() as program:
+            pq.Q() | pq.Vacuum()
+
+            pq.Q(0) | pq.Displacement(
+                r=input_displacement_r, phi=input_displacement_phi
+            )
+
+            # Prepare the finite-squeezing EPR resource on Alice's and Bob's modes.
+            pq.Q(1) | pq.Squeezing(r=-resource_squeezing)
+            pq.Q(2) | pq.Squeezing(r=resource_squeezing)
+            pq.Q(1, 2) | pq.Beamsplitter5050()
+
+            # Apply the gate to Bob's half of the resource before teleportation.
+            pq.Q(2) | pq.QuadraticPhase(s=gate_s)
+
+            # Alice performs the continuous-variable Bell measurement.
+            pq.Q(0, 1) | pq.Beamsplitter5050()
+            pq.Q(0) | pq.HomodyneMeasurement(phi=0.0)
+            pq.Q(1) | pq.HomodyneMeasurement(phi=np.pi / 2)
+
+            # Bob applies the gate-dependent feed-forward corrections.
+            pq.Q(2) | pq.PositionDisplacement(
+                x=lambda outcomes: outcomes[0] / np.sqrt(hbar)
+            )
+            pq.Q(2) | pq.MomentumDisplacement(
+                p=lambda outcomes: (outcomes[1] + gate_s * outcomes[0]) / np.sqrt(hbar)
+            )
+
+        simulator = pq.PureFockSimulator(
+            d=3,
+            config=pq.Config(cutoff=cutoff, hbar=hbar, seed_sequence=16),
+        )
+
+        teleported_state = simulator.execute(program, shots=1).state
+
+        with pq.Program() as reference_program:
+            pq.Q() | pq.Vacuum()
+            pq.Q(0) | pq.Displacement(
+                r=input_displacement_r, phi=input_displacement_phi
+            )
+            pq.Q(0) | pq.QuadraticPhase(s=gate_s)
+
+        reference_state = (
+            pq.PureFockSimulator(
+                d=1,
+                config=pq.Config(cutoff=cutoff, hbar=hbar),
+            )
+            .execute(reference_program)
+            .state
+        )
+
+        assert teleported_state is not None
+        assert reference_state is not None
+        assert reference_state.fidelity(teleported_state) > 0.99
 
 
 def test_conditional_squeezing_with_function():
