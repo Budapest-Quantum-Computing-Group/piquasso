@@ -13,11 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 import pytest
 
+
 import numpy as np
+import mpmath as mp
 
 import jax.numpy as jnp
+
+from functools import lru_cache
 
 from scipy.linalg import block_diag
 from piquasso._math.hafnian import (
@@ -31,6 +37,44 @@ from piquasso._math.jax.hafnian import (
 )
 
 from piquasso._math.linalg import reduce_
+
+
+@pytest.mark.parametrize("dtype", [float, complex])
+def test_hafnian_with_empty_matrix(dtype):
+    matrix = np.empty((0, 0), dtype=dtype)
+    occupation_numbers = np.empty(0, dtype=int)
+
+    assert hafnian_with_reduction(matrix, occupation_numbers) == 1.0
+
+
+@pytest.mark.parametrize("dtype", [float, complex])
+def test_loop_hafnian_with_empty_matrix(dtype):
+    matrix = np.empty((0, 0), dtype=dtype)
+    diagonal = np.empty(0, dtype=dtype)
+    occupation_numbers = np.empty(0, dtype=int)
+
+    assert loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers) == 1.0
+
+
+def test_hafnian_with_empty_matrix_batch():
+    actual = hafnian_with_reduction_batch(
+        np.empty((0, 0), dtype=complex),
+        np.empty(0, dtype=int),
+        cutoff=4,
+    )
+
+    assert np.array_equal(actual, np.array([1.0, 0.0, 0.0, 0.0]))
+
+
+def test_loop_hafnian_with_empty_matrix_batch():
+    actual = loop_hafnian_with_reduction_batch(
+        np.empty((0, 0), dtype=complex),
+        np.empty(0, dtype=complex),
+        np.empty(0, dtype=int),
+        cutoff=4,
+    )
+
+    assert np.array_equal(actual, np.array([1.0, 0.0, 0.0, 0.0]))
 
 
 def test_hafnian_with_empty_reduction():
@@ -113,6 +157,16 @@ def test_loop_hafnian_with_reduction_on_1_by_1_complex_matrix():
         ),
         -16 - 45j,
     )
+
+
+def test_loop_hafnian_with_real_matrix_and_complex_diagonal():
+    actual = loop_hafnian_with_reduction(
+        np.array([[0.0]]),
+        np.array([1.0j]),
+        occupation_numbers=np.array([1]),
+    )
+
+    assert actual == 1.0j
 
 
 def test_loop_hafnian_with_reduction_on_2_by_2_complex_matrix():
@@ -466,6 +520,37 @@ def test_hafnian_with_reduction_scaling_equivalence():
         assert np.isclose(scaled_before, scaled_after)
 
 
+def test_hafnian_with_reduction_weak_single_mode_high_occupation():
+    occupation = 100
+    matrix_element = 1e-5
+    expected = math.prod(range(1, occupation, 2)) * matrix_element ** (occupation // 2)
+
+    actual = hafnian_with_reduction(
+        np.array([[matrix_element]]), np.array([occupation])
+    )
+
+    assert np.isclose(actual, expected, rtol=1e-7, atol=0.0)
+
+
+def test_hafnian_with_reduction_large_representable_matrix_element():
+    matrix = np.array([[0.0, 1e200], [1e200, 0.0]])
+
+    actual = hafnian_with_reduction(matrix, np.array([1, 1]))
+
+    assert np.isfinite(actual)
+    assert np.isclose(actual, 1e200, rtol=1e-15)
+
+
+def test_hafnian_with_reduction_binomial_coefficient_exceeding_int64():
+    occupation = 67
+    matrix = np.array([[0.0, 1.0], [1.0, 0.0]])
+
+    actual = hafnian_with_reduction(matrix, np.array([occupation, occupation]))
+
+    assert np.isfinite(actual)
+    assert np.isclose(actual, float(math.factorial(occupation)), rtol=5e-4, atol=0.0)
+
+
 @pytest.mark.monkey
 def test_loop_hafnian_with_reduction_equivalence():
     for _ in range(100):
@@ -651,6 +736,17 @@ def test_loop_hafnian_with_reduction_batch(occupation_numbers, cutoff):
     )
 
 
+def test_loop_hafnian_with_reduction_batch_real_matrix_complex_diagonal():
+    actual = loop_hafnian_with_reduction_batch(
+        np.array([[0.0]]),
+        np.array([1.0j]),
+        np.array([0]),
+        cutoff=4,
+    )
+
+    assert np.allclose(actual, np.array([1.0, 1.0j, -1.0, -1.0j]))
+
+
 @pytest.mark.monkey
 def test_loop_hafnian_with_reduction_batch_random():
     for _ in range(100):
@@ -698,3 +794,99 @@ def test_jax_loop_hafnian_with_reduction():
         ),
         205.376424 + 690.048304j,
     )
+
+
+def _to_mpmath(value):
+    value = complex(value)
+
+    return mp.mpc(value.real, value.imag)
+
+
+def _expanded_indices(occupation_numbers):
+    return np.repeat(np.arange(len(occupation_numbers)), occupation_numbers)
+
+
+def _high_precision_hafnian(matrix, occupation_numbers):
+    indices = _expanded_indices(occupation_numbers)
+    expanded = [[_to_mpmath(matrix[row, col]) for col in indices] for row in indices]
+
+    @lru_cache(maxsize=None)
+    def calculate(remaining):
+        if not remaining:
+            return mp.mpc(1.0)
+
+        first = remaining[0]
+        tail = remaining[1:]
+        result = mp.mpc(0.0)
+
+        for offset, second in enumerate(tail):
+            reduced = tail[:offset] + tail[offset + 1 :]
+            result += expanded[first][second] * calculate(reduced)
+
+        return result
+
+    return calculate(tuple(range(len(indices))))
+
+
+def _high_precision_loop_hafnian(matrix, diagonal, occupation_numbers):
+    indices = _expanded_indices(occupation_numbers)
+    expanded_matrix = [
+        [_to_mpmath(matrix[row, col]) for col in indices] for row in indices
+    ]
+    expanded_diagonal = [_to_mpmath(diagonal[index]) for index in indices]
+
+    @lru_cache(maxsize=None)
+    def calculate(remaining):
+        if not remaining:
+            return mp.mpc(1.0)
+
+        first = remaining[0]
+        tail = remaining[1:]
+        result = expanded_diagonal[first] * calculate(tail)
+
+        for offset, second in enumerate(tail):
+            reduced = tail[:offset] + tail[offset + 1 :]
+            result += expanded_matrix[first][second] * calculate(reduced)
+
+        return result
+
+    return calculate(tuple(range(len(indices))))
+
+
+def test_complex_hafnian_against_high_precision_reference():
+    matrix = 1e-5 * np.array(
+        [
+            [0.7 + 0.2j, -0.4 + 0.1j, 0.2 - 0.5j],
+            [-0.4 + 0.1j, 0.3 - 0.6j, 0.8 + 0.2j],
+            [0.2 - 0.5j, 0.8 + 0.2j, -0.1 + 0.4j],
+        ]
+    )
+    occupation_numbers = np.array([3, 2, 1])
+
+    with mp.workdps(80):
+        expected = complex(_high_precision_hafnian(matrix, occupation_numbers))
+
+    actual = hafnian_with_reduction(matrix, occupation_numbers)
+
+    assert np.isclose(actual, expected, rtol=1e-12, atol=0.0)
+
+
+def test_complex_loop_hafnian_against_high_precision_reference():
+    matrix = np.array(
+        [
+            [0.7 + 0.2j, -0.4 + 0.1j, 0.2 - 0.5j],
+            [-0.4 + 0.1j, 0.3 - 0.6j, 0.8 + 0.2j],
+            [0.2 - 0.5j, 0.8 + 0.2j, -0.1 + 0.4j],
+        ]
+    )
+    diagonal = np.array([0.3 - 0.2j, -0.7 + 0.1j, 0.4 + 0.6j])
+    occupation_numbers = np.array([2, 1, 2])
+
+    with mp.workdps(80):
+        expected = complex(
+            _high_precision_loop_hafnian(matrix, diagonal, occupation_numbers)
+        )
+
+    actual = loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers)
+
+    assert np.isclose(actual, expected, rtol=1e-12, atol=0.0)

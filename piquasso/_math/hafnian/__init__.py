@@ -13,19 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Package containing hafnian and loop hafnian calculations.
+"""Native hafnian and loop-hafnian calculations."""
 
-Most of the code in this package are translated versions of the PiquassoBoost C++ code
-from https://github.com/Budapest-Quantum-Computing-Group/piquassoboost.
-
-Moreover, the algorithms are enhanced by factoring in repetitions according to
-https://arxiv.org/abs/2108.01622.
-"""
-
-from .plain_hafnian import hafnian_with_reduction, hafnian_with_reduction_batch
-
-from .loop_hafnian import (
+from ._hafnian import (
+    hafnian_with_reduction,
+    hafnian_with_reduction_batch,
     loop_hafnian_with_reduction,
     loop_hafnian_with_reduction_batch,
 )
