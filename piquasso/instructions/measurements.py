@@ -240,32 +240,23 @@ class HomodyneMeasurement(Measurement):
     with a strong coherent state :math:`| \alpha \rangle`, where :math:`\alpha >> 1`,
     then subtracting the detected intensities of the two outputs.
     The mixing is performed with a 50:50 beamsplitter.
+
+    To model a measurement with finite detector squeezing :math:`z`, use
+    :class:`GeneraldyneMeasurement` with
+
+    .. math::
+        \sigma_m = \operatorname{diag}(z^2, z^{-2})
+
+    as its detection covariance instead.
     """
 
-    def __init__(self, phi: float = 0.0, z: float = 1e-4) -> None:
+    def __init__(self, phi: float = 0.0) -> None:
         """
         Args:
             phi (float): Phase space rotation angle.
-            z (float):
-                Squeezing amplitude. In the limit of `z` going to infinity one would
-                recover the pure homodyne measurement in the so-called strong oscillator
-                limit. Conversely, setting `z = 1` would correspond to
-                :class:`HeterodyneMeasurement`.
         """
 
-        super().__init__(params=dict(phi=phi, z=z))
-
-    def _get_computed_params(self, connector: BaseConnector) -> dict:
-        np = connector.np
-        z = self.params["z"]
-        return dict(
-            detection_covariance=np.array(
-                [
-                    [z**2, 0],
-                    [0, (1 / z) ** 2],
-                ]
-            ),
-        )
+        super().__init__(params=dict(phi=phi))
 
     def _validate(self, connector: BaseConnector) -> None:
         np = connector.np
