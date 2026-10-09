@@ -55,6 +55,18 @@ def test_permanent_zero_input():
     assert np.isclose(permanent(interferometer, cols=input, rows=output), 1.0)
 
 
+@pytest.mark.parametrize("argument", ["rows", "cols"])
+def test_permanent_rejects_negative_multiplicities(argument):
+    multiplicities = {
+        "rows": np.array([1, 1]),
+        "cols": np.array([1, 1]),
+    }
+    multiplicities[argument][0] = -1
+
+    with pytest.raises(ValueError, match=f"{argument} must be nonnegative"):
+        permanent(np.eye(2), **multiplicities)
+
+
 def test_permanent_no_repetition():
     interferometer = np.array(
         [

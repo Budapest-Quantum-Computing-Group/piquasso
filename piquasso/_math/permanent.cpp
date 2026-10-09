@@ -32,8 +32,12 @@ py::object permanent_np(
 {
     Matrix<std::complex<TScalar>> native_matrix = numpy_to_matrix(matrix);
 
-    Vector<int> row_mult = numpy_to_vector(row_mult_arr);
-    Vector<int> col_mult = numpy_to_vector(col_mult_arr);
+    Vector<int> row_mult = nonnegative_numpy_to_vector(
+        row_mult_arr, "rows"
+    );
+    Vector<int> col_mult = nonnegative_numpy_to_vector(
+        col_mult_arr, "cols"
+    );
 
     std::complex<TScalar> result = permanent_cpp(native_matrix, row_mult, col_mult);
 
@@ -49,8 +53,12 @@ py::object permanent_laplace_np(
 {
     Matrix<std::complex<TScalar>> native_matrix = numpy_to_matrix(matrix);
 
-    Vector<int> row_mult = numpy_to_vector(row_mult_arr);
-    Vector<int> col_mult = numpy_to_vector(col_mult_arr);
+    Vector<int> row_mult = nonnegative_numpy_to_vector(
+        row_mult_arr, "rows"
+    );
+    Vector<int> col_mult = nonnegative_numpy_to_vector(
+        col_mult_arr, "cols"
+    );
 
     Vector<std::complex<TScalar>> result = permanent_laplace_cpp(native_matrix, row_mult, col_mult);
 
