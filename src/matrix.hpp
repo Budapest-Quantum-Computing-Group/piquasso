@@ -201,12 +201,12 @@ public:
         if (refcount) (*refcount)++;
     }
 
-    HOST_DEVICE size_t size()
+    HOST_DEVICE size_t size() const
     {
         return rows * cols;
     }
 
-    HOST_DEVICE Matrix copy()
+    HOST_DEVICE Matrix copy() const
     {
         Matrix matrix_copy(rows, cols);
 
@@ -254,6 +254,11 @@ public:
     }
 
     HOST_DEVICE TScalar &operator()(size_t row, size_t col)
+    {
+        return data[row * stride + col];
+    }
+
+    HOST_DEVICE const TScalar &operator()(size_t row, size_t col) const
     {
         return data[row * stride + col];
     }
