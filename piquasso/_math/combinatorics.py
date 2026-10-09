@@ -70,40 +70,42 @@ def partitions(boxes, particles, out=None):
         out: Optional output array.
     """
 
-    positions = particles + boxes - 1
-
-    if positions == -1 or boxes == 0:
+    if boxes == 0:
         return np.empty((1, 0), dtype=np.int32)
 
-    size = comb(positions, boxes - 1)
+    size = comb(particles + boxes - 1, boxes - 1)
 
     if out is None:
         result = np.empty((size, boxes), dtype=np.int32)
     else:
         result = out
 
-    separators = np.arange(boxes - 1, dtype=np.int32)
-    index = size - 1
+    state = np.zeros(boxes, dtype=np.int32)
+    state[0] = particles
 
-    while True:
-        prev = -1
-        for i in range(boxes - 1):
-            result[index, i] = separators[i] - prev - 1
-            prev = separators[i]
+    pivot = 0
 
-        result[index, boxes - 1] = positions - prev - 1
-        index -= 1
+    for row in range(size):
+        for i in range(boxes):
+            result[row, i] = state[i]
 
-        if index < 0:
+        if row == size - 1:
             break
 
-        i = boxes - 2
-        while separators[i] == positions - (boxes - 1 - i):
-            i -= 1
+        tail = state[boxes - 1]
 
-        separators[i] += 1
-        for j in range(i + 1, boxes - 1):
-            separators[j] = separators[j - 1] + 1
+        state[boxes - 1] = 0
+        state[pivot] -= 1
+        state[pivot + 1] = tail + 1
+
+        if pivot + 1 < boxes - 1:
+            pivot += 1
+
+        elif state[pivot] == 0:
+            pivot -= 1
+
+            while pivot >= 0 and state[pivot] == 0:
+                pivot -= 1
 
     return result
 
