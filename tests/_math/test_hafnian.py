@@ -890,3 +890,19 @@ def test_complex_loop_hafnian_against_high_precision_reference():
     actual = loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers)
 
     assert np.isclose(actual, expected, rtol=1e-12, atol=0.0)
+
+
+def test_loop_hafnian_with_tiny_matrix_and_unit_diagonal():
+    matrix = np.full((12, 12), 1e-200)
+    diagonal = np.ones(12)
+    occupation_numbers = np.ones(12, dtype=int)
+
+    assert np.isclose(
+        loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers), 1.0
+    )
+    assert np.allclose(
+        loop_hafnian_with_reduction_batch(
+            matrix, diagonal, occupation_numbers, cutoff=2
+        ),
+        [1.0, 1.0],
+    )

@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <numeric>
 #include <tuple>
 #include <utility>
@@ -195,6 +196,31 @@ extend_loop_input(
 }
 
 template <typename T>
+double loop_scale_factor(
+    const Matrix<T> &matrix,
+    const std::vector<T> &diagonal
+) {
+    double scale_factor = primary_scale_factor(matrix);
+    double maximum_diagonal = 0.0;
+
+    for (const T &value : diagonal) {
+        maximum_diagonal = std::max(
+            maximum_diagonal, static_cast<double>(std::abs(value))
+        );
+    }
+
+    const double maximum_diagonal_scale =
+        std::sqrt(std::numeric_limits<double>::max());
+    const double diagonal_scale_factor = maximum_diagonal
+            >= maximum_diagonal_scale
+        ? std::numeric_limits<double>::max()
+        : maximum_diagonal * maximum_diagonal;
+    scale_factor = std::max(scale_factor, diagonal_scale_factor);
+
+    return scale_factor;
+}
+
+template <typename T>
 T loop_hafnian(
     const Matrix<T> &original_matrix,
     const std::vector<T> &original_diagonal,
@@ -226,7 +252,7 @@ T loop_hafnian(
     const MatchedOccupations matched = match_occupation_numbers(occupations);
     Matrix<T> matrix = select_matrix(input_matrix, matched.edge_indices);
     std::vector<T> diagonal = select_vector(input_diagonal, matched.edge_indices);
-    const double scale_factor = primary_scale_factor(matrix);
+    const double scale_factor = loop_scale_factor(matrix, diagonal);
     scale_matrix_and_diagonal(matrix, diagonal, scale_factor);
 
     const std::size_t half_dimension = static_cast<std::size_t>(std::accumulate(
@@ -604,8 +630,10 @@ std::vector<T> loop_hafnian_batch(
         original_matrix, original_diagonal, original_occupations, cutoff
     );
 
-    const double scale_factor = primary_scale_factor(data.matrix);
-    const double odd_scale_factor = primary_scale_factor(data.odd_matrix);
+    const double scale_factor =
+        loop_scale_factor(data.matrix, data.diagonal);
+    const double odd_scale_factor =
+        loop_scale_factor(data.odd_matrix, data.odd_diagonal);
     scale_matrix_and_diagonal(data.matrix, data.diagonal, scale_factor);
     scale_matrix_and_diagonal(
         data.odd_matrix, data.odd_diagonal, odd_scale_factor
