@@ -56,7 +56,8 @@ void calculate_reduced_matrix(
     for (std::size_t index = 0; index < nonzero_indices.size(); ++index) {
         const std::size_t even = 2 * index;
         const std::size_t odd = even + 1;
-        const T delta_value = static_cast<T>(delta[nonzero_indices[index]]);
+        const T delta_value = static_cast<T>(
+            static_cast<double>(delta[nonzero_indices[index]]));
         const std::size_t source_col_even = 2 * nonzero_indices[index] + 1;
         const std::size_t source_col_odd = 2 * nonzero_indices[index];
 
