@@ -57,6 +57,12 @@ void validate_common_inputs(
 }
 
 std::vector<std::int64_t> occupations_from_numpy(const py::array &occupations) {
+    const std::string dtype_kind =
+        py::str(occupations.dtype().attr("kind")).cast<std::string>();
+    if (dtype_kind != "i" && dtype_kind != "u") {
+        throw py::value_error("occupation_numbers must contain integers");
+    }
+
     py::array_t<std::int64_t, py::array::c_style | py::array::forcecast> converted(
         occupations
     );
