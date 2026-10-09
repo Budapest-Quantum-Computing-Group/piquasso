@@ -21,13 +21,13 @@
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <vector>
 
 #include "loop_hafnian.hpp"
 #include "matrix.hpp"
 #include "numpy_utils.hpp"
 #include "plain_hafnian.hpp"
+#include "validations.hpp"
 
 namespace py = pybind11;
 
@@ -56,59 +56,15 @@ void validate_common_inputs(
     }
 }
 
-std::vector<std::int64_t> occupations_from_numpy(const py::array &occupations) {
-    const std::string dtype_kind =
-        py::str(occupations.dtype().attr("kind")).cast<std::string>();
-    if (dtype_kind != "i" && dtype_kind != "u") {
-        throw py::value_error("occupation_numbers must contain integers");
-    }
-
-    py::array_t<std::int64_t, py::array::c_style | py::array::forcecast> converted(
-        occupations
-    );
-    const auto view = converted.unchecked<1>();
-    std::vector<std::int64_t> result(static_cast<std::size_t>(view.shape(0)));
-
-    for (py::ssize_t index = 0; index < view.shape(0); ++index) {
-        if (view(index) < 0) {
-            throw py::value_error("occupation_numbers must be nonnegative");
-        }
-        result[static_cast<std::size_t>(index)] = view(index);
-    }
-    return result;
-}
-
-template <typename T>
-std::vector<T> vector_from_numpy(const py::array &vector) {
-    py::array_t<T, py::array::c_style | py::array::forcecast> converted(vector);
-    const Vector<T> native_vector = numpy_to_vector(converted);
-    std::vector<T> result(native_vector.length);
-
-    for (std::size_t index = 0; index < native_vector.length; ++index) {
-        result[index] = native_vector[index];
-    }
-    return result;
-}
-
-template <typename T> py::object vector_to_numpy(const std::vector<T> &values) {
-    Vector<T> result(values.size());
-    for (std::size_t index = 0; index < values.size(); ++index) {
-        result[index] = values[index];
-    }
-    return create_numpy_vector(result);
-}
-
-bool is_complex_array(const py::array &array) {
-    return py::str(array.dtype().attr("kind")).cast<std::string>() == "c";
-}
-
 py::object hafnian_numpy(
     const py::array &matrix,
     const py::array &occupation_numbers
 ) {
     validate_common_inputs(matrix, occupation_numbers);
     const std::vector<std::int64_t> occupations =
-        occupations_from_numpy(occupation_numbers);
+        nonnegative_vector_from_numpy<std::int64_t>(
+            occupation_numbers, "occupation_numbers"
+        );
 
     if (is_complex_array(matrix)) {
         py::array_t<
@@ -146,7 +102,9 @@ py::object loop_hafnian_numpy(
         throw py::value_error("diagonal must be one-dimensional and match matrix");
     }
     const std::vector<std::int64_t> occupations =
-        occupations_from_numpy(occupation_numbers);
+        nonnegative_vector_from_numpy<std::int64_t>(
+            occupation_numbers, "occupation_numbers"
+        );
 
     if (is_complex_array(matrix) || is_complex_array(diagonal)) {
         py::array_t<
@@ -155,8 +113,12 @@ py::object loop_hafnian_numpy(
         > contiguous_matrix(matrix);
         const Matrix<std::complex<double>> native_matrix =
             numpy_to_matrix(contiguous_matrix);
-        const std::vector<std::complex<double>> native_diagonal =
-            vector_from_numpy<std::complex<double>>(diagonal);
+        py::array_t<
+            std::complex<double>,
+            py::array::c_style | py::array::forcecast
+        > contiguous_diagonal(diagonal);
+        const Vector<std::complex<double>> native_diagonal =
+            numpy_to_vector(contiguous_diagonal);
         std::complex<double> result;
         {
             py::gil_scoped_release release;
@@ -168,8 +130,9 @@ py::object loop_hafnian_numpy(
     py::array_t<double, py::array::c_style | py::array::forcecast>
         contiguous_matrix(matrix);
     const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    const std::vector<double> native_diagonal =
-        vector_from_numpy<double>(diagonal);
+    py::array_t<double, py::array::c_style | py::array::forcecast>
+        contiguous_diagonal(diagonal);
+    const Vector<double> native_diagonal = numpy_to_vector(contiguous_diagonal);
     double result;
     {
         py::gil_scoped_release release;
@@ -188,7 +151,9 @@ py::object hafnian_batch_numpy(
         throw py::value_error("cutoff must be positive");
     }
     const std::vector<std::int64_t> occupations =
-        occupations_from_numpy(occupation_numbers);
+        nonnegative_vector_from_numpy<std::int64_t>(
+            occupation_numbers, "occupation_numbers"
+        );
 
     if (is_complex_array(matrix)) {
         py::array_t<
@@ -202,7 +167,7 @@ py::object hafnian_batch_numpy(
             py::gil_scoped_release release;
             result = hafnian_batch(native_matrix, occupations, cutoff);
         }
-        return vector_to_numpy(result);
+        return create_numpy_vector(result);
     }
 
     py::array_t<double, py::array::c_style | py::array::forcecast>
@@ -213,7 +178,7 @@ py::object hafnian_batch_numpy(
         py::gil_scoped_release release;
         result = hafnian_batch(native_matrix, occupations, cutoff);
     }
-    return vector_to_numpy(result);
+    return create_numpy_vector(result);
 }
 
 py::object loop_hafnian_batch_numpy(
@@ -230,7 +195,9 @@ py::object loop_hafnian_batch_numpy(
         throw py::value_error("cutoff must be positive");
     }
     const std::vector<std::int64_t> occupations =
-        occupations_from_numpy(occupation_numbers);
+        nonnegative_vector_from_numpy<std::int64_t>(
+            occupation_numbers, "occupation_numbers"
+        );
 
     if (is_complex_array(matrix) || is_complex_array(diagonal)) {
         py::array_t<
@@ -239,8 +206,12 @@ py::object loop_hafnian_batch_numpy(
         > contiguous_matrix(matrix);
         const Matrix<std::complex<double>> native_matrix =
             numpy_to_matrix(contiguous_matrix);
-        const std::vector<std::complex<double>> native_diagonal =
-            vector_from_numpy<std::complex<double>>(diagonal);
+        py::array_t<
+            std::complex<double>,
+            py::array::c_style | py::array::forcecast
+        > contiguous_diagonal(diagonal);
+        const Vector<std::complex<double>> native_diagonal =
+            numpy_to_vector(contiguous_diagonal);
         std::vector<std::complex<double>> result;
         {
             py::gil_scoped_release release;
@@ -248,14 +219,15 @@ py::object loop_hafnian_batch_numpy(
                 native_matrix, native_diagonal, occupations, cutoff
             );
         }
-        return vector_to_numpy(result);
+        return create_numpy_vector(result);
     }
 
     py::array_t<double, py::array::c_style | py::array::forcecast>
         contiguous_matrix(matrix);
     const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    const std::vector<double> native_diagonal =
-        vector_from_numpy<double>(diagonal);
+    py::array_t<double, py::array::c_style | py::array::forcecast>
+        contiguous_diagonal(diagonal);
+    const Vector<double> native_diagonal = numpy_to_vector(contiguous_diagonal);
     std::vector<double> result;
     {
         py::gil_scoped_release release;
@@ -263,7 +235,7 @@ py::object loop_hafnian_batch_numpy(
             native_matrix, native_diagonal, occupations, cutoff
         );
     }
-    return vector_to_numpy(result);
+    return create_numpy_vector(result);
 }
 
 } // namespace

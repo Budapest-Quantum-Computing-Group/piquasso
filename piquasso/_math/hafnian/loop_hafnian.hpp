@@ -38,6 +38,25 @@
 namespace piquasso::hafnian {
 
 template <typename T>
+std::size_t diagonal_size(const std::vector<T> &diagonal) {
+    return diagonal.size();
+}
+
+template <typename T>
+std::size_t diagonal_size(const Vector<T> &diagonal) {
+    return diagonal.length;
+}
+
+template <typename T, typename Diagonal>
+std::vector<T> copy_diagonal(const Diagonal &diagonal) {
+    std::vector<T> result(diagonal_size(diagonal));
+    for (std::size_t index = 0; index < result.size(); ++index) {
+        result[index] = diagonal[index];
+    }
+    return result;
+}
+
+template <typename T>
 const std::vector<T> &calculate_f_loop(
     const std::vector<T> &traces,
     const std::vector<T> &loop_corrections,
@@ -159,11 +178,11 @@ const std::vector<T> &calculate_f_loop_from_matrix(
     );
 }
 
-template <typename T>
+template <typename T, typename Diagonal>
 std::tuple<Matrix<T>, std::vector<T>, std::vector<std::int64_t>>
 extend_loop_input(
     const Matrix<T> &matrix,
-    const std::vector<T> &diagonal,
+    const Diagonal &diagonal,
     const std::vector<std::int64_t> &occupations
 ) {
     Matrix<T> extended_matrix(matrix.rows + 1, matrix.cols + 1);
@@ -178,9 +197,12 @@ extend_loop_input(
         }
     }
 
-    std::vector<T> extended_diagonal(diagonal.size() + 1);
+    const std::size_t input_diagonal_size = diagonal_size(diagonal);
+    std::vector<T> extended_diagonal(input_diagonal_size + 1);
     extended_diagonal[0] = static_cast<T>(1.0);
-    std::copy(diagonal.begin(), diagonal.end(), extended_diagonal.begin() + 1);
+    for (std::size_t index = 0; index < input_diagonal_size; ++index) {
+        extended_diagonal[index + 1] = diagonal[index];
+    }
 
     std::vector<std::int64_t> extended_occupations(occupations.size() + 1);
     extended_occupations[0] = 1;
@@ -220,10 +242,10 @@ double loop_scale_factor(
     return scale_factor;
 }
 
-template <typename T>
+template <typename T, typename Diagonal>
 T loop_hafnian(
     const Matrix<T> &original_matrix,
-    const std::vector<T> &original_diagonal,
+    const Diagonal &original_diagonal,
     const std::vector<std::int64_t> &original_occupations
 ) {
     const std::int64_t particle_number = std::accumulate(
@@ -245,7 +267,7 @@ T loop_hafnian(
             );
     } else {
         input_matrix = original_matrix.copy();
-        input_diagonal = original_diagonal;
+        input_diagonal = copy_diagonal<T>(original_diagonal);
         occupations = original_occupations;
     }
 
@@ -430,10 +452,10 @@ template <typename T> struct LoopBatchData {
     std::vector<std::int64_t> odd_edge_repetitions;
 };
 
-template <typename T>
+template <typename T, typename Diagonal>
 LoopBatchData<T> prepare_loop_batch_data(
     const Matrix<T> &original_matrix,
-    const std::vector<T> &original_diagonal,
+    const Diagonal &original_diagonal,
     const std::vector<std::int64_t> &original_occupations,
     std::int64_t cutoff
 ) {
@@ -456,7 +478,7 @@ LoopBatchData<T> prepare_loop_batch_data(
     if (particle_number % 2 == 0) {
         matched = match_occupation_numbers(original_occupations);
         matrix = original_matrix.copy();
-        diagonal = original_diagonal;
+        diagonal = copy_diagonal<T>(original_diagonal);
 
         ++occupations_copy.back();
         std::vector<std::int64_t> unused_occupations;
@@ -485,7 +507,7 @@ LoopBatchData<T> prepare_loop_batch_data(
 
         ++occupations_copy.back();
         odd_matrix = original_matrix.copy();
-        odd_diagonal = original_diagonal;
+        odd_diagonal = copy_diagonal<T>(original_diagonal);
         odd_matched = match_occupation_numbers(occupations_copy);
     }
 
@@ -605,10 +627,10 @@ void accumulate_loop_batch(
     }
 }
 
-template <typename T>
+template <typename T, typename Diagonal>
 std::vector<T> loop_hafnian_batch(
     const Matrix<T> &original_matrix,
-    const std::vector<T> &original_diagonal,
+    const Diagonal &original_diagonal,
     const std::vector<std::int64_t> &original_occupations,
     std::int64_t cutoff
 ) {
