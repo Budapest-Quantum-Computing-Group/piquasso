@@ -36,7 +36,7 @@ void power_traces_from_charpoly(
 ) {
     const std::size_t dimension = coefficients.rows;
     if (maximum_power == 0) {
-        traces.assign(1, static_cast<T>(dimension));
+        traces.assign(1, static_cast<T>(static_cast<double>(dimension)));
         return;
     }
 
