@@ -233,7 +233,7 @@ T hafnian(
         static_cast<std::int64_t>(job_count);
 
 #if defined(_OPENMP)
-#pragma omp parallel for schedule(dynamic) num_threads(workspace_count > 0 ? workspace_count : 1) if(glynn_parallel_enabled(job_count))
+#pragma omp parallel for schedule(dynamic) num_threads(workspace_count > 0 ? static_cast<int>(workspace_count) : 1) if(glynn_parallel_enabled(job_count))
 #endif
     for (std::int64_t omp_job_index = 0;
          omp_job_index < omp_job_count;
@@ -379,7 +379,7 @@ std::vector<T> hafnian_batch(
         static_cast<std::int64_t>(job_count);
 
 #if defined(_OPENMP)
-#pragma omp parallel for schedule(dynamic) num_threads(workspace_count > 0 ? workspace_count : 1) if(glynn_parallel_enabled(job_count))
+#pragma omp parallel for schedule(dynamic) num_threads(workspace_count > 0 ? static_cast<int>(workspace_count) : 1) if(glynn_parallel_enabled(job_count))
 #endif
     for (std::int64_t omp_job_index = 0;
          omp_job_index < omp_job_count;
