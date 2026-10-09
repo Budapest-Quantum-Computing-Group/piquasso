@@ -68,6 +68,7 @@ matplotlib = ["matplotlib"]
 dask = ["dask"]
 dev = [
   "pytest>=8.0.1,<8.5.0",
+  "mpmath>=1.1.0,<1.4.0",
   "coverage>=7.6.1,<7.11.0",
   "mypy==2.3.1",
   "flake8>=7.1.1,<7.4.0",

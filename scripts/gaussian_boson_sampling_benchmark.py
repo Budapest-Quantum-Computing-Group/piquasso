@@ -30,15 +30,15 @@ import piquasso as pq
 N = 100  # number of shots
 
 
-def get_strawberry_samples(squeezings, unitary):
-    d = len(squeezings)
+def get_strawberry_samples(squeezing, unitary):
+    d = len(unitary)
 
     sf_program = sf.Program(d)
     sf_engine = sf.Engine(backend="gaussian")
 
     with sf_program.context as q:
         for i in range(d):
-            sf.ops.Sgate(squeezings[i]) | q[i]
+            sf.ops.Sgate(squeezing) | q[i]
 
         sf.ops.Interferometer(unitary) | tuple(q[i] for i in range(d))
 
@@ -47,12 +47,12 @@ def get_strawberry_samples(squeezings, unitary):
     return sf_engine.run(sf_program, shots=N).samples
 
 
-def get_piquasso_samples(squeezings, unitary):
-    d = len(squeezings)
+def get_piquasso_samples(squeezing, unitary):
+    d = len(unitary)
 
     with pq.Program() as program:
         for i in range(d):
-            pq.Q(i) | pq.Squeezing(squeezings[i])
+            pq.Q(i) | pq.Squeezing(squeezing)
 
         pq.Q() | pq.Interferometer(unitary)
         pq.Q() | pq.ParticleNumberMeasurement()
@@ -71,10 +71,10 @@ if __name__ == "__main__":
 
     # Warmup
     m = 2
-    squeezings = np.arcsinh(1)
+    r = np.arcsinh(1)
     unitary = unitary_group.rvs(m)
-    get_strawberry_samples(squeezings, unitary)
-    get_piquasso_samples(squeezings, unitary)
+    get_strawberry_samples(r, unitary)
+    get_piquasso_samples(r, unitary)
     ####
 
     x = []
@@ -85,17 +85,17 @@ if __name__ == "__main__":
         print("m=", m)
         x.append(m)
 
-        squeezings = np.arcsinh(1)
+        r = np.arcsinh(1)
         unitary = unitary_group.rvs(m)
 
         start_time = time.time()
-        samples = get_strawberry_samples(squeezings, unitary)
+        samples = get_strawberry_samples(r, unitary)
         runtime = time.time() - start_time
         print("SF:", runtime)
         sf_times.append(runtime)
 
         start_time = time.time()
-        samples = get_piquasso_samples(squeezings, unitary)
+        samples = get_piquasso_samples(r, unitary)
         runtime = time.time() - start_time
         print("PQ:", runtime)
         pq_times.append(runtime)

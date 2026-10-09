@@ -20,6 +20,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <string>
+#include <vector>
+
 #include "matrix.hpp"
 #include "torontonian.hpp"
 
@@ -72,6 +75,24 @@ py::object create_numpy_vector(Vector<TScalar> input)
     return py::array_t<TScalar>({size}, {sizeof(TScalar)}, ptr, free_when_done);
 }
 
+template <typename TScalar>
+py::object create_numpy_vector(const std::vector<TScalar> &input)
+{
+    auto size = input.size();
+    TScalar *ptr = new TScalar[size];
+    for (size_t i = 0; i < size; i++) {
+        ptr[i] = input[i];
+    }
+
+    py::capsule free_when_done(ptr, [](void *f)
+    {
+        TScalar *ptr = reinterpret_cast<TScalar *>(f);
+        delete[] ptr;
+    });
+
+    return py::array_t<TScalar>({size}, {sizeof(TScalar)}, ptr, free_when_done);
+}
+
 /**
  * Creates a Matrix from a numpy array with shared memory.
  */
@@ -108,6 +129,59 @@ Vector<TScalar> numpy_to_vector(
     Vector<TScalar> vector(size, data);
 
     return vector;
+}
+
+/**
+ * Creates a nonnegative Vector view over a one-dimensional NumPy array.
+ * The input array must outlive the returned view.
+ */
+template <typename TScalar, int Flags>
+Vector<TScalar> nonnegative_numpy_to_vector(
+    py::array_t<TScalar, Flags> numpy_array,
+    const char *argument_name
+)
+{
+    if (numpy_array.ndim() != 1) {
+        throw py::value_error(
+            std::string(argument_name) + " must be one-dimensional"
+        );
+    }
+
+    Vector<TScalar> result = numpy_to_vector(numpy_array);
+    for (size_t index = 0; index < result.length; index++) {
+        if (result[index] < 0) {
+            throw py::value_error(
+                std::string(argument_name) + " must be nonnegative"
+            );
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Converts a one-dimensional NumPy array to an owning nonnegative vector.
+ */
+template <typename TScalar>
+std::vector<TScalar> nonnegative_vector_from_numpy(
+    const py::array &numpy_array,
+    const char *argument_name
+)
+{
+    py::array_t<
+        TScalar,
+        py::array::c_style | py::array::forcecast
+    > converted(numpy_array);
+    const Vector<TScalar> input = nonnegative_numpy_to_vector(
+        converted, argument_name
+    );
+    std::vector<TScalar> result(input.length);
+
+    for (size_t index = 0; index < input.length; index++) {
+        result[index] = input[index];
+    }
+
+    return result;
 }
 
 #endif

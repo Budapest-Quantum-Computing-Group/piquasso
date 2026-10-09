@@ -17,8 +17,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 #ifndef HOST_DEVICE
@@ -58,6 +61,34 @@ TInt binomialCoeff(TInt n, TInt k)
         result = (result / i) * (n - k + i) + (result % i) * (n - k + i) / i;
 
     return result;
+}
+
+/**
+ * @brief Computes a binomial coefficient without fixed-width integer overflow.
+ *
+ * Hafnian prefactors are accumulated in floating point, so calculating them in
+ * an integer type first only reduces the supported occupation-number range.
+ */
+inline double binomialCoeffDouble(std::int64_t n, std::int64_t k)
+{
+    if (k < 0 || n < 0 || k > n)
+        return 0.0;
+
+    if (k > n - k)
+        k = n - k;
+
+    long double result = 1.0L;
+
+    for (std::int64_t i = 1; i <= k; ++i)
+    {
+        result *= static_cast<long double>(n - k + i);
+        result /= static_cast<long double>(i);
+    }
+
+    if (result > static_cast<long double>(std::numeric_limits<double>::max()))
+        throw std::overflow_error("The binomial coefficient is too large.");
+
+    return static_cast<double>(result);
 }
 
 /**
