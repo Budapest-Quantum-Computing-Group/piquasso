@@ -23,10 +23,10 @@
 #include <cstdint>
 #include <vector>
 
-#include "loop_hafnian.hpp"
+#include "hafnian/loop_hafnian.hpp"
+#include "hafnian/plain_hafnian.hpp"
 #include "matrix.hpp"
 #include "numpy_utils.hpp"
-#include "plain_hafnian.hpp"
 #include "validations.hpp"
 
 namespace py = pybind11;
@@ -240,7 +240,7 @@ py::object loop_hafnian_batch_numpy(
 
 } // namespace
 
-PYBIND11_MODULE(_hafnian, module) {
+PYBIND11_MODULE(hafnian, module) {
     module.doc() = R"doc(Native hafnian and loop-hafnian implementations.
 
 Most of the code in this package consists of translated versions of the PiquassoBoost

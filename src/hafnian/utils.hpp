@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PIQUASSO_HAFNIAN_UTILS_HPP
-#define PIQUASSO_HAFNIAN_UTILS_HPP
+#ifndef PIQUASSO_SRC_HAFNIAN_UTILS_HPP
+#define PIQUASSO_SRC_HAFNIAN_UTILS_HPP
 
 #include <algorithm>
 #include <cmath>
