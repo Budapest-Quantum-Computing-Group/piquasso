@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List
+from typing import Any, Tuple, List
 
 import scipy
 import numpy as np
@@ -558,7 +558,7 @@ def _generate_threshold_samples_using_hafnian(state, instruction, shots):
 def homodyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    phi = np.asarray(
+    phi: Any = np.asarray(
         instruction._get_all_params(state._connector)["phi"],
         dtype=state._config.dtype,
     )
