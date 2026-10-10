@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List
+from typing import Any, Tuple, List
 
 import scipy
 import numpy as np
@@ -558,15 +558,68 @@ def _generate_threshold_samples_using_hafnian(state, instruction, shots):
 def homodyne_measurement(
     state: GaussianState, instruction: Instruction, shots: int
 ) -> List[Branch]:
-    phi = instruction._get_all_params(state._connector)["phi"]
-
+    phi: Any = np.asarray(
+        instruction._get_all_params(state._connector)["phi"],
+        dtype=state._config.dtype,
+    )
     modes = instruction.modes
 
     phaseshift = np.identity(len(instruction.modes)) * np.exp(-1j * phi)
 
     _apply_passive_linear(state, phaseshift, modes=modes)
 
-    return generaldyne_measurement(state, instruction, shots)
+    mean = state.xpxp_mean_vector
+    cov = state.xpxp_covariance_matrix
+
+    measured_indices = np.array([2 * mode for mode in modes])
+    discarded_indices = _map_modes_to_xpxp_indices(modes)
+    outer_indices = np.delete(np.arange(2 * state.d), discarded_indices)
+
+    mean_measured = mean[measured_indices]
+    mean_outer = mean[outer_indices]
+
+    cov_measured = cov[np.ix_(measured_indices, measured_indices)]
+    cov_outer = cov[np.ix_(outer_indices, outer_indices)]
+    cov_correlation = cov[np.ix_(outer_indices, measured_indices)]
+
+    # GaussianState stores twice the physical quadrature covariance. Consequently,
+    # the covariance of the sampled homodyne outcomes is cov_measured / 2.
+    samples: np.ndarray = np.asarray(
+        state._config.rng.multivariate_normal(
+            mean=mean_measured,
+            cov=cov_measured / 2,
+            size=shots,
+        ),
+        dtype=state._config.dtype,
+    )
+
+    gain = np.linalg.solve(cov_measured, cov_correlation.transpose()).transpose()
+    evolved_cov_outer = cov_outer - gain @ cov_correlation.transpose()
+    evolved_cov_outer = (evolved_cov_outer + evolved_cov_outer.transpose()) / 2
+
+    branches = []
+
+    for sample in samples:
+        evolved_mean_outer = mean_outer + gain @ (sample - mean_measured)
+
+        new_state = GaussianState(
+            d=len(evolved_mean_outer) // 2,
+            connector=state._connector,
+            config=state._config,
+        )
+
+        new_state.xpxp_covariance_matrix = evolved_cov_outer
+        new_state.xpxp_mean_vector = evolved_mean_outer
+
+        branches.append(
+            Branch(
+                frequency=Fraction(1, shots),
+                state=new_state,
+                outcome=tuple(sample),
+            )
+        )
+
+    return branches
 
 
 def vacuum(state: GaussianState, instruction: Instruction, shots: int) -> List[Branch]:

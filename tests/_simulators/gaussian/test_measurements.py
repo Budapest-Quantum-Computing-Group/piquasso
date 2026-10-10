@@ -86,6 +86,62 @@ def test_measure_homodyne_with_multiple_shots(state):
     result = simulator.execute(program, initial_state=state, shots=shots)
 
     assert len(result.samples) == shots
+    assert all(len(sample) == 2 for sample in result.samples)
+
+
+def test_Homodyne_vacuum_samples_have_the_quadrature_distribution():
+    shots = 10_000
+    hbar = 3.0
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.HomodyneMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=1,
+        config=pq.Config(hbar=hbar, seed_sequence=42),
+    )
+
+    result = simulator.execute(program, shots=shots)
+    samples = np.asarray(result.samples)
+
+    assert samples.shape == (shots, 1)
+    assert np.isclose(np.mean(samples), 0.0, atol=0.05)
+    assert np.isclose(np.var(samples), hbar / 2, rtol=0.03)
+
+
+def test_Homodyne_two_mode_squeezing_post_measurement_state():
+    r = 0.4
+
+    with pq.Program() as program:
+        pq.Q(0, 1) | pq.Squeezing2(r=r)
+        pq.Q(1) | pq.HomodyneMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=2,
+        config=pq.Config(hbar=1.0, seed_sequence=42),
+    )
+
+    result = simulator.execute(program)
+    state = result.state
+    sample = result.samples[0][0]
+
+    expected_covariance = np.diag(
+        [
+            1 / np.cosh(2 * r),
+            np.cosh(2 * r),
+        ]
+    )
+    expected_mean = np.array(
+        [
+            np.tanh(2 * r) * sample,
+            0.0,
+        ]
+    )
+
+    assert state.d == 1
+    assert np.allclose(state.xpxp_covariance_matrix, expected_covariance)
+    assert np.allclose(state.xpxp_mean_vector, expected_mean)
+    state.validate()
 
 
 def test_measure_heterodyne_with_multiple_shots(state):
@@ -570,14 +626,18 @@ class TestMidCircuitMeasurements:
     """Test programs that contain mid-circuit measurements."""
 
     @pytest.mark.parametrize(
-        "dyne_measurement_class", [pq.HomodyneMeasurement, pq.HeterodyneMeasurement]
+        ("dyne_measurement_class", "number_of_dyne_outcomes"),
+        [(pq.HomodyneMeasurement, 2), (pq.HeterodyneMeasurement, 4)],
     )
     @pytest.mark.parametrize(
         "terminal_measurement_class",
         [pq.ParticleNumberMeasurement, pq.ThresholdMeasurement],
     )
     def test_dyne_and_pnm_threshold_meas(
-        self, dyne_measurement_class, terminal_measurement_class
+        self,
+        dyne_measurement_class,
+        number_of_dyne_outcomes,
+        terminal_measurement_class,
     ):
 
         with pq.Program() as program:
@@ -589,9 +649,9 @@ class TestMidCircuitMeasurements:
         simulator = pq.GaussianSimulator(d=5)
         res = simulator.execute(program, shots=1)
         samples = res.samples[0]
-        for i in range(4):
+        for i in range(number_of_dyne_outcomes):
             assert not np.isclose(samples[i], 0)
-        for i in range(4, 6):
+        for i in range(number_of_dyne_outcomes, number_of_dyne_outcomes + 2):
             assert np.isclose(samples[i], 0)
 
     def test_generaldyne_and_pnm(self):
