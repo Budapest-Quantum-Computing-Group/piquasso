@@ -57,12 +57,20 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/matrix.hpp
 )
 
+add_library(
+    bsoutputstateboost
+    STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/bs_output_state.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bs_output_state.hpp
+)
+
 target_include_directories(torontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(looptorontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pfaffianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(permanentboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(permanentlaplaceboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(hafnianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(bsoutputstateboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # Source: https://cliutils.gitlab.io/modern-cmake/chapters/packages/OpenMP.html

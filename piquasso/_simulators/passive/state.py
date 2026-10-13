@@ -40,7 +40,6 @@ from piquasso.api.exceptions import (
 )
 from piquasso.api.connector import BaseConnector
 
-from .utils import calculate_state_vector
 from .marginal import get_marginal_fock_probabilities
 
 if TYPE_CHECKING:
@@ -392,12 +391,11 @@ class PassiveState(State):
             self._get_postselected_photons(), dtype=int
         )
 
-        calculate_state_vector_func = partial(
-            calculate_state_vector,
+        calculate_BS_output_state_func = partial(
+            connector.calculate_BS_output_state,
             interferometer=self.interferometer,
             postselect_data=(postselected_modes, postselected_photons),
             config=self._config,
-            connector=self._connector,
         )
 
         particle_numbers = fallback_np.sum(self._occupation_numbers, axis=1)
@@ -434,7 +432,7 @@ class PassiveState(State):
 
             input_state = self._occupation_numbers[index]
 
-            partial_state_vector = calculate_state_vector_func(
+            partial_state_vector = calculate_BS_output_state_func(
                 initial_state=input_state,
             )
 
