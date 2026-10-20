@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.0.2] - 2026-10-20
+
+### Fixed
+
+- Replaced hafnian Numba implementation with C++ and OpenMP to avoid LLVM errors when
+  using cached recursively defined Numba functions.
+
 ## [8.0.1] - 2026-07-01
 
 ### Fixed
