@@ -57,39 +57,16 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.0
-        # NOTE: Although all wheels can be built, they are not tested currently.
-        # However, a comment is left for someone in the future trying to solve this.
-        #
-        # Problem:
-        # Scipy is distributed as sdist sometimes, because it is not built for every
-        # architecture cibuildwheel is able to run tests on. The wheel would contain
-        # every library, but an sdist needs to be built on the machine, and it
-        # requires openblas for building:
-        # https://docs.scipy.org/doc/scipy-1.7.1/reference/building/windows.html#installing-openblas
-        # However, yum openblas library is sometimes not registered in pkgconfig on
-        # install.
-        # Therefore, we would need to create an `openblas.pc` file manually, see
-        # https://github.com/scipy/scipy/issues/16308#issuecomment-1339714289
-        # But then, there are architectures where openblas is not even distributed.
-        # This makes installing scipy for testing a nontrivial task.
-        #
-        # Undeterred, one could just skip testing these cases. But it would require us
-        # going through all the architectures and determine which is easy to test.
-        # Since the build identifiers are only parsed with `fnmatch`
-        # (see: https://cibuildwheel.pypa.io/en/stable/options/#build-skip),
-        # it is also tricky to enable testing only on certain architectures.
-        #
-        # To make it simple, we build every wheel and skip the tests altogether, and
-        # pray that it works. If the wheel does not work, we instruct the user to try
-        # installing it from sdist.
-        #
-        # env:
-          # CIBW_TEST_EXTRAS: "tensorflow,jax"
-          # CIBW_TEST_REQUIRES: pytest
-          ## NOTE: --import-mode=importlib prevents pytest to import piquasso from
-          ## directory
-          # CIBW_TEST_COMMAND: "pytest -v --import-mode=importlib {project}/tests"
         env:
+          # Test the installed distribution, not the source checkout.
+          # cibuildwheel creates an isolated environment for each tested wheel.
+          CIBW_TEST_COMMAND: >-
+            python -m pip check &&
+            python -c "import piquasso; print(piquasso.__file__)"
+
+          # Keep building these wheels, but skip installation tests where the Python
+          # dependency stack is not reliably available.
+          CIBW_TEST_SKIP: '*-musllinux* *-win32 *-macosx_x86_64'
           # libomp is not pre-installed on GitHub's macOS runners; brew installs it
           # once per platform so CMakeLists.txt can find it at /opt/homebrew/opt/libomp.
           CIBW_BEFORE_ALL_MACOS: "brew install libomp"
