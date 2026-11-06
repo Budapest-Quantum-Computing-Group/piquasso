@@ -44,11 +44,24 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.hpp
 )
 
+add_library(
+    hafnianboost
+    STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/hafnian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hafnian.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/schur_recursion.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/matching.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/polynomial.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/matrix.hpp
+)
+
 target_include_directories(torontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(looptorontonianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pfaffianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(permanentboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(permanentlaplaceboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(hafnianboost PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # Source: https://cliutils.gitlab.io/modern-cmake/chapters/packages/OpenMP.html
@@ -56,6 +69,7 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(permanentboost PUBLIC OpenMP::OpenMP_CXX)
     target_link_libraries(permanentlaplaceboost PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(hafnianboost PUBLIC OpenMP::OpenMP_CXX)
 else()
     # This could happen, because Apple disabled openmp in clang.
     # One could install it via brew, but it would only works on the machine where it

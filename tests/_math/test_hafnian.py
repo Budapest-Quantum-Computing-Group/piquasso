@@ -906,3 +906,174 @@ def test_loop_hafnian_with_tiny_matrix_and_unit_diagonal():
         ),
         [1.0, 1.0],
     )
+
+
+def test_loop_hafnian_with_reduction_with_single_photon():
+    matrix = np.array([[1.0, 2.0], [2.0, 3.0]], dtype=complex)
+    diagonal = np.array([4.0 + 1j, 5.0 - 2j])
+
+    assert np.isclose(
+        loop_hafnian_with_reduction(matrix, diagonal, np.array([0, 1])), 5.0 - 2j
+    )
+
+
+def test_hafnian_and_loop_hafnian_with_reduction_return_type():
+    matrix = np.array([[1.0, 2.0], [2.0, 3.0]])
+    real_diagonal = np.array([4.0, 5.0])
+    complex_diagonal = np.array([4.0 + 1j, 5.0 - 2j])
+    occupation_numbers = np.array([2, 1])
+
+    assert isinstance(hafnian_with_reduction(matrix, np.array([2, 2])), float)
+    assert isinstance(
+        loop_hafnian_with_reduction(matrix, real_diagonal, occupation_numbers), float
+    )
+    assert isinstance(
+        loop_hafnian_with_reduction(matrix, complex_diagonal, occupation_numbers),
+        complex,
+    )
+    assert (
+        loop_hafnian_with_reduction_batch(
+            matrix, real_diagonal, occupation_numbers, cutoff=5
+        ).dtype
+        == np.float64
+    )
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.complex64])
+def test_hafnian_and_loop_hafnian_with_reduction_single_precision(dtype):
+    rng = np.random.default_rng(123)
+    matrix = rng.normal(size=(4, 4)) + (
+        1j * rng.normal(size=(4, 4)) if dtype is np.complex64 else 0.0
+    )
+    matrix = ((matrix + matrix.T) / 2).astype(dtype)
+    diagonal = rng.normal(size=4).astype(dtype)
+    occupation_numbers = np.array([1, 2, 0, 1])
+    double = np.result_type(dtype, np.float64)
+
+    results = [
+        hafnian_with_reduction(matrix, occupation_numbers),
+        loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers),
+        hafnian_with_reduction_batch(matrix, occupation_numbers, 4),
+        loop_hafnian_with_reduction_batch(matrix, diagonal, occupation_numbers, 4),
+    ]
+    double_results = [
+        hafnian_with_reduction(matrix.astype(double), occupation_numbers),
+        loop_hafnian_with_reduction(
+            matrix.astype(double), diagonal.astype(double), occupation_numbers
+        ),
+        hafnian_with_reduction_batch(matrix.astype(double), occupation_numbers, 4),
+        loop_hafnian_with_reduction_batch(
+            matrix.astype(double), diagonal.astype(double), occupation_numbers, 4
+        ),
+    ]
+
+    for result, double_result in zip(results, double_results):
+        assert np.asarray(result).dtype == dtype
+        assert np.array_equal(result, np.asarray(double_result).astype(dtype))
+
+
+def test_loop_hafnian_with_reduction_mixed_precision_is_double():
+    matrix = np.array([[1.0, 2.0], [2.0, 3.0]], dtype=np.float32)
+
+    assert isinstance(
+        loop_hafnian_with_reduction(matrix, np.array([4.0, 5.0]), np.array([2, 1])),
+        float,
+    )
+
+
+@pytest.mark.parametrize(
+    "occupation_numbers",
+    [np.ones(10, dtype=int), np.array([2, 1, 3, 0, 2, 1, 0, 2, 0, 1])],
+)
+def test_complex_loop_hafnian_and_hafnian_against_high_precision_reference_on_larger_inputs(  # noqa: E501
+    occupation_numbers,
+):
+    rng = np.random.default_rng(42)
+    d = len(occupation_numbers)
+    matrix = rng.normal(size=(d, d)) + 1j * rng.normal(size=(d, d))
+    matrix = (matrix + matrix.T) / 4
+    diagonal = (rng.normal(size=d) + 1j * rng.normal(size=d)) / 2
+
+    with mp.workdps(40):
+        expected_loop_hafnian = complex(
+            _high_precision_loop_hafnian(matrix, diagonal, occupation_numbers)
+        )
+        expected_hafnian = complex(_high_precision_hafnian(matrix, occupation_numbers))
+
+    assert np.isclose(
+        loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers),
+        expected_loop_hafnian,
+        rtol=1e-11,
+        atol=0.0,
+    )
+    assert np.isclose(
+        hafnian_with_reduction(matrix, occupation_numbers),
+        expected_hafnian,
+        rtol=1e-11,
+        atol=0.0,
+    )
+
+
+@pytest.mark.parametrize(
+    "occupation_numbers, cutoff",
+    [
+        (np.array([1, 1, 1, 2]), 6),
+        (np.array([0, 0, 0, 3]), 5),
+        (np.array([2, 0, 1, 1]), 7),
+    ],
+)
+def test_batches_with_occupied_last_mode(occupation_numbers, cutoff):
+    matrix = np.array(
+        [
+            [1j, 2, 3j, 4],
+            [2, 6, 7, 8j],
+            [3j, 7, 3, 4],
+            [4, 8j, 4, 8j],
+        ],
+        dtype=complex,
+    )
+    mask = np.array([0, 0, 0, 1], dtype=int)
+    diagonal = np.array([0.1, 0.2, 0.3, 0.4], dtype=complex)
+
+    assert np.allclose(
+        loop_hafnian_with_reduction_batch(matrix, diagonal, occupation_numbers, cutoff),
+        [
+            loop_hafnian_with_reduction(matrix, diagonal, occupation_numbers + i * mask)
+            for i in range(cutoff)
+        ],
+    )
+    assert np.allclose(
+        hafnian_with_reduction_batch(matrix, occupation_numbers, cutoff),
+        [
+            hafnian_with_reduction(matrix, occupation_numbers + i * mask)
+            for i in range(cutoff)
+        ],
+    )
+
+
+def test_loop_hafnian_with_reduction_raises_for_non_square_matrix():
+    with pytest.raises(ValueError):
+        loop_hafnian_with_reduction(np.ones((2, 3)), np.ones(2), np.ones(2, dtype=int))
+
+
+def test_loop_hafnian_with_reduction_raises_for_mismatched_diagonal():
+    with pytest.raises(ValueError):
+        loop_hafnian_with_reduction(np.ones((2, 2)), np.ones(3), np.ones(2, dtype=int))
+
+
+def test_hafnian_with_reduction_raises_for_negative_occupation_numbers():
+    with pytest.raises(ValueError):
+        hafnian_with_reduction(np.ones((2, 2)), np.array([1, -1]))
+
+
+@pytest.mark.parametrize("cutoff", [0, -1])
+def test_batches_raise_for_nonpositive_cutoff(cutoff):
+    with pytest.raises(ValueError):
+        loop_hafnian_with_reduction_batch(
+            np.ones((2, 2)), np.ones(2), np.ones(2, dtype=int), cutoff=cutoff
+        )
+
+    with pytest.raises(ValueError):
+        hafnian_with_reduction_batch(
+            np.ones((2, 2)), np.ones(2, dtype=int), cutoff=cutoff
+        )

@@ -1,30 +1,15 @@
 pybind11_add_module(torontonian SHARED ${CMAKE_CURRENT_SOURCE_DIR}/torontonian.cpp)
 pybind11_add_module(pfaffian SHARED ${CMAKE_CURRENT_SOURCE_DIR}/pfaffian.cpp)
 pybind11_add_module(permanent SHARED ${CMAKE_CURRENT_SOURCE_DIR}/permanent.cpp)
-pybind11_add_module(
-    hafnian SHARED
-    ${CMAKE_CURRENT_SOURCE_DIR}/hafnian.cpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/hessenberg.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/labudde.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/loop_corrections.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/loop_hafnian.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/plain_hafnian.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/powtrace.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/utils.hpp
-    ${PROJECT_SOURCE_DIR}/src/hafnian/workspace.hpp
-)
-target_include_directories(hafnian PRIVATE ${PROJECT_SOURCE_DIR}/src)
-
-find_package(OpenMP QUIET)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(hafnian PRIVATE OpenMP::OpenMP_CXX)
-endif()
+pybind11_add_module(hafnian SHARED ${CMAKE_CURRENT_SOURCE_DIR}/hafnian.cpp)
 
 target_link_libraries(torontonian PUBLIC torontonianboost looptorontonianboost)
 
 target_link_libraries(pfaffian PUBLIC pfaffianboost)
 
 target_link_libraries(permanent PUBLIC permanentboost permanentlaplaceboost)
+
+target_link_libraries(hafnian PUBLIC hafnianboost)
 
 install(
     TARGETS torontonian pfaffian permanent hafnian
