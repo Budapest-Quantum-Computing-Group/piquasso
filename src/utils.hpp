@@ -18,10 +18,12 @@
 #define UTILS_H
 
 #include <algorithm>
+#include <cmath>
+#include <complex>
 #include <cstdint>
-#include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #ifndef HOST_DEVICE
@@ -61,34 +63,6 @@ TInt binomialCoeff(TInt n, TInt k)
         result = (result / i) * (n - k + i) + (result % i) * (n - k + i) / i;
 
     return result;
-}
-
-/**
- * @brief Computes a binomial coefficient without fixed-width integer overflow.
- *
- * Hafnian prefactors are accumulated in floating point, so calculating them in
- * an integer type first only reduces the supported occupation-number range.
- */
-inline double binomialCoeffDouble(std::int64_t n, std::int64_t k)
-{
-    if (k < 0 || n < 0 || k > n)
-        return 0.0;
-
-    if (k > n - k)
-        k = n - k;
-
-    long double result = 1.0L;
-
-    for (std::int64_t i = 1; i <= k; ++i)
-    {
-        result *= static_cast<long double>(n - k + i);
-        result /= static_cast<long double>(i);
-    }
-
-    if (result > static_cast<long double>(std::numeric_limits<double>::max()))
-        throw std::overflow_error("The binomial coefficient is too large.");
-
-    return static_cast<double>(result);
 }
 
 /**
@@ -160,6 +134,123 @@ binomialCoeffManual(int n, int k)
 inline int64_t binomialCoeffInt128(int n, int k)
 {
     return binomialCoeffTemplated<int64_t>(n, k);
+}
+
+/**
+ * @brief Computes the binomial probabilities binom(n, k) / 2^n, k = 0, ..., n.
+ *
+ * They are computed from the central one, so that neither overflows nor
+ * underflows prematurely, even when binom(n, k) does not fit into a double.
+ *
+ * @param n The number of trials.
+ * @return The probabilities of k = 0, ..., n successes.
+ */
+inline std::vector<long double> binomialProbabilities(std::int64_t n)
+{
+    if (n < 0)
+        throw std::invalid_argument("The number of trials must be nonnegative.");
+
+    const auto trials = static_cast<std::size_t>(n);
+    const std::size_t middle = trials / 2;
+    const auto n_ = static_cast<long double>(trials);
+    const auto middle_ = static_cast<long double>(middle);
+
+    std::vector<long double> probabilities(trials + 1);
+    probabilities[middle] = std::exp(
+        std::lgamma(n_ + 1.0L) - std::lgamma(middle_ + 1.0L)
+        - std::lgamma(n_ - middle_ + 1.0L) - n_ * std::log(2.0L)
+    );
+    for (std::size_t k = middle; k > 0; --k)
+        probabilities[k - 1] = probabilities[k] * static_cast<long double>(k)
+            / static_cast<long double>(trials - k + 1);
+    for (std::size_t k = middle; k < trials; ++k)
+        probabilities[k + 1] = probabilities[k]
+            * static_cast<long double>(trials - k)
+            / static_cast<long double>(k + 1);
+
+    return probabilities;
+}
+
+/**
+ * @brief Checks whether every element of a vector is zero.
+ *
+ * @tparam TVector The type of the vector, e.g., `Vector<TScalar>`.
+ * @param vector The input vector.
+ * @return True if every element is zero, otherwise false.
+ */
+template <typename TVector>
+bool is_zero(const TVector &vector)
+{
+    using TScalar = std::decay_t<decltype(vector[0])>;
+
+    for (size_t i = 0; i < vector.size(); i++)
+    {
+        if (vector[i] != TScalar{})
+            return false;
+    }
+
+    return true;
+}
+
+// TODO: Use compensated summation in the permanent and the torontonian as well.
+/**
+ * @brief The state of Neumaier's compensated summation, see `compensated_add`.
+ *
+ * @tparam T The type of the summands.
+ */
+template <typename T>
+struct CompensatedSum
+{
+    T sum{};
+    T correction{};
+};
+
+/**
+ * @brief The state of the compensated summation of complex numbers, with the
+ * real and imaginary parts compensated separately.
+ */
+template <typename T>
+struct CompensatedSum<std::complex<T>>
+{
+    CompensatedSum<T> real;
+    CompensatedSum<T> imag;
+};
+
+/**
+ * @brief Adds a value to a compensated sum.
+ */
+template <typename T>
+void compensated_add(CompensatedSum<T> &state, T value)
+{
+    const T total = state.sum + value;
+    if (std::abs(state.sum) >= std::abs(value))
+        state.correction += (state.sum - total) + value;
+    else
+        state.correction += (value - total) + state.sum;
+    state.sum = total;
+}
+
+template <typename T>
+void compensated_add(
+    CompensatedSum<std::complex<T>> &state, const std::complex<T> &value)
+{
+    compensated_add(state.real, value.real());
+    compensated_add(state.imag, value.imag());
+}
+
+/**
+ * @brief The value of a compensated sum.
+ */
+template <typename T>
+T compensated_value(const CompensatedSum<T> &state)
+{
+    return state.sum + state.correction;
+}
+
+template <typename T>
+std::complex<T> compensated_value(const CompensatedSum<std::complex<T>> &state)
+{
+    return {compensated_value(state.real), compensated_value(state.imag)};
 }
 
 /**
