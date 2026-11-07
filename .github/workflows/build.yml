@@ -47,8 +47,8 @@ jobs:
             cibw_env_macos: ""
           - os: windows-latest
             cibw_env_macos: ""
-          - os: macos-14
-            cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=14.0"
+          - os: macos-15
+            cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=15.0"
           - os: macos-15-intel
             cibw_env_macos: "MACOSX_DEPLOYMENT_TARGET=15.0"
 
