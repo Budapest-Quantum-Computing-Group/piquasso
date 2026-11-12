@@ -18,13 +18,13 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
+#include <algorithm>
 #include <complex>
-#include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
-#include "hafnian/loop_hafnian.hpp"
-#include "hafnian/plain_hafnian.hpp"
+#include "hafnian.hpp"
 #include "matrix.hpp"
 #include "numpy_utils.hpp"
 #include "validations.hpp"
@@ -33,63 +33,82 @@ namespace py = pybind11;
 
 namespace {
 
-using piquasso::hafnian::hafnian;
-using piquasso::hafnian::hafnian_batch;
 using piquasso::hafnian::loop_hafnian;
 using piquasso::hafnian::loop_hafnian_batch;
 
-void validate_common_inputs(
-    const py::array &matrix,
-    const py::array &occupations,
-    std::int64_t cutoff = -1
-) {
-    if (matrix.ndim() != 2 || matrix.shape(0) != matrix.shape(1)) {
-        throw py::value_error("matrix must be a square two-dimensional array");
-    }
-    if (occupations.ndim() != 1 || occupations.shape(0) != matrix.shape(0)) {
-        throw py::value_error(
-            "occupation_numbers must be one-dimensional and match matrix"
-        );
-    }
-    if (cutoff == 0) {
-        throw py::value_error("cutoff must be positive");
-    }
-}
+using Complex = std::complex<double>;
+using ContiguousArray =
+    py::array_t<Complex, py::array::c_style | py::array::forcecast>;
 
-py::object hafnian_numpy(
+void validate_inputs(
     const py::array &matrix,
+    const py::array &diagonal,
     const py::array &occupation_numbers
 ) {
-    validate_common_inputs(matrix, occupation_numbers);
-    const std::vector<std::int64_t> occupations =
-        nonnegative_vector_from_numpy<std::int64_t>(
-            occupation_numbers, "occupation_numbers"
+    validate_square_matrix(matrix);
+    validate_vector_matching_matrix(
+        occupation_numbers, matrix, "occupation_numbers"
+    );
+    validate_vector_matching_matrix(diagonal, matrix, "diagonal");
+}
+
+bool is_single_precision(const py::array &array) {
+    return py::isinstance<py::array_t<float>>(array)
+        || py::isinstance<py::array_t<std::complex<float>>>(array);
+}
+
+// The results are calculated in double-precision complex arithmetic. They are
+// returned as real numbers for real inputs, and in single precision if all
+// inputs are in single precision.
+bool has_real_result(const py::array &matrix, const py::array &diagonal) {
+    return !is_complex_array(matrix) && !is_complex_array(diagonal);
+}
+
+bool has_single_precision_result(
+    const py::array &matrix,
+    const py::array &diagonal
+) {
+    return is_single_precision(matrix) && is_single_precision(diagonal);
+}
+
+py::object to_input_type(
+    const Complex &value,
+    const py::array &matrix,
+    const py::array &diagonal
+) {
+    const bool single_precision = has_single_precision_result(matrix, diagonal);
+    if (has_real_result(matrix, diagonal)) {
+        return single_precision ? py::dtype::of<float>().attr("type")(value.real())
+                                : py::cast(value.real());
+    }
+    return single_precision
+        ? py::dtype::of<std::complex<float>>().attr("type")(value)
+        : py::cast(value);
+}
+
+py::object to_input_type(
+    const std::vector<Complex> &values,
+    const py::array &matrix,
+    const py::array &diagonal
+) {
+    const bool real = has_real_result(matrix, diagonal);
+    py::object array;
+    if (real) {
+        std::vector<double> real_parts(values.size());
+        std::transform(
+            values.begin(), values.end(), real_parts.begin(),
+            [](const Complex &value) { return value.real(); }
         );
-
-    if (is_complex_array(matrix)) {
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_matrix(matrix);
-        const Matrix<std::complex<double>> native_matrix =
-            numpy_to_matrix(contiguous_matrix);
-        std::complex<double> result;
-        {
-            py::gil_scoped_release release;
-            result = hafnian(native_matrix, occupations);
-        }
-        return py::cast(result);
+        array = create_numpy_vector(real_parts);
+    } else {
+        array = create_numpy_vector(values);
     }
-
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_matrix(matrix);
-    const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    double result;
-    {
-        py::gil_scoped_release release;
-        result = hafnian(native_matrix, occupations);
+    if (has_single_precision_result(matrix, diagonal)) {
+        return array.attr("astype")(
+            real ? py::dtype::of<float>() : py::dtype::of<std::complex<float>>()
+        );
     }
-    return py::cast(result);
+    return array;
 }
 
 py::object loop_hafnian_numpy(
@@ -97,88 +116,23 @@ py::object loop_hafnian_numpy(
     const py::array &diagonal,
     const py::array &occupation_numbers
 ) {
-    validate_common_inputs(matrix, occupation_numbers);
-    if (diagonal.ndim() != 1 || diagonal.shape(0) != matrix.shape(0)) {
-        throw py::value_error("diagonal must be one-dimensional and match matrix");
-    }
+    validate_inputs(matrix, diagonal, occupation_numbers);
     const std::vector<std::int64_t> occupations =
         nonnegative_vector_from_numpy<std::int64_t>(
             occupation_numbers, "occupation_numbers"
         );
+    const ContiguousArray contiguous_matrix(matrix);
+    const ContiguousArray contiguous_diagonal(diagonal);
+    const Matrix<Complex> native_matrix = numpy_to_matrix(contiguous_matrix);
+    const Vector<Complex> native_diagonal = numpy_to_vector(contiguous_diagonal);
 
-    if (is_complex_array(matrix) || is_complex_array(diagonal)) {
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_matrix(matrix);
-        const Matrix<std::complex<double>> native_matrix =
-            numpy_to_matrix(contiguous_matrix);
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_diagonal(diagonal);
-        const Vector<std::complex<double>> native_diagonal =
-            numpy_to_vector(contiguous_diagonal);
-        std::complex<double> result;
-        {
-            py::gil_scoped_release release;
-            result = loop_hafnian(native_matrix, native_diagonal, occupations);
-        }
-        return py::cast(result);
-    }
-
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_matrix(matrix);
-    const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_diagonal(diagonal);
-    const Vector<double> native_diagonal = numpy_to_vector(contiguous_diagonal);
-    double result;
+    Complex result;
     {
         py::gil_scoped_release release;
         result = loop_hafnian(native_matrix, native_diagonal, occupations);
     }
-    return py::cast(result);
-}
 
-py::object hafnian_batch_numpy(
-    const py::array &matrix,
-    const py::array &occupation_numbers,
-    std::int64_t cutoff
-) {
-    validate_common_inputs(matrix, occupation_numbers, cutoff);
-    if (cutoff < 1) {
-        throw py::value_error("cutoff must be positive");
-    }
-    const std::vector<std::int64_t> occupations =
-        nonnegative_vector_from_numpy<std::int64_t>(
-            occupation_numbers, "occupation_numbers"
-        );
-
-    if (is_complex_array(matrix)) {
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_matrix(matrix);
-        const Matrix<std::complex<double>> native_matrix =
-            numpy_to_matrix(contiguous_matrix);
-        std::vector<std::complex<double>> result;
-        {
-            py::gil_scoped_release release;
-            result = hafnian_batch(native_matrix, occupations, cutoff);
-        }
-        return create_numpy_vector(result);
-    }
-
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_matrix(matrix);
-    const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    std::vector<double> result;
-    {
-        py::gil_scoped_release release;
-        result = hafnian_batch(native_matrix, occupations, cutoff);
-    }
-    return create_numpy_vector(result);
+    return to_input_type(result, matrix, diagonal);
 }
 
 py::object loop_hafnian_batch_numpy(
@@ -187,55 +141,58 @@ py::object loop_hafnian_batch_numpy(
     const py::array &occupation_numbers,
     std::int64_t cutoff
 ) {
-    validate_common_inputs(matrix, occupation_numbers, cutoff);
-    if (diagonal.ndim() != 1 || diagonal.shape(0) != matrix.shape(0)) {
-        throw py::value_error("diagonal must be one-dimensional and match matrix");
-    }
-    if (cutoff < 1) {
-        throw py::value_error("cutoff must be positive");
-    }
+    validate_inputs(matrix, diagonal, occupation_numbers);
+    validate_positive(cutoff, "cutoff");
     const std::vector<std::int64_t> occupations =
         nonnegative_vector_from_numpy<std::int64_t>(
             occupation_numbers, "occupation_numbers"
         );
+    const ContiguousArray contiguous_matrix(matrix);
+    const ContiguousArray contiguous_diagonal(diagonal);
+    const Matrix<Complex> native_matrix = numpy_to_matrix(contiguous_matrix);
+    const Vector<Complex> native_diagonal = numpy_to_vector(contiguous_diagonal);
 
-    if (is_complex_array(matrix) || is_complex_array(diagonal)) {
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_matrix(matrix);
-        const Matrix<std::complex<double>> native_matrix =
-            numpy_to_matrix(contiguous_matrix);
-        py::array_t<
-            std::complex<double>,
-            py::array::c_style | py::array::forcecast
-        > contiguous_diagonal(diagonal);
-        const Vector<std::complex<double>> native_diagonal =
-            numpy_to_vector(contiguous_diagonal);
-        std::vector<std::complex<double>> result;
-        {
-            py::gil_scoped_release release;
-            result = loop_hafnian_batch(
-                native_matrix, native_diagonal, occupations, cutoff
-            );
-        }
-        return create_numpy_vector(result);
-    }
-
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_matrix(matrix);
-    const Matrix<double> native_matrix = numpy_to_matrix(contiguous_matrix);
-    py::array_t<double, py::array::c_style | py::array::forcecast>
-        contiguous_diagonal(diagonal);
-    const Vector<double> native_diagonal = numpy_to_vector(contiguous_diagonal);
-    std::vector<double> result;
+    std::vector<Complex> result;
     {
         py::gil_scoped_release release;
         result = loop_hafnian_batch(
             native_matrix, native_diagonal, occupations, cutoff
         );
     }
-    return create_numpy_vector(result);
+
+    return to_input_type(result, matrix, diagonal);
+}
+
+// The hafnian is the loop hafnian with zero diagonal, of the precision of the
+// matrix.
+py::array zero_diagonal(const py::array &matrix) {
+    validate_square_matrix(matrix);
+    py::array diagonal(
+        is_single_precision(matrix) ? py::dtype::of<float>()
+                                    : py::dtype::of<double>(),
+        py::array::ShapeContainer{matrix.shape(0)}
+    );
+    std::memset(
+        diagonal.mutable_data(), 0, static_cast<std::size_t>(diagonal.nbytes())
+    );
+    return diagonal;
+}
+
+py::object hafnian_numpy(
+    const py::array &matrix,
+    const py::array &occupation_numbers
+) {
+    return loop_hafnian_numpy(matrix, zero_diagonal(matrix), occupation_numbers);
+}
+
+py::object hafnian_batch_numpy(
+    const py::array &matrix,
+    const py::array &occupation_numbers,
+    std::int64_t cutoff
+) {
+    return loop_hafnian_batch_numpy(
+        matrix, zero_diagonal(matrix), occupation_numbers, cutoff
+    );
 }
 
 } // namespace
@@ -243,11 +200,10 @@ py::object loop_hafnian_batch_numpy(
 PYBIND11_MODULE(hafnian, module) {
     module.doc() = R"doc(Native hafnian and loop-hafnian implementations.
 
-Most of the code in this package consists of translated versions of the PiquassoBoost
-C++ code: https://github.com/Budapest-Quantum-Computing-Group/piquassoboost.
+The loop hafnians are calculated by a parallel finite-difference Schur recursion in
+O(n^2 2^n) time for 2n vertices, with repeated rows grouped.
 
-The algorithms are further enhanced to account for repetitions, as described in
-https://arxiv.org/abs/2108.01622.
+The idea behind this algorithm will be described in a forthcoming arXiv preprint.
 )doc";
 
     module.def(

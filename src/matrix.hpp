@@ -95,7 +95,7 @@ public:
         return vector_copy;
     }
 
-    HOST_DEVICE size_t size()
+    HOST_DEVICE size_t size() const
     {
         return length;
     }
