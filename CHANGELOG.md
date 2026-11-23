@@ -32,9 +32,9 @@
   pq.Q(0) | pq.Phaseshifter(-phi)
   pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance=np.diag([z**2, z**-2]))
   ```
-- macOS arm64 wheels are built for macOS 15.0 and later (previously 14.0), since the
-  macOS 14 GitHub Actions runner has been retired. On older macOS versions, Piquasso
-  can still be built from source.
+- macOS arm64 and x86_64 wheels are built for macOS 15.0 and later (previously 14.0
+  for arm64), since the macOS 14 GitHub Actions runner has been retired. On older
+  macOS versions, Piquasso can still be built from source.
 
 ### Performance improvements
 
