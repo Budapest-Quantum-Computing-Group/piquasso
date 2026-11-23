@@ -26,6 +26,9 @@ from piquasso._math.hafnian import (
     loop_hafnian_with_reduction,
     loop_hafnian_with_reduction_batch,
 )
+from piquasso._math.bs_output_state import (
+    calculate_BS_output_state as _calculate_BS_output_state,
+)
 from piquasso._math.hermite import density_matrix_from_gaussian
 
 from ..connector import BuiltinConnector, instancemethod
@@ -82,3 +85,15 @@ class NumpyConnector(BuiltinConnector):
         embedded_matrix[composite_index] = np.array(updates)
 
         return embedded_matrix
+
+    def calculate_BS_output_state(
+        self, interferometer, initial_state, postselect_data, config
+    ):
+        postselect_modes, postselect_photons = postselect_data
+
+        return _calculate_BS_output_state(
+            np.asarray(interferometer, dtype=config.complex_dtype),
+            np.asarray(initial_state),
+            np.asarray(postselect_modes, dtype=int),
+            np.asarray(postselect_photons, dtype=int),
+        ).astype(config.complex_dtype, copy=False)

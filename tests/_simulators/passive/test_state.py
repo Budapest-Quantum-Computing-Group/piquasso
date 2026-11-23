@@ -18,7 +18,32 @@ import pytest
 
 import piquasso as pq
 
+from piquasso._math.bs_output_state import calculate_BS_output_state
 from scipy.special import comb
+
+
+def test_postselected_state_vector_with_sparse_layer_index():
+    d = 35
+    initial_state = np.array([3, 4] + [0] * (d - 2))
+    modes = np.arange(2, d)
+
+    result = calculate_BS_output_state(
+        np.eye(d, dtype=complex), initial_state, modes, np.zeros(len(modes), dtype=int)
+    )
+
+    expected = np.zeros(8, dtype=complex)
+    expected[4] = 1
+    np.testing.assert_allclose(result, expected, atol=1e-14)
+
+
+def test_state_vector_rejects_particle_count_exceeding_int32():
+    with pytest.raises(ValueError, match="Too many particles"):
+        calculate_BS_output_state(
+            np.eye(2, dtype=complex),
+            np.array([np.iinfo(np.int32).max, 1], dtype=np.int64),
+            np.array([], dtype=int),
+            np.array([], dtype=int),
+        )
 
 
 def test_state_vector(generate_unitary_matrix):

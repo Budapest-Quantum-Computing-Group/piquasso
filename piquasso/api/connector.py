@@ -275,6 +275,22 @@ class BaseConnector(abc.ABC):
         """
 
     @abc.abstractmethod
+    def calculate_BS_output_state(
+        self, interferometer, initial_state, postselect_data, config
+    ):
+        """Calculates the state vector on a fixed-particle-number subspace.
+
+        Args:
+            interferometer: One-particle unitary corresponding to the interferometer.
+            initial_state: Input occupation numbers.
+            postselect_data: Postselected modes and their occupation numbers.
+            config: Simulation configuration.
+
+        Returns:
+            The state vector on the subspace defined by ``initial_state``.
+        """
+
+    @abc.abstractmethod
     def density_matrix_from_gaussian(self, A, b, c, basis):
         """Builds a Gaussian density matrix from its :math:`(A, b, c)` triple.
 
