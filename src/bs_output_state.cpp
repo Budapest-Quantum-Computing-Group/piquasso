@@ -60,6 +60,7 @@
 #include <deque>
 #include <limits>
 #include <numeric>
+#include <stdexcept>
 
 namespace
 {
@@ -294,10 +295,11 @@ constexpr std::size_t EMPTY = std::numeric_limits<std::size_t>::max();
 
 inline std::size_t scramble(std::size_t value)
 {
-    value ^= value >> 32;
-    value *= 0x9E3779B97F4A7C15ULL;
+    std::uint64_t mixed = value;
+    mixed ^= mixed >> 32;
+    mixed *= 0x9E3779B97F4A7C15ULL;
 
-    return value >> 20;
+    return static_cast<std::size_t>(mixed >> 20);
 }
 
 /**
@@ -479,7 +481,8 @@ Vector<TScalar> add_particle_postselected(
             const auto found = find(next_index, rank);
 
             if (found != NOT_IN_BASIS)
-                next[found] += sqrt_table[admissible[i] + 1] * interferometer(i, mode) * weight;
+                next[static_cast<std::size_t>(found)] +=
+                    sqrt_table[admissible[i] + 1] * interferometer(i, mode) * weight;
         }
     };
 
@@ -512,11 +515,17 @@ Vector<TScalar> calculate_BS_output_state(
 
     const auto n = std::accumulate(initial_state.begin(), initial_state.end(), std::int64_t{0});
 
+    if (n > std::numeric_limits<std::int32_t>::max()
+            || static_cast<std::uint64_t>(n) > std::numeric_limits<std::size_t>::max() - d)
+        throw std::length_error("Too many particles for output state");
+
+    const auto particle_count = static_cast<std::size_t>(n);
+
     // `C(a, b)` for `a < n + d` and `b < d`.
-    const auto binomials = make_binomials(n + d, d);
+    const auto binomials = make_binomials(particle_count + d, d);
 
     // `sqrt(v)` for `v <= n`.
-    std::vector<TReal> sqrt_table(n + 1);
+    std::vector<TReal> sqrt_table(particle_count + 1);
 
     for (std::size_t v = 0; v < sqrt_table.size(); ++v)
         sqrt_table[v] = std::sqrt(static_cast<TReal>(v));

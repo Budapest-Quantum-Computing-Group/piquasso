@@ -28,8 +28,8 @@
  * `initial_state` (Algorithm 1, `SLOS_full`, from "Strong Simulation of Linear
  * Optical Processes"), pruned according to the postselection data.
  *
- * Occupations are indexed with 64-bit ranks, so the number of occupations of
- * `sum(initial_state)` particles in `d` modes must be below 2^64. This is not
+ * Occupations are indexed with `size_t` ranks, so the number of occupations of
+ * `sum(initial_state)` particles in `d` modes must fit in `size_t`. This is not
  * checked.
  *
  * Instantiated for `std::complex<float>` and `std::complex<double>`.
