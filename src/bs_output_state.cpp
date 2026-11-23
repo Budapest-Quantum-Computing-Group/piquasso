@@ -524,6 +524,9 @@ Vector<TScalar> calculate_BS_output_state(
     const bool is_postselected = !postselect_modes.empty();
     const auto constraints = make_constraints(d, n, postselect_modes, postselect_photons);
 
+    if (constraints.free_limit < 0)
+        return Vector<TScalar>(0);
+
     // Only two consecutive layers are alive at any time. A deque is used, since
     // `Vector` assignment does not release the previous data, but its destructor
     // does.
