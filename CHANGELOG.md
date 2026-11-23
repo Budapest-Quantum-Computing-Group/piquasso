@@ -1,5 +1,69 @@
 # Changelog
 
+## [8.1.0] - 2026-11-23
+
+### Added
+
+- `HomodyneMeasurement` as a mid-circuit measurement in `PureFockSimulator`, so that
+  circuits can continue after a homodyne measurement with further gates, measurements,
+  and feed-forward based on the outcomes.
+- Per-mode homodyne angles in `PureFockSimulator`: the `phi` parameter of
+  `HomodyneMeasurement` can be an array with one angle per measured mode.
+- `HomodyneMeasurement` in `PureFockSimulator` now returns the conditional
+  post-measurement state. Multimode outcomes are sampled sequentially from conditional
+  pure states instead of conditioning the multimode density matrix.
+- `PureFockState.mean_position` and `BatchPureFockState.mean_position` accept an
+  optional quadrature rotation angle `phi`.
+
+### Changed
+
+- `HomodyneMeasurement` in `GaussianSimulator` is now an exact ideal homodyne
+  measurement: the measured quadratures are sampled directly and the conditional
+  Gaussian state is computed analytically. Previously, it was approximated by a
+  general-dyne measurement with a small squeezing parameter `z`, which could be
+  numerically unstable for highly squeezed detection covariances. Since the
+  approximation is gone, `HomodyneMeasurement` no longer takes the `z` parameter.
+  Finite detector squeezing is still supported through `GeneraldyneMeasurement`:
+  ```python
+  # Before
+  pq.Q(0) | pq.HomodyneMeasurement(phi=phi, z=z)
+
+  # Now
+  pq.Q(0) | pq.Phaseshifter(-phi)
+  pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance=np.diag([z**2, z**-2]))
+  ```
+- macOS arm64 wheels are built for macOS 15.0 and later (previously 14.0), since the
+  macOS 14 GitHub Actions runner has been retired. On older macOS versions, Piquasso
+  can still be built from source.
+
+### Performance improvements
+
+- Hafnian and loop hafnian reimplemented in C++ with a parallel finite-difference Schur
+  recursion. Rounding errors are lower, results no longer depend on the number of
+  OpenMP threads, and `float32`/`complex64` inputs are computed in double precision.
+- `PassiveState.state_vector` uses a C++ implementation of the `SLOS_full` algorithm
+  with the NumPy connector, including pruning for postselection.
+- Faster `partitions` for listing occupation-number vectors.
+
+### Fixed
+
+- `PureFockState.mean_position` returned wrong results for state vectors with complex
+  coefficients due to a missing complex conjugation.
+- `HomodyneMeasurement` in `GaussianSimulator` sampled the measured quadrature with
+  twice its actual variance, and returned two values per measured mode, where the
+  second one was the conjugate quadrature dominated by noise of order `1/z`. Both came
+  from the general-dyne implementation it was built on. It now returns one real-valued
+  sample per measured mode from the correct quadrature distribution, consistent with
+  `PureFockSimulator`.
+
+
+## [8.0.2] - 2026-10-20
+
+### Fixed
+
+- Replaced hafnian Numba implementation with C++ and OpenMP to avoid LLVM errors when
+  using cached recursively defined Numba functions.
+
 ## [8.0.1] - 2026-07-01
 
 ### Fixed
