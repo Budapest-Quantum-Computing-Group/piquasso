@@ -272,7 +272,7 @@ def _get_generaldyne_samples(state, modes, shots, detection_covariance):
     cov = (
         state.xpxp_covariance_matrix[np.ix_(indices, indices)]
         + full_detection_covariance
-    )
+    ) / 2
 
     # HACK: We need tol=1e-7 to avoid Numpy warnings at homodyne detection with
     # squeezed detection covariance. Numpy warns

@@ -156,6 +156,87 @@ def test_measure_heterodyne_with_multiple_shots(state):
     assert len(result.samples) == shots
 
 
+def test_Heterodyne_coherent_state_samples_follow_the_Husimi_Q_function():
+    r"""
+    For a coherent state :math:`| \alpha \rangle`, the heterodyne outcome distribution
+    :math:`Q(\beta) = | \langle \beta | \alpha \rangle |^2 / \pi` is a Gaussian
+    centered at :math:`\alpha` with variance :math:`1/2` in both :math:`\Re \beta` and
+    :math:`\Im \beta`. The samples are returned in quadrature units, i.e., scaled by
+    :math:`\sqrt{2 \hbar}`, hence their mean is :math:`\sqrt{2 \hbar} (\Re \alpha,
+    \Im \alpha)` and their covariance is :math:`\hbar I`.
+
+    The samples are compared with ones drawn from the expected distribution using the
+    same seed.
+    """
+    shots = 3
+    seed = 42
+    hbar = 3.0
+    alpha = 0.7 * np.exp(0.4j)
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Displacement(r=np.abs(alpha), phi=np.angle(alpha))
+        pq.Q(0) | pq.HeterodyneMeasurement()
+
+    simulator = pq.GaussianSimulator(
+        d=1,
+        config=pq.Config(hbar=hbar, seed_sequence=seed),
+    )
+
+    result = simulator.execute(program, shots=shots)
+
+    # NOTE: `Result.samples` shuffles the outcomes, the branches keep the order in
+    # which they were sampled.
+    samples = np.array([branch.outcome for branch in result.branches])
+
+    expected_samples = np.random.default_rng(seed).multivariate_normal(
+        mean=np.sqrt(2 * hbar) * np.array([alpha.real, alpha.imag]),
+        cov=hbar * np.identity(2),
+        size=shots,
+    )
+
+    assert np.allclose(samples, expected_samples)
+
+
+def test_Generaldyne_squeezed_vacuum_samples_have_the_expected_distribution():
+    r"""
+    The general-dyne outcome distribution is Gaussian with the mean of the measured
+    state, and with covariance being the physical covariance of the measured state plus
+    :math:`\hbar \sigma_m / 2`. For a squeezed vacuum, the former is
+    :math:`\hbar \operatorname{diag}(e^{-2r}, e^{2r}) / 2`.
+
+    The samples are compared with ones drawn from the expected distribution using the
+    same seed.
+    """
+    shots = 3
+    seed = 42
+    hbar = 3.0
+    r = 0.3
+    detection_covariance = np.diag([2.0, 0.5])
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Squeezing(r=r)
+        pq.Q(0) | pq.GeneraldyneMeasurement(detection_covariance)
+
+    simulator = pq.GaussianSimulator(
+        d=1,
+        config=pq.Config(hbar=hbar, seed_sequence=seed),
+    )
+
+    result = simulator.execute(program, shots=shots)
+
+    samples = np.array([branch.outcome for branch in result.branches])
+
+    physical_covariance = hbar / 2 * np.diag([np.exp(-2 * r), np.exp(2 * r)])
+
+    expected_samples = np.random.default_rng(seed).multivariate_normal(
+        mean=np.zeros(2),
+        cov=physical_covariance + hbar / 2 * detection_covariance,
+        size=shots,
+    )
+
+    assert np.allclose(samples, expected_samples)
+
+
 def test_measure_dyne(state):
     detection_covariance = np.array(
         [
