@@ -364,6 +364,43 @@ def test_measure_particle_number_on_all_modes(state):
     assert result.state is None
 
 
+@pytest.mark.parametrize("hbar", (0.5, 8.0))
+def test_ParticleNumberMeasurement_samples_are_the_same_regardless_of_hbar(hbar):
+    r"""
+    The particle number distribution does not depend on :math:`\hbar`, hence the
+    samples should be identical to the ones obtained with :math:`\hbar = 2` when using
+    the same seed.
+
+    NOTE: For these values of :math:`\hbar`, the rescaling to the :math:`\hbar = 2`
+    convention is exact in floating point arithmetic, which makes the comparison
+    deterministic.
+    """
+    shots = 10
+    seed_sequence = 42
+
+    with pq.Program() as program:
+        pq.Q(0) | pq.Squeezing(r=0.6, phi=0.3)
+        pq.Q(1) | pq.Displacement(r=0.8, phi=1.2)
+        pq.Q(2) | pq.Squeezing(r=0.4)
+        pq.Q(0, 1) | pq.Beamsplitter(theta=0.7, phi=0.2)
+        pq.Q(1, 2) | pq.Beamsplitter(theta=0.5)
+        pq.Q(0) | pq.Attenuator(theta=0.4)
+
+        pq.Q() | pq.ParticleNumberMeasurement()
+
+    simulator_hbar_2 = pq.GaussianSimulator(
+        d=3, config=pq.Config(hbar=2.0, seed_sequence=seed_sequence)
+    )
+    simulator_custom_hbar = pq.GaussianSimulator(
+        d=3, config=pq.Config(hbar=hbar, seed_sequence=seed_sequence)
+    )
+
+    result_hbar_2 = simulator_hbar_2.execute(program, shots=shots)
+    result_custom_hbar = simulator_custom_hbar.execute(program, shots=shots)
+
+    assert np.array_equal(result_hbar_2.samples, result_custom_hbar.samples)
+
+
 @pytest.mark.parametrize(
     "MeasurementClass",
     (pq.HomodyneMeasurement, pq.HeterodyneMeasurement),

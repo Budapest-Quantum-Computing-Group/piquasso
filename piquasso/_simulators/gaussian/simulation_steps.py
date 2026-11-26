@@ -369,10 +369,10 @@ def _get_particle_number_measurement_samples(
     hbar_in_calculations = 2.0
 
     normalized_cov = (
-        hbar / (2.0 * hbar_in_calculations) * reduced_state.xxpp_covariance_matrix
+        hbar_in_calculations / (2.0 * hbar) * reduced_state.xxpp_covariance_matrix
     )
     normalized_mean = (
-        np.sqrt(hbar / hbar_in_calculations) * reduced_state.xxpp_mean_vector
+        np.sqrt(hbar_in_calculations / hbar) * reduced_state.xxpp_mean_vector
     )
     S, D = williamson(normalized_cov, connector)
 
